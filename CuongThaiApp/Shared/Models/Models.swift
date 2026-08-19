@@ -326,10 +326,19 @@ struct CourseLesson: Codable, Identifiable, Hashable {
 
     var laQuiz: Bool { lessonType == "QUIZ" }
 
+    /// "4:19:34" cho bài dài, "12:05" cho bài ngắn.
+    ///
+    /// Bản đầu chia mọi thứ ra phút:giây, nên một bài 15.574 giây (hơn 4 tiếng)
+    /// hiện thành "259:34" — đúng về số học, vô nghĩa với người đọc.
     var thoiLuong: String? {
         guard let giay = videoDurationSeconds, giay > 0 else { return nil }
-        let phut = giay / 60, du = giay % 60
-        return phut > 0 ? "\(phut):\(String(format: "%02d", du))" : "0:\(String(format: "%02d", du))"
+        let gio = giay / 3600
+        let phut = (giay % 3600) / 60
+        let du = giay % 60
+        if gio > 0 {
+            return "\(gio):\(String(format: "%02d:%02d", phut, du))"
+        }
+        return "\(phut):\(String(format: "%02d", du))"
     }
 }
 

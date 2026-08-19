@@ -575,7 +575,11 @@ struct HTMLText: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .task(id: cheDo) { await dung() }
+        // PHẢI theo dõi cả `html`, không chỉ chế độ màu. Bản đầu chỉ đặt
+        // `.task(id: cheDo)`, nên khi chuyển sang bài khác thì SwiftUI dùng lại
+        // đúng view đó, `@State chu` giữ nguyên chữ của bài TRƯỚC và không có
+        // gì kích hoạt dựng lại — người học đọc mô tả của bài mình vừa rời.
+        .task(id: "\(cheDo)|\(html.hashValue)") { await dung() }
     }
 
     private func dung() async {
