@@ -91,6 +91,7 @@ struct NotificationsView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var baiDangMo: SocialPost?
+    @State private var nguoiDangMo: Int?
     @State private var dangMoBai: Int?
 
     var body: some View {
@@ -127,6 +128,9 @@ struct NotificationsView: View {
             }
             .navigationDestination(item: $baiDangMo) { bai in
                 PostDetailView(post: bai)
+            }
+            .navigationDestination(item: $nguoiDangMo) { userId in
+                UserProfileView(userId: userId)
             }
             .alert("Lỗi", isPresented: .constant(vm.loi != nil)) {
                 Button("OK") { vm.loi = nil }
@@ -201,23 +205,29 @@ struct NotificationsView: View {
     private func moThongBao(_ tb: AppNotification) async {
         if !tb.isRead { await vm.danhDauDaDoc([tb.id]) }
 
-        // Thông báo tin nhắn: nhảy sang tab Tin nhắn thay vì cố mở một bài
-        // viết không tồn tại — `entityId` lúc đó là id hội thoại, không phải
-        // id bài, và mở nhầm sẽ ra lỗi "không tìm thấy bài viết".
-        if tb.laTinNhan {
+        switch tb.noiDen {
+        case .tinNhan:
             dismiss()
             appState.selectedTab = .messages
-            return
-        }
 
-        guard let postId = tb.entityId, dangMoBai == nil else { return }
-        dangMoBai = tb.id
-        defer { dangMoBai = nil }
-        do {
-            let bai: SocialPost = try await APIClient.shared.request(.getPost(id: postId))
-            baiDangMo = bai
-        } catch {
-            vm.loi = "Không mở được bài viết — có thể nó đã bị xoá."
+        case .nguoiDung(let userId):
+            nguoiDangMo = userId
+
+        case .baiViet(let postId):
+            guard dangMoBai == nil else { return }
+            dangMoBai = tb.id
+            defer { dangMoBai = nil }
+            do {
+                let bai: SocialPost = try await APIClient.shared.request(.getPost(id: postId))
+                baiDangMo = bai
+            } catch {
+                vm.loi = "Không mở được bài viết — có thể nó đã bị xoá."
+            }
+
+        case .khongDauCa:
+            // Ghi chú, tài liệu Hub, thông báo ban quản trị: app chưa có màn
+            // tương ứng. Nói thẳng còn hơn bấm vào không có gì xảy ra.
+            vm.loi = "Nội dung này hiện chỉ xem được trên website cuongthai.com."
         }
     }
 }

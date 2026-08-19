@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import os
 import SocketIO
 
 // MARK: - Kết nối thời gian thực
@@ -45,6 +46,8 @@ final class RealtimeClient: ObservableObject {
 
     /// Tin mới về từ máy chủ. ChatView nghe cái này thay vì hỏi lại API.
     let tinMoi = PassthroughSubject<(threadId: Int, message: Message), Never>()
+
+    private static let log = Logger(subsystem: "com.cuongthai.app", category: "realtime")
 
     private var manager: SocketManager?
     private var socket: SocketIOClient?
@@ -118,15 +121,18 @@ final class RealtimeClient: ObservableObject {
 
     private func dangKyLangNghe(_ socket: SocketIOClient) {
         socket.on(clientEvent: .connect) { [weak self] _, _ in
+            Self.log.notice("socket ĐÃ NỐI")
             Task { @MainActor in self?.trangThai = .daNoi }
         }
-        socket.on(clientEvent: .disconnect) { [weak self] _, _ in
+        socket.on(clientEvent: .disconnect) { [weak self] data, _ in
+            Self.log.notice("socket NGẮT: \(String(describing: data), privacy: .public)")
             Task { @MainActor in self?.trangThai = .chuaNoi }
         }
         socket.on(clientEvent: .reconnect) { [weak self] _, _ in
             Task { @MainActor in self?.trangThai = .dangNoi }
         }
-        socket.on(clientEvent: .error) { [weak self] _, _ in
+        socket.on(clientEvent: .error) { [weak self] data, _ in
+            Self.log.error("socket LỖI: \(String(describing: data), privacy: .public)")
             // Token hết hạn cũng rơi vào đây. Không thử lại vô hạn với token
             // hỏng — REST sẽ làm mới token, lần `noi()` sau dùng token mới.
             Task { @MainActor in self?.trangThai = .chuaNoi }

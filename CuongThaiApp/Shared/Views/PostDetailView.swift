@@ -50,16 +50,19 @@ struct PostDetailView: View {
                         Label("Ẩn bài viết này", systemImage: "eye.slash")
                     }
 
-                    Button(role: .destructive) {
-                        activeReport = .post(id: post.id, authorId: post.author.id, authorName: post.author.name)
-                    } label: {
-                        Label("Báo cáo bài viết", systemImage: "flag")
-                    }
+                    // Không báo cáo / chặn chính mình.
+                    if post.author.id != AppState.shared.currentUser?.id {
+                        Button(role: .destructive) {
+                            activeReport = .post(id: post.id, authorId: post.author.id, authorName: post.author.name)
+                        } label: {
+                            Label("Báo cáo bài viết", systemImage: "flag")
+                        }
 
-                    Button(role: .destructive) {
-                        showBlockConfirm = true
-                    } label: {
-                        Label("Chặn \(post.author.name)", systemImage: "hand.raised")
+                        Button(role: .destructive) {
+                            showBlockConfirm = true
+                        } label: {
+                            Label("Chặn \(post.author.name)", systemImage: "hand.raised")
+                        }
                     }
                 } label: {
                     Image(systemName: "ellipsis")

@@ -131,7 +131,12 @@ struct ReportSheet: View {
 
 struct PostModerationMenu: View {
     let post: SocialPost
-    var isOwnPost: Bool = false
+    /// Tự suy ra thay vì bắt mỗi nơi gọi phải truyền — HomeView quên truyền
+    /// nên "Báo cáo" và "Chặn <chính mình>" hiện trên bài của chính người
+    /// dùng. Vô lý, và chặn chính mình thì backend cũng từ chối.
+    private var laBaiCuaMinh: Bool {
+        post.author.id == AppState.shared.currentUser?.id
+    }
 
     @ObservedObject private var moderation = ModerationStore.shared
     @State private var showReport = false
@@ -145,7 +150,7 @@ struct PostModerationMenu: View {
                 Label("Ẩn bài viết này", systemImage: "eye.slash")
             }
 
-            if !isOwnPost {
+            if !laBaiCuaMinh {
                 Button(role: .destructive) {
                     showReport = true
                 } label: {

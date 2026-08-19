@@ -414,6 +414,11 @@ struct AppNotification: Codable, Identifiable, Hashable {
 
     /// Câu mô tả dựng từ `type`, KHÔNG lấy từ `payload`: payload là JSON tự do
     /// nên hình dạng không có gì bảo đảm, còn `type` thì backend ràng bằng enum.
+    ///
+    /// ⚠️ Chú thích trong `prisma/schema.prisma` chỉ liệt kê 6 loại và ĐÃ CŨ.
+    /// Đếm thật trong `notification.service.ts` (19/08/2026) có 11 loại. Thiếu
+    /// loại nào thì nó rơi vào câu mặc định "có hoạt động mới" — không sai,
+    /// nhưng vô nghĩa với người đọc.
     var loiNhan: String {
         switch type {
         case "NEW_REACTION": return "đã bày tỏ cảm xúc về bài viết của bạn"
@@ -422,6 +427,13 @@ struct AppNotification: Codable, Identifiable, Hashable {
         case "NEW_MENTION": return "đã nhắc tới bạn"
         case "NEW_POST": return "vừa đăng một bài mới"
         case "NEW_MESSAGE": return "đã gửi cho bạn một tin nhắn"
+        case "NEW_FOLLOW": return "đã theo dõi bạn"
+        case "FRIEND_REQUEST": return "đã gửi lời mời kết bạn"
+        case "FRIEND_ACCEPT": return "đã chấp nhận lời mời kết bạn"
+        case "NOTE_SHARE": return "đã chia sẻ một ghi chú với bạn"
+        case "NOTE_COMMENT": return "đã bình luận ghi chú của bạn"
+        case "HUB_SHARE": return "đã chia sẻ một tài liệu với bạn"
+        case "ADMIN_ANNOUNCEMENT": return "có thông báo mới từ ban quản trị"
         default: return "có hoạt động mới"
         }
     }
@@ -429,16 +441,42 @@ struct AppNotification: Codable, Identifiable, Hashable {
     var bieuTuong: String {
         switch type {
         case "NEW_REACTION": return "heart.fill"
-        case "NEW_COMMENT", "NEW_REPLY": return "bubble.left.fill"
+        case "NEW_COMMENT", "NEW_REPLY", "NOTE_COMMENT": return "bubble.left.fill"
         case "NEW_MENTION": return "at"
         case "NEW_POST": return "doc.text.fill"
         case "NEW_MESSAGE": return "envelope.fill"
+        case "NEW_FOLLOW": return "person.badge.plus"
+        case "FRIEND_REQUEST", "FRIEND_ACCEPT": return "person.2.fill"
+        case "NOTE_SHARE", "HUB_SHARE": return "square.and.arrow.up.fill"
+        case "ADMIN_ANNOUNCEMENT": return "megaphone.fill"
         default: return "bell.fill"
         }
     }
 
-    /// Thông báo tin nhắn dẫn vào Tin nhắn, còn lại dẫn vào bài viết.
-    var laTinNhan: Bool { type == "NEW_MESSAGE" }
+    /// Bấm vào thì đi đâu. Đoán sai chỗ đến còn tệ hơn không đi đâu cả: mở
+    /// bài viết bằng id hội thoại sẽ ra "không tìm thấy bài viết".
+    enum NoiDen {
+        case baiViet(Int)
+        case nguoiDung(Int)
+        case tinNhan
+        case khongDauCa
+    }
+
+    var noiDen: NoiDen {
+        switch type {
+        case "NEW_MESSAGE":
+            return .tinNhan
+        case "NEW_FOLLOW", "FRIEND_REQUEST", "FRIEND_ACCEPT":
+            // Với các loại này `entityId` KHÔNG phải id bài viết; người gửi
+            // mới là thứ đáng mở.
+            return sender.map { .nguoiDung($0.id) } ?? .khongDauCa
+        case "NEW_REACTION", "NEW_COMMENT", "NEW_REPLY", "NEW_MENTION", "NEW_POST":
+            return entityId.map { .baiViet($0) } ?? .khongDauCa
+        default:
+            // NOTE_*, HUB_SHARE, ADMIN_ANNOUNCEMENT: app chưa có màn tương ứng.
+            return .khongDauCa
+        }
+    }
 }
 
 struct NotificationsPagination: Codable {

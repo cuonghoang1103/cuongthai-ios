@@ -61,9 +61,17 @@ struct ProfileView: View {
             } message: {
                 Text(viewModel.loiDoiAnh ?? "")
             }
-            .onAppear {
-                if let currentUser = appState.currentUser {
-                    viewModel.userId = currentUser.id
+            // `init()` của ViewModel gọi loadProfile() ngay lập tức, nhưng
+            // lúc đó `currentUser` thường CHƯA về (fetchProfile chạy bất đồng
+            // bộ sau đăng nhập). Khi đó `if let userId = ...` trong loadProfile
+            // trượt, hàm im lặng không làm gì, và màn hình đứng nguyên ở dữ
+            // liệu mẫu "User / @username / 0 bài viết". Đặt userId KHÔNG tự
+            // nạp lại, nên phải gọi tay.
+            .task(id: appState.currentUser?.id) {
+                guard let id = appState.currentUser?.id else { return }
+                if viewModel.userId != id || viewModel.profile == nil {
+                    viewModel.userId = id
+                    await viewModel.loadProfile()
                 }
             }
         }
