@@ -171,29 +171,27 @@ struct CreatePostView: View {
                     }
                 }
             } else {
+                // Chỉ còn Ảnh. "Video" / "Địa điểm" / "Nhạc" đã GỠ: cả ba đều
+                // là nút bấm không ăn — luồng đăng bài chỉ dựng được media
+                // kiểu IMAGE, và không có màn chọn địa điểm hay chọn nhạc nào
+                // trong app. Thêm lại khi làm thật, đừng để chỗ trống bấm được.
                 HStack(spacing: Spacing.md) {
                     PhotosPicker(
                         selection: $selectedPhotosPickerItems,
                         maxSelectionCount: 4,
                         matching: .images
                     ) {
-                        mediaButton(icon: "photo", title: "Ảnh")
+                        mediaButton(icon: "photo", title: "Thêm ảnh")
                     }
-
-                    mediaButton(icon: "video", title: "Video")
-
-                    mediaButton(icon: "location", title: "Địa điểm")
-
-                    mediaButton(icon: "music.note", title: "Nhạc")
                 }
             }
         }
     }
 
+    /// Chỉ là NHÃN đặt bên trong PhotosPicker — không bọc Button nữa, vì
+    /// Button lồng trong PhotosPicker sẽ nuốt mất cú chạm của chính nó.
     private func mediaButton(icon: String, title: String) -> some View {
-        Button {
-            // Action for each media type
-        } label: {
+        Group {
             VStack(spacing: 4) {
                 Image(systemName: icon)
                     .font(.title3)

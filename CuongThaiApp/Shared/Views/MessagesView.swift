@@ -344,6 +344,9 @@ class MessagesViewModel: ObservableObject {
 struct NewMessageView: View {
     @Environment(\.dismiss) var dismiss
     @StateObject private var viewModel = NewMessageViewModel()
+    @State private var hoiThoaiMo: MessageThread?
+    @State private var dangMo: Int?
+    @State private var loi: String?
 
     var body: some View {
         NavigationStack {
@@ -378,8 +381,7 @@ struct NewMessageView: View {
                 } else {
                     List(viewModel.users) { user in
                         Button {
-                            // Create or open thread with user
-                            dismiss()
+                            Task { await moHoiThoai(voi: user) }
                         } label: {
                             HStack(spacing: Spacing.md) {
                                 UserAvatarView(url: user.avatarUrl, size: 44)
@@ -402,6 +404,17 @@ struct NewMessageView: View {
                 }
             }
             .background(AppColors.backgroundPrimary)
+            // Điều hướng NGAY TRONG sheet này thay vì đóng sheet rồi nhờ màn
+            // cha mở hộ: màn cha phải chờ tải lại danh sách hội thoại mới thấy
+            // hội thoại vừa tạo, nên người dùng bấm xong thấy... không có gì.
+            .navigationDestination(item: $hoiThoaiMo) { thread in
+                ChatView(thread: thread)
+            }
+            .alert("Không mở được hội thoại", isPresented: .constant(loi != nil)) {
+                Button("OK") { loi = nil }
+            } message: {
+                Text(loi ?? "")
+            }
             .navigationTitle("Tin nhắn mới")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -411,6 +424,20 @@ struct NewMessageView: View {
                     }
                 }
             }
+        }
+    }
+
+    /// `POST /messages/threads/user/:peerId` — máy chủ trả hội thoại đã có,
+    /// hoặc tạo mới nếu hai người chưa từng nhắn. Không cần kiểm trước.
+    private func moHoiThoai(voi user: User) async {
+        guard dangMo == nil else { return }
+        dangMo = user.id
+        defer { dangMo = nil }
+        do {
+            let thread: MessageThread = try await APIClient.shared.request(.openThread(peerId: user.id))
+            hoiThoaiMo = thread
+        } catch {
+            loi = error.localizedDescription
         }
     }
 }

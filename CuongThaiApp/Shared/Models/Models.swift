@@ -119,7 +119,10 @@ struct Comment: Codable, Identifiable {
 }
 
 // MARK: - Message
-struct MessageThread: Codable, Identifiable {
+// Hashable để dùng được với `navigationDestination(item:)`. So sánh theo `id`
+// như User: hai lần tải cùng một hội thoại khác nhau ở `unreadCount`/
+// `lastMessage`, mà đó không phải thứ định danh hội thoại.
+struct MessageThread: Codable, Identifiable, Hashable {
     let id: Int
     let type: String
     let participants: [User]?
@@ -131,6 +134,9 @@ struct MessageThread: Codable, Identifiable {
     var displayName: String {
         participants?.first?.name ?? "Unknown"
     }
+
+    func hash(into hasher: inout Hasher) { hasher.combine(id) }
+    static func == (lhs: MessageThread, rhs: MessageThread) -> Bool { lhs.id == rhs.id }
 
     var avatarUrl: String? {
         participants?.first?.avatarUrl

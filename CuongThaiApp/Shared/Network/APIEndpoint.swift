@@ -41,6 +41,11 @@ enum APIEndpoint {
     case getMessages(threadId: Int, cursor: Int?, limit: Int)
     case sendMessage(threadId: Int, content: String, type: String)
     case markRead(threadId: Int)
+    /// Mở (hoặc tạo nếu chưa có) hội thoại 1-1 với một người.
+    case openThread(peerId: Int)
+    /// Tắt thông báo hội thoại. `durationMinutes`: 0 = bật lại, 15/60/480/1440,
+    /// nil = tắt vô thời hạn. Backend CHỈ chấp nhận đúng những giá trị đó.
+    case muteThread(id: Int, durationMinutes: Int?)
 
     // Moderation (App Store Guideline 1.2)
     case reportPost(id: Int, reason: String, details: String?)
@@ -101,6 +106,8 @@ enum APIEndpoint {
         case .getMessages(let threadId, _, _): return "/api/v1/messages/threads/\(threadId)/messages"
         case .sendMessage(let threadId, _, _): return "/api/v1/messages/threads/\(threadId)/messages"
         case .markRead(let threadId): return "/api/v1/messages/threads/\(threadId)/read"
+        case .openThread(let peerId): return "/api/v1/messages/threads/user/\(peerId)"
+        case .muteThread(let id, _): return "/api/v1/messages/threads/\(id)/mute-for"
 
         case .reportPost(let id, _, _): return "/api/v1/social/posts/\(id)/report"
         case .reportThread(let id, _): return "/api/v1/messages/threads/\(id)/report"
@@ -129,7 +136,8 @@ enum APIEndpoint {
         case .login, .register, .oauthToken, .changePassword, .refreshToken,
              .createPost, .likePost, .followUser, .unfollowUser,
              .createComment, .savePost, .sendMessage, .enrollCourse,
-             .createNote, .reportPost, .reportThread, .blockUser, .requestDeletion:
+             .createNote, .reportPost, .reportThread, .blockUser, .requestDeletion,
+             .openThread, .muteThread:
             return "POST"
         case .updateProfile:
             return "PUT"
@@ -189,6 +197,10 @@ enum APIEndpoint {
             return reason != nil ? ["reason": reason!] : nil
         case .requestDeletion(let reason):
             return reason != nil ? ["reason": reason!] : nil
+        case .muteThread(_, let phut):
+            // Gửi NSNull chứ không bỏ trắng: bỏ trắng thì backend đọc ra
+            // `undefined` và cũng hiểu là vô thời hạn, nhưng gửi thẳng cho rõ.
+            return ["durationMinutes": phut as Any? ?? NSNull()]
         case .refreshToken(let t): return ["refreshToken": t]
         default: return nil
         }

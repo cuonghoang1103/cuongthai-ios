@@ -1,10 +1,20 @@
 import SwiftUI
+import PhotosUI
 
 // MARK: - Profile View
 struct ProfileView: View {
     @EnvironmentObject var appState: AppState
     @StateObject private var viewModel = ProfileViewModel()
-    @State private var showSettings = false
+    @State private var sheet: ProfileSheet?
+    @State private var avatarItem: PhotosPickerItem?
+    @State private var coverItem: PhotosPickerItem?
+
+    // MỘT `.sheet(item:)` cho cả hai màn: hai `.sheet(isPresented:)` trên cùng
+    // một view thì chỉ cái cuối chạy, cái kia bấm im lặng.
+    enum ProfileSheet: String, Identifiable {
+        case settings, editProfile
+        var id: String { rawValue }
+    }
 
     var body: some View {
         NavigationStack {
@@ -23,15 +33,33 @@ struct ProfileView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
-                        showSettings = true
+                        sheet = .settings
                     } label: {
                         Image(systemName: "gearshape")
                             .foregroundColor(AppColors.textPrimary)
                     }
                 }
             }
-            .sheet(isPresented: $showSettings) {
-                SettingsView()
+            .sheet(item: $sheet) { which in
+                switch which {
+                case .settings: SettingsView()
+                case .editProfile: NavigationStack { EditProfileView() }
+                }
+            }
+            // Đổi ảnh: chọn xong là tải lên rồi ghi vào hồ sơ ngay, không có
+            // bước "Lưu" riêng — người dùng chọn ảnh là đã quyết định rồi.
+            .onChange(of: avatarItem) { _, item in
+                guard let item else { return }
+                Task { await viewModel.doiAnh(item, truong: .avatar) }
+            }
+            .onChange(of: coverItem) { _, item in
+                guard let item else { return }
+                Task { await viewModel.doiAnh(item, truong: .bia) }
+            }
+            .alert("Không đổi được ảnh", isPresented: .constant(viewModel.loiDoiAnh != nil)) {
+                Button("OK") { viewModel.loiDoiAnh = nil }
+            } message: {
+                Text(viewModel.loiDoiAnh ?? "")
             }
             .onAppear {
                 if let currentUser = appState.currentUser {
@@ -73,15 +101,19 @@ struct ProfileView: View {
 
                 // Edit Cover Button
                 if viewModel.isCurrentUser {
-                    Button {
-                        // Edit cover photo
-                    } label: {
-                        Image(systemName: "camera.fill")
-                            .foregroundColor(.white)
-                            .padding(Spacing.sm)
-                            .background(Color.black.opacity(0.5))
-                            .clipShape(Circle())
+                    PhotosPicker(selection: $coverItem, matching: .images) {
+                        Group {
+                            if viewModel.dangTaiAnhBia {
+                                ProgressView().tint(.white)
+                            } else {
+                                Image(systemName: "camera.fill").foregroundColor(.white)
+                            }
+                        }
+                        .padding(Spacing.sm)
+                        .background(Color.black.opacity(0.5))
+                        .clipShape(Circle())
                     }
+                    .disabled(viewModel.dangTaiAnhBia)
                     .padding(.trailing, Spacing.md)
                     .frame(maxWidth: .infinity, alignment: .trailing)
                     .offset(y: -20)
@@ -94,16 +126,19 @@ struct ProfileView: View {
                     UserAvatarView(url: viewModel.profile?.avatarUrl, size: 90)
 
                     if viewModel.isCurrentUser {
-                        Button {
-                            // Edit avatar
-                        } label: {
-                            Image(systemName: "camera.fill")
-                                .font(.caption)
-                                .foregroundColor(.white)
-                                .padding(6)
-                                .background(AppColors.primary)
-                                .clipShape(Circle())
+                        PhotosPicker(selection: $avatarItem, matching: .images) {
+                            Group {
+                                if viewModel.dangTaiAvatar {
+                                    ProgressView().tint(.white).scaleEffect(0.7)
+                                } else {
+                                    Image(systemName: "camera.fill").font(.caption).foregroundColor(.white)
+                                }
+                            }
+                            .padding(6)
+                            .background(AppColors.primary)
+                            .clipShape(Circle())
                         }
+                        .disabled(viewModel.dangTaiAvatar)
                     }
                 }
                 .offset(y: -45)
@@ -138,7 +173,7 @@ struct ProfileView: View {
                         }
                     } else {
                         Button {
-                            // Edit profile
+                            sheet = .editProfile
                         } label: {
                             Text("Chỉnh sửa")
                                 .font(.buttonSmall)
@@ -365,6 +400,50 @@ class ProfileViewModel: ObservableObject {
     @Published var selectedTab: ProfileTab = .posts
 
     private var cursor: Int?
+
+    // ── Đổi ảnh đại diện / ảnh bìa ────────────────────────────────
+    @Published var dangTaiAvatar = false
+    @Published var dangTaiAnhBia = false
+    @Published var loiDoiAnh: String?
+
+    enum TruongAnh {
+        case avatar, bia
+        /// Tên trường trong `PUT /api/v1/profile`.
+        var khoa: String { self == .avatar ? "avatarUrl" : "coverPhotoUrl" }
+        var thuMuc: String { self == .avatar ? "avatar" : "cover" }
+    }
+
+    func doiAnh(_ item: PhotosPickerItem, truong: TruongAnh) async {
+        if truong == .avatar { dangTaiAvatar = true } else { dangTaiAnhBia = true }
+        defer { if truong == .avatar { dangTaiAvatar = false } else { dangTaiAnhBia = false } }
+        loiDoiAnh = nil
+
+        do {
+            guard let data = try await item.loadTransferable(type: Data.self),
+                  let anh = PlatformImage(data: data),
+                  let jpeg = anh.jpegDataForUpload()
+            else {
+                loiDoiAnh = "Không đọc được ảnh vừa chọn."
+                return
+            }
+
+            let file = try await APIClient.shared.upload(
+                data: jpeg,
+                fileName: "\(truong.thuMuc)-\(UUID().uuidString).jpg",
+                mimeType: "image/jpeg",
+                category: truong.thuMuc,
+            )
+            try await APIClient.shared.send(.updateProfile([truong.khoa: file.url]))
+
+            // Nạp lại từ máy chủ thay vì tự sửa `profile` tại chỗ: máy chủ có
+            // thể đổi URL (đưa qua CDN, thêm hậu tố kích cỡ), và nếu ta đoán
+            // sai thì ảnh hiện đúng cho tới lần mở app sau rồi biến mất.
+            await loadProfile()
+            await AppState.shared.fetchProfile()
+        } catch {
+            loiDoiAnh = error.localizedDescription
+        }
+    }
 
     var isCurrentUser: Bool {
         guard let profileId = profile?.id, let currentId = AppState.shared.currentUser?.id else {

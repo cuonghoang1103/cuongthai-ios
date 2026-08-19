@@ -16,8 +16,11 @@ enum SupportContact {
 // MARK: - Terms of Use (EULA)
 
 struct TermsView: View {
+    /// Đặt `true` khi mở dạng sheet để có nút "Xong".
+    var dismissible: Bool = false
+
     var body: some View {
-        LegalScrollView(title: "Điều khoản sử dụng") {
+        LegalScrollView(title: "Điều khoản sử dụng", dismissible: dismissible) {
             LegalSection("1. Chấp nhận điều khoản") {
                 Text("Khi tạo tài khoản hoặc sử dụng ứng dụng CuongThai, bạn đồng ý với các điều khoản dưới đây. Nếu không đồng ý, vui lòng ngừng sử dụng ứng dụng.")
             }
@@ -67,8 +70,11 @@ struct TermsView: View {
 // MARK: - Privacy Policy
 
 struct PrivacyPolicyView: View {
+    /// Đặt `true` khi mở dạng sheet để có nút "Xong".
+    var dismissible: Bool = false
+
     var body: some View {
-        LegalScrollView(title: "Chính sách bảo mật") {
+        LegalScrollView(title: "Chính sách bảo mật", dismissible: dismissible) {
             LegalSection("Dữ liệu chúng tôi thu thập") {
                 LegalBullet("Thông tin tài khoản: tên đăng nhập, email, họ tên, ảnh đại diện")
                 LegalBullet("Nội dung bạn tạo: bài viết, bình luận, tin nhắn, ghi chú, ảnh và video bạn tải lên")
@@ -105,8 +111,11 @@ struct PrivacyPolicyView: View {
 // MARK: - Help / moderation contact
 
 struct HelpView: View {
+    /// Đặt `true` khi mở dạng sheet để có nút "Xong".
+    var dismissible: Bool = false
+
     var body: some View {
-        LegalScrollView(title: "Trợ giúp") {
+        LegalScrollView(title: "Trợ giúp", dismissible: dismissible) {
             LegalSection("Báo cáo nội dung xấu") {
                 Text("Chạm biểu tượng ••• ở góc phải mỗi bài viết → Báo cáo. Bài viết sẽ được ẩn khỏi bảng tin của bạn ngay và chuyển tới đội kiểm duyệt.")
             }
@@ -178,7 +187,7 @@ struct TermsConsentView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(AppColors.backgroundPrimary)
         .sheet(isPresented: $showTerms) {
-            NavigationStack { TermsView() }
+            NavigationStack { TermsView(dismissible: true) }
         }
     }
 }
@@ -187,10 +196,17 @@ struct TermsConsentView: View {
 
 private struct LegalScrollView<Content: View>: View {
     let title: String
+    /// Mở dạng sheet thì PHẢI có nút đóng. Không có thì người dùng bấm khắp
+    /// màn hình không ra gì và tưởng app treo — đúng nghĩa đen đã xảy ra.
+    /// Vuốt xuống vẫn đóng được, nhưng không ai đoán ra khi màn hình đầy chữ.
+    /// Khi được đẩy vào từ Cài đặt thì KHÔNG đặt cờ này: đã có nút Back.
+    let dismissible: Bool
     @ViewBuilder let content: Content
+    @Environment(\.dismiss) private var dismiss
 
-    init(title: String, @ViewBuilder content: () -> Content) {
+    init(title: String, dismissible: Bool = false, @ViewBuilder content: () -> Content) {
         self.title = title
+        self.dismissible = dismissible
         self.content = content()
     }
 
@@ -205,6 +221,14 @@ private struct LegalScrollView<Content: View>: View {
         .background(AppColors.backgroundPrimary)
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if dismissible {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Xong") { dismiss() }
+                        .fontWeight(.semibold)
+                }
+            }
+        }
     }
 }
 

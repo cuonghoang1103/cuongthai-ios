@@ -185,7 +185,7 @@ struct PostDetailView: View {
             Spacer()
 
             Button {
-                // Show more options
+                dismiss()
             } label: {
                 Image(systemName: "xmark")
                     .foregroundColor(AppColors.textSecondary)
@@ -445,9 +445,13 @@ struct PostDetailView: View {
 
                 Spacer()
 
-                Button {
-                    // Share
-                } label: {
+                // ShareLink của hệ thống: người dùng chọn gửi đi đâu bằng
+                // bảng chia sẻ chuẩn của iOS, không phải dựng lại tay.
+                ShareLink(
+                    item: URL(string: "https://cuongthai.com/feed/\(post.id)")!,
+                    subject: Text(post.author.name),
+                    message: Text(post.content.prefix(120)),
+                ) {
                     HStack(spacing: 4) {
                         Image(systemName: "square.and.arrow.up")
                         Text("Chia sẻ")

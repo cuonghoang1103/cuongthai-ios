@@ -26,22 +26,15 @@ struct NotesView: View {
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Menu {
-                        Button {
-                            showNewSubject = true
-                        } label: {
-                            Label("Môn học mới", systemImage: "folder.badge.plus")
-                        }
-
-                        Button {
-                            // Import notes
-                        } label: {
-                            Label("Nhập ghi chú", systemImage: "square.and.arrow.down")
-                        }
+                    // Menu chỉ còn MỘT mục thì bỏ menu, bấm phát ăn ngay.
+                    // "Nhập ghi chú" đã gỡ: backend không có đường nhập nào.
+                    Button {
+                        showNewSubject = true
                     } label: {
                         Image(systemName: "plus")
                             .foregroundColor(AppColors.textPrimary)
                     }
+                    .accessibilityLabel("Môn học mới")
                 }
             }
             .sheet(isPresented: $showNewSubject) {

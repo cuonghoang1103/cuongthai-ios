@@ -10,11 +10,17 @@ struct ChatView: View {
     @State private var messageText = ""
     @State private var showAttachmentOptions = false
     @State private var showUserProfile = false
+    @State private var dangTimKiem = false
+    @State private var tuKhoa = ""
+    @State private var hienEmoji = false
+    @State private var thongBaoTat: String?
     @FocusState private var isInputFocused: Bool
 
     var body: some View {
         VStack(spacing: 0) {
+            if dangTimKiem { thanhTimKiem }
             messagesList
+            if hienEmoji { bangEmoji }
             inputBar
         }
         .background(AppColors.backgroundPrimary)
@@ -25,31 +31,36 @@ struct ChatView: View {
             }
 
             ToolbarItem(placement: .navigationBarTrailing) {
+                // Gọi video / gọi thoại đã GỠ: backend không có kênh gọi nào,
+                // để nút đó lại chỉ tạo ra hai chỗ bấm không ăn — đúng thứ
+                // App Store đánh rớt theo 2.1.
                 Menu {
                     Button {
-                        // Video call
+                        withAnimation { dangTimKiem.toggle() }
+                        if !dangTimKiem { tuKhoa = "" }
                     } label: {
-                        Label("Gọi video", systemImage: "video")
-                    }
-
-                    Button {
-                        // Voice call
-                    } label: {
-                        Label("Gọi thoại", systemImage: "phone")
-                    }
-
-                    Button {
-                        // Search messages
-                    } label: {
-                        Label("Tìm kiếm", systemImage: "magnifyingglass")
+                        Label(dangTimKiem ? "Đóng tìm kiếm" : "Tìm trong hội thoại",
+                              systemImage: "magnifyingglass")
                     }
 
                     Divider()
 
-                    Button(role: .destructive) {
-                        // Mute notifications
+                    Menu {
+                        Button("15 phút") { Task { await tatThongBao(15) } }
+                        Button("1 giờ") { Task { await tatThongBao(60) } }
+                        Button("8 giờ") { Task { await tatThongBao(480) } }
+                        Button("1 ngày") { Task { await tatThongBao(1440) } }
+                        Button("Cho tới khi bật lại") { Task { await tatThongBao(nil) } }
+                        Divider()
+                        Button("Bật lại thông báo") { Task { await tatThongBao(0) } }
                     } label: {
                         Label("Tắt thông báo", systemImage: "bell.slash")
+                    }
+
+                    Button(role: .destructive) {
+                        Task { await baoCaoHoiThoai() }
+                    } label: {
+                        Label("Báo cáo hội thoại", systemImage: "flag")
                     }
                 } label: {
                     Image(systemName: "ellipsis")
@@ -73,6 +84,11 @@ struct ChatView: View {
                 await viewModel.markAsRead()
             }
         }
+        .alert("Hội thoại", isPresented: .constant(thongBaoTat != nil)) {
+            Button("OK") { thongBaoTat = nil }
+        } message: {
+            Text(thongBaoTat ?? "")
+        }
     }
 
     private var chatHeader: some View {
@@ -95,6 +111,106 @@ struct ChatView: View {
         }
     }
 
+    /// Các nhóm tin sau khi lọc theo từ khoá. Lọc ngay trên máy vì backend
+    /// không có endpoint tìm trong hội thoại — chỉ tìm được trong số tin ĐÃ
+    /// tải; thanh tìm kiếm nói rõ điều đó thay vì im lặng để người dùng tưởng
+    /// đã tìm hết lịch sử.
+    private var nhomHienThi: [MessageGroup] {
+        let goc = viewModel.groupedMessages
+        let khoa = tuKhoa.trimmingCharacters(in: .whitespaces)
+        guard !khoa.isEmpty else { return goc }
+        return goc.compactMap { nhom in
+            let khop = nhom.messages.filter { $0.content.localizedCaseInsensitiveContains(khoa) }
+            return khop.isEmpty ? nil : MessageGroup(date: nhom.date, messages: khop)
+        }
+    }
+
+    private var soTinKhop: Int { nhomHienThi.reduce(0) { $0 + $1.messages.count } }
+
+    private var thanhTimKiem: some View {
+        VStack(spacing: Spacing.xs) {
+            HStack(spacing: Spacing.sm) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundColor(AppColors.textSecondary)
+                TextField("Tìm trong hội thoại", text: $tuKhoa)
+                    .foregroundColor(AppColors.textPrimary)
+                    .autocorrectionDisabled()
+                if !tuKhoa.isEmpty {
+                    Button {
+                        tuKhoa = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(AppColors.textTertiary)
+                    }
+                }
+                Button("Đóng") {
+                    withAnimation { dangTimKiem = false }
+                    tuKhoa = ""
+                }
+                .font(.buttonSmall)
+                .foregroundColor(AppColors.primary)
+            }
+            .padding(.horizontal, Spacing.md)
+            .padding(.vertical, Spacing.sm)
+
+            if !tuKhoa.trimmingCharacters(in: .whitespaces).isEmpty {
+                Text(soTinKhop == 0
+                     ? "Không thấy tin nào khớp trong \(viewModel.messages.count) tin đã tải"
+                     : "\(soTinKhop) tin khớp trong \(viewModel.messages.count) tin đã tải")
+                    .font(.caption)
+                    .foregroundColor(AppColors.textTertiary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, Spacing.md)
+                    .padding(.bottom, Spacing.sm)
+            }
+        }
+        .background(AppColors.backgroundSecondary)
+    }
+
+    private var bangEmoji: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: Spacing.sm) {
+                ForEach(Self.emojiHayDung, id: \.self) { e in
+                    Button {
+                        messageText += e
+                    } label: {
+                        Text(e).font(.system(size: 30))
+                    }
+                }
+            }
+            .padding(.horizontal, Spacing.md)
+            .padding(.vertical, Spacing.sm)
+        }
+        .background(AppColors.backgroundSecondary)
+    }
+
+    private static let emojiHayDung = [
+        "❤️", "😂", "😍", "👍", "🔥", "🎉", "😊", "😢", "😮", "😡",
+        "🙏", "👏", "💯", "✅", "🤔", "😅", "🥰", "😭", "🤣", "💪",
+    ]
+
+    // MARK: - Hành động
+
+    private func tatThongBao(_ phut: Int?) async {
+        guard let id = viewModel.thread?.id else { return }
+        do {
+            try await APIClient.shared.send(.muteThread(id: id, durationMinutes: phut))
+            thongBaoTat = phut == 0 ? "Đã bật lại thông báo" : "Đã tắt thông báo hội thoại này"
+        } catch {
+            thongBaoTat = error.localizedDescription
+        }
+    }
+
+    private func baoCaoHoiThoai() async {
+        guard let id = viewModel.thread?.id else { return }
+        do {
+            try await APIClient.shared.send(.reportThread(id: id, reason: "HARASSMENT"))
+            thongBaoTat = "Đã gửi báo cáo. Đội kiểm duyệt xem xét trong 24 giờ."
+        } catch {
+            thongBaoTat = error.localizedDescription
+        }
+    }
+
     private var messagesList: some View {
         ScrollViewReader { proxy in
             ScrollView {
@@ -103,7 +219,7 @@ struct ChatView: View {
                         ProgressView()
                             .padding(.top, Spacing.xxl)
                     } else {
-                        ForEach(viewModel.groupedMessages, id: \.date) { group in
+                        ForEach(nhomHienThi, id: \.date) { group in
                             // Date header
                             Text(group.date)
                                 .font(.caption)
@@ -173,11 +289,12 @@ struct ChatView: View {
 
                     // Emoji button
                     Button {
-                        // Show emoji picker
+                        withAnimation { hienEmoji.toggle() }
+                        if hienEmoji { isInputFocused = false }
                     } label: {
-                        Image(systemName: "face.smiling")
+                        Image(systemName: hienEmoji ? "keyboard" : "face.smiling")
                             .font(.title3)
-                            .foregroundColor(AppColors.textSecondary)
+                            .foregroundColor(hienEmoji ? AppColors.primary : AppColors.textSecondary)
                     }
                 }
 

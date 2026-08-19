@@ -49,8 +49,8 @@ struct AuthView: View {
             .sheet(item: $legalSheet) { sheet in
                 NavigationStack {
                     switch sheet {
-                    case .terms: TermsView()
-                    case .privacy: PrivacyPolicyView()
+                    case .terms: TermsView(dismissible: true)
+                    case .privacy: PrivacyPolicyView(dismissible: true)
                     }
                 }
             }
