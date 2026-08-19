@@ -44,7 +44,13 @@ final class AppState: ObservableObject {
         }
     }
 
+    /// Mã lỗi Keychain nếu kho khoá không dùng được. Khác nil nghĩa là phiên
+    /// đăng nhập KHÔNG lưu được — phải nói ra chứ không để người dùng đăng
+    /// nhập xong, mở lại app thấy mình bị đăng xuất mà không hiểu vì sao.
+    @Published var loiKeychain: OSStatus?
+
     private init() {
+        loiKeychain = KeychainStore.tuKiem()
         checkAuth()
         // Tin mới về qua socket thì cộng huy hiệu ngay, không đợi lần làm mới
         // sau. Bỏ qua tin của chính mình và tin của hội thoại đang mở.

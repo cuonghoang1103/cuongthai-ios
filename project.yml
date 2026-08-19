@@ -72,12 +72,16 @@ targets:
     entitlements:
       path: CuongThaiApp/iOS/CuongThaiApp.entitlements
       properties:
-        com.apple.security.app-sandbox: true
-        com.apple.security.network.client: true
-        # App Store Guideline 4.8 — required because the backend also offers
-        # Google/GitHub sign-in. Enable "Sign in with Apple" for the App ID in
-        # the Apple Developer portal or the build will fail to provision.
+        # app-sandbox + network.client đã GỠ: đó là khoá của macOS. App iOS
+        # luôn chạy trong hộp cát và mạng không cần entitlement; khai thừa chỉ
+        # tổ làm bước cấp phép hồ sơ ký thất bại.
+        #
+        # App Store Guideline 4.8 — bắt buộc vì backend cũng có Google/GitHub.
+        # Nhớ bật "Sign in with Apple" cho App ID trong Developer portal, không
+        # thì build trượt bước provisioning.
         com.apple.developer.applesignin: [Default]
+        # SDK Google ghi Keychain qua GTMAppAuth và đòi nhóm truy cập Keychain.
+        keychain-access-groups: ["$(AppIdentifierPrefix)com.cuongthai.app"]
 
   CuongThaiAppMac:
     type: application
