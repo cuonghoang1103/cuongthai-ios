@@ -1,0 +1,29 @@
+# Xcode
+DerivedData/
+build/
+*.xcuserstate
+xcuserdata/
+*.xcscmblueprint
+*.xccheckout
+
+# Dự án Xcode do xcodegen SINH RA từ project.yml — nguồn sự thật là project.yml.
+# Theo dõi cả hai thì mọi lần `xcodegen generate` lại đẻ ra một diff rác khổng
+# lồ, và hai người sửa cùng lúc là chắc chắn xung đột.
+CuongThaiApp.xcodeproj/
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Packages/
+Package.resolved
+
+# macOS
+.DS_Store
+
+# Chứng thư ký + khoá riêng. KHÔNG BAO GIỜ commit.
+# Certificates.p12 đang nằm sẵn trong thư mục này.
+*.p12
+*.cer
+*.certSigningRequest
+*.mobileprovision
+*.provisionprofile

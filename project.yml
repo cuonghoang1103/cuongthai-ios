@@ -1,0 +1,122 @@
+name: CuongThaiApp
+options:
+  bundleIdPrefix: com.cuongthai
+  deploymentTarget:
+    iOS: "17.0"
+    macOS: "14.0"
+  xcodeVersion: "15.0"
+  generateEmptyDirectories: true
+  createIntermediateGroups: true
+  defaultConfig: Debug
+
+settings:
+  base:
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_VERSION: "5.9"
+    ENABLE_USER_SCRIPT_SANDBOXING: NO
+    SWIFT_EMIT_LOC_STRINGS: YES
+    IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+
+packages:
+  Kingfisher:
+    url: https://github.com/onevcat/Kingfisher.git
+    from: "8.0.0"
+
+targets:
+  CuongThaiApp:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: CuongThaiApp/Shared
+        group: Shared
+      - path: CuongThaiApp/iOS
+        group: iOS
+      - path: CuongThaiApp/Resources
+        group: Resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.cuongthai.app
+        INFOPLIST_FILE: CuongThaiApp/iOS/Info.plist
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        GENERATE_INFOPLIST_FILE: NO
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: YES
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: $(inherited) DEBUG
+        ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES: YES
+    dependencies:
+      - package: Kingfisher
+    entitlements:
+      path: CuongThaiApp/iOS/CuongThaiApp.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.network.client: true
+        # App Store Guideline 4.8 — required because the backend also offers
+        # Google/GitHub sign-in. Enable "Sign in with Apple" for the App ID in
+        # the Apple Developer portal or the build will fail to provision.
+        com.apple.developer.applesignin: [Default]
+
+  CuongThaiAppMac:
+    type: application
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: CuongThaiApp/Shared
+        group: Shared
+      - path: CuongThaiApp/macOS
+        group: macOS
+      - path: CuongThaiApp/Resources
+        group: Resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.cuongthai.app.macos
+        INFOPLIST_FILE: CuongThaiApp/macOS/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        MACOSX_DEPLOYMENT_TARGET: "14.0"
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGN_STYLE: Manual
+        PRODUCT_NAME: "CuongThai App"
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: $(inherited) DEBUG
+        ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES: YES
+    dependencies:
+      - package: Kingfisher
+    entitlements:
+      path: CuongThaiApp/macOS/CuongThaiAppMac.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.network.client: true
+
+schemes:
+  CuongThaiApp:
+    build:
+      targets:
+        CuongThaiApp: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release
+
+  CuongThaiAppMac:
+    build:
+      targets:
+        CuongThaiAppMac: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release

@@ -1,0 +1,121 @@
+import SwiftUI
+
+// MARK: - Root Content View
+struct ContentView: View {
+    @EnvironmentObject var appState: AppState
+    @State private var hasAcceptedTerms = StorageManager.shared.hasAcceptedTerms
+
+    var body: some View {
+        Group {
+            if !hasAcceptedTerms {
+                // App Store Guideline 1.2: the community rules must be agreed
+                // to before any user-generated content is shown.
+                TermsConsentView { hasAcceptedTerms = true }
+            } else if appState.isAuthenticated {
+                MainView()
+            } else {
+                AuthView()
+            }
+        }
+        .animation(.easeInOut, value: appState.isAuthenticated)
+    }
+}
+
+// MARK: - Main View (Platform Adaptive)
+struct MainView: View {
+    @EnvironmentObject var appState: AppState
+
+    var body: some View {
+        #if os(iOS)
+        iOSTabView()
+        #else
+        macOSNavigationView()
+        #endif
+    }
+}
+
+// MARK: - iOS TabView
+#if os(iOS)
+struct iOSTabView: View {
+    @EnvironmentObject var appState: AppState
+
+    var body: some View {
+        TabView(selection: $appState.selectedTab) {
+            HomeView()
+                .tabItem {
+                    Label(AppState.AppTab.home.title, systemImage: AppState.AppTab.home.icon)
+                }
+                .tag(AppState.AppTab.home)
+
+            CoursesView()
+                .tabItem {
+                    Label(AppState.AppTab.learn.title, systemImage: AppState.AppTab.learn.icon)
+                }
+                .tag(AppState.AppTab.learn)
+
+            CreatePostView()
+                .tabItem {
+                    Label(AppState.AppTab.create.title, systemImage: AppState.AppTab.create.icon)
+                }
+                .tag(AppState.AppTab.create)
+
+            MessagesView()
+                .tabItem {
+                    Label(AppState.AppTab.messages.title, systemImage: AppState.AppTab.messages.icon)
+                }
+                .tag(AppState.AppTab.messages)
+                .badge(appState.unreadMessages > 0 ? appState.unreadMessages : 0)
+
+            ProfileView()
+                .tabItem {
+                    Label(AppState.AppTab.profile.title, systemImage: AppState.AppTab.profile.icon)
+                }
+                .tag(AppState.AppTab.profile)
+        }
+        .tint(Color(red: 0.55, green: 0.35, blue: 0.96))
+    }
+}
+#endif
+
+// MARK: - macOS NavigationSplitView
+#if os(macOS)
+struct macOSNavigationView: View {
+    @EnvironmentObject var appState: AppState
+    @State private var selectedTab: AppState.AppTab? = .home
+
+    var body: some View {
+        NavigationSplitView {
+            List(selection: $selectedTab) {
+                ForEach(AppState.AppTab.allCases) { tab in
+                    Label(tab.title, systemImage: tab.icon)
+                        .tag(tab)
+                }
+            }
+            .listStyle(.sidebar)
+            .frame(minWidth: 180)
+        } detail: {
+            if let tab = selectedTab {
+                detailView(for: tab)
+            } else {
+                Text("Chọn một mục")
+                    .foregroundColor(.secondary)
+            }
+        }
+        .frame(minWidth: 900, minHeight: 600)
+    }
+
+    @ViewBuilder
+    private func detailView(for tab: AppState.AppTab) -> some View {
+        switch tab {
+        case .home: HomeView()
+        case .learn: CoursesView()
+        case .create: CreatePostView()
+        case .messages:
+            // MessagesView carries its own NavigationStack + NavigationLink,
+            // so it drives push-to-chat inside the split-view detail column.
+            MessagesView()
+        case .profile: ProfileView()
+        }
+    }
+}
+#endif
