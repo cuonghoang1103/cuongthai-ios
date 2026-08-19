@@ -13,6 +13,9 @@ final class AppState: ObservableObject {
     @Published var selectedTab: AppTab = .home
 
     private let storage = StorageManager.shared
+    private var huyDangKy = Set<AnyCancellable>()
+    /// Hội thoại đang mở — tin mới của chính nó KHÔNG cộng vào huy hiệu.
+    var hoiThoaiDangMo: Int?
 
     // Five tabs is the iPhone maximum before iOS collapses the rest into
     // "More". Search moved into the Home toolbar so the Learn tab (courses +
@@ -41,11 +44,24 @@ final class AppState: ObservableObject {
         }
     }
 
-    private init() { checkAuth() }
+    private init() {
+        checkAuth()
+        // Tin mới về qua socket thì cộng huy hiệu ngay, không đợi lần làm mới
+        // sau. Bỏ qua tin của chính mình và tin của hội thoại đang mở.
+        RealtimeClient.shared.tinMoi
+            .sink { [weak self] su in
+                guard let self else { return }
+                guard su.message.senderId != self.currentUser?.id else { return }
+                guard su.threadId != self.hoiThoaiDangMo else { return }
+                self.unreadMessages += 1
+            }
+            .store(in: &huyDangKy)
+    }
 
     func checkAuth() {
         if storage.getAuthToken() != nil {
             isAuthenticated = true
+            RealtimeClient.shared.noi()
             Task { await fetchProfile() }
         }
     }
@@ -53,11 +69,16 @@ final class AppState: ObservableObject {
     func login(token: String, refreshToken: String? = nil) {
         storage.saveAuthToken(token, refreshToken: refreshToken)
         isAuthenticated = true
+        // `noiLai` chứ không phải `noi`: token nằm trong header của kết nối,
+        // nên đăng nhập tài khoản khác mà chỉ gọi `noi()` thì socket cũ vẫn
+        // sống với token cũ và ta nhận tin của người dùng TRƯỚC.
+        RealtimeClient.shared.noiLai()
         Task { await fetchProfile() }
     }
 
     func logout() {
         storage.clearAll()
+        RealtimeClient.shared.ngat()
         ModerationStore.shared.reset()
         isAuthenticated = false
         currentUser = nil

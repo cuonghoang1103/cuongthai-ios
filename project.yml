@@ -25,6 +25,12 @@ packages:
   Kingfisher:
     url: https://github.com/onevcat/Kingfisher.git
     from: "8.0.0"
+  # Máy chủ chạy socket.io 4.8.3 — dòng 16.x của client là dòng nói được
+  # giao thức Engine.IO v4. Dùng 15.x là bắt tay xong rồi ngắt ngay, và lỗi
+  # hiện ra dạng "disconnect" trơn chứ không nói vì sao.
+  SocketIO:
+    url: https://github.com/socketio/socket.io-client-swift.git
+    from: "16.1.0"
 
 targets:
   CuongThaiApp:
@@ -50,6 +56,8 @@ targets:
         ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES: YES
     dependencies:
       - package: Kingfisher
+      - package: SocketIO
+        product: SocketIO
     entitlements:
       path: CuongThaiApp/iOS/CuongThaiApp.entitlements
       properties:
@@ -84,6 +92,8 @@ targets:
         ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES: YES
     dependencies:
       - package: Kingfisher
+      - package: SocketIO
+        product: SocketIO
     entitlements:
       path: CuongThaiApp/macOS/CuongThaiAppMac.entitlements
       properties:

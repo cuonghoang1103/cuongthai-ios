@@ -1,4 +1,5 @@
 import SwiftUI
+import Combine
 #if canImport(Kingfisher)
 import Kingfisher
 #endif
@@ -14,6 +15,7 @@ struct ChatView: View {
     @State private var tuKhoa = ""
     @State private var hienEmoji = false
     @State private var thongBaoTat: String?
+    @ObservedObject private var realtime = RealtimeClient.shared
     @FocusState private var isInputFocused: Bool
 
     var body: some View {
@@ -75,11 +77,31 @@ struct ChatView: View {
         }
         .onAppear {
             viewModel.thread = thread
+            AppState.shared.hoiThoaiDangMo = thread.id
+            // Hội thoại vừa tạo chưa có trong danh sách máy chủ tự cho vào
+            // lúc bắt tay, nên phải xin vào phòng.
+            realtime.vaoPhong(threadId: thread.id)
             Task {
                 await viewModel.loadMessages()
             }
         }
+        // Tin mới đẩy thẳng vào danh sách, không hỏi lại API.
+        .onReceive(realtime.tinMoi) { su in
+            guard su.threadId == thread.id else { return }
+            viewModel.chenTinMoi(su.message)
+        }
+        .onChange(of: messageText) { cu, moi in
+            // Chỉ báo khi VỪA bắt đầu gõ và khi vừa xoá sạch, không phải mỗi
+            // ký tự: gõ một câu 40 chữ là 40 gói tin cho cùng một thông tin.
+            if cu.isEmpty && !moi.isEmpty {
+                realtime.baoDangGo(threadId: thread.id, dangGo: true)
+            } else if !cu.isEmpty && moi.isEmpty {
+                realtime.baoDangGo(threadId: thread.id, dangGo: false)
+            }
+        }
         .onDisappear {
+            AppState.shared.hoiThoaiDangMo = nil
+            realtime.baoDangGo(threadId: thread.id, dangGo: false)
             Task {
                 await viewModel.markAsRead()
             }
@@ -103,12 +125,37 @@ struct ChatView: View {
                         .font(.titleSmall)
                         .foregroundColor(AppColors.textPrimary)
 
-                    Text("Đang hoạt động")
+                    // Trước đây dòng này ghi cứng "Đang hoạt động" cho mọi
+                    // người, kể cả người đã offline hàng tháng — một lời nói
+                    // dối nhỏ mà người dùng phát hiện ngay.
+                    Text(dongTrangThai)
                         .font(.caption)
-                        .foregroundColor(AppColors.success)
+                        .foregroundColor(mauTrangThai)
                 }
             }
         }
+    }
+
+    /// Người bên kia có đang gõ không.
+    private var doiPhuongDangGo: Bool {
+        guard let tap = realtime.dangGo[thread.id] else { return false }
+        return tap.contains { $0 != AppState.shared.currentUser?.id }
+    }
+
+    private var dongTrangThai: String {
+        if doiPhuongDangGo { return "đang gõ…" }
+        if let id = thread.participants?.first?.id, realtime.truyenTuyen.contains(id) {
+            return "Đang hoạt động"
+        }
+        return realtime.trangThai == .daNoi ? "Ngoại tuyến" : realtime.trangThai.moTa
+    }
+
+    private var mauTrangThai: Color {
+        if doiPhuongDangGo { return AppColors.primary }
+        if let id = thread.participants?.first?.id, realtime.truyenTuyen.contains(id) {
+            return AppColors.success
+        }
+        return AppColors.textTertiary
     }
 
     /// Các nhóm tin sau khi lọc theo từ khoá. Lọc ngay trên máy vì backend
@@ -450,6 +497,13 @@ class ChatViewModel: ObservableObject {
     @Published private(set) var localUnreadCount: Int = 0
 
     private var cursor: Int?
+
+    /// Chèn tin nhận qua socket. Bỏ qua nếu đã có — tin do CHÍNH MÌNH gửi
+    /// quay về qua socket sẽ trùng với bản đã thêm lạc quan lúc bấm Gửi.
+    func chenTinMoi(_ tin: Message) {
+        guard !messages.contains(where: { $0.id == tin.id }) else { return }
+        messages.append(tin)
+    }
 
     func loadMessages() async {
         guard let threadId = thread?.id else { return }
