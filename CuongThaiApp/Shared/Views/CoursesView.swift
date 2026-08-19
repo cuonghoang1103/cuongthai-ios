@@ -13,6 +13,14 @@ struct CoursesView: View {
             ScrollView {
                 VStack(spacing: Spacing.lg) {
                     searchBar
+                    // Academy đặt NGAY dưới ô tìm kiếm, thành một nhánh riêng
+                    // có viền — không trộn vào lưới khoá bên dưới. Hai thứ
+                    // khác mục đích: một bên là chương trình đại học theo kỳ,
+                    // một bên là khoá chọn học tuỳ ý.
+                    AcademyEntryCard()
+                        .padding(.horizontal, -Spacing.md)
+
+                    tieuDeNhanh("Khoá tự biên soạn", "sparkles")
                     categoriesSection
                     featuredCoursesSection
                     allCoursesSection
@@ -38,6 +46,19 @@ struct CoursesView: View {
             .refreshable {
                 await viewModel.loadCourses()
             }
+        }
+    }
+
+    /// Nhãn phân nhánh, để người dùng thấy rõ phần dưới KHÔNG phải Academy.
+    private func tieuDeNhanh(_ chu: String, _ bieuTuong: String) -> some View {
+        HStack(spacing: Spacing.sm) {
+            Image(systemName: bieuTuong)
+                .font(.system(size: 13))
+                .foregroundColor(AppColors.primary)
+            Text(chu)
+                .font(.titleSmall)
+                .foregroundColor(AppColors.textPrimary)
+            Spacer()
         }
     }
 

@@ -239,6 +239,9 @@ struct Course: Codable, Identifiable {
     let id: Int
     let title: String
     let slug: String
+    /// Mã môn của Academy FPT (CEA201, PRF192…). `nil` với khoá tự biên soạn.
+    let courseCode: String?
+    let semesterName: String?
     let shortDescription: String?
     let thumbnailUrl: String?
     let instructor: User?
@@ -259,6 +262,7 @@ extension Course {
     init(from ct: CourseDetail) {
         self.init(
             id: ct.id, title: ct.title, slug: ct.slug ?? "",
+            courseCode: nil, semesterName: nil,
             shortDescription: ct.description, thumbnailUrl: ct.thumbnailUrl,
             instructor: ct.instructor, price: 0, discountPrice: nil, isFree: true,
             level: "", totalStudents: 0, avgRating: nil, totalLessons: nil,
@@ -665,4 +669,39 @@ struct UnreadNotificationCount: Codable {
 /// bị `catch {}` nuốt, và badge tin nhắn vĩnh viễn bằng 0.
 struct UnreadMessageCount: Codable {
     let count: Int
+}
+
+
+// MARK: - Academy FPT
+//
+// Chương trình FPT nằm TÁCH khỏi các khoá tự biên soạn: `/courses` chỉ trả 5
+// khoá `academyType: "GENERAL"`, còn 50 môn FPT (`academyType: "FPT"`) chỉ lấy
+// được qua học kỳ. Hai đường khác nhau, nên trong app cũng để hai nhánh riêng
+// — trộn chung thì "PostgreSQL" nằm cạnh "Mathematics for Engineering", không
+// ai hiểu đang xem cái gì.
+struct Semester: Codable, Identifiable, Hashable {
+    let id: Int
+    let name: String
+    let code: String
+    let ordinal: Int?
+    let description: String?
+
+    func hash(into hasher: inout Hasher) { hasher.combine(id) }
+    static func == (l: Semester, r: Semester) -> Bool { l.id == r.id }
+
+    /// Số kỳ để hiện trên huy hiệu.
+    ///
+    /// ⚠️ KHÔNG dùng `ordinal` — nó là khoá SẮP XẾP, không phải số kỳ. Đo thật:
+    /// "Kỳ 3" có ordinal=5, "Kỳ 7" có ordinal=9. Lấy ordinal làm huy hiệu thì
+    /// người dùng thấy ô số "5" cạnh chữ "Kỳ 3".
+    /// Số thật nằm trong `name`; không rút được thì đành dùng ordinal.
+    var soKy: Int? {
+        let so = name.filter(\.isNumber)
+        return Int(so) ?? ordinal
+    }
+}
+
+extension Course {
+    /// Mã môn FPT (CEA201, PRF192…). Chỉ môn Academy mới có.
+    var laMonAcademy: Bool { (courseCode?.isEmpty == false) }
 }

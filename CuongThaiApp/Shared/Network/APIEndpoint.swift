@@ -67,6 +67,11 @@ enum APIEndpoint {
     case enrollCourse(id: Int)
     /// Mục lục khoá — trả MẢNG chương ở tầng gốc, đi qua `requestList`.
     case getCurriculum(courseId: Int)
+    /// 9 học kỳ của chương trình FPT.
+    case getSemesters
+    /// Các môn của một học kỳ — 50 môn `academyType: "FPT"` chỉ lấy được ở đây,
+    /// `/courses` KHÔNG trả chúng.
+    case getCoursesBySemester(semesterId: Int)
     /// Nội dung đầy đủ một bài (có kiểm quyền truy cập).
     case getLesson(courseId: Int, lessonId: Int)
     case getCourseProgress(courseId: Int)
@@ -136,6 +141,8 @@ enum APIEndpoint {
         case .getCourseDetail(let slug): return "/api/v1/courses/\(slug)"
         case .enrollCourse(let id): return "/api/v1/courses/\(id)/enroll"
         case .getCurriculum(let id): return "/api/v1/courses/\(id)/curriculum"
+        case .getSemesters: return "/api/v1/academy/semesters"
+        case .getCoursesBySemester(let id): return "/api/v1/courses/semester/\(id)"
         case .getLesson(let c, let l): return "/api/v1/courses/\(c)/lessons/\(l)"
         case .getCourseProgress(let id): return "/api/v1/courses/\(id)/progress"
         case .saveLessonProgress(let id, _, _, _, _): return "/api/v1/courses/\(id)/progress"
