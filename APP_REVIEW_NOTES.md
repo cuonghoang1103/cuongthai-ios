@@ -28,6 +28,33 @@ Tab bar giờ là: **Trang chủ · Học · Tạo · Tin nhắn · Cá nhân**
    (Certificates, IDs & Profiles → Identifiers → `com.cuongthai.app` → Capabilities).
    Không bật thì build sẽ trượt bước provisioning.
 2. Đặt `DEVELOPMENT_TEAM` trong `project.yml` (đang để trống) rồi chạy `xcodegen generate`.
+
+2b. **Bật đăng nhập Google** (không bắt buộc để nộp, nút tự ẩn khi chưa bật):
+
+   Client OAuth loại **Web** của trang web **KHÔNG dùng lại được**. Google cấm
+   app di động giữ `client_secret` — ai cũng mở file `.ipa` ra đọc — nên app
+   phải có client loại **iOS**: không secret, ràng danh tính bằng Bundle ID,
+   nhận chuyển hướng qua URL scheme riêng. Đưa client Web cho SDK iOS sẽ nhận
+   thẳng lỗi `Custom scheme URIs are not allowed for 'WEB' client type`.
+
+   - console.cloud.google.com → **cùng project `650641212127`** (project đang
+     chạy Google login của web) → APIs & Services → Credentials
+     → Create credentials → OAuth client ID → **iOS**
+     → Bundle ID: `com.cuongthai.app` → Create
+   - Màn hình hiện ra một **Client ID**, KHÔNG có secret. Chép nó.
+   - Mở `CuongThaiApp/iOS/Info.plist`, thay hai chỗ:
+     - `GIDClientID` → dán client ID
+     - `CFBundleURLSchemes` → dán client ID **đảo ngược**:
+       `123-abc.apps.googleusercontent.com` → `com.googleusercontent.apps.123-abc`
+   - Không phải sửa dòng mã nào. Chưa dán thì nút Google tự ẩn.
+
+   ⚠️ Backend KHÔNG cần đổi: `/auth/oauth/token` nhận `provider` bất kỳ, đúng
+   đường Sign in with Apple đang đi.
+
+   ⛔ **GitHub thì không làm kiểu này được.** GitHub bắt buộc `client_secret`
+   để đổi code lấy token và **không hỗ trợ PKCE** cho OAuth App, nên app di
+   động không tự làm được — phải thêm một endpoint ở backend đứng ra đổi hộ,
+   giống việc NextAuth đang làm cho web.
 3. **Backend (chưa đụng theo yêu cầu):** `POST /api/v1/auth/oauth/token` hiện TIN
    email + providerId do client gửi mà không xác minh chữ ký. App đã gửi kèm
    `identityToken` và `authorizationCode` của Apple, nên khi vá backend chỉ cần

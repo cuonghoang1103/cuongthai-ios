@@ -37,16 +37,25 @@ struct AuthView: View {
                     nutChinh
                     if laDangNhap { nutQuenMatKhau }
                     gachNgang
-                    AppleSignInButton(
-                        onSignedIn: { res in
-                            Haptics.xong()
-                            appState.login(token: res.token, refreshToken: res.refreshToken)
-                        },
-                        onError: { thongBao in
-                            Haptics.hong()
-                            loi = thongBao
-                        },
-                    )
+                    VStack(spacing: Spacing.sm) {
+                        AppleSignInButton(
+                            onSignedIn: { res in
+                                Haptics.xong()
+                                appState.login(token: res.token, refreshToken: res.refreshToken)
+                            },
+                            onError: { thongBao in
+                                Haptics.hong()
+                                loi = thongBao
+                            },
+                        )
+                        // Tự ẩn khi chưa dán client ID iOS vào Info.plist.
+                        GoogleSignInButtonView(
+                            onSignedIn: { res in
+                                appState.login(token: res.token, refreshToken: res.refreshToken)
+                            },
+                            onError: { thongBao in loi = thongBao },
+                        )
+                    }
                     .padding(.horizontal, Spacing.lg)
                     ghiChuPhapLy
                 }

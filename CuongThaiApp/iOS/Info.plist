@@ -31,5 +31,30 @@
     <key>NSCameraUsageDescription</key><string>CuongThai cần camera để bạn chụp ảnh hoặc quay video đăng lên bảng tin và đổi ảnh đại diện.</string>
     <key>NSMicrophoneUsageDescription</key><string>CuongThai cần micro để ghi âm thanh khi bạn quay video đăng lên bảng tin.</string>
     <key>NSPhotoLibraryUsageDescription</key><string>CuongThai cần thư viện ảnh để bạn chọn ảnh đính kèm vào bài viết và ảnh đại diện.</string>
+    <!-- ── Đăng nhập Google ─────────────────────────────────────────────
+         CHƯA BẬT. Client loại Web của trang web KHÔNG dùng lại được: Google
+         cấm app di động giữ secret (ai cũng mở .ipa ra đọc), nên app phải có
+         client loại iOS riêng — không secret, ràng danh tính bằng Bundle ID.
+
+         Bật bằng 3 bước, không cần sửa một dòng mã nào:
+           1. console.cloud.google.com → project 650641212127 → Credentials
+              → Create credentials → OAuth client ID → iOS
+              → Bundle ID: com.cuongthai.app
+           2. Dán client ID vào <string> của GIDClientID ngay dưới
+           3. Dán client ID ĐẢO NGƯỢC vào CFBundleURLSchemes:
+              ID  123-abc.apps.googleusercontent.com
+              →   com.googleusercontent.apps.123-abc
+         Chưa dán thì nút Google tự ẩn — thà không có nút còn hơn nút báo lỗi.
+    -->
+    <key>GIDClientID</key><string>DAN-CLIENT-ID-IOS-VAO-DAY</string>
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>DAN-CLIENT-ID-DAO-NGUOC-VAO-DAY</string>
+            </array>
+        </dict>
+    </array>
 </dict>
 </plist>
