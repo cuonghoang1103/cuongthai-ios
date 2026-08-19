@@ -120,10 +120,19 @@ actor APIClient {
         }
 
         if httpResponse.statusCode == 401 {
-            // Don't recurse: a 401 on the refresh call itself means the session is dead.
-            if case .refreshToken = endpoint {
+            // Với ĐĂNG NHẬP / ĐĂNG KÝ, 401 nghĩa là SAI THÔNG TIN, không phải
+            // phiên hết hạn. Bản cũ ném thẳng `.unauthorized` nên người gõ sai
+            // mật khẩu nhận được câu "Please login again" — vừa là tiếng Anh,
+            // vừa nói sai chuyện, vừa che mất lý do thật máy chủ đã gửi kèm.
+            switch endpoint {
+            case .login, .register, .oauthToken, .changePassword:
+                throw Self.loiTuThan(data) ?? APIError.serverError("Sai tên đăng nhập hoặc mật khẩu.")
+            case .refreshToken:
+                // Không đệ quy: 401 ngay trên lệnh làm mới nghĩa là phiên chết hẳn.
                 storage.clearAuthTokens()
                 throw APIError.unauthorized
+            default:
+                break
             }
             if !isRetry, await refreshToken() {
                 return try await perform(endpoint, isRetry: true)
@@ -132,14 +141,20 @@ actor APIClient {
         }
 
         guard (200..<300).contains(httpResponse.statusCode) else {
-            if let envelope = try? JSONDecoder().decode(EmptyEnvelope.self, from: data),
-               let message = envelope.message {
-                throw APIError.serverError(message)
-            }
-            throw APIError.serverError("Server error: \(httpResponse.statusCode)")
+            throw Self.loiTuThan(data)
+                ?? APIError.serverError("Máy chủ trả lỗi \(httpResponse.statusCode).")
         }
 
         return data
+    }
+
+    /// Rút câu giải thích máy chủ gửi kèm. Câu đó luôn sát thực tế hơn bất cứ
+    /// câu chung chung nào ta tự bịa ở client.
+    private static func loiTuThan(_ data: Data) -> APIError? {
+        guard let envelope = try? JSONDecoder().decode(EmptyEnvelope.self, from: data),
+              let message = envelope.message, !message.isEmpty
+        else { return nil }
+        return .serverError(message)
     }
 
     private func refreshToken() async -> Bool {
@@ -166,13 +181,15 @@ enum APIError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .invalidURL: return "Invalid URL"
-        case .noData: return "No data received"
-        case .unauthorized: return "Please login again"
-        case .unknown: return "An unknown error occurred"
-        case .decodingError(let e): return "Decoding error: \(e.localizedDescription)"
+        // Người dùng đọc những câu này, nên chúng phải bằng tiếng Việt và nói
+        // đúng chuyện. "Please login again" từng hiện ra khi gõ sai mật khẩu.
+        case .invalidURL: return "Địa chỉ không hợp lệ."
+        case .noData: return "Máy chủ không trả về dữ liệu."
+        case .unauthorized: return "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại."
+        case .unknown: return "Có lỗi không xác định."
+        case .decodingError: return "Dữ liệu trả về không đúng định dạng."
         case .serverError(let m): return m
-        case .networkError(let e): return "Network error: \(e.localizedDescription)"
+        case .networkError: return "Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại."
         }
     }
 }

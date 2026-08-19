@@ -1,249 +1,409 @@
 import SwiftUI
 
-// MARK: - Auth View
-struct AuthView: View {
-    @State private var isLoginMode = true
-    @State private var username = ""
-    @State private var email = ""
-    @State private var password = ""
-    @State private var confirmPassword = ""
-    @State private var fullName = ""
-    @State private var isLoading = false
-    @State private var errorMessage: String?
-    @State private var legalSheet: LegalSheet?
+// MARK: - Đăng nhập / Đăng ký
 
-    enum LegalSheet: String, Identifiable {
-        case terms, privacy
+struct AuthView: View {
+    @EnvironmentObject var appState: AppState
+
+    @State private var laDangNhap = true
+    @State private var tenDangNhap = ""
+    @State private var email = ""
+    @State private var matKhau = ""
+    @State private var xacNhanMatKhau = ""
+    @State private var hoTen = ""
+    @State private var hienMatKhau = false
+    @State private var dangGui = false
+    @State private var loi: String?
+    @State private var manPhapLy: ManPhapLy?
+    @FocusState private var oDangGo: O?
+
+    private enum O: Hashable { case hoTen, tenDangNhap, email, matKhau, xacNhan }
+
+    enum ManPhapLy: String, Identifiable {
+        case dieuKhoan, baoMat
         var id: String { rawValue }
     }
 
-    @EnvironmentObject var appState: AppState
-
     var body: some View {
-        NavigationStack {
-            ZStack {
-                AppColors.backgroundPrimary.ignoresSafeArea()
+        ZStack {
+            nenGradient
 
-                ScrollView {
-                    VStack(spacing: Spacing.lg) {
-                        logoSection
-                        tabSelector
-                        formFields
-                        if let error = errorMessage {
-                            errorLabel(error)
-                        }
-                        submitButton
-                        dividerRow
-                        // Guideline 4.8 — a privacy-preserving login option.
-                        AppleSignInButton(
-                            onSignedIn: { res in
-                                appState.login(token: res.token, refreshToken: res.refreshToken)
-                            },
-                            onError: { message in errorMessage = message }
-                        )
-                        .padding(.horizontal, Spacing.lg)
-                        legalNotice
-                    }
+            ScrollView {
+                VStack(spacing: Spacing.lg) {
+                    khoiLogo
+                    boChonTab
+                    cacO
+                    if let loi { khoiLoi(loi) }
+                    nutChinh
+                    if laDangNhap { nutQuenMatKhau }
+                    gachNgang
+                    AppleSignInButton(
+                        onSignedIn: { res in
+                            Haptics.xong()
+                            appState.login(token: res.token, refreshToken: res.refreshToken)
+                        },
+                        onError: { thongBao in
+                            Haptics.hong()
+                            loi = thongBao
+                        },
+                    )
+                    .padding(.horizontal, Spacing.lg)
+                    ghiChuPhapLy
                 }
+                .padding(.bottom, Spacing.xl)
             }
-            .sheet(item: $legalSheet) { sheet in
-                NavigationStack {
-                    switch sheet {
-                    case .terms: TermsView(dismissible: true)
-                    case .privacy: PrivacyPolicyView(dismissible: true)
-                    }
+            .scrollDismissesKeyboard(.interactively)
+        }
+        .sheet(item: $manPhapLy) { man in
+            NavigationStack {
+                switch man {
+                case .dieuKhoan: TermsView(dismissible: true)
+                case .baoMat: PrivacyPolicyView(dismissible: true)
                 }
             }
         }
     }
 
-    private var logoSection: some View {
+    // MARK: Nền
+
+    /// Hai quầng sáng mờ thay cho nền phẳng. Đặt sau `ignoresSafeArea` nên nó
+    /// tràn cả sau thanh trạng thái; `blur` lớn để không thành hai vệt rõ rệt.
+    private var nenGradient: some View {
+        ZStack {
+            AppColors.backgroundPrimary.ignoresSafeArea()
+            Circle()
+                .fill(AppColors.primary.opacity(0.28))
+                .frame(width: 340, height: 340)
+                .blur(radius: 110)
+                .offset(x: -110, y: -260)
+            Circle()
+                .fill(AppColors.secondary.opacity(0.22))
+                .frame(width: 300, height: 300)
+                .blur(radius: 120)
+                .offset(x: 130, y: 240)
+        }
+        .ignoresSafeArea()
+    }
+
+    // MARK: Logo
+
+    private var khoiLogo: some View {
         VStack(spacing: Spacing.sm) {
-            Image(systemName: "play.circle.fill")
-                .font(.system(size: 80))
-                .foregroundStyle(LinearGradient(
-                    colors: [
-                        AppColors.primary,
-                        AppColors.secondary
-                    ],
-                    startPoint: .leading,
-                    endPoint: .trailing
-                ))
+            Image("AppLogo")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 96, height: 96)
+                .padding(Spacing.sm)
+                .background(
+                    RoundedRectangle(cornerRadius: 28, style: .continuous)
+                        .fill(AppColors.backgroundSecondary)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                                .stroke(AppColors.border, lineWidth: 1),
+                        )
+                        .shadow(color: AppColors.primary.opacity(0.35), radius: 24, y: 8),
+                )
+
             Text("CuongThai")
-                .font(.system(size: 28, weight: .bold))
-                .foregroundColor(AppColors.textPrimary)
-            Text("Kết nối và chia sẻ")
-                .font(.caption)
+                .font(.system(size: 30, weight: .bold, design: .rounded))
+                .foregroundStyle(AppColors.brandGradient)
+
+            Text(laDangNhap ? "Chào mừng trở lại" : "Tạo tài khoản mới")
+                .font(.bodyMedium)
                 .foregroundColor(AppColors.textSecondary)
         }
         .padding(.top, Spacing.xxl)
     }
 
-    private var tabSelector: some View {
-        HStack(spacing: 0) {
-            Button { withAnimation { isLoginMode = true } } label: {
-                Text("Đăng nhập")
-                    .font(.buttonText)
-                    .foregroundColor(isLoginMode ? AppColors.textPrimary : AppColors.textSecondary)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, Spacing.md)
-                    .background(isLoginMode ? AppColors.primary.opacity(0.2) : Color.clear)
-                    .cornerRadius(CornerRadius.medium)
-            }
-            Button { withAnimation { isLoginMode = false } } label: {
-                Text("Đăng ký")
-                    .font(.buttonText)
-                    .foregroundColor(!isLoginMode ? AppColors.textPrimary : AppColors.textSecondary)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, Spacing.md)
-                    .background(!isLoginMode ? AppColors.primary.opacity(0.2) : Color.clear)
-                    .cornerRadius(CornerRadius.medium)
-            }
+    // MARK: Tab
+
+    private var boChonTab: some View {
+        HStack(spacing: 4) {
+            tab("Đăng nhập", chon: laDangNhap) { doiTab(sangDangNhap: true) }
+            tab("Đăng ký", chon: !laDangNhap) { doiTab(sangDangNhap: false) }
         }
-        .background(AppColors.backgroundCard)
-        .cornerRadius(CornerRadius.medium)
+        .padding(4)
+        .background(AppColors.backgroundSecondary)
+        .clipShape(Capsule())
+        .overlay(Capsule().stroke(AppColors.border, lineWidth: 1))
         .padding(.horizontal, Spacing.lg)
     }
 
-    private var formFields: some View {
+    private func tab(_ nhan: String, chon: Bool, _ bam: @escaping () -> Void) -> some View {
+        Button(action: bam) {
+            Text(nhan)
+                .font(.buttonText)
+                .foregroundColor(chon ? AppColors.onPrimary : AppColors.textSecondary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+                .background {
+                    if chon {
+                        Capsule().fill(AppColors.brandGradient)
+                    }
+                }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func doiTab(sangDangNhap: Bool) {
+        guard laDangNhap != sangDangNhap else { return }
+        Haptics.cham()
+        withAnimation(.snappy(duration: 0.25)) {
+            laDangNhap = sangDangNhap
+            loi = nil
+        }
+    }
+
+    // MARK: Các ô nhập
+
+    private var cacO: some View {
         VStack(spacing: Spacing.md) {
-            if !isLoginMode {
-                AuthTextField(icon: "person", placeholder: "Họ và tên", text: $fullName)
+            if !laDangNhap {
+                ONhap(icon: "person", nhan: "Họ và tên", chu: $hoTen)
+                    .focused($oDangGo, equals: .hoTen)
+                    .submitLabel(.next)
+                    .onSubmit { oDangGo = .tenDangNhap }
             }
-            AuthTextField(icon: "at", placeholder: "Tên đăng nhập", text: $username)
-            if !isLoginMode {
-                AuthTextField(icon: "envelope", placeholder: "Email", text: $email)
-            }
-            AuthTextField(icon: "lock", placeholder: "Mật khẩu", text: $password, isSecure: true)
-            if !isLoginMode {
-                AuthTextField(icon: "lock", placeholder: "Xác nhận mật khẩu", text: $confirmPassword, isSecure: true)
-            }
-        }
-        .padding(.horizontal, Spacing.lg)
-    }
 
-    private func errorLabel(_ error: String) -> some View {
-        Text(error)
-            .font(.caption)
-            .foregroundColor(AppColors.error)
-            .padding(.horizontal, Spacing.lg)
-    }
+            ONhap(icon: "at", nhan: "Tên đăng nhập", chu: $tenDangNhap)
+                .focused($oDangGo, equals: .tenDangNhap)
+                .oKhongTuSua()
+                .submitLabel(.next)
+                .onSubmit { oDangGo = laDangNhap ? .matKhau : .email }
 
-    private var submitButton: some View {
-        Button { Task { await submit() } } label: {
-            HStack {
-                if isLoading {
-                    ProgressView().tint(AppColors.onPrimary)
-                } else {
-                    Text(isLoginMode ? "Đăng nhập" : "Tạo tài khoản")
-                        .font(.buttonText)
+            if !laDangNhap {
+                ONhap(icon: "envelope", nhan: "Email", chu: $email)
+                    .focused($oDangGo, equals: .email)
+                    .oKhongTuSua()
+                    .banPhimEmail()
+                    .submitLabel(.next)
+                    .onSubmit { oDangGo = .matKhau }
+            }
+
+            ONhap(
+                icon: "lock",
+                nhan: "Mật khẩu",
+                chu: $matKhau,
+                an: !hienMatKhau,
+                nutPhai: (hienMatKhau ? "eye.slash" : "eye", { hienMatKhau.toggle() }),
+            )
+            .focused($oDangGo, equals: .matKhau)
+            .submitLabel(laDangNhap ? .go : .next)
+            .onSubmit {
+                if laDangNhap { Task { await gui() } } else { oDangGo = .xacNhan }
+            }
+
+            if !laDangNhap {
+                ONhap(
+                    icon: "lock.rotation",
+                    nhan: "Nhập lại mật khẩu",
+                    chu: $xacNhanMatKhau,
+                    an: !hienMatKhau,
+                )
+                .focused($oDangGo, equals: .xacNhan)
+                .submitLabel(.go)
+                .onSubmit { Task { await gui() } }
+
+                if !xacNhanMatKhau.isEmpty && matKhau != xacNhanMatKhau {
+                    dongCanhBao("Hai mật khẩu chưa khớp")
+                }
+                if !matKhau.isEmpty && matKhau.count < 12 {
+                    dongCanhBao("Mật khẩu cần ít nhất 12 ký tự")
                 }
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, Spacing.md)
-            .background(LinearGradient(
-                colors: [
-                    AppColors.primary,
-                    AppColors.secondary
-                ],
-                startPoint: .leading,
-                endPoint: .trailing
-            ))
-            .foregroundColor(AppColors.onPrimary)
-            .cornerRadius(CornerRadius.medium)
         }
-        .disabled(isLoading || !isFormValid)
-        .opacity(isFormValid ? 1 : 0.6)
         .padding(.horizontal, Spacing.lg)
     }
 
-    private var dividerRow: some View {
+    private func dongCanhBao(_ chu: String) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: "exclamationmark.circle.fill")
+            Text(chu)
+            Spacer()
+        }
+        .font(.caption)
+        .foregroundColor(AppColors.warning)
+    }
+
+    // MARK: Lỗi
+
+    private func khoiLoi(_ chu: String) -> some View {
+        HStack(alignment: .top, spacing: Spacing.sm) {
+            Image(systemName: "exclamationmark.triangle.fill")
+            Text(chu)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .font(.bodySmall)
+        .foregroundColor(AppColors.error)
+        .padding(Spacing.md)
+        .background(AppColors.error.opacity(0.12))
+        .cornerRadius(CornerRadius.medium)
+        .overlay(
+            RoundedRectangle(cornerRadius: CornerRadius.medium)
+                .stroke(AppColors.error.opacity(0.35), lineWidth: 1),
+        )
+        .padding(.horizontal, Spacing.lg)
+        .transition(.opacity.combined(with: .move(edge: .top)))
+    }
+
+    // MARK: Nút
+
+    private var nutChinh: some View {
+        Button {
+            Task { await gui() }
+        } label: {
+            HStack(spacing: Spacing.sm) {
+                if dangGui {
+                    ProgressView().tint(AppColors.onPrimary)
+                }
+                Text(laDangNhap ? "Đăng nhập" : "Tạo tài khoản")
+                    .font(.buttonText)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 15)
+            .background(AppColors.brandGradient)
+            .foregroundColor(AppColors.onPrimary)
+            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+            .shadow(color: AppColors.primary.opacity(hopLe ? 0.35 : 0), radius: 14, y: 6)
+        }
+        .disabled(dangGui || !hopLe)
+        .opacity(hopLe ? 1 : 0.5)
+        .padding(.horizontal, Spacing.lg)
+    }
+
+    private var nutQuenMatKhau: some View {
+        // Việc lấy lại mật khẩu đi qua email OTP và app chưa có màn nhập OTP,
+        // nên mở web thay vì dựng một nút chết.
+        Link(destination: URL(string: "https://cuongthai.com/forgot-password")!) {
+            Text("Quên mật khẩu?")
+                .font(.bodySmall)
+                .foregroundColor(AppColors.primary)
+        }
+    }
+
+    private var gachNgang: some View {
         HStack(spacing: Spacing.md) {
-            Rectangle().fill(Color.gray.opacity(0.3)).frame(height: 1)
+            Rectangle().fill(AppColors.divider).frame(height: 1)
             Text("hoặc")
                 .font(.caption)
-                .foregroundColor(AppColors.textSecondary)
-            Rectangle().fill(Color.gray.opacity(0.3)).frame(height: 1)
+                .foregroundColor(AppColors.textTertiary)
+            Rectangle().fill(AppColors.divider).frame(height: 1)
         }
         .padding(.horizontal, Spacing.lg)
-        .padding(.top, Spacing.sm)
     }
 
-    private var legalNotice: some View {
+    private var ghiChuPhapLy: some View {
         VStack(spacing: Spacing.xs) {
-            Text("Khi tiếp tục, bạn đồng ý với Điều khoản sử dụng và Chính sách bảo mật.")
+            Text("Khi tiếp tục, bạn đồng ý với")
                 .font(.caption)
-                .foregroundColor(AppColors.textSecondary)
-                .multilineTextAlignment(.center)
+                .foregroundColor(AppColors.textTertiary)
             HStack(spacing: Spacing.md) {
-                Button("Điều khoản") { legalSheet = .terms }
-                Button("Bảo mật") { legalSheet = .privacy }
+                Button("Điều khoản sử dụng") { manPhapLy = .dieuKhoan }
+                Button("Chính sách bảo mật") { manPhapLy = .baoMat }
             }
             .font(.caption)
             .foregroundColor(AppColors.primary)
         }
         .padding(.horizontal, Spacing.lg)
-        .padding(.bottom, Spacing.xl)
+        .padding(.top, Spacing.sm)
     }
 
-    private var isFormValid: Bool {
-        if isLoginMode {
-            return !username.isEmpty && !password.isEmpty
+    // MARK: Logic
+
+    private var hopLe: Bool {
+        if laDangNhap {
+            return !tenDangNhap.isEmpty && !matKhau.isEmpty
         }
-        return !username.isEmpty && !email.isEmpty && !password.isEmpty && password == confirmPassword
+        return !tenDangNhap.isEmpty
+            && email.contains("@")
+            && matKhau.count >= 12
+            && matKhau == xacNhanMatKhau
     }
 
-    private func submit() async {
-        guard isFormValid else { return }
-        isLoading = true
-        errorMessage = nil
+    private func gui() async {
+        guard hopLe, !dangGui else { return }
+        oDangGo = nil
+        dangGui = true
+        withAnimation { loi = nil }
 
         do {
-            if isLoginMode {
-                let res: AuthResponse = try await APIClient.shared.request(
-                    .login(username: username, password: password, captchaToken: nil)
-                )
-                appState.login(token: res.token, refreshToken: res.refreshToken)
-            } else {
+            if !laDangNhap {
                 let _: EmptyResponse = try await APIClient.shared.request(
-                    .register(username: username, email: email, password: password, fullName: fullName.isEmpty ? nil : fullName, captchaToken: nil)
+                    .register(username: tenDangNhap, email: email, password: matKhau,
+                              fullName: hoTen.isEmpty ? nil : hoTen, captchaToken: nil),
                 )
-                let res: AuthResponse = try await APIClient.shared.request(
-                    .login(username: username, password: password, captchaToken: nil)
-                )
-                appState.login(token: res.token, refreshToken: res.refreshToken)
             }
+            let res: AuthResponse = try await APIClient.shared.request(
+                .login(username: tenDangNhap, password: matKhau, captchaToken: nil),
+            )
+            Haptics.xong()
+            appState.login(token: res.token, refreshToken: res.refreshToken)
         } catch {
-            errorMessage = error.localizedDescription
+            Haptics.hong()
+            withAnimation { loi = error.localizedDescription }
         }
 
-        isLoading = false
+        dangGui = false
     }
 }
 
-// MARK: - Auth TextField
-struct AuthTextField: View {
+// MARK: - Ô nhập dùng chung
+
+struct ONhap: View {
     let icon: String
-    let placeholder: String
-    @Binding var text: String
-    var isSecure: Bool = false
+    let nhan: String
+    @Binding var chu: String
+    var an: Bool = false
+    /// Nút bên phải trong ô — hiện dùng cho con mắt bật/tắt mật khẩu.
+    var nutPhai: (String, () -> Void)? = nil
+
+    @FocusState private var dangGo: Bool
 
     var body: some View {
         HStack(spacing: Spacing.sm) {
             Image(systemName: icon)
-                .foregroundColor(AppColors.textSecondary)
-                .frame(width: 24)
-            if isSecure {
-                SecureField(placeholder, text: $text)
-                    .foregroundColor(AppColors.textPrimary)
-            } else {
-                TextField(placeholder, text: $text)
-                    .foregroundColor(AppColors.textPrimary)
+                .foregroundColor(dangGo ? AppColors.primary : AppColors.textTertiary)
+                .frame(width: 22)
+
+            Group {
+                if an {
+                    SecureField(nhan, text: $chu)
+                } else {
+                    TextField(nhan, text: $chu)
+                }
+            }
+            .foregroundColor(AppColors.textPrimary)
+            .focused($dangGo)
+
+            if let (bieuTuong, bam) = nutPhai {
+                Button {
+                    Haptics.cham()
+                    bam()
+                } label: {
+                    Image(systemName: bieuTuong)
+                        .foregroundColor(AppColors.textTertiary)
+                        .frame(width: 24, height: 24)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                // Nhãn cho VoiceOver: một biểu tượng con mắt trơn không nói
+                // lên nó đang bật hay tắt.
+                .accessibilityLabel(bieuTuong == "eye" ? "Hiện mật khẩu" : "Ẩn mật khẩu")
             }
         }
         .padding(.horizontal, Spacing.md)
-        .padding(.vertical, Spacing.md)
-        .background(AppColors.backgroundCard)
-        .cornerRadius(CornerRadius.medium)
+        .padding(.vertical, 14)
+        .background(AppColors.backgroundSecondary)
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
+                .stroke(dangGo ? AppColors.primary : AppColors.border, lineWidth: dangGo ? 1.5 : 1),
+        )
+        .animation(.easeOut(duration: 0.15), value: dangGo)
     }
+}
+
+#Preview {
+    AuthView().environmentObject(AppState.shared)
 }

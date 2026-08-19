@@ -25,3 +25,31 @@ extension ToolbarItemPlacement {
 }
 
 #endif
+
+
+// MARK: - Bàn phím: iOS có, macOS không
+//
+// `textInputAutocapitalization` và `keyboardType` CHỈ tồn tại trên iOS. Gọi
+// thẳng trong file dùng chung thì target iOS xanh còn macOS đỏ — và lỗi báo ra
+// là "cannot infer contextual base in reference to member 'never'", đọc không
+// ra nguyên nhân. Hai hàm dưới bọc lại, trên macOS thành lệnh rỗng.
+
+extension View {
+    /// Không tự viết hoa, không tự sửa chính tả — cho tên đăng nhập, email.
+    func oKhongTuSua() -> some View {
+        #if os(iOS)
+        return self.textInputAutocapitalization(.never).autocorrectionDisabled()
+        #else
+        return self.autocorrectionDisabled()
+        #endif
+    }
+
+    /// Bàn phím có sẵn phím @ và dấu chấm.
+    func banPhimEmail() -> some View {
+        #if os(iOS)
+        return self.keyboardType(.emailAddress)
+        #else
+        return self
+        #endif
+    }
+}
