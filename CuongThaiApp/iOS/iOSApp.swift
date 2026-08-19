@@ -8,7 +8,6 @@ struct CuongThaiApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(appState)
-                .preferredColorScheme(.dark)
         }
     }
 }

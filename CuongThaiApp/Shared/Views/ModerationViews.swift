@@ -160,7 +160,7 @@ struct PostModerationMenu: View {
             }
         } label: {
             Image(systemName: "ellipsis")
-                .foregroundColor(.gray)
+                .foregroundColor(AppColors.textSecondary)
                 .frame(width: 32, height: 32)
                 .contentShape(Rectangle())
         }

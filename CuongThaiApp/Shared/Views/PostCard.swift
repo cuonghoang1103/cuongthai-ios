@@ -33,7 +33,7 @@ struct PostCard: View {
             actionsRow
         }
         .padding(Spacing.md)
-        .background(Color(red: 0.1, green: 0.1, blue: 0.14))
+        .background(AppColors.backgroundCard)
         .cornerRadius(CornerRadius.large)
     }
 
@@ -45,24 +45,24 @@ struct PostCard: View {
                 HStack(spacing: 4) {
                     Text(post.author.name)
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.white)
+                        .foregroundColor(AppColors.textPrimary)
                     if post.author.isFollowing == true {
                         Text("•")
-                            .foregroundColor(.gray)
+                            .foregroundColor(AppColors.textSecondary)
                         Text("Theo dõi")
                             .font(.caption)
-                            .foregroundColor(Color(red: 0.55, green: 0.35, blue: 0.96))
+                            .foregroundColor(AppColors.primary)
                     }
                 }
                 HStack(spacing: 4) {
                     Text("@\(post.author.username)")
                         .font(.caption)
-                        .foregroundColor(.gray)
+                        .foregroundColor(AppColors.textSecondary)
                     Text("•")
-                        .foregroundColor(.gray)
+                        .foregroundColor(AppColors.textSecondary)
                     Text(TimeFormatter.formatTimeAgo(post.createdAt))
                         .font(.caption)
-                        .foregroundColor(.gray)
+                        .foregroundColor(AppColors.textSecondary)
                 }
             }
 
@@ -77,7 +77,7 @@ struct PostCard: View {
     private var postContent: some View {
         Text(post.content)
             .font(.bodyText)
-            .foregroundColor(.white)
+            .foregroundColor(AppColors.textPrimary)
             .lineLimit(10)
             .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -89,7 +89,7 @@ struct PostCard: View {
                     Text(emoji)
                         .font(.caption)
                         .padding(4)
-                        .background(Color(red: 0.1, green: 0.1, blue: 0.14))
+                        .background(AppColors.backgroundCard)
                         .clipShape(Circle())
                 }
             }
@@ -97,13 +97,13 @@ struct PostCard: View {
             HStack(spacing: Spacing.md) {
                 Text("\(likesCount)")
                     .font(.caption)
-                    .foregroundColor(.gray)
+                    .foregroundColor(AppColors.textSecondary)
                 Text("\(post.commentsCount) bình luận")
                     .font(.caption)
-                    .foregroundColor(.gray)
+                    .foregroundColor(AppColors.textSecondary)
                 Text("\(post.sharesCount) chia sẻ")
                     .font(.caption)
-                    .foregroundColor(.gray)
+                    .foregroundColor(AppColors.textSecondary)
             }
         }
     }
@@ -127,7 +127,7 @@ struct PostCard: View {
                     Text("Bình luận")
                 }
                 .font(.caption)
-                .foregroundColor(.gray)
+                .foregroundColor(AppColors.textSecondary)
             }
 
             Spacer()
@@ -138,7 +138,7 @@ struct PostCard: View {
                     Text("Chia sẻ")
                 }
                 .font(.caption)
-                .foregroundColor(.gray)
+                .foregroundColor(AppColors.textSecondary)
             }
 
             Spacer()
@@ -149,12 +149,13 @@ struct PostCard: View {
                     Text("Lưu")
                 }
                 .font(.caption)
-                .foregroundColor(.gray)
+                .foregroundColor(AppColors.textSecondary)
             }
         }
     }
 
     private func toggleLike() async {
+        Haptics.cham()
         isLiked.toggle()
         likesCount += isLiked ? 1 : -1
         do {
@@ -195,11 +196,11 @@ struct UserAvatarView: View {
 
     private var avatarPlaceholder: some View {
         Circle()
-            .fill(Color(red: 0.15, green: 0.15, blue: 0.2))
+            .fill(AppColors.backgroundTertiary)
             .frame(width: size, height: size)
             .overlay(
                 Image(systemName: "person.fill")
-                    .foregroundColor(.gray)
+                    .foregroundColor(AppColors.textSecondary)
                     .font(.system(size: size * 0.5))
             )
     }
@@ -237,16 +238,16 @@ struct MediaItemView: View {
                     .resizable()
                     .aspectRatio(contentMode: .fill)
             } else {
-                Color(red: 0.15, green: 0.15, blue: 0.2)
+                AppColors.backgroundTertiary
             }
             #else
-            Color(red: 0.15, green: 0.15, blue: 0.2)
+            AppColors.backgroundTertiary
             #endif
 
             if media.type == "VIDEO" {
                 Image(systemName: "play.circle.fill")
                     .font(.system(size: 44))
-                    .foregroundColor(.white)
+                    .foregroundColor(AppColors.onPrimary)
                     .shadow(radius: 4)
             }
         }
@@ -262,32 +263,32 @@ struct PollView: View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
             Text(poll.question)
                 .font(.system(size: 16, weight: .semibold))
-                .foregroundColor(.white)
+                .foregroundColor(AppColors.textPrimary)
 
             ForEach(poll.options ?? []) { option in
                 HStack {
                     Text(option.text)
                         .font(.caption)
-                        .foregroundColor(.white)
+                        .foregroundColor(AppColors.textPrimary)
                     Spacer()
                     if let pct = option.percentage {
                         Text("\(Int(pct * 100))%")
                             .font(.caption)
-                            .foregroundColor(.gray)
+                            .foregroundColor(AppColors.textSecondary)
                     }
                 }
                 .padding(.horizontal, Spacing.md)
                 .padding(.vertical, Spacing.sm)
-                .background(Color(red: 0.15, green: 0.15, blue: 0.2))
+                .background(AppColors.backgroundTertiary)
                 .cornerRadius(CornerRadius.small)
             }
 
             Text("\(poll.totalVotes ?? 0) bình chọn")
                 .font(.caption)
-                .foregroundColor(.gray)
+                .foregroundColor(AppColors.textSecondary)
         }
         .padding(Spacing.md)
-        .background(Color(red: 0.08, green: 0.08, blue: 0.1))
+        .background(AppColors.backgroundSecondary)
         .cornerRadius(CornerRadius.medium)
     }
 }
@@ -315,11 +316,11 @@ struct MusicStickerView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(track.title)
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(.white)
+                    .foregroundColor(AppColors.textPrimary)
                     .lineLimit(1)
                 Text(track.artist)
                     .font(.caption)
-                    .foregroundColor(.gray)
+                    .foregroundColor(AppColors.textSecondary)
                     .lineLimit(1)
             }
 
@@ -327,20 +328,20 @@ struct MusicStickerView: View {
             // Label only — the app does not stream music (see APP_REVIEW_NOTES.md).
             Image(systemName: "music.note")
                 .font(.system(size: 20))
-                .foregroundColor(Color(red: 0.55, green: 0.35, blue: 0.96))
+                .foregroundColor(AppColors.primary)
         }
         .padding(Spacing.md)
-        .background(Color(red: 0.1, green: 0.1, blue: 0.14))
+        .background(AppColors.backgroundCard)
         .cornerRadius(CornerRadius.medium)
     }
 
     private var musicPlaceholder: some View {
         RoundedRectangle(cornerRadius: CornerRadius.small)
-            .fill(Color(red: 0.15, green: 0.15, blue: 0.2))
+            .fill(AppColors.backgroundTertiary)
             .frame(width: 48, height: 48)
             .overlay(
                 Image(systemName: "music.note")
-                    .foregroundColor(.gray)
+                    .foregroundColor(AppColors.textSecondary)
             )
     }
 }

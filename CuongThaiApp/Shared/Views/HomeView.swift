@@ -69,7 +69,7 @@ struct HomeView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color(red: 0.04, green: 0.04, blue: 0.06).ignoresSafeArea()
+                AppColors.backgroundPrimary.ignoresSafeArea()
 
                 VStack(spacing: 0) {
                     filterBar
@@ -85,8 +85,8 @@ struct HomeView: View {
                         .foregroundStyle(
                             LinearGradient(
                                 colors: [
-                                    Color(red: 0.55, green: 0.35, blue: 0.96),
-                                    Color(red: 0.02, green: 0.71, blue: 0.83)
+                                    AppColors.primary,
+                                    AppColors.secondary
                                 ],
                                 startPoint: .leading,
                                 endPoint: .trailing
@@ -109,7 +109,7 @@ struct HomeView: View {
                                         Text(appState.unreadNotifications > 99
                                              ? "99+" : "\(appState.unreadNotifications)")
                                             .font(.system(size: 10, weight: .bold))
-                                            .foregroundColor(.white)
+                                            .foregroundColor(AppColors.onPrimary)
                                             .padding(.horizontal, 4)
                                             .padding(.vertical, 1)
                                             .background(Capsule().fill(AppColors.error))
@@ -166,8 +166,23 @@ struct HomeView: View {
     private var feedContent: some View {
         Group {
             if vm.isLoading && vm.posts.isEmpty {
+                // Khung xương thay vòng xoay: thấy trước bố cục nên lúc dữ
+                // liệu về màn hình không "nhảy" một cái.
+                ScrollView {
+                    LazyVStack(spacing: Spacing.md) {
+                        ForEach(0..<3, id: \.self) { _ in PostSkeleton() }
+                    }
+                    .padding(.horizontal, Spacing.md)
+                }
+                .disabled(true)
+            } else if let loi = vm.error, vm.posts.isEmpty {
+                // Trước đây lỗi mạng cũng rơi vào nhánh "Chưa có bài viết" —
+                // báo mất mạng thành "không có nội dung" là nói sai, và người
+                // dùng không có lý do gì để thử lại.
                 Spacer()
-                ProgressView()
+                ErrorStateView(message: loi) {
+                    Task { await vm.loadFeed(type: selectedType) }
+                }
                 Spacer()
             } else if moderation.filter(vm.posts).isEmpty {
                 Spacer()
@@ -228,8 +243,8 @@ struct FilterPill: View {
                 .padding(.vertical, Spacing.sm)
                 .background(
                     isSelected
-                        ? Color(red: 0.55, green: 0.35, blue: 0.96)
-                        : Color(red: 0.1, green: 0.1, blue: 0.14)
+                        ? AppColors.primary
+                        : AppColors.backgroundCard
                 )
                 .cornerRadius(20)
         }
@@ -246,13 +261,13 @@ struct EmptyStateView: View {
         VStack(spacing: Spacing.md) {
             Image(systemName: icon)
                 .font(.system(size: 48))
-                .foregroundColor(.gray)
+                .foregroundColor(AppColors.textSecondary)
             Text(title)
                 .font(.system(size: 20, weight: .semibold))
-                .foregroundColor(.white)
+                .foregroundColor(AppColors.textPrimary)
             Text(subtitle)
                 .font(.caption)
-                .foregroundColor(.gray)
+                .foregroundColor(AppColors.textSecondary)
         }
         .padding()
     }

@@ -412,6 +412,7 @@ struct ChatView: View {
 
     private func sendMessage() {
         guard !messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        Haptics.cham()
 
         Task {
             await viewModel.sendMessage(messageText)

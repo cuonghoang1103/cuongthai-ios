@@ -213,7 +213,7 @@ struct FeaturedCourseCard: View {
                 if !course.isFree {
                     Text(course.isEnrolled == true ? "Đã ghi danh" : formatPrice(course.discountPrice ?? course.price))
                         .font(.captionBold)
-                        .foregroundColor(.white)
+                        .foregroundColor(AppColors.onPrimary)
                         .padding(.horizontal, Spacing.sm)
                         .padding(.vertical, 4)
                         .background(course.isEnrolled == true ? AppColors.success : AppColors.primary)

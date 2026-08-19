@@ -35,7 +35,7 @@ struct AvatarStackView: View {
 
                     Text("+\(users.count - maxDisplay)")
                         .font(.system(size: size * 0.35, weight: .semibold))
-                        .foregroundColor(.white)
+                        .foregroundColor(AppColors.onPrimary)
                 }
             }
         }
@@ -51,7 +51,7 @@ struct BadgeView: View {
     var body: some View {
         Text(text)
             .font(.caption2)
-            .foregroundColor(.white)
+            .foregroundColor(AppColors.onPrimary)
             .padding(.horizontal, Spacing.sm)
             .padding(.vertical, 2)
             .background(color)
@@ -66,7 +66,7 @@ struct NotificationBadge: View {
         if count > 0 {
             Text(count > 99 ? "99+" : "\(count)")
                 .font(.system(size: 10, weight: .bold))
-                .foregroundColor(.white)
+                .foregroundColor(AppColors.onPrimary)
                 .padding(.horizontal, 5)
                 .padding(.vertical, 2)
                 .background(AppColors.error)
@@ -270,7 +270,7 @@ struct ToastView: View {
         .padding(Spacing.md)
         .background(AppColors.backgroundCard)
         .cornerRadius(CornerRadius.medium)
-        .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
+        .shadow(color: Color.theoCheDo(sang: .black.opacity(0.14), toi: .black.opacity(0.45)), radius: 8, y: 4)
         .padding(.horizontal, Spacing.md)
     }
 }

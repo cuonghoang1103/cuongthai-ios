@@ -167,7 +167,7 @@ struct NotificationsView: View {
                 UserAvatarView(url: tb.sender?.avatarUrl, size: 44)
                 Image(systemName: tb.bieuTuong)
                     .font(.system(size: 10))
-                    .foregroundColor(.white)
+                    .foregroundColor(AppColors.onPrimary)
                     .padding(5)
                     .background(AppColors.primary)
                     .clipShape(Circle())

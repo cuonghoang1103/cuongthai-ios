@@ -153,7 +153,7 @@ struct PostDetailView: View {
 
                         if post.author.isFollowing == true {
                             Text("•")
-                                .foregroundColor(.gray)
+                                .foregroundColor(AppColors.textSecondary)
                             Text("Theo dõi")
                                 .font(.caption)
                                 .foregroundColor(AppColors.primary)
@@ -167,14 +167,14 @@ struct PostDetailView: View {
                         .foregroundColor(AppColors.textSecondary)
 
                     Text("•")
-                        .foregroundColor(.gray)
+                        .foregroundColor(AppColors.textSecondary)
 
                     Text(TimeFormatter.formatTimeAgo(post.createdAt))
                         .font(.caption)
                         .foregroundColor(AppColors.textSecondary)
 
                     Text("•")
-                        .foregroundColor(.gray)
+                        .foregroundColor(AppColors.textSecondary)
 
                     Image(systemName: "globe")
                         .font(.caption)

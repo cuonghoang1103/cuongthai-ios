@@ -8,7 +8,6 @@ struct CuongThaiAppMac: App {
         WindowGroup {
             ContentView()
                 .environmentObject(appState)
-                .preferredColorScheme(.dark)
         }
         .windowStyle(.hiddenTitleBar)
     }

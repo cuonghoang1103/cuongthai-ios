@@ -253,7 +253,7 @@ struct ThreadRow: View {
                     if thread.unreadCount > 0 {
                         Text("\(thread.unreadCount)")
                             .font(.captionBold)
-                            .foregroundColor(.white)
+                            .foregroundColor(AppColors.onPrimary)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
                             .background(AppColors.primary)

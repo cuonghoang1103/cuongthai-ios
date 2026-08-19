@@ -145,7 +145,7 @@ struct CreatePostView: View {
                                     viewModel.removeImage(at: index)
                                 } label: {
                                     Image(systemName: "xmark.circle.fill")
-                                        .foregroundColor(.white)
+                                        .foregroundColor(AppColors.onPrimary)
                                         .background(Circle().fill(Color.black.opacity(0.5)))
                                 }
                                 .padding(4)

@@ -73,7 +73,7 @@ struct iOSTabView: View {
                 }
                 .tag(AppState.AppTab.profile)
         }
-        .tint(Color(red: 0.55, green: 0.35, blue: 0.96))
+        .tint(AppColors.primary)
         // Không có socket nên đây là lúc DUY NHẤT số chưa đọc được làm mới:
         // mở app, và mỗi lần app quay lại tiền cảnh. Trước đây
         // `fetchUnreadCounts()` không được gọi từ bất cứ đâu, nên huy hiệu

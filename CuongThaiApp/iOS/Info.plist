@@ -28,7 +28,6 @@
         <string>UIInterfaceOrientationLandscapeLeft</string>
         <string>UIInterfaceOrientationLandscapeRight</string>
     </array>
-    <key>UIUserInterfaceStyle</key><string>Dark</string>
     <key>NSCameraUsageDescription</key><string>CuongThai cần camera để bạn chụp ảnh hoặc quay video đăng lên bảng tin và đổi ảnh đại diện.</string>
     <key>NSMicrophoneUsageDescription</key><string>CuongThai cần micro để ghi âm thanh khi bạn quay video đăng lên bảng tin.</string>
     <key>NSPhotoLibraryUsageDescription</key><string>CuongThai cần thư viện ảnh để bạn chọn ảnh đính kèm vào bài viết và ảnh đại diện.</string>

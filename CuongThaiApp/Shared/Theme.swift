@@ -22,43 +22,88 @@ struct CornerRadius {
 }
 
 // MARK: Colors
+
+/// Màu đổi theo chế độ sáng/tối của hệ thống.
+///
+/// Trước 19/08/2026 app ép chế độ tối cứng (`UIUserInterfaceStyle: Dark` +
+/// `.preferredColorScheme(.dark)`), nên mọi màu ghi thẳng số RGB là đủ. Bỏ ép
+/// rồi thì từng màu phải tự biết mình đang ở chế độ nào — nếu không, người
+/// dùng để máy ở chế độ sáng sẽ thấy chữ trắng trên nền trắng.
+extension Color {
+    static func theoCheDo(sang: Color, toi: Color) -> Color {
+        #if os(iOS)
+        return Color(UIColor { traits in
+            traits.userInterfaceStyle == .dark ? UIColor(toi) : UIColor(sang)
+        })
+        #elseif os(macOS)
+        return Color(NSColor(name: nil) { hinhThuc in
+            hinhThuc.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+                ? NSColor(toi) : NSColor(sang)
+        })
+        #endif
+    }
+
+    /// Dựng từ mã hex `0xRRGGBB` — dễ đối chiếu với bảng màu của web hơn là
+    /// ba số thập phân.
+    init(hex: UInt32) {
+        self.init(
+            red: Double((hex >> 16) & 0xFF) / 255,
+            green: Double((hex >> 8) & 0xFF) / 255,
+            blue: Double(hex & 0xFF) / 255,
+        )
+    }
+}
+
 struct AppColors {
-    // Primary Brand Colors
-    static let primary = Color(red: 0.55, green: 0.35, blue: 0.96) // #8C5AF0 - Purple
-    static let primaryDark = Color(red: 0.45, green: 0.25, blue: 0.86)
-    static let primaryLight = Color(red: 0.65, green: 0.45, blue: 1.0)
+    // Primary Brand Colors — tím thương hiệu giữ nguyên ở cả hai chế độ, chỉ
+    // đậm hơn một nấc ở nền sáng cho đủ tương phản chữ trắng (WCAG AA).
+    static let primary = Color.theoCheDo(sang: Color(hex: 0x7A45E8), toi: Color(hex: 0x8C5AF0))
+    static let primaryDark = Color.theoCheDo(sang: Color(hex: 0x6535D0), toi: Color(hex: 0x7340DB))
+    static let primaryLight = Color.theoCheDo(sang: Color(hex: 0x9B6BFF), toi: Color(hex: 0xA673FF))
 
     // Secondary Colors
-    static let secondary = Color(red: 0.13, green: 0.83, blue: 0.93) // Cyan
-    static let accent = Color(red: 1.0, green: 0.6, blue: 0.2) // Orange
+    static let secondary = Color.theoCheDo(sang: Color(hex: 0x0E93A6), toi: Color(hex: 0x21D4ED))
+    static let accent = Color.theoCheDo(sang: Color(hex: 0xD97706), toi: Color(hex: 0xFF9933))
 
     // Background Colors
-    static let backgroundPrimary = Color(red: 0.04, green: 0.04, blue: 0.08) // #0a0a14
-    static let backgroundSecondary = Color(red: 0.08, green: 0.08, blue: 0.12) // #141420
-    static let backgroundTertiary = Color(red: 0.1, green: 0.1, blue: 0.14) // #1a1a24
-    static let backgroundCard = Color(red: 0.1, green: 0.1, blue: 0.14)
+    static let backgroundPrimary = Color.theoCheDo(sang: Color(hex: 0xF6F6F9), toi: Color(hex: 0x0A0A14))
+    static let backgroundSecondary = Color.theoCheDo(sang: Color(hex: 0xFFFFFF), toi: Color(hex: 0x141420))
+    static let backgroundTertiary = Color.theoCheDo(sang: Color(hex: 0xEDEDF2), toi: Color(hex: 0x1A1A24))
+    static let backgroundCard = Color.theoCheDo(sang: Color(hex: 0xFFFFFF), toi: Color(hex: 0x1A1A24))
 
     // Text Colors
-    static let textPrimary = Color.white
-    static let textSecondary = Color(red: 0.6, green: 0.6, blue: 0.65)
-    static let textTertiary = Color(red: 0.45, green: 0.45, blue: 0.5)
+    static let textPrimary = Color.theoCheDo(sang: Color(hex: 0x14141C), toi: Color(hex: 0xFFFFFF))
+    static let textSecondary = Color.theoCheDo(sang: Color(hex: 0x56565F), toi: Color(hex: 0x9999A6))
+    static let textTertiary = Color.theoCheDo(sang: Color(hex: 0x81818C), toi: Color(hex: 0x737380))
+
+    /// Chữ/biểu tượng đặt TRÊN nền thương hiệu (nút tím, huy hiệu đỏ, lớp phủ
+    /// đen trên ảnh). Luôn trắng ở cả hai chế độ — đừng thay bằng textPrimary,
+    /// ở chế độ sáng textPrimary là màu gần đen và sẽ chìm vào nền tím.
+    static let onPrimary = Color.white
 
     // Status Colors
-    static let success = Color(red: 0.2, green: 0.78, blue: 0.35)
-    static let error = Color(red: 0.93, green: 0.26, blue: 0.26)
-    static let warning = Color(red: 0.98, green: 0.82, blue: 0.16)
+    static let success = Color.theoCheDo(sang: Color(hex: 0x1A8F35), toi: Color(hex: 0x33C759))
+    static let error = Color.theoCheDo(sang: Color(hex: 0xD32F2F), toi: Color(hex: 0xEE4444))
+    static let warning = Color.theoCheDo(sang: Color(hex: 0xB47600), toi: Color(hex: 0xFAD129))
 
     // UI Elements
-    static let divider = Color.gray.opacity(0.2)
-    static let border = Color.gray.opacity(0.15)
+    static let divider = Color.theoCheDo(sang: Color.black.opacity(0.10), toi: Color.white.opacity(0.12))
+    static let border = Color.theoCheDo(sang: Color.black.opacity(0.08), toi: Color.white.opacity(0.10))
     static let overlay = Color.black.opacity(0.5)
 
     // Reaction Colors
-    static let like = Color(red: 0.55, green: 0.35, blue: 0.96)
-    static let love = Color(red: 0.96, green: 0.26, blue: 0.21)
-    static let haha = Color(red: 0.98, green: 0.82, blue: 0.16)
-    static let sad = Color(red: 0.25, green: 0.55, blue: 0.98)
-    static let angry = Color(red: 0.93, green: 0.26, blue: 0.26)
+    static let like = primary
+    static let love = Color.theoCheDo(sang: Color(hex: 0xD32F2F), toi: Color(hex: 0xF54336))
+    static let haha = Color.theoCheDo(sang: Color(hex: 0xB47600), toi: Color(hex: 0xFAD129))
+    static let sad = Color.theoCheDo(sang: Color(hex: 0x2E6FD9), toi: Color(hex: 0x408CFA))
+    static let angry = Color.theoCheDo(sang: Color(hex: 0xD32F2F), toi: Color(hex: 0xEE4444))
+
+    /// Dải gradient thương hiệu — dùng ở nút chính và logo.
+    static let brandGradient = LinearGradient(
+        colors: [primary, secondary],
+        startPoint: .leading,
+        endPoint: .trailing,
+    )
 }
 
 // MARK: Typography

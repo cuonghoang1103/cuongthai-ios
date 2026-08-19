@@ -106,7 +106,7 @@ struct ProfileView: View {
                             if viewModel.dangTaiAnhBia {
                                 ProgressView().tint(.white)
                             } else {
-                                Image(systemName: "camera.fill").foregroundColor(.white)
+                                Image(systemName: "camera.fill").foregroundColor(AppColors.onPrimary)
                             }
                         }
                         .padding(Spacing.sm)
@@ -131,7 +131,7 @@ struct ProfileView: View {
                                 if viewModel.dangTaiAvatar {
                                     ProgressView().tint(.white).scaleEffect(0.7)
                                 } else {
-                                    Image(systemName: "camera.fill").font(.caption).foregroundColor(.white)
+                                    Image(systemName: "camera.fill").font(.caption).foregroundColor(AppColors.onPrimary)
                                 }
                             }
                             .padding(6)
@@ -163,7 +163,7 @@ struct ProfileView: View {
                             } label: {
                                 Text("Theo dõi")
                                     .font(.buttonSmall)
-                                    .foregroundColor(.white)
+                                    .foregroundColor(AppColors.onPrimary)
                                     .padding(.horizontal, Spacing.md)
                                     .padding(.vertical, Spacing.sm)
                                     .background(AppColors.primary)

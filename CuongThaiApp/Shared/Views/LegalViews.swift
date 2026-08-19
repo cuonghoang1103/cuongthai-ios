@@ -178,7 +178,7 @@ struct TermsConsentView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, Spacing.md)
                     .background(AppColors.primary)
-                    .foregroundColor(.white)
+                    .foregroundColor(AppColors.textPrimary)
                     .cornerRadius(CornerRadius.medium)
             }
             .padding(.horizontal, Spacing.lg)

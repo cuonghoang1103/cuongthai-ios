@@ -22,7 +22,7 @@ struct AuthView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color(red: 0.04, green: 0.04, blue: 0.06).ignoresSafeArea()
+                AppColors.backgroundPrimary.ignoresSafeArea()
 
                 ScrollView {
                     VStack(spacing: Spacing.lg) {
@@ -63,18 +63,18 @@ struct AuthView: View {
                 .font(.system(size: 80))
                 .foregroundStyle(LinearGradient(
                     colors: [
-                        Color(red: 0.55, green: 0.35, blue: 0.96),
-                        Color(red: 0.02, green: 0.71, blue: 0.83)
+                        AppColors.primary,
+                        AppColors.secondary
                     ],
                     startPoint: .leading,
                     endPoint: .trailing
                 ))
             Text("CuongThai")
                 .font(.system(size: 28, weight: .bold))
-                .foregroundColor(.white)
+                .foregroundColor(AppColors.textPrimary)
             Text("Kết nối và chia sẻ")
                 .font(.caption)
-                .foregroundColor(.gray)
+                .foregroundColor(AppColors.textSecondary)
         }
         .padding(.top, Spacing.xxl)
     }
@@ -84,23 +84,23 @@ struct AuthView: View {
             Button { withAnimation { isLoginMode = true } } label: {
                 Text("Đăng nhập")
                     .font(.buttonText)
-                    .foregroundColor(isLoginMode ? .white : .gray)
+                    .foregroundColor(isLoginMode ? AppColors.textPrimary : AppColors.textSecondary)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, Spacing.md)
-                    .background(isLoginMode ? Color(red: 0.55, green: 0.35, blue: 0.96).opacity(0.2) : Color.clear)
+                    .background(isLoginMode ? AppColors.primary.opacity(0.2) : Color.clear)
                     .cornerRadius(CornerRadius.medium)
             }
             Button { withAnimation { isLoginMode = false } } label: {
                 Text("Đăng ký")
                     .font(.buttonText)
-                    .foregroundColor(!isLoginMode ? .white : .gray)
+                    .foregroundColor(!isLoginMode ? AppColors.textPrimary : AppColors.textSecondary)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, Spacing.md)
-                    .background(!isLoginMode ? Color(red: 0.55, green: 0.35, blue: 0.96).opacity(0.2) : Color.clear)
+                    .background(!isLoginMode ? AppColors.primary.opacity(0.2) : Color.clear)
                     .cornerRadius(CornerRadius.medium)
             }
         }
-        .background(Color(red: 0.1, green: 0.1, blue: 0.14))
+        .background(AppColors.backgroundCard)
         .cornerRadius(CornerRadius.medium)
         .padding(.horizontal, Spacing.lg)
     }
@@ -125,7 +125,7 @@ struct AuthView: View {
     private func errorLabel(_ error: String) -> some View {
         Text(error)
             .font(.caption)
-            .foregroundColor(Color(red: 0.94, green: 0.27, blue: 0.27))
+            .foregroundColor(AppColors.error)
             .padding(.horizontal, Spacing.lg)
     }
 
@@ -133,7 +133,7 @@ struct AuthView: View {
         Button { Task { await submit() } } label: {
             HStack {
                 if isLoading {
-                    ProgressView().tint(.white)
+                    ProgressView().tint(AppColors.onPrimary)
                 } else {
                     Text(isLoginMode ? "Đăng nhập" : "Tạo tài khoản")
                         .font(.buttonText)
@@ -143,13 +143,13 @@ struct AuthView: View {
             .padding(.vertical, Spacing.md)
             .background(LinearGradient(
                 colors: [
-                    Color(red: 0.55, green: 0.35, blue: 0.96),
-                    Color(red: 0.02, green: 0.71, blue: 0.83)
+                    AppColors.primary,
+                    AppColors.secondary
                 ],
                 startPoint: .leading,
                 endPoint: .trailing
             ))
-            .foregroundColor(.white)
+            .foregroundColor(AppColors.onPrimary)
             .cornerRadius(CornerRadius.medium)
         }
         .disabled(isLoading || !isFormValid)
@@ -162,7 +162,7 @@ struct AuthView: View {
             Rectangle().fill(Color.gray.opacity(0.3)).frame(height: 1)
             Text("hoặc")
                 .font(.caption)
-                .foregroundColor(.gray)
+                .foregroundColor(AppColors.textSecondary)
             Rectangle().fill(Color.gray.opacity(0.3)).frame(height: 1)
         }
         .padding(.horizontal, Spacing.lg)
@@ -173,7 +173,7 @@ struct AuthView: View {
         VStack(spacing: Spacing.xs) {
             Text("Khi tiếp tục, bạn đồng ý với Điều khoản sử dụng và Chính sách bảo mật.")
                 .font(.caption)
-                .foregroundColor(.gray)
+                .foregroundColor(AppColors.textSecondary)
                 .multilineTextAlignment(.center)
             HStack(spacing: Spacing.md) {
                 Button("Điều khoản") { legalSheet = .terms }
@@ -231,19 +231,19 @@ struct AuthTextField: View {
     var body: some View {
         HStack(spacing: Spacing.sm) {
             Image(systemName: icon)
-                .foregroundColor(.gray)
+                .foregroundColor(AppColors.textSecondary)
                 .frame(width: 24)
             if isSecure {
                 SecureField(placeholder, text: $text)
-                    .foregroundColor(.white)
+                    .foregroundColor(AppColors.textPrimary)
             } else {
                 TextField(placeholder, text: $text)
-                    .foregroundColor(.white)
+                    .foregroundColor(AppColors.textPrimary)
             }
         }
         .padding(.horizontal, Spacing.md)
         .padding(.vertical, Spacing.md)
-        .background(Color(red: 0.1, green: 0.1, blue: 0.14))
+        .background(AppColors.backgroundCard)
         .cornerRadius(CornerRadius.medium)
     }
 }
