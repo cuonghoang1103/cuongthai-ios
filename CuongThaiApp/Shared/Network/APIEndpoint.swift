@@ -68,6 +68,10 @@ enum APIEndpoint {
     /// Mục lục khoá — trả MẢNG chương ở tầng gốc, đi qua `requestList`.
     case getCurriculum(courseId: Int)
     /// 9 học kỳ của chương trình FPT.
+    /// Bài đã lưu. `{ data: [...], pagination }` — đi qua `requestList`.
+    case getSavedPosts(cursor: Int?, limit: Int)
+    /// Khoá đã ghi danh — trả bản ghi ghi danh kèm tiến độ, không phải Course.
+    case getMyCourses
     case getSemesters
     /// Các môn của một học kỳ — 50 môn `academyType: "FPT"` chỉ lấy được ở đây,
     /// `/courses` KHÔNG trả chúng.
@@ -141,6 +145,8 @@ enum APIEndpoint {
         case .getCourseDetail(let slug): return "/api/v1/courses/\(slug)"
         case .enrollCourse(let id): return "/api/v1/courses/\(id)/enroll"
         case .getCurriculum(let id): return "/api/v1/courses/\(id)/curriculum"
+        case .getSavedPosts: return "/api/v1/social/saves"
+        case .getMyCourses: return "/api/v1/courses/my"
         case .getSemesters: return "/api/v1/academy/semesters"
         case .getCoursesBySemester(let id): return "/api/v1/courses/semester/\(id)"
         case .getLesson(let c, let l): return "/api/v1/courses/\(c)/lessons/\(l)"
@@ -269,6 +275,10 @@ enum APIEndpoint {
             if let keyword = k { m["keyword"] = keyword }
             return m
         case .getNotifications(let c, let l):
+            var m: [String: Any] = ["limit": l]
+            if let cursor = c { m["cursor"] = cursor }
+            return m
+        case .getSavedPosts(let c, let l):
             var m: [String: Any] = ["limit": l]
             if let cursor = c { m["cursor"] = cursor }
             return m

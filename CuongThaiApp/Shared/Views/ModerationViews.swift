@@ -141,9 +141,41 @@ struct PostModerationMenu: View {
     @ObservedObject private var moderation = ModerationStore.shared
     @State private var showReport = false
     @State private var showBlockConfirm = false
+    @State private var daLuu: Bool
+
+    init(post: SocialPost) {
+        self.post = post
+        _daLuu = State(initialValue: post.isSaved)
+    }
+
+    /// Đổi trạng thái lưu. Đổi trên máy trước cho tay bấm thấy phản hồi ngay,
+    /// hỏng thì trả lại.
+    private func doiLuu() async {
+        let muon = !daLuu
+        daLuu = muon
+        Haptics.cham()
+        do {
+            try await APIClient.shared.send(
+                muon ? .savePost(id: post.id, folder: nil) : .unsavePost(id: post.id),
+            )
+        } catch {
+            daLuu = !muon
+            Haptics.hong()
+        }
+    }
 
     var body: some View {
         Menu {
+            // "Lưu" phải nằm ở ĐÂY. Trước đây nó chỉ có trong màn chi tiết bài,
+            // nên tab "Đã lưu" ở hồ sơ hướng dẫn người dùng "chạm ••• rồi chọn
+            // Lưu" — một chỉ dẫn không thực hiện được từ bảng tin.
+            Button {
+                Task { await doiLuu() }
+            } label: {
+                Label(daLuu ? "Bỏ lưu" : "Lưu bài viết",
+                      systemImage: daLuu ? "bookmark.fill" : "bookmark")
+            }
+
             Button {
                 moderation.hide(postId: post.id)
             } label: {

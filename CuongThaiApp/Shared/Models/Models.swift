@@ -705,3 +705,39 @@ extension Course {
     /// Mã môn FPT (CEA201, PRF192…). Chỉ môn Academy mới có.
     var laMonAcademy: Bool { (courseCode?.isEmpty == false) }
 }
+
+
+// MARK: - Khoá học đã ghi danh
+//
+// `GET /courses/my` trả bản ghi GHI DANH (đã làm phẳng), KHÔNG phải `Course`:
+// có sẵn phần trăm tiến độ, bài học dở dang gần nhất và số hiệu chứng chỉ —
+// tính sẵn ở máy chủ nên app không phải cộng lại từ danh sách bài.
+struct Enrollment: Codable, Identifiable, Hashable {
+    let id: Int
+    let courseId: Int
+    let courseTitle: String
+    let courseSlug: String
+    let courseThumbnail: String?
+    /// Mã môn Academy (CEA201…), `nil` với khoá tự biên soạn.
+    let courseCode: String?
+    let semesterName: String?
+    let enrolledAt: String?
+    /// ACTIVE | IN_PROGRESS | COMPLETED
+    let status: String?
+    let progressPercent: Int?
+    let lastLessonId: Int?
+    let lastLessonTitle: String?
+    let lastAccessedAt: String?
+    let certificateNumber: String?
+
+    func hash(into hasher: inout Hasher) { hasher.combine(id) }
+    static func == (l: Enrollment, r: Enrollment) -> Bool { l.id == r.id }
+
+    var daXong: Bool { (progressPercent ?? 0) >= 100 }
+
+    var nhanTrangThai: String {
+        if daXong { return "Hoàn thành" }
+        if (progressPercent ?? 0) > 0 { return "Đang học" }
+        return "Chưa bắt đầu"
+    }
+}

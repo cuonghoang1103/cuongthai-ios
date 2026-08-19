@@ -1,5 +1,8 @@
 import SwiftUI
 import PhotosUI
+#if canImport(Kingfisher)
+import Kingfisher
+#endif
 
 // MARK: - Profile View
 struct ProfileView: View {
@@ -24,7 +27,7 @@ struct ProfileView: View {
                     profileStats
                     profileActions
                     contentTabs
-                    postsGrid
+                    noiDungTheoTab
                 }
             }
             .background(AppColors.backgroundPrimary)
@@ -276,16 +279,19 @@ struct ProfileView: View {
                 viewModel.selectedTab = .posts
             }
 
-            actionButton(icon: "bookmark", title: "Đã lưu", isActive: viewModel.selectedTab == .saved) {
-                viewModel.selectedTab = .saved
-            }
+            // "Đã lưu" và "Khoá học" là thông tin RIÊNG TƯ — chỉ hiện ở hồ sơ
+            // của chính mình, không khoe ở hồ sơ người khác.
+            if viewModel.isCurrentUser {
+                actionButton(icon: "bookmark", title: "Đã lưu", isActive: viewModel.selectedTab == .saved) {
+                    viewModel.selectedTab = .saved
+                }
 
-            actionButton(icon: "shield.checkerboard", title: "Khóa học", isActive: viewModel.selectedTab == .courses) {
-                viewModel.selectedTab = .courses
-            }
-
-            actionButton(icon: "music.note.list", title: "Nhạc", isActive: viewModel.selectedTab == .music) {
-                viewModel.selectedTab = .music
+            // Tab Nhạc đã GỠ: module nhạc bị bỏ khỏi app vì App Store
+            // Guideline 5.2.3 (rút audio từ YouTube). Để lại một tab mở ra
+            // màn trống còn tệ hơn không có tab.
+                actionButton(icon: "graduationcap", title: "Khoá học", isActive: viewModel.selectedTab == .courses) {
+                    viewModel.selectedTab = .courses
+                }
             }
         }
         .padding(.vertical, Spacing.sm)
@@ -310,6 +316,130 @@ struct ProfileView: View {
     private var contentTabs: some View {
         Divider()
             .background(AppColors.divider)
+    }
+
+    /// Phần dưới hồ sơ, đổi theo tab đang chọn.
+    /// Trước đây LUÔN vẽ `viewModel.posts` bất kể tab nào — nên hai tab kia
+    /// bấm vào chỉ đổi màu biểu tượng, nội dung y nguyên.
+    @ViewBuilder
+    private var noiDungTheoTab: some View {
+        switch viewModel.selectedTab {
+        case .posts: postsGrid
+        case .saved: khoiDaLuu
+        case .courses: khoiKhoaHoc
+        }
+    }
+
+    private var khoiDaLuu: some View {
+        LazyVStack(spacing: Spacing.md) {
+            if viewModel.dangTaiDaLuu && viewModel.baiDaLuu.isEmpty {
+                ProgressView().padding(.top, Spacing.xxl)
+            } else if viewModel.baiDaLuu.isEmpty {
+                khoiRong(icon: "bookmark", tieuDe: "Chưa lưu bài nào",
+                         phu: "Chạm ••• trên một bài viết rồi chọn Lưu để đọc lại sau.")
+            } else {
+                ForEach(viewModel.baiDaLuu) { post in
+                    ZStack(alignment: .topTrailing) {
+                        NavigationLink(destination: PostDetailView(post: post)) {
+                            PostCard(post: post)
+                        }
+                        .buttonStyle(.plain)
+                        PostModerationMenu(post: post)
+                            .padding(.top, Spacing.md)
+                            .padding(.trailing, Spacing.md)
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, Spacing.md)
+        .task { await viewModel.taiBaiDaLuu() }
+    }
+
+    private var khoiKhoaHoc: some View {
+        LazyVStack(spacing: Spacing.sm) {
+            if viewModel.dangTaiKhoa && viewModel.khoaDaHoc.isEmpty {
+                ProgressView().padding(.top, Spacing.xxl)
+            } else if viewModel.khoaDaHoc.isEmpty {
+                khoiRong(icon: "graduationcap", tieuDe: "Chưa ghi danh khoá nào",
+                         phu: "Vào tab Học, chọn một khoá và bấm Ghi danh.")
+            } else {
+                ForEach(viewModel.khoaDaHoc) { gd in
+                    NavigationLink(destination: CourseDetailView(slug: gd.courseSlug)) {
+                        hangKhoaHoc(gd)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .padding(.horizontal, Spacing.md)
+        .task { await viewModel.taiKhoaDaHoc() }
+    }
+
+    private func hangKhoaHoc(_ gd: Enrollment) -> some View {
+        HStack(spacing: Spacing.md) {
+            #if canImport(Kingfisher)
+            if let t = gd.courseThumbnail, let url = URL(string: t) {
+                KFImage(url)
+                    .resizable()
+                    .aspectRatio(16 / 9, contentMode: .fill)
+                    .frame(width: 96, height: 56)
+                    .clipShape(RoundedRectangle(cornerRadius: CornerRadius.small))
+            }
+            #endif
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 6) {
+                    if let ma = gd.courseCode {
+                        Text(ma)
+                            .font(.system(size: 10, weight: .bold, design: .monospaced))
+                            .foregroundColor(AppColors.secondary)
+                    }
+                    Text(gd.nhanTrangThai)
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundColor(gd.daXong ? AppColors.success : AppColors.textTertiary)
+                }
+
+                Text(gd.courseTitle)
+                    .font(.bodyMedium)
+                    .foregroundColor(AppColors.textPrimary)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+
+                // Thanh tiến độ + phần trăm, đều do máy chủ tính sẵn.
+                HStack(spacing: Spacing.sm) {
+                    ProgressView(value: Double(gd.progressPercent ?? 0), total: 100)
+                        .tint(gd.daXong ? AppColors.success : AppColors.primary)
+                    Text("\(gd.progressPercent ?? 0)%")
+                        .font(.caption)
+                        .foregroundColor(AppColors.textSecondary)
+                }
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(Spacing.sm)
+        .background(AppColors.backgroundCard)
+        .cornerRadius(CornerRadius.medium)
+        .contentShape(Rectangle())
+    }
+
+    private func khoiRong(icon: String, tieuDe: String, phu: String) -> some View {
+        VStack(spacing: Spacing.md) {
+            Image(systemName: icon)
+                .font(.system(size: 44))
+                .foregroundColor(AppColors.textTertiary)
+            Text(tieuDe)
+                .font(.titleMedium)
+                .foregroundColor(AppColors.textPrimary)
+            Text(phu)
+                .font(.bodyMedium)
+                .foregroundColor(AppColors.textSecondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, Spacing.xxl)
+        .padding(.horizontal, Spacing.lg)
     }
 
     private var postsGrid: some View {
@@ -408,6 +538,45 @@ class ProfileViewModel: ObservableObject {
     @Published var selectedTab: ProfileTab = .posts
 
     private var cursor: Int?
+
+    // ── Bài đã lưu & khoá đã ghi danh ─────────────────────────────
+    @Published var baiDaLuu: [SocialPost] = []
+    @Published var khoaDaHoc: [Enrollment] = []
+    @Published var dangTaiDaLuu = false
+    @Published var dangTaiKhoa = false
+
+    /// Nạp một lần rồi thôi — người dùng gạt qua gạt lại giữa các tab liên
+    /// tục, gọi lại mỗi lần là phí. Kéo-để-làm-mới vẫn nạp lại được.
+    func taiBaiDaLuu(batBuoc: Bool = false) async {
+        guard batBuoc || (baiDaLuu.isEmpty && !dangTaiDaLuu) else { return }
+        dangTaiDaLuu = true
+        defer { dangTaiDaLuu = false }
+        do {
+            let ds: (items: [SocialPost], nextCursor: Int?, hasMore: Bool) =
+                try await APIClient.shared.requestList(.getSavedPosts(cursor: nil, limit: 30))
+            baiDaLuu = ds.items
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
+    func taiKhoaDaHoc(batBuoc: Bool = false) async {
+        guard batBuoc || (khoaDaHoc.isEmpty && !dangTaiKhoa) else { return }
+        dangTaiKhoa = true
+        defer { dangTaiKhoa = false }
+        do {
+            let ds: (items: [Enrollment], nextCursor: Int?, hasMore: Bool) =
+                try await APIClient.shared.requestList(.getMyCourses)
+            // Khoá đang học lên trước, xong rồi xuống dưới; cùng nhóm thì cái
+            // vừa học gần nhất lên trên.
+            khoaDaHoc = ds.items.sorted {
+                if $0.daXong != $1.daXong { return !$0.daXong }
+                return ($0.lastAccessedAt ?? "") > ($1.lastAccessedAt ?? "")
+            }
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
 
     // ── Đổi ảnh đại diện / ảnh bìa ────────────────────────────────
     @Published var dangTaiAvatar = false
@@ -543,7 +712,6 @@ enum ProfileTab {
     case posts
     case saved
     case courses
-    case music
 }
 
 // MARK: - User Profile (extended user info)
