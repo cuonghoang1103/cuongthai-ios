@@ -279,6 +279,53 @@ struct CourseDetail: Codable, Identifiable {
     let reviews: [CourseReview]?
     let isEnrolled: Bool
     let progress: Double?
+
+    // ── Những trường API VẪN LUÔN TRẢ mà app chưa từng dùng ────────
+    // Trước đây màn chi tiết chỉ lấy title + description, nên phần giới thiệu
+    // là một khối chữ 10 dòng đổ thẳng ra màn hình, không cấp bậc, không nhịp
+    // nghỉ — trong khi máy chủ đã gửi sẵn cấp độ, thời lượng, số bài, danh
+    // mục, "bạn sẽ học được gì", "yêu cầu đầu vào".
+    let level: String?
+    let language: String?
+    let categoryName: String?
+    let totalLessons: Int?
+    let totalDurationSeconds: Int?
+    let totalStudents: Int?
+    let avgRating: Double?
+    let totalReviews: Int?
+    let isFree: Bool?
+    let accessType: String?
+    let whatYouLearn: String?
+    let requirements: String?
+    let documentsNote: String?
+
+    var nhanCapDo: String? {
+        switch level {
+        case "BEGINNER": return "Cơ bản"
+        case "INTERMEDIATE": return "Trung cấp"
+        case "ADVANCED": return "Nâng cao"
+        default: return level
+        }
+    }
+
+    /// "5 giờ 09 phút" — thời lượng cả khoá, đọc được bằng tiếng người.
+    var nhanThoiLuong: String? {
+        guard let giay = totalDurationSeconds, giay > 0 else { return nil }
+        let gio = giay / 3600, phut = (giay % 3600) / 60
+        if gio > 0 { return phut > 0 ? "\(gio) giờ \(phut) phút" : "\(gio) giờ" }
+        return "\(phut) phút"
+    }
+
+    /// Tách "ý này; ý kia; ý nữa" thành từng gạch đầu dòng.
+    /// Backend gộp hết vào MỘT chuỗi, ngăn bằng `;` (whatYouLearn) hoặc `•`
+    /// (documentsNote) — không tách thì lại thành khối chữ như cũ.
+    static func tachY(_ chu: String?) -> [String] {
+        guard let chu, !chu.isEmpty else { return [] }
+        let dau: Character = chu.contains("•") ? "•" : ";"
+        return chu.split(separator: dau)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+    }
 }
 
 // MARK: - Chương trình học

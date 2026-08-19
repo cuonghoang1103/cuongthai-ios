@@ -417,6 +417,7 @@ struct CourseDetailView: View {
     let slug: String
     @StateObject private var viewModel = CourseDetailViewModel()
     @State private var baiDangMo: CourseLesson?
+    @State private var moRongMoTa = false
 
     var body: some View {
         ScrollView {
@@ -501,68 +502,119 @@ struct CourseDetailView: View {
 
     private func courseHeader(_ course: CourseDetail) -> some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
-            // Thumbnail
-            #if canImport(Kingfisher)
-            if let thumbnail = course.thumbnailUrl, let url = URL(string: thumbnail) {
-                KFImage(url)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(height: 200)
-                    .clipped()
-            }
-            #endif
+            anhBia(course)
 
             VStack(alignment: .leading, spacing: Spacing.sm) {
-                Text(course.title)
-                    .font(.titleLarge)
-                    .foregroundColor(AppColors.textPrimary)
-
-                if let description = course.description {
-                    Text(description)
-                        .font(.bodyMedium)
-                        .foregroundColor(AppColors.textSecondary)
+                // Danh mục + cấp độ: hai mẩu nhỏ đặt TRƯỚC tiêu đề, để người
+                // đọc biết ngay "đây là khoá gì, cho ai" trong nửa giây.
+                HStack(spacing: Spacing.sm) {
+                    if let dm = course.categoryName { the(dm, mau: AppColors.primary) }
+                    if let cd = course.nhanCapDo { the(cd, mau: AppColors.secondary) }
+                    if course.isFree == true { the("Miễn phí", mau: AppColors.success) }
+                    Spacer(minLength: 0)
                 }
 
-                // Instructor
-                if let instructor = course.instructor {
-                    HStack(spacing: Spacing.md) {
-                        UserAvatarView(url: instructor.avatarUrl, size: 40)
+                Text(course.title)
+                    .font(.system(size: 26, weight: .bold))
+                    .foregroundColor(AppColors.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
 
-                        VStack(alignment: .leading, spacing: 2) {
+                hangThongSo(course)
+
+                if let gv = course.instructor {
+                    HStack(spacing: Spacing.sm) {
+                        UserAvatarView(url: gv.avatarUrl, size: 32)
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text(gv.name)
+                                .font(.buttonSmall)
+                                .foregroundColor(AppColors.textPrimary)
                             Text("Giảng viên")
                                 .font(.caption)
-                                .foregroundColor(AppColors.textSecondary)
-                            Text(instructor.name)
-                                .font(.titleSmall)
-                                .foregroundColor(AppColors.textPrimary)
+                                .foregroundColor(AppColors.textTertiary)
                         }
                     }
-                }
-
-                // Progress
-                if course.isEnrolled, let progress = course.progress {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Tiến độ: \(Int(progress * 100))%")
-                            .font(.caption)
-                            .foregroundColor(AppColors.textSecondary)
-
-                        ProgressView(value: progress)
-                            .tint(AppColors.primary)
-                    }
+                    .padding(.top, 2)
                 }
             }
-            .padding(Spacing.md)
+            .padding(.horizontal, Spacing.md)
+        }
+    }
+
+    @ViewBuilder
+    private func anhBia(_ course: CourseDetail) -> some View {
+        #if canImport(Kingfisher)
+        if let thumbnail = course.thumbnailUrl, let url = URL(string: thumbnail) {
+            KFImage(url)
+                .resizable()
+                .aspectRatio(16 / 9, contentMode: .fill)
+                .frame(maxWidth: .infinity)
+                .frame(height: 200)
+                .clipped()
+                // Vệt tối ở đáy để ảnh bìa không đâm thẳng vào chữ bên dưới.
+                .overlay(alignment: .bottom) {
+                    LinearGradient(
+                        colors: [.clear, AppColors.backgroundPrimary.opacity(0.9)],
+                        startPoint: .top, endPoint: .bottom,
+                    )
+                    .frame(height: 60)
+                }
+        }
+        #endif
+    }
+
+    private func the(_ chu: String, mau: Color) -> some View {
+        Text(chu)
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundColor(mau)
+            .padding(.horizontal, 9)
+            .padding(.vertical, 4)
+            .background(mau.opacity(0.14))
+            .clipShape(Capsule())
+    }
+
+    /// Hàng thông số: số bài · thời lượng · ngôn ngữ · học viên · đánh giá.
+    /// Chỉ hiện những mục CÓ dữ liệu — khoá mới chưa ai học thì không việc gì
+    /// phải khoe "0 học viên · 0.0 sao".
+    private func hangThongSo(_ course: CourseDetail) -> some View {
+        let soBai = course.totalLessons ?? viewModel.tongSoBai
+        var muc: [(String, String)] = []
+        if soBai > 0 { muc.append(("play.rectangle", "\(soBai) bài")) }
+        if let t = course.nhanThoiLuong { muc.append(("clock", t)) }
+        if let ng = course.language { muc.append(("globe", ng == "Vietnamese" ? "Tiếng Việt" : ng)) }
+        if let hv = course.totalStudents, hv > 0 { muc.append(("person.2", "\(hv) học viên")) }
+        if let sao = course.avgRating, sao > 0 {
+            muc.append(("star.fill", String(format: "%.1f", sao)))
+        }
+
+        return FlowRow(spacing: Spacing.md) {
+            ForEach(Array(muc.enumerated()), id: \.offset) { _, m in
+                HStack(spacing: 4) {
+                    Image(systemName: m.0).font(.system(size: 11))
+                    Text(m.1).font(.caption)
+                }
+                .foregroundColor(AppColors.textSecondary)
+            }
         }
     }
 
     private func courseContent(_ course: CourseDetail) -> some View {
-        VStack(spacing: Spacing.md) {
-            // Curriculum
+        VStack(alignment: .leading, spacing: Spacing.lg) {
+            if let mt = course.description, !mt.isEmpty {
+                khoiMoTa(mt)
+            }
+
+            danhSachY("Bạn sẽ học được gì", "checkmark.circle.fill",
+                      CourseDetail.tachY(course.whatYouLearn), mau: AppColors.success)
+
+            danhSachY("Yêu cầu đầu vào", "info.circle.fill",
+                      CourseDetail.tachY(course.requirements), mau: AppColors.secondary)
+
+            danhSachY("Tài liệu tham khảo", "book.fill",
+                      CourseDetail.tachY(course.documentsNote), mau: AppColors.primary)
+
+            // Nội dung khoá học
             VStack(alignment: .leading, spacing: Spacing.sm) {
-                Text("Nội dung khóa học")
-                    .font(.titleMedium)
-                    .foregroundColor(AppColors.textPrimary)
-                    .padding(.horizontal, Spacing.md)
+                tieuDeMuc("Nội dung khoá học", "list.bullet")
 
                 if viewModel.chuong.isEmpty {
                     Text("Khoá học này chưa có bài nào.")
@@ -580,24 +632,123 @@ struct CourseDetailView: View {
                 }
             }
 
-            // Reviews
-            VStack(alignment: .leading, spacing: Spacing.sm) {
-                Text("Đánh giá")
-                    .font(.titleMedium)
-                    .foregroundColor(AppColors.textPrimary)
-                    .padding(.horizontal, Spacing.md)
-
-                if let reviews = course.reviews, !reviews.isEmpty {
+            // Đánh giá
+            if let reviews = course.reviews, !reviews.isEmpty {
+                VStack(alignment: .leading, spacing: Spacing.sm) {
+                    tieuDeMuc("Đánh giá", "star.fill")
                     ForEach(reviews.prefix(3)) { review in
                         ReviewRow(review: review)
                     }
-                } else {
-                    Text("Chưa có đánh giá nào")
-                        .font(.bodyMedium)
-                        .foregroundColor(AppColors.textSecondary)
-                        .padding(.horizontal, Spacing.md)
                 }
             }
+        }
+        .padding(.top, Spacing.md)
+    }
+
+    /// Mô tả dài thu về 4 dòng, có nút mở rộng.
+    ///
+    /// Bản cũ đổ nguyên 10 dòng ra màn hình: người đọc chưa kịp biết khoá này
+    /// dạy gì đã phải cuộn qua một bức tường chữ, và nút "Bắt đầu học" bị đẩy
+    /// xuống tận đáy.
+    @ViewBuilder
+    private func khoiMoTa(_ chu: String) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.xs) {
+            Text(chu)
+                .font(.bodyMedium)
+                .foregroundColor(AppColors.textSecondary)
+                .lineSpacing(3)
+                .lineLimit(moRongMoTa ? nil : 4)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Button {
+                withAnimation(.snappy(duration: 0.22)) { moRongMoTa.toggle() }
+            } label: {
+                HStack(spacing: 3) {
+                    Text(moRongMoTa ? "Thu gọn" : "Xem thêm")
+                    Image(systemName: moRongMoTa ? "chevron.up" : "chevron.down")
+                        .font(.system(size: 10, weight: .semibold))
+                }
+                .font(.buttonSmall)
+                .foregroundColor(AppColors.primary)
+            }
+        }
+        .padding(.horizontal, Spacing.md)
+    }
+
+    @ViewBuilder
+    private func danhSachY(_ tieuDe: String, _ bieuTuong: String,
+                           _ ds: [String], mau: Color) -> some View {
+        if !ds.isEmpty {
+            VStack(alignment: .leading, spacing: Spacing.sm) {
+                tieuDeMuc(tieuDe, bieuTuong)
+                VStack(alignment: .leading, spacing: Spacing.sm) {
+                    ForEach(Array(ds.enumerated()), id: \.offset) { _, y in
+                        HStack(alignment: .top, spacing: Spacing.sm) {
+                            Image(systemName: bieuTuong)
+                                .font(.system(size: 13))
+                                .foregroundColor(mau)
+                                .padding(.top, 2)
+                            Text(y)
+                                .font(.bodyMedium)
+                                .foregroundColor(AppColors.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Spacer(minLength: 0)
+                        }
+                    }
+                }
+                .padding(Spacing.md)
+                .background(AppColors.backgroundSecondary)
+                .cornerRadius(CornerRadius.medium)
+                .padding(.horizontal, Spacing.md)
+            }
+        }
+    }
+
+    private func tieuDeMuc(_ chu: String, _ bieuTuong: String) -> some View {
+        HStack(spacing: Spacing.sm) {
+            Image(systemName: bieuTuong)
+                .font(.system(size: 14))
+                .foregroundColor(AppColors.primary)
+            Text(chu)
+                .font(.titleMedium)
+                .foregroundColor(AppColors.textPrimary)
+        }
+        .padding(.horizontal, Spacing.md)
+    }
+}
+
+// MARK: - Hàng tự xuống dòng
+//
+// `HStack` không tự ngắt dòng, nên hàng thông số dài sẽ tràn ra ngoài màn hình
+// và bị cắt cụt. `Layout` tự xếp: hết chỗ thì xuống hàng.
+struct FlowRow: Layout {
+    var spacing: CGFloat = 8
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let rong = proposal.width ?? .infinity
+        var x: CGFloat = 0, y: CGFloat = 0, caoHang: CGFloat = 0
+        for o in subviews {
+            let s = o.sizeThatFits(.unspecified)
+            if x > 0, x + s.width > rong {
+                x = 0; y += caoHang + spacing; caoHang = 0
+            }
+            x += s.width + spacing
+            caoHang = max(caoHang, s.height)
+        }
+        return CGSize(width: rong == .infinity ? x : rong, height: y + caoHang)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize,
+                       subviews: Subviews, cache: inout ()) {
+        var x = bounds.minX, y = bounds.minY, caoHang: CGFloat = 0
+        for o in subviews {
+            let s = o.sizeThatFits(.unspecified)
+            if x > bounds.minX, x + s.width > bounds.maxX {
+                x = bounds.minX; y += caoHang + spacing; caoHang = 0
+            }
+            o.place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(s))
+            x += s.width + spacing
+            caoHang = max(caoHang, s.height)
         }
     }
 }
