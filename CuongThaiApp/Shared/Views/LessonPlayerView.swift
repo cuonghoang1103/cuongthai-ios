@@ -320,7 +320,7 @@ struct LessonPlayerView: View {
             // Nội dung bài là HTML (có `<h2>`, `<p>`, `<strong>`, và cả hai
             // ngôn ngữ phân bằng class `ml-en` / `ml-vi`). Đổ thẳng ra `Text`
             // thì người học đọc nguyên thẻ — đúng như đã thấy lúc chạy thử.
-            HTMLText(html: chu)
+            RichContent(html: chu)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         if let ghiChu = vm.baiDayDu?.teachingNotes, !ghiChu.isEmpty {
@@ -328,7 +328,7 @@ struct LessonPlayerView: View {
                 Label("Ghi chú bài giảng", systemImage: "text.book.closed")
                     .font(.titleSmall)
                     .foregroundColor(AppColors.textPrimary)
-                HTMLText(html: ghiChu)
+                RichContent(html: ghiChu)
             }
             .padding(Spacing.md)
             .background(AppColors.backgroundSecondary)
@@ -546,76 +546,8 @@ final class LessonPlayerViewModel: ObservableObject {
     }
 }
 
-// MARK: - Dựng nội dung HTML
-
-/// Nội dung bài học lưu dạng HTML. `NSAttributedString` biết đọc HTML, nên
-/// không phải kéo thêm thư viện — nhưng nó dựng theo màu mặc định (đen trên
-/// trắng), nên phải chèn CSS ép màu, không thì ở chế độ tối là chữ đen trên
-/// nền đen.
-///
-/// Chuyển đổi tốn CPU và PHẢI chạy ngoài luồng chính: một bài dài vài chục
-/// nghìn ký tự sẽ làm khựng cuộn nếu dựng ngay trong `body`.
-struct HTMLText: View {
-    let html: String
-
-    @Environment(\.colorScheme) private var cheDo
-    @State private var chu: AttributedString?
-
-    var body: some View {
-        Group {
-            if let chu {
-                Text(chu)
-                    .fixedSize(horizontal: false, vertical: true)
-            } else {
-                // Trong lúc dựng: giữ chỗ bằng bản đã lột thẻ, để người đọc có
-                // chữ ngay thay vì nhìn khoảng trống.
-                Text(html.lotTheHTML)
-                    .font(.bodyMedium)
-                    .foregroundColor(AppColors.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-        // PHẢI theo dõi cả `html`, không chỉ chế độ màu. Bản đầu chỉ đặt
-        // `.task(id: cheDo)`, nên khi chuyển sang bài khác thì SwiftUI dùng lại
-        // đúng view đó, `@State chu` giữ nguyên chữ của bài TRƯỚC và không có
-        // gì kích hoạt dựng lại — người học đọc mô tả của bài mình vừa rời.
-        .task(id: "\(cheDo)|\(html.hashValue)") { await dung() }
-    }
-
-    private func dung() async {
-        let nguon = html
-        let toi = cheDo == .dark
-        let ketQua: AttributedString? = await Task.detached(priority: .userInitiated) {
-            let mauChu = toi ? "#B8B8C4" : "#3A3A44"
-            let css = """
-            <style>
-              body{font:-apple-system-body;font-size:16px;line-height:1.55;color:\(mauChu);
-                   margin:0;padding:0;background:transparent}
-              h1,h2,h3,h4{color:\(toi ? "#FFFFFF" : "#14141C");line-height:1.3;margin:18px 0 8px}
-              h2{font-size:20px} h3{font-size:17px}
-              p{margin:0 0 12px} li{margin:0 0 6px}
-              strong,b{color:\(toi ? "#FFFFFF" : "#14141C")}
-              code,pre{font-family:ui-monospace,Menlo,monospace;font-size:14px;
-                       background:\(toi ? "#1A1A24" : "#EDEDF2");padding:2px 5px;border-radius:5px}
-              pre{padding:10px;overflow-x:auto}
-              a{color:#8C5AF0;text-decoration:none}
-              .eyebrow{font-size:12px;letter-spacing:.06em;text-transform:uppercase;
-                       color:\(toi ? "#737380" : "#81818C")}
-            </style>
-            """
-            guard let data = (css + nguon).data(using: .utf8) else { return nil }
-            let tuyChon: [NSAttributedString.DocumentReadingOptionKey: Any] = [
-                .documentType: NSAttributedString.DocumentType.html,
-                .characterEncoding: String.Encoding.utf8.rawValue,
-            ]
-            guard let ns = try? NSAttributedString(data: data, options: tuyChon, documentAttributes: nil) else {
-                return nil
-            }
-            return AttributedString(ns)
-        }.value
-        chu = ketQua
-    }
-}
+// Bản dựng bằng NSAttributedString đã GỠ: nó bẹp `<table>` thành dòng
+// nối đuôi và hiện cả hai ngôn ngữ cùng lúc. Xem RichContentView.swift.
 
 extension String {
     /// Lột hết thẻ, gộp khoảng trắng — bản dự phòng khi dựng HTML thất bại.
