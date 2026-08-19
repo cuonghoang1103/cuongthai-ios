@@ -52,12 +52,31 @@ targets:
       - path: CuongThaiApp/Resources
         group: Resources
     settings:
+      configs:
+        # Không đặt thì Xcode lấy mặc định cũ `CODE_SIGN_IDENTITY = iPhone
+        # Developer`, và khi dựng bản nộp nó đi tìm hồ sơ DEVELOPMENT — thứ đòi
+        # phải có thiết bị đăng ký sẵn. Lỗi báo ra là "Your team has no devices
+        # from which to generate a provisioning profile", đọc xong dễ tưởng
+        # phải cắm iPhone vào mới nộp được app.
+        Release:
+          # Ký TỰ ĐỘNG thì KHÔNG được tự chỉ định chứng thư — Xcode báo
+          # "conflicting provisioning settings". Chỉ cần nói rõ đây là bản
+          # phát hành, Xcode tự chọn Apple Distribution.
+          CODE_SIGN_STYLE: Automatic
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.cuongthai.app
         INFOPLIST_FILE: CuongThaiApp/iOS/Info.plist
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         GENERATE_INFOPLIST_FILE: NO
-        TARGETED_DEVICE_FAMILY: "1,2"
+        # CHỈ iPhone ("1"). Khai thêm iPad ("1,2") kéo theo hai hệ quả:
+        #  1. App Store bắt khai ĐỦ 4 hướng màn hình, kể cả lộn ngược — nếu
+        #     không, gói bị từ chối ngay ở bước kiểm (đã dính 20/08/2026).
+        #  2. Quan trọng hơn: reviewer sẽ MỞ APP TRÊN iPad. Giao diện này dựng
+        #     cho điện thoại (thanh 5 tab, bảng tin một cột), phóng lên iPad
+        #     nhìn rất trống — đúng thứ bị đánh theo 2.1/4.2.
+        # App vẫn chạy trên iPad ở chế độ tương thích. Muốn hỗ trợ iPad thật
+        # thì đổi lại "1,2" VÀ dựng bố cục riêng cho màn rộng.
+        TARGETED_DEVICE_FAMILY: "1"
         SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: YES
         SWIFT_ACTIVE_COMPILATION_CONDITIONS: $(inherited) DEBUG
         ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES: YES
