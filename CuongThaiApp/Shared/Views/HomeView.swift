@@ -15,9 +15,10 @@ class HomeViewModel: ObservableObject {
         isLoading = true
         error = nil
         do {
-            let res: FeedResponse = try await APIClient.shared.request(
-                .getFeed(cursor: nil, limit: 20, type: type, videoCategoryId: nil)
-            )
+            let res: (items: [SocialPost], nextCursor: Int?, hasMore: Bool) =
+                try await APIClient.shared.requestList(
+                    .getFeed(cursor: nil, limit: 20, type: type, videoCategoryId: nil)
+                )
             posts = res.items
             cursor = res.nextCursor
             hasMore = res.hasMore
@@ -31,10 +32,14 @@ class HomeViewModel: ObservableObject {
         guard !isLoadingMore && hasMore, let cursor = cursor else { return }
         isLoadingMore = true
         do {
-            let res: FeedResponse = try await APIClient.shared.request(
-                .getFeed(cursor: cursor, limit: 20, type: type, videoCategoryId: nil)
-            )
-            posts.append(contentsOf: res.items)
+            let res: (items: [SocialPost], nextCursor: Int?, hasMore: Bool) =
+                try await APIClient.shared.requestList(
+                    .getFeed(cursor: cursor, limit: 20, type: type, videoCategoryId: nil)
+                )
+            // Lọc trùng: bài mới chen vào giữa hai lần gọi đẩy trang sau lệch
+            // một dòng, và dòng đó hiện hai lần.
+            let daCo = Set(posts.map(\.id))
+            posts.append(contentsOf: res.items.filter { !daCo.contains($0.id) })
             self.cursor = res.nextCursor
             hasMore = res.hasMore
         } catch {

@@ -761,9 +761,10 @@ class PostDetailViewModel: ObservableObject {
         cursor = nil
 
         do {
-            let response: CommentsResponse = try await APIClient.shared.request(
-                .getComments(postId: postId, cursor: nil, limit: 20)
-            )
+            let response: (items: [Comment], nextCursor: Int?, hasMore: Bool) =
+                try await APIClient.shared.requestList(
+                    .getComments(postId: postId, cursor: nil, limit: 20)
+                )
             comments = response.items
             cursor = response.nextCursor
             hasMore = response.hasMore
@@ -778,10 +779,12 @@ class PostDetailViewModel: ObservableObject {
         guard let postId = post?.id, hasMore, !isLoading else { return }
 
         do {
-            let response: CommentsResponse = try await APIClient.shared.request(
-                .getComments(postId: postId, cursor: cursor, limit: 20)
-            )
-            comments.append(contentsOf: response.items)
+            let response: (items: [Comment], nextCursor: Int?, hasMore: Bool) =
+                try await APIClient.shared.requestList(
+                    .getComments(postId: postId, cursor: cursor, limit: 20)
+                )
+            let daCo = Set(comments.map(\.id))
+            comments.append(contentsOf: response.items.filter { !daCo.contains($0.id) })
             cursor = response.nextCursor
             hasMore = response.hasMore
         } catch {

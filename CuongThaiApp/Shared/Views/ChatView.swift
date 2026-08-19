@@ -513,12 +513,16 @@ class ChatViewModel: ObservableObject {
         cursor = nil
 
         do {
-            let response: MessagesResponse = try await APIClient.shared.request(
-                .getMessages(threadId: threadId, cursor: nil, limit: 50)
-            )
+            // `/threads/:id/messages` trả `{ success, data: [...] }` — mảng
+            // TRẦN, không kèm con trỏ trang nào. Nên hasMore luôn false: máy
+            // chủ chưa có đường tải thêm, đừng vờ như có.
+            let response: (items: [Message], nextCursor: Int?, hasMore: Bool) =
+                try await APIClient.shared.requestList(
+                    .getMessages(threadId: threadId, cursor: nil, limit: 50)
+                )
             messages = response.items.reversed()
-            cursor = response.nextCursor
-            hasMore = response.hasMore
+            cursor = nil
+            hasMore = false
         } catch {
             self.error = error.localizedDescription
         }
@@ -530,9 +534,10 @@ class ChatViewModel: ObservableObject {
         guard let threadId = thread?.id, hasMore, !isLoading else { return }
 
         do {
-            let response: MessagesResponse = try await APIClient.shared.request(
-                .getMessages(threadId: threadId, cursor: cursor, limit: 50)
-            )
+            let response: (items: [Message], nextCursor: Int?, hasMore: Bool) =
+                try await APIClient.shared.requestList(
+                    .getMessages(threadId: threadId, cursor: cursor, limit: 50)
+                )
             messages.insert(contentsOf: response.items.reversed(), at: 0)
             cursor = response.nextCursor
             hasMore = response.hasMore

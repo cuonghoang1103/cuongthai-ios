@@ -1,8 +1,35 @@
 import Foundation
+import os
 
 // MARK: - API Client (Cross-Platform)
 actor APIClient {
     static let shared = APIClient()
+
+    private static let log = Logger(subsystem: "com.cuongthai.app", category: "api")
+
+    /// Ghi ra ĐÚNG trường nào sai và sai kiểu gì. `DecodingError` mang đủ
+    /// thông tin đó, nhưng `localizedDescription` vứt hết — chỉ còn câu
+    /// "The data couldn't be read", đọc xong vẫn không biết sửa ở đâu.
+    static func ghiLoiGiaiMa(_ error: Error, duong: String) {
+        guard let loi = error as? DecodingError else {
+            log.error("[\(duong, privacy: .public)] giải mã hỏng: \(String(describing: error), privacy: .public)")
+            return
+        }
+        let moTa: String
+        switch loi {
+        case .keyNotFound(let key, let ctx):
+            moTa = "THIẾU KHOÁ '\(key.stringValue)' tại \(ctx.codingPath.map(\.stringValue).joined(separator: "."))"
+        case .typeMismatch(let kieu, let ctx):
+            moTa = "SAI KIỂU, mong \(kieu) tại \(ctx.codingPath.map(\.stringValue).joined(separator: "."))"
+        case .valueNotFound(let kieu, let ctx):
+            moTa = "GIÁ TRỊ NULL cho \(kieu) tại \(ctx.codingPath.map(\.stringValue).joined(separator: "."))"
+        case .dataCorrupted(let ctx):
+            moTa = "DỮ LIỆU HỎNG tại \(ctx.codingPath.map(\.stringValue).joined(separator: ".")): \(ctx.debugDescription)"
+        @unknown default:
+            moTa = String(describing: loi)
+        }
+        log.error("[\(duong, privacy: .public)] \(moTa, privacy: .public)")
+    }
 
     private let baseURL = "https://cuongthai.com"
     private let storage = StorageManager.shared
@@ -13,11 +40,55 @@ actor APIClient {
 
     func request<T: Decodable>(_ endpoint: APIEndpoint) async throws -> T {
         let data = try await perform(endpoint)
-        let apiResponse = try JSONDecoder().decode(APIResponse<T>.self, from: data)
+        let apiResponse: APIResponse<T>
+        do {
+            apiResponse = try JSONDecoder().decode(APIResponse<T>.self, from: data)
+        } catch {
+            // Bọc lại: lỗi gốc của JSONDecoder là tiếng Anh và hiện thẳng ra
+            // màn hình ("The data couldn't be read because it isn't in the
+            // correct format") — vừa khó hiểu vừa không nói được sai ở đâu.
+            throw APIError.decodingError(error)
+        }
         guard apiResponse.success, let responseData = apiResponse.data else {
-            throw APIError.serverError(apiResponse.message ?? "Unknown error")
+            throw APIError.serverError(apiResponse.message ?? "Máy chủ không trả về dữ liệu")
         }
         return responseData
+    }
+
+    // MARK: - Danh sách phân trang
+    //
+    // Backend KHÔNG có một hình dạng danh sách thống nhất. Đo thật 19/08/2026,
+    // có tới bốn kiểu:
+    //   /social/posts            → { data: [...], pagination: {nextCursor, hasNextPage} }
+    //   /social/posts/:id/comments → y hệt trên
+    //   /users/:id/posts         → { data: {items, nextCursor, hasMore} }   ← lồng
+    //   /messages/threads        → { data: [...] }                          ← không phân trang
+    //   /courses                 → { data: [...], pagination: {page, total, totalPages} }
+    //
+    // Model cũ giả định MỌI danh sách đều là kiểu lồng `{items,nextCursor,hasMore}`,
+    // nên bảng tin, bình luận, tin nhắn và khoá học đều giải mã HỎNG. Trên màn
+    // hình nó hiện ra thành "Không có tin nhắn nào" / "Chưa có bài viết" — nói
+    // sai thành "trống rỗng" thay vì "hỏng".
+    //
+    // `requestList` đọc kiểu `data` là MẢNG + `pagination` nằm ngoài.
+    func requestList<T: Decodable>(_ endpoint: APIEndpoint) async throws -> (items: [T], nextCursor: Int?, hasMore: Bool) {
+        let raw = try await perform(endpoint)
+        do {
+            let envelope = try JSONDecoder().decode(DanhSachEnvelope<T>.self, from: raw)
+            guard envelope.success else {
+                throw APIError.serverError(envelope.message ?? "Không tải được danh sách")
+            }
+            return (
+                envelope.data ?? [],
+                envelope.pagination?.nextCursor,
+                envelope.pagination?.hasNextPage ?? false
+            )
+        } catch let error as APIError {
+            throw error
+        } catch {
+            Self.ghiLoiGiaiMa(error, duong: endpoint.path)
+            throw APIError.decodingError(error)
+        }
     }
 
     // MARK: - Send (envelope carries no `data` — report, block, change-password…)
@@ -216,4 +287,25 @@ struct UploadedFile: Decodable {
     let thumbnail: String?
     let width: Int?
     let height: Int?
+}
+
+
+/// Envelope cho danh sách: `data` là MẢNG, `pagination` nằm NGOÀI `data`.
+struct DanhSachEnvelope<T: Decodable>: Decodable {
+    let success: Bool
+    let data: [T]?
+    let pagination: BackendPagination?
+    let message: String?
+}
+
+/// Backend dùng hai bộ tên khác nhau tuỳ endpoint (`nextCursor/hasNextPage`
+/// cho feed & bình luận, `page/total/totalPages` cho khoá học). Khai cả hai,
+/// tất cả optional, để một model đọc được mọi nơi.
+struct BackendPagination: Decodable {
+    let nextCursor: Int?
+    let hasNextPage: Bool?
+    let limit: Int?
+    let page: Int?
+    let total: Int?
+    let totalPages: Int?
 }

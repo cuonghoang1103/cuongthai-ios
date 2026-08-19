@@ -709,13 +709,13 @@ class CoursesViewModel: ObservableObject {
         isLoading = true
 
         do {
-            let response: CoursesResponse = try await APIClient.shared.request(
-                .getCourses(page: 1, size: 20, keyword: nil)
-            )
-            courses = response.courses
-            featuredCourses = Array(response.courses.prefix(5))
+            // `/courses` phân trang kiểu page/totalPages, KHÔNG phải con trỏ.
+            let response: (items: [Course], nextCursor: Int?, hasMore: Bool) =
+                try await APIClient.shared.requestList(.getCourses(page: 1, size: 20, keyword: nil))
+            courses = response.items
+            featuredCourses = Array(response.items.prefix(5))
             page = 1
-            hasMore = response.hasMore
+            hasMore = response.items.count >= 20
         } catch {
             self.error = error.localizedDescription
         }
@@ -727,12 +727,12 @@ class CoursesViewModel: ObservableObject {
         guard hasMore, !isLoading else { return }
 
         do {
-            let response: CoursesResponse = try await APIClient.shared.request(
-                .getCourses(page: page + 1, size: 20, keyword: nil)
-            )
-            courses.append(contentsOf: response.courses)
+            let response: (items: [Course], nextCursor: Int?, hasMore: Bool) =
+                try await APIClient.shared.requestList(.getCourses(page: page + 1, size: 20, keyword: nil))
+            let daCo = Set(courses.map(\.id))
+            courses.append(contentsOf: response.items.filter { !daCo.contains($0.id) })
             page += 1
-            hasMore = response.hasMore
+            hasMore = !response.items.isEmpty
         } catch {
             self.error = error.localizedDescription
         }
@@ -747,10 +747,9 @@ class CoursesViewModel: ObservableObject {
         isLoading = true
 
         do {
-            let response: CoursesResponse = try await APIClient.shared.request(
-                .getCourses(page: 1, size: 20, keyword: query)
-            )
-            courses = response.courses
+            let response: (items: [Course], nextCursor: Int?, hasMore: Bool) =
+                try await APIClient.shared.requestList(.getCourses(page: 1, size: 20, keyword: query))
+            courses = response.items
         } catch {
             self.error = error.localizedDescription
         }
@@ -791,10 +790,9 @@ class MyCoursesViewModel: ObservableObject {
 
         // Would filter courses by enrollment status
         do {
-            let response: CoursesResponse = try await APIClient.shared.request(
-                .getCourses(page: 1, size: 50, keyword: nil)
-            )
-            enrolledCourses = response.courses.filter { $0.isEnrolled == true }
+            let response: (items: [Course], nextCursor: Int?, hasMore: Bool) =
+                try await APIClient.shared.requestList(.getCourses(page: 1, size: 50, keyword: nil))
+            enrolledCourses = response.items.filter { $0.isEnrolled == true }
         } catch {
             self.error = error.localizedDescription
         }
@@ -811,10 +809,9 @@ enum CourseSortOption {
     case priceHigh
 }
 
-struct CoursesResponse: Codable {
-    let courses: [Course]
-    let hasMore: Bool
-}
+// CoursesResponse cũ ({courses, hasMore}) đã GỠ: backend trả
+// { success, data: [...], pagination: {page, total, totalPages} } — không có
+// khoá `courses` lẫn `hasMore` nào, nên nó giải mã HỎNG mọi lần gọi.
 
 #Preview {
     CoursesView()

@@ -1,5 +1,40 @@
 import Foundation
 
+/// Boolean chịu được cả `true/false` lẫn `0/1` lẫn `"true"/"1"`.
+///
+/// Backend có ba trường trả về SỐ thay vì boolean vì một lỗi thứ tự toán tử
+/// trong `social.service.ts:1074-1076`:
+///
+///     isLiked: currentUserId ? (post.likes)?.length ?? 0 > 0 : false
+///
+/// JavaScript đọc `?? 0 > 0` thành `?? (0 > 0)`, nên khi `likes` tồn tại thì
+/// giá trị trả về là `length` — một con số. Web viết bằng JS không phát hiện
+/// (0/1 vẫn dùng được như true/false), còn Swift thì hỏng NGAY: cả bảng tin
+/// không giải mã được, và trên màn hình chỉ thấy "Không tải được".
+///
+/// Bọc như thế này KHÔNG phải để che lỗi backend — lỗi đó nên sửa (thêm cặp
+/// ngoặc). Nhưng một trường lệch kiểu KHÔNG được phép làm sập cả màn hình.
+@propertyWrapper
+struct BoolDeTinh: Codable, Hashable {
+    var wrappedValue: Bool
+
+    init(wrappedValue: Bool) { self.wrappedValue = wrappedValue }
+
+    init(from decoder: Decoder) throws {
+        let o = try decoder.singleValueContainer()
+        if let b = try? o.decode(Bool.self) { wrappedValue = b }
+        else if let i = try? o.decode(Int.self) { wrappedValue = i != 0 }
+        else if let d = try? o.decode(Double.self) { wrappedValue = d != 0 }
+        else if let c = try? o.decode(String.self) { wrappedValue = c == "true" || c == "1" }
+        else { wrappedValue = false }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var o = encoder.singleValueContainer()
+        try o.encode(wrappedValue)
+    }
+}
+
 // MARK: - User Model
 struct User: Codable, Identifiable, Hashable {
     let id: Int
@@ -46,8 +81,8 @@ struct SocialPost: Codable, Identifiable, Equatable, Hashable {
     let sharesCount: Int
     let savesCount: Int
     let viewsCount: Int?
-    let isLiked: Bool
-    let isSaved: Bool
+    @BoolDeTinh var isLiked: Bool
+    @BoolDeTinh var isSaved: Bool
     let myReaction: String?
     let reactionBreakdown: ReactionBreakdown?
     let createdAt: String
@@ -276,24 +311,31 @@ struct MusicPlaylist: Codable, Identifiable {
 // sau khi đọc `notifications.routes.ts` và `model SocialNotification`.
 
 // MARK: - API Responses
+// CHỈ dùng cho `/users/:id/posts` — endpoint DUY NHẤT trả kiểu lồng
+// `{ data: { items, nextCursor, hasMore } }`. Bảng tin `/social/posts` trả
+// `{ data: [...], pagination: {...} }` và phải đi qua `requestList`.
 struct FeedResponse: Codable {
     let items: [SocialPost]
     let nextCursor: Int?
     let hasMore: Bool
 }
 
+// KHÔNG dùng nữa — bình luận trả `{ data: [...], pagination }`, đi qua
+// `requestList`. Giữ lại vì các model khác trong file tham chiếu kiểu này.
 struct CommentsResponse: Codable {
     let items: [Comment]
     let nextCursor: Int?
     let hasMore: Bool
 }
 
+// KHÔNG dùng nữa — `/messages/threads` trả mảng trần.
 struct ThreadsResponse: Codable {
     let items: [MessageThread]
     let nextCursor: Int?
     let hasMore: Bool
 }
 
+// KHÔNG dùng nữa — `/threads/:id/messages` trả mảng trần.
 struct MessagesResponse: Codable {
     let items: [Message]
     let nextCursor: Int?

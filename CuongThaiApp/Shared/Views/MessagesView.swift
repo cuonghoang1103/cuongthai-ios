@@ -285,7 +285,7 @@ class MessagesViewModel: ObservableObject {
         cursor = nil
 
         do {
-            let response: ThreadsResponse = try await APIClient.shared.request(
+            let response: (items: [MessageThread], nextCursor: Int?, hasMore: Bool) = try await APIClient.shared.requestList(
                 .getThreads(cursor: nil, limit: 20)
             )
             threads = response.items
@@ -302,7 +302,7 @@ class MessagesViewModel: ObservableObject {
         guard hasMore, !isLoading else { return }
 
         do {
-            let response: ThreadsResponse = try await APIClient.shared.request(
+            let response: (items: [MessageThread], nextCursor: Int?, hasMore: Bool) = try await APIClient.shared.requestList(
                 .getThreads(cursor: cursor, limit: 20)
             )
             threads.append(contentsOf: response.items)
