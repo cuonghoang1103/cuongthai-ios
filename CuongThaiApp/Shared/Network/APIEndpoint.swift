@@ -65,6 +65,13 @@ enum APIEndpoint {
     case getCourses(page: Int, size: Int, keyword: String?)
     case getCourseDetail(slug: String)
     case enrollCourse(id: Int)
+    /// Mục lục khoá — trả MẢNG chương ở tầng gốc, đi qua `requestList`.
+    case getCurriculum(courseId: Int)
+    /// Nội dung đầy đủ một bài (có kiểm quyền truy cập).
+    case getLesson(courseId: Int, lessonId: Int)
+    case getCourseProgress(courseId: Int)
+    /// Lưu tiến độ. `lastPositionSeconds` cho phép mở lại đúng chỗ đang dở.
+    case saveLessonProgress(courseId: Int, lessonId: Int, isCompleted: Bool?, watchTimeSeconds: Int?, lastPositionSeconds: Int?)
 
     // Notifications
     case getUnreadNotificationCount
@@ -128,6 +135,10 @@ enum APIEndpoint {
         case .getCourses: return "/api/v1/courses"
         case .getCourseDetail(let slug): return "/api/v1/courses/\(slug)"
         case .enrollCourse(let id): return "/api/v1/courses/\(id)/enroll"
+        case .getCurriculum(let id): return "/api/v1/courses/\(id)/curriculum"
+        case .getLesson(let c, let l): return "/api/v1/courses/\(c)/lessons/\(l)"
+        case .getCourseProgress(let id): return "/api/v1/courses/\(id)/progress"
+        case .saveLessonProgress(let id, _, _, _, _): return "/api/v1/courses/\(id)/progress"
 
         case .getUnreadNotificationCount: return "/api/v1/social/notifications/unread-count"
         case .getNotifications: return "/api/v1/social/notifications"
@@ -143,7 +154,7 @@ enum APIEndpoint {
              .createPost, .likePost, .followUser, .unfollowUser,
              .createComment, .savePost, .sendMessage, .enrollCourse,
              .createNote, .reportPost, .reportThread, .blockUser, .requestDeletion,
-             .openThread, .muteThread:
+             .openThread, .muteThread, .saveLessonProgress:
             return "POST"
         case .updateProfile:
             return "PUT"
@@ -211,6 +222,12 @@ enum APIEndpoint {
             // Thân rỗng cũng được hiểu là "tất cả", nhưng gửi rõ ràng để
             // không phụ thuộc vào hành vi mặc định của backend.
             return ids.map { ["ids": $0] } ?? ["all": true]
+        case .saveLessonProgress(_, let lessonId, let xong, let daXem, let viTri):
+            var m: [String: Any] = ["lessonId": lessonId]
+            if let xong { m["isCompleted"] = xong }
+            if let daXem { m["watchTimeSeconds"] = daXem }
+            if let viTri { m["lastPositionSeconds"] = viTri }
+            return m
         case .refreshToken(let t): return ["refreshToken": t]
         default: return nil
         }

@@ -253,9 +253,25 @@ struct Course: Codable, Identifiable {
     let isEnrolled: Bool?
 }
 
+extension Course {
+    /// Dựng từ `CourseDetail` để đưa sang trình phát. Trình phát chỉ cần
+    /// `id` + `slug` (mở web cho bài quiz), phần còn lại điền tạm.
+    init(from ct: CourseDetail) {
+        self.init(
+            id: ct.id, title: ct.title, slug: ct.slug ?? "",
+            shortDescription: ct.description, thumbnailUrl: ct.thumbnailUrl,
+            instructor: ct.instructor, price: 0, discountPrice: nil, isFree: true,
+            level: "", totalStudents: 0, avgRating: nil, totalLessons: nil,
+            totalDurationSeconds: nil, isEnrolled: ct.isEnrolled,
+        )
+    }
+}
+
 struct CourseDetail: Codable, Identifiable {
     let id: Int
     let title: String
+    /// Cần cho nút "Mở trên website" ở bài kiểm tra.
+    let slug: String?
     let description: String?
     let thumbnailUrl: String?
     let instructor: User?
@@ -265,18 +281,111 @@ struct CourseDetail: Codable, Identifiable {
     let progress: Double?
 }
 
-struct CourseSection: Codable, Identifiable {
+// MARK: - Chương trình học
+//
+// `GET /courses/:id/curriculum` trả `{ success, data: [chương] }` — MẢNG chương
+// ở tầng gốc, mỗi chương ôm mảng bài. Đo thật trên khoá PostgreSQL: 11 chương,
+// 54 bài (44 VIDEO + 10 QUIZ), tất cả `videoPlatform: EMBED`.
+struct CourseSection: Codable, Identifiable, Hashable {
     let id: Int
+    let courseId: Int?
     let title: String
+    let description: String?
     let sortOrder: Int?
+    let isLocked: Bool?
     let lessons: [CourseLesson]?
+
+    func hash(into hasher: inout Hasher) { hasher.combine(id) }
+    static func == (l: CourseSection, r: CourseSection) -> Bool { l.id == r.id }
 }
 
-struct CourseLesson: Codable, Identifiable {
+struct CourseLesson: Codable, Identifiable, Hashable {
     let id: Int
     let title: String
-    let durationSeconds: Int?
-    let isCompleted: Bool?
+    let slug: String?
+    let description: String?
+    /// VIDEO | QUIZ | (có thể thêm loại khác về sau)
+    let lessonType: String?
+    let videoDurationSeconds: Int?
+    let thumbnailUrl: String?
+    let isFreePreview: Bool?
+    let sortOrder: Int?
+    let videoUrl: String?
+    /// EMBED (YouTube) | DIRECT (file trên R2, qua URL ký ngắn hạn)
+    let videoPlatform: String?
+    let videoTracks: [VideoTrack]?
+    /// Luồng mở sẵn khi vào bài: "YT" | "VI" | "EN"
+    let defaultVideoTrack: String?
+    let sourceCodeUrl: String?
+    let teachingNotes: String?
+    /// KHÔNG có trong `/curriculum` — chỉ có ở `/courses/:id/lessons/:id`.
+    let content: String?
+
+    func hash(into hasher: inout Hasher) { hasher.combine(id) }
+    static func == (l: CourseLesson, r: CourseLesson) -> Bool { l.id == r.id }
+
+    var laQuiz: Bool { lessonType == "QUIZ" }
+
+    var thoiLuong: String? {
+        guard let giay = videoDurationSeconds, giay > 0 else { return nil }
+        let phut = giay / 60, du = giay % 60
+        return phut > 0 ? "\(phut):\(String(format: "%02d", du))" : "0:\(String(format: "%02d", du))"
+    }
+}
+
+/// Một bài có thể mang tới ba bản thu song song: tiếng Việt của giảng viên,
+/// bản tiếng Anh, và một bài giảng YouTube được tuyển chọn.
+struct VideoTrack: Codable, Hashable {
+    /// "VI" | "EN" | "YT"
+    let track: String
+    let url: String?
+    let platform: String?
+    /// Dòng ghi công người làm video gốc — PHẢI hiện khi phát bài của người
+    /// khác. Đây vừa là phép lịch sự vừa là chỗ dựa nếu bị hỏi về bản quyền.
+    let credit: String?
+
+    var nhan: String {
+        switch track {
+        case "VI": return "Tiếng Việt"
+        case "EN": return "English"
+        case "YT": return "YouTube"
+        default: return track
+        }
+    }
+}
+
+/// Tiến độ một bài — `GET /courses/:id/progress` trả mảng các mục này.
+struct LessonProgress: Codable, Identifiable {
+    let id: Int?
+    let lessonId: Int
+    let isCompleted: Bool
+    let watchTimeSeconds: Int?
+    let lastPositionSeconds: Int?
+}
+
+// MARK: - Tiêu đề song ngữ
+//
+// Backend nhét cả hai ngôn ngữ vào MỘT chuỗi, ngăn bằng `|||`:
+//     "0.1 — About this course|||0.1 — Về khoá học này"
+// Không tách thì người dùng đọc nguyên cả chuỗi kèm ba gạch đứng.
+extension String {
+    /// Nửa hợp với ngôn ngữ máy. Không có dấu `|||` thì trả nguyên chuỗi.
+    var songNguTheoMay: String {
+        let phan = components(separatedBy: "|||")
+        guard phan.count >= 2 else { return self }
+        let tiengViet = Locale.preferredLanguages.first?.hasPrefix("vi") ?? false
+        // Quy ước của web: vế TRƯỚC là tiếng Anh, vế SAU là tiếng Việt.
+        let chon = tiengViet ? phan[1] : phan[0]
+        return chon.trimmingCharacters(in: .whitespaces)
+    }
+
+    /// Nửa còn lại, để hiện mờ bên dưới cho người muốn đối chiếu.
+    var songNguVeKia: String? {
+        let phan = components(separatedBy: "|||")
+        guard phan.count >= 2 else { return nil }
+        let tiengViet = Locale.preferredLanguages.first?.hasPrefix("vi") ?? false
+        return phan[tiengViet ? 0 : 1].trimmingCharacters(in: .whitespaces)
+    }
 }
 
 struct CourseReview: Codable, Identifiable {

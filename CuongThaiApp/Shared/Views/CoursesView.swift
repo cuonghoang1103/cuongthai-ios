@@ -416,6 +416,7 @@ struct CourseRow: View {
 struct CourseDetailView: View {
     let slug: String
     @StateObject private var viewModel = CourseDetailViewModel()
+    @State private var baiDangMo: CourseLesson?
 
     var body: some View {
         ScrollView {
@@ -425,17 +426,77 @@ struct CourseDetailView: View {
                         .padding(.top, Spacing.xxl)
                 } else if let course = viewModel.course {
                     courseHeader(course)
+                    khoiHanhDong(course)
                     courseContent(course)
                 }
             }
         }
         .background(AppColors.backgroundPrimary)
         .navigationBarTitleDisplayMode(.inline)
-        .onAppear {
-            Task {
-                await viewModel.loadCourseDetail(slug: slug)
+        .navigationDestination(item: $baiDangMo) { bai in
+            if let ct = viewModel.course {
+                LessonPlayerView(
+                    course: Course(from: ct),
+                    sections: viewModel.chuong,
+                    lessonId: bai.id,
+                )
             }
         }
+        .task { await viewModel.loadCourseDetail(slug: slug) }
+    }
+
+    /// Thanh tiến độ + nút chính. Chưa ghi danh thì mời ghi danh; ghi danh rồi
+    /// thì nhảy thẳng vào bài dở dang gần nhất.
+    @ViewBuilder
+    private func khoiHanhDong(_ course: CourseDetail) -> some View {
+        VStack(spacing: Spacing.sm) {
+            if viewModel.daGhiDanh && viewModel.tongSoBai > 0 {
+                VStack(spacing: 6) {
+                    HStack {
+                        Text("\(viewModel.daXong.count)/\(viewModel.tongSoBai) bài")
+                        Spacer()
+                        Text("\(viewModel.phanTram)%")
+                    }
+                    .font(.caption)
+                    .foregroundColor(AppColors.textSecondary)
+
+                    ProgressView(value: Double(viewModel.daXong.count),
+                                 total: Double(max(viewModel.tongSoBai, 1)))
+                        .tint(AppColors.primary)
+                }
+            }
+
+            Button {
+                if viewModel.daGhiDanh {
+                    baiDangMo = viewModel.baiTiepTheo
+                } else {
+                    Task { await viewModel.ghiDanh() }
+                }
+            } label: {
+                HStack(spacing: Spacing.sm) {
+                    if viewModel.dangGhiDanh {
+                        ProgressView().tint(AppColors.onPrimary)
+                    } else {
+                        Image(systemName: viewModel.daGhiDanh ? "play.fill" : "plus.circle")
+                    }
+                    Text(nhanNutChinh)
+                        .font(.buttonText)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, Spacing.md)
+                .background(AppColors.brandGradient)
+                .foregroundColor(AppColors.onPrimary)
+                .cornerRadius(CornerRadius.medium)
+            }
+            .disabled(viewModel.dangGhiDanh || (viewModel.daGhiDanh && viewModel.baiTiepTheo == nil))
+        }
+        .padding(.horizontal, Spacing.md)
+        .padding(.top, Spacing.sm)
+    }
+
+    private var nhanNutChinh: String {
+        if !viewModel.daGhiDanh { return "Ghi danh học" }
+        return viewModel.daXong.isEmpty ? "Bắt đầu học" : "Học tiếp"
     }
 
     private func courseHeader(_ course: CourseDetail) -> some View {
@@ -503,9 +564,18 @@ struct CourseDetailView: View {
                     .foregroundColor(AppColors.textPrimary)
                     .padding(.horizontal, Spacing.md)
 
-                if let sections = course.sections {
-                    ForEach(sections) { section in
-                        CourseSectionRow(section: section)
+                if viewModel.chuong.isEmpty {
+                    Text("Khoá học này chưa có bài nào.")
+                        .font(.bodyMedium)
+                        .foregroundColor(AppColors.textSecondary)
+                        .padding(.horizontal, Spacing.md)
+                } else {
+                    ForEach(viewModel.chuong.sorted { ($0.sortOrder ?? 0) < ($1.sortOrder ?? 0) }) { chuong in
+                        CourseSectionRow(
+                            section: chuong,
+                            daXong: viewModel.daXong,
+                            chonBai: { bai in baiDangMo = bai },
+                        )
                     }
                 }
             }
@@ -535,55 +605,64 @@ struct CourseDetailView: View {
 // MARK: - Course Section Row
 struct CourseSectionRow: View {
     let section: CourseSection
-    @State private var isExpanded = false
+    /// Đã hoàn thành những bài nào — để vẽ dấu tích.
+    var daXong: Set<Int> = []
+    /// Bấm vào một bài. Nil = chỉ xem, không mở được (chưa ghi danh).
+    var chonBai: ((CourseLesson) -> Void)?
+
+    @State private var moRong = false
+
+    private var dsBai: [CourseLesson] {
+        (section.lessons ?? []).sorted { ($0.sortOrder ?? 0) < ($1.sortOrder ?? 0) }
+    }
+
+    private var soXong: Int { dsBai.filter { daXong.contains($0.id) }.count }
 
     var body: some View {
         VStack(spacing: 0) {
             Button {
-                withAnimation {
-                    isExpanded.toggle()
-                }
+                withAnimation(.snappy(duration: 0.2)) { moRong.toggle() }
             } label: {
                 HStack {
-                    Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                    Image(systemName: moRong ? "chevron.down" : "chevron.right")
+                        .font(.caption)
                         .foregroundColor(AppColors.textSecondary)
+                        .frame(width: 16)
 
-                    Text(section.title)
-                        .font(.titleSmall)
-                        .foregroundColor(AppColors.textPrimary)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(section.title.songNguTheoMay)
+                            .font(.titleSmall)
+                            .foregroundColor(AppColors.textPrimary)
+                            .multilineTextAlignment(.leading)
+                        if soXong > 0 {
+                            Text("\(soXong)/\(dsBai.count) bài đã xong")
+                                .font(.caption)
+                                .foregroundColor(AppColors.success)
+                        }
+                    }
 
                     Spacer()
 
-                    Text("\(section.lessons?.count ?? 0) bài")
+                    Text("\(dsBai.count) bài")
                         .font(.caption)
                         .foregroundColor(AppColors.textSecondary)
                 }
                 .padding(Spacing.md)
                 .background(AppColors.backgroundCard)
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
 
-            if isExpanded {
+            if moRong {
                 VStack(spacing: 0) {
-                    ForEach(section.lessons ?? []) { lesson in
-                        HStack {
-                            Image(systemName: lesson.isCompleted == true ? "checkmark.circle.fill" : "play.circle")
-                                .foregroundColor(lesson.isCompleted == true ? AppColors.success : AppColors.primary)
-
-                            Text(lesson.title)
-                                .font(.bodyMedium)
-                                .foregroundColor(AppColors.textPrimary)
-
-                            Spacer()
-
-                            if let duration = lesson.durationSeconds {
-                                Text(formatDuration(duration))
-                                    .font(.caption)
-                                    .foregroundColor(AppColors.textSecondary)
-                            }
+                    ForEach(dsBai) { bai in
+                        Button {
+                            chonBai?(bai)
+                        } label: {
+                            hangBai(bai)
                         }
-                        .padding(Spacing.md)
-                        .padding(.leading, Spacing.xl)
-                        .background(AppColors.backgroundSecondary)
+                        .buttonStyle(.plain)
+                        .disabled(chonBai == nil)
                     }
                 }
             }
@@ -592,14 +671,42 @@ struct CourseSectionRow: View {
         .padding(.horizontal, Spacing.md)
     }
 
-    private func formatDuration(_ seconds: Int) -> String {
-        let minutes = seconds / 60
-        let secs = seconds % 60
-        return String(format: "%d:%02d", minutes, secs)
+    private func hangBai(_ bai: CourseLesson) -> some View {
+        HStack(spacing: Spacing.sm) {
+            Image(systemName: bieuTuong(bai))
+                .foregroundColor(daXong.contains(bai.id) ? AppColors.success : AppColors.primary)
+                .frame(width: 20)
+
+            Text(bai.title.songNguTheoMay)
+                .font(.bodyMedium)
+                .foregroundColor(AppColors.textPrimary)
+                .multilineTextAlignment(.leading)
+
+            Spacer(minLength: Spacing.sm)
+
+            if bai.laQuiz {
+                Text("Kiểm tra")
+                    .font(.caption)
+                    .foregroundColor(AppColors.warning)
+            } else if let t = bai.thoiLuong {
+                Text(t)
+                    .font(.caption)
+                    .foregroundColor(AppColors.textSecondary)
+            }
+        }
+        .padding(Spacing.md)
+        .padding(.leading, Spacing.lg)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(AppColors.backgroundSecondary)
+        .contentShape(Rectangle())
+    }
+
+    private func bieuTuong(_ bai: CourseLesson) -> String {
+        if daXong.contains(bai.id) { return "checkmark.circle.fill" }
+        return bai.laQuiz ? "square.and.pencil" : "play.circle"
     }
 }
 
-// MARK: - Review Row
 struct ReviewRow: View {
     let review: CourseReview
 
@@ -762,19 +869,71 @@ class CoursesViewModel: ObservableObject {
 @MainActor
 class CourseDetailViewModel: ObservableObject {
     @Published var course: CourseDetail?
+    @Published var chuong: [CourseSection] = []
+    @Published var daXong: Set<Int> = []
+    @Published var daGhiDanh = false
     @Published var isLoading = false
+    @Published var dangGhiDanh = false
     @Published var error: String?
+
+    /// Bài học dở dang gần nhất — để nút "Học tiếp" nhảy đúng chỗ.
+    var baiTiepTheo: CourseLesson? {
+        let tatCa = chuong
+            .sorted { ($0.sortOrder ?? 0) < ($1.sortOrder ?? 0) }
+            .flatMap { ($0.lessons ?? []).sorted { ($0.sortOrder ?? 0) < ($1.sortOrder ?? 0) } }
+        return tatCa.first { !daXong.contains($0.id) } ?? tatCa.first
+    }
+
+    var tongSoBai: Int { chuong.reduce(0) { $0 + ($1.lessons?.count ?? 0) } }
+    var phanTram: Int {
+        guard tongSoBai > 0 else { return 0 }
+        return Int((Double(daXong.count) / Double(tongSoBai)) * 100)
+    }
 
     func loadCourseDetail(slug: String) async {
         isLoading = true
+        defer { isLoading = false }
 
         do {
-            course = try await APIClient.shared.request(.getCourseDetail(slug: slug))
+            let ct: CourseDetail = try await APIClient.shared.request(.getCourseDetail(slug: slug))
+            course = ct
+            daGhiDanh = ct.isEnrolled
+
+            // Mục lục nằm ở đường RIÊNG. `/courses/:slug` không kèm chương —
+            // nên trước đây phần "Nội dung khoá học" luôn trống trơn.
+            let ds: (items: [CourseSection], nextCursor: Int?, hasMore: Bool) =
+                try await APIClient.shared.requestList(.getCurriculum(courseId: ct.id))
+            chuong = ds.items
+
+            await taiTienDo(courseId: ct.id)
         } catch {
             self.error = error.localizedDescription
         }
+    }
 
-        isLoading = false
+    private func taiTienDo(courseId: Int) async {
+        do {
+            let ds: (items: [LessonProgress], nextCursor: Int?, hasMore: Bool) =
+                try await APIClient.shared.requestList(.getCourseProgress(courseId: courseId))
+            daXong = Set(ds.items.filter(\.isCompleted).map(\.lessonId))
+        } catch {
+            // Chưa ghi danh thì 401/403 — bình thường, không phải lỗi.
+        }
+    }
+
+    func ghiDanh() async {
+        guard let id = course?.id, !dangGhiDanh else { return }
+        dangGhiDanh = true
+        defer { dangGhiDanh = false }
+        do {
+            try await APIClient.shared.send(.enrollCourse(id: id))
+            daGhiDanh = true
+            Haptics.xong()
+            await taiTienDo(courseId: id)
+        } catch {
+            Haptics.hong()
+            self.error = error.localizedDescription
+        }
     }
 }
 
