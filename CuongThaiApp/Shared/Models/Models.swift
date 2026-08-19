@@ -31,7 +31,7 @@ struct User: Codable, Identifiable, Hashable {
 }
 
 // MARK: - Social Post
-struct SocialPost: Codable, Identifiable, Equatable {
+struct SocialPost: Codable, Identifiable, Equatable, Hashable {
     let id: Int
     let content: String
     let author: User
@@ -56,6 +56,8 @@ struct SocialPost: Codable, Identifiable, Equatable {
     static func == (lhs: SocialPost, rhs: SocialPost) -> Bool {
         lhs.id == rhs.id
     }
+
+    func hash(into hasher: inout Hasher) { hasher.combine(id) }
 }
 
 struct SocialMedia: Codable, Identifiable {
@@ -268,23 +270,10 @@ struct MusicPlaylist: Codable, Identifiable {
     let tracksCount: Int?
 }
 
-// MARK: - Notification
-struct AppNotification: Codable, Identifiable {
-    let id: Int
-    let type: String
-    let title: String
-    let body: String?
-    let data: NotificationData?
-    let isRead: Bool
-    let createdAt: String
-}
-
-struct NotificationData: Codable {
-    let postId: Int?
-    let userId: Int?
-    let threadId: Int?
-    let commentId: Int?
-}
+// Model thông báo CŨ (title/body/data) đã gỡ: nó được viết theo phỏng đoán,
+// không khớp shape thật của backend (thật ra là entityId + sender, KHÔNG có
+// title/body), và không một dòng nào dùng tới. Bản đúng nằm ở cuối file, viết
+// sau khi đọc `notifications.routes.ts` và `model SocialNotification`.
 
 // MARK: - API Responses
 struct FeedResponse: Codable {
@@ -355,4 +344,80 @@ struct AnyCodable: Codable {
         default: try container.encodeNil()
         }
     }
+}
+
+
+// MARK: - Thông báo
+//
+// GET /api/v1/social/notifications trả về:
+//   { items, pagination: { nextCursor, hasNextPage, limit }, unreadCount }
+// KHÁC hẳn dạng { items, nextCursor, hasMore } của feed/comment — đừng dùng
+// lại model của feed ở đây, decode sẽ hỏng câm và danh sách hiện trống rỗng.
+//
+// Tên `AppNotification` chứ không phải `Notification`: `Notification` là kiểu
+// có sẵn của Foundation, trùng tên là mọi chỗ dùng đều phải viết đủ tên.
+struct AppNotification: Codable, Identifiable, Hashable {
+    let id: Int
+    /// NEW_POST | NEW_REACTION | NEW_COMMENT | NEW_REPLY | NEW_MENTION | NEW_MESSAGE
+    let type: String
+    /// Con trỏ đa hình — nghĩa của nó phụ thuộc `type` (thường là postId).
+    let entityId: Int?
+    let secondaryEntityId: Int?
+    let isRead: Bool
+    let createdAt: String
+    let sender: User?
+
+    func hash(into hasher: inout Hasher) { hasher.combine(id) }
+    static func == (lhs: AppNotification, rhs: AppNotification) -> Bool { lhs.id == rhs.id }
+
+    /// Câu mô tả dựng từ `type`, KHÔNG lấy từ `payload`: payload là JSON tự do
+    /// nên hình dạng không có gì bảo đảm, còn `type` thì backend ràng bằng enum.
+    var loiNhan: String {
+        switch type {
+        case "NEW_REACTION": return "đã bày tỏ cảm xúc về bài viết của bạn"
+        case "NEW_COMMENT": return "đã bình luận bài viết của bạn"
+        case "NEW_REPLY": return "đã trả lời bình luận của bạn"
+        case "NEW_MENTION": return "đã nhắc tới bạn"
+        case "NEW_POST": return "vừa đăng một bài mới"
+        case "NEW_MESSAGE": return "đã gửi cho bạn một tin nhắn"
+        default: return "có hoạt động mới"
+        }
+    }
+
+    var bieuTuong: String {
+        switch type {
+        case "NEW_REACTION": return "heart.fill"
+        case "NEW_COMMENT", "NEW_REPLY": return "bubble.left.fill"
+        case "NEW_MENTION": return "at"
+        case "NEW_POST": return "doc.text.fill"
+        case "NEW_MESSAGE": return "envelope.fill"
+        default: return "bell.fill"
+        }
+    }
+
+    /// Thông báo tin nhắn dẫn vào Tin nhắn, còn lại dẫn vào bài viết.
+    var laTinNhan: Bool { type == "NEW_MESSAGE" }
+}
+
+struct NotificationsPagination: Codable {
+    let nextCursor: Int?
+    let hasNextPage: Bool
+}
+
+struct NotificationsResponse: Codable {
+    let items: [AppNotification]
+    let pagination: NotificationsPagination
+    /// Backend gửi kèm để chuông cập nhật badge mà không phải gọi thêm lần nữa.
+    let unreadCount: Int
+}
+
+struct UnreadNotificationCount: Codable {
+    let unreadCount: Int
+}
+
+/// GET /api/v1/messages/unread-count trả `{ count }` — một ĐỐI TƯỢNG, không
+/// phải số trần. Trước đây AppState giải mã thẳng ra Int nên luôn ném lỗi,
+/// bị `catch {}` nuốt, và badge tin nhắn vĩnh viễn bằng 0.
+struct UnreadMessageCount: Codable {
+    let count: Int
 }

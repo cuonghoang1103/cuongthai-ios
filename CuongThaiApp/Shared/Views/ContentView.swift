@@ -38,6 +38,7 @@ struct MainView: View {
 #if os(iOS)
 struct iOSTabView: View {
     @EnvironmentObject var appState: AppState
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         TabView(selection: $appState.selectedTab) {
@@ -73,6 +74,16 @@ struct iOSTabView: View {
                 .tag(AppState.AppTab.profile)
         }
         .tint(Color(red: 0.55, green: 0.35, blue: 0.96))
+        // Không có socket nên đây là lúc DUY NHẤT số chưa đọc được làm mới:
+        // mở app, và mỗi lần app quay lại tiền cảnh. Trước đây
+        // `fetchUnreadCounts()` không được gọi từ bất cứ đâu, nên huy hiệu
+        // vĩnh viễn bằng 0 dù hàm vẫn nằm đó.
+        .task { await appState.fetchUnreadCounts() }
+        .onChange(of: scenePhase) { _, moi in
+            if moi == .active {
+                Task { await appState.fetchUnreadCounts() }
+            }
+        }
     }
 }
 #endif

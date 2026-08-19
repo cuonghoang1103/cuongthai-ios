@@ -9,6 +9,7 @@ final class AppState: ObservableObject {
     @Published var isAuthenticated = false
     @Published var currentUser: User?
     @Published var unreadMessages = 0
+    @Published var unreadNotifications = 0
     @Published var selectedTab: AppTab = .home
 
     private let storage = StorageManager.shared
@@ -61,6 +62,7 @@ final class AppState: ObservableObject {
         isAuthenticated = false
         currentUser = nil
         unreadMessages = 0
+        unreadNotifications = 0
     }
 
     func fetchProfile() async {
@@ -74,10 +76,23 @@ final class AppState: ObservableObject {
         }
     }
 
+    /// Đếm chưa đọc cho cả tin nhắn lẫn thông báo.
+    ///
+    /// Bản cũ giải mã `/messages/unread-count` thẳng ra `Int`, nhưng backend
+    /// trả `{ "count": 5 }` — một ĐỐI TƯỢNG. Lệnh giải mã luôn ném lỗi, lỗi
+    /// bị `catch { }` nuốt, nên huy hiệu tin nhắn VĨNH VIỄN bằng 0 mà không
+    /// một dòng log nào. Hỏng câm đúng nghĩa.
     func fetchUnreadCounts() async {
         do {
-            let count: Int = try await APIClient.shared.request(.getUnreadMessageCount)
-            unreadMessages = count
+            let tin: UnreadMessageCount = try await APIClient.shared.request(.getUnreadMessageCount)
+            unreadMessages = tin.count
+        } catch {
+            // Mất mạng thì giữ nguyên số cũ, đừng xoá về 0 —
+            // "0 tin chưa đọc" là một lời khẳng định, không phải "không biết".
+        }
+        do {
+            let tb: UnreadNotificationCount = try await APIClient.shared.request(.getUnreadNotificationCount)
+            unreadNotifications = tb.unreadCount
         } catch { }
     }
 }

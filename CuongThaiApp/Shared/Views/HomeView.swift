@@ -52,12 +52,13 @@ class HomeViewModel: ObservableObject {
 struct HomeView: View {
     @StateObject private var vm = HomeViewModel()
     @ObservedObject private var moderation = ModerationStore.shared
+    @EnvironmentObject private var appState: AppState
     @State private var quickSheet: QuickSheet?
 
     // One `.sheet(item:)` rather than two `.sheet(isPresented:)` — SwiftUI
     // only honours the last presentation modifier attached to a view.
     enum QuickSheet: String, Identifiable {
-        case search, notes
+        case search, notes, notifications
         var id: String { rawValue }
     }
     @State private var selectedType: String?
@@ -99,6 +100,24 @@ struct HomeView: View {
                         Button { quickSheet = .search } label: {
                             Image(systemName: "magnifyingglass")
                         }
+                        Button { quickSheet = .notifications } label: {
+                            // Huy hiệu vẽ chồng thay vì dùng `.badge`:
+                            // `.badge` chỉ có tác dụng trên tab và List.
+                            Image(systemName: "bell")
+                                .overlay(alignment: .topTrailing) {
+                                    if appState.unreadNotifications > 0 {
+                                        Text(appState.unreadNotifications > 99
+                                             ? "99+" : "\(appState.unreadNotifications)")
+                                            .font(.system(size: 10, weight: .bold))
+                                            .foregroundColor(.white)
+                                            .padding(.horizontal, 4)
+                                            .padding(.vertical, 1)
+                                            .background(Capsule().fill(AppColors.error))
+                                            .offset(x: 10, y: -8)
+                                            .fixedSize()
+                                    }
+                                }
+                        }
                         Button { quickSheet = .notes } label: {
                             Image(systemName: "note.text")
                         }
@@ -111,6 +130,7 @@ struct HomeView: View {
             switch sheet {
             case .search: SearchView()
             case .notes: NotesView()
+            case .notifications: NotificationsView()
             }
         }
         .task {

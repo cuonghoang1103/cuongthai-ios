@@ -70,6 +70,10 @@ enum APIEndpoint {
     case getUnreadNotificationCount
     case getNotifications(cursor: Int?, limit: Int)
     case getUnreadMessageCount
+    /// PATCH — `nil` = đánh dấu đã đọc TẤT CẢ, hoặc truyền danh sách id.
+    case markNotificationsRead(ids: [Int]?)
+    /// Lấy một bài viết theo id, để bấm thông báo là mở đúng bài.
+    case getPost(id: Int)
 
     var path: String {
         switch self {
@@ -128,6 +132,8 @@ enum APIEndpoint {
         case .getUnreadNotificationCount: return "/api/v1/social/notifications/unread-count"
         case .getNotifications: return "/api/v1/social/notifications"
         case .getUnreadMessageCount: return "/api/v1/messages/unread-count"
+        case .markNotificationsRead: return "/api/v1/social/notifications"
+        case .getPost(let id): return "/api/v1/social/posts/\(id)"
         }
     }
 
@@ -141,7 +147,7 @@ enum APIEndpoint {
             return "POST"
         case .updateProfile:
             return "PUT"
-        case .updateNote, .markRead, .reactPost:
+        case .updateNote, .markRead, .reactPost, .markNotificationsRead:
             return "PATCH"
         case .deletePost, .unlikePost, .unsavePost, .deleteNote,
              .unblockUser, .cancelDeletionRequest:
@@ -201,6 +207,10 @@ enum APIEndpoint {
             // Gửi NSNull chứ không bỏ trắng: bỏ trắng thì backend đọc ra
             // `undefined` và cũng hiểu là vô thời hạn, nhưng gửi thẳng cho rõ.
             return ["durationMinutes": phut as Any? ?? NSNull()]
+        case .markNotificationsRead(let ids):
+            // Thân rỗng cũng được hiểu là "tất cả", nhưng gửi rõ ràng để
+            // không phụ thuộc vào hành vi mặc định của backend.
+            return ids.map { ["ids": $0] } ?? ["all": true]
         case .refreshToken(let t): return ["refreshToken": t]
         default: return nil
         }
