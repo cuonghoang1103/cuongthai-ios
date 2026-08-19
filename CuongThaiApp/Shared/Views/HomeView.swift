@@ -59,6 +59,9 @@ struct HomeView: View {
     @ObservedObject private var moderation = ModerationStore.shared
     @EnvironmentObject private var appState: AppState
     @State private var quickSheet: QuickSheet?
+    /// Bấm "Bình luận" mở đúng bài đó — dùng đích điều hướng riêng thay vì
+    /// lồng NavigationLink trong NavigationLink.
+    @State private var baiMoBinhLuan: SocialPost?
 
     // One `.sheet(item:)` rather than two `.sheet(isPresented:)` — SwiftUI
     // only honours the last presentation modifier attached to a view.
@@ -130,6 +133,9 @@ struct HomeView: View {
                     .foregroundColor(AppColors.textPrimary)
                 }
             }
+        }
+        .navigationDestination(item: $baiMoBinhLuan) { bai in
+            PostDetailView(post: bai)
         }
         .sheet(item: $quickSheet) { sheet in
             switch sheet {
@@ -204,7 +210,7 @@ struct HomeView: View {
                         ForEach(moderation.filter(vm.posts)) { post in
                             ZStack(alignment: .topTrailing) {
                                 NavigationLink(destination: PostDetailView(post: post)) {
-                                    PostCard(post: post)
+                                    PostCard(post: post) { baiMoBinhLuan = post }
                                 }
                                 .buttonStyle(.plain)
 

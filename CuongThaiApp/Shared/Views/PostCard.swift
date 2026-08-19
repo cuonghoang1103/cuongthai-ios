@@ -6,13 +6,25 @@ import Kingfisher
 // MARK: - Post Card
 struct PostCard: View {
     let post: SocialPost
+    /// Bấm "Bình luận" — màn cha mở chi tiết bài. Truyền lên thay vì tự điều
+    /// hướng: thẻ này đã nằm trong một NavigationLink, lồng thêm một cái nữa
+    /// là hai đích cãi nhau.
+    var onComment: (() -> Void)?
+
     @State private var likesCount: Int
     @State private var isLiked: Bool
+    @State private var daLuu: Bool
+    @State private var camXuc: String?
+    @State private var hienChonCamXuc = false
+    @State private var mediaDangXem: Int?
 
-    init(post: SocialPost) {
+    init(post: SocialPost, onComment: (() -> Void)? = nil) {
         self.post = post
+        self.onComment = onComment
         _likesCount = State(initialValue: post.likesCount)
         _isLiked = State(initialValue: post.isLiked)
+        _daLuu = State(initialValue: post.isSaved)
+        _camXuc = State(initialValue: post.myReaction)
     }
 
     var body: some View {
@@ -20,7 +32,7 @@ struct PostCard: View {
             postHeader
             postContent
             if let media = post.media, !media.isEmpty {
-                MediaGridView(media: media)
+                MediaGridView(media: media) { i in mediaDangXem = i }
             }
             if let poll = post.poll {
                 PollView(poll: poll)
@@ -35,6 +47,17 @@ struct PostCard: View {
         .padding(Spacing.md)
         .background(AppColors.backgroundCard)
         .cornerRadius(CornerRadius.large)
+        // `fullScreenCover` chỉ có trên iOS; macOS dùng `sheet`. Không bọc
+        // `#if` thì target macOS đỏ với "unavailable in macOS".
+        #if os(iOS)
+        .fullScreenCover(item: $mediaDangXem) { i in
+            MediaViewer(media: post.media ?? [], batDauTai: i)
+        }
+        #else
+        .sheet(item: $mediaDangXem) { i in
+            MediaViewer(media: post.media ?? [], batDauTai: i)
+        }
+        #endif
     }
 
     private var postHeader: some View {
@@ -110,47 +133,130 @@ struct PostCard: View {
 
     private var actionsRow: some View {
         HStack {
+            // Chạm: thích/bỏ thích. GIỮ LÂU: chọn cảm xúc — backend có sẵn
+            // 5 loại (LIKE/LOVE/HAHA/SAD/ANGRY) qua `reactPost`, nhưng app
+            // trước đây chỉ dùng được đúng một loại.
             Button { Task { await toggleLike() } } label: {
                 HStack(spacing: 4) {
-                    Image(systemName: isLiked ? "heart.fill" : "heart")
-                    Text("Thích")
+                    Text(bieuTuongCamXuc)
+                    Text(nhanCamXuc)
                 }
                 .font(.caption)
-                .foregroundColor(isLiked ? .red : .gray)
+                .foregroundColor(camXuc != nil || isLiked ? AppColors.like : AppColors.textSecondary)
+            }
+            .onLongPressGesture(minimumDuration: 0.35) {
+                Haptics.cham()
+                withAnimation(.snappy(duration: 0.2)) { hienChonCamXuc = true }
             }
 
             Spacer()
 
-            Button { } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: "bubble.right")
-                    Text("Bình luận")
-                }
-                .font(.caption)
-                .foregroundColor(AppColors.textSecondary)
+            Button {
+                Haptics.cham()
+                onComment?()
+            } label: {
+                nhan("bubble.right", "Bình luận")
             }
 
             Spacer()
 
-            Button { } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: "square.and.arrow.up")
-                    Text("Chia sẻ")
-                }
-                .font(.caption)
-                .foregroundColor(AppColors.textSecondary)
+            ShareLink(item: duongDanBai) {
+                nhan("square.and.arrow.up", "Chia sẻ")
             }
 
             Spacer()
 
-            Button { } label: {
+            Button { Task { await doiLuu() } } label: {
                 HStack(spacing: 4) {
-                    Image(systemName: post.isSaved ? "bookmark.fill" : "bookmark")
+                    Image(systemName: daLuu ? "bookmark.fill" : "bookmark")
                     Text("Lưu")
                 }
                 .font(.caption)
-                .foregroundColor(AppColors.textSecondary)
+                .foregroundColor(daLuu ? AppColors.primary : AppColors.textSecondary)
             }
+        }
+        .overlay(alignment: .topLeading) {
+            if hienChonCamXuc { bangChonCamXuc }
+        }
+    }
+
+    private func nhan(_ icon: String, _ chu: String) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: icon)
+            Text(chu)
+        }
+        .font(.caption)
+        .foregroundColor(AppColors.textSecondary)
+    }
+
+    private var duongDanBai: URL {
+        URL(string: "https://cuongthai.com/feed/\(post.id)")!
+    }
+
+    private static let cacCamXuc: [(String, String, String)] = [
+        ("LIKE", "👍", "Thích"),
+        ("LOVE", "❤️", "Yêu thích"),
+        ("HAHA", "😂", "Haha"),
+        ("SAD", "😢", "Buồn"),
+        ("ANGRY", "😡", "Phẫn nộ"),
+    ]
+
+    private var bieuTuongCamXuc: String {
+        if let c = camXuc, let m = Self.cacCamXuc.first(where: { $0.0 == c }) { return m.1 }
+        return isLiked ? "❤️" : "🤍"
+    }
+
+    private var nhanCamXuc: String {
+        if let c = camXuc, let m = Self.cacCamXuc.first(where: { $0.0 == c }) { return m.2 }
+        return "Thích"
+    }
+
+    private var bangChonCamXuc: some View {
+        HStack(spacing: Spacing.sm) {
+            ForEach(Self.cacCamXuc, id: \.0) { loai, hinh, _ in
+                Button {
+                    Task { await datCamXuc(loai) }
+                } label: {
+                    Text(hinh).font(.system(size: 28))
+                }
+            }
+        }
+        .padding(.horizontal, Spacing.md)
+        .padding(.vertical, Spacing.sm)
+        .background(AppColors.backgroundTertiary)
+        .clipShape(Capsule())
+        .shadow(color: .black.opacity(0.3), radius: 10, y: 4)
+        .offset(y: -52)
+        .transition(.scale(scale: 0.85).combined(with: .opacity))
+    }
+
+    private func datCamXuc(_ loai: String) async {
+        Haptics.xong()
+        let truoc = camXuc
+        withAnimation(.snappy(duration: 0.2)) {
+            camXuc = loai
+            hienChonCamXuc = false
+        }
+        if !isLiked { isLiked = true; likesCount += 1 }
+        do {
+            try await APIClient.shared.send(.reactPost(id: post.id, type: loai))
+        } catch {
+            camXuc = truoc
+            Haptics.hong()
+        }
+    }
+
+    private func doiLuu() async {
+        Haptics.cham()
+        let muon = !daLuu
+        daLuu = muon
+        do {
+            try await APIClient.shared.send(
+                muon ? .savePost(id: post.id, folder: nil) : .unsavePost(id: post.id),
+            )
+        } catch {
+            daLuu = !muon
+            Haptics.hong()
         }
     }
 
@@ -209,21 +315,40 @@ struct UserAvatarView: View {
 // MARK: - Media Grid
 struct MediaGridView: View {
     let media: [SocialMedia]
+    var chon: ((Int) -> Void)?
 
     var body: some View {
         if media.count == 1 {
-            MediaItemView(media: media[0])
-                .frame(height: 300)
+            nut(0) {
+                MediaItemView(media: media[0]).frame(height: 300)
+            }
         } else {
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 2) {
-                ForEach(media.prefix(4)) { item in
-                    MediaItemView(media: item)
-                        .aspectRatio(1, contentMode: .fill)
-                        .clipped()
+                ForEach(Array(media.prefix(4).enumerated()), id: \.offset) { i, item in
+                    nut(i) {
+                        ZStack(alignment: .center) {
+                            MediaItemView(media: item)
+                                .aspectRatio(1, contentMode: .fill)
+                                .clipped()
+                            // Ảnh thứ 5 trở đi không hiện — nói rõ còn bao
+                            // nhiêu thay vì im lặng giấu mất.
+                            if i == 3, media.count > 4 {
+                                Color.black.opacity(0.55)
+                                Text("+\(media.count - 4)")
+                                    .font(.system(size: 26, weight: .bold))
+                                    .foregroundColor(.white)
+                            }
+                        }
+                    }
                 }
             }
             .frame(height: 300)
         }
+    }
+
+    private func nut<N: View>(_ i: Int, @ViewBuilder _ noi: () -> N) -> some View {
+        Button { chon?(i) } label: { noi() }
+            .buttonStyle(.plain)
     }
 }
 
