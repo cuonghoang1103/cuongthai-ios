@@ -197,20 +197,76 @@ struct RichContentView: UIViewRepresentable {
             border-radius:14px;padding:12px 15px;position:relative}
           .lz-flow .lz-step .lz-k{font-family:ui-monospace,Menlo,monospace;font-size:10px;
             letter-spacing:.08em;text-transform:uppercase;color:#8B8DF5;font-weight:700}
-          .lz-flow .lz-step .lz-t{font-weight:700;color:\(chuChinh);margin-top:2px}
-          .lz-flow .lz-step .lz-d{font-size:13px;color:\(chuMo);margin-top:3px}
+          .lz-flow .lz-step .lz-t,.lz-flow .lz-step .lz-st{font-weight:700;color:\(chuChinh);margin-top:2px}
+          .lz-flow .lz-step .lz-d,.lz-flow .lz-step .lz-sd{font-size:13px;color:\(chuMo);margin-top:3px}
+
+          /* Bước có ĐÁNH SỐ: `.lz-si` là con số, `.lz-sb` là phần thân.
+             Bốn lớp lz-s* này KHÔNG có trong CSS của web (đo: 0 lần xuất
+             hiện), nên các bài Next.js/Node.js đang mất định dạng ở CẢ web.
+             Riêng `.lz-si` dùng 108 lần, `.lz-sb` 76 lần — bỏ qua là hỏng cả
+             một mảng lớn nội dung. */
+          .lz-step:has(.lz-si){display:flex;gap:11px;align-items:flex-start}
+          .lz-si{flex-shrink:0;width:26px;height:26px;border-radius:8px;display:grid;
+            place-items:center;font-size:13px;font-weight:700;color:#8B8DF5;
+            background:rgba(99,102,241,.16);border:1px solid rgba(99,102,241,.28)}
+          .lz-sb{flex:1;min-width:0;font-size:14.5px;color:\(chuPhu)}
+          .lz-sb b,.lz-sb strong{color:\(chuChinh)}
+          /* `.lz-v` là vế GIÁ TRỊ trong một lớp của .lz-stack, đi cặp với .lz-k */
+          .lz-layer .lz-k{flex-shrink:0;font-family:ui-monospace,Menlo,monospace;
+            font-size:12px;font-weight:700;color:#8B8DF5;text-transform:none;
+            letter-spacing:0;margin:0}
+          .lz-layer .lz-v{flex:1;font-size:13.5px;color:\(chuPhu);text-align:left}
+
+          /* Thẻ chung + mấy lớp Tailwind lọt vào nội dung bài (flex, p-4,
+             rounded-lg…). Chúng KHÔNG có tác dụng ở đây vì trang không nạp
+             Tailwind — khai bản tối thiểu để khối đó vẫn ra hình thẻ thay vì
+             một cục chữ dính vào nhau. */
+          .card{border:1px solid \(vien);background:\(nenPhu);border-radius:12px;
+            padding:12px 14px;margin:14px 0}
+          .flex{display:flex;gap:8px;align-items:center}
+          .gap-2{gap:8px} .p-4{padding:14px} .px-4{padding-left:14px;padding-right:14px}
+          .py-2{padding-top:8px;padding-bottom:8px} .rounded-lg{border-radius:10px}
+          .bg-blue-600{background:#2563EB} .text-white{color:#FFFFFF}
           .lz-flow .lz-step:not(:last-child)::after{content:"▾";position:absolute;
             left:22px;bottom:-12.5px;color:#8B8DF5;font-size:15px;z-index:2}
 
           .lz-stack{display:flex;flex-direction:column;gap:6px;margin:18px 0}
-          .lz-stack .lz-layer{border:1px solid \(vien);border-left:3px solid #6366F1;
-            background:\(nenPhu);border-radius:9px;padding:9px 14px;display:flex;
-            justify-content:space-between;align-items:center;gap:12px}
-          .lz-stack .lz-layer .lz-lname{font-weight:700;color:\(chuChinh);
+          /* `.lz-lname`/`.lz-lnote` là tên web đặt trong CSS, nhưng nội dung
+             Academy lại viết `.lz-lt`/`.lz-ld`. Hai bộ tên lệch nhau, nên trên
+             CHÍNH WEB các khối này cũng đang mất định dạng. Khai cả hai. */
+          .lz-layer .lz-lname,.lz-layer .lz-lt{font-weight:700;color:\(chuChinh);
             font-family:ui-monospace,Menlo,monospace;font-size:14px}
-          .lz-stack .lz-layer .lz-lnote{font-size:13px;color:\(chuMo);text-align:right}
-          .link-card{display:flex;align-items:center;gap:10px;border:1px solid \(vien);
-            border-radius:12px;padding:10px 12px;margin:0 0 10px;background:\(nenPhu)}
+          .lz-layer .lz-lnote,.lz-layer .lz-ld{font-size:13px;color:\(chuMo);text-align:right}
+          /* `.lz-layer` xuất hiện cả khi KHÔNG nằm trong `.lz-stack` — bỏ ràng
+             buộc cha, không thì nó trần trụi không viền. */
+          .lz-layer{border:1px solid \(vien);border-left:3px solid #6366F1;
+            background:\(nenPhu);border-radius:9px;padding:9px 14px;margin:6px 0;
+            display:flex;justify-content:space-between;align-items:center;gap:12px}
+          /* Thẻ liên kết sang Code Lab / Exp Hub — nội dung Academy dùng
+             nhiều. Thiếu `.lc-*` thì biểu tượng, tiêu đề, phụ đề và nhãn hành
+             động rơi thành bốn dòng chữ trần cạnh nhau. */
+          .link-card{display:flex;align-items:center;gap:11px;border:1px solid \(vien);
+            border-radius:12px;padding:12px 14px;margin:14px 0;background:\(nenPhu);
+            text-decoration:none}
+          .link-card .lc-ico{font-size:22px;line-height:1;flex-shrink:0}
+          .link-card .lc-body{flex:1;min-width:0}
+          .link-card .lc-title{font-weight:700;color:\(chuChinh)}
+          .link-card .lc-sub{font-size:13px;color:\(chuMo);margin-top:1px}
+          .link-card .lc-cta{font-family:ui-monospace,Menlo,monospace;font-size:10.5px;
+            font-weight:700;padding:4px 10px;border-radius:999px;white-space:nowrap;
+            flex-shrink:0}
+          .link-card.codelab .lc-cta{background:rgba(99,102,241,.18);color:#818CF8}
+          .link-card.exphub .lc-cta{background:rgba(214,146,32,.18);color:#E0A44A}
+          .link-card.dl .lc-cta{background:rgba(47,158,107,.18);color:#3FB27F}
+
+          /* Tô màu mã. Nội dung Academy đã gắn sẵn `tok-*`; không định kiểu
+             thì cả khối mã một màu xám, đọc mệt hơn hẳn. */
+          pre .tok-keyword{color:#FF7B72}
+          pre .tok-string{color:#A5D6FF}
+          pre .tok-number{color:#79C0FF}
+          pre .tok-comment{color:#8B949E;font-style:italic}
+          pre .tok-function{color:#D2A8FF}
+          pre .tok-type{color:#FFA657}
           kbd{font-family:ui-monospace,Menlo,monospace;font-size:.8em;background:\(nenMa);
             border:1px solid \(vien);border-bottom-width:2px;border-radius:5px;padding:1px 5px}
           .sim-card,.sim-video{border:1px solid \(vien);border-radius:10px;
