@@ -35,11 +35,27 @@ struct MessagesView: View {
             .refreshable {
                 await viewModel.loadThreads()
             }
+            // ⚠️ Mọi thao tác vuốt (ghim/lưu trữ/chưa đọc/tắt báo) đều hoàn
+            // tác thay đổi rồi đặt `viewModel.error` khi hỏng — mà TRƯỚC BẢN
+            // NÀY không chỗ nào hiện nó ra. Hàng bật về như cũ, không một chữ
+            // giải thích, nên người dùng thấy đúng là "nút không hoạt động".
+            .alert("Không thực hiện được",
+                   isPresented: Binding(get: { viewModel.error != nil },
+                                        set: { if !$0 { viewModel.error = nil } })) {
+                Button("OK") { viewModel.error = nil }
+            } message: { Text(viewModel.error ?? "") }
             .onAppear {
                 Task {
                     await viewModel.loadThreads()
+                    // ⚠️ `onChange` bên dưới CHỈ bắt thay đổi. Chạm thông báo
+                    // lúc app đang tắt thì `hoiThoaiCanMo` đã được đặt TRƯỚC
+                    // khi màn này kịp dựng — không có "thay đổi" nào để bắt,
+                    // nên app chỉ mở tab Tin nhắn rồi đứng đó. Phải kiểm lại
+                    // một lần ngay khi xuất hiện.
+                    moHoiThoaiDangCho()
                 }
             }
+            .modifier(LamMoiKhiCanThiet(viewModel: viewModel, moHoiThoai: moHoiThoaiDangCho))
             // Chạm vào thông báo đẩy → mở thẳng hội thoại đó. Không có đoạn
             // này thì chạm xong chỉ nhảy vào tab Tin nhắn rồi đứng ở danh
             // sách, người dùng phải tự đi tìm.
@@ -235,6 +251,14 @@ struct MessagesView: View {
         }
         .padding(.top, Spacing.xxl)
     }
+
+    /// Mở hội thoại mà thông báo đẩy đã chỉ định, nếu có.
+    private func moHoiThoaiDangCho() {
+        guard let id = AppState.shared.hoiThoaiCanMo else { return }
+        hoiThoaiMoTuThongBao = viewModel.threads.first { $0.id == id }
+        // Chỉ xoá khi ĐÃ tìm thấy — xoá sớm thì lần tải sau không còn gì để mở.
+        if hoiThoaiMoTuThongBao != nil { AppState.shared.hoiThoaiCanMo = nil }
+    }
 }
 
 // MARK: - Message Filter
@@ -279,6 +303,7 @@ struct MessageFilterChip: View {
             .cornerRadius(CornerRadius.full)
         }
     }
+
 }
 
 // MARK: - Thread Row
@@ -733,4 +758,37 @@ class NewMessageViewModel: ObservableObject {
 #Preview {
     MessagesView()
         .environmentObject(AppState.shared)
+}
+
+
+/// Ba lưới đỡ cho danh sách hội thoại, gom lại một chỗ.
+///
+/// Tách khỏi `body` vì gộp thẳng vào đó làm trình biên dịch bỏ cuộc
+/// ("unable to type-check this expression in reasonable time") — `body` của
+/// màn này vốn đã dài.
+///
+/// Cập nhật tại chỗ qua socket vẫn là đường CHÍNH; ba cái dưới đây chỉ lo
+/// những khoảng mà socket không thể phủ:
+///   • socket vừa nối lại  → mọi sự kiện lúc đứt đã mất hẳn
+///   • app quay lại từ nền → lúc ở nền socket đóng, tin tới qua push
+struct LamMoiKhiCanThiet: ViewModifier {
+    @ObservedObject var viewModel: MessagesViewModel
+    let moHoiThoai: () -> Void
+    @ObservedObject private var realtime = RealtimeClient.shared
+    @Environment(\.scenePhase) private var scenePhase
+
+    func body(content: Content) -> some View {
+        content
+            .onChange(of: realtime.trangThai) { cu, moi in
+                guard cu != .daNoi, moi == .daNoi else { return }
+                Task { await viewModel.loadThreads() }
+            }
+            .onChange(of: scenePhase) { _, giaiDoan in
+                guard giaiDoan == .active else { return }
+                Task {
+                    await viewModel.loadThreads()
+                    moHoiThoai()
+                }
+            }
+    }
 }
