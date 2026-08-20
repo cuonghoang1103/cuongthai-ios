@@ -36,7 +36,9 @@ enum APIEndpoint {
     case unlikePost(id: Int)
     case reactPost(id: Int, type: String)
     case getComments(postId: Int, cursor: Int?, limit: Int)
-    case createComment(postId: Int, content: String, parentId: Int?)
+    case createComment(postId: Int, content: String, parentId: Int?, mediaUrl: String? = nil, mediaKind: String? = nil)
+    /// Thích bình luận — máy chủ TỰ ĐẢO trạng thái, một đường cho cả hai chiều.
+    case likeComment(id: Int)
     case savePost(id: Int, folder: String?)
     case unsavePost(id: Int)
 
@@ -188,7 +190,12 @@ enum APIEndpoint {
         case .unlikePost(let id): return "/api/v1/social/posts/\(id)/like"
         case .reactPost(let id, _): return "/api/v1/social/posts/\(id)/react"
         case .getComments(let postId, _, _): return "/api/v1/social/posts/\(postId)/comments"
-        case .createComment(let postId, _, _): return "/api/v1/social/posts/\(postId)/comments"
+        // ⚠️ TẠO bình luận là `POST /social/comments` với `postId` trong THÂN.
+        // Bản cũ gọi `/social/posts/{id}/comments` — đường đó chỉ có GET, nên
+        // POST trả 404, bình luận vừa chèn tạm bị gỡ đi, và nhìn từ ngoài
+        // đúng là "ấn gửi mà không thấy gì".
+        case .createComment: return "/api/v1/social/comments"
+        case .likeComment(let id): return "/api/v1/social/comments/\(id)/like"
         case .savePost(let id, _): return "/api/v1/social/posts/\(id)/save"
         case .unsavePost(let id): return "/api/v1/social/posts/\(id)/save"
 
@@ -287,7 +294,7 @@ enum APIEndpoint {
         switch self {
         case .login, .register, .oauthToken, .changePassword, .refreshToken,
              .createPost, .likePost, .followUser, .unfollowUser,
-             .createComment, .savePost, .sendMessage, .sendMessageWithFiles, .enrollCourse,
+             .createComment, .likeComment, .savePost, .sendMessage, .sendMessageWithFiles, .enrollCourse,
              .sendMessageMedia, .toggleMessageReaction, .recallMessage,
              .boLuuTruHoiThoai, .danhDauChuaDoc, .danhDauDaXemTin, .taoTin, .taoChuong,
              .luuMocPhienBan, .khoiPhucPhienBan, .chayViecAI, .hoiTroLyGhiChu, .taoDongBang,
@@ -332,9 +339,12 @@ enum APIEndpoint {
         // Backend `POST /users/follow` is a toggle keyed by `targetId`.
         case .followUser(let id): return ["targetId": id]
         case .unfollowUser(let id): return ["targetId": id]
-        case .createComment(_, let c, let p):
-            var m: [String: Any] = ["content": c]
-            if let parent = p { m["parentId"] = parent }
+        case .createComment(let postId, let c, let p, let mUrl, let mKind):
+            var m: [String: Any] = ["postId": postId, "content": c]
+            if let p { m["parentId"] = p }
+            // Máy chủ chỉ nhận media khi CÓ ĐỦ cặp url + kind, và kind phải là
+            // gif | sticker | image.
+            if let mUrl, let mKind, !mUrl.isEmpty { m["mediaUrl"] = mUrl; m["mediaKind"] = mKind }
             return m
         case .savePost(_, let f):
             return f != nil ? ["folder": f!] : nil

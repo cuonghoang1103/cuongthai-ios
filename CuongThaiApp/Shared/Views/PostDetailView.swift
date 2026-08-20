@@ -1,4 +1,7 @@
 import SwiftUI
+#if os(iOS)
+import PhotosUI
+#endif
 #if canImport(Kingfisher)
 import Kingfisher
 #endif
@@ -9,6 +12,15 @@ struct PostDetailView: View {
     @StateObject private var viewModel = PostDetailViewModel()
     @State private var commentText = ""
     @State private var replyingTo: Comment?
+    @State private var anhKem: String?
+    @State private var loaiAnhKem: String?
+    @State private var dangGuiBinhLuan = false
+    @State private var dangTaiAnhBinhLuan = false
+    @State private var hienGifBinhLuan = false
+    @State private var hienEmojiBinhLuan = false
+    #if os(iOS)
+    @State private var anhChonBinhLuan: [PhotosPickerItem] = []
+    #endif
     @State private var showReactions = false
     @State private var showShareSheet = false
     @State private var activeReport: ReportSheet.Target?
@@ -84,6 +96,17 @@ struct PostDetailView: View {
             // không ai nối lại.
             await viewModel.loadComments()
         }
+        .sheet(isPresented: $hienGifBinhLuan) {
+            BangChonGif { url in
+                anhKem = url
+                loaiAnhKem = "gif"
+            }
+        }
+        #if os(iOS)
+        .onChange(of: anhChonBinhLuan) { _, moi in
+            Task { await taiAnhBinhLuan(moi) }
+        }
+        #endif
         .sheet(item: $activeReport) { target in
             ReportSheet(target: target)
         }
@@ -607,7 +630,7 @@ struct PostDetailView: View {
                                 activeReport = .comment(
                                     postId: post.id,
                                     commentId: comment.id,
-                                    authorName: comment.author.name
+                                    authorName: (comment.tacGia?.name ?? "Người dùng")
                                 )
                             }
                         )
@@ -640,7 +663,7 @@ struct PostDetailView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     if let replying = replyingTo {
                         HStack(spacing: Spacing.sm) {
-                            Text("Trả lời @\(replying.author.username)")
+                            Text("Trả lời @\(replying.tacGia?.username ?? "…")")
                                 .font(.caption)
                                 .foregroundColor(AppColors.primary)
 
@@ -654,7 +677,8 @@ struct PostDetailView: View {
                         }
                     }
 
-                    TextField("Viết bình luận...", text: $commentText, axis: .vertical)
+                    TextField(anhKem == nil ? "Viết bình luận…" : "Thêm chú thích (không bắt buộc)…",
+                              text: $commentText, axis: .vertical)
                         .font(.bodyMedium)
                         .foregroundColor(AppColors.textPrimary)
                         .lineLimit(1...5)
@@ -666,23 +690,136 @@ struct PostDetailView: View {
                 }
 
                 Button {
-                    Task {
-                        await viewModel.addComment(content: commentText, parentId: replyingTo?.id)
-                        commentText = ""
-                        replyingTo = nil
-                    }
+                    guiBinhLuan()
                 } label: {
-                    Image(systemName: "arrow.up.circle.fill")
-                        .font(.title)
-                        .foregroundColor(commentText.isEmpty ? AppColors.textTertiary : AppColors.primary)
+                    if dangGuiBinhLuan {
+                        ProgressView().frame(width: 30, height: 30)
+                    } else {
+                        Image(systemName: "arrow.up.circle.fill")
+                            .font(.title)
+                            .foregroundColor(guiDuoc ? AppColors.primary : AppColors.textTertiary)
+                    }
                 }
-                .disabled(commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .disabled(!guiDuoc || dangGuiBinhLuan)
             }
             .padding(.horizontal, Spacing.md)
             .padding(.vertical, Spacing.sm)
-            .background(AppColors.backgroundSecondary)
+
+            thanhCongCuBinhLuan
+        }
+        .background(AppColors.backgroundSecondary)
+    }
+
+    // MARK: Soạn bình luận
+
+    private var guiDuoc: Bool {
+        anhKem != nil || !commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    /// Ảnh/GIF đã chọn, hiện ngay trên ô nhập để người dùng thấy mình sắp gửi
+    /// gì — chọn xong mà không thấy gì đổi thì tưởng bấm hụt.
+    @ViewBuilder
+    private var thanhCongCuBinhLuan: some View {
+        if let a = anhKem {
+            HStack(spacing: Spacing.sm) {
+                AsyncImage(url: URL(string: a)) { pha in
+                    if let img = try? pha.image { img.resizable().aspectRatio(contentMode: .fill) }
+                    else { AppColors.backgroundTertiary }
+                }
+                .frame(width: 56, height: 56)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                Text(loaiAnhKem == "gif" ? "GIF đã chọn" : "Ảnh đã chọn")
+                    .font(.system(size: 12))
+                    .foregroundColor(AppColors.textSecondary)
+                Spacer()
+                Button { anhKem = nil; loaiAnhKem = nil } label: {
+                    Image(systemName: "xmark.circle.fill").foregroundColor(AppColors.textTertiary)
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, Spacing.md)
+            .padding(.bottom, Spacing.sm)
+        }
+
+        HStack(spacing: Spacing.lg) {
+            #if os(iOS)
+            PhotosPicker(selection: $anhChonBinhLuan, maxSelectionCount: 1, matching: .images) {
+                nutBinhLuan("photo", "Ảnh")
+            }
+            #endif
+            Button { hienGifBinhLuan = true } label: { nutBinhLuan("square.stack.3d.down.right", "GIF") }
+                .buttonStyle(.plain)
+            Button { withAnimation { hienEmojiBinhLuan.toggle() } } label: {
+                nutBinhLuan(hienEmojiBinhLuan ? "keyboard" : "face.smiling", "Emoji")
+            }
+            .buttonStyle(.plain)
+            Spacer()
+            if dangTaiAnhBinhLuan { ProgressView().scaleEffect(0.7) }
+        }
+        .padding(.horizontal, Spacing.md)
+        .padding(.bottom, Spacing.sm)
+
+        if hienEmojiBinhLuan {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: Spacing.sm) {
+                    ForEach(["❤️","😂","😍","👍","🔥","🎉","😊","😢","😮","😡",
+                             "🙏","👏","💯","✅","🤔","😅","🥰","😭","🤣","💪"], id: \.self) { e in
+                        Button { commentText += e } label: { Text(e).font(.system(size: 26)) }
+                            .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, Spacing.md)
+                .padding(.bottom, Spacing.sm)
+            }
         }
     }
+
+    private func nutBinhLuan(_ icon: String, _ ten: String) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: icon).font(.system(size: 15))
+            Text(ten).font(.system(size: 12, weight: .medium))
+        }
+        .foregroundColor(AppColors.primary)
+    }
+
+    private func guiBinhLuan() {
+        let chu = commentText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let a = anhKem, k = loaiAnhKem
+        guard !chu.isEmpty || a != nil else { return }
+        Haptics.cham()
+        dangGuiBinhLuan = true
+        // Xoá ô nhập NGAY, không đợi máy chủ: chờ mà ô vẫn còn chữ thì người
+        // dùng bấm gửi lần nữa và thành hai bình luận trùng.
+        commentText = ""; anhKem = nil; loaiAnhKem = nil; replyingTo = nil
+        Task {
+            await viewModel.addComment(content: chu, parentId: replyingTo?.id,
+                                       anhKem: a, loaiAnhKem: k)
+            dangGuiBinhLuan = false
+        }
+    }
+
+    #if os(iOS)
+    private func taiAnhBinhLuan(_ items: [PhotosPickerItem]) async {
+        guard let item = items.first else { return }
+        dangTaiAnhBinhLuan = true
+        defer { dangTaiAnhBinhLuan = false; anhChonBinhLuan = [] }
+        guard let data = try? await item.loadTransferable(type: Data.self) else { return }
+        do {
+            // Bình luận nhận `mediaUrl` dạng CHUỖI, nên đi `/files/upload`
+            // (trả url) chứ không phải `/messages/upload` (trả fileId).
+            let loai = item.supportedContentTypes.first
+            let tep = try await APIClient.shared.upload(
+                data: data,
+                fileName: "binh-luan.\(loai?.preferredFilenameExtension ?? "jpg")",
+                mimeType: loai?.preferredMIMEType ?? "image/jpeg",
+                category: "social")
+            anhKem = tep.url
+            loaiAnhKem = "image"
+        } catch {
+            viewModel.error = error.localizedDescription
+        }
+    }
+    #endif
 }
 
 // MARK: - Comment Row
@@ -704,14 +841,14 @@ struct CommentRow: View {
         self.onLike = onLike
         self.onReport = onReport
         self.laTraLoi = laTraLoi
-        _daThich = State(initialValue: comment.isLiked)
-        _soThich = State(initialValue: comment.likesCount)
+        _daThich = State(initialValue: comment.daThich)
+        _soThich = State(initialValue: comment.soThich)
     }
 
     var body: some View {
         HStack(alignment: .top, spacing: Spacing.sm) {
-            NavigationLink(destination: UserProfileView(userId: comment.author.id)) {
-                UserAvatarView(url: comment.author.avatarUrl, size: laTraLoi ? 28 : 34)
+            NavigationLink(destination: UserProfileView(userId: (comment.tacGia?.id ?? 0))) {
+                UserAvatarView(url: comment.tacGia?.avatarUrl, size: laTraLoi ? 28 : 34)
             }
             .buttonStyle(.plain)
 
@@ -720,13 +857,37 @@ struct CommentRow: View {
                 // Facebook/Messenger. Bản cũ đổ tên và nội dung ra thành hai
                 // dòng chữ trần, không có ranh giới nào giữa các bình luận.
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(comment.author.name)
+                    Text((comment.tacGia?.name ?? "Người dùng"))
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundColor(AppColors.textPrimary)
-                    Text(comment.content)
-                        .font(.system(size: 15))
-                        .foregroundColor(AppColors.textPrimary)
-                        .fixedSize(horizontal: false, vertical: true)
+                    if !comment.noiDung.isEmpty {
+                        Text(comment.noiDung)
+                            .font(.system(size: 15))
+                            .foregroundColor(AppColors.textPrimary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    // Ảnh / GIF kèm bình luận. Không dựng chỗ này thì gửi ảnh
+                    // xong bình luận hiện ra RỖNG — người dùng tưởng mất.
+                    if let a = comment.mediaUrl, !a.isEmpty, let url = URL(string: a) {
+                        AsyncImage(url: url) { pha in
+                            switch pha {
+                            case .success(let img):
+                                img.resizable().aspectRatio(contentMode: .fit)
+                            case .failure:
+                                HStack(spacing: 4) {
+                                    Image(systemName: "photo")
+                                    Text("Không tải được ảnh").font(.system(size: 12))
+                                }
+                                .foregroundColor(AppColors.textTertiary)
+                                .frame(height: 60)
+                            default:
+                                ProgressView().frame(height: 100)
+                            }
+                        }
+                        .frame(maxWidth: 220, maxHeight: 240)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .padding(.top, 2)
+                    }
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
@@ -866,25 +1027,31 @@ class PostDetailViewModel: ObservableObject {
         }
     }
 
-    func addComment(content: String, parentId: Int?) async {
+    func addComment(content: String, parentId: Int?, anhKem: String? = nil, loaiAnhKem: String? = nil) async {
         guard let postId = post?.id else { return }
 
+        // Id ÂM để chắc chắn không đụng id thật — bốc số ngẫu nhiên trong
+        // 100000...999999 thì id thật rơi vào đúng khoảng đó là thay nhầm.
         let tempComment = Comment(
-            id: Int.random(in: 100000...999999),
+            id: -Int(Date().timeIntervalSince1970 * 1000) % 1_000_000_000,
             content: content,
-            author: AppState.shared.currentUser ?? User(id: 0, username: "temp", email: nil, fullName: "Temp", displayName: nil, avatarUrl: nil, coverPhotoUrl: nil, bio: nil, isFollowing: nil, isFollowedBy: nil, followersCount: nil, followingCount: nil, postsCount: nil, createdAt: nil),
+            user: AppState.shared.currentUser,
             likesCount: 0,
             repliesCount: nil,
             isLiked: false,
             parentId: parentId,
-            createdAt: ISO8601DateFormatter().string(from: Date())
+            createdAt: ISO8601DateFormatter().string(from: Date()),
+            mediaUrl: anhKem,
+            mediaKind: loaiAnhKem,
+            replies: nil
         )
 
         comments.insert(tempComment, at: 0)
 
         do {
             let newComment: Comment = try await APIClient.shared.request(
-                .createComment(postId: postId, content: content, parentId: parentId)
+                .createComment(postId: postId, content: content, parentId: parentId,
+                               mediaUrl: anhKem, mediaKind: loaiAnhKem)
             )
 
             if let index = comments.firstIndex(where: { $0.id == tempComment.id }) {
@@ -897,20 +1064,15 @@ class PostDetailViewModel: ObservableObject {
     }
 
     func likeComment(commentId: Int) async {
-        // Toggle like locally
-        if let index = comments.firstIndex(where: { $0.id == commentId }) {
-            var comment = comments[index]
-            let wasLiked = comment.isLiked
-            comments[index] = Comment(
-                id: comment.id,
-                content: comment.content,
-                author: comment.author,
-                likesCount: wasLiked ? comment.likesCount - 1 : comment.likesCount + 1,
-                repliesCount: comment.repliesCount,
-                isLiked: !wasLiked,
-                parentId: comment.parentId,
-                createdAt: comment.createdAt
-            )
+        guard let i = comments.firstIndex(where: { $0.id == commentId }) else { return }
+        let cu = comments[i]
+        let thich = !cu.daThich
+        comments[i] = cu.doiThich(thich, thich ? cu.soThich + 1 : max(0, cu.soThich - 1))
+        do {
+            let _: EmptyResponse = try await APIClient.shared
+                .request(.likeComment(id: commentId))
+        } catch {
+            if let j = comments.firstIndex(where: { $0.id == commentId }) { comments[j] = cu }
         }
     }
 

@@ -144,15 +144,38 @@ struct MusicTrackInfo: Codable {
 }
 
 // MARK: - Comment
+/// ⚠️ Máy chủ trả khoá **`user`**, KHÔNG phải `author` — cả lúc tạo lẫn lúc
+/// lấy danh sách. Bản cũ khai `author` bắt buộc nên giải mã NÉM: danh sách
+/// bình luận chưa bao giờ hiện, và bình luận vừa gửi bị gỡ đi ngay sau khi
+/// chèn tạm. Nhìn từ ngoài đúng là "ấn gửi mà không thấy gì".
 struct Comment: Codable, Identifiable {
     let id: Int
-    let content: String
-    let author: User
-    let likesCount: Int
+    let content: String?
+    let user: User?
+    let likesCount: Int?
     let repliesCount: Int?
-    let isLiked: Bool
+    let isLiked: Bool?
     let parentId: Int?
     let createdAt: String
+    /// Ảnh / GIF / nhãn dán kèm bình luận.
+    let mediaUrl: String?
+    /// `gif` | `sticker` | `image`
+    let mediaKind: String?
+    /// Máy chủ trả sẵn vài phản hồi con ở đường danh sách.
+    let replies: [Comment]?
+
+    var tacGia: User? { user }
+    var noiDung: String { content ?? "" }
+    var soThich: Int { likesCount ?? 0 }
+    var daThich: Bool { isLiked ?? false }
+    var laAnh: Bool { mediaUrl?.isEmpty == false }
+
+    /// Dựng lại với cờ thích mới — `Comment` toàn `let`.
+    func doiThich(_ thich: Bool, _ so: Int) -> Comment {
+        Comment(id: id, content: content, user: user, likesCount: so, repliesCount: repliesCount,
+                isLiked: thich, parentId: parentId, createdAt: createdAt,
+                mediaUrl: mediaUrl, mediaKind: mediaKind, replies: replies)
+    }
 }
 
 // MARK: - Message
