@@ -44,6 +44,18 @@ extension View {
         #endif
     }
 
+    /// Bàn phím SỐ khi người dùng đang gõ số, bàn phím thường khi gõ chữ.
+    /// Ô "nhảy tới ngày hoặc tìm tên bài" nhận cả hai kiểu, nên nó phải đổi
+    /// theo nội dung — ép cứng bàn phím số thì không gõ được tên bài, mà để
+    /// bàn phím chữ thì gõ số phải chuyển bảng phím mỗi lần.
+    func banPhimSo(dangSo: Bool) -> some View {
+        #if os(iOS)
+        return self.keyboardType(dangSo ? .numberPad : .default)
+        #else
+        return self
+        #endif
+    }
+
     /// Bàn phím có sẵn phím @ và dấu chấm.
     func banPhimEmail() -> some View {
         #if os(iOS)

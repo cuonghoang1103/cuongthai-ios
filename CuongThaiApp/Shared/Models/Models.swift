@@ -741,3 +741,59 @@ struct Enrollment: Codable, Identifiable, Hashable {
         return "Chưa bắt đầu"
     }
 }
+
+// MARK: - Loạt bài nhiều kỳ (100 Ngày Java / Database / Tiếng Anh)
+
+/// Mục lục một loạt bài, trả về từ `GET /social/series/:slug`.
+///
+/// `items` CHỈ chứa những kỳ đã đăng — Database mới ra 30/100 thì `items` có 30
+/// phần tử chứ không phải 100 phần tử rỗng. Lưới ngày dựng từ `total`, rồi tra
+/// `items` xem ngày nào đã có bài.
+struct PostSeries: Codable, Identifiable {
+    let slug: String
+    let label: String
+    let total: Int
+    let items: [Ky]
+
+    var id: String { slug }
+
+    struct Ky: Codable, Identifiable {
+        let day: Int
+        let postId: Int
+        let title: String
+        var id: Int { day }
+    }
+
+    /// Tra nhanh ngày → kỳ. Lưới 100 ô mà dò tuyến tính thì thành 100×N phép so.
+    var theoNgay: [Int: Ky] {
+        Dictionary(items.map { ($0.day, $0) }, uniquingKeysWith: { a, _ in a })
+    }
+
+    var soDaDang: Int { items.count }
+    var tiLe: Double { total > 0 ? Double(items.count) / Double(total) : 0 }
+}
+
+/// Ba loạt bài khoá cứng ở backend (`POST_SERIES` trong `social.service.ts`).
+/// Giữ ở đây phần TRÌNH BÀY thôi — màu, biểu tượng, mô tả; còn tên và số kỳ thì
+/// lấy từ API để không lệch với máy chủ.
+struct LoatBai: Identifiable {
+    let slug: String
+    let tenNgan: String
+    let moTa: String
+    let bieuTuong: String
+    let mau: [UInt32]
+
+    var id: String { slug }
+
+    static let tatCa: [LoatBai] = [
+        LoatBai(slug: "100-ngay-java", tenNgan: "100 Ngày Java",
+                moTa: "Từ cú pháp đầu tiên tới lập trình hướng đối tượng",
+                bieuTuong: "cup.and.saucer.fill", mau: [0xF89820, 0xE76F00]),
+        LoatBai(slug: "100-ngay-database", tenNgan: "100 Ngày Database",
+                moTa: "SQL, thiết kế bảng, tối ưu truy vấn",
+                bieuTuong: "cylinder.split.1x2.fill", mau: [0x3B82F6, 0x1D4ED8]),
+        LoatBai(slug: "100-ngay-tieng-anh", tenNgan: "100 Ngày Tiếng Anh",
+                moTa: "Từ vựng, ngữ pháp và giao tiếp cho dân IT",
+                bieuTuong: "character.book.closed.fill", mau: [0x10B981, 0x047857]),
+    ]
+}

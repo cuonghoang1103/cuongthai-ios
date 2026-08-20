@@ -18,7 +18,18 @@ enum APIEndpoint {
     case cancelDeletionRequest
 
     // Feed
-    case getFeed(cursor: Int?, limit: Int, type: String?, videoCategoryId: Int?)
+    /// Bảng tin. `hashtag` lọc theo một thẻ (dùng cho từng loạt bài),
+    /// `excludeSeries` thì ngược lại — bỏ hẳn bài của MỌI loạt, để bảng tin
+    /// chung không bị 135 bài học dìm mất bài thường.
+    /// (Swift không cho enum case có tham số mặc định, nên phải truyền đủ.)
+    case getFeed(cursor: Int?, limit: Int, type: String?, videoCategoryId: Int?,
+                 hashtag: String?, excludeSeries: Bool)
+    /// Số bài mỗi tab. `excludeSeries` phải truyền GIỐNG hệt lúc gọi `getFeed`,
+    /// không thì con số trên tab đếm cả bài của các loạt mà danh sách bên dưới
+    /// lại không hiện chúng.
+    case getPostCounts(excludeSeries: Bool)
+    /// Mục lục một loạt bài nhiều kỳ: [{ day, postId, title }]. Công khai.
+    case getSeries(slug: String)
     case createPost([String: Any])
     case deletePost(id: Int)
     case likePost(id: Int)
@@ -106,6 +117,8 @@ enum APIEndpoint {
         case .cancelDeletionRequest: return "/api/v1/profile/deletion-request"
 
         case .getFeed: return "/api/v1/social/posts"
+        case .getPostCounts: return "/api/v1/social/posts/counts"
+        case .getSeries(let slug): return "/api/v1/social/series/\(slug)"
         case .createPost: return "/api/v1/social/posts"
         case .deletePost(let id): return "/api/v1/social/posts/\(id)"
         case .likePost(let id): return "/api/v1/social/posts/\(id)/like"
@@ -248,12 +261,16 @@ enum APIEndpoint {
 
     var queryParams: [String: Any]? {
         switch self {
-        case .getFeed(let c, let l, let t, let v):
+        case .getFeed(let c, let l, let t, let v, let h, let boLoat):
             var m: [String: Any] = ["limit": l]
             if let cursor = c { m["cursor"] = cursor }
             if let type = t { m["type"] = type }
             if let vid = v { m["videoCategoryId"] = vid }
+            if let tag = h { m["hashtag"] = tag }
+            if boLoat { m["excludeSeries"] = "true" }
             return m
+        case .getPostCounts(let boLoat):
+            return boLoat ? ["excludeSeries": "true"] : [:]
         case .getComments(_, let c, let l):
             var m: [String: Any] = ["limit": l]
             if let cursor = c { m["cursor"] = cursor }

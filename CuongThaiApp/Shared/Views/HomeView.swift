@@ -8,8 +8,16 @@ class HomeViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var isLoadingMore = false
     @Published var error: String?
+    /// Số bài mỗi tab, để hiện lên chip. Đã trừ bài của các loạt — cùng cờ với
+    /// lúc gọi bảng tin, không thì chip ghi 145 mà cuộn ra 10 bài là hết.
+    @Published var soBai: [String: Int] = [:]
     private var cursor: Int?
     private var hasMore = true
+
+    /// Bảng tin chung KHÔNG chứa bài của ba loạt 100 ngày — chúng có mục Học tập
+    /// riêng. Đo 20/08/2026: 135 trong 145 bài là bài loạt, để nguyên thì mở
+    /// bảng tin ra gần như chỉ thấy bài học.
+    private let boQuaLoat = true
 
     func loadFeed(type: String? = nil) async {
         isLoading = true
@@ -17,7 +25,8 @@ class HomeViewModel: ObservableObject {
         do {
             let res: (items: [SocialPost], nextCursor: Int?, hasMore: Bool) =
                 try await APIClient.shared.requestList(
-                    .getFeed(cursor: nil, limit: 20, type: type, videoCategoryId: nil)
+                    .getFeed(cursor: nil, limit: 20, type: type, videoCategoryId: nil,
+                             hashtag: nil, excludeSeries: boQuaLoat)
                 )
             posts = res.items
             cursor = res.nextCursor
@@ -34,7 +43,8 @@ class HomeViewModel: ObservableObject {
         do {
             let res: (items: [SocialPost], nextCursor: Int?, hasMore: Bool) =
                 try await APIClient.shared.requestList(
-                    .getFeed(cursor: cursor, limit: 20, type: type, videoCategoryId: nil)
+                    .getFeed(cursor: cursor, limit: 20, type: type, videoCategoryId: nil,
+                             hashtag: nil, excludeSeries: boQuaLoat)
                 )
             // Lọc trùng: bài mới chen vào giữa hai lần gọi đẩy trang sau lệch
             // một dòng, và dòng đó hiện hai lần.
@@ -50,6 +60,14 @@ class HomeViewModel: ObservableObject {
 
     func refresh(type: String? = nil) async {
         await loadFeed(type: type)
+    }
+
+    /// Số đếm hỏng thì chip chỉ mất con số, bảng tin vẫn chạy — nên nuốt lỗi ở
+    /// đây thay vì để nó che cả màn hình.
+    func taiSoBai() async {
+        guard let d: [String: Int] = try? await APIClient.shared
+            .request(.getPostCounts(excludeSeries: boQuaLoat)) else { return }
+        soBai = d
     }
 }
 
@@ -69,10 +87,57 @@ struct HomeView: View {
         case search, notes, notifications
         var id: String { rawValue }
     }
-    @State private var selectedType: String?
-    @State private var selectedFilter = 0
+    @State private var tabDangChon: TabTrangChu = .tatCa
 
-    let filters = ["Tất cả", "Bài viết", "Video", "File"]
+    /// Năm mục của Trang chủ. "Học tập" KHÔNG phải một bộ lọc của bảng tin —
+    /// nó là một màn khác hẳn, nên để chung một enum thay vì một `String?` type
+    /// cộng thêm cờ; kiểu cũ đã có lúc để lọt trạng thái "type=nil mà đang ở
+    /// Học tập" và hiện nhầm bảng tin.
+    enum TabTrangChu: String, CaseIterable, Identifiable {
+        case tatCa, hocTap, baiViet, video, file
+        var id: String { rawValue }
+
+        var ten: String {
+            switch self {
+            case .tatCa: return "Tất cả"
+            case .hocTap: return "Học tập"
+            case .baiViet: return "Bài viết"
+            case .video: return "Video"
+            case .file: return "File"
+            }
+        }
+
+        var bieuTuong: String {
+            switch self {
+            case .tatCa: return "square.stack"
+            case .hocTap: return "graduationcap.fill"
+            case .baiViet: return "doc.text"
+            case .video: return "play.rectangle"
+            case .file: return "paperclip"
+            }
+        }
+
+        /// `type` gửi lên API. `nil` = mọi loại. Học tập không gọi bảng tin.
+        var loaiAPI: String? {
+            switch self {
+            case .baiViet: return "POST"
+            case .video: return "VIDEO"
+            case .file: return "FILE"
+            case .tatCa, .hocTap: return nil
+            }
+        }
+
+        /// Khoá trong `soBai` trả về từ `/posts/counts`.
+        var khoaDem: String? {
+            switch self {
+            case .tatCa: return "all"
+            case .baiViet: return "post"
+            case .video: return "video"
+            case .file: return "file"
+            case .hocTap: return nil
+            }
+        }
+    }
 
     var body: some View {
         NavigationStack {
@@ -81,7 +146,11 @@ struct HomeView: View {
 
                 VStack(spacing: 0) {
                     filterBar
-                    feedContent
+                    if tabDangChon == .hocTap {
+                        HocTapView()
+                    } else {
+                        feedContent
+                    }
                 }
             }
             .navigationTitle("CuongThai")
@@ -133,9 +202,13 @@ struct HomeView: View {
                     .foregroundColor(AppColors.textPrimary)
                 }
             }
-        }
-        .navigationDestination(item: $baiMoBinhLuan) { bai in
-            PostDetailView(post: bai)
+            // PHẢI nằm TRONG `NavigationStack`. Trước đây nó gắn ở ngoài, mà
+            // HomeView nằm thẳng trong TabView chứ không có stack cha nào —
+            // nên cái đích này không thuộc stack nào cả và bấm "Bình luận"
+            // không đẩy được màn nào.
+            .navigationDestination(item: $baiMoBinhLuan) { bai in
+                PostDetailView(post: bai)
+            }
         }
         .sheet(item: $quickSheet) { sheet in
             switch sheet {
@@ -145,32 +218,37 @@ struct HomeView: View {
             }
         }
         .task {
-            await vm.loadFeed(type: selectedType)
+            await vm.loadFeed(type: tabDangChon.loaiAPI)
+            await vm.taiSoBai()
         }
     }
 
     private var filterBar: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: Spacing.sm) {
-                ForEach(Array(filters.enumerated()), id: \.offset) { index, filter in
-                    FilterPill(
-                        title: filter,
-                        isSelected: selectedFilter == index
-                    ) {
-                        selectedFilter = index
-                        switch index {
-                        case 0: selectedType = nil
-                        case 1: selectedType = "POST"
-                        case 2: selectedType = "VIDEO"
-                        case 3: selectedType = "FILE"
-                        default: selectedType = nil
+        VStack(spacing: 0) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: Spacing.sm) {
+                    ForEach(TabTrangChu.allCases) { tab in
+                        FilterPill(
+                            title: tab.ten,
+                            bieuTuong: tab.bieuTuong,
+                            soLuong: tab.khoaDem.flatMap { vm.soBai[$0] },
+                            isSelected: tabDangChon == tab
+                        ) {
+                            guard tabDangChon != tab else { return }
+                            Haptics.cham()
+                            tabDangChon = tab
+                            // Học tập tự tải mục lục của nó; gọi bảng tin ở đây
+                            // chỉ tốn một vòng mạng cho thứ không ai nhìn.
+                            if tab != .hocTap {
+                                Task { await vm.loadFeed(type: tab.loaiAPI) }
+                            }
                         }
-                        Task { await vm.loadFeed(type: selectedType) }
                     }
                 }
+                .padding(.horizontal, Spacing.md)
+                .padding(.vertical, Spacing.sm)
             }
-            .padding(.horizontal, Spacing.md)
-            .padding(.vertical, Spacing.sm)
+            Divider().opacity(0.5)
         }
     }
 
@@ -192,16 +270,33 @@ struct HomeView: View {
                 // dùng không có lý do gì để thử lại.
                 Spacer()
                 ErrorStateView(message: loi) {
-                    Task { await vm.loadFeed(type: selectedType) }
+                    Task { await vm.loadFeed(type: tabDangChon.loaiAPI) }
                 }
                 Spacer()
             } else if moderation.filter(vm.posts).isEmpty {
                 Spacer()
-                EmptyStateView(
-                    icon: "newspaper",
-                    title: "Chưa có bài viết",
-                    subtitle: "Hãy là người đầu tiên chia sẻ!"
-                )
+                VStack(spacing: Spacing.md) {
+                    EmptyStateView(
+                        icon: "newspaper",
+                        title: "Chưa có bài viết",
+                        subtitle: "Hãy là người đầu tiên chia sẻ!"
+                    )
+                    // Bài của ba loạt 100 ngày đã bị lọc khỏi bảng tin, nên tab
+                    // này rỗng KHÔNG có nghĩa là web không có nội dung — chỉ ra
+                    // chỗ chúng nằm, đừng để người dùng tưởng app hỏng.
+                    Button {
+                        Haptics.cham()
+                        tabDangChon = .hocTap
+                    } label: {
+                        Label("Xem loạt bài 100 ngày", systemImage: "graduationcap.fill")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(AppColors.onPrimary)
+                            .padding(.horizontal, Spacing.lg)
+                            .padding(.vertical, 10)
+                            .background(Capsule().fill(AppColors.primary))
+                    }
+                    .buttonStyle(.plain)
+                }
                 Spacer()
             } else {
                 ScrollView {
@@ -220,7 +315,7 @@ struct HomeView: View {
                             }
                             .onAppear {
                                 if post.id == vm.posts.last?.id {
-                                    Task { await vm.loadMore(type: selectedType) }
+                                    Task { await vm.loadMore(type: tabDangChon.loaiAPI) }
                                 }
                             }
                         }
@@ -231,7 +326,7 @@ struct HomeView: View {
                     .padding(.horizontal, Spacing.md)
                 }
                 .refreshable {
-                    await vm.refresh(type: selectedType)
+                    await vm.refresh(type: tabDangChon.loaiAPI)
                 }
             }
         }
@@ -241,24 +336,43 @@ struct HomeView: View {
 // MARK: - Filter Pill
 struct FilterPill: View {
     let title: String
+    var bieuTuong: String? = nil
+    /// Số bài của tab. `nil` = không có số để hiện (tab Học tập, hoặc số chưa
+    /// tải xong) — khi đó KHÔNG vẽ chỗ trống, vì một viên thuốc rộng hơn hẳn
+    /// mấy viên kia rồi lại co lại lúc số về trông như giao diện giật.
+    var soLuong: Int? = nil
     let isSelected: Bool
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            Text(title)
-                .font(.caption)
-                .fontWeight(.medium)
-                .foregroundColor(isSelected ? .white : .gray)
-                .padding(.horizontal, Spacing.md)
-                .padding(.vertical, Spacing.sm)
-                .background(
-                    isSelected
-                        ? AppColors.primary
-                        : AppColors.backgroundCard
-                )
-                .cornerRadius(20)
+            HStack(spacing: 5) {
+                if let bieuTuong {
+                    Image(systemName: bieuTuong)
+                        .font(.system(size: 11, weight: .semibold))
+                }
+                Text(title)
+                    .font(.caption)
+                    .fontWeight(.medium)
+                if let soLuong {
+                    Text("\(soLuong)")
+                        .font(.system(size: 10, weight: .bold))
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 1)
+                        .background(
+                            Capsule().fill(isSelected
+                                           ? Color.white.opacity(0.25)
+                                           : AppColors.textTertiary.opacity(0.18))
+                        )
+                }
+            }
+            .foregroundColor(isSelected ? AppColors.onPrimary : AppColors.textSecondary)
+            .padding(.horizontal, Spacing.md)
+            .padding(.vertical, Spacing.sm)
+            .background(isSelected ? AppColors.primary : AppColors.backgroundCard)
+            .cornerRadius(20)
         }
+        .buttonStyle(.plain)
     }
 }
 
