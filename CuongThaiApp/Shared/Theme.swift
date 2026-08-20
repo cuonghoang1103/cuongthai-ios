@@ -231,3 +231,15 @@ typealias PlatformFont = Font
 typealias PlatformColor = Color
 typealias PlatformFont = Font
 #endif
+
+extension Color {
+    /// Đọc mã màu dạng chuỗi `"#RRGGBB"` hoặc `"RRGGBB"` mà backend lưu cho
+    /// tin chỉ-có-chữ. Trả `nil` khi chuỗi hỏng, để nơi gọi tự lùi về màu mặc
+    /// định thay vì vẽ ra màu đen tuyền.
+    init?(hexChuoi: String) {
+        var s = hexChuoi.trimmingCharacters(in: .whitespaces)
+        if s.hasPrefix("#") { s.removeFirst() }
+        guard s.count == 6, let v = UInt32(s, radix: 16) else { return nil }
+        self.init(hex: v)
+    }
+}

@@ -1020,3 +1020,49 @@ extension Message {
         )
     }
 }
+
+// MARK: - Tin (Stories)
+
+/// Một tin, khớp với `getHomeFeedStories` / `getUserStories` của backend.
+///
+/// `/stories/feed` trả **MỘT tin cho mỗi người** (tin mới nhất) để dựng hàng
+/// tròn; muốn xem đủ tin của một người thì gọi `/stories/user/:id`.
+struct Tin: Codable, Identifiable, Hashable {
+    let id: Int
+    let userId: Int
+    let visibility: String?
+    let caption: String?
+    let mediaUrl: String?
+    /// IMAGE | VIDEO
+    let mediaType: String?
+    let duration: Int?
+    let thumbnail: String?
+    /// Mã màu nền cho tin CHỈ CÓ CHỮ (không có mediaUrl).
+    let backgroundColor: String?
+    let expiresAt: String?
+    let createdAt: String
+    let isOwn: Bool?
+    let hasViewed: Bool?
+    let viewsCount: Int?
+    let user: User?
+
+    var laVideo: Bool { (mediaType ?? "IMAGE").uppercased() == "VIDEO" }
+    var laCuaToi: Bool { isOwn ?? false }
+    var daXem: Bool { hasViewed ?? false }
+    var tenNguoi: String { user?.name ?? "Bạn" }
+
+    /// Thời gian còn lại trước khi tin biến mất — hiện trong màn xem.
+    var conLai: String {
+        guard let e = expiresAt, let h = Date.tuChuoiISO(e) else { return "" }
+        let giay = h.timeIntervalSinceNow
+        guard giay > 0 else { return "sắp hết" }
+        let gio = Int(giay / 3600)
+        return gio >= 1 ? "còn \(gio) giờ" : "còn \(max(1, Int(giay / 60))) phút"
+    }
+
+    /// Mỗi tin ảnh hiện 5 giây; video thì theo thời lượng thật, chặn ở 30s.
+    var soGiay: Double {
+        guard laVideo, let d = duration, d > 0 else { return 5 }
+        return min(Double(d), 30)
+    }
+}

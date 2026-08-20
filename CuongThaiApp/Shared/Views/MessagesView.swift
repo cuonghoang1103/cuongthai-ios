@@ -84,6 +84,16 @@ struct MessagesView: View {
     }
 
     private var threadsList: some View {
+        VStack(spacing: 0) {
+            // Hàng tin ở TRÊN danh sách, ngoài List — để trong List thì nó cuộn
+            // ngang bên trong một hàng và dính luôn cả thao tác vuốt của hàng đó.
+            HangTinView()
+            Divider().background(AppColors.divider)
+            noiDungDanhSach
+        }
+    }
+
+    private var noiDungDanhSach: some View {
         Group {
             if viewModel.isLoading && viewModel.threads.isEmpty {
                 loadingView

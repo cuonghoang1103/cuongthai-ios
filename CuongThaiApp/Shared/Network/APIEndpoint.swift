@@ -77,6 +77,13 @@ enum APIEndpoint {
     /// nên `peer.displayName` luôn là TÊN THẬT — dùng nó để lấy lại tên thật
     /// sau khi xoá biệt danh, đừng dùng để làm mới sau khi ĐẶT biệt danh.
     case layHoiThoai(threadId: Int)
+    /// Hàng tin: MỘT tin mới nhất cho mỗi người.
+    case layHangTin
+    /// Đủ tin của một người, để lật qua từng tin.
+    case layTinCuaNguoi(userId: Int)
+    case danhDauDaXemTin(storyId: Int)
+    case taoTin(mediaUrl: String, mediaType: String, caption: String?)
+    case xoaTin(storyId: Int)
     case markRead(threadId: Int)
     /// Mở (hoặc tạo nếu chưa có) hội thoại 1-1 với một người.
     case openThread(peerId: Int)
@@ -176,6 +183,11 @@ enum APIEndpoint {
         case .danhDauChuaDoc(let id): return "/api/v1/messages/threads/\(id)/mark-unread"
         case .datBietDanh(let id, _, _): return "/api/v1/messages/threads/\(id)/nickname"
         case .layHoiThoai(let id): return "/api/v1/messages/threads/\(id)"
+        case .layHangTin: return "/api/v1/stories/feed"
+        case .layTinCuaNguoi(let id): return "/api/v1/stories/user/\(id)"
+        case .danhDauDaXemTin(let id): return "/api/v1/stories/\(id)/view"
+        case .taoTin: return "/api/v1/stories"
+        case .xoaTin(let id): return "/api/v1/stories/\(id)"
         case .markRead(let threadId): return "/api/v1/messages/threads/\(threadId)/read"
         case .openThread(let peerId): return "/api/v1/messages/threads/user/\(peerId)"
         case .muteThread(let id, _): return "/api/v1/messages/threads/\(id)/mute-for"
@@ -218,7 +230,7 @@ enum APIEndpoint {
              .createPost, .likePost, .followUser, .unfollowUser,
              .createComment, .savePost, .sendMessage, .sendMessageWithFiles, .enrollCourse,
              .sendMessageMedia, .toggleMessageReaction, .recallMessage,
-             .boLuuTruHoiThoai, .danhDauChuaDoc,
+             .boLuuTruHoiThoai, .danhDauChuaDoc, .danhDauDaXemTin, .taoTin,
              .createNote, .reportPost, .reportThread, .blockUser, .requestDeletion,
              .openThread, .muteThread, .saveLessonProgress:
             return "POST"
@@ -227,7 +239,7 @@ enum APIEndpoint {
         case .updateNote, .markRead, .reactPost, .markNotificationsRead, .datTuyChonHoiThoai:
             return "PATCH"
         case .deletePost, .unlikePost, .unsavePost, .deleteNote,
-             .unblockUser, .cancelDeletionRequest, .deleteMessage:
+             .unblockUser, .cancelDeletionRequest, .deleteMessage, .xoaTin:
             return "DELETE"
         default:
             return "GET"
@@ -267,6 +279,10 @@ enum APIEndpoint {
             return ["media": ["url": u, "kind": k]]
         case .toggleMessageReaction(_, let e):
             return ["emoji": e]
+        case .taoTin(let u, let k, let c):
+            var m: [String: Any] = ["mediaUrl": u, "mediaType": k, "visibility": "PUBLIC"]
+            if let c, !c.isEmpty { m["caption"] = c }
+            return m
         case .datBietDanh(_, let t, let a):
             return ["targetId": t, "alias": a]
         case .datTuyChonHoiThoai(_, let slot, let v):

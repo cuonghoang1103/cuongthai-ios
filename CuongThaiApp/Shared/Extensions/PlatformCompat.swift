@@ -65,3 +65,16 @@ extension View {
         #endif
     }
 }
+
+extension View {
+    /// `statusBarHidden` chỉ có trên iOS. Màn xem tin cần ẩn thanh trạng thái
+    /// để ảnh chiếm trọn màn hình.
+    @ViewBuilder
+    func statusBarHiddenNeuCo() -> some View {
+        #if os(iOS)
+        self.statusBarHidden(true)
+        #else
+        self
+        #endif
+    }
+}
