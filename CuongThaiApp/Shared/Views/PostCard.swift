@@ -113,13 +113,14 @@ struct PostCard: View {
                         .foregroundColor(AppColors.textPrimary)
                         .lineLimit(2)
                 }
-                Text(xemTruoc.components(separatedBy: "\n").dropFirst().joined(separator: " ")
-                        .trimmingCharacters(in: .whitespacesAndNewlines))
+                Text(BoTachBaiViet.lotDauMarkdown(
+                        xemTruoc.components(separatedBy: "\n").dropFirst()
+                            .joined(separator: " ")))
                     .font(.bodyText)
                     .foregroundColor(AppColors.textSecondary)
                     .lineLimit(6)
             } else {
-                Text(post.content)
+                Text(BoTachBaiViet.lotDauMarkdown(post.content))
                     .font(.bodyText)
                     .foregroundColor(AppColors.textPrimary)
                     .lineLimit(10)
@@ -350,10 +351,60 @@ struct MediaGridView: View {
     let media: [SocialMedia]
     var chon: ((Int) -> Void)?
 
+    /// Chiều cao theo tỉ lệ thật, chặn hai đầu.
+    ///
+    /// Trần 560pt: ảnh dọc rất dài mà cho hiện trọn thì một bài chiếm hết màn
+    /// hình và cuộn bảng tin thành cuộn ảnh. Sàn 180pt: ảnh ngang rất bẹt thì
+    /// nhỏ tới mức không nhìn ra gì.
+    private func caoTheoAnh(_ m: SocialMedia) -> CGFloat {
+        #if os(iOS)
+        let rong = UIScreen.main.bounds.width - 32
+        #else
+        let rong: CGFloat = 420
+        #endif
+        guard let w = m.width, let h = m.height, w > 0, h > 0 else { return 300 }
+        return min(max(rong * CGFloat(h) / CGFloat(w), 180), 560)
+    }
+
+    /// Ảnh có bị trần 560pt cắt mất phần nào không — để nói cho người dùng
+    /// biết còn nội dung bên dưới, thay vì để họ tưởng ảnh chỉ có bấy nhiêu.
+    private func biCat(_ m: SocialMedia) -> Bool {
+        #if os(iOS)
+        let rong = UIScreen.main.bounds.width - 32
+        #else
+        let rong: CGFloat = 420
+        #endif
+        guard let w = m.width, let h = m.height, w > 0, h > 0 else { return false }
+        return rong * CGFloat(h) / CGFloat(w) > 560
+    }
+
     var body: some View {
         if media.count == 1 {
             nut(0) {
-                MediaItemView(media: media[0]).frame(height: 300)
+                // ⚠️ PHẢI có `.clipped()`. `aspectRatio(.fill)` không cắt gì —
+                // ảnh tràn ra NGOÀI khung và vẽ đè lên hàng bên trên/bên dưới.
+                // Đường nhiều ảnh vốn đã có, đường một ảnh thì thiếu, nên ảnh
+                // bài giảng dạng dọc đè lên cả hàng "Thích · Bình luận".
+                //
+                // Và dùng TỈ LỆ THẬT của ảnh: ảnh hạ tầng bài học là ảnh DỌC
+                // dài; ép vào khung 300pt cố định thì chỉ thấy khúc giữa, mất
+                // cả tiêu đề lẫn phần kết.
+                MediaItemView(media: media[0])
+                    // `.top`: ảnh dọc bị chặn trần thì cắt từ ĐÁY, giữ lại
+                    // phần đầu — đó là chỗ có tiêu đề. Căn giữa (mặc định) thì
+                    // mất cả tiêu đề lẫn phần kết, còn lại khúc giữa vô nghĩa.
+                    .frame(height: caoTheoAnh(media[0]), alignment: .top)
+                    .clipped()
+                    .overlay(alignment: .bottom) {
+                        if biCat(media[0]) {
+                            Text("Chạm để xem trọn ảnh")
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 10).padding(.vertical, 5)
+                                .background(Capsule().fill(.black.opacity(0.55)))
+                                .padding(.bottom, 8)
+                        }
+                    }
             }
         } else {
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 2) {

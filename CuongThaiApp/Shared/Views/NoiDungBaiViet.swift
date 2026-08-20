@@ -300,3 +300,21 @@ enum BoTachBaiViet {
         return (emoji.isEmpty || chu.isEmpty) ? nil : (emoji, chu)
     }
 }
+
+extension BoTachBaiViet {
+    /// Lột dấu định dạng cho phần XEM TRƯỚC.
+    ///
+    /// Trong thẻ bảng tin ta hiện chữ trơn một dòng, mà `**đậm**` và `` `mã` ``
+    /// để nguyên thì người đọc thấy đúng hai dấu sao — trông như bài đăng bị
+    /// lỗi. Màn chi tiết thì KHÔNG lột: ở đó chúng được dựng thành định dạng
+    /// thật.
+    static func lotDauMarkdown(_ chu: String) -> String {
+        var s = chu
+        for mau in [#"\*\*(.+?)\*\*"#, #"__(.+?)__"#, #"~~(.+?)~~"#, "`([^`]+)`"] {
+            s = s.replacingOccurrences(of: mau, with: "$1", options: .regularExpression)
+        }
+        // Link markdown: giữ chữ, bỏ địa chỉ.
+        s = s.replacingOccurrences(of: #"\[([^\]]+)\]\([^)]+\)"#, with: "$1", options: .regularExpression)
+        return s.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+}

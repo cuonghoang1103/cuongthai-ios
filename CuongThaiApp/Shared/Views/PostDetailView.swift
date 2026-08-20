@@ -207,6 +207,13 @@ struct PostDetailView: View {
         }
     }
 
+    /// Tỉ lệ rộng/cao thật của ảnh; `nil` khi máy chủ không trả kích thước —
+    /// lúc đó để SwiftUI tự co theo ảnh tải về.
+    private func tiLe(_ m: SocialMedia) -> CGFloat? {
+        guard let w = m.width, let h = m.height, w > 0, h > 0 else { return nil }
+        return CGFloat(w) / CGFloat(h)
+    }
+
     private func mediaCarousel(_ media: [SocialMedia]) -> some View {
         VStack(spacing: Spacing.sm) {
             TabView {
@@ -214,10 +221,15 @@ struct PostDetailView: View {
                     ZStack {
                         #if canImport(Kingfisher)
                         if let url = URL(string: item.thumbnail ?? item.url) {
+                            // Ở màn CHI TIẾT hiện TRỌN ảnh theo tỉ lệ thật,
+                            // không chặn chiều cao. Ảnh hạ tầng bài học là ảnh
+                            // dọc 1080×1900 chứa cả bài — chặn ở 400pt là cắt
+                            // mất hơn nửa nội dung mà người dùng vừa mở ra để
+                            // đọc. Một ảnh thì nhiều ảnh mới cần khung cố định
+                            // (để vuốt qua lại không nhảy chiều cao).
                             KFImage(url)
                                 .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(maxHeight: 400)
+                                .aspectRatio(tiLe(item), contentMode: .fit)
                         }
                         #endif
 
