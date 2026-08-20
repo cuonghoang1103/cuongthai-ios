@@ -71,6 +71,12 @@ enum APIEndpoint {
     case datTuyChonHoiThoai(threadId: Int, slot: String, value: String?)
     case boLuuTruHoiThoai(threadId: Int)
     case danhDauChuaDoc(threadId: Int)
+    /// Đặt/xoá biệt danh cho người kia trong hội thoại. `alias` rỗng = xoá.
+    case datBietDanh(threadId: Int, targetId: Int, alias: String)
+    /// Một hội thoại. ⚠️ Đường này gọi serializer KHÔNG kèm bản đồ biệt danh,
+    /// nên `peer.displayName` luôn là TÊN THẬT — dùng nó để lấy lại tên thật
+    /// sau khi xoá biệt danh, đừng dùng để làm mới sau khi ĐẶT biệt danh.
+    case layHoiThoai(threadId: Int)
     case markRead(threadId: Int)
     /// Mở (hoặc tạo nếu chưa có) hội thoại 1-1 với một người.
     case openThread(peerId: Int)
@@ -168,6 +174,8 @@ enum APIEndpoint {
         case .datTuyChonHoiThoai(let id, _, _): return "/api/v1/messages/threads/\(id)/preference"
         case .boLuuTruHoiThoai(let id): return "/api/v1/messages/threads/\(id)/unarchive"
         case .danhDauChuaDoc(let id): return "/api/v1/messages/threads/\(id)/mark-unread"
+        case .datBietDanh(let id, _, _): return "/api/v1/messages/threads/\(id)/nickname"
+        case .layHoiThoai(let id): return "/api/v1/messages/threads/\(id)"
         case .markRead(let threadId): return "/api/v1/messages/threads/\(threadId)/read"
         case .openThread(let peerId): return "/api/v1/messages/threads/user/\(peerId)"
         case .muteThread(let id, _): return "/api/v1/messages/threads/\(id)/mute-for"
@@ -214,7 +222,7 @@ enum APIEndpoint {
              .createNote, .reportPost, .reportThread, .blockUser, .requestDeletion,
              .openThread, .muteThread, .saveLessonProgress:
             return "POST"
-        case .updateProfile:
+        case .updateProfile, .datBietDanh:
             return "PUT"
         case .updateNote, .markRead, .reactPost, .markNotificationsRead, .datTuyChonHoiThoai:
             return "PATCH"
@@ -259,6 +267,8 @@ enum APIEndpoint {
             return ["media": ["url": u, "kind": k]]
         case .toggleMessageReaction(_, let e):
             return ["emoji": e]
+        case .datBietDanh(_, let t, let a):
+            return ["targetId": t, "alias": a]
         case .datTuyChonHoiThoai(_, let slot, let v):
             // `value: nil` PHẢI gửi thành JSON `null` chứ không được bỏ khoá —
             // máy chủ hiểu `null` là "xoá ô này", còn thiếu khoá cũng ra null

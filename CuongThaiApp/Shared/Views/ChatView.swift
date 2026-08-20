@@ -26,9 +26,17 @@ struct ChatView: View {
     @State private var hienChonTep = false
     @State private var hienChonGif = false
     @State private var traLoiTin: Message?
+    @State private var hienDatBietDanh = false
+    @State private var bietDanhMoi = ""
+    /// Bản hội thoại có thể ĐỔI tại chỗ — `thread` truyền vào là `let`, mà đặt
+    /// biệt danh xong thì tiêu đề phải đổi ngay chứ không đợi mở lại màn.
+    @State private var hoiThoaiSua: MessageThread?
     @StateObject private var viTri = DoViTri()
     @ObservedObject private var realtime = RealtimeClient.shared
     @FocusState private var isInputFocused: Bool
+
+    /// Hội thoại đang dùng để hiển thị: bản đã sửa nếu có, không thì bản gốc.
+    private var hoiThoai: MessageThread { hoiThoaiSua ?? thread }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -57,6 +65,14 @@ struct ChatView: View {
                               systemImage: "magnifyingglass")
                     }
 
+                    Button {
+                        bietDanhMoi = hoiThoai.bietDanh ?? ""
+                        hienDatBietDanh = true
+                    } label: {
+                        Label(hoiThoai.bietDanh == nil ? "Đặt biệt danh" : "Đổi biệt danh",
+                              systemImage: "textformat.abc")
+                    }
+
                     Divider()
 
                     Menu {
@@ -83,7 +99,7 @@ struct ChatView: View {
             }
         }
         .sheet(isPresented: $showUserProfile) {
-            if let userId = thread.participants?.first?.id {
+            if let userId = thread.peer?.id {
                 UserProfileView(userId: userId)
             }
         }
@@ -98,6 +114,18 @@ struct ChatView: View {
             Task { await guiVideoDaChon(moi) }
         }
         #endif
+        .alert(hoiThoai.bietDanh == nil ? "Đặt biệt danh" : "Đổi biệt danh",
+               isPresented: $hienDatBietDanh) {
+            TextField("Biệt danh", text: $bietDanhMoi)
+                .oKhongTuSua()
+            Button("Lưu") { Task { await luuBietDanh(bietDanhMoi) } }
+            if hoiThoai.bietDanh != nil {
+                Button("Xoá biệt danh", role: .destructive) { Task { await luuBietDanh("") } }
+            }
+            Button("Huỷ", role: .cancel) { }
+        } message: {
+            Text("Chỉ MÌNH BẠN thấy biệt danh này. Người kia vẫn thấy tên thật của họ.")
+        }
         .sheet(isPresented: $hienChonGif) {
             BangChonGif { url in
                 Task { await viewModel.guiGif(url) }
@@ -138,6 +166,33 @@ struct ChatView: View {
     }
     #endif
 
+    /// Máy chủ cắt còn 100 ký tự và từ chối đặt cho chính mình; alias rỗng =
+    /// xoá biệt danh.
+    private func luuBietDanh(_ chu: String) async {
+        guard let peerId = hoiThoai.peer?.id else { return }
+        let sach = chu.trimmingCharacters(in: .whitespaces)
+        do {
+            let _: BietDanhTraVe = try await APIClient.shared
+                .request(.datBietDanh(threadId: thread.id, targetId: peerId, alias: sach))
+            if sach.isEmpty {
+                // Máy chủ THAY `displayName` bằng biệt danh, nên khi xoá thì
+                // app không còn biết tên thật là gì — phải hỏi lại. Đường
+                // `/threads/:id` không áp biệt danh nên nó trả đúng tên thật.
+                if let lai: MessageThread = try? await APIClient.shared
+                    .request(.layHoiThoai(threadId: thread.id)) {
+                    hoiThoaiSua = lai
+                } else {
+                    hoiThoaiSua = hoiThoai.doiBietDanh(nil)
+                }
+            } else {
+                hoiThoaiSua = hoiThoai.doiBietDanh(sach)
+            }
+            Haptics.xong()
+        } catch {
+            thongBaoTat = error.localizedDescription
+        }
+    }
+
     private func guiViTri() async {
         guard let toado = await viTri.doMotLan() else { return }
         await viewModel.guiViTri(vido: toado.latitude, kinhdo: toado.longitude)
@@ -149,10 +204,10 @@ struct ChatView: View {
             showUserProfile = true
         } label: {
             HStack(spacing: Spacing.sm) {
-                UserAvatarView(url: thread.avatarUrl, size: 36)
+                UserAvatarView(url: hoiThoai.avatarUrl, size: 36)
 
                 VStack(alignment: .leading, spacing: 0) {
-                    Text(thread.displayName)
+                    Text(hoiThoai.displayName)
                         .font(.titleSmall)
                         .foregroundColor(AppColors.textPrimary)
 
@@ -175,7 +230,7 @@ struct ChatView: View {
 
     private var dongTrangThai: String {
         if doiPhuongDangGo { return "đang gõ…" }
-        if let id = thread.participants?.first?.id, realtime.truyenTuyen.contains(id) {
+        if let id = thread.peer?.id, realtime.truyenTuyen.contains(id) {
             return "Đang hoạt động"
         }
         return realtime.trangThai == .daNoi ? "Ngoại tuyến" : realtime.trangThai.moTa
@@ -183,7 +238,7 @@ struct ChatView: View {
 
     private var mauTrangThai: Color {
         if doiPhuongDangGo { return AppColors.primary }
-        if let id = thread.participants?.first?.id, realtime.truyenTuyen.contains(id) {
+        if let id = thread.peer?.id, realtime.truyenTuyen.contains(id) {
             return AppColors.success
         }
         return AppColors.textTertiary
@@ -1227,8 +1282,8 @@ class ChatViewModel: ObservableObject {
     NavigationStack {
         ChatView(thread: MessageThread(
             id: 1,
-            type: "direct",
-            participants: [User(id: 1, username: "test", email: nil, fullName: "Test User", displayName: nil, avatarUrl: nil, coverPhotoUrl: nil, bio: nil, isFollowing: nil, isFollowedBy: nil, followersCount: nil, followingCount: nil, postsCount: nil, createdAt: nil)],
+            type: "USER",
+            peer: ThreadPeer(id: 1, username: "test", displayName: "Test User", avatarUrl: nil, alias: nil),
             lastMessage: nil,
             unreadCount: 0,
             createdAt: nil,
@@ -1319,4 +1374,11 @@ private struct DinhKemChat: ViewModifier {
                 guiTep(kq)
             }
     }
+}
+
+
+/// `PUT /threads/:id/nickname` trả nguyên hàng `ThreadNickname` của Prisma.
+/// Chỉ cần biết nó thành công, nên khai tối thiểu.
+struct BietDanhTraVe: Decodable {
+    let alias: String?
 }

@@ -159,10 +159,27 @@ struct Comment: Codable, Identifiable {
 // Hashable để dùng được với `navigationDestination(item:)`. So sánh theo `id`
 // như User: hai lần tải cùng một hội thoại khác nhau ở `unreadCount`/
 // `lastMessage`, mà đó không phải thứ định danh hội thoại.
+/// Người CÒN LẠI trong hội thoại, theo góc nhìn của người đang xem.
+///
+/// ⚠️ Máy chủ trả khoá `peer` (MỘT người), KHÔNG phải `participants` (mảng) —
+/// hệ thống tin nhắn chỉ có hội thoại đôi. Bản cũ đọc `participants` nên khoá
+/// đó luôn vắng ⇒ mọi hội thoại hiện tên "Unknown" và ảnh đại diện trống.
+struct ThreadPeer: Codable, Hashable {
+    let id: Int
+    let username: String?
+    /// Máy chủ ĐÃ thay bằng biệt danh nếu người xem có đặt.
+    let displayName: String?
+    let avatarUrl: String?
+    /// Biệt danh thô, `nil` khi chưa đặt — cần cho ô sửa biệt danh.
+    let alias: String?
+}
+
 struct MessageThread: Codable, Identifiable, Hashable {
     let id: Int
+    /// `USER` = nhắn riêng hai người · `ADMIN` = hỗ trợ với ban quản trị.
+    /// KHÔNG phải "direct"/"group" — máy chủ không có hội thoại nhóm.
     let type: String
-    let participants: [User]?
+    let peer: ThreadPeer?
     let lastMessage: Message?
     let unreadCount: Int
     let createdAt: String?
@@ -182,23 +199,46 @@ struct MessageThread: Codable, Identifiable, Hashable {
         return moc > Date()
     }
 
+    /// Dựng lại bản ghi với biệt danh mới.
+    func doiBietDanh(_ moi: String?) -> MessageThread {
+        guard let p = peer else { return self }
+        let sach = (moi ?? "").trimmingCharacters(in: .whitespaces)
+        let p2 = ThreadPeer(
+            id: p.id, username: p.username,
+            // Xoá biệt danh thì tên hiện phải quay về tên thật. Máy chủ tính
+            // sẵn trường này, nhưng tại chỗ thì mình phải tự lùi về username.
+            displayName: sach.isEmpty ? p.username : sach,
+            avatarUrl: p.avatarUrl,
+            alias: sach.isEmpty ? nil : sach
+        )
+        return MessageThread(id: id, type: type, peer: p2, lastMessage: lastMessage,
+                             unreadCount: unreadCount, createdAt: createdAt,
+                             updatedAt: updatedAt, preferences: preferences)
+    }
+
     /// Dựng lại bản ghi với tuỳ chọn mới — `MessageThread` toàn `let`.
     func doiTuyChon(_ moi: ThreadPreferences?) -> MessageThread {
-        MessageThread(id: id, type: type, participants: participants, lastMessage: lastMessage,
+        MessageThread(id: id, type: type, peer: peer, lastMessage: lastMessage,
                       unreadCount: unreadCount, createdAt: createdAt, updatedAt: updatedAt,
                       preferences: moi)
     }
 
     var displayName: String {
-        participants?.first?.name ?? "Unknown"
+        peer?.displayName ?? peer?.username ?? (laHoTro ? "Hỗ trợ CuongThai" : "Người dùng")
+    }
+
+    var laHoTro: Bool { type == "ADMIN" }
+    var laNhanRieng: Bool { type == "USER" }
+    /// Biệt danh người xem đã đặt cho đối phương, `nil` khi chưa đặt.
+    var bietDanh: String? {
+        guard let a = peer?.alias, !a.isEmpty else { return nil }
+        return a
     }
 
     func hash(into hasher: inout Hasher) { hasher.combine(id) }
     static func == (lhs: MessageThread, rhs: MessageThread) -> Bool { lhs.id == rhs.id }
 
-    var avatarUrl: String? {
-        participants?.first?.avatarUrl
-    }
+    var avatarUrl: String? { peer?.avatarUrl }
 }
 
 /// Bốn ô tuỳ chọn nằm chung một cột JSONB trên hàng hội thoại. Tất cả đều là

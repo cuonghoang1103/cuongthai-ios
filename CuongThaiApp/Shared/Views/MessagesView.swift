@@ -217,7 +217,7 @@ enum MessageFilter: String, CaseIterable {
     case unread = "Chưa đọc"
     case pinned = "Đã ghim"
     case personal = "Cá nhân"
-    case group = "Nhóm"
+    case support = "Hỗ trợ"
     case archived = "Lưu trữ"
 
     var icon: String {
@@ -225,9 +225,9 @@ enum MessageFilter: String, CaseIterable {
         case .all: return "tray"
         case .unread: return "envelope.badge"
         case .pinned: return "pin.fill"
+        case .support: return "lifepreserver"
         case .archived: return "archivebox"
         case .personal: return "person"
-        case .group: return "person.3"
         }
     }
 }
@@ -266,7 +266,7 @@ struct ThreadRow: View {
             ZStack(alignment: .bottomTrailing) {
                 UserAvatarView(url: thread.avatarUrl, size: 56)
 
-                if thread.type == "direct" && isOnline {
+                if thread.laNhanRieng && isOnline {
                     Circle()
                         .fill(AppColors.success)
                         .frame(width: 14, height: 14)
@@ -414,9 +414,12 @@ class MessagesViewModel: ObservableObject {
         case .pinned:
             filtered = filtered.filter { $0.daGhim }
         case .personal:
-            filtered = filtered.filter { $0.type == "direct" }
-        case .group:
-            filtered = filtered.filter { $0.type == "group" }
+            // `USER` / `ADMIN` — KHÔNG phải "direct"/"group". Bản cũ lọc bằng
+            // hai chuỗi không tồn tại nên cả hai tab luôn RỖNG. Và máy chủ
+            // không có hội thoại nhóm nào cả, nên chip "Nhóm" đã bỏ.
+            filtered = filtered.filter { $0.laNhanRieng }
+        case .support:
+            filtered = filtered.filter { $0.laHoTro }
         case .archived:
             filtered = filtered.filter { $0.daLuuTru }
         }
