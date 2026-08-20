@@ -481,10 +481,17 @@ struct PostDetailView: View {
                         noiBat: viewModel.camXucHienTai != nil || viewModel.daThich,
                     )
                 }
-                .onLongPressGesture(minimumDuration: 0.35) {
-                    Haptics.cham()
-                    withAnimation(.snappy(duration: 0.2)) { hienChonCamXuc = true }
-                }
+                // ⚠️ PHẢI là `simultaneousGesture`, KHÔNG phải `onLongPressGesture`.
+                // Gắn `.onLongPressGesture` lên một `Button` thì bộ nhận cử chỉ của
+                // chính Button giành quyền trước và cú giữ KHÔNG bao giờ tới nơi —
+                // bấm giữ mãi mà bảng cảm xúc không hiện. `simultaneousGesture`
+                // chạy SONG SONG với cử chỉ của Button nên cả chạm lẫn giữ đều ăn.
+                .simultaneousGesture(
+                    LongPressGesture(minimumDuration: 0.35).onEnded { _ in
+                        Haptics.cham()
+                        withAnimation(.snappy(duration: 0.22)) { hienChonCamXuc = true }
+                    }
+                )
 
                 Button {
                     isCommentFocused = true
@@ -530,7 +537,8 @@ struct PostDetailView: View {
     }
 
     private static let cacCamXuc: [(String, String, String)] = [
-        ("LIKE", "👍", "Thích"), ("LOVE", "❤️", "Yêu thích"), ("HAHA", "😂", "Haha"),
+        ("LIKE", "👍", "Thích"), ("LOVE", "❤️", "Yêu thích"), ("CARE", "🥰", "Thương thương"),
+        ("HAHA", "😂", "Haha"), ("WOW", "😮", "Wow"),
         ("SAD", "😢", "Buồn"), ("ANGRY", "😡", "Phẫn nộ"),
     ]
 

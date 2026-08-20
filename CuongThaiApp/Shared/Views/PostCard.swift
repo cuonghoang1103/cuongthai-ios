@@ -16,6 +16,10 @@ struct PostCard: View {
     @State private var daLuu: Bool
     @State private var camXuc: String?
     @State private var hienChonCamXuc = false
+    /// Bật một nhịp để biểu tượng cảm xúc nảy lên rồi về.
+    @State private var nayCamXuc = false
+    /// Emoji ngón tay đang trượt qua — để phóng to đúng cái đó.
+    @State private var camXucDangDi: String?
     @State private var mediaDangXem: Int?
 
     init(post: SocialPost, onComment: (() -> Void)? = nil) {
@@ -173,15 +177,26 @@ struct PostCard: View {
             Button { Task { await toggleLike() } } label: {
                 HStack(spacing: 4) {
                     Text(bieuTuongCamXuc)
+                        // Nảy to rồi về — đây là phần "đã ghi nhận" mà thiếu
+                        // nó thì chọn xong không biết máy có nhận hay chưa.
+                        .scaleEffect(nayCamXuc ? 1.55 : 1)
+                        .rotationEffect(.degrees(nayCamXuc ? -12 : 0))
                     Text(nhanCamXuc)
                 }
                 .font(.caption)
                 .foregroundColor(camXuc != nil || isLiked ? AppColors.like : AppColors.textSecondary)
             }
-            .onLongPressGesture(minimumDuration: 0.35) {
-                Haptics.cham()
-                withAnimation(.snappy(duration: 0.2)) { hienChonCamXuc = true }
-            }
+            // ⚠️ PHẢI là `simultaneousGesture`, KHÔNG phải `onLongPressGesture`.
+            // Gắn `.onLongPressGesture` lên một `Button` thì bộ nhận cử chỉ của
+            // chính Button giành quyền trước và cú giữ KHÔNG bao giờ tới nơi —
+            // bấm giữ mãi mà bảng cảm xúc không hiện. `simultaneousGesture`
+            // chạy SONG SONG với cử chỉ của Button nên cả chạm lẫn giữ đều ăn.
+            .simultaneousGesture(
+                LongPressGesture(minimumDuration: 0.35).onEnded { _ in
+                    Haptics.cham()
+                    withAnimation(.snappy(duration: 0.22)) { hienChonCamXuc = true }
+                }
+            )
 
             Spacer()
 
@@ -230,7 +245,9 @@ struct PostCard: View {
     private static let cacCamXuc: [(String, String, String)] = [
         ("LIKE", "👍", "Thích"),
         ("LOVE", "❤️", "Yêu thích"),
+        ("CARE", "🥰", "Thương thương"),
         ("HAHA", "😂", "Haha"),
+        ("WOW", "😮", "Wow"),
         ("SAD", "😢", "Buồn"),
         ("ANGRY", "😡", "Phẫn nộ"),
     ]
@@ -262,8 +279,16 @@ struct PostCard: View {
                             .foregroundColor(.white)
                             .padding(.horizontal, 6).padding(.vertical, 2)
                             .background(Capsule().fill(.black.opacity(0.72)))
-                        Text(hinh).font(.system(size: 28))
+                        Text(hinh)
+                            .font(.system(size: 28))
+                            .scaleEffect(camXucDangDi == loai ? 1.6 : 1)
+                            .animation(.spring(response: 0.25, dampingFraction: 0.55),
+                                       value: camXucDangDi)
                     }
+                    // Vùng chạm rộng hơn emoji để ngón tay trượt qua là bắt
+                    // được — Facebook phóng to theo ngón tay trượt.
+                    .contentShape(Rectangle())
+                    .onHover { camXucDangDi = $0 ? loai : nil }
                 }
                 .buttonStyle(.plain)
                 // Nảy LẦN LƯỢT từ trái sang, mỗi cái trễ 40ms — đó là thứ làm
@@ -292,6 +317,15 @@ struct PostCard: View {
             hienChonCamXuc = false
         }
         if !isLiked { isLiked = true; likesCount += 1 }
+
+        // Nhịp NẢY: phóng to rồi về. Chạy ngay, không đợi máy chủ — người dùng
+        // cần thấy phản hồi tức thì, còn máy chủ mất vài trăm mili giây.
+        withAnimation(.spring(response: 0.22, dampingFraction: 0.42)) { nayCamXuc = true }
+        Task {
+            try? await Task.sleep(nanoseconds: 220_000_000)
+            withAnimation(.spring(response: 0.34, dampingFraction: 0.62)) { nayCamXuc = false }
+        }
+
         do {
             try await APIClient.shared.send(.reactPost(id: post.id, type: loai))
         } catch {
