@@ -12,6 +12,10 @@ struct NotesView: View {
     @State private var dangTim = false
     @State private var hienSoDo = false
     @State private var hienTroLy = false
+    @State private var hienLoc = false
+    @State private var monSua: NoteSubject?
+    @State private var tenMonMoi = ""
+    @State private var hoiXoaMon: NoteSubject?
 
     var body: some View {
         NavigationStack {
@@ -49,6 +53,12 @@ struct NotesView: View {
                     // Menu chỉ còn MỘT mục thì bỏ menu, bấm phát ăn ngay.
                     // "Nhập ghi chú" đã gỡ: backend không có đường nhập nào.
                     HStack(spacing: Spacing.md) {
+                        Button { hienLoc = true } label: {
+                            Image(systemName: "line.3.horizontal.decrease.circle")
+                                .foregroundColor(AppColors.textPrimary)
+                        }
+                        .accessibilityLabel("Lọc và thùng rác")
+
                         Button { hienSoDo = true } label: {
                             Image(systemName: "point.3.connected.trianglepath.dotted")
                                 .foregroundColor(AppColors.textPrimary)
@@ -67,7 +77,27 @@ struct NotesView: View {
                     }
                 }
             }
+            .sheet(isPresented: $hienLoc) { LocGhiChuView() }
             .sheet(isPresented: $hienSoDo) { SoDoGhiChuView() }
+            .alert("Đổi tên môn", isPresented: Binding(get: { monSua != nil },
+                                                       set: { if !$0 { monSua = nil } })) {
+                TextField("Tên môn", text: $tenMonMoi)
+                Button("Lưu") {
+                    if let m = monSua {
+                        Task { await viewModel.suaMon(m.id, ten: tenMonMoi); monSua = nil }
+                    }
+                }
+                Button("Huỷ", role: .cancel) { monSua = nil }
+            }
+            .alert("Xoá môn học?", isPresented: Binding(get: { hoiXoaMon != nil },
+                                                        set: { if !$0 { hoiXoaMon = nil } })) {
+                Button("Xoá", role: .destructive) {
+                    if let m = hoiXoaMon { Task { await viewModel.xoaMon(m.id); hoiXoaMon = nil } }
+                }
+                Button("Huỷ", role: .cancel) { hoiXoaMon = nil }
+            } message: {
+                Text("Mọi ghi chú trong môn này cũng bị xoá theo.")
+            }
             .sheet(isPresented: $hienTroLy) { TroLyGhiChuView() }
             .sheet(isPresented: $showNewSubject) {
                 NewSubjectView { name, color, emoji in
@@ -196,6 +226,14 @@ struct NotesView: View {
                             SubjectCard(subject: subject)
                         }
                         .buttonStyle(.plain)
+                        .contextMenu {
+                            Button { monSua = subject; tenMonMoi = subject.name } label: {
+                                Label("Đổi tên", systemImage: "pencil")
+                            }
+                            Button(role: .destructive) { hoiXoaMon = subject } label: {
+                                Label("Xoá môn", systemImage: "trash")
+                            }
+                        }
                     }
                 }
             }
@@ -432,9 +470,35 @@ class NotesViewModel: ObservableObject {
         isLoading = false
     }
 
+    /// ⚠️ Trước đây hàm này là VỎ — chỉ có chú thích "API call would be made
+    /// here" rồi tải lại cây, nên bấm "Tạo" không tạo gì cả và cũng không báo
+    /// lỗi. Đây là chỗ duy nhất trong app còn sót lại kiểu đó.
     func createSubject(name: String, color: String, emoji: String) async {
-        // API call would be made here
-        await loadNotesTree()
+        let ten = name.trimmingCharacters(in: .whitespaces)
+        guard !ten.isEmpty else { error = "Chưa nhập tên môn học."; return }
+        do {
+            let _: NoteSubject = try await APIClient.shared
+                .request(.taoMon(name: ten, color: color, emoji: emoji))
+            Haptics.xong()
+            await loadNotesTree()
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
+    func suaMon(_ id: Int, ten: String) async {
+        do {
+            let _: NoteSubject = try await APIClient.shared.request(.suaMon(id: id, ["name": ten]))
+            await loadNotesTree()
+        } catch { self.error = error.localizedDescription }
+    }
+
+    func xoaMon(_ id: Int) async {
+        do {
+            let _: EmptyResponse = try await APIClient.shared.request(.xoaMon(id: id))
+            Haptics.xong()
+            await loadNotesTree()
+        } catch { self.error = error.localizedDescription }
     }
 }
 

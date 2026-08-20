@@ -109,6 +109,16 @@ enum APIEndpoint {
     case timGhiChu(q: String, subjectId: Int?, tag: String?)
     case layThe
     case taoChuong(subjectId: Int, title: String)
+    case taoMon(name: String, color: String?, emoji: String?)
+    case suaMon(id: Int, [String: Any])
+    case xoaMon(id: Int)
+    case suaChuong(id: Int, title: String)
+    case xoaChuong(id: Int)
+    case nhanBanGhiChu(id: Int)
+    case locGhiChu(f: String)
+    case khoiPhucGhiChu(id: Int)
+    case xoaVinhVien(id: Int)
+    case layLienKetNguoc(id: Int)
     case layPhienBan(noteId: Int)
     case layMotPhienBan(noteId: Int, version: Int)
     case luuMocPhienBan(noteId: Int)
@@ -225,6 +235,16 @@ enum APIEndpoint {
         case .timGhiChu: return "/api/v1/notes/search"
         case .layThe: return "/api/v1/notes/tags"
         case .taoChuong: return "/api/v1/notes/chapters"
+        case .taoMon: return "/api/v1/notes/subjects"
+        case .suaMon(let id, _): return "/api/v1/notes/subjects/\(id)"
+        case .xoaMon(let id): return "/api/v1/notes/subjects/\(id)"
+        case .suaChuong(let id, _): return "/api/v1/notes/chapters/\(id)"
+        case .xoaChuong(let id): return "/api/v1/notes/chapters/\(id)"
+        case .nhanBanGhiChu(let id): return "/api/v1/notes/notes/\(id)/duplicate"
+        case .locGhiChu: return "/api/v1/notes/notes/filter"
+        case .khoiPhucGhiChu(let id): return "/api/v1/notes/notes/\(id)/restore"
+        case .xoaVinhVien(let id): return "/api/v1/notes/notes/\(id)/permanent"
+        case .layLienKetNguoc(let id): return "/api/v1/notes/notes/\(id)/backlinks"
         case .layPhienBan(let id): return "/api/v1/notes/notes/\(id)/versions"
         case .layMotPhienBan(let id, let v): return "/api/v1/notes/notes/\(id)/versions/\(v)"
         case .luuMocPhienBan(let id): return "/api/v1/notes/notes/\(id)/versions"
@@ -267,16 +287,18 @@ enum APIEndpoint {
              .sendMessageMedia, .toggleMessageReaction, .recallMessage,
              .boLuuTruHoiThoai, .danhDauChuaDoc, .danhDauDaXemTin, .taoTin, .taoChuong,
              .luuMocPhienBan, .khoiPhucPhienBan, .chayViecAI, .hoiTroLyGhiChu, .taoDongBang,
+             .taoMon, .nhanBanGhiChu, .khoiPhucGhiChu,
              .createNote, .reportPost, .reportThread, .blockUser, .requestDeletion,
              .openThread, .muteThread, .saveLessonProgress:
             return "POST"
         case .updateProfile, .datBietDanh:
             return "PUT"
         case .updateNote, .markRead, .reactPost, .markNotificationsRead, .datTuyChonHoiThoai,
-             .suaDongBang:
+             .suaDongBang, .suaMon, .suaChuong:
             return "PATCH"
         case .deletePost, .unlikePost, .unsavePost, .deleteNote,
-             .unblockUser, .cancelDeletionRequest, .deleteMessage, .xoaTin, .xoaDongBang:
+             .unblockUser, .cancelDeletionRequest, .deleteMessage, .xoaTin, .xoaDongBang,
+             .xoaMon, .xoaChuong, .xoaVinhVien:
             return "DELETE"
         default:
             return "GET"
@@ -331,6 +353,14 @@ enum APIEndpoint {
             return m
         case .taoChuong(let sid, let t):
             return ["subjectId": sid, "title": t]
+        case .taoMon(let n, let c, let e):
+            var m: [String: Any] = ["name": n]
+            if let c { m["color"] = c }
+            if let e { m["emoji"] = e }
+            return m
+        case .suaMon(_, let d): return d
+        case .suaChuong(_, let t): return ["title": t]
+        case .locGhiChu(let f): return ["f": f]
         case .taoTin(let u, let k, let c):
             var m: [String: Any] = ["mediaUrl": u, "mediaType": k, "visibility": "PUBLIC"]
             if let c, !c.isEmpty { m["caption"] = c }

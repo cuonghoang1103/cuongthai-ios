@@ -67,6 +67,9 @@ struct GhiChuChiTietView: View {
                             Label(g.isArchived ? "Bỏ lưu trữ" : "Lưu trữ", systemImage: "archivebox")
                         }
                     }
+                    Button { Task { await nhanBan() } } label: {
+                        Label("Nhân bản", systemImage: "doc.on.doc")
+                    }
                     Button { hienLichSu = true } label: {
                         Label("Lịch sử phiên bản", systemImage: "clock.arrow.circlepath")
                     }
@@ -146,6 +149,15 @@ struct GhiChuChiTietView: View {
             let moi: Note = try await APIClient.shared.request(.updateNote(id: ghiChuId, [ten: giaTri]))
             ghiChu = moi
             Haptics.cham()
+            doiRoi()
+        } catch { loi = error.localizedDescription }
+    }
+
+    private func nhanBan() async {
+        do {
+            let _: Note = try await APIClient.shared.request(.nhanBanGhiChu(id: ghiChuId))
+            Haptics.xong()
+            loi = "Đã tạo một bản sao."
             doiRoi()
         } catch { loi = error.localizedDescription }
     }

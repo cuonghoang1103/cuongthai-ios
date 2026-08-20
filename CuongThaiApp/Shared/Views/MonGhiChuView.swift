@@ -11,6 +11,10 @@ struct MonGhiChuView: View {
     @State private var dangTao = false
     @State private var loi: String?
     @State private var bang: [BangTomTat] = []
+    @State private var hienThemChuong = false
+    @State private var tenChuong = ""
+    @State private var chuongSua: NoteChapter?
+    @State private var hoiXoaChuong: NoteChapter?
 
     private var ghiChuLe: [NoteSummary] { mon.notes ?? [] }
 
@@ -37,13 +41,34 @@ struct MonGhiChuView: View {
         .navigationBarTitleDisplayModeInline()
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Button {
-                    Task { await taoGhiChu(chuongId: nil) }
+                Menu {
+                    Button { Task { await taoGhiChu(chuongId: nil) } } label: {
+                        Label("Ghi chú mới", systemImage: "square.and.pencil")
+                    }
+                    Button { tenChuong = ""; hienThemChuong = true } label: {
+                        Label("Chương mới", systemImage: "folder.badge.plus")
+                    }
                 } label: {
-                    if dangTao { ProgressView() } else { Image(systemName: "square.and.pencil") }
+                    if dangTao { ProgressView() } else { Image(systemName: "plus") }
                 }
                 .disabled(dangTao)
             }
+        }
+        .alert(chuongSua == nil ? "Chương mới" : "Đổi tên chương",
+               isPresented: Binding(get: { hienThemChuong || chuongSua != nil },
+                                    set: { if !$0 { hienThemChuong = false; chuongSua = nil } })) {
+            TextField("Tên chương", text: $tenChuong)
+            Button(chuongSua == nil ? "Tạo" : "Lưu") { Task { await luuChuong() } }
+            Button("Huỷ", role: .cancel) { hienThemChuong = false; chuongSua = nil }
+        }
+        .alert("Xoá chương?", isPresented: Binding(get: { hoiXoaChuong != nil },
+                                                   set: { if !$0 { hoiXoaChuong = nil } })) {
+            Button("Xoá", role: .destructive) {
+                if let c = hoiXoaChuong { Task { await xoaChuong(c.id) } }
+            }
+            Button("Huỷ", role: .cancel) { hoiXoaChuong = nil }
+        } message: {
+            Text("Ghi chú trong chương KHÔNG bị xoá, chúng chuyển ra ngoài chương.")
         }
         .task {
             // Trang cơ sở dữ liệu KHÔNG nằm trong cây ghi chú — `getTree` lọc
@@ -70,6 +95,21 @@ struct MonGhiChuView: View {
                     }
                     .buttonStyle(.plain)
                     .foregroundColor(AppColors.primary)
+
+                    if let cid = chuongId, let ch = (mon.chapters ?? []).first(where: { $0.id == cid }) {
+                        Menu {
+                            Button { chuongSua = ch; tenChuong = ch.title } label: {
+                                Label("Đổi tên", systemImage: "pencil")
+                            }
+                            Button(role: .destructive) { hoiXoaChuong = ch } label: {
+                                Label("Xoá chương", systemImage: "trash")
+                            }
+                        } label: {
+                            Image(systemName: "ellipsis")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundColor(AppColors.textTertiary)
+                        }
+                    }
                 }
                 .padding(.horizontal, Spacing.md)
             }
@@ -142,6 +182,31 @@ struct MonGhiChuView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 60)
+    }
+
+    private func luuChuong() async {
+        let ten = tenChuong.trimmingCharacters(in: .whitespaces)
+        guard !ten.isEmpty else { loi = "Chưa nhập tên chương."; return }
+        do {
+            if let ch = chuongSua {
+                let _: NoteChapter = try await APIClient.shared.request(.suaChuong(id: ch.id, title: ten))
+            } else {
+                let _: NoteChapter = try await APIClient.shared
+                    .request(.taoChuong(subjectId: mon.id, title: ten))
+            }
+            Haptics.xong()
+            hienThemChuong = false; chuongSua = nil
+            await taiLaiCay()
+        } catch { loi = error.localizedDescription }
+    }
+
+    private func xoaChuong(_ id: Int) async {
+        hoiXoaChuong = nil
+        do {
+            let _: EmptyResponse = try await APIClient.shared.request(.xoaChuong(id: id))
+            Haptics.xong()
+            await taiLaiCay()
+        } catch { loi = error.localizedDescription }
     }
 
     private func taoGhiChu(chuongId: Int?) async {
