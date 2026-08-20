@@ -391,6 +391,9 @@ struct NoteSubject: Codable, Identifiable {
     let sortOrder: Int?
     let chapters: [NoteChapter]?
     let notesCount: Int?
+    /// Ghi chú nằm THẲNG dưới môn, không thuộc chương nào. Máy chủ trả sẵn
+    /// trong cây; thiếu trường này là mất hẳn nhóm ghi chú đó khỏi màn hình.
+    let notes: [NoteSummary]?
 }
 
 struct NoteChapter: Codable, Identifiable {
@@ -417,6 +420,19 @@ struct NoteSummary: Codable, Identifiable {
     let id: Int
     let title: String
     let updatedAt: String
+}
+
+/// Một dòng kết quả tìm. Máy chủ trả kèm `snippet` — đoạn trích quanh từ khoá.
+/// `NoteSummary` giải mã được payload này nhưng sẽ VỨT mất snippet, nên khai
+/// riêng để hiện được đoạn trích.
+struct KetQuaTimGhiChu: Codable, Identifiable {
+    let id: Int
+    let title: String
+    let subjectId: Int?
+    let chapterId: Int?
+    let tags: [String]?
+    let updatedAt: String
+    let snippet: String?
 }
 
 struct Note: Codable, Identifiable {

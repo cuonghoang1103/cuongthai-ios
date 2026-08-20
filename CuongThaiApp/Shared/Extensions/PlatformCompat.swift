@@ -78,3 +78,15 @@ extension View {
         #endif
     }
 }
+
+extension View {
+    /// `navigationBarTitleDisplayMode` chỉ có trên iOS.
+    @ViewBuilder
+    func navigationBarTitleDisplayModeInline() -> some View {
+        #if os(iOS)
+        self.navigationBarTitleDisplayMode(.inline)
+        #else
+        self
+        #endif
+    }
+}

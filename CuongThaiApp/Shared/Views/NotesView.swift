@@ -7,12 +7,17 @@ struct NotesView: View {
     @State private var showNewSubject = false
     @State private var showNewChapter = false
     @State private var selectedSubjectForChapter: NoteSubject?
+    @State private var tuKhoa = ""
+    @State private var ketQua: [KetQuaTimGhiChu] = []
+    @State private var dangTim = false
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: Spacing.md) {
-                    if viewModel.isLoading && viewModel.notesTree == nil {
+                    if !tuKhoa.trimmingCharacters(in: .whitespaces).isEmpty {
+                        khoiKetQuaTim
+                    } else if viewModel.isLoading && viewModel.notesTree == nil {
                         loadingView
                     } else if let tree = viewModel.notesTree {
                         recentNotesSection(tree)
@@ -24,6 +29,19 @@ struct NotesView: View {
             .background(AppColors.backgroundPrimary)
             .navigationTitle("Ghi chú")
             .navigationBarTitleDisplayMode(.large)
+            .searchable(text: $tuKhoa, prompt: "Tìm trong mọi ghi chú")
+            .onChange(of: tuKhoa) { _, moi in
+                // Hoãn 350ms: gõ "toán" là 4 lượt gọi mạng cho một lần tìm, và
+                // lượt về sau có thể tới TRƯỚC lượt trước rồi đè kết quả đúng.
+                viecTim?.cancel()
+                let khoa = moi.trimmingCharacters(in: .whitespaces)
+                guard !khoa.isEmpty else { ketQua = []; return }
+                viecTim = Task {
+                    try? await Task.sleep(nanoseconds: 350_000_000)
+                    guard !Task.isCancelled else { return }
+                    await tim(khoa)
+                }
+            }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     // Menu chỉ còn MỘT mục thì bỏ menu, bấm phát ăn ngay.
@@ -66,6 +84,64 @@ struct NotesView: View {
         .padding(.top, Spacing.xxl)
     }
 
+    @State private var viecTim: Task<Void, Never>?
+
+    private var khoiKetQuaTim: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            HStack {
+                Text(dangTim ? "Đang tìm…" : "\(ketQua.count) kết quả")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(AppColors.textSecondary)
+                Spacer()
+                if dangTim { ProgressView().scaleEffect(0.7) }
+            }
+
+            if !dangTim && ketQua.isEmpty {
+                Text("Không thấy ghi chú nào khớp.")
+                    .font(.bodyMedium)
+                    .foregroundColor(AppColors.textTertiary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 40)
+            }
+
+            ForEach(ketQua) { n in
+                NavigationLink {
+                    GhiChuChiTietView(ghiChuId: n.id) { Task { await viewModel.loadNotesTree() } }
+                } label: {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(n.title.isEmpty ? "Untitled" : n.title)
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundColor(AppColors.textPrimary)
+                            .lineLimit(1)
+                        if let sn = n.snippet, !sn.isEmpty {
+                            Text(sn)
+                                .font(.system(size: 12))
+                                .foregroundColor(AppColors.textSecondary)
+                                .lineLimit(2)
+                        }
+                        Text(TimeFormatter.formatTimeAgo(n.updatedAt))
+                            .font(.system(size: 10))
+                            .foregroundColor(AppColors.textTertiary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 7)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                Divider().background(AppColors.divider)
+            }
+        }
+    }
+
+    private func tim(_ khoa: String) async {
+        dangTim = true
+        defer { dangTim = false }
+        // Tìm hỏng thì để danh sách rỗng — màn hình đã nói rõ "0 kết quả",
+        // ném thêm hộp thoại lỗi ở đây chỉ chắn mất ô tìm.
+        ketQua = (try? await APIClient.shared
+            .request(.timGhiChu(q: khoa, subjectId: nil, tag: nil))) ?? []
+    }
+
     private func recentNotesSection(_ tree: NotesTree) -> some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
             sectionHeader("Gần đây")
@@ -74,9 +150,14 @@ struct NotesView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: Spacing.md) {
                         ForEach(recentNotes.prefix(10)) { note in
-                            RecentNoteCard(note: note) {
-                                // Open note
+                            NavigationLink {
+                                GhiChuChiTietView(ghiChuId: note.id) {
+                                    Task { await viewModel.loadNotesTree() }
+                                }
+                            } label: {
+                                RecentNoteCard(note: note) { }
                             }
+                            .buttonStyle(.plain)
                         }
                     }
                 }
@@ -95,9 +176,12 @@ struct NotesView: View {
             } else {
                 LazyVStack(spacing: Spacing.md) {
                     ForEach(tree.subjects) { subject in
-                        SubjectCard(subject: subject) {
-                            selectedSubject = subject
+                        NavigationLink {
+                            MonGhiChuView(mon: subject) { await viewModel.loadNotesTree() }
+                        } label: {
+                            SubjectCard(subject: subject) { }
                         }
+                        .buttonStyle(.plain)
                     }
                 }
             }

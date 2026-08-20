@@ -104,6 +104,11 @@ enum APIEndpoint {
     case createNote(subjectId: Int, chapterId: Int?, title: String?)
     case updateNote(id: Int, [String: Any])
     case deleteNote(id: Int)
+    case layGhiChu(id: Int)
+    /// Tìm ghi chú. `q` rỗng + `tag` rỗng = trả tất cả (máy chủ tự lo).
+    case timGhiChu(q: String, subjectId: Int?, tag: String?)
+    case layThe
+    case taoChuong(subjectId: Int, title: String)
 
     // Learning
     case getCourses(page: Int, size: Int, keyword: String?)
@@ -203,6 +208,10 @@ enum APIEndpoint {
         case .createNote: return "/api/v1/notes/notes"
         case .updateNote(let id, _): return "/api/v1/notes/notes/\(id)"
         case .deleteNote(let id): return "/api/v1/notes/notes/\(id)"
+        case .layGhiChu(let id): return "/api/v1/notes/notes/\(id)"
+        case .timGhiChu: return "/api/v1/notes/search"
+        case .layThe: return "/api/v1/notes/tags"
+        case .taoChuong: return "/api/v1/notes/chapters"
 
         case .getCourses: return "/api/v1/courses"
         case .getCourseDetail(let slug): return "/api/v1/courses/\(slug)"
@@ -230,7 +239,7 @@ enum APIEndpoint {
              .createPost, .likePost, .followUser, .unfollowUser,
              .createComment, .savePost, .sendMessage, .sendMessageWithFiles, .enrollCourse,
              .sendMessageMedia, .toggleMessageReaction, .recallMessage,
-             .boLuuTruHoiThoai, .danhDauChuaDoc, .danhDauDaXemTin, .taoTin,
+             .boLuuTruHoiThoai, .danhDauChuaDoc, .danhDauDaXemTin, .taoTin, .taoChuong,
              .createNote, .reportPost, .reportThread, .blockUser, .requestDeletion,
              .openThread, .muteThread, .saveLessonProgress:
             return "POST"
@@ -279,6 +288,14 @@ enum APIEndpoint {
             return ["media": ["url": u, "kind": k]]
         case .toggleMessageReaction(_, let e):
             return ["emoji": e]
+        case .timGhiChu(let q, let sid, let tag):
+            var m: [String: Any] = [:]
+            if !q.isEmpty { m["q"] = q }
+            if let sid { m["subjectId"] = sid }
+            if let tag, !tag.isEmpty { m["tag"] = tag }
+            return m
+        case .taoChuong(let sid, let t):
+            return ["subjectId": sid, "title": t]
         case .taoTin(let u, let k, let c):
             var m: [String: Any] = ["mediaUrl": u, "mediaType": k, "visibility": "PUBLIC"]
             if let c, !c.isEmpty { m["caption"] = c }
