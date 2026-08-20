@@ -28,6 +28,10 @@ struct ChatView: View {
     @State private var traLoiTin: Message?
     @State private var hienDatBietDanh = false
     @State private var hienChonNen = false
+    @State private var hienMayAnh = false
+    /// Bốn nút tắt thu lại khi đang gõ, bung ra khi ô chữ trống.
+    @State private var dangGo = false
+    @StateObject private var ghiAm = GhiAmThoai()
     @State private var nen: NenChat = .macDinh
     @State private var bietDanhMoi = ""
     /// Bản hội thoại có thể ĐỔI tại chỗ — `thread` truyền vào là `let`, mà đặt
@@ -139,6 +143,8 @@ struct ChatView: View {
         } message: {
             Text("Chỉ MÌNH BẠN thấy biệt danh này. Người kia vẫn thấy tên thật của họ.")
         }
+        .modifier(MayAnhVaGhiAm(hienMayAnh: $hienMayAnh, dangGo: $dangGo,
+                                coChu: coChu, ghiAm: ghiAm, chup: chupXong))
         .sheet(isPresented: $hienChonNen) {
             BangChonNen(dangChon: $nen) { KhoNenChat.ghi(thread.id, $0) }
         }
@@ -317,6 +323,80 @@ struct ChatView: View {
         .background(AppColors.backgroundSecondary)
     }
 
+    private var coChu: Bool {
+        !messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private func chupXong(_ data: Data) {
+        Task {
+            await viewModel.guiAnh([(data, "chup.jpg", "image/jpeg")],
+                                   kem: messageText.trimmingCharacters(in: .whitespaces))
+            messageText = ""
+        }
+    }
+
+    private func nutThanh(_ icon: String, _ cham: @escaping () -> Void) -> some View {
+        Button(action: cham) {
+            Image(systemName: icon)
+                .font(.system(size: 21))
+                .foregroundColor(AppColors.primary)
+                .frame(width: 30, height: 34)
+        }
+        .buttonStyle(.plain)
+    }
+
+    /// Thanh thay chỗ ô nhập trong lúc ghi. Cố ý CHIẾM CHỖ ô nhập thay vì nổi
+    /// đè lên: đang ghi mà vẫn gõ được thì người dùng gõ xong bấm gửi và mất
+    /// đoạn ghi.
+    private var thanhGhiAm: some View {
+        HStack(spacing: 12) {
+            Button {
+                _ = ghiAm.dungLai(huy: true)
+            } label: {
+                Image(systemName: "trash.fill")
+                    .font(.system(size: 18))
+                    .foregroundColor(AppColors.error)
+                    .frame(width: 34, height: 34)
+            }
+            .buttonStyle(.plain)
+
+            Circle()
+                .fill(AppColors.error)
+                .frame(width: 9, height: 9)
+                .opacity(ghiAm.giay % 2 == 0 ? 1 : 0.25)
+                .animation(.easeInOut(duration: 0.4), value: ghiAm.giay)
+
+            Text(String(format: "%d:%02d", ghiAm.giay / 60, ghiAm.giay % 60))
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundColor(AppColors.textPrimary)
+                .monospacedDigit()
+
+            Text("Đang ghi…")
+                .font(.system(size: 13))
+                .foregroundColor(AppColors.textSecondary)
+
+            Spacer()
+
+            Button {
+                guard let kq = ghiAm.dungLai() else {
+                    viewModel.error = "Đoạn ghi quá ngắn."
+                    return
+                }
+                Haptics.cham()
+                Task {
+                    await viewModel.guiAnh([(kq.data, "thoai-\(kq.giay)s.m4a", "audio/m4a")], kem: "")
+                }
+            } label: {
+                Image(systemName: "arrow.up.circle.fill")
+                    .font(.system(size: 30))
+                    .foregroundColor(AppColors.primary)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 9)
+    }
+
     private var bangEmoji: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: Spacing.sm) {
@@ -447,62 +527,95 @@ struct ChatView: View {
                 thanhTraLoi(cha)
             }
 
-            HStack(alignment: .bottom, spacing: Spacing.sm) {
-                // Attachment button
-                Button {
-                    showAttachmentOptions.toggle()
-                } label: {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.title2)
-                        .foregroundColor(AppColors.primary)
-                }
+            Group {
+            if ghiAm.dangGhi {
+                thanhGhiAm
+            } else {
+                HStack(alignment: .bottom, spacing: 10) {
+                    // Bốn nút tắt kiểu Messenger. Chúng THU LẠI thành một mũi
+                    // tên khi đang gõ — bốn biểu tượng cộng bàn phím đẩy ô chữ
+                    // xuống còn một mẩu hẹp trên máy nhỏ.
+                    if dangGo {
+                        Button {
+                            withAnimation(.easeOut(duration: 0.18)) { dangGo = false }
+                        } label: {
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundColor(AppColors.primary)
+                                .frame(width: 26, height: 34)
+                        }
+                        .buttonStyle(.plain)
+                    } else {
+                        nutThanh("plus.circle.fill") {
+                            withAnimation { showAttachmentOptions.toggle() }
+                        }
+                        #if os(iOS)
+                        // Máy mô phỏng KHÔNG có máy ảnh — ẩn hẳn nút thay vì để
+                        // bấm vào ra màn hình đen.
+                        if MayAnh.coMayAnh {
+                            nutThanh("camera.fill") { hienMayAnh = true }
+                        }
+                        PhotosPicker(selection: $anhDangChon, maxSelectionCount: 5, matching: .images) {
+                            Image(systemName: "photo.fill")
+                                .font(.system(size: 20))
+                                .foregroundColor(AppColors.primary)
+                                .frame(width: 30, height: 34)
+                        }
+                        #endif
+                        nutThanh("mic.fill") { Task { await ghiAm.batDau() } }
+                    }
 
-                // Text input
-                HStack(alignment: .bottom, spacing: Spacing.sm) {
-                    TextField("Tin nhắn", text: $messageText, axis: .vertical)
-                        .font(.bodyMedium)
-                        .foregroundColor(AppColors.textPrimary)
-                        .lineLimit(1...5)
-                        .focused($isInputFocused)
-                        .padding(.horizontal, Spacing.sm)
-                        .padding(.vertical, Spacing.sm)
-                        .background(AppColors.backgroundTertiary)
-                        .cornerRadius(CornerRadius.large)
+                    HStack(alignment: .bottom, spacing: 6) {
+                        TextField("Tin nhắn", text: $messageText, axis: .vertical)
+                            .font(.bodyMedium)
+                            .foregroundColor(AppColors.textPrimary)
+                            .lineLimit(1...5)
+                            .focused($isInputFocused)
+                            .padding(.leading, 12)
+                            .padding(.vertical, 8)
 
-                    // Emoji button
+                        Button {
+                            withAnimation { hienEmoji.toggle() }
+                            if hienEmoji { isInputFocused = false }
+                        } label: {
+                            Image(systemName: hienEmoji ? "keyboard" : "face.smiling")
+                                .font(.system(size: 19))
+                                .foregroundColor(hienEmoji ? AppColors.primary : AppColors.textSecondary)
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.trailing, 10)
+                        .padding(.bottom, 7)
+                    }
+                    .background(
+                        RoundedRectangle(cornerRadius: 20, style: .continuous)
+                            .fill(AppColors.backgroundTertiary)
+                    )
+
+                    // Ô trống thì nút gửi thành 👍 — bấm một cái là gửi luôn.
+                    // Bản cũ để nút mờ và TẮT, tức một điểm bấm không ăn.
                     Button {
-                        withAnimation { hienEmoji.toggle() }
-                        if hienEmoji { isInputFocused = false }
+                        if coChu {
+                            sendMessage()
+                        } else {
+                            Haptics.cham()
+                            Task { await viewModel.sendMessage("👍") }
+                        }
                     } label: {
-                        Image(systemName: hienEmoji ? "keyboard" : "face.smiling")
-                            .font(.title3)
-                            .foregroundColor(hienEmoji ? AppColors.primary : AppColors.textSecondary)
+                        if coChu {
+                            Image(systemName: "arrow.up.circle.fill")
+                                .font(.system(size: 30))
+                                .foregroundColor(AppColors.primary)
+                        } else {
+                            Text("👍").font(.system(size: 25))
+                        }
                     }
+                    .buttonStyle(.plain)
+                    .padding(.bottom, 2)
                 }
-
-                // Ô trống thì nút gửi thành 👍 — bấm một cái là gửi luôn, đúng
-                // như Messenger. Bản cũ để nút mờ và TẮT, tức chỗ đó thành một
-                // điểm bấm không ăn.
-                Button {
-                    if messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                        Haptics.cham()
-                        Task { await viewModel.sendMessage("👍") }
-                    } else {
-                        sendMessage()
-                    }
-                } label: {
-                    if messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                        Text("👍").font(.system(size: 26))
-                    } else {
-                        Image(systemName: "arrow.up.circle.fill")
-                            .font(.title)
-                            .foregroundColor(AppColors.primary)
-                    }
-                }
-                .buttonStyle(.plain)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 7)
             }
-            .padding(.horizontal, Spacing.md)
-            .padding(.vertical, Spacing.sm)
+            }
             .background(AppColors.backgroundSecondary)
 
             // Attachment options
@@ -517,12 +630,6 @@ struct ChatView: View {
     // dưới đi chung đường `POST /messages/upload` (trần 10MB).
     private var attachmentOptions: some View {
         HStack(spacing: Spacing.xl) {
-            #if os(iOS)
-            PhotosPicker(selection: $anhDangChon, maxSelectionCount: 5, matching: .images) {
-                nutDinhKem(icon: "photo", title: "Ảnh")
-            }
-            #endif
-
             #if os(iOS)
             PhotosPicker(selection: $videoDangChon, maxSelectionCount: 1, matching: .videos) {
                 nutDinhKem(icon: "video", title: "Video")
@@ -721,7 +828,11 @@ struct MessageBubble: View {
                     }
 
                     ForEach(message.tepKhongPhaiAnh) { tep in
-                        theTep(tep)
+                        if (tep.mimeType ?? "").hasPrefix("audio/") {
+                            TinThoaiView(tep: tep, mauChu: mauChu, mauNen: mauNen)
+                        } else {
+                            theTep(tep)
+                        }
                     }
 
                     if !message.noiDung.isEmpty && message.viTri == nil {
@@ -1439,4 +1550,31 @@ private struct DinhKemChat: ViewModifier {
 /// Chỉ cần biết nó thành công, nên khai tối thiểu.
 struct BietDanhTraVe: Decodable {
     let alias: String?
+}
+
+
+private struct MayAnhVaGhiAm: ViewModifier {
+    @Binding var hienMayAnh: Bool
+    @Binding var dangGo: Bool
+    let coChu: Bool
+    @ObservedObject var ghiAm: GhiAmThoai
+    let chup: (Data) -> Void
+
+    func body(content: Content) -> some View {
+        content
+            #if os(iOS)
+            .fullScreenCover(isPresented: $hienMayAnh) {
+                MayAnh(xong: chup).ignoresSafeArea()
+            }
+            #endif
+            // Gõ chữ đầu tiên thì bốn nút thu lại; xoá sạch thì bung ra.
+            .onChange(of: coChu) { _, co in
+                withAnimation(.easeOut(duration: 0.18)) { dangGo = co }
+            }
+            .alert("Ghi âm", isPresented: .constant(ghiAm.loi != nil)) {
+                Button("OK") { ghiAm.loi = nil }
+            } message: {
+                Text(ghiAm.loi ?? "")
+            }
+    }
 }
