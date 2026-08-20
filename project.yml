@@ -12,7 +12,7 @@ options:
 settings:
   base:
     MARKETING_VERSION: "1.0.0"
-    CURRENT_PROJECT_VERSION: "1"
+    CURRENT_PROJECT_VERSION: "2"
     # Mã đội lấy từ chính chứng thư Developer ID (OU=UR32PFUQ38), không phải
     # gõ tay từ trang web — đỡ một chỗ sai chính tả im lặng.
     DEVELOPMENT_TEAM: "UR32PFUQ38"
