@@ -5,6 +5,11 @@ import Combine
 @MainActor
 class HomeViewModel: ObservableObject {
     @Published var posts: [SocialPost] = []
+
+    /// Bỏ một bài khỏi danh sách đang hiện — gọi sau khi xoá bài trên máy chủ.
+    func boBaiKhoiDanhSach(_ id: Int) {
+        posts.removeAll { $0.id == id }
+    }
     @Published var isLoading = false
     @Published var isLoadingMore = false
     @Published var error: String?
@@ -310,7 +315,12 @@ struct HomeView: View {
                                 }
                                 .buttonStyle(.plain)
 
-                                PostModerationMenu(post: post)
+                                PostModerationMenu(post: post) {
+                                    // Bỏ khỏi danh sách NGAY. Đợi tải lại thì
+                                    // bài vừa xoá vẫn nằm đó vài giây, người
+                                    // dùng tưởng xoá không ăn và bấm lại.
+                                    withAnimation { vm.boBaiKhoiDanhSach(post.id) }
+                                }
                                     .padding(.top, Spacing.md)
                                     .padding(.trailing, Spacing.md)
                             }

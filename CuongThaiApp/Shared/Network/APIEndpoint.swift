@@ -125,6 +125,16 @@ enum APIEndpoint {
     case layLienKetNguoc(id: Int)
 
     // ─── Từ vựng & thẻ ghi nhớ ───────────────────────────────
+    // ─── Bài viết của chính mình ─────────────────────────────
+    case xoaBaiViet(id: Int)
+    /// Đổi nội dung và/hoặc quyền riêng tư. Máy chủ nhận `content`,
+    /// `visibility` (PUBLIC | FRIENDS | PRIVATE).
+    case suaBaiViet(id: Int, [String: Any])
+    /// Ghim/bỏ ghim — máy chủ TỰ ĐẢO, một đường cho cả hai chiều.
+    /// ⚠️ Mỗi người chỉ ghim được MỘT bài: nó lưu ở `userProfile.pinnedPostId`,
+    /// ghim bài mới là bài cũ tự bỏ ghim.
+    case ghimBaiViet(id: Int)
+
     case layTuVung(noteId: Int)
     case themTuVung(noteId: Int, term: String, reading: String?, meaning: String?, example: String?)
     case suaTuVung(id: Int, [String: Any])
@@ -266,6 +276,9 @@ enum APIEndpoint {
         case .khoiPhucGhiChu(let id): return "/api/v1/notes/notes/\(id)/restore"
         case .xoaVinhVien(let id): return "/api/v1/notes/notes/\(id)/permanent"
         case .layLienKetNguoc(let id): return "/api/v1/notes/notes/\(id)/backlinks"
+        case .xoaBaiViet(let id): return "/api/v1/social/posts/\(id)"
+        case .suaBaiViet(let id, _): return "/api/v1/social/posts/\(id)"
+        case .ghimBaiViet(let id): return "/api/v1/social/posts/\(id)/pin"
         case .layTuVung: return "/api/v1/notes/vocab"
         case .themTuVung: return "/api/v1/notes/vocab"
         case .suaTuVung(let id, _): return "/api/v1/notes/vocab/\(id)"
@@ -316,18 +329,18 @@ enum APIEndpoint {
              .boLuuTruHoiThoai, .danhDauChuaDoc, .danhDauDaXemTin, .taoTin, .taoChuong,
              .luuMocPhienBan, .khoiPhucPhienBan, .chayViecAI, .hoiTroLyGhiChu, .taoDongBang,
              .taoMon, .nhanBanGhiChu, .khoiPhucGhiChu, .dangKyThietBi,
-             .themTuVung, .chamThe, .datLaiThe,
+             .themTuVung, .chamThe, .datLaiThe, .ghimBaiViet,
              .createNote, .reportPost, .reportThread, .blockUser, .requestDeletion,
              .openThread, .muteThread, .saveLessonProgress:
             return "POST"
         case .updateProfile, .datBietDanh:
             return "PUT"
         case .updateNote, .markRead, .reactPost, .markNotificationsRead, .datTuyChonHoiThoai,
-             .suaDongBang, .suaMon, .suaChuong, .suaTuVung:
+             .suaDongBang, .suaMon, .suaChuong, .suaTuVung, .suaBaiViet:
             return "PATCH"
         case .deletePost, .unlikePost, .unsavePost, .deleteNote,
              .unblockUser, .cancelDeletionRequest, .deleteMessage, .xoaTin, .xoaDongBang,
-             .xoaMon, .xoaChuong, .xoaVinhVien, .goThietBi, .xoaTuVung:
+             .xoaMon, .xoaChuong, .xoaVinhVien, .goThietBi, .xoaTuVung, .xoaBaiViet:
             return "DELETE"
         default:
             return "GET"
@@ -377,6 +390,7 @@ enum APIEndpoint {
             return ["action": a, "selection": sel]
         case .hoiTroLyGhiChu(let q):
             return ["question": q]
+        case .suaBaiViet(_, let d): return d
         case .themTuVung(let nid, let t, let r, let m, let e):
             var d: [String: Any] = ["noteId": nid, "term": t]
             if let r, !r.isEmpty { d["reading"] = r }

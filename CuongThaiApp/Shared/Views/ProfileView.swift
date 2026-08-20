@@ -371,7 +371,9 @@ struct ProfileView: View {
                             PostCard(post: post)
                         }
                         .buttonStyle(.plain)
-                        PostModerationMenu(post: post)
+                        PostModerationMenu(post: post) {
+                            withAnimation { viewModel.boBaiKhoiDanhSach(post.id) }
+                        }
                             .padding(.top, Spacing.md)
                             .padding(.trailing, Spacing.md)
                     }
@@ -557,6 +559,11 @@ class ProfileViewModel: ObservableObject {
     @Published var userId: Int?
     @Published var profile: UserProfile?
     @Published var posts: [SocialPost] = []
+
+    /// Bỏ một bài khỏi danh sách đang hiện — gọi sau khi xoá bài trên máy chủ.
+    func boBaiKhoiDanhSach(_ id: Int) {
+        posts.removeAll { $0.id == id }
+    }
     @Published var isLoading = false
     @Published var error: String?
     @Published var hasMore = true
