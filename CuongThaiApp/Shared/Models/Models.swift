@@ -223,6 +223,29 @@ struct MessageThread: Codable, Identifiable, Hashable {
     }
 
     /// Dựng lại bản ghi với biệt danh mới.
+    /// Bản sao đã cập nhật theo một tin vừa tới qua socket.
+    ///
+    /// Mọi trường đều `let` nên phải dựng hàng mới — cùng lối với
+    /// `doiBietDanh`. `updatedAt` phải đổi theo, vì danh sách sắp xếp bằng nó:
+    /// không đổi thì tin mới về nhưng hàng vẫn nằm nguyên chỗ cũ.
+    func voiTinMoi(_ tin: Message, tangChuaDoc: Bool) -> MessageThread {
+        MessageThread(
+            id: id, type: type, peer: peer,
+            lastMessage: tin,
+            unreadCount: tangChuaDoc ? unreadCount + 1 : unreadCount,
+            createdAt: createdAt,
+            updatedAt: tin.createdAt,
+            preferences: preferences
+        )
+    }
+
+    /// Bản sao đã xoá dấu chưa đọc — dùng khi chính mình mở hội thoại.
+    func daDocHet() -> MessageThread {
+        MessageThread(id: id, type: type, peer: peer, lastMessage: lastMessage,
+                      unreadCount: 0, createdAt: createdAt, updatedAt: updatedAt,
+                      preferences: preferences)
+    }
+
     func doiBietDanh(_ moi: String?) -> MessageThread {
         guard let p = peer else { return self }
         let sach = (moi ?? "").trimmingCharacters(in: .whitespaces)

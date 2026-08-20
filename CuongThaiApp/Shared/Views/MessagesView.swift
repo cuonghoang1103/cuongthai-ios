@@ -1,4 +1,5 @@
 import SwiftUI
+import Combine
 
 // MARK: - Messages View
 struct MessagesView: View {
@@ -385,6 +386,53 @@ class MessagesViewModel: ObservableObject {
     @Published var hasMore = true
 
     private var cursor: Int?
+    private var huyDangKy = Set<AnyCancellable>()
+
+    init() { ngheSocket() }
+
+    /// Nghe tin mới và cập nhật NGAY hàng tương ứng.
+    ///
+    /// ⚠️ Trước bản này danh sách chỉ tải lại ở `onAppear` và khi kéo xuống,
+    /// nên đang đứng sẵn ở màn này thì KHÔNG gì làm mới nó: bạn bè nhắn tới,
+    /// khung chat bên trong hiện ngay (nó tự nghe socket) còn hàng ngoài này
+    /// vẫn là tin cũ tới khi rời tab rồi quay lại. `AppState` cũng nghe cùng
+    /// sự kiện đó nhưng chỉ để CỘNG HUY HIỆU — nên tab hiện số mới ngay trong
+    /// khi dòng chữ bên dưới vẫn cũ, đúng thứ người dùng thấy.
+    private func ngheSocket() {
+        RealtimeClient.shared.tinMoi
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] su in self?.apTinMoi(su.threadId, su.message) }
+            .store(in: &huyDangKy)
+
+        // Đọc ở máy khác thì dấu chưa đọc ở đây phải tắt theo.
+        RealtimeClient.shared.daDoc
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] su in
+                guard let self,
+                      su.readerId == AppState.shared.currentUser?.id,
+                      let i = self.threads.firstIndex(where: { $0.id == su.threadId })
+                else { return }
+                self.threads[i] = self.threads[i].daDocHet()
+            }
+            .store(in: &huyDangKy)
+    }
+
+    private func apTinMoi(_ threadId: Int, _ tin: Message) {
+        guard let i = threads.firstIndex(where: { $0.id == threadId }) else {
+            // Hội thoại CHƯA có trong danh sách — người lạ nhắn lần đầu. Chỉ
+            // lúc này mới cần gọi mạng; cập nhật tại chỗ lo hết phần còn lại.
+            Task { await loadThreads() }
+            return
+        }
+        let cuaMinh = tin.senderId == AppState.shared.currentUser?.id
+        let dangMo = AppState.shared.hoiThoaiDangMo == threadId
+        let hang = threads[i].voiTinMoi(tin, tangChuaDoc: !cuaMinh && !dangMo)
+        threads.remove(at: i)
+        // Đưa lên đầu, nhưng KHÔNG vượt mấy hàng đã ghim — ghim mà bị tin mới
+        // đẩy xuống thì cái ghim vô nghĩa.
+        threads.insert(hang, at: viTriChen(daGhimTheoThuTu: threads.map(\.daGhim),
+                                          hangDuocGhim: hang.daGhim))
+    }
 
     func loadThreads() async {
         isLoading = true
