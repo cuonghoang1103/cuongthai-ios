@@ -117,6 +117,11 @@ enum APIEndpoint {
     case chayViecAI(action: String, selection: String)
     case hoiTroLyGhiChu(question: String)
     case laySoDoGhiChu
+    case layBangTheoMon(subjectId: Int)
+    case layBang(databaseId: Int)
+    case taoDongBang(databaseId: Int)
+    case suaDongBang(rowId: Int, values: [String: Any])
+    case xoaDongBang(rowId: Int)
 
     // Learning
     case getCourses(page: Int, size: Int, keyword: String?)
@@ -228,6 +233,11 @@ enum APIEndpoint {
         case .chayViecAI: return "/api/v1/notes/ai/assist"
         case .hoiTroLyGhiChu: return "/api/v1/notes/ai/hoi"
         case .laySoDoGhiChu: return "/api/v1/notes/graph"
+        case .layBangTheoMon(let id): return "/api/v1/notes-databases/subject/\(id)"
+        case .layBang(let id): return "/api/v1/notes-databases/\(id)"
+        case .taoDongBang(let id): return "/api/v1/notes-databases/\(id)/rows"
+        case .suaDongBang(let id, _): return "/api/v1/notes-databases/rows/\(id)"
+        case .xoaDongBang(let id): return "/api/v1/notes-databases/rows/\(id)"
 
         case .getCourses: return "/api/v1/courses"
         case .getCourseDetail(let slug): return "/api/v1/courses/\(slug)"
@@ -256,16 +266,17 @@ enum APIEndpoint {
              .createComment, .savePost, .sendMessage, .sendMessageWithFiles, .enrollCourse,
              .sendMessageMedia, .toggleMessageReaction, .recallMessage,
              .boLuuTruHoiThoai, .danhDauChuaDoc, .danhDauDaXemTin, .taoTin, .taoChuong,
-             .luuMocPhienBan, .khoiPhucPhienBan, .chayViecAI, .hoiTroLyGhiChu,
+             .luuMocPhienBan, .khoiPhucPhienBan, .chayViecAI, .hoiTroLyGhiChu, .taoDongBang,
              .createNote, .reportPost, .reportThread, .blockUser, .requestDeletion,
              .openThread, .muteThread, .saveLessonProgress:
             return "POST"
         case .updateProfile, .datBietDanh:
             return "PUT"
-        case .updateNote, .markRead, .reactPost, .markNotificationsRead, .datTuyChonHoiThoai:
+        case .updateNote, .markRead, .reactPost, .markNotificationsRead, .datTuyChonHoiThoai,
+             .suaDongBang:
             return "PATCH"
         case .deletePost, .unlikePost, .unsavePost, .deleteNote,
-             .unblockUser, .cancelDeletionRequest, .deleteMessage, .xoaTin:
+             .unblockUser, .cancelDeletionRequest, .deleteMessage, .xoaTin, .xoaDongBang:
             return "DELETE"
         default:
             return "GET"
@@ -305,6 +316,9 @@ enum APIEndpoint {
             return ["media": ["url": u, "kind": k]]
         case .toggleMessageReaction(_, let e):
             return ["emoji": e]
+        case .suaDongBang(_, let v):
+            // Máy chủ nhận NGUYÊN bản đồ `values`, không nhận từng ô lẻ.
+            return ["values": v]
         case .chayViecAI(let a, let sel):
             return ["action": a, "selection": sel]
         case .hoiTroLyGhiChu(let q):

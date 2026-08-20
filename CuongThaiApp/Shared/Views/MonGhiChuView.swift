@@ -10,12 +10,15 @@ struct MonGhiChuView: View {
 
     @State private var dangTao = false
     @State private var loi: String?
+    @State private var bang: [BangTomTat] = []
 
     private var ghiChuLe: [NoteSummary] { mon.notes ?? [] }
 
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: Spacing.lg) {
+                if !bang.isEmpty { khoiBang }
+
                 if ghiChuLe.isEmpty && (mon.chapters ?? []).isEmpty {
                     trong
                 } else {
@@ -41,6 +44,11 @@ struct MonGhiChuView: View {
                 }
                 .disabled(dangTao)
             }
+        }
+        .task {
+            // Trang cơ sở dữ liệu KHÔNG nằm trong cây ghi chú — `getTree` lọc
+            // `isDatabasePage: false`. Phải hỏi riêng, không thì chúng vô hình.
+            bang = (try? await APIClient.shared.request(.layBangTheoMon(subjectId: mon.id))) ?? []
         }
         .alert("Ghi chú", isPresented: .constant(loi != nil)) {
             Button("OK") { loi = nil }
@@ -80,6 +88,42 @@ struct MonGhiChuView: View {
                     }
                     .buttonStyle(.plain)
                 }
+            }
+        }
+    }
+
+    private var khoiBang: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            Text("Cơ sở dữ liệu")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(AppColors.textSecondary)
+                .padding(.horizontal, Spacing.md)
+
+            ForEach(bang) { b in
+                NavigationLink {
+                    BangDuLieuView(bangId: b.id)
+                } label: {
+                    HStack(spacing: Spacing.sm) {
+                        Text(b.icon ?? "🗂").font(.system(size: 16)).frame(width: 22)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(b.ten)
+                                .font(.system(size: 15))
+                                .foregroundColor(AppColors.textPrimary)
+                                .lineLimit(1)
+                            Text("\(b.soDong) dòng · \(b.properties?.count ?? 0) cột")
+                                .font(.system(size: 11))
+                                .foregroundColor(AppColors.textTertiary)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundColor(AppColors.textTertiary)
+                    }
+                    .padding(.horizontal, Spacing.md)
+                    .padding(.vertical, 9)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
             }
         }
     }

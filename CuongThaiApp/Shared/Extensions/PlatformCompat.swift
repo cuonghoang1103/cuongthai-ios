@@ -90,3 +90,16 @@ extension View {
         #endif
     }
 }
+
+extension View {
+    /// Bàn phím số CÓ dấu thập phân. `.numberPad` không có dấu chấm, nên cột
+    /// NUMBER sẽ không nhập nổi giá trị lẻ.
+    @ViewBuilder
+    func banPhimThapPhan() -> some View {
+        #if os(iOS)
+        self.keyboardType(.decimalPad)
+        #else
+        self
+        #endif
+    }
+}
