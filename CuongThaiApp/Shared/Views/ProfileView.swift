@@ -108,6 +108,13 @@ struct ProfileView: View {
                                 endPoint: .bottomTrailing
                             ))
                     }
+                    // ⚠️ PHẢI chặn cả BỀ NGANG. `.frame(height:)` để bề ngang
+                    // TỰ DO, nên ảnh bìa tỉ lệ ngang co xuống cao 180pt sẽ
+                    // rộng ~480pt — rộng hơn màn iPhone XR (414pt). `.clipped()`
+                    // chỉ cắt phần VẼ RA, kích thước bố cục vẫn là 480, nên cả
+                    // khối hồ sơ bị kéo rộng theo rồi căn giữa → tràn đều hai
+                    // bên, chữ bị cắt cả trái lẫn phải.
+                    .frame(maxWidth: .infinity)
                     .frame(height: 180)
                     .clipped()
                 } else {
