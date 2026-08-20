@@ -8,23 +8,62 @@ struct TinAI: Identifiable {
     var dangChay: Bool = false
     var model: String? = nil
     var messageId: Int? = nil
+    /// Ảnh người dùng đính ở lượt này (base64). Giữ lại vì lịch sử gửi lên
+    /// model là CHỮ THUẦN — xem `anhKemLai()`.
+    var anh: [String] = []
+    var tenTep: [String] = []
 }
 
-/// Ba bậc, khớp với `PURPOSE_MODEL` của backend.
+/// Ba bậc, khớp `CHAT_MODELS` trong `src/services/ai.service.ts`.
+///
+/// ⚠️ `maModel` phải là **mã BẬC CHAT** (`cuongmini-*`), KHÔNG phải tên model
+/// của cổng (`gpt-5.6-sol`, `claude-sonnet-5`). `resolveChatModel()` tra đúng
+/// ba khoá này; gửi thứ khác thì nó rơi về mặc định **im lặng** — bảng chọn
+/// trông vẫn chạy còn cả ba bậc đều ra Groq.
 enum BacAI: String, CaseIterable, Identifiable {
-    case pro, max
+    case mini, pro, max
     var id: String { rawValue }
 
-    var ten: String { self == .pro ? "CuongMini Pro" : "CuongMini Max" }
-    var bieuTuong: String { self == .pro ? "bolt" : "sparkles" }
-    var moTa: String {
-        self == .pro
-            ? "Nhanh và đủ dùng cho hầu hết câu hỏi."
-            : "Chậm hơn nhưng khá hơn ở toán, mã và bài dài."
+    var maModel: String {
+        switch self {
+        case .mini: return "cuongmini-3.11"
+        case .pro:  return "cuongmini-pro"
+        case .max:  return "cuongmini-max"
+        }
     }
-    /// Mã model gửi lên. Backend tự lùi về model tương đương nếu bậc này
-    /// không gọi được — nó ghi WARN chứ không chết.
-    var maModel: String? { self == .pro ? nil : "gpt-5.6-sol" }
+
+    var ten: String {
+        switch self {
+        case .mini: return "CuongMini3.11"
+        case .pro:  return "CuongMini Pro"
+        case .max:  return "CuongMini Max"
+        }
+    }
+
+    var bieuTuong: String {
+        switch self {
+        case .mini: return "hare"
+        case .pro:  return "bolt"
+        case .max:  return "sparkles"
+        }
+    }
+
+    var moTa: String {
+        switch self {
+        case .mini: return "Nhanh nhất · câu ngắn, hỏi hằng ngày"
+        case .pro:  return "Nhanh + chính xác · dùng hằng ngày"
+        case .max:  return "Mạnh nhất · toán, mã, đọc file"
+        }
+    }
+
+    /// Ảnh và tệp CHỈ đi được ở bậc Claude. Backend nói rõ: "Images + PDFs are
+    /// a perk of the Pro/Max (Claude) tiers only" — nhánh Groq nhận `message`
+    /// dạng chuỗi thuần, đính kèm vào đó là rơi vào hư không.
+    var nhanTep: Bool { self != .mini }
+
+    /// Bậc nhanh tắt tìm web: mỗi lượt tìm mất mấy giây, mà câu hỏi thường
+    /// ngày thì không cần.
+    var timWeb: Bool { self != .mini }
 }
 
 @MainActor
@@ -33,7 +72,7 @@ final class AIChatViewModel: ObservableObject {
     @Published var dangTraLoi = false
     @Published var buocHienTai: String?
     @Published var loi: String?
-    @Published var bac: BacAI = .pro
+    @Published var bac: BacAI = .mini
 
     private var sessionId: String?
     private var viec: Task<Void, Never>?
@@ -60,9 +99,44 @@ final class AIChatViewModel: ObservableObject {
         }
     }
 
-    func gui(_ cauHoi: String) {
+    /// Số lượt gần nhất gửi lên làm ngữ cảnh. Bằng web (`page.tsx` cắt
+    /// `.slice(-10)`), và backend còn cắt lần nữa ở `MAX_HISTORY_TURNS = 10`.
+    private let SO_LUOT_NHO = 10
+    /// Trong tầm này thì lượt sau vẫn coi là "đang làm bài có ảnh đó".
+    private let TAM_NHO_ANH = 6
+
+    /// Dựng ngữ cảnh gửi lên model.
+    ///
+    /// ⚠️ Backend KHÔNG nhớ hộ. `streamChat` chỉ GHI lượt vào phiên chứ không
+    /// đọc lại theo `sessionId`; `sanitizeHistory(context.history)` đọc đúng
+    /// mảng client gửi lên. Thiếu nó thì mỗi câu là một cuộc đời mới — đó là
+    /// lý do app "quên" ngay câu vừa hỏi.
+    private func lichSuGui() -> [[String: String]] {
+        tin.filter { !$0.noiDung.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+            .suffix(SO_LUOT_NHO)
+            .map { ["role": $0.cuaNguoi ? "user" : "assistant", "content": $0.noiDung] }
+    }
+
+    /// Lượt này không đính ảnh thì kèm lại ảnh của lượt có ảnh GẦN NHẤT.
+    ///
+    /// Lịch sử lên model là chữ thuần, nên sau khi gửi ảnh đề toán mà hỏi tiếp
+    /// "câu b thì sao" là model KHÔNG CÒN NHÌN THẤY ĐỀ và nó quay ra xin gửi
+    /// lại ảnh. Chỉ kèm trong `TAM_NHO_ANH` lượt vì mỗi lần gửi lại là một lần
+    /// trả tiền cho ảnh đó.
+    private func anhKemLai() -> [String] {
+        guard bac.nhanTep else { return [] }
+        return tin.suffix(TAM_NHO_ANH).last(where: { $0.cuaNguoi && !$0.anh.isEmpty })?
+            .anh.prefix(2).map { $0 } ?? []
+    }
+
+    func gui(_ cauHoi: String, anh: [String] = [], tep: [String] = [], tenTep: [String] = []) {
         guard !dangTraLoi else { return }
-        tin.append(TinAI(cuaNguoi: true, noiDung: cauHoi))
+        // Ngữ cảnh phải chộp TRƯỚC khi thêm lượt mới, không thì câu vừa gõ
+        // lọt vào lịch sử và model đọc nó hai lần.
+        let lichSu = lichSuGui()
+        let anhGui = anh.isEmpty ? anhKemLai() : anh
+
+        tin.append(TinAI(cuaNguoi: true, noiDung: cauHoi, anh: anh, tenTep: tenTep))
         tin.append(TinAI(cuaNguoi: false, noiDung: "", dangChay: true))
         dangTraLoi = true
         buocHienTai = nil
@@ -70,7 +144,12 @@ final class AIChatViewModel: ObservableObject {
         viec = Task { [weak self] in
             guard let self else { return }
             let luong = LuongChat.gui(cauHoi: cauHoi, sessionId: sessionId,
-                                      model: bac.maModel)
+                                      model: bac.maModel,
+                                      lichSu: lichSu,
+                                      anh: anhGui,
+                                      taiLieu: bac.nhanTep ? tep : [],
+                                      tenTaiLieu: bac.nhanTep ? tenTep : [],
+                                      timWeb: bac.timWeb)
             for await su in luong {
                 if Task.isCancelled { break }
                 switch su {

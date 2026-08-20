@@ -36,10 +36,17 @@ final class LuongChat {
     ///
     /// Dùng `URLSession.bytes(for:)` — nó giao từng byte về ngay khi máy chủ
     /// gửi, khác `data(for:)` vốn đợi hết rồi mới trả.
+    /// - Parameter lichSu: các lượt TRƯỚC đó. Backend KHÔNG tự nạp lịch sử
+    ///   theo `sessionId` — `streamChat` chỉ GHI vào phiên chứ không đọc ra.
+    ///   Không gửi cái này thì mỗi câu hỏi là một cuộc đời mới.
     static func gui(cauHoi: String,
                     sessionId: String?,
                     model: String?,
-                    anh: [String] = []) -> AsyncStream<SuKienChat> {
+                    lichSu: [[String: String]] = [],
+                    anh: [String] = [],
+                    taiLieu: [String] = [],
+                    tenTaiLieu: [String] = [],
+                    timWeb: Bool = true) -> AsyncStream<SuKienChat> {
         AsyncStream { tiep in
             Task {
                 guard let url = URL(string: APIClient.diaChiGoc + "/api/v1/ai/chat") else {
@@ -57,7 +64,13 @@ final class LuongChat {
                 var than: [String: Any] = ["message": cauHoi]
                 if let sessionId { than["sessionId"] = sessionId }
                 if let model { than["model"] = model }
+                if !lichSu.isEmpty { than["history"] = lichSu }
                 if !anh.isEmpty { than["images"] = anh }
+                if !taiLieu.isEmpty { than["documents"] = taiLieu }
+                if !tenTaiLieu.isEmpty { than["documentNames"] = tenTaiLieu }
+                // Mặc định của backend là BẬT. Bậc nhanh tắt đi để khỏi mất
+                // mấy giây tìm web cho câu hỏi thường ngày.
+                if !timWeb { than["choTimWeb"] = false }
                 req.httpBody = try? JSONSerialization.data(withJSONObject: than)
                 // Câu trả lời dài có thể mất hơn một phút; mặc định 60s sẽ cắt
                 // ngang giữa câu.

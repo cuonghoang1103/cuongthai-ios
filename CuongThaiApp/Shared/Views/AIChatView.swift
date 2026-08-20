@@ -1,11 +1,17 @@
 import SwiftUI
+import PhotosUI
 
 /// Trò chuyện với AI. Chữ hiện DẦN theo luồng SSE, không đợi cả câu.
 struct AIChatView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var vm = AIChatViewModel()
     @State private var cauHoi = ""
+    /// 0 = "đang suy nghĩ", 1 = "đợi tớ chút nhé". Xem `loiCho`.
+    @State private var phaCho = 0
     @State private var hienChonModel = false
+    @State private var dinhKem: [DinhKemAI] = []
+    @State private var anhChon: [PhotosPickerItem] = []
+    @State private var hienChonTep = false
     @FocusState private var dangGo: Bool
 
     var body: some View {
@@ -42,6 +48,21 @@ struct AIChatView: View {
             .alert("AI", isPresented: .constant(vm.loi != nil)) {
                 Button("OK") { vm.loi = nil }
             } message: { Text(vm.loi ?? "") }
+            .onChange(of: anhChon) { _, moi in
+                guard !moi.isEmpty else { return }
+                Task { await napAnh(moi) }
+            }
+            .fileImporter(isPresented: $hienChonTep,
+                          allowedContentTypes: HanMucDinhKem.loaiTep,
+                          allowsMultipleSelection: true) { napTep($0) }
+            // Đổi xuống bậc nhanh thì bỏ đính kèm — bậc đó không nhận, giữ
+            // lại chỉ làm người dùng tưởng nó vẫn gửi đi.
+            .onChange(of: vm.bac) { _, b in
+                if !b.nhanTep && !dinhKem.isEmpty {
+                    dinhKem = []
+                    vm.loi = "CuongMini3.11 chưa đọc được ảnh và tệp — đã bỏ phần đính kèm. Chọn Pro hoặc Max để gửi kèm."
+                }
+            }
         }
     }
 
@@ -127,15 +148,35 @@ struct AIChatView: View {
         }
     }
 
+    /// Câu chờ hai nhịp.
+    ///
+    /// Nhịp đầu xưng tên cho người dùng biết ai đang trả lời, nhịp sau ở lại
+    /// tới lúc có chữ. `buocHienTai` (tìm web, đổi model) là tin THẬT nên nó
+    /// luôn được ưu tiên — không đè lời chào lên thông tin.
+    private var loiCho: String {
+        if let b = vm.buocHienTai, !b.isEmpty { return b }
+        return phaCho == 0 ? "CuongMini đang suy nghĩ" : "Bạn đợi tớ chút nhé…"
+    }
+
     private var dangLam: some View {
         HStack(spacing: 8) {
             ProgressView().scaleEffect(0.7)
-            Text(vm.buocHienTai ?? "Đang nghĩ…")
+            Text(loiCho)
                 .font(.system(size: 13))
                 .foregroundColor(AppColors.textSecondary)
+                .contentTransition(.opacity)
+                .animation(.easeInOut(duration: 0.35), value: loiCho)
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
         .background(Capsule().fill(AppColors.backgroundSecondary))
+        // `id:` là số tin — mỗi câu hỏi mới là một lượt chờ mới, nên nhịp phải
+        // quay lại từ đầu. Thiếu cái này thì từ câu thứ hai trở đi người dùng
+        // chỉ còn thấy nhịp sau.
+        .task(id: vm.tin.count) {
+            phaCho = 0
+            try? await Task.sleep(nanoseconds: 2_200_000_000)
+            if !Task.isCancelled { phaCho = 1 }
+        }
     }
 
     // MARK: Ô nhập
@@ -143,7 +184,11 @@ struct AIChatView: View {
     private var oNhap: some View {
         VStack(spacing: 0) {
             Divider().background(AppColors.divider)
+            if !dinhKem.isEmpty { daiDinhKem }
             HStack(alignment: .bottom, spacing: Spacing.sm) {
+                // Ảnh/tệp CHỈ đi được ở bậc Claude — bậc nhanh nhận chuỗi
+                // thuần, đính vào đó là rơi vào hư không mà không báo lỗi.
+                if vm.bac.nhanTep { nutKep }
                 TextField("Nhắn cho CuongMini…", text: $cauHoi, axis: .vertical)
                     .font(.bodyMedium)
                     .lineLimit(1...6)
@@ -165,10 +210,10 @@ struct AIChatView: View {
                     Button { gui() } label: {
                         Image(systemName: "arrow.up.circle.fill")
                             .font(.system(size: 30))
-                            .foregroundColor(coChu ? AppColors.primary : AppColors.textTertiary)
+                            .foregroundColor(guiDuoc ? AppColors.primary : AppColors.textTertiary)
                     }
                     .buttonStyle(.plain)
-                    .disabled(!coChu)
+                    .disabled(!guiDuoc)
                 }
             }
             .padding(.horizontal, Spacing.md)
@@ -179,13 +224,106 @@ struct AIChatView: View {
 
     private var coChu: Bool { !cauHoi.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
 
+    // MARK: Đính kèm
+
+    private var guiDuoc: Bool { coChu || !dinhKem.isEmpty }
+
+    private var nutKep: some View {
+        Menu {
+            Button { hienChonTep = true } label: {
+                Label("Tệp (PDF, Word, văn bản)", systemImage: "doc")
+            }
+        } label: {
+            Image(systemName: "plus.circle.fill")
+                .font(.system(size: 28))
+                .foregroundColor(AppColors.textSecondary)
+        } primaryAction: {
+            hienChonTep = true
+        }
+        .overlay(alignment: .center) {
+            // PhotosPicker phải là nút RIÊNG, không lồng trong Menu được:
+            // trình chọn ảnh của hệ thống cần chính nó trình bày sheet.
+            PhotosPicker(selection: $anhChon,
+                         maxSelectionCount: HanMucDinhKem.soAnh,
+                         matching: .images) {
+                Color.clear.frame(width: 28, height: 28)
+            }
+            .opacity(0.011)
+        }
+    }
+
+    private var daiDinhKem: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(dinhKem) { d in
+                    HStack(spacing: 6) {
+                        if d.laAnh, let ui = PlatformImage(data: d.duLieu) {
+                            Image(platformImage: ui).resizable().scaledToFill()
+                                .frame(width: 28, height: 28)
+                                .clipShape(RoundedRectangle(cornerRadius: 5))
+                        } else {
+                            Image(systemName: d.bieuTuong).foregroundColor(AppColors.primary)
+                        }
+                        Text(d.ten).font(.system(size: 12)).lineLimit(1)
+                            .foregroundColor(AppColors.textPrimary)
+                        Button {
+                            dinhKem.removeAll { $0.id == d.id }
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(AppColors.textTertiary)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(.horizontal, 8).padding(.vertical, 6)
+                    .background(Capsule().fill(AppColors.backgroundTertiary))
+                }
+            }
+            .padding(.horizontal, Spacing.md).padding(.vertical, 6)
+        }
+        .frame(maxHeight: 46)
+    }
+
+    /// Đọc ảnh vừa chọn. `PhotosPickerItem` chỉ giao dữ liệu bất đồng bộ.
+    private func napAnh(_ mucs: [PhotosPickerItem]) async {
+        for muc in mucs.prefix(HanMucDinhKem.soAnh) {
+            guard let d = try? await muc.loadTransferable(type: Data.self) else { continue }
+            // Nén lại: ảnh gốc iPhone ~4MB, mà cả thân yêu cầu bị chặn ở 10MB.
+            // `jpegDataForUpload` còn thu nhỏ về 1600px trước khi nén.
+            let nen = PlatformImage(data: d)?.jpegDataForUpload() ?? d
+            dinhKem.append(DinhKemAI(ten: "ảnh.jpg", mime: "image/jpeg", duLieu: nen))
+        }
+        anhChon = []
+    }
+
+    private func napTep(_ kq: Result<[URL], Error>) {
+        guard case .success(let urls) = kq else { return }
+        for url in urls.prefix(HanMucDinhKem.soTep) {
+            // Tệp ngoài hộp cát cần xin quyền rồi TRẢ LẠI, không thì lần chọn
+            // sau bị từ chối im lặng.
+            let mo = url.startAccessingSecurityScopedResource()
+            defer { if mo { url.stopAccessingSecurityScopedResource() } }
+            guard let d = try? Data(contentsOf: url) else {
+                vm.loi = "Không đọc được “\(url.lastPathComponent)”."; continue
+            }
+            guard d.count <= HanMucDinhKem.byteMoiTep else {
+                vm.loi = "“\(url.lastPathComponent)” nặng quá 6MB."; continue
+            }
+            dinhKem.append(DinhKemAI(ten: url.lastPathComponent,
+                                     mime: HanMucDinhKem.mime(cho: url),
+                                     duLieu: d))
+        }
+    }
+
     private func gui() {
         let c = cauHoi.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !c.isEmpty else { return }
+        guard !c.isEmpty || !dinhKem.isEmpty else { return }
+        let anh = dinhKem.filter(\.laAnh).map(\.dataURL)
+        let tep = dinhKem.filter { !$0.laAnh }
         cauHoi = ""
+        dinhKem = []
         dangGo = false
         Haptics.cham()
-        vm.gui(c)
+        vm.gui(c, anh: anh, tep: tep.map(\.dataURL), tenTep: tep.map(\.ten))
     }
 }
 
