@@ -97,12 +97,45 @@ struct PostCard: View {
         }
     }
 
+    /// Thẻ trong bảng tin chỉ hiện phần XEM TRƯỚC, cắt ở khối mã đầu tiên.
+    ///
+    /// Cố ý KHÔNG dựng đầy đủ như màn chi tiết: một bài giảng 4000 ký tự với 5
+    /// khối mã dựng hết ra thì thẻ dài bằng ba màn hình, và cuộn bảng tin phải
+    /// tính bố cục cho từng khối — giật ngay trên máy cũ.
     private var postContent: some View {
-        Text(post.content)
-            .font(.bodyText)
-            .foregroundColor(AppColors.textPrimary)
-            .lineLimit(10)
-            .frame(maxWidth: .infinity, alignment: .leading)
+        VStack(alignment: .leading, spacing: 4) {
+            if let td = BoTachBaiViet.tach(xemTruoc).first,
+               case .tieuDeBai(let e, let c) = td {
+                HStack(alignment: .top, spacing: 6) {
+                    Text(e).font(.system(size: 15))
+                    Text(c)
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundColor(AppColors.textPrimary)
+                        .lineLimit(2)
+                }
+                Text(xemTruoc.components(separatedBy: "\n").dropFirst().joined(separator: " ")
+                        .trimmingCharacters(in: .whitespacesAndNewlines))
+                    .font(.bodyText)
+                    .foregroundColor(AppColors.textSecondary)
+                    .lineLimit(6)
+            } else {
+                Text(post.content)
+                    .font(.bodyText)
+                    .foregroundColor(AppColors.textPrimary)
+                    .lineLimit(10)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// Cắt trước khối mã đầu tiên — dấu ``` hiện trần trong bảng tin trông
+    /// như lỗi hiển thị.
+    private var xemTruoc: String {
+        if let r = post.content.range(of: "```") {
+            return String(post.content[..<r.lowerBound])
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        return post.content
     }
 
     private var statsRow: some View {

@@ -116,16 +116,17 @@ struct PostDetailView: View {
             // Author Header
             postHeader
 
-            // Post Content
-            Text(post.content)
-                .font(.bodyLarge)
-                .foregroundColor(AppColors.textPrimary)
-                .textSelection(.enabled)
-
-            // Media
+            // Ảnh/video ĐẶT TRƯỚC nội dung. Bài giảng dài 4000+ ký tự mà để
+            // ảnh ở dưới thì người đọc cuộn hết bài mới thấy — trên web ảnh là
+            // thứ đập vào mắt đầu tiên.
             if let media = post.media, !media.isEmpty {
                 mediaCarousel(media)
             }
+
+            // Nội dung: tiêu đề, đường kẻ ngăn phần, khối mã tô màu — theo
+            // ĐÚNG luật web dùng. Trước đây chỉ `Text(post.content)`, nên khối
+            // mã hiện cả dấu ``` và không có phân đoạn nào.
+            NoiDungBaiViet(noiDung: post.content)
 
             // Poll
             if let poll = post.poll {
