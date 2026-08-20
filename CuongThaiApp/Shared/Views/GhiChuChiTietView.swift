@@ -15,6 +15,7 @@ struct GhiChuChiTietView: View {
     @State private var hoiXoa = false
     @State private var hienLichSu = false
     @State private var hienTroLy = false
+    @State private var hienTuVung = false
 
     var body: some View {
         Group {
@@ -67,6 +68,9 @@ struct GhiChuChiTietView: View {
                             Label(g.isArchived ? "Bỏ lưu trữ" : "Lưu trữ", systemImage: "archivebox")
                         }
                     }
+                    Button { hienTuVung = true } label: {
+                        Label("Từ vựng & thẻ ghi nhớ", systemImage: "character.book.closed")
+                    }
                     Button { Task { await nhanBan() } } label: {
                         Label("Nhân bản", systemImage: "doc.on.doc")
                     }
@@ -101,6 +105,9 @@ struct GhiChuChiTietView: View {
             }
         }
         .sheet(isPresented: $hienTroLy) { TroLyGhiChuView() }
+        .sheet(isPresented: $hienTuVung) {
+            TuVungView(ghiChuId: ghiChuId, tenGhiChu: ghiChu?.title ?? "Ghi chú")
+        }
         .alert("Xoá ghi chú?", isPresented: $hoiXoa) {
             Button("Xoá", role: .destructive) { Task { await xoa() } }
             Button("Huỷ", role: .cancel) { }

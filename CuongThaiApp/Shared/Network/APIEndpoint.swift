@@ -123,6 +123,16 @@ enum APIEndpoint {
     case khoiPhucGhiChu(id: Int)
     case xoaVinhVien(id: Int)
     case layLienKetNguoc(id: Int)
+
+    // ─── Từ vựng & thẻ ghi nhớ ───────────────────────────────
+    case layTuVung(noteId: Int)
+    case themTuVung(noteId: Int, term: String, reading: String?, meaning: String?, example: String?)
+    case suaTuVung(id: Int, [String: Any])
+    case xoaTuVung(id: Int)
+    case layBoThe(noteId: Int)
+    /// `known: true` = nhớ được. Máy chủ tự cộng chuỗi đúng và số lần ôn.
+    case chamThe(vocabId: Int, known: Bool)
+    case datLaiThe(vocabId: Int)
     case layPhienBan(noteId: Int)
     case layMotPhienBan(noteId: Int, version: Int)
     case luuMocPhienBan(noteId: Int)
@@ -256,6 +266,13 @@ enum APIEndpoint {
         case .khoiPhucGhiChu(let id): return "/api/v1/notes/notes/\(id)/restore"
         case .xoaVinhVien(let id): return "/api/v1/notes/notes/\(id)/permanent"
         case .layLienKetNguoc(let id): return "/api/v1/notes/notes/\(id)/backlinks"
+        case .layTuVung: return "/api/v1/notes/vocab"
+        case .themTuVung: return "/api/v1/notes/vocab"
+        case .suaTuVung(let id, _): return "/api/v1/notes/vocab/\(id)"
+        case .xoaTuVung(let id): return "/api/v1/notes/vocab/\(id)"
+        case .layBoThe: return "/api/v1/notes/flashcards"
+        case .chamThe: return "/api/v1/notes/flashcards/grade"
+        case .datLaiThe: return "/api/v1/notes/flashcards/reset"
         case .layPhienBan(let id): return "/api/v1/notes/notes/\(id)/versions"
         case .layMotPhienBan(let id, let v): return "/api/v1/notes/notes/\(id)/versions/\(v)"
         case .luuMocPhienBan(let id): return "/api/v1/notes/notes/\(id)/versions"
@@ -299,17 +316,18 @@ enum APIEndpoint {
              .boLuuTruHoiThoai, .danhDauChuaDoc, .danhDauDaXemTin, .taoTin, .taoChuong,
              .luuMocPhienBan, .khoiPhucPhienBan, .chayViecAI, .hoiTroLyGhiChu, .taoDongBang,
              .taoMon, .nhanBanGhiChu, .khoiPhucGhiChu, .dangKyThietBi,
+             .themTuVung, .chamThe, .datLaiThe,
              .createNote, .reportPost, .reportThread, .blockUser, .requestDeletion,
              .openThread, .muteThread, .saveLessonProgress:
             return "POST"
         case .updateProfile, .datBietDanh:
             return "PUT"
         case .updateNote, .markRead, .reactPost, .markNotificationsRead, .datTuyChonHoiThoai,
-             .suaDongBang, .suaMon, .suaChuong:
+             .suaDongBang, .suaMon, .suaChuong, .suaTuVung:
             return "PATCH"
         case .deletePost, .unlikePost, .unsavePost, .deleteNote,
              .unblockUser, .cancelDeletionRequest, .deleteMessage, .xoaTin, .xoaDongBang,
-             .xoaMon, .xoaChuong, .xoaVinhVien, .goThietBi:
+             .xoaMon, .xoaChuong, .xoaVinhVien, .goThietBi, .xoaTuVung:
             return "DELETE"
         default:
             return "GET"
@@ -359,6 +377,15 @@ enum APIEndpoint {
             return ["action": a, "selection": sel]
         case .hoiTroLyGhiChu(let q):
             return ["question": q]
+        case .themTuVung(let nid, let t, let r, let m, let e):
+            var d: [String: Any] = ["noteId": nid, "term": t]
+            if let r, !r.isEmpty { d["reading"] = r }
+            if let m, !m.isEmpty { d["meaning"] = m }
+            if let e, !e.isEmpty { d["example"] = e }
+            return d
+        case .suaTuVung(_, let d): return d
+        case .chamThe(let vid, let k): return ["vocabId": vid, "known": k]
+        case .datLaiThe(let vid): return ["vocabId": vid]
         case .taoChuong(let sid, let t):
             return ["subjectId": sid, "title": t]
         case .taoMon(let n, let c, let e):
@@ -440,6 +467,10 @@ enum APIEndpoint {
             return m.isEmpty ? nil : m
         case .locGhiChu(let f):
             return ["f": f]
+        // Hai đường này là GET — tham số PHẢI ở đây, không phải `body`.
+        // Đặt vào body thì URLSession ném "resource exceeds maximum size".
+        case .layTuVung(let nid): return ["noteId": nid]
+        case .layBoThe(let nid): return ["noteId": nid]
         case .getFeed(let c, let l, let t, let v, let h, let boLoat):
             var m: [String: Any] = ["limit": l]
             if let cursor = c { m["cursor"] = cursor }

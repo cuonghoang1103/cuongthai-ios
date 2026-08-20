@@ -103,3 +103,16 @@ extension View {
         #endif
     }
 }
+
+extension View {
+    /// `fullScreenCover` không có trên macOS — ở đó lùi về `sheet`.
+    @ViewBuilder
+    func fullScreenCoverNeuCo<N: View>(isPresented: Binding<Bool>,
+                                       @ViewBuilder content: @escaping () -> N) -> some View {
+        #if os(iOS)
+        self.fullScreenCover(isPresented: isPresented, content: content)
+        #else
+        self.sheet(isPresented: isPresented, content: content)
+        #endif
+    }
+}

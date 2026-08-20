@@ -529,6 +529,55 @@ struct CanhSoDo: Codable, Hashable {
     let targetNoteId: Int
 }
 
+/// Một mục từ vựng gắn với MỘT ghi chú.
+///
+/// `reading` là cách đọc — furigana cho tiếng Nhật, pinyin cho tiếng Trung,
+/// phiên âm cho tiếng Anh. Máy chủ không ràng buộc ngôn ngữ nào.
+struct TuVung: Codable, Identifiable, Hashable {
+    let id: Int
+    let noteId: Int?
+    let term: String
+    let reading: String?
+    let meaning: String?
+    let example: String?
+    let sortOrder: Int?
+    let createdAt: String?
+
+    // Trạng thái ôn tập — máy chủ khai `@default` nên luôn có, nhưng để
+    // optional phòng đường nào đó trả bản rút gọn.
+    let isKnown: Bool?
+    let reviewCount: Int?
+    let knownStreak: Int?
+    let lastReviewedAt: String?
+
+    var daThuoc: Bool { isKnown ?? false }
+    var soLanOn: Int { reviewCount ?? 0 }
+    var chuoiDung: Int { knownStreak ?? 0 }
+
+    /// Dựng lại với trạng thái mới — `TuVung` toàn `let`.
+    func capNhat(thuoc: Bool, soLan: Int, chuoi: Int) -> TuVung {
+        TuVung(id: id, noteId: noteId, term: term, reading: reading, meaning: meaning,
+               example: example, sortOrder: sortOrder, createdAt: createdAt,
+               isKnown: thuoc, reviewCount: soLan, knownStreak: chuoi,
+               lastReviewedAt: ISO8601DateFormatter().string(from: Date()))
+    }
+}
+
+/// `GET /notes/flashcards?noteId=` — bộ thẻ kèm thống kê, KHÔNG phải mảng trần.
+struct BoTheGhiNho: Codable {
+    let cards: [TuVung]
+    let summary: TomTatThe?
+}
+
+struct TomTatThe: Codable {
+    let total: Int?
+    let known: Int?
+    let reviewed: Int?
+    var tong: Int { total ?? 0 }
+    var thuoc: Int { known ?? 0 }
+    var daOn: Int { reviewed ?? 0 }
+}
+
 struct Note: Codable, Identifiable {
     let id: Int
     let title: String
