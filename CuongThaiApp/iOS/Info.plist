@@ -21,7 +21,10 @@
     <dict>
         <key>UIApplicationSupportsMultipleScenes</key><false/>
     </dict>
-    <key>UILaunchScreen</key><dict/>
+    <!-- Storyboard thay cho `UILaunchScreen` dict rỗng — dict rỗng chính là
+         cái màn hình TRẮNG lúc mở app. `UILaunchScreen` + `UIImageName` cũng
+         không dùng được: nó phóng ảnh cho đầy màn hình. -->
+    <key>UILaunchStoryboardName</key><string>LaunchScreen</string>
     <key>UISupportedInterfaceOrientations</key>
     <array>
         <string>UIInterfaceOrientationPortrait</string>
