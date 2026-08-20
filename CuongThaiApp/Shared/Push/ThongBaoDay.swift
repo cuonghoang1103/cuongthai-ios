@@ -81,19 +81,37 @@ final class ThongBaoDay: NSObject, ObservableObject, UNUserNotificationCenterDel
     }
 
     /// Bản chạy thẳng từ Xcode dùng máy chủ push SANDBOX; bản TestFlight và
-    /// App Store dùng PRODUCTION. Gửi nhầm máy chủ thì Apple trả
-    /// `BadDeviceToken` và thông báo im lặng không tới nơi.
+    /// App Store dùng PRODUCTION. Gửi nhầm máy chủ thì Apple im lặng không
+    /// giao, và KHÔNG có lỗi nào ở bất kỳ đâu để thấy.
     ///
-    /// Nhận biết bằng hồ sơ cấp phép: bản Debug có `embedded.mobileprovision`,
-    /// bản App Store thì KHÔNG. TestFlight có, nhưng nó dùng production — nên
-    /// phải loại trừ bằng biên dịch điều kiện.
-    static var laBanThuNghiem: Bool {
-        #if DEBUG
-        return true
-        #else
-        return false
-        #endif
-    }
+    /// ⚠️ TRƯỚC ĐÂY dùng `#if DEBUG` và nó SAI: `SWIFT_ACTIVE_COMPILATION_-
+    /// CONDITIONS: DEBUG` bị khai trong settings GỐC của target nên áp cho cả
+    /// Release — bản TestFlight vẫn báo `sandbox: true`, gửi vào máy chủ thử
+    /// nghiệm, và người dùng TestFlight không nhận được thông báo nào.
+    ///
+    /// Nay đọc THẲNG `aps-environment` trong hồ sơ cấp phép nhúng trong gói.
+    /// Đó chính là giá trị Apple dùng để quyết định máy chủ nào, nên nó không
+    /// thể lệch với thực tế dù cờ biên dịch có sai thế nào.
+    ///   • có `aps-environment = development`  → sandbox
+    ///   • `production`, hoặc KHÔNG có hồ sơ (bản App Store) → production
+    static let laBanThuNghiem: Bool = {
+        guard let duong = Bundle.main.path(forResource: "embedded", ofType: "mobileprovision"),
+              let tho = try? Data(contentsOf: URL(fileURLWithPath: duong)),
+              // Hồ sơ là CMS ký, không phải plist thuần — nhưng phần plist nằm
+              // dạng chữ bên trong nên đọc theo chuỗi là đủ và không cần thư
+              // viện mã hoá nào.
+              let chu = String(data: tho, encoding: .isoLatin1),
+              let r = chu.range(of: "aps-environment")
+        else {
+            // Không có hồ sơ nhúng = bản tải từ App Store ⇒ production.
+            print("[day] không thấy hồ sơ cấp phép — coi là production")
+            return false
+        }
+        let sau = chu[r.upperBound...].prefix(200)
+        let la = sau.contains("development")
+        print("[day] môi trường đẩy: \(la ? "sandbox (development)" : "production")")
+        return la
+    }()
 
     // MARK: Người dùng chạm vào thông báo
 
