@@ -1232,7 +1232,8 @@ class ChatViewModel: ObservableObject {
             lastMessage: nil,
             unreadCount: 0,
             createdAt: nil,
-            updatedAt: nil
+            updatedAt: nil,
+            preferences: nil
         ))
     }
 }

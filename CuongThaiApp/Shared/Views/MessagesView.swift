@@ -84,34 +84,88 @@ struct MessagesView: View {
     }
 
     private var threadsList: some View {
-        ScrollView {
-            LazyVStack(spacing: 0) {
-                if viewModel.isLoading && viewModel.threads.isEmpty {
-                    loadingView
-                } else if viewModel.threads.isEmpty {
-                    emptyStateView
-                } else {
+        Group {
+            if viewModel.isLoading && viewModel.threads.isEmpty {
+                loadingView
+            } else if viewModel.filteredThreads(searchQuery: searchQuery).isEmpty {
+                emptyStateView
+            } else {
+                // Phải là `List` chứ không phải `LazyVStack`: `.swipeActions`
+                // chỉ có tác dụng trong List. Bỏ hết trang trí mặc định của
+                // List để nhìn y như danh sách cũ.
+                List {
                     ForEach(viewModel.filteredThreads(searchQuery: searchQuery)) { thread in
-                        NavigationLink(destination: ChatView(thread: thread)) {
+                        ZStack {
+                            NavigationLink(destination: ChatView(thread: thread)) {
+                                EmptyView()
+                            }
+                            .opacity(0)
+
                             ThreadRow(thread: thread)
                         }
-                        .buttonStyle(.plain)
+                        .listRowInsets(EdgeInsets())
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(AppColors.backgroundPrimary)
+                        .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                            Button {
+                                Haptics.cham()
+                                Task { await viewModel.doiGhim(thread) }
+                            } label: {
+                                Label(thread.daGhim ? "Bỏ ghim" : "Ghim",
+                                      systemImage: thread.daGhim ? "pin.slash.fill" : "pin.fill")
+                            }
+                            .tint(.orange)
+                        }
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            Button {
+                                Haptics.cham()
+                                Task { await viewModel.doiLuuTru(thread) }
+                            } label: {
+                                Label(thread.daLuuTru ? "Bỏ lưu trữ" : "Lưu trữ",
+                                      systemImage: thread.daLuuTru ? "tray.and.arrow.up" : "archivebox.fill")
+                            }
+                            .tint(.purple)
+
+                            Button {
+                                Haptics.cham()
+                                Task { await viewModel.danhDauChuaDoc(thread) }
+                            } label: {
+                                Label("Chưa đọc", systemImage: "envelope.badge.fill")
+                            }
+                            .tint(AppColors.primary)
+
+                            Button {
+                                Haptics.cham()
+                                Task { await viewModel.doiTatThongBao(thread, phut: thread.daTatThongBao ? nil : 60 * 8) }
+                            } label: {
+                                Label(thread.daTatThongBao ? "Bật báo" : "Tắt báo",
+                                      systemImage: thread.daTatThongBao ? "bell.fill" : "bell.slash.fill")
+                            }
+                            .tint(.gray)
+                        }
 
                         Divider()
                             .background(AppColors.divider)
                             .padding(.leading, 76)
+                            .listRowInsets(EdgeInsets())
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(AppColors.backgroundPrimary)
                     }
 
                     if viewModel.hasMore {
                         ProgressView()
+                            .frame(maxWidth: .infinity)
                             .padding()
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(AppColors.backgroundPrimary)
                             .onAppear {
-                                Task {
-                                    await viewModel.loadMoreThreads()
-                                }
+                                Task { await viewModel.loadMoreThreads() }
                             }
                     }
                 }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
+                .background(AppColors.backgroundPrimary)
             }
         }
     }
@@ -161,13 +215,17 @@ struct MessagesView: View {
 enum MessageFilter: String, CaseIterable {
     case all = "Tất cả"
     case unread = "Chưa đọc"
+    case pinned = "Đã ghim"
     case personal = "Cá nhân"
     case group = "Nhóm"
+    case archived = "Lưu trữ"
 
     var icon: String {
         switch self {
         case .all: return "tray"
         case .unread: return "envelope.badge"
+        case .pinned: return "pin.fill"
+        case .archived: return "archivebox"
         case .personal: return "person"
         case .group: return "person.3"
         }
@@ -220,18 +278,36 @@ struct ThreadRow: View {
             }
 
             VStack(alignment: .leading, spacing: 4) {
-                HStack {
+                HStack(spacing: 5) {
+                    // Ghim / tắt báo / lưu trữ phải THẤY ĐƯỢC trên hàng. Vuốt
+                    // xong mà hàng không đổi gì thì người dùng tưởng nút không
+                    // ăn và vuốt lại lần nữa — tức bật rồi tắt.
+                    if thread.daGhim {
+                        Image(systemName: "pin.fill")
+                            .font(.system(size: 10))
+                            .foregroundColor(.orange)
+                    }
                     Text(thread.displayName)
                         .font(.titleSmall)
                         .foregroundColor(AppColors.textPrimary)
                         .lineLimit(1)
+                    if thread.daTatThongBao {
+                        Image(systemName: "bell.slash.fill")
+                            .font(.system(size: 10))
+                            .foregroundColor(AppColors.textTertiary)
+                    }
+                    if thread.daLuuTru {
+                        Image(systemName: "archivebox.fill")
+                            .font(.system(size: 10))
+                            .foregroundColor(.purple)
+                    }
 
-                    Spacer()
+                    Spacer(minLength: 4)
 
                     if let lastMessage = thread.lastMessage {
                         Text(TimeFormatter.formatTimeAgo(lastMessage.createdAt))
                             .font(.caption)
-                            .foregroundColor(thread.unreadCount > 0 ? AppColors.primary : AppColors.textTertiary)
+                            .foregroundColor(thread.chuaDoc ? AppColors.primary : AppColors.textTertiary)
                     }
                 }
 
@@ -239,7 +315,7 @@ struct ThreadRow: View {
                     if let lastMessage = thread.lastMessage {
                         Text(lastMessage.xemTruoc)
                             .font(.bodyMedium)
-                            .foregroundColor(thread.unreadCount > 0 ? AppColors.textPrimary : AppColors.textSecondary)
+                            .foregroundColor(thread.chuaDoc ? AppColors.textPrimary : AppColors.textSecondary)
                             .lineLimit(1)
                     } else {
                         Text("Chưa có tin nhắn")
@@ -258,13 +334,19 @@ struct ThreadRow: View {
                             .padding(.vertical, 4)
                             .background(AppColors.primary)
                             .clipShape(Capsule())
+                    } else if thread.chuaDoc {
+                        // Tự đánh dấu chưa đọc: không có số nào để hiện, nhưng
+                        // vẫn phải có chấm, không thì thao tác đó vô hình.
+                        Circle()
+                            .fill(AppColors.primary)
+                            .frame(width: 10, height: 10)
                     }
                 }
             }
         }
         .padding(.horizontal, Spacing.md)
         .padding(.vertical, Spacing.sm)
-        .background(thread.unreadCount > 0 ? AppColors.primary.opacity(0.05) : Color.clear)
+        .background(thread.chuaDoc ? AppColors.primary.opacity(0.05) : Color.clear)
     }
 }
 
@@ -316,16 +398,27 @@ class MessagesViewModel: ObservableObject {
     func filteredThreads(searchQuery: String) -> [MessageThread] {
         var filtered = threads
 
-        // Filter by type
+        // ⚠️ Máy chủ KHÔNG tự giấu hội thoại đã lưu trữ: `listThreadsForUser`
+        // chỉ lọc theo `deletedAt`, còn `archivedAt` thì vẫn trả về. Nên mọi
+        // tab TRỪ "Lưu trữ" phải tự bỏ chúng ra, không thì lưu trữ xong nó
+        // vẫn nằm nguyên chỗ cũ và người dùng tưởng nút không ăn.
+        if selectedFilter != .archived {
+            filtered = filtered.filter { !$0.daLuuTru }
+        }
+
         switch selectedFilter {
         case .all:
             break
         case .unread:
-            filtered = filtered.filter { $0.unreadCount > 0 }
+            filtered = filtered.filter { $0.chuaDoc }
+        case .pinned:
+            filtered = filtered.filter { $0.daGhim }
         case .personal:
             filtered = filtered.filter { $0.type == "direct" }
         case .group:
             filtered = filtered.filter { $0.type == "group" }
+        case .archived:
+            filtered = filtered.filter { $0.daLuuTru }
         }
 
         // Filter by search query
@@ -336,8 +429,86 @@ class MessagesViewModel: ObservableObject {
             }
         }
 
-        return filtered
+        // Hội thoại đã ghim luôn nổi lên đầu, giữ nguyên thứ tự thời gian
+        // trong từng nhóm — `sorted` của Swift ổn định nên chỉ cần một khoá.
+        return filtered.sorted { a, b in
+            a.daGhim && !b.daGhim
+        }
     }
+
+    // MARK: Ghim / lưu trữ / đánh dấu chưa đọc
+
+    /// Đổi tại chỗ TRƯỚC rồi mới gọi mạng: vuốt xong mà hàng đứng im nửa giây
+    /// thì người dùng vuốt lại lần nữa và bật-tắt hai lần.
+    private func capNhat(_ threadId: Int, _ moi: ThreadPreferences?) {
+        guard let i = threads.firstIndex(where: { $0.id == threadId }) else { return }
+        threads[i] = threads[i].doiTuyChon(moi)
+    }
+
+    func doiGhim(_ t: MessageThread) async {
+        let cu = t.preferences
+        let moc = t.daGhim ? nil : ISO8601DateFormatter().string(from: Date())
+        capNhat(t.id, (cu ?? ThreadPreferences()).dat(\.pinnedAt, moc))
+        do {
+            let _: TuyChonBoc = try await APIClient.shared
+                .request(.datTuyChonHoiThoai(threadId: t.id, slot: "pinnedAt", value: moc))
+        } catch {
+            capNhat(t.id, cu)
+            self.error = error.localizedDescription
+        }
+    }
+
+    func doiLuuTru(_ t: MessageThread) async {
+        let cu = t.preferences
+        let dangLuu = t.daLuuTru
+        let moc = dangLuu ? nil : ISO8601DateFormatter().string(from: Date())
+        capNhat(t.id, (cu ?? ThreadPreferences()).dat(\.archivedAt, moc))
+        do {
+            if dangLuu {
+                // Bỏ lưu trữ có route RIÊNG vì nó còn xoá cả `deletedAt` —
+                // đặt `archivedAt = null` qua /preference thì hội thoại từng
+                // bị "xoá cho riêng tôi" vẫn không quay lại hộp thư.
+                let _: EmptyResponse = try await APIClient.shared.request(.boLuuTruHoiThoai(threadId: t.id))
+            } else {
+                let _: TuyChonBoc = try await APIClient.shared
+                    .request(.datTuyChonHoiThoai(threadId: t.id, slot: "archivedAt", value: moc))
+            }
+        } catch {
+            capNhat(t.id, cu)
+            self.error = error.localizedDescription
+        }
+    }
+
+    func danhDauChuaDoc(_ t: MessageThread) async {
+        let cu = t.preferences
+        capNhat(t.id, (cu ?? ThreadPreferences())
+            .dat(\.markedUnreadAt, ISO8601DateFormatter().string(from: Date())))
+        do {
+            let _: EmptyResponse = try await APIClient.shared.request(.danhDauChuaDoc(threadId: t.id))
+        } catch {
+            capNhat(t.id, cu)
+            self.error = error.localizedDescription
+        }
+    }
+
+    func doiTatThongBao(_ t: MessageThread, phut: Int?) async {
+        let cu = t.preferences
+        let moc = phut.map { ISO8601DateFormatter().string(from: Date().addingTimeInterval(Double($0) * 60)) }
+        capNhat(t.id, (cu ?? ThreadPreferences()).dat(\.mutedUntil, moc))
+        do {
+            let _: TuyChonBoc = try await APIClient.shared
+                .request(.datTuyChonHoiThoai(threadId: t.id, slot: "mutedUntil", value: moc))
+        } catch {
+            capNhat(t.id, cu)
+            self.error = error.localizedDescription
+        }
+    }
+}
+
+/// `PATCH /threads/:id/preference` trả `{ preferences: {...} }`, không trả
+/// thẳng bộ tuỳ chọn — phải bóc một lớp.
+struct TuyChonBoc: Decodable {
+    let preferences: ThreadPreferences?
 }
 
 // MARK: - New Message View

@@ -65,6 +65,12 @@ enum APIEndpoint {
     case deleteMessage(messageId: Int)
     /// Tìm GIF qua proxy GIPHY của backend. `q` rỗng = đang thịnh hành.
     case searchGifs(q: String)
+    /// Đổi MỘT ô tuỳ chọn của hội thoại. `slot` là một trong
+    /// `pinnedAt` / `mutedUntil` / `archivedAt` / `markedUnreadAt`;
+    /// `value` là mốc ISO, hoặc `nil` để xoá ô đó.
+    case datTuyChonHoiThoai(threadId: Int, slot: String, value: String?)
+    case boLuuTruHoiThoai(threadId: Int)
+    case danhDauChuaDoc(threadId: Int)
     case markRead(threadId: Int)
     /// Mở (hoặc tạo nếu chưa có) hội thoại 1-1 với một người.
     case openThread(peerId: Int)
@@ -159,6 +165,9 @@ enum APIEndpoint {
         case .recallMessage(let id): return "/api/v1/messages/messages/\(id)/recall"
         case .deleteMessage(let id): return "/api/v1/messages/messages/\(id)"
         case .searchGifs: return "/api/v1/gifs"
+        case .datTuyChonHoiThoai(let id, _, _): return "/api/v1/messages/threads/\(id)/preference"
+        case .boLuuTruHoiThoai(let id): return "/api/v1/messages/threads/\(id)/unarchive"
+        case .danhDauChuaDoc(let id): return "/api/v1/messages/threads/\(id)/mark-unread"
         case .markRead(let threadId): return "/api/v1/messages/threads/\(threadId)/read"
         case .openThread(let peerId): return "/api/v1/messages/threads/user/\(peerId)"
         case .muteThread(let id, _): return "/api/v1/messages/threads/\(id)/mute-for"
@@ -201,12 +210,13 @@ enum APIEndpoint {
              .createPost, .likePost, .followUser, .unfollowUser,
              .createComment, .savePost, .sendMessage, .sendMessageWithFiles, .enrollCourse,
              .sendMessageMedia, .toggleMessageReaction, .recallMessage,
+             .boLuuTruHoiThoai, .danhDauChuaDoc,
              .createNote, .reportPost, .reportThread, .blockUser, .requestDeletion,
              .openThread, .muteThread, .saveLessonProgress:
             return "POST"
         case .updateProfile:
             return "PUT"
-        case .updateNote, .markRead, .reactPost, .markNotificationsRead:
+        case .updateNote, .markRead, .reactPost, .markNotificationsRead, .datTuyChonHoiThoai:
             return "PATCH"
         case .deletePost, .unlikePost, .unsavePost, .deleteNote,
              .unblockUser, .cancelDeletionRequest, .deleteMessage:
@@ -249,6 +259,11 @@ enum APIEndpoint {
             return ["media": ["url": u, "kind": k]]
         case .toggleMessageReaction(_, let e):
             return ["emoji": e]
+        case .datTuyChonHoiThoai(_, let slot, let v):
+            // `value: nil` PHẢI gửi thành JSON `null` chứ không được bỏ khoá —
+            // máy chủ hiểu `null` là "xoá ô này", còn thiếu khoá cũng ra null
+            // nhưng dựa vào đó là dựa vào một sự trùng hợp.
+            return ["slot": slot, "value": v as Any]
         case .searchGifs(let q):
             return q.isEmpty ? [:] : ["q": q]
         case .sendMessageWithFiles(_, let c, let ids):

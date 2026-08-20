@@ -167,6 +167,27 @@ struct MessageThread: Codable, Identifiable, Hashable {
     let unreadCount: Int
     let createdAt: String?
     let updatedAt: String?
+    /// Tuỳ chọn RIÊNG của người đang xem: ghim / tắt thông báo / lưu trữ /
+    /// đánh dấu chưa đọc. Máy chủ trả bản đã lọc theo người xem.
+    let preferences: ThreadPreferences?
+
+    var daGhim: Bool { preferences?.pinnedAt != nil }
+    var daLuuTru: Bool { preferences?.archivedAt != nil }
+
+    /// Chưa đọc = có tin mới, HOẶC người dùng tự đánh dấu chưa đọc.
+    var chuaDoc: Bool { unreadCount > 0 || preferences?.markedUnreadAt != nil }
+
+    var daTatThongBao: Bool {
+        guard let d = preferences?.mutedUntil, let moc = Date.tuChuoiISO(d) else { return false }
+        return moc > Date()
+    }
+
+    /// Dựng lại bản ghi với tuỳ chọn mới — `MessageThread` toàn `let`.
+    func doiTuyChon(_ moi: ThreadPreferences?) -> MessageThread {
+        MessageThread(id: id, type: type, participants: participants, lastMessage: lastMessage,
+                      unreadCount: unreadCount, createdAt: createdAt, updatedAt: updatedAt,
+                      preferences: moi)
+    }
 
     var displayName: String {
         participants?.first?.name ?? "Unknown"
@@ -177,6 +198,24 @@ struct MessageThread: Codable, Identifiable, Hashable {
 
     var avatarUrl: String? {
         participants?.first?.avatarUrl
+    }
+}
+
+/// Bốn ô tuỳ chọn nằm chung một cột JSONB trên hàng hội thoại. Tất cả đều là
+/// mốc thời gian ISO, `nil` = chưa đặt. `deletedAt` là "xoá cho riêng tôi" —
+/// hội thoại biến khỏi hộp thư nhưng người kia vẫn thấy.
+struct ThreadPreferences: Codable, Hashable {
+    var pinnedAt: String?
+    var mutedUntil: String?
+    var archivedAt: String?
+    var markedUnreadAt: String?
+    var deletedAt: String?
+
+    /// Đổi một ô, giữ nguyên ba ô kia.
+    func dat(_ o: WritableKeyPath<ThreadPreferences, String?>, _ giaTri: String?) -> ThreadPreferences {
+        var b = self
+        b[keyPath: o] = giaTri
+        return b
     }
 }
 
