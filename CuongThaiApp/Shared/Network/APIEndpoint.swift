@@ -129,6 +129,25 @@ enum APIEndpoint {
     /// Báo cáo một câu trả lời AI. Máy chủ đòi `rating` 1-5; báo cáo là mức
     /// thấp nhất (1) kèm loại.
     case baoCaoTraLoiAI(messageId: Int?)
+    // ─── Phiên chat AI ───────────────────────────────────────
+    /// `archived=1` là màn LƯU TRỮ; không truyền là danh sách thường.
+    /// Hai bộ lọc LOẠI TRỪ nhau — backend cố ý không có nhánh "xem tất cả".
+    case dsPhienChat(luuTru: Bool, thuMucId: String?)
+    case lichSuPhienChat(id: String)
+    case taoPhienChat(title: String?)
+    /// Đổi tên / ghim / lưu trữ — cùng một đường PATCH.
+    case suaPhienChat(id: String, [String: Any])
+    case xoaPhienChat(id: String)
+    case dsThuMucChat
+    case taoThuMucChat(ten: String, mau: String?)
+    case xoaThuMucChat(id: String)
+    case chuyenThuMuc(id: String, thuMucId: String?)
+    /// Tách nhánh từ một lượt: giữ các tin TRƯỚC `denChiSo`, tạo phiên mới.
+    case tachNhanhPhien(id: String, denChiSo: Int)
+    /// Cắt bỏ từ một lượt trở đi — dùng khi sửa câu hỏi rồi hỏi lại.
+    case catPhien(id: String, tuChiSo: Int)
+    /// Đặt việc đọc — trả `{ jobId }`, KHÔNG trả tiếng ngay. Xem `MayDoc`.
+    case datViecDoc(text: String)
     case xoaBaiViet(id: Int)
     /// Đổi nội dung và/hoặc quyền riêng tư. Máy chủ nhận `content`,
     /// `visibility` (PUBLIC | FRIENDS | PRIVATE).
@@ -280,6 +299,17 @@ enum APIEndpoint {
         case .xoaVinhVien(let id): return "/api/v1/notes/notes/\(id)/permanent"
         case .layLienKetNguoc(let id): return "/api/v1/notes/notes/\(id)/backlinks"
         case .baoCaoTraLoiAI: return "/api/v1/ai/feedback"
+        case .dsPhienChat: return "/api/v1/ai/chat/sessions"
+        case .lichSuPhienChat(let id): return "/api/v1/ai/chat/history/\(id)"
+        case .taoPhienChat: return "/api/v1/ai/chat/sessions"
+        case .suaPhienChat(let id, _): return "/api/v1/ai/chat/sessions/\(id)"
+        case .xoaPhienChat(let id): return "/api/v1/ai/chat/sessions/\(id)"
+        case .dsThuMucChat, .taoThuMucChat: return "/api/v1/ai/chat/folders"
+        case .xoaThuMucChat(let id): return "/api/v1/ai/chat/folders/\(id)"
+        case .chuyenThuMuc(let id, _): return "/api/v1/ai/chat/sessions/\(id)/folder"
+        case .tachNhanhPhien(let id, _): return "/api/v1/ai/chat/sessions/\(id)/fork"
+        case .catPhien(let id, _): return "/api/v1/ai/chat/sessions/\(id)/cat"
+        case .datViecDoc: return "/api/v1/voice-mini/tts"
         case .xoaBaiViet(let id): return "/api/v1/social/posts/\(id)"
         case .suaBaiViet(let id, _): return "/api/v1/social/posts/\(id)"
         case .ghimBaiViet(let id): return "/api/v1/social/posts/\(id)/pin"
@@ -335,16 +365,19 @@ enum APIEndpoint {
              .taoMon, .nhanBanGhiChu, .khoiPhucGhiChu, .dangKyThietBi,
              .themTuVung, .chamThe, .datLaiThe, .ghimBaiViet, .baoCaoTraLoiAI,
              .createNote, .reportPost, .reportThread, .blockUser, .requestDeletion,
-             .openThread, .muteThread, .saveLessonProgress:
+             .openThread, .muteThread, .saveLessonProgress,
+             .taoPhienChat, .taoThuMucChat, .tachNhanhPhien, .catPhien, .datViecDoc:
             return "POST"
         case .updateProfile, .datBietDanh:
             return "PUT"
         case .updateNote, .markRead, .reactPost, .markNotificationsRead, .datTuyChonHoiThoai,
-             .suaDongBang, .suaMon, .suaChuong, .suaTuVung, .suaBaiViet:
+             .suaDongBang, .suaMon, .suaChuong, .suaTuVung, .suaBaiViet,
+             .suaPhienChat, .chuyenThuMuc:
             return "PATCH"
         case .deletePost, .unlikePost, .unsavePost, .deleteNote,
              .unblockUser, .cancelDeletionRequest, .deleteMessage, .xoaTin, .xoaDongBang,
-             .xoaMon, .xoaChuong, .xoaVinhVien, .goThietBi, .xoaTuVung, .xoaBaiViet:
+             .xoaMon, .xoaChuong, .xoaVinhVien, .goThietBi, .xoaTuVung, .xoaBaiViet,
+             .xoaPhienChat, .xoaThuMucChat:
             return "DELETE"
         default:
             return "GET"
@@ -394,6 +427,19 @@ enum APIEndpoint {
             return ["action": a, "selection": sel]
         case .hoiTroLyGhiChu(let q):
             return ["question": q]
+        case .taoPhienChat(let t):
+            return t.map { ["title": $0] } ?? [:]
+        case .suaPhienChat(_, let d): return d
+        case .taoThuMucChat(let ten, let mau):
+            var d: [String: Any] = ["ten": ten]
+            if let mau { d["mau"] = mau }
+            return d
+        case .chuyenThuMuc(_, let fid):
+            // `null` là BỎ khỏi thư mục — khác hẳn không gửi trường.
+            return ["folderId": fid as Any]
+        case .datViecDoc(let t): return ["text": t]
+        case .tachNhanhPhien(_, let i): return ["denChiSo": i]
+        case .catPhien(_, let i): return ["tuChiSo": i]
         case .baoCaoTraLoiAI(let mid):
             return ["messageId": mid ?? 0, "rating": 1, "feedbackType": "REPORT",
                     "comment": "Người dùng báo cáo từ app iOS"]
@@ -480,6 +526,13 @@ enum APIEndpoint {
         // được, và tìm/lọc ghi chú cũng hỏng câm y hệt.
         case .searchGifs(let q):
             return q.isEmpty ? nil : ["q": q]
+        case .dsPhienChat(let luuTru, let fid):
+            var d: [String: Any] = [:]
+            // Chỉ gửi khi BẬT: backend đọc `archived === '1'`, gửi "0" cũng
+            // vô hại nhưng thừa một tham số trong mọi URL.
+            if luuTru { d["archived"] = "1" }
+            if let fid { d["folderId"] = fid }
+            return d.isEmpty ? nil : d
         case .timGhiChu(let q, let sid, let tag):
             var m: [String: Any] = [:]
             if !q.isEmpty { m["q"] = q }

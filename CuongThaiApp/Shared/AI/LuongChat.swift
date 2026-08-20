@@ -25,9 +25,24 @@ enum SuKienChat {
     case buoc(String)
     case mau(String)
     case suyNghi(String)
-    case nguon([String])
+    case nguon([NguonWeb])
     case xong(messageId: Int?, model: String?, tokens: Int?)
     case hong(String)
+}
+
+/// Một nguồn web model đã đọc để trả lời.
+struct NguonWeb: Identifiable, Hashable {
+    let id = UUID()
+    let tieuDe: String
+    let url: String
+    let mien: String
+
+    init?(tu m: [String: Any]) {
+        guard let u = m["url"] as? String, !u.isEmpty else { return nil }
+        url = u
+        tieuDe = (m["tieuDe"] as? String).flatMap { $0.isEmpty ? nil : $0 } ?? u
+        mien = (m["mien"] as? String) ?? URL(string: u)?.host ?? ""
+    }
 }
 
 @MainActor
@@ -107,9 +122,12 @@ final class LuongChat {
                         case "reasoning":
                             tiep.yield(.suyNghi(m["step"] as? String ?? ""))
                         case "nguon":
-                            if let ns = m["nguon"] as? [Any] {
-                                tiep.yield(.nguon(ns.compactMap { ($0 as? [String: Any])?["title"] as? String
-                                                                  ?? $0 as? String }))
+                            // ⚠️ Backend gửi `tieuDe` / `url` / `mien` — KHÔNG
+                            // phải `title`. Bản trước đọc `title` nên mảng
+                            // luôn rỗng, và vì nó bị `break` bỏ đi nên không
+                            // ai thấy. Hai lỗi câm chồng lên nhau.
+                            if let ns = m["nguon"] as? [[String: Any]] {
+                                tiep.yield(.nguon(ns.compactMap(NguonWeb.init(tu:))))
                             }
                         case "chunk":
                             if let t = m["text"] as? String, !t.isEmpty { tiep.yield(.mau(t)) }

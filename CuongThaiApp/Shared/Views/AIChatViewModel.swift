@@ -12,6 +12,8 @@ struct TinAI: Identifiable {
     /// model là CHỮ THUẦN — xem `anhKemLai()`.
     var anh: [String] = []
     var tenTep: [String] = []
+    /// Nguồn web model đã đọc cho lượt này.
+    var nguon: [NguonWeb] = []
 }
 
 /// Ba bậc, khớp `CHAT_MODELS` trong `src/services/ai.service.ts`.
@@ -74,10 +76,70 @@ final class AIChatViewModel: ObservableObject {
     @Published var loi: String?
     @Published var bac: BacAI = .mini
 
-    private var sessionId: String?
+    /// `sessionId` để trống nghĩa là cuộc MỚI — backend tự tạo ở lượt đầu và
+    /// trả lại qua khung `connected`.
+    @Published private(set) var sessionId: String?
+    @Published var dangNapLichSu = false
     private var viec: Task<Void, Never>?
 
     var bacHienTai: BacAI { bac }
+
+    /// Mở lại một cuộc đã lưu: nạp toàn bộ tin từ `GET /ai/chat/history/:id`.
+    ///
+    /// Phải đặt `sessionId` để lượt hỏi tiếp GHI VÀO ĐÚNG cuộc đó, không đẻ ra
+    /// một cuộc mới song song — nhìn ngoài thì giống nhau, tới khi mở lại lịch
+    /// sử mới thấy một cuộc cụt và một cuộc lạ.
+    func moCuoc(_ p: PhienChat) async {
+        dung()
+        dangNapLichSu = true
+        defer { dangNapLichSu = false }
+        do {
+            let ds: [TinLichSu] = try await APIClient.shared.request(.lichSuPhienChat(id: p.id))
+            tin = ds.map { TinAI(cuaNguoi: $0.cuaNguoi, noiDung: $0.content, messageId: $0.id) }
+            sessionId = p.id
+            buocHienTai = nil
+        } catch {
+            loi = "Không mở được cuộc này: \(error.localizedDescription)"
+        }
+    }
+
+    /// Hỏi lại lượt cuối.
+    ///
+    /// Bỏ câu trả lời cũ RỒI mới gửi, để nó không lọt vào lịch sử gửi lên —
+    /// model đọc thấy câu nó vừa viết thì thường chỉ diễn đạt lại y hệt.
+    func taoLai() {
+        guard !dangTraLoi else { return }
+        guard let iCuoi = tin.lastIndex(where: { $0.cuaNguoi }) else { return }
+        let cauHoi = tin[iCuoi].noiDung
+        let anh = tin[iCuoi].anh
+        let tenTep = tin[iCuoi].tenTep
+        tin.removeSubrange(iCuoi...)
+        gui(cauHoi, anh: anh, tep: [], tenTep: tenTep)
+    }
+
+    /// Sửa một câu hỏi của mình rồi hỏi lại từ đó.
+    ///
+    /// Cắt luôn ở máy chủ (`POST /chat/sessions/:id/cat`) chứ không chỉ xoá
+    /// trên màn hình: phiên là thứ mở lại được, để lại phần cũ thì lần sau mở
+    /// ra thấy cả câu đã sửa lẫn câu chưa sửa.
+    func suaVaHoiLai(_ tinCu: TinAI, thanh moi: String) async {
+        guard !dangTraLoi, let i = tin.firstIndex(where: { $0.id == tinCu.id }) else { return }
+        let c = moi.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !c.isEmpty else { return }
+        if let sid = sessionId {
+            try? await APIClient.shared.send(.catPhien(id: sid, tuChiSo: i))
+        }
+        let anh = tin[i].anh
+        tin.removeSubrange(i...)
+        gui(c, anh: anh)
+    }
+
+    /// Cả cuộc dưới dạng markdown, để chia sẻ hoặc lưu.
+    func xuatMarkdown() -> String {
+        tin.filter { !$0.noiDung.isEmpty }
+           .map { ($0.cuaNguoi ? "## 🧑 Tôi\n\n" : "## 🤖 CuongMini\n\n") + $0.noiDung }
+           .joined(separator: "\n\n---\n\n")
+    }
 
     func hoiMoi() {
         dung()
@@ -164,8 +226,10 @@ final class AIChatViewModel: ObservableObject {
                     buocHienTai = b.isEmpty ? nil : b
                 case .suyNghi(let s):
                     buocHienTai = s.isEmpty ? nil : String(s.prefix(80))
-                case .nguon:
-                    break
+                case .nguon(let ns):
+                    // Trước đây dòng này là `break` — model tìm web xong mà
+                    // người dùng không có cách nào biết nó đọc ở đâu.
+                    if let i = chiSoDangChay(), !ns.isEmpty { tin[i].nguon = ns }
                 case .mau(let m):
                     buocHienTai = nil
                     if let i = chiSoDangChay() { tin[i].noiDung += m }

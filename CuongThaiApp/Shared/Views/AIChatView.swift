@@ -12,6 +12,13 @@ struct AIChatView: View {
     @State private var dinhKem: [DinhKemAI] = []
     @State private var anhChon: [PhotosPickerItem] = []
     @State private var hienChonTep = false
+    @State private var hienLichSu = false
+    @StateObject private var ghiAm = GhiAmThoai()
+    @StateObject private var mayDoc = MayDoc()
+    @State private var dangNhanDang = false
+    @State private var hienMayAnh = false
+    @State private var suaTin: TinAI?
+    @State private var chuSua = ""
     @FocusState private var dangGo: Bool
 
     var body: some View {
@@ -29,6 +36,13 @@ struct AIChatView: View {
             .navigationBarTitleDisplayModeInline()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Đóng") { dismiss() } }
+                // Nút riêng, không giấu trong menu ⋮: đây là thứ người dùng
+                // với tới nhiều thứ hai sau ô nhập.
+                ToolbarItem(placement: .navigation) {
+                    Button { hienLichSu = true } label: {
+                        Image(systemName: "clock.arrow.circlepath")
+                    }
+                }
                 ToolbarItem(placement: .primaryAction) {
                     Menu {
                         Picker("Bậc", selection: $vm.bac) {
@@ -40,10 +54,25 @@ struct AIChatView: View {
                         Button {
                             vm.hoiMoi()
                         } label: { Label("Cuộc trò chuyện mới", systemImage: "square.and.pencil") }
+                        if !vm.tin.isEmpty {
+                            ShareLink(item: vm.xuatMarkdown()) {
+                                Label("Chia sẻ cuộc này", systemImage: "square.and.arrow.up")
+                            }
+                        }
                     } label: {
                         Image(systemName: "ellipsis.circle")
                     }
                 }
+            }
+            .alert("Sửa câu hỏi", isPresented: .constant(suaTin != nil)) {
+                TextField("Câu hỏi", text: $chuSua, axis: .vertical)
+                Button("Huỷ", role: .cancel) { suaTin = nil }
+                Button("Hỏi lại") {
+                    if let t = suaTin { Task { await vm.suaVaHoiLai(t, thanh: chuSua) } }
+                    suaTin = nil
+                }
+            } message: {
+                Text("Mọi tin sau câu này sẽ bị bỏ.")
             }
             .alert("AI", isPresented: .constant(vm.loi != nil)) {
                 Button("OK") { vm.loi = nil }
@@ -51,6 +80,19 @@ struct AIChatView: View {
             .onChange(of: anhChon) { _, moi in
                 guard !moi.isEmpty else { return }
                 Task { await napAnh(moi) }
+            }
+            #if os(iOS)
+            .fullScreenCover(isPresented: $hienMayAnh) {
+                MayAnh { d in
+                    namBacNeuCan()
+                    let nen = PlatformImage(data: d)?.jpegDataForUpload() ?? d
+                    dinhKem.append(DinhKemAI(ten: "ảnh-chụp.jpg", mime: "image/jpeg", duLieu: nen))
+                }
+                .ignoresSafeArea()
+            }
+            #endif
+            .sheet(isPresented: $hienLichSu) {
+                LichSuChatView { p in Task { await vm.moCuoc(p) } }
             }
             .fileImporter(isPresented: $hienChonTep,
                           allowedContentTypes: HanMucDinhKem.loaiTep,
@@ -126,10 +168,21 @@ struct AIChatView: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: Spacing.md) {
                     ForEach(vm.tin) { t in
-                        BongBongAI(tin: t)
+                        BongBongAI(tin: t, mayDoc: mayDoc,
+                                   taoLai: t.id == vm.tin.last?.id && !vm.dangTraLoi
+                                           ? { vm.taoLai() } : nil,
+                                   sua: t.cuaNguoi && !vm.dangTraLoi
+                                        ? { chuSua = t.noiDung; suaTin = t } : nil)
                             .id(t.id)
                     }
-                    if vm.dangTraLoi {
+                    if coChu || !dinhKem.isEmpty {
+                    EmptyView()
+                } else if !vm.dangTraLoi {
+                    // Micro chỉ hiện khi CHƯA gõ gì — có chữ rồi thì chỗ đó là
+                    // nút gửi, đổi qua đổi lại dưới ngón tay là bấm nhầm.
+                    nutMicro
+                }
+                if vm.dangTraLoi {
                         dangLam
                             .id("dang-lam")
                     }
@@ -229,6 +282,52 @@ struct AIChatView: View {
 
     private var guiDuoc: Bool { coChu || !dinhKem.isEmpty }
 
+    /// Giữ để nói, thả để gửi đi nhận dạng.
+    private var nutMicro: some View {
+        Image(systemName: dangNhanDang ? "waveform" : (ghiAm.dangGhi ? "mic.fill" : "mic"))
+            .font(.system(size: 26))
+            .foregroundColor(ghiAm.dangGhi ? AppColors.error : AppColors.textSecondary)
+            .frame(width: 34, height: 34)
+            .overlay(alignment: .top) {
+                if ghiAm.dangGhi {
+                    Text("\(ghiAm.giay)s")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundColor(AppColors.error)
+                        .offset(y: -13)
+                }
+            }
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in
+                        guard !ghiAm.dangGhi, !dangNhanDang else { return }
+                        Haptics.cham()
+                        Task { await ghiAm.batDau() }
+                    }
+                    .onEnded { _ in ketThucNoi() }
+            )
+            .disabled(dangNhanDang)
+    }
+
+    private func ketThucNoi() {
+        guard let thu = ghiAm.dungLai() else { return }
+        dangNhanDang = true
+        Task {
+            defer { dangNhanDang = false }
+            do {
+                if let chu = try await GiongNoiAI.chuTuGiong(thu.data) {
+                    // Ghép vào chữ đang có thay vì đè — người dùng có thể gõ
+                    // một nửa rồi nói nốt.
+                    cauHoi = cauHoi.isEmpty ? chu : cauHoi + " " + chu
+                } else {
+                    vm.loi = "Chưa nghe rõ, thử nói lại gần micro hơn nhé."
+                }
+            } catch {
+                vm.loi = "Không nhận dạng được giọng nói."
+            }
+        }
+    }
+
     /// Hai nút RIÊNG, không gộp vào Menu.
     ///
     /// ⚠️ `PhotosPicker` KHÔNG lồng được trong `Menu`: nó phải tự trình bày
@@ -243,6 +342,16 @@ struct AIChatView: View {
                     .font(.system(size: 22))
                     .foregroundColor(AppColors.textSecondary)
             }
+            #if os(iOS)
+            if MayAnh.coMayAnh {
+                Button { hienMayAnh = true } label: {
+                    Image(systemName: "camera")
+                        .font(.system(size: 21))
+                        .foregroundColor(AppColors.textSecondary)
+                }
+                .buttonStyle(.plain)
+            }
+            #endif
             Button { hienChonTep = true } label: {
                 Image(systemName: "paperclip")
                     .font(.system(size: 21))
@@ -344,8 +453,40 @@ struct AIChatView: View {
 
 struct BongBongAI: View {
     let tin: TinAI
+    /// Máy đọc dùng CHUNG cho cả khung chat, không phải mỗi bong bóng một cái:
+    /// hai giọng chồng lên nhau là thứ không có nút nào dừng được.
+    @ObservedObject var mayDoc: MayDoc
+    /// `nil` = không cho tạo lại ở tin này (chỉ tin CUỐI mới cho).
+    var taoLai: (() -> Void)?
+    /// `nil` = không phải tin của mình.
+    var sua: (() -> Void)?
     @State private var daChep = false
     @State private var hienBaoCao = false
+
+    private var dangDocTin: Bool { mayDoc.dangDoc == tin.id && !mayDoc.dangCho }
+
+    /// Nguồn model đã đọc — bấm mở được, vì "theo một bài trên VnExpress" mà
+    /// không kèm đường dẫn thì người đọc không kiểm chứng được gì.
+    private var theNguon: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 7) {
+                ForEach(tin.nguon) { n in
+                    Link(destination: URL(string: n.url) ?? URL(string: "https://cuongthai.com")!) {
+                        HStack(spacing: 5) {
+                            Image(systemName: "link").font(.system(size: 9))
+                            Text(n.mien.isEmpty ? n.tieuDe : n.mien)
+                                .font(.system(size: 11)).lineLimit(1)
+                        }
+                        .padding(.horizontal, 8).padding(.vertical, 5)
+                        .background(Capsule().fill(AppColors.backgroundTertiary))
+                        .foregroundColor(AppColors.textSecondary)
+                    }
+                }
+            }
+            .padding(.vertical, 2)
+        }
+        .frame(maxHeight: 32)
+    }
 
     var body: some View {
         VStack(alignment: tin.cuaNguoi ? .trailing : .leading, spacing: 4) {
@@ -357,13 +498,33 @@ struct BongBongAI: View {
                     .background(RoundedRectangle(cornerRadius: 18, style: .continuous)
                         .fill(AppColors.primary))
                     .frame(maxWidth: 300, alignment: .trailing)
+                    // Chạm-giữ để sửa: đặt một nút nhỏ cạnh mọi tin của mình
+                    // thì khung chat rối, mà đây là việc thỉnh thoảng mới làm.
+                    .contextMenu {
+                        if let sua {
+                            Button(action: sua) { Label("Sửa và hỏi lại", systemImage: "pencil") }
+                        }
+                        Button {
+                            #if os(iOS)
+                            UIPasteboard.general.string = tin.noiDung
+                            #endif
+                        } label: { Label("Chép", systemImage: "doc.on.doc") }
+                    }
+                if sua != nil {
+                    Text("Chạm giữ để sửa")
+                        .font(.system(size: 10))
+                        .foregroundColor(AppColors.textTertiary)
+                }
             } else {
                 // Câu trả lời dựng theo ĐÚNG luật của bài viết: tiêu đề, khối
                 // mã tô màu, đường kẻ. AI hay trả lời kèm mã, để chữ trơn thì
                 // mã dính liền văn xuôi và không đọc được.
-                NoiDungBaiViet(noiDung: tin.noiDung)
+                // Markdown chuẩn của model — KHÔNG dùng bộ dựng bài đăng,
+                // xem đầu file NoiDungMarkdown.swift.
+                NoiDungMarkdown(noiDung: tin.noiDung)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
+                if !tin.nguon.isEmpty { theNguon }
                 if !tin.dangChay {
                     HStack(spacing: Spacing.md) {
                         Button {
@@ -377,6 +538,20 @@ struct BongBongAI: View {
                         }
                         // App Store 1.2: người dùng phải báo cáo được câu trả
                         // lời không phù hợp. Backend đã có `/ai/feedback`.
+                        Button {
+                            mayDoc.batTat(tin.id, chu: tin.noiDung)
+                        } label: {
+                            Label(dangDocTin ? "Dừng" : "Nghe",
+                                  systemImage: mayDoc.dangCho && mayDoc.dangDoc == tin.id
+                                    ? "hourglass"
+                                    : (dangDocTin ? "stop.circle" : "speaker.wave.2"))
+                        }
+                        .foregroundColor(dangDocTin ? AppColors.primary : AppColors.textSecondary)
+                        if let taoLai {
+                            Button(action: taoLai) {
+                                Label("Tạo lại", systemImage: "arrow.clockwise")
+                            }
+                        }
                         Button { hienBaoCao = true } label: {
                             Label("Báo cáo", systemImage: "flag")
                         }

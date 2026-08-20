@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 // ════════════════════════════════════════════════════════════════
 // DỰNG NỘI DUNG BÀI VIẾT — bắt chước ĐÚNG luật của web
@@ -128,6 +129,37 @@ struct KhoiMaView: View {
     let ma: String
     let ngonNgu: String?
     @State private var daChep = false
+    @State private var hienLuu = false
+
+    /// Đuôi file suy từ tên ngôn ngữ model ghi sau ```.
+    ///
+    /// Chỉ những cái CHẮC CHẮN — tên lạ thì để `.txt`, vì đoán sai đuôi còn
+    /// khó chịu hơn không đoán (macOS mở nhầm ứng dụng).
+    private var duoi: String {
+        switch (ngonNgu ?? "").lowercased() {
+        case "swift": return "swift"
+        case "python", "py": return "py"
+        case "javascript", "js": return "js"
+        case "typescript", "ts": return "ts"
+        case "java": return "java"
+        case "kotlin", "kt": return "kt"
+        case "csharp", "cs", "c#": return "cs"
+        case "c": return "c"
+        case "cpp", "c++": return "cpp"
+        case "go": return "go"
+        case "rust", "rs": return "rs"
+        case "php": return "php"
+        case "ruby", "rb": return "rb"
+        case "sql": return "sql"
+        case "html": return "html"
+        case "css": return "css"
+        case "json": return "json"
+        case "yaml", "yml": return "yml"
+        case "sh", "bash", "shell", "zsh": return "sh"
+        case "markdown", "md": return "md"
+        default: return "txt"
+        }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -152,10 +184,24 @@ struct KhoiMaView: View {
                     .foregroundColor(daChep ? Color(hex: 0x34D399) : .white.opacity(0.7))
                 }
                 .buttonStyle(.plain)
+                Button { hienLuu = true } label: {
+                    HStack(spacing: 3) {
+                        Image(systemName: "arrow.down.doc")
+                        Text("Lưu")
+                    }
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundColor(.white.opacity(0.7))
+                }
+                .buttonStyle(.plain)
+                .padding(.leading, 10)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 7)
             .background(Color(hex: 0x1E1E2E))
+            .fileExporter(isPresented: $hienLuu,
+                          document: TepVanBan(noiDung: ma),
+                          contentType: .plainText,
+                          defaultFilename: "doan-ma.\(duoi)") { _ in }
 
             // Cuộn NGANG: mã thường dài hơn bề ngang điện thoại, mà tự xuống
             // dòng thì thụt lề vỡ hết và mã hết đọc được.
@@ -316,5 +362,25 @@ extension BoTachBaiViet {
         // Link markdown: giữ chữ, bỏ địa chỉ.
         s = s.replacingOccurrences(of: #"\[([^\]]+)\]\([^)]+\)"#, with: "$1", options: .regularExpression)
         return s.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+}
+
+
+/// Bọc một chuỗi thành tài liệu để `fileExporter` ghi ra đĩa.
+///
+/// `.plainText` cho MỌI đuôi: khai `contentType` theo từng ngôn ngữ thì phải
+/// dựng `UTType` riêng cho thứ hệ thống chưa biết, và nó lặng lẽ từ chối ghi.
+/// Nội dung là chữ thuần, đuôi file mới là thứ quyết định app nào mở nó.
+struct TepVanBan: FileDocument {
+    static var readableContentTypes: [UTType] { [.plainText] }
+    let noiDung: String
+
+    init(noiDung: String) { self.noiDung = noiDung }
+    init(configuration: ReadConfiguration) throws {
+        noiDung = configuration.file.regularFileContents
+            .flatMap { String(data: $0, encoding: .utf8) } ?? ""
+    }
+    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
+        FileWrapper(regularFileWithContents: Data(noiDung.utf8))
     }
 }
