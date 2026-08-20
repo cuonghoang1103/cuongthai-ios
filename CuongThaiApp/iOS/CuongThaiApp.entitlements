@@ -2,17 +2,15 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- SDK Google ghi Keychain qua GTMAppAuth, và đường đó đòi nhóm truy cập
-	     Keychain. Kho khoá của CHÍNH app (KeychainStore) không đòi, nên nó
-	     chạy tốt trong khi Google báo "keychain error" — đo được 19/08/2026:
-	     tự kiểm ghi–đọc–xoá của app trả "Keychain dùng được". -->
-	<key>keychain-access-groups</key>
-	<array>
-		<string>$(AppIdentifierPrefix)com.cuongthai.app</string>
-	</array>
+	<key>aps-environment</key>
+	<string>development</string>
 	<key>com.apple.developer.applesignin</key>
 	<array>
 		<string>Default</string>
+	</array>
+	<key>keychain-access-groups</key>
+	<array>
+		<string>$(AppIdentifierPrefix)com.cuongthai.app</string>
 	</array>
 </dict>
 </plist>

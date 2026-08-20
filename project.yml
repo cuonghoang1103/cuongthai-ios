@@ -103,6 +103,12 @@ targets:
         com.apple.developer.applesignin: [Default]
         # SDK Google ghi Keychain qua GTMAppAuth và đòi nhóm truy cập Keychain.
         keychain-access-groups: ["$(AppIdentifierPrefix)com.cuongthai.app"]
+        # Thông báo đẩy. `development` cho bản chạy từ Xcode, và Apple TỰ ĐỔI
+        # sang production khi đóng gói App Store / TestFlight — nên để
+        # `development` ở đây là đúng cho cả hai, không phải sửa mỗi lần.
+        # Thiếu khoá này thì `registerForRemoteNotifications()` gọi xong im
+        # lặng, không có thẻ nào về, và không có lỗi nào để thấy.
+        aps-environment: development
 
   CuongThaiAppMac:
     type: application

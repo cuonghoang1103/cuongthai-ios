@@ -78,6 +78,8 @@ enum APIEndpoint {
     /// sau khi xoá biệt danh, đừng dùng để làm mới sau khi ĐẶT biệt danh.
     case layHoiThoai(threadId: Int)
     /// Hàng tin: MỘT tin mới nhất cho mỗi người.
+    case dangKyThietBi(token: String, sandbox: Bool)
+    case goThietBi(token: String)
     case layHangTin
     /// Đủ tin của một người, để lật qua từng tin.
     case layTinCuaNguoi(userId: Int)
@@ -211,6 +213,8 @@ enum APIEndpoint {
         case .danhDauChuaDoc(let id): return "/api/v1/messages/threads/\(id)/mark-unread"
         case .datBietDanh(let id, _, _): return "/api/v1/messages/threads/\(id)/nickname"
         case .layHoiThoai(let id): return "/api/v1/messages/threads/\(id)"
+        case .dangKyThietBi: return "/api/v1/devices"
+        case .goThietBi(let t): return "/api/v1/devices/\(t)"
         case .layHangTin: return "/api/v1/stories/feed"
         case .layTinCuaNguoi(let id): return "/api/v1/stories/user/\(id)"
         case .danhDauDaXemTin(let id): return "/api/v1/stories/\(id)/view"
@@ -287,7 +291,7 @@ enum APIEndpoint {
              .sendMessageMedia, .toggleMessageReaction, .recallMessage,
              .boLuuTruHoiThoai, .danhDauChuaDoc, .danhDauDaXemTin, .taoTin, .taoChuong,
              .luuMocPhienBan, .khoiPhucPhienBan, .chayViecAI, .hoiTroLyGhiChu, .taoDongBang,
-             .taoMon, .nhanBanGhiChu, .khoiPhucGhiChu,
+             .taoMon, .nhanBanGhiChu, .khoiPhucGhiChu, .dangKyThietBi,
              .createNote, .reportPost, .reportThread, .blockUser, .requestDeletion,
              .openThread, .muteThread, .saveLessonProgress:
             return "POST"
@@ -298,7 +302,7 @@ enum APIEndpoint {
             return "PATCH"
         case .deletePost, .unlikePost, .unsavePost, .deleteNote,
              .unblockUser, .cancelDeletionRequest, .deleteMessage, .xoaTin, .xoaDongBang,
-             .xoaMon, .xoaChuong, .xoaVinhVien:
+             .xoaMon, .xoaChuong, .xoaVinhVien, .goThietBi:
             return "DELETE"
         default:
             return "GET"
@@ -361,6 +365,8 @@ enum APIEndpoint {
         case .suaMon(_, let d): return d
         case .suaChuong(_, let t): return ["title": t]
         case .locGhiChu(let f): return ["f": f]
+        case .dangKyThietBi(let t, let sb):
+            return ["token": t, "platform": "ios", "sandbox": sb]
         case .taoTin(let u, let k, let c):
             var m: [String: Any] = ["mediaUrl": u, "mediaType": k, "visibility": "PUBLIC"]
             if let c, !c.isEmpty { m["caption"] = c }

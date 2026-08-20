@@ -16,6 +16,9 @@ final class AppState: ObservableObject {
     private var huyDangKy = Set<AnyCancellable>()
     /// Hội thoại đang mở — tin mới của chính nó KHÔNG cộng vào huy hiệu.
     var hoiThoaiDangMo: Int?
+    /// Hội thoại cần mở sau khi người dùng chạm vào thông báo đẩy. Màn Tin
+    /// nhắn đọc rồi xoá — không xoá thì lần sau vào tab đó nó tự mở lại.
+    @Published var hoiThoaiCanMo: Int?
 
     // Five tabs is the iPhone maximum before iOS collapses the rest into
     // "More". Search moved into the Home toolbar so the Learn tab (courses +

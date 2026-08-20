@@ -5,6 +5,7 @@ struct MessagesView: View {
     @EnvironmentObject var appState: AppState
     @StateObject private var viewModel = MessagesViewModel()
     @State private var searchQuery = ""
+    @State private var hoiThoaiMoTuThongBao: MessageThread?
     @State private var showNewMessage = false
 
     var body: some View {
@@ -37,6 +38,22 @@ struct MessagesView: View {
                 Task {
                     await viewModel.loadThreads()
                 }
+            }
+            // Chạm vào thông báo đẩy → mở thẳng hội thoại đó. Không có đoạn
+            // này thì chạm xong chỉ nhảy vào tab Tin nhắn rồi đứng ở danh
+            // sách, người dùng phải tự đi tìm.
+            .onChange(of: AppState.shared.hoiThoaiCanMo) { _, id in
+                guard let id else { return }
+                Task {
+                    if viewModel.threads.isEmpty { await viewModel.loadThreads() }
+                    hoiThoaiMoTuThongBao = viewModel.threads.first { $0.id == id }
+                    // Xoá NGAY sau khi dùng — không xoá thì lần sau vào tab
+                    // này nó tự mở lại hội thoại cũ.
+                    AppState.shared.hoiThoaiCanMo = nil
+                }
+            }
+            .navigationDestination(item: $hoiThoaiMoTuThongBao) { t in
+                ChatView(thread: t)
             }
         }
     }
