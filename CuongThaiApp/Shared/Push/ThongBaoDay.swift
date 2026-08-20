@@ -22,6 +22,50 @@ final class ThongBaoDay: NSObject, ObservableObject, UNUserNotificationCenterDel
 
     private override init() { super.init() }
 
+    // MARK: Định tuyến chờ từ cú chạm thông báo
+
+    /// ⚠️⚠️ VÌ SAO PHẢI "CẤT RỒI ÁP SAU" — ĐỌC TRƯỚC KHI SỬA LẠI THÀNH GỌI THẲNG
+    ///
+    /// Bản cũ đổi `AppState.shared.selectedTab` NGAY trong callback
+    /// `didReceive`. Biến đó là `@Published` → SwiftUI đổi tab → UIKit chụp
+    /// snapshot — trong khi scene CHƯA active (app vừa được cú chạm dựng dậy).
+    /// UIKit nổ NSAssertion và app SẬP. Biên bản 21/08/2026, 9 lần từ 01:46
+    /// tới 03:41, vết ném nào cũng một khuôn:
+    ///
+    ///   @objc closure #1 in ThongBaoDay.userNotificationCenter(_:didReceive:)
+    ///     → _updateStateRestorationArchiveForBackgroundEvent…
+    ///     → NSAssertionHandler → abort
+    ///
+    /// Người dùng thấy "chạm thông báo thì app không mở, vào lại bằng icon
+    /// thì đứng ở Trang chủ" — vì app chết trước khi kịp vẽ gì.
+    ///
+    /// Luật: trong callback CHỈ ghi hai biến thường dưới đây (không ai quan
+    /// sát ⇒ không SwiftUI ⇒ không UIKit). Việc đổi tab dời sang
+    /// `apDungDinhTuyen()`, gọi từ ba chỗ đều đã an toàn:
+    ///   • `.task` của iOSTabView        — mở nguội từ thông báo
+    ///   • `scenePhase == .active`       — app từ nền quay lại
+    ///   • Task trễ 150ms trong callback — chạm banner khi app ĐANG mở
+    ///     (không có chuyển scene nào sắp xảy ra nên hai móc trên im lặng)
+    @MainActor private static var canVaoTabTinNhan = false
+    @MainActor private static var hoiThoaiCho: Int?
+
+    @MainActor static func catDinhTuyen(threadId: Int?) {
+        canVaoTabTinNhan = true
+        hoiThoaiCho = threadId
+        NhatKy.thongBao.info("cất định tuyến — hội thoại \(threadId.map(String.init) ?? "(không rõ)")")
+    }
+
+    /// Idempotent: áp xong tự xoá, ba móc có gọi chồng cũng chỉ áp một lần.
+    @MainActor static func apDungDinhTuyen() {
+        guard canVaoTabTinNhan else { return }
+        canVaoTabTinNhan = false
+        let tid = hoiThoaiCho
+        hoiThoaiCho = nil
+        NhatKy.thongBao.info("ÁP định tuyến — mở tab Tin nhắn, hội thoại \(tid.map(String.init) ?? "(không)")")
+        AppState.shared.selectedTab = .messages
+        if let tid { AppState.shared.hoiThoaiCanMo = tid }
+    }
+
     func khoiDong() {
         UNUserNotificationCenter.current().delegate = self
     }
@@ -115,21 +159,52 @@ final class ThongBaoDay: NSObject, ObservableObject, UNUserNotificationCenterDel
 
     // MARK: Người dùng chạm vào thông báo
 
+    /// ⚠️⚠️ PHẢI là dạng COMPLETION HANDLER, KHÔNG được đổi về dạng `async`.
+    ///
+    /// Dạng `nonisolated ... async` chạy trên executor NỀN, nên đoạn mã trình
+    /// biên dịch tự sinh để gọi completion của UIKit cũng chạy NGOÀI luồng
+    /// chính. Khi app được cú chạm dựng dậy từ trạng thái TẮT HẲN, UIKit chạy
+    /// máy snapshot ngay trong completion (`_updateStateRestorationArchiveFor
+    /// BackgroundEvent…`), đòi luồng chính, không được là nổ NSAssertion —
+    /// app sập TRƯỚC khi kịp vẽ gì. 12+ biên bản ngày 21/08/2026.
+    ///
+    /// Bản 14 đã chứng minh bằng phép loại trừ: thân hàm chỉ ghi hai biến
+    /// thường mà vẫn sập y hệt ⇒ lỗi nằm ở CÁCH KHAI, không ở thân hàm.
+    /// Chạm lúc app còn ở NỀN thì không sập (đường snapshot đó không chạy) —
+    /// vì thế lỗi này trông như "lúc được lúc không" nếu không đọc biên bản.
     nonisolated func userNotificationCenter(
         _ center: UNUserNotificationCenter,
-        didReceive response: UNNotificationResponse
-    ) async {
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
         let info = response.notification.request.content.userInfo
-        guard let loai = info["loai"] as? String else { return }
-        await MainActor.run {
-            switch loai {
-            case "tin-nhan":
-                AppState.shared.selectedTab = .messages
-                if let tid = info["threadId"] as? Int {
-                    AppState.shared.hoiThoaiCanMo = tid
+        // `threadId` có thể về dạng Int, NSNumber hoặc chuỗi tuỳ đường đi.
+        let tid = (info["threadId"] as? Int)
+            ?? (info["threadId"] as? NSNumber)?.intValue
+            ?? Int((info["threadId"] as? String) ?? "")
+        let loai = info["loai"] as? String
+        // Về luồng CHÍNH rồi mới làm gì và mới gọi completion — đây là toàn
+        // bộ bản vá. `main.async` chứ không gọi thẳng: tách hẳn khỏi lượt
+        // giao dịch CATransaction mà UIKit đang giữ khi gọi mình.
+        DispatchQueue.main.async {
+            MainActor.assumeIsolated {
+                NhatKy.thongBao.info("didReceive CHẠY — loai=\(loai ?? "(không có)") · threadId=\(tid.map(String.init) ?? "(không đọc được)")")
+                if loai == "tin-nhan" || tid != nil {
+                    // CHỈ CẤT — đổi tab dời sang `apDungDinhTuyen`, chạy khi
+                    // scene đã active.
+                    Self.catDinhTuyen(threadId: tid)
+                    #if canImport(UIKit)
+                    // Chạm banner khi app ĐANG mở: scene không đổi trạng thái
+                    // nên các móc kia im lặng — tự áp sau khi mọi thứ đã yên.
+                    Task { @MainActor in
+                        try? await Task.sleep(nanoseconds: 150_000_000)
+                        if UIApplication.shared.applicationState == .active {
+                            Self.apDungDinhTuyen()
+                        }
+                    }
+                    #endif
                 }
-            default:
-                break
+                completionHandler()
             }
         }
     }
@@ -138,13 +213,26 @@ final class ThongBaoDay: NSObject, ObservableObject, UNUserNotificationCenterDel
     /// dùng đang ở ĐÚNG hội thoại đó, lúc ấy tin đã hiện trong khung chat rồi.
     nonisolated func userNotificationCenter(
         _ center: UNUserNotificationCenter,
-        willPresent notification: UNNotification
-    ) async -> UNNotificationPresentationOptions {
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        // Cùng bệnh với `didReceive`: dạng async trả completion NGOÀI luồng
+        // chính ⇒ UIKit sập. Banner lúc app đang mở đi qua hàm này.
         let info = notification.request.content.userInfo
-        let tid = info["threadId"] as? Int
-        let dangMo = await MainActor.run { AppState.shared.hoiThoaiDangMo }
-        if let tid, tid == dangMo { return [] }
-        return [.banner, .sound, .badge]
+        let tid = (info["threadId"] as? Int)
+            ?? (info["threadId"] as? NSNumber)?.intValue
+            ?? Int((info["threadId"] as? String) ?? "")
+        DispatchQueue.main.async {
+            MainActor.assumeIsolated {
+                // Đang đứng ĐÚNG hội thoại đó thì tin đã hiện trong khung chat
+                // — banner chỉ thừa. Còn lại vẫn báo đầy đủ.
+                if let tid, tid == AppState.shared.hoiThoaiDangMo {
+                    completionHandler([])
+                } else {
+                    completionHandler([.banner, .sound, .badge])
+                }
+            }
+        }
     }
 }
 #endif

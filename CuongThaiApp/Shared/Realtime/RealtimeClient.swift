@@ -128,7 +128,10 @@ final class RealtimeClient: ObservableObject {
     private func dangKyLangNghe(_ socket: SocketIOClient) {
         socket.on(clientEvent: .connect) { [weak self] _, _ in
             Self.log.notice("socket ĐÃ NỐI")
-            Task { @MainActor in self?.trangThai = .daNoi }
+            Task { @MainActor in
+                NhatKy.socket.info("SOCKET ĐÃ NỐI")
+                self?.trangThai = .daNoi
+            }
         }
         socket.on(clientEvent: .disconnect) { [weak self] data, _ in
             Self.log.notice("socket NGẮT: \(String(describing: data), privacy: .public)")

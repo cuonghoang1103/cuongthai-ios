@@ -871,6 +871,15 @@ struct MessageBubble: View {
                     .padding(.horizontal, 4)
                 }
             }
+
+            // ⚠️ Không có Spacer đuôi thì hàng tin ĐẾN chỉ rộng bằng nội
+            // dung và bị khung chứa CĂN GIỮA — mép trái bong bóng trôi theo
+            // độ dài chữ, cả cột nhìn ngoằn ngoèo. Spacer ép hàng nở hết bề
+            // ngang để bong bóng dán vào mép trái cố định, đối xứng với
+            // Spacer(minLength: 60) mà tin ĐI đã có ở đầu hàng.
+            if !isFromCurrentUser {
+                Spacer(minLength: 60)
+            }
         }
         .padding(.vertical, hienGio ? 3 : 1)
         .contentShape(Rectangle())

@@ -243,7 +243,10 @@ struct MessageThread: Codable, Identifiable, Hashable {
     func daDocHet() -> MessageThread {
         MessageThread(id: id, type: type, peer: peer, lastMessage: lastMessage,
                       unreadCount: 0, createdAt: createdAt, updatedAt: updatedAt,
-                      preferences: preferences)
+                      // Xoá cả lời nhắc "chưa đọc": `chuaDoc` tính bằng
+                      // `unreadCount > 0 || markedUnreadAt != nil` — chỉ về 0
+                      // vế đầu thì hàng vẫn sáng.
+                      preferences: preferences?.dat(\.markedUnreadAt, nil))
     }
 
     func doiBietDanh(_ moi: String?) -> MessageThread {

@@ -78,9 +78,16 @@ struct iOSTabView: View {
         // mở app, và mỗi lần app quay lại tiền cảnh. Trước đây
         // `fetchUnreadCounts()` không được gọi từ bất cứ đâu, nên huy hiệu
         // vĩnh viễn bằng 0 dù hàm vẫn nằm đó.
-        .task { await appState.fetchUnreadCounts() }
+        .task {
+            // Mở NGUỘI từ cú chạm thông báo: didReceive đã cất đường đi từ
+            // trước khi view này tồn tại — áp lại ở đây.
+            ThongBaoDay.apDungDinhTuyen()
+            await appState.fetchUnreadCounts()
+        }
         .onChange(of: scenePhase) { _, moi in
             if moi == .active {
+                // App từ nền quay lại sau cú chạm thông báo.
+                ThongBaoDay.apDungDinhTuyen()
                 Task { await appState.fetchUnreadCounts() }
             }
         }

@@ -147,6 +147,13 @@ struct MessagesView: View {
 
                             ThreadRow(thread: thread)
                         }
+                        // ⚠️ Ép LÀM MỚI Ô: dữ liệu đã tươi và body đã chạy
+                        // lại (nhật ký VẼ ghi rõ "mày" lúc 04:11:04.901) mà
+                        // điểm ảnh trên máy vẫn là tin cũ (ảnh người dùng chụp
+                        // sau đó vài giây còn "ok"). Trói danh tính ô vào đúng
+                        // những gì mắt phải thấy — tin cuối, số chưa đọc, ghim,
+                        // chuông — để ô BẮT BUỘC dựng lại khi chúng đổi.
+                        .id("\(thread.id)-\(thread.lastMessage?.id ?? 0)-\(thread.unreadCount)-\(thread.daGhim ? 1 : 0)-\(thread.daTatThongBao ? 1 : 0)")
                         .listRowInsets(EdgeInsets())
                         // Vạch ngăn dùng của List, thụt vào cho thẳng mép chữ.
                         // Tự thêm `Divider()` vào ForEach là sai: trong List nó
@@ -255,6 +262,7 @@ struct MessagesView: View {
     /// Mở hội thoại mà thông báo đẩy đã chỉ định, nếu có.
     private func moHoiThoaiDangCho() {
         guard let id = AppState.shared.hoiThoaiCanMo else { return }
+        NhatKy.thongBao.info("cần mở hội thoại \(id) — có trong danh sách: \(viewModel.threads.contains { $0.id == id })")
         hoiThoaiMoTuThongBao = viewModel.threads.first { $0.id == id }
         // Chỉ xoá khi ĐÃ tìm thấy — xoá sớm thì lần tải sau không còn gì để mở.
         if hoiThoaiMoTuThongBao != nil { AppState.shared.hoiThoaiCanMo = nil }
@@ -413,7 +421,16 @@ class MessagesViewModel: ObservableObject {
     private var cursor: Int?
     private var huyDangKy = Set<AnyCancellable>()
 
-    init() { ngheSocket() }
+    /// Danh tính để đối chiếu: bản nghe socket có PHẢI bản đang vẽ không.
+    /// Kết quả lọc gần nhất — chỉ để nhật ký đọc được thứ ĐÃ vẽ.
+    private var ketQuaCuoi: [MessageThread] = []
+
+    var maSo: String { String(UInt(bitPattern: ObjectIdentifier(self).hashValue) % 10000) }
+
+    init() {
+        ngheSocket()
+        NhatKy.tinNhan.info("TẠO ViewModel #\(maSo)")
+    }
 
     /// Nghe tin mới và cập nhật NGAY hàng tương ứng.
     ///
@@ -426,7 +443,10 @@ class MessagesViewModel: ObservableObject {
     private func ngheSocket() {
         RealtimeClient.shared.tinMoi
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] su in self?.apTinMoi(su.threadId, su.message) }
+            .sink { [weak self] su in
+                NhatKy.tinNhan.info("socket giao tin mới cho hội thoại \(su.threadId)")
+                self?.apTinMoi(su.threadId, su.message)
+            }
             .store(in: &huyDangKy)
 
         // Đọc ở máy khác thì dấu chưa đọc ở đây phải tắt theo.
@@ -443,15 +463,26 @@ class MessagesViewModel: ObservableObject {
     }
 
     private func apTinMoi(_ threadId: Int, _ tin: Message) {
+        NhatKy.tinNhan.info("apTinMoi ở VM #\(maSo): \(self.threads.count) hàng")
         guard let i = threads.firstIndex(where: { $0.id == threadId }) else {
+            NhatKy.tinNhan.info("  → KHÔNG thấy hội thoại \(threadId) trong danh sách, tải lại")
             // Hội thoại CHƯA có trong danh sách — người lạ nhắn lần đầu. Chỉ
             // lúc này mới cần gọi mạng; cập nhật tại chỗ lo hết phần còn lại.
             Task { await loadThreads() }
             return
         }
+        // Máy chủ phát MỖI TIN HAI LẦN (đo thật trong nhật ký: mọi tin đều về
+        // đúng 2 lượt cách nhau 12-25ms — phòng thread + phòng user). Không
+        // chặn thì unreadCount cộng ĐÔI và mỗi tin gây HAI lượt remove/insert
+        // sát nhau — đúng loại nhiễu làm bộ diff của List bỏ qua cập nhật.
+        if threads[i].lastMessage?.id == tin.id {
+            NhatKy.tinNhan.info("tin \(tin.id) lặp lần 2 — bỏ")
+            return
+        }
         let cuaMinh = tin.senderId == AppState.shared.currentUser?.id
         let dangMo = AppState.shared.hoiThoaiDangMo == threadId
         let hang = threads[i].voiTinMoi(tin, tangChuaDoc: !cuaMinh && !dangMo)
+        NhatKy.tinNhan.info("  → cập nhật hàng \(i): \(hang.lastMessage?.content ?? "(rỗng)")")
         threads.remove(at: i)
         // Đưa lên đầu, nhưng KHÔNG vượt mấy hàng đã ghim — ghim mà bị tin mới
         // đẩy xuống thì cái ghim vô nghĩa.
@@ -460,6 +491,7 @@ class MessagesViewModel: ObservableObject {
     }
 
     func loadThreads() async {
+        NhatKy.tinNhan.info("loadThreads() gọi mạng…")
         isLoading = true
         error = nil
         cursor = nil
@@ -469,9 +501,11 @@ class MessagesViewModel: ObservableObject {
                 .getThreads(cursor: nil, limit: 20)
             )
             threads = response.items
+            NhatKy.tinNhan.info("loadThreads xong: \(response.items.count) hàng · đầu = \(response.items.first?.lastMessage?.content ?? "(rỗng)")")
             cursor = response.nextCursor
             hasMore = response.hasMore
         } catch {
+            NhatKy.tinNhan.error("thao tác HỎNG: \(error.localizedDescription)")
             self.error = error.localizedDescription
         }
 
@@ -489,11 +523,18 @@ class MessagesViewModel: ObservableObject {
             cursor = response.nextCursor
             hasMore = response.hasMore
         } catch {
+            NhatKy.tinNhan.error("thao tác HỎNG: \(error.localizedDescription)")
             self.error = error.localizedDescription
         }
     }
 
     func filteredThreads(searchQuery: String) -> [MessageThread] {
+        defer {
+            // In ĐÚNG thứ sắp hiện lên màn hình. Nếu dòng này nói "hả" mà mắt
+            // vẫn thấy tin cũ, thì lỗi nằm ở tầng vẽ chứ không ở dữ liệu.
+            let dau = ketQuaCuoi.first
+            NhatKy.tinNhan.info("VẼ #\(maSo): \(ketQuaCuoi.count) hàng · đầu = \(dau?.displayName ?? "—") / \(dau?.lastMessage?.content ?? "(rỗng)")")
+        }
         var filtered = threads
 
         // ⚠️ Máy chủ KHÔNG tự giấu hội thoại đã lưu trữ: `listThreadsForUser`
@@ -532,6 +573,7 @@ class MessagesViewModel: ObservableObject {
 
         // Hội thoại đã ghim luôn nổi lên đầu, giữ nguyên thứ tự thời gian
         // trong từng nhóm — `sorted` của Swift ổn định nên chỉ cần một khoá.
+        ketQuaCuoi = filtered
         return filtered.sorted { a, b in
             a.daGhim && !b.daGhim
         }
@@ -547,6 +589,7 @@ class MessagesViewModel: ObservableObject {
     }
 
     func doiGhim(_ t: MessageThread) async {
+        NhatKy.tinNhan.info("BẤM doiGhim — hội thoại \(t.id)")
         let cu = t.preferences
         let moc = t.daGhim ? nil : ISO8601DateFormatter().string(from: Date())
         capNhat(t.id, (cu ?? ThreadPreferences()).dat(\.pinnedAt, moc))
@@ -555,11 +598,13 @@ class MessagesViewModel: ObservableObject {
                 .request(.datTuyChonHoiThoai(threadId: t.id, slot: "pinnedAt", value: moc))
         } catch {
             capNhat(t.id, cu)
+            NhatKy.tinNhan.error("thao tác HỎNG: \(error.localizedDescription)")
             self.error = error.localizedDescription
         }
     }
 
     func doiLuuTru(_ t: MessageThread) async {
+        NhatKy.tinNhan.info("BẤM doiLuuTru — hội thoại \(t.id)")
         let cu = t.preferences
         let dangLuu = t.daLuuTru
         let moc = dangLuu ? nil : ISO8601DateFormatter().string(from: Date())
@@ -576,11 +621,13 @@ class MessagesViewModel: ObservableObject {
             }
         } catch {
             capNhat(t.id, cu)
+            NhatKy.tinNhan.error("thao tác HỎNG: \(error.localizedDescription)")
             self.error = error.localizedDescription
         }
     }
 
     func danhDauChuaDoc(_ t: MessageThread) async {
+        NhatKy.tinNhan.info("BẤM danhDauChuaDoc — hội thoại \(t.id)")
         let cu = t.preferences
         capNhat(t.id, (cu ?? ThreadPreferences())
             .dat(\.markedUnreadAt, ISO8601DateFormatter().string(from: Date())))
@@ -588,11 +635,13 @@ class MessagesViewModel: ObservableObject {
             let _: EmptyResponse = try await APIClient.shared.request(.danhDauChuaDoc(threadId: t.id))
         } catch {
             capNhat(t.id, cu)
+            NhatKy.tinNhan.error("thao tác HỎNG: \(error.localizedDescription)")
             self.error = error.localizedDescription
         }
     }
 
     func doiTatThongBao(_ t: MessageThread, phut: Int?) async {
+        NhatKy.tinNhan.info("BẤM doiTatThongBao — hội thoại \(t.id)")
         let cu = t.preferences
         let moc = phut.map { ISO8601DateFormatter().string(from: Date().addingTimeInterval(Double($0) * 60)) }
         capNhat(t.id, (cu ?? ThreadPreferences()).dat(\.mutedUntil, moc))
@@ -601,6 +650,7 @@ class MessagesViewModel: ObservableObject {
                 .request(.datTuyChonHoiThoai(threadId: t.id, slot: "mutedUntil", value: moc))
         } catch {
             capNhat(t.id, cu)
+            NhatKy.tinNhan.error("thao tác HỎNG: \(error.localizedDescription)")
             self.error = error.localizedDescription
         }
     }
@@ -780,10 +830,13 @@ struct LamMoiKhiCanThiet: ViewModifier {
     func body(content: Content) -> some View {
         content
             .onChange(of: realtime.trangThai) { cu, moi in
+                NhatKy.socket.info("trạng thái socket: \(cu.rawValue) → \(moi.rawValue)")
                 guard cu != .daNoi, moi == .daNoi else { return }
+                NhatKy.tinNhan.info("socket nối lại ⇒ tải lại danh sách")
                 Task { await viewModel.loadThreads() }
             }
             .onChange(of: scenePhase) { _, giaiDoan in
+                NhatKy.tinNhan.info("app chuyển sang: \(String(describing: giaiDoan))")
                 guard giaiDoan == .active else { return }
                 Task {
                     await viewModel.loadThreads()
