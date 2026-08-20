@@ -96,27 +96,37 @@ struct ProfileView: View {
             ZStack(alignment: .bottom) {
                 if let coverUrl = viewModel.profile?.coverPhotoUrl,
                    let url = URL(string: coverUrl) {
-                    AsyncImage(url: url) { image in
-                        image
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                    } placeholder: {
-                        Rectangle()
-                            .fill(LinearGradient(
-                                colors: [AppColors.primary, AppColors.primaryDark],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ))
-                    }
-                    // ⚠️ PHẢI chặn cả BỀ NGANG. `.frame(height:)` để bề ngang
-                    // TỰ DO, nên ảnh bìa tỉ lệ ngang co xuống cao 180pt sẽ
-                    // rộng ~480pt — rộng hơn màn iPhone XR (414pt). `.clipped()`
-                    // chỉ cắt phần VẼ RA, kích thước bố cục vẫn là 480, nên cả
-                    // khối hồ sơ bị kéo rộng theo rồi căn giữa → tràn đều hai
-                    // bên, chữ bị cắt cả trái lẫn phải.
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 180)
-                    .clipped()
+                    // ⚠️ Ảnh bìa phải vẽ dạng LỚP PHỦ, không được nằm thẳng
+                    // trong bố cục.
+                    //
+                    // `aspectRatio(.fill)` + `frame(height: 180)` TỰ BÁO bề
+                    // rộng theo tỉ lệ ảnh: ảnh 1600×600 cao 180pt thì rộng
+                    // 480pt — rộng hơn màn iPhone XR (414) đúng 66pt. Cả khối
+                    // hồ sơ bị kéo rộng 480 rồi căn giữa trong màn 414, nên
+                    // chữ bị cắt cả hai bên. Máy 440pt chỉ tràn 40 nên dễ bỏ
+                    // qua; máy XR thì lộ hẳn.
+                    //
+                    // `.clipped()` KHÔNG cứu được: nó chỉ cắt phần VẼ RA, kích
+                    // thước bố cục vẫn là 480. Thêm `.frame(maxWidth:.infinity)`
+                    // cũng KHÔNG — đo thật vẫn báo 480.
+                    //
+                    // Lớp phủ thì KHÔNG BAO GIỜ ảnh hưởng kích thước bố cục.
+                    // Khung do `Color.clear` quyết định: cao cố định, rộng co
+                    // theo cha. Đo thật: 480pt → 10pt.
+                    Color.clear
+                        .frame(height: 180)
+                        .overlay {
+                            AsyncImage(url: url) { image in
+                                image.resizable().aspectRatio(contentMode: .fill)
+                            } placeholder: {
+                                LinearGradient(
+                                    colors: [AppColors.primary, AppColors.primaryDark],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            }
+                        }
+                        .clipped()
                 } else {
                     Rectangle()
                         .fill(LinearGradient(

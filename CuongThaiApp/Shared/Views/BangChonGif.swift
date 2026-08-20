@@ -108,17 +108,24 @@ struct BangChonGif: View {
                             chon(g.url)
                             dismiss()
                         } label: {
-                            AsyncImage(url: URL(string: g.previewUrl)) { pha in
-                                if let img = try? pha.image {
-                                    img.resizable().aspectRatio(contentMode: .fill)
-                                } else {
-                                    AppColors.backgroundSecondary
+                            // Cùng bẫy với ảnh bìa hồ sơ: `aspectRatio(.fill)`
+                            // + `frame(height:)` TỰ BÁO bề rộng theo tỉ lệ
+                            // ảnh, kéo rộng cả ô lưới. GIF ngang 500×200 sẽ
+                            // đòi 275pt trong khi ô chỉ có ~180pt.
+                            // Vẽ dạng LỚP PHỦ thì không ảnh hưởng bố cục.
+                            Color.clear
+                                .frame(height: 110)
+                                .overlay {
+                                    AsyncImage(url: URL(string: g.previewUrl)) { pha in
+                                        if let img = try? pha.image {
+                                            img.resizable().aspectRatio(contentMode: .fill)
+                                        } else {
+                                            AppColors.backgroundSecondary
+                                        }
+                                    }
                                 }
-                            }
-                            .frame(height: 110)
-                            .frame(maxWidth: .infinity)
-                            .clipped()
-                            .cornerRadius(8)
+                                .clipped()
+                                .cornerRadius(8)
                         }
                         .buttonStyle(.plain)
                     }
