@@ -46,6 +46,8 @@ final class RealtimeClient: ObservableObject {
 
     /// Tin mới về từ máy chủ. ChatView nghe cái này thay vì hỏi lại API.
     let tinMoi = PassthroughSubject<(threadId: Int, message: Message), Never>()
+    /// `thread:read` — người kia vừa mở hội thoại, dùng để dời mốc "Đã xem".
+    let daDoc = PassthroughSubject<(threadId: Int, readerId: Int, readAt: Date), Never>()
 
     private static let log = Logger(subsystem: "com.cuongthai.app", category: "realtime")
 
@@ -148,6 +150,27 @@ final class RealtimeClient: ObservableObject {
                 self?.tinMoi.send((threadId: threadId, message: tin))
                 // Tin mới thì người đó thôi gõ.
                 self?.datDangGo(threadId: threadId, userId: tin.senderId, dangGo: false)
+            }
+        }
+
+        socket.on("thread:read") { [weak self] data, _ in
+            guard let dict = data.first as? [String: Any],
+                  let threadId = dict["threadId"] as? Int,
+                  let readerId = dict["readerId"] as? Int
+            else { return }
+            // Socket.IO giao `readAt` khi thì chuỗi ISO, khi thì số mili giây,
+            // tuỳ cách bên phát serialize — nhận cả hai, đừng đoán một kiểu.
+            let moc: Date?
+            if let chuoi = dict["readAt"] as? String {
+                moc = Date.tuChuoiISO(chuoi)
+            } else if let ms = dict["readAt"] as? Double {
+                moc = Date(timeIntervalSince1970: ms / 1000)
+            } else {
+                moc = nil
+            }
+            guard let readAt = moc else { return }
+            Task { @MainActor in
+                self?.daDoc.send((threadId: threadId, readerId: readerId, readAt: readAt))
             }
         }
 

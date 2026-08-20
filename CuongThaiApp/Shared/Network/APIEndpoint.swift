@@ -51,6 +51,11 @@ enum APIEndpoint {
     case getThreads(cursor: Int?, limit: Int)
     case getMessages(threadId: Int, cursor: Int?, limit: Int)
     case sendMessage(threadId: Int, content: String, type: String)
+    /// Gửi tin có file đính kèm. Máy chủ nhận `fileIds: [Int]` (id hàng
+    /// `FileAttachment` do `POST /messages/upload` tạo ra), KHÔNG nhận URL.
+    case sendMessageWithFiles(threadId: Int, content: String, fileIds: [Int])
+    /// Mốc đọc của từng người trong hội thoại — để vẽ "Đã xem".
+    case getThreadReads(threadId: Int)
     case markRead(threadId: Int)
     /// Mở (hoặc tạo nếu chưa có) hội thoại 1-1 với một người.
     case openThread(peerId: Int)
@@ -138,6 +143,8 @@ enum APIEndpoint {
         case .getThreads: return "/api/v1/messages/threads"
         case .getMessages(let threadId, _, _): return "/api/v1/messages/threads/\(threadId)/messages"
         case .sendMessage(let threadId, _, _): return "/api/v1/messages/threads/\(threadId)/messages"
+        case .sendMessageWithFiles(let threadId, _, _): return "/api/v1/messages/threads/\(threadId)/messages"
+        case .getThreadReads(let threadId): return "/api/v1/messages/threads/\(threadId)/reads"
         case .markRead(let threadId): return "/api/v1/messages/threads/\(threadId)/read"
         case .openThread(let peerId): return "/api/v1/messages/threads/user/\(peerId)"
         case .muteThread(let id, _): return "/api/v1/messages/threads/\(id)/mute-for"
@@ -178,7 +185,7 @@ enum APIEndpoint {
         switch self {
         case .login, .register, .oauthToken, .changePassword, .refreshToken,
              .createPost, .likePost, .followUser, .unfollowUser,
-             .createComment, .savePost, .sendMessage, .enrollCourse,
+             .createComment, .savePost, .sendMessage, .sendMessageWithFiles, .enrollCourse,
              .createNote, .reportPost, .reportThread, .blockUser, .requestDeletion,
              .openThread, .muteThread, .saveLessonProgress:
             return "POST"
@@ -223,6 +230,9 @@ enum APIEndpoint {
             return m
         case .savePost(_, let f):
             return f != nil ? ["folder": f!] : nil
+        case .sendMessageWithFiles(_, let c, let ids):
+            // `content` rỗng vẫn phải gửi khoá: tin chỉ có ảnh là hợp lệ.
+            return ["content": c, "fileIds": ids]
         case .sendMessage(_, let c, let t):
             return ["content": c, "type": t]
         case .createNote(let s, let ch, let t):

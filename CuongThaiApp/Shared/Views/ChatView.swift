@@ -1,5 +1,9 @@
 import SwiftUI
 import Combine
+import UniformTypeIdentifiers
+#if os(iOS)
+import PhotosUI
+#endif
 #if canImport(Kingfisher)
 import Kingfisher
 #endif
@@ -15,6 +19,10 @@ struct ChatView: View {
     @State private var tuKhoa = ""
     @State private var hienEmoji = false
     @State private var thongBaoTat: String?
+    #if os(iOS)
+    @State private var anhDangChon: [PhotosPickerItem] = []
+    #endif
+    @State private var hienChonTep = false
     @ObservedObject private var realtime = RealtimeClient.shared
     @FocusState private var isInputFocused: Bool
 
@@ -75,42 +83,14 @@ struct ChatView: View {
                 UserProfileView(userId: userId)
             }
         }
-        .onAppear {
-            viewModel.thread = thread
-            AppState.shared.hoiThoaiDangMo = thread.id
-            // Hội thoại vừa tạo chưa có trong danh sách máy chủ tự cho vào
-            // lúc bắt tay, nên phải xin vào phòng.
-            realtime.vaoPhong(threadId: thread.id)
-            Task {
-                await viewModel.loadMessages()
-            }
+        .modifier(VongDoiChat(thread: thread, viewModel: viewModel, realtime: realtime,
+                              messageText: $messageText, thongBaoTat: $thongBaoTat))
+        .modifier(DinhKemChat(hienChonTep: $hienChonTep, guiTep: guiTep))
+        #if os(iOS)
+        .onChange(of: anhDangChon) { _, moi in
+            Task { await guiAnhDaChon(moi) }
         }
-        // Tin mới đẩy thẳng vào danh sách, không hỏi lại API.
-        .onReceive(realtime.tinMoi) { su in
-            guard su.threadId == thread.id else { return }
-            viewModel.chenTinMoi(su.message)
-        }
-        .onChange(of: messageText) { cu, moi in
-            // Chỉ báo khi VỪA bắt đầu gõ và khi vừa xoá sạch, không phải mỗi
-            // ký tự: gõ một câu 40 chữ là 40 gói tin cho cùng một thông tin.
-            if cu.isEmpty && !moi.isEmpty {
-                realtime.baoDangGo(threadId: thread.id, dangGo: true)
-            } else if !cu.isEmpty && moi.isEmpty {
-                realtime.baoDangGo(threadId: thread.id, dangGo: false)
-            }
-        }
-        .onDisappear {
-            AppState.shared.hoiThoaiDangMo = nil
-            realtime.baoDangGo(threadId: thread.id, dangGo: false)
-            Task {
-                await viewModel.markAsRead()
-            }
-        }
-        .alert("Hội thoại", isPresented: .constant(thongBaoTat != nil)) {
-            Button("OK") { thongBaoTat = nil }
-        } message: {
-            Text(thongBaoTat ?? "")
-        }
+        #endif
     }
 
     private var chatHeader: some View {
@@ -167,7 +147,7 @@ struct ChatView: View {
         let khoa = tuKhoa.trimmingCharacters(in: .whitespaces)
         guard !khoa.isEmpty else { return goc }
         return goc.compactMap { nhom in
-            let khop = nhom.messages.filter { $0.content.localizedCaseInsensitiveContains(khoa) }
+            let khop = nhom.messages.filter { $0.noiDung.localizedCaseInsensitiveContains(khoa) }
             return khop.isEmpty ? nil : MessageGroup(date: nhom.date, messages: khop)
         }
     }
@@ -266,6 +246,28 @@ struct ChatView: View {
                         ProgressView()
                             .padding(.top, Spacing.xxl)
                     } else {
+                        // Tin CŨ nằm trên đỉnh, nên móc "tải thêm" phải ở đây.
+                        // Bản cũ đặt nó dưới đáy — tức cuộn xuống tin MỚI NHẤT
+                        // mới đi tải tin cũ, và ở đáy thì nó luôn hiện sẵn nên
+                        // vòng tải chạy ngay lúc mở.
+                        if viewModel.hasMore {
+                            HStack(spacing: 6) {
+                                if viewModel.dangTaiThem {
+                                    ProgressView().scaleEffect(0.7)
+                                    Text("Đang tải tin cũ…")
+                                } else {
+                                    Text("Kéo lên để xem tin cũ hơn")
+                                }
+                            }
+                            .font(.caption)
+                            .foregroundColor(AppColors.textTertiary)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, Spacing.sm)
+                            .onAppear {
+                                Task { await viewModel.loadMoreMessages() }
+                            }
+                        }
+
                         ForEach(nhomHienThi, id: \.date) { group in
                             // Date header
                             Text(group.date)
@@ -277,21 +279,13 @@ struct ChatView: View {
                                 MessageBubble(
                                     message: message,
                                     isFromCurrentUser: viewModel.isFromCurrentUser(message),
-                                    showAvatar: viewModel.shouldShowAvatar(for: message, in: group.messages)
+                                    showAvatar: viewModel.shouldShowAvatar(for: message, in: group.messages),
+                                    daXem: viewModel.tinCuoiDaXem == message.id
                                 )
                                 .id(message.id)
                             }
                         }
 
-                        if viewModel.hasMore {
-                            ProgressView()
-                                .padding()
-                                .onAppear {
-                                    Task {
-                                        await viewModel.loadMoreMessages()
-                                    }
-                                }
-                        }
                     }
                 }
                 .padding(.horizontal, Spacing.md)
@@ -366,47 +360,84 @@ struct ChatView: View {
         }
     }
 
+    // Chỉ giữ hai nút LÀM ĐƯỢC THẬT. Video / Vị trí / Liên hệ trước đây là
+    // nút rỗng — bấm vào không có gì xảy ra, trông y như app hỏng. Cả hai nút
+    // dưới đi chung đường `POST /messages/upload` (trần 10MB).
     private var attachmentOptions: some View {
         HStack(spacing: Spacing.xl) {
-            attachmentButton(icon: "photo", title: "Ảnh") {
-                // Photo picker
+            #if os(iOS)
+            PhotosPicker(selection: $anhDangChon, maxSelectionCount: 5, matching: .images) {
+                nutDinhKem(icon: "photo", title: "Ảnh")
             }
+            #endif
 
-            attachmentButton(icon: "video", title: "Video") {
-                // Video picker
+            Button {
+                hienChonTep = true
+            } label: {
+                nutDinhKem(icon: "folder", title: "Tệp")
             }
+            .buttonStyle(.plain)
 
-            attachmentButton(icon: "folder", title: "File") {
-                // File picker
-            }
-
-            attachmentButton(icon: "location", title: "Vị trí") {
-                // Location
-            }
-
-            attachmentButton(icon: "person.crop.circle.badge.plus", title: "Liên hệ") {
-                // Contact
-            }
+            Spacer()
         }
         .padding(Spacing.md)
         .background(AppColors.backgroundSecondary)
         .transition(.move(edge: .bottom).combined(with: .opacity))
     }
 
-    private func attachmentButton(icon: String, title: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            VStack(spacing: 4) {
-                Image(systemName: icon)
-                    .font(.title2)
-                    .foregroundColor(AppColors.primary)
-                    .frame(width: 44, height: 44)
-                    .background(AppColors.primary.opacity(0.1))
-                    .clipShape(Circle())
+    private func nutDinhKem(icon: String, title: String) -> some View {
+        VStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.title2)
+                .foregroundColor(AppColors.primary)
+                .frame(width: 44, height: 44)
+                .background(AppColors.primary.opacity(0.1))
+                .clipShape(Circle())
+            Text(title)
+                .font(.caption)
+                .foregroundColor(AppColors.textSecondary)
+        }
+    }
 
-                Text(title)
-                    .font(.caption)
-                    .foregroundColor(AppColors.textSecondary)
+    #if os(iOS)
+    /// Đọc ảnh đã chọn rồi gửi. `loadTransferable` trả `Data` ĐÃ giải mã sang
+    /// định dạng gốc của ảnh — kể cả ảnh HEIC của iPhone, nên không phải tự
+    /// chuyển đổi.
+    private func guiAnhDaChon(_ items: [PhotosPickerItem]) async {
+        guard !items.isEmpty else { return }
+        var gui: [(data: Data, ten: String, mime: String)] = []
+        for (i, item) in items.enumerated() {
+            guard let data = try? await item.loadTransferable(type: Data.self) else { continue }
+            // `supportedContentTypes` có thể RỖNG với ảnh chụp màn hình và ảnh
+            // đồng bộ từ iCloud — mặc định về jpeg thay vì bỏ qua tấm ảnh.
+            let loai = item.supportedContentTypes.first
+            let duoi = loai?.preferredFilenameExtension ?? "jpg"
+            let mime = loai?.preferredMIMEType ?? "image/jpeg"
+            gui.append((data, "anh-\(i + 1).\(duoi)", mime))
+        }
+        guard !gui.isEmpty else { return }
+        await viewModel.guiAnh(gui, kem: messageText.trimmingCharacters(in: .whitespacesAndNewlines))
+        messageText = ""
+        anhDangChon = []
+        withAnimation { showAttachmentOptions = false }
+    }
+    #endif
+
+    private func guiTep(_ ketQua: Result<URL, Error>) {
+        guard case .success(let url) = ketQua else { return }
+        Task {
+            // File ngoài hộp cát của app cần xin quyền đọc rồi TRẢ LẠI, không
+            // thì lần chọn sau bị từ chối im lặng.
+            let mo = url.startAccessingSecurityScopedResource()
+            defer { if mo { url.stopAccessingSecurityScopedResource() } }
+            guard let data = try? Data(contentsOf: url) else {
+                viewModel.error = "Không đọc được tệp này."
+                return
             }
+            await viewModel.guiAnh([(data, url.lastPathComponent, "application/octet-stream")],
+                                   kem: messageText.trimmingCharacters(in: .whitespacesAndNewlines))
+            messageText = ""
+            withAnimation { showAttachmentOptions = false }
         }
     }
 
@@ -426,6 +457,11 @@ struct MessageBubble: View {
     let message: Message
     let isFromCurrentUser: Bool
     let showAvatar: Bool
+    /// Vẽ "Đã xem" dưới ĐÚNG tin cuối người kia đã đọc, như Messenger.
+    var daXem: Bool = false
+
+    private var mauChu: Color { isFromCurrentUser ? AppColors.onPrimary : AppColors.textPrimary }
+    private var mauNen: Color { isFromCurrentUser ? AppColors.primary : AppColors.backgroundTertiary }
 
     var body: some View {
         HStack(alignment: .bottom, spacing: Spacing.sm) {
@@ -439,45 +475,163 @@ struct MessageBubble: View {
                 }
             }
 
-            VStack(alignment: isFromCurrentUser ? .trailing : .leading, spacing: 2) {
-                // Message content
-                Group {
-                    if message.type == "text" || message.type == nil {
-                        Text(message.content)
+            VStack(alignment: isFromCurrentUser ? .trailing : .leading, spacing: 3) {
+                if message.daXoaHoacThuHoi {
+                    Text("Tin nhắn đã được thu hồi")
+                        .font(.bodyMedium)
+                        .italic()
+                        .foregroundColor(AppColors.textTertiary)
+                        .padding(.horizontal, Spacing.md)
+                        .padding(.vertical, Spacing.sm)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: CornerRadius.large)
+                                .stroke(AppColors.border, lineWidth: 1)
+                        )
+                } else {
+                    if let cha = message.parentMessage {
+                        traLoiTrichDan(cha)
+                    }
+
+                    // Ảnh trước, chữ sau — giống Messenger, và tin chỉ có ảnh
+                    // thì không vẽ bong bóng rỗng bên dưới.
+                    if !message.anh.isEmpty {
+                        luoiAnh(message.anh)
+                    }
+
+                    ForEach(message.tepKhongPhaiAnh) { tep in
+                        theTep(tep)
+                    }
+
+                    if !message.noiDung.isEmpty {
+                        Text(message.noiDung)
                             .font(.bodyMedium)
-                            .foregroundColor(isFromCurrentUser ? .white : AppColors.textPrimary)
+                            .foregroundColor(mauChu)
                             .padding(.horizontal, Spacing.md)
                             .padding(.vertical, Spacing.sm)
-                            .background(isFromCurrentUser ? AppColors.primary : AppColors.backgroundTertiary)
+                            .background(mauNen)
                             .cornerRadius(CornerRadius.large)
-                    } else if message.type == "image" {
-                        #if canImport(Kingfisher)
-                        if let url = URL(string: message.mediaUrl ?? "") {
-                            KFImage(url)
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .frame(maxWidth: 200, maxHeight: 200)
-                                .cornerRadius(CornerRadius.medium)
-                        }
-                        #endif
+                            .textSelection(.enabled)
                     }
                 }
 
-                // Timestamp and status
                 HStack(spacing: 4) {
                     Text(TimeFormatter.formatTimeAgo(message.createdAt))
                         .font(.caption)
                         .foregroundColor(AppColors.textTertiary)
-
-                    if isFromCurrentUser {
-                        Image(systemName: message.readAt != nil ? "checkmark.circle.fill" : "checkmark.circle")
+                    if isFromCurrentUser && daXem {
+                        // Chữ chứ không phải dấu tích: hai dấu tích đặc/rỗng
+                        // trông gần giống nhau, nhìn lướt không phân biệt được.
+                        Text("· Đã xem")
                             .font(.caption)
-                            .foregroundColor(message.readAt != nil ? AppColors.primary : AppColors.textTertiary)
+                            .foregroundColor(AppColors.primary)
                     }
                 }
             }
         }
         .padding(.vertical, 2)
+    }
+
+    // MARK: Ảnh
+
+    @ViewBuilder
+    private func luoiAnh(_ ds: [String]) -> some View {
+        let rong: CGFloat = ds.count == 1 ? 220 : 108
+        LazyVGrid(columns: Array(repeating: GridItem(.fixed(rong), spacing: 4),
+                                 count: ds.count == 1 ? 1 : 2),
+                  spacing: 4) {
+            ForEach(Array(ds.enumerated()), id: \.offset) { _, duong in
+                anhMot(duong, canh: rong)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func anhMot(_ duong: String, canh: CGFloat) -> some View {
+        if let url = URL(string: duong) {
+            AsyncImage(url: url) { pha in
+                switch pha {
+                case .success(let img):
+                    img.resizable().aspectRatio(contentMode: .fill)
+                case .failure:
+                    ZStack {
+                        AppColors.backgroundTertiary
+                        Image(systemName: "photo").foregroundColor(AppColors.textTertiary)
+                    }
+                default:
+                    ZStack {
+                        AppColors.backgroundTertiary
+                        ProgressView().scaleEffect(0.7)
+                    }
+                }
+            }
+            .frame(width: canh, height: canh)
+            .clipped()
+            .cornerRadius(CornerRadius.medium)
+        }
+    }
+
+    // MARK: Tệp không phải ảnh
+
+    private func theTep(_ tep: MessageAttachment) -> some View {
+        HStack(spacing: Spacing.sm) {
+            Image(systemName: "doc.fill")
+                .font(.system(size: 18))
+                .foregroundColor(mauChu.opacity(0.9))
+            VStack(alignment: .leading, spacing: 1) {
+                Text(tep.fileName ?? "Tệp đính kèm")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(mauChu)
+                    .lineLimit(1)
+                if let n = tep.fileSize {
+                    Text(Self.coChu(n))
+                        .font(.system(size: 11))
+                        .foregroundColor(mauChu.opacity(0.75))
+                }
+            }
+        }
+        .padding(.horizontal, Spacing.md)
+        .padding(.vertical, Spacing.sm)
+        .background(mauNen)
+        .cornerRadius(CornerRadius.large)
+        .onTapGesture { moTep(tep) }
+    }
+
+    private func moTep(_ tep: MessageAttachment) {
+        guard let url = URL(string: tep.url) else { return }
+        #if os(iOS)
+        UIApplication.shared.open(url)
+        #else
+        NSWorkspace.shared.open(url)
+        #endif
+    }
+
+    private static func coChu(_ byte: Int) -> String {
+        let f = ByteCountFormatter()
+        f.countStyle = .file
+        return f.string(fromByteCount: Int64(byte))
+    }
+
+    // MARK: Trích dẫn tin được trả lời
+
+    private func traLoiTrichDan(_ cha: MessageParent) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text(cha.senderName ?? "Tin nhắn")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundColor(AppColors.textTertiary)
+            Text((cha.content?.isEmpty ?? true) ? "Tin nhắn đã thu hồi" : (cha.content ?? ""))
+                .font(.system(size: 12))
+                .foregroundColor(AppColors.textSecondary)
+                .lineLimit(2)
+        }
+        .padding(.horizontal, Spacing.sm)
+        .padding(.vertical, 5)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(AppColors.backgroundTertiary.opacity(0.6))
+        )
+        .overlay(alignment: .leading) {
+            Rectangle().fill(AppColors.primary).frame(width: 2)
+        }
     }
 }
 
@@ -495,6 +649,10 @@ class ChatViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var error: String?
     @Published var hasMore = true
+    @Published var dangTaiThem = false
+    @Published var dangGuiAnh = false
+    /// Mốc người kia đã đọc tới. `nil` = chưa từng mở hội thoại.
+    @Published var mocDocCuaNguoiKia: Date?
     @Published private(set) var localUnreadCount: Int = 0
 
     private var cursor: Int?
@@ -506,60 +664,127 @@ class ChatViewModel: ObservableObject {
         messages.append(tin)
     }
 
+    /// Số tin mỗi lượt. Máy chủ chặn trần ở 100.
+    private static let moiLuot = 50
+
     func loadMessages() async {
         guard let threadId = thread?.id else { return }
 
         isLoading = true
-        cursor = nil
+        defer { isLoading = false }
 
         do {
-            // `/threads/:id/messages` trả `{ success, data: [...] }` — mảng
-            // TRẦN, không kèm con trỏ trang nào. Nên hasMore luôn false: máy
-            // chủ chưa có đường tải thêm, đừng vờ như có.
+            // `/threads/:id/messages` trả MẢNG TRẦN, mới nhất trước, và KHÔNG
+            // kèm con trỏ trang. Nhưng nó CÓ nhận `?cursor=` (máy chủ lọc
+            // `id < cursor`), nên con trỏ phải tự suy ra từ id nhỏ nhất đang
+            // giữ. Bản cũ đặt cứng `hasMore = false` vì tưởng máy chủ không
+            // phân trang — thật ra có, chỉ là không trả con trỏ về.
             let response: (items: [Message], nextCursor: Int?, hasMore: Bool) =
                 try await APIClient.shared.requestList(
-                    .getMessages(threadId: threadId, cursor: nil, limit: 50)
+                    .getMessages(threadId: threadId, cursor: nil, limit: Self.moiLuot)
                 )
             messages = response.items.reversed()
-            cursor = nil
-            hasMore = false
+            cursor = messages.first?.id
+            hasMore = response.items.count >= Self.moiLuot
         } catch {
             self.error = error.localizedDescription
         }
-
-        isLoading = false
     }
 
     func loadMoreMessages() async {
-        guard let threadId = thread?.id, hasMore, !isLoading else { return }
+        guard let threadId = thread?.id, hasMore, !isLoading, !dangTaiThem,
+              let cursor else { return }
+        dangTaiThem = true
+        defer { dangTaiThem = false }
 
         do {
             let response: (items: [Message], nextCursor: Int?, hasMore: Bool) =
                 try await APIClient.shared.requestList(
-                    .getMessages(threadId: threadId, cursor: cursor, limit: 50)
+                    .getMessages(threadId: threadId, cursor: cursor, limit: Self.moiLuot)
                 )
-            messages.insert(contentsOf: response.items.reversed(), at: 0)
-            cursor = response.nextCursor
-            hasMore = response.hasMore
+            // Lọc trùng phòng khi có tin chen vào giữa hai lượt gọi.
+            let daCo = Set(messages.map(\.id))
+            let them = response.items.reversed().filter { !daCo.contains($0.id) }
+            messages.insert(contentsOf: them, at: 0)
+            self.cursor = messages.first?.id
+            hasMore = response.items.count >= Self.moiLuot
         } catch {
             self.error = error.localizedDescription
         }
+    }
+
+    // MARK: Gửi ảnh
+
+    /// Tải ảnh lên rồi gửi kèm tin. Ảnh đi qua `POST /messages/upload` để lấy
+    /// `fileId` — máy chủ nhận `fileIds: [Int]`, KHÔNG nhận URL.
+    func guiAnh(_ duLieu: [(data: Data, ten: String, mime: String)], kem chu: String) async {
+        guard let threadId = thread?.id, !duLieu.isEmpty else { return }
+        dangGuiAnh = true
+        defer { dangGuiAnh = false }
+
+        do {
+            var ids: [Int] = []
+            for anh in duLieu {
+                let ket = try await APIClient.shared.taiLenChat(
+                    data: anh.data, fileName: anh.ten, mimeType: anh.mime
+                )
+                ids.append(ket.fileId)
+            }
+            let tin: Message = try await APIClient.shared.request(
+                .sendMessageWithFiles(threadId: threadId, content: chu, fileIds: ids)
+            )
+            chenTinMoi(tin)
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
+    // MARK: "Đã xem"
+
+    /// Mốc đọc của người kia. Tin nào gửi trước mốc này thì người ta đã xem.
+    func taiMocDoc() async {
+        guard let threadId = thread?.id else { return }
+        guard let ds: [MocDoc] = try? await APIClient.shared
+            .request(.getThreadReads(threadId: threadId)) else { return }
+        let toi = AppState.shared.currentUser?.id
+        mocDocCuaNguoiKia = ds.filter { $0.userId != toi }.compactMap(\.moc).max()
+    }
+
+    /// Socket `thread:read` bắn lúc người kia mở hội thoại — cập nhật ngay mà
+    /// không phải gọi lại API.
+    func capNhatMocDoc(_ moc: Date) {
+        if let cu = mocDocCuaNguoiKia, cu >= moc { return }
+        mocDocCuaNguoiKia = moc
+    }
+
+    /// Tin CUỐI CÙNG do mình gửi mà người kia đã đọc — chỉ vẽ "Đã xem" dưới
+    /// đúng tin đó, như Messenger, thay vì gắn nhãn lên mọi tin.
+    var tinCuoiDaXem: Int? {
+        guard let moc = mocDocCuaNguoiKia, let toi = AppState.shared.currentUser?.id else { return nil }
+        return messages.last(where: { $0.senderId == toi && ($0.ngayGio ?? .distantFuture) <= moc })?.id
     }
 
     func sendMessage(_ content: String) async {
         guard let threadId = thread?.id else { return }
 
-        // Optimistically add message
+        // Hiện ngay tin tạm rồi mới gọi máy chủ. Id âm để chắc chắn không đụng
+        // id thật — bản cũ bốc số ngẫu nhiên trong 100000...999999, mà id thật
+        // rơi vào đúng khoảng đó thì tin thật bị thay nhầm.
         let tempMessage = Message(
-            id: Int.random(in: 100000...999999),
+            id: -Int(Date().timeIntervalSince1970 * 1000) % 1_000_000_000,
+            threadId: threadId,
             senderId: AppState.shared.currentUser?.id ?? 0,
             sender: AppState.shared.currentUser,
             content: content,
-            type: "text",
             mediaUrl: nil,
-            thumbnailUrl: nil,
+            mediaKind: nil,
+            deleted: nil,
+            recalled: nil,
             createdAt: ISO8601DateFormatter().string(from: Date()),
-            readAt: nil
+            attachments: nil,
+            parentMessageId: nil,
+            parentMessage: nil,
+            hasAttachment: nil
         )
 
         messages.append(tempMessage)
@@ -649,5 +874,83 @@ class ChatViewModel: ObservableObject {
             createdAt: nil,
             updatedAt: nil
         ))
+    }
+}
+
+
+// MARK: - Tách bớt cho trình biên dịch
+//
+// Thân `ChatView` từng dài tới mức `swiftc` bỏ cuộc: "unable to type-check this
+// expression in reasonable time". Gộp chuỗi bộ điều chỉnh vào hai `ViewModifier`
+// làm mỗi khối nhỏ lại đủ để suy kiểu.
+
+private struct VongDoiChat: ViewModifier {
+    let thread: MessageThread
+    @ObservedObject var viewModel: ChatViewModel
+    @ObservedObject var realtime: RealtimeClient
+    @Binding var messageText: String
+    @Binding var thongBaoTat: String?
+
+    func body(content: Content) -> some View {
+        content
+            .onAppear {
+                viewModel.thread = thread
+                AppState.shared.hoiThoaiDangMo = thread.id
+                // Hội thoại vừa tạo chưa có trong danh sách máy chủ tự cho vào
+                // lúc bắt tay, nên phải xin vào phòng.
+                realtime.vaoPhong(threadId: thread.id)
+                Task {
+                    await viewModel.loadMessages()
+                    // Mở hội thoại = đã đọc. Bản cũ có hàm `markAsRead()` nhưng
+                    // KHÔNG chỗ nào gọi, nên huy hiệu chưa đọc không tắt.
+                    await viewModel.markAsRead()
+                    await viewModel.taiMocDoc()
+                }
+            }
+            // Tin mới đẩy thẳng vào danh sách, không hỏi lại API.
+            .onReceive(realtime.tinMoi) { su in
+                guard su.threadId == thread.id else { return }
+                viewModel.chenTinMoi(su.message)
+                // Đang mở hội thoại mà tin tới thì coi như đọc luôn, không thì
+                // huy hiệu chưa đọc nhảy lên ngay trước mắt người đang đọc.
+                Task { await viewModel.markAsRead() }
+            }
+            // Người kia mở hội thoại → dời mốc "Đã xem" ngay.
+            .onReceive(realtime.daDoc) { su in
+                guard su.threadId == thread.id,
+                      su.readerId != AppState.shared.currentUser?.id else { return }
+                viewModel.capNhatMocDoc(su.readAt)
+            }
+            .onChange(of: messageText) { cu, moi in
+                // Chỉ báo khi VỪA bắt đầu gõ và khi vừa xoá sạch, không phải mỗi
+                // ký tự: gõ một câu 40 chữ là 40 gói tin cho cùng một thông tin.
+                if cu.isEmpty && !moi.isEmpty {
+                    realtime.baoDangGo(threadId: thread.id, dangGo: true)
+                } else if !cu.isEmpty && moi.isEmpty {
+                    realtime.baoDangGo(threadId: thread.id, dangGo: false)
+                }
+            }
+            .onDisappear {
+                AppState.shared.hoiThoaiDangMo = nil
+                realtime.baoDangGo(threadId: thread.id, dangGo: false)
+                Task { await viewModel.markAsRead() }
+            }
+            .alert("Hội thoại", isPresented: .constant(thongBaoTat != nil)) {
+                Button("OK") { thongBaoTat = nil }
+            } message: {
+                Text(thongBaoTat ?? "")
+            }
+    }
+}
+
+private struct DinhKemChat: ViewModifier {
+    @Binding var hienChonTep: Bool
+    let guiTep: (Result<URL, Error>) -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .fileImporter(isPresented: $hienChonTep, allowedContentTypes: [.item]) { kq in
+                guiTep(kq)
+            }
     }
 }

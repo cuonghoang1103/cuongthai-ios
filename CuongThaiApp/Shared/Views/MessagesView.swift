@@ -237,7 +237,7 @@ struct ThreadRow: View {
 
                 HStack {
                     if let lastMessage = thread.lastMessage {
-                        Text(lastMessage.content)
+                        Text(lastMessage.xemTruoc)
                             .font(.bodyMedium)
                             .foregroundColor(thread.unreadCount > 0 ? AppColors.textPrimary : AppColors.textSecondary)
                             .lineLimit(1)
@@ -332,7 +332,7 @@ class MessagesViewModel: ObservableObject {
         if !searchQuery.isEmpty {
             filtered = filtered.filter {
                 $0.displayName.localizedCaseInsensitiveContains(searchQuery) ||
-                ($0.lastMessage?.content.localizedCaseInsensitiveContains(searchQuery) ?? false)
+                ($0.lastMessage?.xemTruoc.localizedCaseInsensitiveContains(searchQuery) ?? false)
             }
         }
 

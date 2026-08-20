@@ -156,6 +156,54 @@ actor APIClient {
         return file
     }
 
+    /// POST /api/v1/messages/upload — ảnh/file cho khung chat, trần 10MB.
+    ///
+    /// Đường này KHÁC `/files/upload`: nó tạo thêm một hàng `FileAttachment` và
+    /// trả về `fileId` dạng số. Tin nhắn tham chiếu file bằng `fileIds: [Int]`
+    /// chứ KHÔNG nhận URL, nên `/files/upload` (chỉ trả url) không dùng được ở
+    /// đây.
+    func taiLenChat(data fileData: Data,
+                    fileName: String,
+                    mimeType: String) async throws -> ChatUploadedFile {
+        guard let url = URL(string: baseURL + "/api/v1/messages/upload") else {
+            throw APIError.invalidURL
+        }
+        let boundary = "Boundary-\(UUID().uuidString)"
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        if let token = storage.getAuthToken() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+
+        var body = Data()
+        func append(_ string: String) { body.append(Data(string.utf8)) }
+        append("--\(boundary)\r\n")
+        append("Content-Disposition: form-data; name=\"file\"; filename=\"\(fileName)\"\r\n")
+        append("Content-Type: \(mimeType)\r\n\r\n")
+        body.append(fileData)
+        append("\r\n--\(boundary)--\r\n")
+        request.httpBody = body
+
+        let (responseData, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse else { throw APIError.unknown }
+        guard (200..<300).contains(http.statusCode) else {
+            if let envelope = try? JSONDecoder().decode(EmptyEnvelope.self, from: responseData),
+               let message = envelope.message {
+                throw APIError.serverError(message)
+            }
+            // 413 là trần 10MB của chính route này — nói rõ thay vì đọc số.
+            throw APIError.serverError(http.statusCode == 413
+                                       ? "Ảnh quá 10MB, hãy chọn ảnh nhỏ hơn."
+                                       : "Gửi ảnh thất bại (\(http.statusCode))")
+        }
+        let decoded = try JSONDecoder().decode(APIResponse<ChatUploadedFile>.self, from: responseData)
+        guard decoded.success, let file = decoded.data else {
+            throw APIError.serverError(decoded.message ?? "Gửi ảnh thất bại")
+        }
+        return file
+    }
+
     // MARK: - Transport
 
     private func perform(_ endpoint: APIEndpoint, isRetry: Bool = false) async throws -> Data {
@@ -281,6 +329,15 @@ struct EmptyEnvelope: Decodable {
 
 
 /// Response of POST /api/v1/files/upload.
+/// Kết quả `POST /messages/upload`. `fileId` mới là thứ gửi kèm tin nhắn.
+struct ChatUploadedFile: Decodable {
+    let fileId: Int
+    let url: String
+    let fileName: String?
+    let fileSize: Int?
+    let mimeType: String?
+}
+
 struct UploadedFile: Decodable {
     let url: String
     let key: String?

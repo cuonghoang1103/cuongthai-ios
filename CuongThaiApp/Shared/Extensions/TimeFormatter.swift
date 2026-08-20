@@ -44,3 +44,19 @@ struct TimeFormatter {
         return "\(years)năm trước"
     }
 }
+
+// MARK: - Đọc chuỗi thời gian ISO của backend
+
+extension Date {
+    /// Backend trả ISO-8601 lúc CÓ lúc KHÔNG có phần giây lẻ (`.123`), tuỳ chỗ
+    /// serialize. `ISO8601DateFormatter` chỉ nhận đúng một dạng theo cờ đang
+    /// đặt, nên thử lần lượt — thiếu bước này thì so mốc đọc luôn thất bại và
+    /// "Đã xem" không bao giờ hiện.
+    static func tuChuoiISO(_ chuoi: String) -> Date? {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let d = f.date(from: chuoi) { return d }
+        f.formatOptions = [.withInternetDateTime]
+        return f.date(from: chuoi)
+    }
+}

@@ -180,16 +180,85 @@ struct MessageThread: Codable, Identifiable, Hashable {
     }
 }
 
+/// Một tin nhắn, khớp ĐÚNG với `serializeMessage` của backend.
+///
+/// ⚠️ Bản cũ khai `let type: String` BẮT BUỘC, mà máy chủ chưa bao giờ gửi khoá
+/// `type` — Swift gặp khoá thiếu ở trường không-optional thì NÉM, nên mọi tin
+/// nhắn đều hỏng giải mã và hội thoại nào cũng trống trơn. Build vẫn xanh,
+/// không có gì báo. Mọi trường dưới đây trừ `id`/`senderId`/`createdAt` đều để
+/// optional, vì máy chủ bỏ hẳn khoá thay vì gửi `null` ở vài chỗ.
 struct Message: Codable, Identifiable {
     let id: Int
+    let threadId: Int?
     let senderId: Int
     let sender: User?
-    let content: String
-    let type: String
+    let content: String?
+    /// Ảnh GIF / nhãn dán. Ảnh người dùng gửi thì nằm ở `attachments`.
     let mediaUrl: String?
-    let thumbnailUrl: String?
+    let mediaKind: String?
+    let deleted: Bool?
+    let recalled: Bool?
     let createdAt: String
-    let readAt: String?
+    let attachments: [MessageAttachment]?
+    let parentMessageId: Int?
+    let parentMessage: MessageParent?
+    /// Chỉ có ở bản RÚT GỌN dùng cho dòng cuối trong hộp thư
+    /// (`serializeMessagePreview`), không có ở tin đầy đủ.
+    let hasAttachment: Bool?
+
+    var noiDung: String { content ?? "" }
+
+    /// Dòng tóm tắt cho hộp thư. Tin chỉ có ảnh thì `content` rỗng — để trống
+    /// thì hộp thư hiện một dòng trắng, trông như tin lỗi.
+    var xemTruoc: String {
+        if let c = content, !c.isEmpty { return c }
+        if (hasAttachment ?? false) || !anh.isEmpty { return "📷 Đã gửi một ảnh" }
+        if !tepKhongPhaiAnh.isEmpty { return "📎 Đã gửi một tệp" }
+        if daXoaHoacThuHoi { return "Tin nhắn đã thu hồi" }
+        return ""
+    }
+    var daXoaHoacThuHoi: Bool { (deleted ?? false) || (recalled ?? false) }
+
+    /// Ảnh trong tin: file đính kèm có mime `image/*`, cộng GIF/nhãn dán.
+    var anh: [String] {
+        var ds = (attachments ?? [])
+            .filter { ($0.mimeType ?? "").hasPrefix("image/") }
+            .map(\.url)
+        if let m = mediaUrl, !m.isEmpty { ds.append(m) }
+        return ds
+    }
+
+    /// File đính kèm KHÔNG phải ảnh — hiện dạng thẻ tải về.
+    var tepKhongPhaiAnh: [MessageAttachment] {
+        (attachments ?? []).filter { !($0.mimeType ?? "").hasPrefix("image/") }
+    }
+
+    var ngayGio: Date? { Date.tuChuoiISO(createdAt) }
+}
+
+struct MessageAttachment: Codable, Identifiable, Hashable {
+    let id: Int
+    let fileId: Int?
+    let mimeType: String?
+    let fileName: String?
+    let fileSize: Int?
+    let url: String
+    let thumbnailUrl: String?
+}
+
+struct MessageParent: Codable, Hashable {
+    let id: Int
+    let senderId: Int?
+    let senderName: String?
+    let content: String?
+}
+
+/// Mốc đọc của một người trong hội thoại — `GET /messages/threads/:id/reads`.
+struct MocDoc: Codable, Identifiable {
+    let userId: Int
+    let lastReadAt: String
+    var id: Int { userId }
+    var moc: Date? { Date.tuChuoiISO(lastReadAt) }
 }
 
 // MARK: - Notes
