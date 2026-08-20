@@ -109,6 +109,14 @@ enum APIEndpoint {
     case timGhiChu(q: String, subjectId: Int?, tag: String?)
     case layThe
     case taoChuong(subjectId: Int, title: String)
+    case layPhienBan(noteId: Int)
+    case layMotPhienBan(noteId: Int, version: Int)
+    case luuMocPhienBan(noteId: Int)
+    case khoiPhucPhienBan(noteId: Int, version: Int)
+    case layViecAI
+    case chayViecAI(action: String, selection: String)
+    case hoiTroLyGhiChu(question: String)
+    case laySoDoGhiChu
 
     // Learning
     case getCourses(page: Int, size: Int, keyword: String?)
@@ -212,6 +220,14 @@ enum APIEndpoint {
         case .timGhiChu: return "/api/v1/notes/search"
         case .layThe: return "/api/v1/notes/tags"
         case .taoChuong: return "/api/v1/notes/chapters"
+        case .layPhienBan(let id): return "/api/v1/notes/notes/\(id)/versions"
+        case .layMotPhienBan(let id, let v): return "/api/v1/notes/notes/\(id)/versions/\(v)"
+        case .luuMocPhienBan(let id): return "/api/v1/notes/notes/\(id)/versions"
+        case .khoiPhucPhienBan(let id, let v): return "/api/v1/notes/notes/\(id)/versions/\(v)/restore"
+        case .layViecAI: return "/api/v1/notes/ai/actions"
+        case .chayViecAI: return "/api/v1/notes/ai/assist"
+        case .hoiTroLyGhiChu: return "/api/v1/notes/ai/hoi"
+        case .laySoDoGhiChu: return "/api/v1/notes/graph"
 
         case .getCourses: return "/api/v1/courses"
         case .getCourseDetail(let slug): return "/api/v1/courses/\(slug)"
@@ -240,6 +256,7 @@ enum APIEndpoint {
              .createComment, .savePost, .sendMessage, .sendMessageWithFiles, .enrollCourse,
              .sendMessageMedia, .toggleMessageReaction, .recallMessage,
              .boLuuTruHoiThoai, .danhDauChuaDoc, .danhDauDaXemTin, .taoTin, .taoChuong,
+             .luuMocPhienBan, .khoiPhucPhienBan, .chayViecAI, .hoiTroLyGhiChu,
              .createNote, .reportPost, .reportThread, .blockUser, .requestDeletion,
              .openThread, .muteThread, .saveLessonProgress:
             return "POST"
@@ -288,6 +305,10 @@ enum APIEndpoint {
             return ["media": ["url": u, "kind": k]]
         case .toggleMessageReaction(_, let e):
             return ["emoji": e]
+        case .chayViecAI(let a, let sel):
+            return ["action": a, "selection": sel]
+        case .hoiTroLyGhiChu(let q):
+            return ["question": q]
         case .timGhiChu(let q, let sid, let tag):
             var m: [String: Any] = [:]
             if !q.isEmpty { m["q"] = q }

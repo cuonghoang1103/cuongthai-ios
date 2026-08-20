@@ -10,6 +10,8 @@ struct NotesView: View {
     @State private var tuKhoa = ""
     @State private var ketQua: [KetQuaTimGhiChu] = []
     @State private var dangTim = false
+    @State private var hienSoDo = false
+    @State private var hienTroLy = false
 
     var body: some View {
         NavigationStack {
@@ -46,15 +48,27 @@ struct NotesView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     // Menu chỉ còn MỘT mục thì bỏ menu, bấm phát ăn ngay.
                     // "Nhập ghi chú" đã gỡ: backend không có đường nhập nào.
-                    Button {
-                        showNewSubject = true
-                    } label: {
-                        Image(systemName: "plus")
-                            .foregroundColor(AppColors.textPrimary)
+                    HStack(spacing: Spacing.md) {
+                        Button { hienSoDo = true } label: {
+                            Image(systemName: "point.3.connected.trianglepath.dotted")
+                                .foregroundColor(AppColors.textPrimary)
+                        }
+                        .accessibilityLabel("Sơ đồ liên kết")
+
+                        Button { hienTroLy = true } label: {
+                            Image(systemName: "sparkles").foregroundColor(AppColors.textPrimary)
+                        }
+                        .accessibilityLabel("Trợ lý ghi chú")
+
+                        Button { showNewSubject = true } label: {
+                            Image(systemName: "plus").foregroundColor(AppColors.textPrimary)
+                        }
+                        .accessibilityLabel("Môn học mới")
                     }
-                    .accessibilityLabel("Môn học mới")
                 }
             }
+            .sheet(isPresented: $hienSoDo) { SoDoGhiChuView() }
+            .sheet(isPresented: $hienTroLy) { TroLyGhiChuView() }
             .sheet(isPresented: $showNewSubject) {
                 NewSubjectView { name, color, emoji in
                     Task {
@@ -155,7 +169,7 @@ struct NotesView: View {
                                     Task { await viewModel.loadNotesTree() }
                                 }
                             } label: {
-                                RecentNoteCard(note: note) { }
+                                RecentNoteCard(note: note)
                             }
                             .buttonStyle(.plain)
                         }
@@ -179,7 +193,7 @@ struct NotesView: View {
                         NavigationLink {
                             MonGhiChuView(mon: subject) { await viewModel.loadNotesTree() }
                         } label: {
-                            SubjectCard(subject: subject) { }
+                            SubjectCard(subject: subject)
                         }
                         .buttonStyle(.plain)
                     }
@@ -243,12 +257,14 @@ struct NotesView: View {
 }
 
 // MARK: - Recent Note Card
+/// ⚠️ KHÔNG được là `Button`. Thẻ này nằm trong `NavigationLink`, mà Button
+/// lồng trong NavigationLink NUỐT cú chạm — link không bao giờ kích hoạt và
+/// bấm vào không có gì xảy ra. Đây là view thuần, để link bọc ngoài lo.
 struct RecentNoteCard: View {
     let note: NoteSummary
-    let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
+        Group {
             VStack(alignment: .leading, spacing: Spacing.sm) {
                 HStack {
                     Image(systemName: "doc.text")
@@ -277,12 +293,12 @@ struct RecentNoteCard: View {
 }
 
 // MARK: - Subject Card
+/// ⚠️ KHÔNG được là `Button` — xem chú thích ở `RecentNoteCard`.
 struct SubjectCard: View {
     let subject: NoteSubject
-    let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
+        Group {
             HStack(spacing: Spacing.md) {
                 // Subject Icon
                 ZStack {

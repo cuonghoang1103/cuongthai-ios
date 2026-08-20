@@ -20,6 +20,8 @@ struct SoanGhiChuView: View {
     @State private var dangLuu = false
     @State private var loi: String?
     @State private var hienXemTruoc = false
+    @State private var viecAI: [ViecAI] = []
+    @State private var dangChayAI = false
     @FocusState private var dangGoThan: Bool
 
     init(ghiChu: Note, luuXong: @escaping (Note) -> Void) {
@@ -82,6 +84,11 @@ struct SoanGhiChuView: View {
                     }
                 }
             }
+            .task {
+                // Danh sách việc AI lấy từ MÁY CHỦ, không đặt cứng trong app —
+                // thêm việc mới ở backend là app có ngay, khỏi phát hành lại.
+                viecAI = (try? await APIClient.shared.request(.layViecAI)) ?? []
+            }
             .alert("Lưu ghi chú", isPresented: .constant(loi != nil)) {
                 Button("OK") { loi = nil }
             } message: { Text(loi ?? "") }
@@ -101,6 +108,25 @@ struct SoanGhiChuView: View {
                 nut("Trích", "text.quote") { chen("> ", dauDong: true) }
                 nut("Khối mã", "curlybraces") { chen("\n```\n\n```\n") }
                 nut("Kẻ ngang", "minus") { chen("\n---\n") }
+
+                if !viecAI.isEmpty {
+                    Divider().frame(height: 22)
+                    Menu {
+                        ForEach(viecAI) { v in
+                            Button(v.label) { Task { await chayAI(v.key) } }
+                        }
+                    } label: {
+                        HStack(spacing: 4) {
+                            if dangChayAI { ProgressView().scaleEffect(0.6) }
+                            else { Image(systemName: "sparkles").font(.system(size: 14)) }
+                            Text("AI").font(.system(size: 13, weight: .medium))
+                        }
+                        .foregroundColor(AppColors.primary)
+                        .padding(.horizontal, 10).frame(height: 32)
+                        .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.primary.opacity(0.12)))
+                    }
+                    .disabled(dangChayAI)
+                }
             }
             .padding(.horizontal, Spacing.sm)
             .padding(.vertical, 7)
@@ -118,6 +144,23 @@ struct SoanGhiChuView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(ten)
+    }
+
+    /// AI làm việc trên TOÀN BỘ thân ghi chú, không phải vùng chọn: SwiftUI
+    /// không cho đọc vùng chọn của `TextEditor`. Kết quả CHÈN THÊM xuống cuối
+    /// chứ không ghi đè — mất bản gõ tay của người dùng là hỏng nặng hơn nhiều
+    /// so với phải xoá một đoạn thừa.
+    private func chayAI(_ key: String) async {
+        let nguon = than.trimmingCharacters(in: .whitespaces)
+        guard !nguon.isEmpty else { loi = "Ghi chú đang trống, chưa có gì để AI làm."; return }
+        dangChayAI = true
+        defer { dangChayAI = false }
+        do {
+            let kq: KetQuaAI = try await APIClient.shared
+                .request(.chayViecAI(action: key, selection: nguon))
+            than += "\n\n---\n\n\(kq.text)"
+            Haptics.xong()
+        } catch { loi = error.localizedDescription }
     }
 
     private func chen(_ chu: String, dauDong: Bool = false) {

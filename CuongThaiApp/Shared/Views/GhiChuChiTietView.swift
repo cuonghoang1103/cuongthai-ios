@@ -13,6 +13,8 @@ struct GhiChuChiTietView: View {
     @State private var loi: String?
     @State private var hienSoan = false
     @State private var hoiXoa = false
+    @State private var hienLichSu = false
+    @State private var hienTroLy = false
 
     var body: some View {
         Group {
@@ -65,6 +67,12 @@ struct GhiChuChiTietView: View {
                             Label(g.isArchived ? "Bỏ lưu trữ" : "Lưu trữ", systemImage: "archivebox")
                         }
                     }
+                    Button { hienLichSu = true } label: {
+                        Label("Lịch sử phiên bản", systemImage: "clock.arrow.circlepath")
+                    }
+                    Button { hienTroLy = true } label: {
+                        Label("Hỏi trợ lý", systemImage: "sparkles")
+                    }
                     Divider()
                     Button(role: .destructive) { hoiXoa = true } label: {
                         Label("Xoá", systemImage: "trash")
@@ -83,6 +91,13 @@ struct GhiChuChiTietView: View {
                 }
             }
         }
+        .sheet(isPresented: $hienLichSu) {
+            PhienBanGhiChuView(ghiChuId: ghiChuId) {
+                Task { await tai() }
+                doiRoi()
+            }
+        }
+        .sheet(isPresented: $hienTroLy) { TroLyGhiChuView() }
         .alert("Xoá ghi chú?", isPresented: $hoiXoa) {
             Button("Xoá", role: .destructive) { Task { await xoa() } }
             Button("Huỷ", role: .cancel) { }

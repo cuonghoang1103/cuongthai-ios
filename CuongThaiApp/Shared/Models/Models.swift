@@ -435,6 +435,77 @@ struct KetQuaTimGhiChu: Codable, Identifiable {
     let snippet: String?
 }
 
+/// Một bản lưu của ghi chú. `origin` cho biết ai/việc gì tạo ra nó
+/// (tự động khi lưu, hay người dùng bấm "Lưu mốc").
+struct PhienBanGhiChu: Codable, Identifiable {
+    let id: Int
+    let version: Int
+    let title: String?
+    let origin: String?
+    let createdAt: String
+    let user: User?
+
+    var nhanNguon: String {
+        switch (origin ?? "").uppercased() {
+        case "MANUAL": return "Mốc tự đặt"
+        case "AUTO", "AUTOSAVE": return "Tự lưu"
+        case "RESTORE": return "Khôi phục"
+        default: return origin ?? "Bản lưu"
+        }
+    }
+}
+
+/// Nội dung đầy đủ của một bản lưu — để xem lại và khôi phục.
+struct NoiDungPhienBan: Codable {
+    let version: Int?
+    let title: String?
+    let contentHtml: String?
+    let contentJson: [String: AnyCodable]?
+    let createdAt: String?
+}
+
+/// Một việc AI làm được với đoạn chữ đang chọn (rút gọn, viết lại…).
+struct ViecAI: Codable, Identifiable, Hashable {
+    let key: String
+    let label: String
+    var id: String { key }
+}
+
+struct KetQuaAI: Codable {
+    let text: String
+    let action: String?
+}
+
+/// Trợ lý trả lời dựa trên chính kho ghi chú của người dùng, kèm nguồn.
+struct TraLoiTroLy: Codable {
+    let answer: String
+    let sources: [NguonTroLy]?
+}
+
+struct NguonTroLy: Codable, Identifiable, Hashable {
+    let noteId: Int
+    let title: String?
+    let trich: String?
+    var id: Int { noteId }
+}
+
+/// Sơ đồ liên kết giữa các ghi chú — `GET /notes/graph`.
+struct SoDoGhiChu: Codable {
+    let nodes: [NutSoDo]
+    let edges: [CanhSoDo]
+}
+
+struct NutSoDo: Codable, Identifiable, Hashable {
+    let id: Int
+    let title: String
+    let subjectId: Int?
+}
+
+struct CanhSoDo: Codable, Hashable {
+    let sourceNoteId: Int
+    let targetNoteId: Int
+}
+
 struct Note: Codable, Identifiable {
     let id: Int
     let title: String
