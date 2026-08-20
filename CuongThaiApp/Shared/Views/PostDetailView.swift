@@ -546,14 +546,32 @@ struct PostDetailView: View {
 
     private var bangChonCamXuc: some View {
         HStack(spacing: Spacing.sm) {
-            ForEach(Self.cacCamXuc, id: \.0) { loai, hinh, _ in
+            ForEach(Array(Self.cacCamXuc.enumerated()), id: \.element.0) { i, muc in
+                let (loai, hinh, nhan) = muc
                 Button {
                     Haptics.xong()
                     withAnimation(.snappy(duration: 0.2)) { hienChonCamXuc = false }
                     Task { await viewModel.datCamXuc(loai) }
                 } label: {
-                    Text(hinh).font(.system(size: 30))
+                    VStack(spacing: 2) {
+                        // Nhãn tên NẰM TRÊN như Facebook — chỉ có emoji thì
+                        // người dùng phải đoán 😢 là "Buồn" hay "Thương".
+                        Text(nhan)
+                            .font(.system(size: 9, weight: .semibold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 6).padding(.vertical, 2)
+                            .background(Capsule().fill(.black.opacity(0.72)))
+                        Text(hinh).font(.system(size: 30))
+                    }
                 }
+                .buttonStyle(.plain)
+                // Nảy LẦN LƯỢT từ trái sang, mỗi cái trễ 40ms — đó là thứ làm
+                // bảng cảm xúc của Facebook trông "sống" chứ không bật cả cụm.
+                .transition(.asymmetric(
+                    insertion: .scale(scale: 0.3).combined(with: .opacity)
+                        .animation(.spring(response: 0.34, dampingFraction: 0.62)
+                            .delay(Double(i) * 0.04)),
+                    removal: .scale(scale: 0.8).combined(with: .opacity)))
             }
         }
         .padding(.horizontal, Spacing.md)
@@ -825,6 +843,8 @@ struct PostDetailView: View {
 // MARK: - Comment Row
 struct CommentRow: View {
     let comment: Comment
+    /// Ảnh đang mở toàn màn hình — `nil` là không mở.
+    @State private var anhPhongTo: String?
     let onReply: () -> Void
     let onLike: () -> Void
     var onReport: (() -> Void)? = nil
@@ -887,6 +907,10 @@ struct CommentRow: View {
                         .frame(maxWidth: 220, maxHeight: 240)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                         .padding(.top, 2)
+                        // Ảnh 220pt thì không đọc được gì — chạm để mở trình
+                        // xem toàn màn hình có phóng to, đúng như ảnh trong bài.
+                        .contentShape(Rectangle())
+                        .onTapGesture { anhPhongTo = a }
                     }
                 }
                 .padding(.horizontal, 12)
@@ -944,6 +968,17 @@ struct CommentRow: View {
             }
         }
         .padding(.leading, laTraLoi ? Spacing.xl : 0)
+        #if os(iOS)
+        .fullScreenCover(item: Binding(
+            get: { anhPhongTo.map { AnhMo(url: $0) } },
+            set: { if $0 == nil { anhPhongTo = nil } })) { a in
+            MediaViewer(media: [SocialMedia(id: 0, type: "IMAGE", url: a.url, thumbnail: nil,
+                                            width: nil, height: nil, duration: nil,
+                                            fileSize: nil, mimeType: nil, fileName: nil,
+                                            alt: nil, sortOrder: nil)])
+        }
+        #endif
+
     }
 
     private func doiThich() {
@@ -1223,4 +1258,11 @@ enum CommentSortOrder {
             updatedAt: "2024-01-15T10:30:00Z"
         ))
     }
+}
+
+
+/// Bọc chuỗi URL thành `Identifiable` để `fullScreenCover(item:)` nhận được.
+struct AnhMo: Identifiable {
+    let url: String
+    var id: String { url }
 }

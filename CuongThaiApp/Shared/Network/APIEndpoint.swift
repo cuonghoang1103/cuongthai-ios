@@ -359,12 +359,6 @@ enum APIEndpoint {
             return ["action": a, "selection": sel]
         case .hoiTroLyGhiChu(let q):
             return ["question": q]
-        case .timGhiChu(let q, let sid, let tag):
-            var m: [String: Any] = [:]
-            if !q.isEmpty { m["q"] = q }
-            if let sid { m["subjectId"] = sid }
-            if let tag, !tag.isEmpty { m["tag"] = tag }
-            return m
         case .taoChuong(let sid, let t):
             return ["subjectId": sid, "title": t]
         case .taoMon(let n, let c, let e):
@@ -374,7 +368,6 @@ enum APIEndpoint {
             return m
         case .suaMon(_, let d): return d
         case .suaChuong(_, let t): return ["title": t]
-        case .locGhiChu(let f): return ["f": f]
         case .dangKyThietBi(let t, let sb):
             return ["token": t, "platform": "ios", "sandbox": sb]
         case .taoTin(let u, let k, let c):
@@ -388,8 +381,6 @@ enum APIEndpoint {
             // máy chủ hiểu `null` là "xoá ô này", còn thiếu khoá cũng ra null
             // nhưng dựa vào đó là dựa vào một sự trùng hợp.
             return ["slot": slot, "value": v as Any]
-        case .searchGifs(let q):
-            return q.isEmpty ? [:] : ["q": q]
         case .sendMessageWithFiles(_, let c, let ids):
             // `content` rỗng vẫn phải gửi khoá: tin chỉ có ảnh là hợp lệ.
             return ["content": c, "fileIds": ids]
@@ -433,6 +424,22 @@ enum APIEndpoint {
 
     var queryParams: [String: Any]? {
         switch self {
+        // ⚠️ Tham số của GET PHẢI ở ĐÂY, không phải ở `body`. Đặt `httpBody`
+        // lên một yêu cầu GET thì URLSession ném
+        // `NSURLErrorDataLengthExceedsMaximum` — hiện ra thành câu
+        // "resource exceeds maximum size", nghe như ảnh quá nặng nên rất khó
+        // lần ra. Ba đường dưới đây từng dính đúng lỗi này: bảng GIF không tải
+        // được, và tìm/lọc ghi chú cũng hỏng câm y hệt.
+        case .searchGifs(let q):
+            return q.isEmpty ? nil : ["q": q]
+        case .timGhiChu(let q, let sid, let tag):
+            var m: [String: Any] = [:]
+            if !q.isEmpty { m["q"] = q }
+            if let sid { m["subjectId"] = sid }
+            if let tag, !tag.isEmpty { m["tag"] = tag }
+            return m.isEmpty ? nil : m
+        case .locGhiChu(let f):
+            return ["f": f]
         case .getFeed(let c, let l, let t, let v, let h, let boLoat):
             var m: [String: Any] = ["limit": l]
             if let cursor = c { m["cursor"] = cursor }

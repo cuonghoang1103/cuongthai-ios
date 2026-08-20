@@ -6,6 +6,14 @@ import Kingfisher
 
 // MARK: - Profile View
 struct ProfileView: View {
+    /// `nil` = hồ sơ CỦA MÌNH. Có giá trị = hồ sơ người khác.
+    ///
+    /// ⚠️ Trước đây `UserProfileView` tạo một ProfileViewModel RIÊNG rồi gán
+    /// `userId` vào đó, nhưng bên trong lại dựng `ProfileView()` — mà
+    /// `ProfileView` tự tạo view model KHÁC. Cái userId kia không ai đọc, nên
+    /// bấm vào ai cũng ra hồ sơ của chính mình.
+    var userIdKhac: Int? = nil
+
     @EnvironmentObject var appState: AppState
     @StateObject private var viewModel = ProfileViewModel()
     @State private var sheet: ProfileSheet?
@@ -70,8 +78,10 @@ struct ProfileView: View {
             // trượt, hàm im lặng không làm gì, và màn hình đứng nguyên ở dữ
             // liệu mẫu "User / @username / 0 bài viết". Đặt userId KHÔNG tự
             // nạp lại, nên phải gọi tay.
-            .task(id: appState.currentUser?.id) {
-                guard let id = appState.currentUser?.id else { return }
+            .task(id: userIdKhac ?? appState.currentUser?.id) {
+                // Hồ sơ người khác thì KHÔNG chờ `currentUser` — người dùng có
+                // thể xem hồ sơ người khác ngay cả khi hồ sơ mình chưa về.
+                guard let id = userIdKhac ?? appState.currentUser?.id else { return }
                 if viewModel.userId != id || viewModel.profile == nil {
                     viewModel.userId = id
                     await viewModel.loadProfile()
@@ -515,14 +525,12 @@ struct ProfileView: View {
 // MARK: - User Profile View (for other users)
 struct UserProfileView: View {
     let userId: Int
-    @StateObject private var viewModel = ProfileViewModel()
 
     var body: some View {
-        ProfileView()
+        // Truyền THẲNG vào `ProfileView`. Bản cũ giữ một view model riêng ở
+        // đây rồi hy vọng `ProfileView` dùng nó — nó không dùng.
+        ProfileView(userIdKhac: userId)
             .environmentObject(AppState.shared)
-            .onAppear {
-                viewModel.userId = userId
-            }
     }
 }
 

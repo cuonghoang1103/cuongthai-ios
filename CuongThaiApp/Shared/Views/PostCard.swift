@@ -247,12 +247,32 @@ struct PostCard: View {
 
     private var bangChonCamXuc: some View {
         HStack(spacing: Spacing.sm) {
-            ForEach(Self.cacCamXuc, id: \.0) { loai, hinh, _ in
+            ForEach(Array(Self.cacCamXuc.enumerated()), id: \.element.0) { i, muc in
+                let (loai, hinh, nhan) = muc
                 Button {
+                    Haptics.xong()
+                    withAnimation(.snappy(duration: 0.2)) { hienChonCamXuc = false }
                     Task { await datCamXuc(loai) }
                 } label: {
-                    Text(hinh).font(.system(size: 28))
+                    VStack(spacing: 2) {
+                        // Nhãn tên NẰM TRÊN như Facebook — chỉ có emoji thì
+                        // người dùng phải đoán 😢 là "Buồn" hay "Thương".
+                        Text(nhan)
+                            .font(.system(size: 9, weight: .semibold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 6).padding(.vertical, 2)
+                            .background(Capsule().fill(.black.opacity(0.72)))
+                        Text(hinh).font(.system(size: 28))
+                    }
                 }
+                .buttonStyle(.plain)
+                // Nảy LẦN LƯỢT từ trái sang, mỗi cái trễ 40ms — đó là thứ làm
+                // bảng cảm xúc của Facebook trông "sống" chứ không bật cả cụm.
+                .transition(.asymmetric(
+                    insertion: .scale(scale: 0.3).combined(with: .opacity)
+                        .animation(.spring(response: 0.34, dampingFraction: 0.62)
+                            .delay(Double(i) * 0.04)),
+                    removal: .scale(scale: 0.8).combined(with: .opacity)))
             }
         }
         .padding(.horizontal, Spacing.md)
