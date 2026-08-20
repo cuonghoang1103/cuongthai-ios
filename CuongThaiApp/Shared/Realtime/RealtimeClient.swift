@@ -48,6 +48,10 @@ final class RealtimeClient: ObservableObject {
     let tinMoi = PassthroughSubject<(threadId: Int, message: Message), Never>()
     /// `thread:read` — người kia vừa mở hội thoại, dùng để dời mốc "Đã xem".
     let daDoc = PassthroughSubject<(threadId: Int, readerId: Int, readAt: Date), Never>()
+    /// `message:updated` — thả cảm xúc, thu hồi, xoá một tin đã gửi.
+    let tinDoi = PassthroughSubject<(threadId: Int, messageId: Int,
+                                     reactions: [MessageReaction]?,
+                                     thuHoi: Bool?, daXoa: Bool?), Never>()
 
     private static let log = Logger(subsystem: "com.cuongthai.app", category: "realtime")
 
@@ -150,6 +154,27 @@ final class RealtimeClient: ObservableObject {
                 self?.tinMoi.send((threadId: threadId, message: tin))
                 // Tin mới thì người đó thôi gõ.
                 self?.datDangGo(threadId: threadId, userId: tin.senderId, dangGo: false)
+            }
+        }
+
+        socket.on("message:updated") { [weak self] data, _ in
+            guard let dict = data.first as? [String: Any],
+                  let threadId = dict["threadId"] as? Int,
+                  let messageId = dict["messageId"] as? Int
+            else { return }
+            let doi = dict["changes"] as? [String: Any] ?? [:]
+            // `changes` chỉ chứa những khoá THỰC SỰ đổi — thả cảm xúc thì không
+            // có `recalled`. Đọc thiếu khoá thành `false` sẽ "bỏ thu hồi" một
+            // tin đã thu hồi, nên phải giữ nil khi khoá vắng mặt.
+            var camXuc: [MessageReaction]?
+            if let raw = doi["reactions"] {
+                camXuc = Self.giaiMa([MessageReaction].self, tu: raw)
+            }
+            Task { @MainActor in
+                self?.tinDoi.send((threadId: threadId, messageId: messageId,
+                                   reactions: camXuc,
+                                   thuHoi: doi["recalled"] as? Bool,
+                                   daXoa: doi["deleted"] as? Bool))
             }
         }
 

@@ -205,6 +205,9 @@ struct Message: Codable, Identifiable {
     /// Chỉ có ở bản RÚT GỌN dùng cho dòng cuối trong hộp thư
     /// (`serializeMessagePreview`), không có ở tin đầy đủ.
     let hasAttachment: Bool?
+    /// CHỈ có ở `GET /threads/:id/messages`. Tin trả về từ lúc GỬI và từ socket
+    /// `thread:new-message` không kèm khoá này — nên phải optional.
+    let reactions: [MessageReaction]?
 
     var noiDung: String { content ?? "" }
 
@@ -234,6 +237,31 @@ struct Message: Codable, Identifiable {
     }
 
     var ngayGio: Date? { Date.tuChuoiISO(createdAt) }
+
+    /// Toạ độ nếu tin này là một chia sẻ vị trí.
+    ///
+    /// Máy chủ KHÔNG có trường toạ độ cho tin nhắn, nên vị trí đi dưới dạng một
+    /// link Google Maps trong nội dung. App nhận ra link đó để vẽ thẻ bản đồ;
+    /// ai xem trên web vẫn thấy một link bấm được, không mất thông tin.
+    var viTri: (vido: Double, kinhdo: Double)? {
+        guard let c = content, let r = c.range(of: #"maps/search/\?api=1&query=(-?\d+\.?\d*),(-?\d+\.?\d*)"#,
+                                               options: .regularExpression) else { return nil }
+        let phan = c[r].split(separator: "=").last.map(String.init)?.split(separator: ",") ?? []
+        guard phan.count == 2, let vd = Double(phan[0]), let kd = Double(phan[1]) else { return nil }
+        return (vd, kd)
+    }
+}
+
+/// Một loại cảm xúc trên tin, đã gộp sẵn ở máy chủ.
+struct MessageReaction: Codable, Identifiable, Hashable {
+    let emoji: String
+    let count: Int
+    let userIds: [Int]
+    var id: String { emoji }
+    func coCua(_ userId: Int?) -> Bool {
+        guard let userId else { return false }
+        return userIds.contains(userId)
+    }
 }
 
 struct MessageAttachment: Codable, Identifiable, Hashable {
@@ -865,4 +893,29 @@ struct LoatBai: Identifiable {
                 moTa: "Từ vựng, ngữ pháp và giao tiếp cho dân IT",
                 bieuTuong: "character.book.closed.fill", mau: [0x10B981, 0x047857]),
     ]
+}
+
+extension Message {
+    /// `Message` toàn `let` nên phải dựng lại cả bản ghi để đổi một trường.
+    /// Giữ ở một chỗ thay vì chép 15 tham số ra khắp nơi.
+    func thayCamXuc(_ moi: [MessageReaction]) -> Message {
+        apDung(reactions: moi, thuHoi: nil, daXoa: nil)
+    }
+
+    func apDung(reactions moi: [MessageReaction]?, thuHoi: Bool?, daXoa: Bool?) -> Message {
+        Message(
+            id: id, threadId: threadId, senderId: senderId, sender: sender,
+            // Thu hồi thì máy chủ xoá sạch nội dung — client phải làm y hệt,
+            // không thì chữ vẫn nằm đó cho tới lần tải lại.
+            content: (thuHoi ?? recalled ?? false) || (daXoa ?? deleted ?? false) ? "" : content,
+            mediaUrl: (thuHoi ?? recalled ?? false) ? nil : mediaUrl,
+            mediaKind: mediaKind,
+            deleted: daXoa ?? deleted, recalled: thuHoi ?? recalled,
+            createdAt: createdAt,
+            attachments: (thuHoi ?? recalled ?? false) ? nil : attachments,
+            parentMessageId: parentMessageId, parentMessage: parentMessage,
+            hasAttachment: hasAttachment,
+            reactions: moi ?? reactions
+        )
+    }
 }

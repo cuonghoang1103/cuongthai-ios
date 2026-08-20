@@ -50,12 +50,21 @@ enum APIEndpoint {
     // Messaging
     case getThreads(cursor: Int?, limit: Int)
     case getMessages(threadId: Int, cursor: Int?, limit: Int)
-    case sendMessage(threadId: Int, content: String, type: String)
+    case sendMessage(threadId: Int, content: String, type: String, parentMessageId: Int?)
     /// Gửi tin có file đính kèm. Máy chủ nhận `fileIds: [Int]` (id hàng
     /// `FileAttachment` do `POST /messages/upload` tạo ra), KHÔNG nhận URL.
     case sendMessageWithFiles(threadId: Int, content: String, fileIds: [Int])
     /// Mốc đọc của từng người trong hội thoại — để vẽ "Đã xem".
     case getThreadReads(threadId: Int)
+    /// Gửi GIF / nhãn dán. Máy chủ nhận `media: {url, kind}` với kind là
+    /// `gif` hoặc `sticker` — KHÔNG phải file đính kèm.
+    case sendMessageMedia(threadId: Int, url: String, kind: String)
+    /// Bật/tắt một cảm xúc trên tin nhắn (gọi lại cùng emoji là gỡ).
+    case toggleMessageReaction(messageId: Int, emoji: String)
+    case recallMessage(messageId: Int)
+    case deleteMessage(messageId: Int)
+    /// Tìm GIF qua proxy GIPHY của backend. `q` rỗng = đang thịnh hành.
+    case searchGifs(q: String)
     case markRead(threadId: Int)
     /// Mở (hoặc tạo nếu chưa có) hội thoại 1-1 với một người.
     case openThread(peerId: Int)
@@ -142,9 +151,14 @@ enum APIEndpoint {
 
         case .getThreads: return "/api/v1/messages/threads"
         case .getMessages(let threadId, _, _): return "/api/v1/messages/threads/\(threadId)/messages"
-        case .sendMessage(let threadId, _, _): return "/api/v1/messages/threads/\(threadId)/messages"
+        case .sendMessage(let threadId, _, _, _): return "/api/v1/messages/threads/\(threadId)/messages"
         case .sendMessageWithFiles(let threadId, _, _): return "/api/v1/messages/threads/\(threadId)/messages"
         case .getThreadReads(let threadId): return "/api/v1/messages/threads/\(threadId)/reads"
+        case .sendMessageMedia(let threadId, _, _): return "/api/v1/messages/threads/\(threadId)/messages"
+        case .toggleMessageReaction(let id, _): return "/api/v1/messages/messages/\(id)/reactions"
+        case .recallMessage(let id): return "/api/v1/messages/messages/\(id)/recall"
+        case .deleteMessage(let id): return "/api/v1/messages/messages/\(id)"
+        case .searchGifs: return "/api/v1/gifs"
         case .markRead(let threadId): return "/api/v1/messages/threads/\(threadId)/read"
         case .openThread(let peerId): return "/api/v1/messages/threads/user/\(peerId)"
         case .muteThread(let id, _): return "/api/v1/messages/threads/\(id)/mute-for"
@@ -186,6 +200,7 @@ enum APIEndpoint {
         case .login, .register, .oauthToken, .changePassword, .refreshToken,
              .createPost, .likePost, .followUser, .unfollowUser,
              .createComment, .savePost, .sendMessage, .sendMessageWithFiles, .enrollCourse,
+             .sendMessageMedia, .toggleMessageReaction, .recallMessage,
              .createNote, .reportPost, .reportThread, .blockUser, .requestDeletion,
              .openThread, .muteThread, .saveLessonProgress:
             return "POST"
@@ -194,7 +209,7 @@ enum APIEndpoint {
         case .updateNote, .markRead, .reactPost, .markNotificationsRead:
             return "PATCH"
         case .deletePost, .unlikePost, .unsavePost, .deleteNote,
-             .unblockUser, .cancelDeletionRequest:
+             .unblockUser, .cancelDeletionRequest, .deleteMessage:
             return "DELETE"
         default:
             return "GET"
@@ -230,11 +245,19 @@ enum APIEndpoint {
             return m
         case .savePost(_, let f):
             return f != nil ? ["folder": f!] : nil
+        case .sendMessageMedia(_, let u, let k):
+            return ["media": ["url": u, "kind": k]]
+        case .toggleMessageReaction(_, let e):
+            return ["emoji": e]
+        case .searchGifs(let q):
+            return q.isEmpty ? [:] : ["q": q]
         case .sendMessageWithFiles(_, let c, let ids):
             // `content` rỗng vẫn phải gửi khoá: tin chỉ có ảnh là hợp lệ.
             return ["content": c, "fileIds": ids]
-        case .sendMessage(_, let c, let t):
-            return ["content": c, "type": t]
+        case .sendMessage(_, let c, let t, let cha):
+            var m: [String: Any] = ["content": c, "type": t]
+            if let cha { m["parentMessageId"] = cha }
+            return m
         case .createNote(let s, let ch, let t):
             var m: [String: Any] = ["subjectId": s]
             if let chapter = ch { m["chapterId"] = chapter }

@@ -31,6 +31,9 @@
     <key>NSCameraUsageDescription</key><string>CuongThai cần camera để bạn chụp ảnh hoặc quay video đăng lên bảng tin và đổi ảnh đại diện.</string>
     <key>NSMicrophoneUsageDescription</key><string>CuongThai cần micro để ghi âm thanh khi bạn quay video đăng lên bảng tin.</string>
     <key>NSPhotoLibraryUsageDescription</key><string>CuongThai cần thư viện ảnh để bạn chọn ảnh đính kèm vào bài viết và ảnh đại diện.</string>
+    <!-- BẮT BUỘC: gọi requestWhenInUseAuthorization() mà thiếu khoá này thì iOS
+         GIẾT app ngay, không phải hiện lỗi. Dùng cho nút "Vị trí" trong chat. -->
+    <key>NSLocationWhenInUseUsageDescription</key><string>CuongThai cần vị trí để bạn chia sẻ chỗ mình đang đứng vào cuộc trò chuyện. Vị trí chỉ được gửi khi bạn tự bấm nút, và app không theo dõi bạn trong nền.</string>
     <!-- ── Đăng nhập Google — ĐÃ BẬT 19/08/2026 ─────────────────────────
          Client loại **iOS** (project 650641212127 "Cuong Thai Portfolio",
          Bundle ID com.cuongthai.app). KHÔNG có secret — đúng thiết kế: app

@@ -21,8 +21,12 @@ struct ChatView: View {
     @State private var thongBaoTat: String?
     #if os(iOS)
     @State private var anhDangChon: [PhotosPickerItem] = []
+    @State private var videoDangChon: [PhotosPickerItem] = []
     #endif
     @State private var hienChonTep = false
+    @State private var hienChonGif = false
+    @State private var traLoiTin: Message?
+    @StateObject private var viTri = DoViTri()
     @ObservedObject private var realtime = RealtimeClient.shared
     @FocusState private var isInputFocused: Bool
 
@@ -90,7 +94,54 @@ struct ChatView: View {
         .onChange(of: anhDangChon) { _, moi in
             Task { await guiAnhDaChon(moi) }
         }
+        .onChange(of: videoDangChon) { _, moi in
+            Task { await guiVideoDaChon(moi) }
+        }
         #endif
+        .sheet(isPresented: $hienChonGif) {
+            BangChonGif { url in
+                Task { await viewModel.guiGif(url) }
+                withAnimation { showAttachmentOptions = false }
+            }
+        }
+        .alert("Vị trí", isPresented: .constant(viTri.loi != nil)) {
+            Button("OK") { viTri.loi = nil }
+        } message: {
+            Text(viTri.loi ?? "")
+        }
+    }
+
+    #if os(iOS)
+    /// Video đi CÙNG đường tải lên với ảnh, nên vẫn dính trần 10MB của
+    /// `/messages/upload`. Kiểm cỡ ở client để báo trước, thay vì tải lên rồi
+    /// mới nhận 413 sau vài chục giây.
+    private func guiVideoDaChon(_ items: [PhotosPickerItem]) async {
+        guard let item = items.first else { return }
+        guard let data = try? await item.loadTransferable(type: Data.self) else {
+            viewModel.error = "Không đọc được video này."
+            videoDangChon = []
+            return
+        }
+        guard data.count <= 10 * 1024 * 1024 else {
+            viewModel.error = "Video nặng \(ByteCountFormatter.string(fromByteCount: Int64(data.count), countStyle: .file)) — máy chủ chỉ nhận tối đa 10MB."
+            videoDangChon = []
+            return
+        }
+        let loai = item.supportedContentTypes.first
+        let duoi = loai?.preferredFilenameExtension ?? "mp4"
+        let mime = loai?.preferredMIMEType ?? "video/mp4"
+        await viewModel.guiAnh([(data, "video.\(duoi)", mime)],
+                               kem: messageText.trimmingCharacters(in: .whitespacesAndNewlines))
+        messageText = ""
+        videoDangChon = []
+        withAnimation { showAttachmentOptions = false }
+    }
+    #endif
+
+    private func guiViTri() async {
+        guard let toado = await viTri.doMotLan() else { return }
+        await viewModel.guiViTri(vido: toado.latitude, kinhdo: toado.longitude)
+        withAnimation { showAttachmentOptions = false }
     }
 
     private var chatHeader: some View {
@@ -280,7 +331,11 @@ struct ChatView: View {
                                     message: message,
                                     isFromCurrentUser: viewModel.isFromCurrentUser(message),
                                     showAvatar: viewModel.shouldShowAvatar(for: message, in: group.messages),
-                                    daXem: viewModel.tinCuoiDaXem == message.id
+                                    daXem: viewModel.tinCuoiDaXem == message.id,
+                                    thaCamXuc: { e in Task { await viewModel.doiCamXuc(message, e) } },
+                                    traLoi: { traLoiTin = message },
+                                    thuHoi: { Task { await viewModel.thuHoi(message) } },
+                                    xoa: { Task { await viewModel.xoaTin(message) } }
                                 )
                                 .id(message.id)
                             }
@@ -305,6 +360,10 @@ struct ChatView: View {
         VStack(spacing: 0) {
             Divider()
                 .background(AppColors.divider)
+
+            if let cha = traLoiTin {
+                thanhTraLoi(cha)
+            }
 
             HStack(alignment: .bottom, spacing: Spacing.sm) {
                 // Attachment button
@@ -339,15 +398,26 @@ struct ChatView: View {
                     }
                 }
 
-                // Send button
+                // Ô trống thì nút gửi thành 👍 — bấm một cái là gửi luôn, đúng
+                // như Messenger. Bản cũ để nút mờ và TẮT, tức chỗ đó thành một
+                // điểm bấm không ăn.
                 Button {
-                    sendMessage()
+                    if messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        Haptics.cham()
+                        Task { await viewModel.sendMessage("👍") }
+                    } else {
+                        sendMessage()
+                    }
                 } label: {
-                    Image(systemName: "arrow.up.circle.fill")
-                        .font(.title)
-                        .foregroundColor(messageText.isEmpty ? AppColors.textTertiary : AppColors.primary)
+                    if messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        Text("👍").font(.system(size: 26))
+                    } else {
+                        Image(systemName: "arrow.up.circle.fill")
+                            .font(.title)
+                            .foregroundColor(AppColors.primary)
+                    }
                 }
-                .disabled(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .buttonStyle(.plain)
             }
             .padding(.horizontal, Spacing.md)
             .padding(.vertical, Spacing.sm)
@@ -371,18 +441,65 @@ struct ChatView: View {
             }
             #endif
 
+            #if os(iOS)
+            PhotosPicker(selection: $videoDangChon, maxSelectionCount: 1, matching: .videos) {
+                nutDinhKem(icon: "video", title: "Video")
+            }
+            #endif
+
+            Button {
+                hienChonGif = true
+            } label: {
+                nutDinhKem(icon: "square.stack.3d.down.right", title: "GIF")
+            }
+            .buttonStyle(.plain)
+
+            Button {
+                Task { await guiViTri() }
+            } label: {
+                nutDinhKem(icon: viTri.dangDo ? "location.fill" : "location", title: "Vị trí")
+            }
+            .buttonStyle(.plain)
+            .disabled(viTri.dangDo)
+
             Button {
                 hienChonTep = true
             } label: {
                 nutDinhKem(icon: "folder", title: "Tệp")
             }
             .buttonStyle(.plain)
-
-            Spacer()
         }
         .padding(Spacing.md)
         .background(AppColors.backgroundSecondary)
         .transition(.move(edge: .bottom).combined(with: .opacity))
+    }
+
+    /// Thanh hiện tin đang được trả lời. Không có nó thì bấm "Trả lời" xong
+    /// không thấy gì đổi, và tin gửi ra lại gắn vào một tin người dùng đã quên.
+    private func thanhTraLoi(_ cha: Message) -> some View {
+        HStack(spacing: Spacing.sm) {
+            Rectangle().fill(AppColors.primary).frame(width: 3, height: 32)
+            VStack(alignment: .leading, spacing: 1) {
+                Text("Đang trả lời \(cha.sender?.name ?? "tin nhắn")")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(AppColors.primary)
+                Text(cha.xemTruoc.isEmpty ? "Tin nhắn" : cha.xemTruoc)
+                    .font(.system(size: 12))
+                    .foregroundColor(AppColors.textSecondary)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 4)
+            Button {
+                traLoiTin = nil
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundColor(AppColors.textTertiary)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, Spacing.md)
+        .padding(.vertical, Spacing.sm)
+        .background(AppColors.backgroundTertiary.opacity(0.5))
     }
 
     private func nutDinhKem(icon: String, title: String) -> some View {
@@ -445,9 +562,11 @@ struct ChatView: View {
         guard !messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         Haptics.cham()
 
+        let cha = traLoiTin?.id
         Task {
-            await viewModel.sendMessage(messageText)
+            await viewModel.sendMessage(messageText, traLoi: cha)
             messageText = ""
+            traLoiTin = nil
         }
     }
 }
@@ -459,6 +578,12 @@ struct MessageBubble: View {
     let showAvatar: Bool
     /// Vẽ "Đã xem" dưới ĐÚNG tin cuối người kia đã đọc, như Messenger.
     var daXem: Bool = false
+    var thaCamXuc: ((String) -> Void)? = nil
+    var traLoi: (() -> Void)? = nil
+    var thuHoi: (() -> Void)? = nil
+    var xoa: (() -> Void)? = nil
+
+    @State private var hienBangCamXuc = false
 
     private var mauChu: Color { isFromCurrentUser ? AppColors.onPrimary : AppColors.textPrimary }
     private var mauNen: Color { isFromCurrentUser ? AppColors.primary : AppColors.backgroundTertiary }
@@ -492,9 +617,11 @@ struct MessageBubble: View {
                         traLoiTrichDan(cha)
                     }
 
-                    // Ảnh trước, chữ sau — giống Messenger, và tin chỉ có ảnh
-                    // thì không vẽ bong bóng rỗng bên dưới.
-                    if !message.anh.isEmpty {
+                    // Vị trí đi trước: nó thay cho cả dòng chữ chứa link, chứ
+                    // không hiện thêm link thô bên dưới.
+                    if let vt = message.viTri {
+                        theViTri(vido: vt.vido, kinhdo: vt.kinhdo)
+                    } else if !message.anh.isEmpty {
                         luoiAnh(message.anh)
                     }
 
@@ -502,7 +629,7 @@ struct MessageBubble: View {
                         theTep(tep)
                     }
 
-                    if !message.noiDung.isEmpty {
+                    if !message.noiDung.isEmpty && message.viTri == nil {
                         Text(message.noiDung)
                             .font(.bodyMedium)
                             .foregroundColor(mauChu)
@@ -512,6 +639,10 @@ struct MessageBubble: View {
                             .cornerRadius(CornerRadius.large)
                             .textSelection(.enabled)
                     }
+                }
+
+                if let ds = message.reactions, !ds.isEmpty {
+                    chipCamXuc(ds)
                 }
 
                 HStack(spacing: 4) {
@@ -529,6 +660,142 @@ struct MessageBubble: View {
             }
         }
         .padding(.vertical, 2)
+        .contentShape(Rectangle())
+        .onLongPressGesture {
+            guard !message.daXoaHoacThuHoi else { return }
+            Haptics.cham()
+            hienBangCamXuc = true
+        }
+        .popover(isPresented: $hienBangCamXuc) {
+            bangCamXuc
+                .presentationCompactAdaptation(.popover)
+        }
+    }
+
+    // MARK: Bảng nhấn giữ
+
+    private var bangCamXuc: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 2) {
+                ForEach(ChatViewModel.camXuc, id: \.self) { e in
+                    Button {
+                        hienBangCamXuc = false
+                        thaCamXuc?(e)
+                    } label: {
+                        Text(e).font(.system(size: 26)).padding(6)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 6)
+            .padding(.vertical, 4)
+
+            Divider()
+
+            VStack(spacing: 0) {
+                if let traLoi {
+                    hangMenu("Trả lời", "arrowshape.turn.up.left") { hienBangCamXuc = false; traLoi() }
+                }
+                if isFromCurrentUser, let thuHoi {
+                    hangMenu("Thu hồi", "arrow.uturn.backward") { hienBangCamXuc = false; thuHoi() }
+                }
+                if isFromCurrentUser, let xoa {
+                    hangMenu("Xoá", "trash", doTuoi: true) { hienBangCamXuc = false; xoa() }
+                }
+            }
+        }
+        .frame(width: 250)
+    }
+
+    private func hangMenu(_ chu: String, _ icon: String, doTuoi: Bool = false,
+                          _ cham: @escaping () -> Void) -> some View {
+        Button(action: cham) {
+            HStack(spacing: 10) {
+                Image(systemName: icon).frame(width: 20)
+                Text(chu)
+                Spacer()
+            }
+            .font(.system(size: 15))
+            .foregroundColor(doTuoi ? AppColors.error : AppColors.textPrimary)
+            .padding(.horizontal, Spacing.md)
+            .padding(.vertical, 11)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: Chip cảm xúc
+
+    private func chipCamXuc(_ ds: [MessageReaction]) -> some View {
+        HStack(spacing: 3) {
+            ForEach(ds) { r in
+                Button {
+                    thaCamXuc?(r.emoji)
+                } label: {
+                    HStack(spacing: 2) {
+                        Text(r.emoji).font(.system(size: 12))
+                        if r.count > 1 {
+                            Text("\(r.count)")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundColor(AppColors.textSecondary)
+                        }
+                    }
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(
+                        Capsule().fill(AppColors.backgroundSecondary)
+                    )
+                    .overlay(
+                        Capsule().stroke(
+                            r.coCua(AppState.shared.currentUser?.id)
+                                ? AppColors.primary : AppColors.border,
+                            lineWidth: 1)
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.top, 1)
+    }
+
+    // MARK: Thẻ vị trí
+
+    private func theViTri(vido: Double, kinhdo: Double) -> some View {
+        Button {
+            guard let u = URL(string: "https://www.google.com/maps/search/?api=1&query=\(vido),\(kinhdo)")
+            else { return }
+            #if os(iOS)
+            UIApplication.shared.open(u)
+            #else
+            NSWorkspace.shared.open(u)
+            #endif
+        } label: {
+            HStack(spacing: Spacing.sm) {
+                ZStack {
+                    Circle().fill(AppColors.primary.opacity(0.15))
+                    Image(systemName: "mappin.and.ellipse")
+                        .font(.system(size: 17))
+                        .foregroundColor(AppColors.primary)
+                }
+                .frame(width: 40, height: 40)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Vị trí đã chia sẻ")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(mauChu)
+                    Text(String(format: "%.5f, %.5f", vido, kinhdo))
+                        .font(.system(size: 11))
+                        .foregroundColor(mauChu.opacity(0.75))
+                }
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(mauChu.opacity(0.6))
+            }
+            .padding(.horizontal, Spacing.md)
+            .padding(.vertical, Spacing.sm)
+            .background(mauNen)
+            .cornerRadius(CornerRadius.large)
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: Ảnh
@@ -683,7 +950,11 @@ class ChatViewModel: ObservableObject {
                 try await APIClient.shared.requestList(
                     .getMessages(threadId: threadId, cursor: nil, limit: Self.moiLuot)
                 )
-            messages = response.items.reversed()
+            // `listMessages` lấy 50 tin MỚI NHẤT (`id desc`) rồi `.reverse()`
+            // trước khi trả — nên mảng về đã là CŨ TRƯỚC, MỚI SAU, dùng thẳng.
+            // Bản cũ còn `.reversed()` thêm một lần nữa, tức lộn ngược cả
+            // khung chat; không ai thấy vì tin nhắn chưa từng giải mã được.
+            messages = response.items
             cursor = messages.first?.id
             hasMore = response.items.count >= Self.moiLuot
         } catch {
@@ -704,7 +975,7 @@ class ChatViewModel: ObservableObject {
                 )
             // Lọc trùng phòng khi có tin chen vào giữa hai lượt gọi.
             let daCo = Set(messages.map(\.id))
-            let them = response.items.reversed().filter { !daCo.contains($0.id) }
+            let them = response.items.filter { !daCo.contains($0.id) }
             messages.insert(contentsOf: them, at: 0)
             self.cursor = messages.first?.id
             hasMore = response.items.count >= Self.moiLuot
@@ -739,6 +1010,94 @@ class ChatViewModel: ObservableObject {
         }
     }
 
+    // MARK: Cảm xúc / GIF / vị trí / thu hồi
+
+    /// Sáu cảm xúc của Messenger, đúng thứ tự quen mắt.
+    static let camXuc = ["❤️", "😆", "😮", "😢", "😡", "👍"]
+
+    /// Bật/tắt một cảm xúc. Đổi TẠI CHỖ trước khi gọi mạng để nút phản hồi tức
+    /// thì; máy chủ trả về bản gộp thật thì ghi đè lại.
+    func doiCamXuc(_ tin: Message, _ emoji: String) async {
+        guard let toi = AppState.shared.currentUser?.id else { return }
+        guard let i = messages.firstIndex(where: { $0.id == tin.id }) else { return }
+
+        let cu = messages[i].reactions ?? []
+        messages[i] = messages[i].thayCamXuc(Self.gopTaiCho(cu, emoji: emoji, userId: toi))
+
+        do {
+            let moi: [MessageReaction] = try await APIClient.shared
+                .request(.toggleMessageReaction(messageId: tin.id, emoji: emoji))
+            if let j = messages.firstIndex(where: { $0.id == tin.id }) {
+                messages[j] = messages[j].thayCamXuc(moi)
+            }
+        } catch {
+            // Trả lại đúng trạng thái cũ, đừng để nút "dính" ở trạng thái sai.
+            if let j = messages.firstIndex(where: { $0.id == tin.id }) {
+                messages[j] = messages[j].thayCamXuc(cu)
+            }
+            self.error = error.localizedDescription
+        }
+    }
+
+    private static func gopTaiCho(_ ds: [MessageReaction], emoji: String, userId: Int) -> [MessageReaction] {
+        var m = ds
+        if let i = m.firstIndex(where: { $0.emoji == emoji }) {
+            var ids = m[i].userIds
+            if let k = ids.firstIndex(of: userId) {
+                ids.remove(at: k)
+            } else {
+                ids.append(userId)
+            }
+            if ids.isEmpty { m.remove(at: i) }
+            else { m[i] = MessageReaction(emoji: emoji, count: ids.count, userIds: ids) }
+        } else {
+            m.append(MessageReaction(emoji: emoji, count: 1, userIds: [userId]))
+        }
+        return m
+    }
+
+    /// Socket `message:updated` — người kia thả cảm xúc / thu hồi tin.
+    func apDungThayDoi(messageId: Int, reactions: [MessageReaction]?, thuHoi: Bool?, daXoa: Bool?) {
+        guard let i = messages.firstIndex(where: { $0.id == messageId }) else { return }
+        messages[i] = messages[i].apDung(reactions: reactions, thuHoi: thuHoi, daXoa: daXoa)
+    }
+
+    func guiGif(_ url: String) async {
+        guard let threadId = thread?.id else { return }
+        do {
+            let tin: Message = try await APIClient.shared
+                .request(.sendMessageMedia(threadId: threadId, url: url, kind: "gif"))
+            chenTinMoi(tin)
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
+    /// Gửi vị trí dạng link Google Maps — máy chủ không có trường toạ độ, và
+    /// link thì web đọc được luôn. App tự nhận ra link này để vẽ thẻ bản đồ.
+    func guiViTri(vido: Double, kinhdo: Double) async {
+        let link = "https://www.google.com/maps/search/?api=1&query=\(vido),\(kinhdo)"
+        await sendMessage("📍 Vị trí của tôi: \(link)")
+    }
+
+    func thuHoi(_ tin: Message) async {
+        do {
+            let _: EmptyResponse = try await APIClient.shared.request(.recallMessage(messageId: tin.id))
+            apDungThayDoi(messageId: tin.id, reactions: nil, thuHoi: true, daXoa: nil)
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
+    func xoaTin(_ tin: Message) async {
+        do {
+            let _: EmptyResponse = try await APIClient.shared.request(.deleteMessage(messageId: tin.id))
+            messages.removeAll { $0.id == tin.id }
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
     // MARK: "Đã xem"
 
     /// Mốc đọc của người kia. Tin nào gửi trước mốc này thì người ta đã xem.
@@ -764,7 +1123,7 @@ class ChatViewModel: ObservableObject {
         return messages.last(where: { $0.senderId == toi && ($0.ngayGio ?? .distantFuture) <= moc })?.id
     }
 
-    func sendMessage(_ content: String) async {
+    func sendMessage(_ content: String, traLoi cha: Int? = nil) async {
         guard let threadId = thread?.id else { return }
 
         // Hiện ngay tin tạm rồi mới gọi máy chủ. Id âm để chắc chắn không đụng
@@ -782,16 +1141,17 @@ class ChatViewModel: ObservableObject {
             recalled: nil,
             createdAt: ISO8601DateFormatter().string(from: Date()),
             attachments: nil,
-            parentMessageId: nil,
+            parentMessageId: cha,
             parentMessage: nil,
-            hasAttachment: nil
+            hasAttachment: nil,
+            reactions: nil
         )
 
         messages.append(tempMessage)
 
         do {
             let newMessage: Message = try await APIClient.shared.request(
-                .sendMessage(threadId: threadId, content: content, type: "text")
+                .sendMessage(threadId: threadId, content: content, type: "text", parentMessageId: cha)
             )
 
             // Replace temp message with real one
@@ -914,6 +1274,11 @@ private struct VongDoiChat: ViewModifier {
                 // Đang mở hội thoại mà tin tới thì coi như đọc luôn, không thì
                 // huy hiệu chưa đọc nhảy lên ngay trước mắt người đang đọc.
                 Task { await viewModel.markAsRead() }
+            }
+            .onReceive(realtime.tinDoi) { su in
+                guard su.threadId == thread.id else { return }
+                viewModel.apDungThayDoi(messageId: su.messageId, reactions: su.reactions,
+                                        thuHoi: su.thuHoi, daXoa: su.daXoa)
             }
             // Người kia mở hội thoại → dời mốc "Đã xem" ngay.
             .onReceive(realtime.daDoc) { su in
