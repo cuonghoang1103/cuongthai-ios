@@ -89,7 +89,7 @@ struct HomeView: View {
     // One `.sheet(item:)` rather than two `.sheet(isPresented:)` — SwiftUI
     // only honours the last presentation modifier attached to a view.
     enum QuickSheet: String, Identifiable {
-        case search, notes, notifications
+        case search, notes, notifications, ai
         var id: String { rawValue }
     }
     @State private var tabDangChon: TabTrangChu = .tatCa
@@ -201,6 +201,10 @@ struct HomeView: View {
                                     }
                                 }
                         }
+                        Button { quickSheet = .ai } label: {
+                            Image(systemName: "sparkles")
+                                .foregroundStyle(AppColors.brandGradient)
+                        }
                         Button { quickSheet = .notes } label: {
                             Image(systemName: "note.text")
                         }
@@ -221,6 +225,7 @@ struct HomeView: View {
             case .search: SearchView()
             case .notes: NotesView()
             case .notifications: NotificationsView()
+            case .ai: AIChatView()
             }
         }
         .task {

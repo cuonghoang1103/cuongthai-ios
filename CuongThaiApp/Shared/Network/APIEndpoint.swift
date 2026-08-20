@@ -126,6 +126,9 @@ enum APIEndpoint {
 
     // ─── Từ vựng & thẻ ghi nhớ ───────────────────────────────
     // ─── Bài viết của chính mình ─────────────────────────────
+    /// Báo cáo một câu trả lời AI. Máy chủ đòi `rating` 1-5; báo cáo là mức
+    /// thấp nhất (1) kèm loại.
+    case baoCaoTraLoiAI(messageId: Int?)
     case xoaBaiViet(id: Int)
     /// Đổi nội dung và/hoặc quyền riêng tư. Máy chủ nhận `content`,
     /// `visibility` (PUBLIC | FRIENDS | PRIVATE).
@@ -276,6 +279,7 @@ enum APIEndpoint {
         case .khoiPhucGhiChu(let id): return "/api/v1/notes/notes/\(id)/restore"
         case .xoaVinhVien(let id): return "/api/v1/notes/notes/\(id)/permanent"
         case .layLienKetNguoc(let id): return "/api/v1/notes/notes/\(id)/backlinks"
+        case .baoCaoTraLoiAI: return "/api/v1/ai/feedback"
         case .xoaBaiViet(let id): return "/api/v1/social/posts/\(id)"
         case .suaBaiViet(let id, _): return "/api/v1/social/posts/\(id)"
         case .ghimBaiViet(let id): return "/api/v1/social/posts/\(id)/pin"
@@ -329,7 +333,7 @@ enum APIEndpoint {
              .boLuuTruHoiThoai, .danhDauChuaDoc, .danhDauDaXemTin, .taoTin, .taoChuong,
              .luuMocPhienBan, .khoiPhucPhienBan, .chayViecAI, .hoiTroLyGhiChu, .taoDongBang,
              .taoMon, .nhanBanGhiChu, .khoiPhucGhiChu, .dangKyThietBi,
-             .themTuVung, .chamThe, .datLaiThe, .ghimBaiViet,
+             .themTuVung, .chamThe, .datLaiThe, .ghimBaiViet, .baoCaoTraLoiAI,
              .createNote, .reportPost, .reportThread, .blockUser, .requestDeletion,
              .openThread, .muteThread, .saveLessonProgress:
             return "POST"
@@ -390,6 +394,9 @@ enum APIEndpoint {
             return ["action": a, "selection": sel]
         case .hoiTroLyGhiChu(let q):
             return ["question": q]
+        case .baoCaoTraLoiAI(let mid):
+            return ["messageId": mid ?? 0, "rating": 1, "feedbackType": "REPORT",
+                    "comment": "Người dùng báo cáo từ app iOS"]
         case .suaBaiViet(_, let d): return d
         case .themTuVung(let nid, let t, let r, let m, let e):
             var d: [String: Any] = ["noteId": nid, "term": t]

@@ -31,7 +31,14 @@ actor APIClient {
         log.error("[\(duong, privacy: .public)] \(moTa, privacy: .public)")
     }
 
-    private let baseURL = "https://cuongthai.com"
+    private let baseURL = APIClient.diaChiGoc
+    /// Cho `LuongChat` dùng — nó tự dựng `URLRequest` vì phải đọc luồng SSE,
+    /// không đi qua `request()` được.
+    ///
+    /// `nonisolated static` chứ không phải thuộc tính của actor: đọc một hằng
+    /// chuỗi thì không cần vào hàng đợi của actor, mà `await` ở đây lại buộc
+    /// mọi nơi gọi phải bất đồng bộ theo.
+    nonisolated static let diaChiGoc = "https://cuongthai.com"
     private let storage = StorageManager.shared
 
     private init() {}
