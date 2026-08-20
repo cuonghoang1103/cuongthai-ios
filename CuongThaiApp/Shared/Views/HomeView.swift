@@ -153,22 +153,23 @@ struct HomeView: View {
                     }
                 }
             }
-            .navigationTitle("CuongThai")
+            // ⚠️ Tiêu đề để TRỐNG. Trước đây vừa đặt `navigationTitle`
+            // ("CuongThai" hiện ở GIỮA) vừa có chữ "CuongThai" ở bên TRÁI —
+            // hai cái cùng tên, và cái bên trái bị tiêu đề giữa cộng ba nút
+            // bên phải ép hết chỗ nên cắt thành "C…". Facebook cũng chỉ có
+            // MỘT chữ, nằm bên trái.
+            .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Text("CuongThai")
-                        .font(.system(size: 20, weight: .bold))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [
-                                    AppColors.primary,
-                                    AppColors.secondary
-                                ],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
+                        .font(.system(size: 22, weight: .heavy, design: .rounded))
+                        // Dùng CHUNG `brandGradient` thay vì tự khai — không
+                        // thì đổi màu thương hiệu phải nhớ sửa từng màn.
+                        .foregroundStyle(AppColors.brandGradient)
+                        // Không cho hệ thống cắt chữ thương hiệu — thà đẩy
+                        // nút bên phải hẹp lại còn hơn hiện "C…".
+                        .fixedSize()
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     HStack(spacing: Spacing.md) {

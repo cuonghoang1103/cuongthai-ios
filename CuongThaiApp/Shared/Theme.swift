@@ -98,9 +98,18 @@ struct AppColors {
     static let sad = Color.theoCheDo(sang: Color(hex: 0x2E6FD9), toi: Color(hex: 0x408CFA))
     static let angry = Color.theoCheDo(sang: Color(hex: 0xD32F2F), toi: Color(hex: 0xEE4444))
 
-    /// Dải gradient thương hiệu — dùng ở nút chính và logo.
+    /// Hồng thương hiệu — đầu kia của dải gradient chữ CuongThai.
+    /// Bản nền sáng đậm hơn để chữ không bị nhạt trên nền trắng.
+    static let brandPink = Color.theoCheDo(sang: Color(hex: 0xDB2777), toi: Color(hex: 0xF472B6))
+
+    /// Dải gradient thương hiệu — TÍM → HỒNG.
+    ///
+    /// Dùng cho chữ "CuongThai" ở mọi nơi trong app. Khai MỘT chỗ để hai màn
+    /// không lệch nhau: trước đây màn Trang chủ tự khai gradient riêng
+    /// (tím→lam) còn màn đăng nhập dùng `brandGradient`, nên cùng một chữ mà
+    /// hai màu khác nhau tuỳ màn.
     static let brandGradient = LinearGradient(
-        colors: [primary, secondary],
+        colors: [primary, brandPink],
         startPoint: .leading,
         endPoint: .trailing,
     )
