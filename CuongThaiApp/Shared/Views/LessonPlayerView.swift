@@ -38,19 +38,32 @@ struct YouTubePlayer: UIViewRepresentable {
         guard context.coordinator.videoDangTai != videoId else { return }
         context.coordinator.videoDangTai = videoId
 
-        // Ba cách nạp, đã thử thật hết cả ba (19/08/2026):
-        //   1. loadHTMLString + baseURL  → "This video is unavailable, 152"
-        //   2. load(URLRequest) thẳng URL /embed → "Video player configuration error"
-        //   3. loadSimulatedRequest  → CHẠY
+        // Bốn cách nạp, đã thử thật hết cả bốn:
+        //   1. loadHTMLString + baseURL           → "unavailable, 152"
+        //   2. load(URLRequest) thẳng /embed      → "player configuration error"
+        //   3. loadSimulatedRequest, origin youtube.com → khung tải được nhưng
+        //      vẫn "152 - 4" TRÊN MÁY THẬT (20/08/2026)
+        //   4. loadSimulatedRequest, origin cuongthai.com → cách này
         //
-        // Lý do: YouTube đòi khung nhúng chạy trong một trang có ORIGIN thật.
-        // `loadHTMLString` không tạo origin (baseURL chỉ dùng để phân giải
-        // đường dẫn tương đối), còn mở thẳng /embed thì lại thiếu trang cha.
-        // `loadSimulatedRequest` (iOS 15+) trả HTML của mình NHƯNG gắn đúng
-        // origin của URL — thứ duy nhất thoả cả hai điều kiện.
-        guard let goc = URL(string: "https://www.youtube.com") else { return }
+        // Chỗ sai ở (3): đặt origin là `youtube.com` tức bảo YouTube "trang
+        // nhúng chính là YouTube" — vô nghĩa, và nó từ chối. Khung nhúng cần
+        // một origin BÊN THỨ BA hợp lệ, và `origin` trong URL phải KHỚP với
+        // origin của trang cha.
+        //
+        // Bằng chứng dẫn tới cách (4): CÙNG những video này đang nhúng tốt
+        // trên cuongthai.com. Khác biệt duy nhất là origin. Dùng lại đúng
+        // origin của web thì khung nhúng ở app không khác gì khung ở web.
+        //
+        // ⚠️ oEmbed trả 200 KHÔNG chứng minh video nhúng được — video bị chủ
+        // kênh tắt nhúng vẫn trả 200. Tôi từng dựa vào đó để kết luận "cả 6
+        // video đều nhúng được"; kết luận ấy vô giá trị.
+        guard let goc = URL(string: Self.trangChu) else { return }
         web.loadSimulatedRequest(URLRequest(url: goc), responseHTML: trangHTML)
     }
+
+    /// Origin của trang nhúng — phải là trang thật của mình, và phải trùng với
+    /// tham số `origin` trong địa chỉ khung nhúng.
+    private static let trangChu = "https://cuongthai.com/"
 
     private var trangHTML: String {
         """
@@ -59,7 +72,7 @@ struct YouTubePlayer: UIViewRepresentable {
         <style>html,body{margin:0;padding:0;background:#000;height:100%;overflow:hidden}
         iframe{border:0;width:100%;height:100%}</style></head>
         <body><iframe
-          src="https://www.youtube.com/embed/\(videoId)?playsinline=1&rel=0&modestbranding=1&start=\(batDauTaiGiay)"
+          src="https://www.youtube.com/embed/\(videoId)?playsinline=1&rel=0&modestbranding=1&start=\(batDauTaiGiay)&origin=https%3A%2F%2Fcuongthai.com"
           allow="accelerometer; encrypted-media; gyroscope; picture-in-picture"
           allowfullscreen></iframe></body></html>
         """
