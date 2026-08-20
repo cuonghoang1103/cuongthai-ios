@@ -27,6 +27,8 @@ struct ChatView: View {
     @State private var hienChonGif = false
     @State private var traLoiTin: Message?
     @State private var hienDatBietDanh = false
+    @State private var hienChonNen = false
+    @State private var nen: NenChat = .macDinh
     @State private var bietDanhMoi = ""
     /// Bản hội thoại có thể ĐỔI tại chỗ — `thread` truyền vào là `let`, mà đặt
     /// biệt danh xong thì tiêu đề phải đổi ngay chứ không đợi mở lại màn.
@@ -42,6 +44,11 @@ struct ChatView: View {
         VStack(spacing: 0) {
             if dangTimKiem { thanhTimKiem }
             messagesList
+                .background(
+                    // Chỉ phủ sau KHUNG TIN. Phủ cả ô nhập thì chữ đang gõ nằm
+                    // trên gradient và mất tương phản.
+                    nen.lop.ignoresSafeArea(edges: .horizontal)
+                )
             if hienEmoji { bangEmoji }
             inputBar
         }
@@ -63,6 +70,12 @@ struct ChatView: View {
                     } label: {
                         Label(dangTimKiem ? "Đóng tìm kiếm" : "Tìm trong hội thoại",
                               systemImage: "magnifyingglass")
+                    }
+
+                    Button {
+                        hienChonNen = true
+                    } label: {
+                        Label("Đổi hình nền", systemImage: "photo.on.rectangle.angled")
                     }
 
                     Button {
@@ -126,6 +139,10 @@ struct ChatView: View {
         } message: {
             Text("Chỉ MÌNH BẠN thấy biệt danh này. Người kia vẫn thấy tên thật của họ.")
         }
+        .sheet(isPresented: $hienChonNen) {
+            BangChonNen(dangChon: $nen) { KhoNenChat.ghi(thread.id, $0) }
+        }
+        .onAppear { nen = KhoNenChat.doc(thread.id) }
         .sheet(isPresented: $hienChonGif) {
             BangChonGif { url in
                 Task { await viewModel.guiGif(url) }
@@ -366,7 +383,7 @@ struct ChatView: View {
                                 }
                             }
                             .font(.caption)
-                            .foregroundColor(AppColors.textTertiary)
+                            .foregroundColor(nen.laNenToi ? .white.opacity(0.7) : AppColors.textTertiary)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, Spacing.sm)
                             .onAppear {
@@ -375,10 +392,19 @@ struct ChatView: View {
                         }
 
                         ForEach(nhomHienThi, id: \.date) { group in
-                            // Date header
+                            // Dải ngày kiểu Messenger: viên thuốc ở GIỮA, có
+                            // nền mờ riêng để đọc được cả khi đặt hình nền.
                             Text(group.date)
-                                .font(.caption)
-                                .foregroundColor(AppColors.textTertiary)
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundColor(nen.laNenToi ? .white.opacity(0.85) : AppColors.textSecondary)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 4)
+                                .background(
+                                    Capsule().fill(nen == .macDinh
+                                                   ? AppColors.backgroundTertiary.opacity(0.9)
+                                                   : Color.black.opacity(nen.laNenToi ? 0.28 : 0.10))
+                                )
+                                .frame(maxWidth: .infinity)
                                 .padding(.vertical, Spacing.sm)
 
                             ForEach(group.messages) { message in
@@ -390,7 +416,8 @@ struct ChatView: View {
                                     thaCamXuc: { e in Task { await viewModel.doiCamXuc(message, e) } },
                                     traLoi: { traLoiTin = message },
                                     thuHoi: { Task { await viewModel.thuHoi(message) } },
-                                    xoa: { Task { await viewModel.xoaTin(message) } }
+                                    xoa: { Task { await viewModel.xoaTin(message) } },
+                                    hienGio: viewModel.laCuoiCum(message, in: group.messages)
                                 )
                                 .id(message.id)
                             }
@@ -637,11 +664,24 @@ struct MessageBubble: View {
     var traLoi: (() -> Void)? = nil
     var thuHoi: (() -> Void)? = nil
     var xoa: (() -> Void)? = nil
+    /// Hiện giờ dưới bong bóng. Messenger CHỈ hiện ở tin cuối mỗi cụm, không
+    /// phải mỗi tin — dán giờ vào từng dòng làm khung chat rời rạc hẳn ra.
+    var hienGio: Bool = true
 
     @State private var hienBangCamXuc = false
 
     private var mauChu: Color { isFromCurrentUser ? AppColors.onPrimary : AppColors.textPrimary }
     private var mauNen: Color { isFromCurrentUser ? AppColors.primary : AppColors.backgroundTertiary }
+
+    /// Bong bóng không được kéo hết bề ngang: Messenger chặn quanh 3/4 màn hình
+    /// rồi mới xuống dòng, nhờ vậy mắt còn thấy được lề và biết ai đang nói.
+    private var tranNgang: CGFloat {
+        #if os(iOS)
+        return UIScreen.main.bounds.width * 0.74
+        #else
+        return 420
+        #endif
+    }
 
     var body: some View {
         HStack(alignment: .bottom, spacing: Spacing.sm) {
@@ -655,7 +695,7 @@ struct MessageBubble: View {
                 }
             }
 
-            VStack(alignment: isFromCurrentUser ? .trailing : .leading, spacing: 3) {
+            VStack(alignment: isFromCurrentUser ? .trailing : .leading, spacing: 2) {
                 if message.daXoaHoacThuHoi {
                     Text("Tin nhắn đã được thu hồi")
                         .font(.bodyMedium)
@@ -688,10 +728,12 @@ struct MessageBubble: View {
                         Text(message.noiDung)
                             .font(.bodyMedium)
                             .foregroundColor(mauChu)
-                            .padding(.horizontal, Spacing.md)
-                            .padding(.vertical, Spacing.sm)
+                            .padding(.horizontal, 13)
+                            .padding(.vertical, 8)
                             .background(mauNen)
-                            .cornerRadius(CornerRadius.large)
+                            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                            .frame(maxWidth: tranNgang,
+                                   alignment: isFromCurrentUser ? .trailing : .leading)
                             .textSelection(.enabled)
                     }
                 }
@@ -700,21 +742,26 @@ struct MessageBubble: View {
                     chipCamXuc(ds)
                 }
 
-                HStack(spacing: 4) {
-                    Text(TimeFormatter.formatTimeAgo(message.createdAt))
-                        .font(.caption)
-                        .foregroundColor(AppColors.textTertiary)
-                    if isFromCurrentUser && daXem {
-                        // Chữ chứ không phải dấu tích: hai dấu tích đặc/rỗng
-                        // trông gần giống nhau, nhìn lướt không phân biệt được.
-                        Text("· Đã xem")
-                            .font(.caption)
-                            .foregroundColor(AppColors.primary)
+                if hienGio || daXem {
+                    HStack(spacing: 4) {
+                        if hienGio {
+                            Text(TimeFormatter.gioTrongChat(message.createdAt))
+                                .font(.system(size: 11))
+                                .foregroundColor(AppColors.textTertiary)
+                        }
+                        if isFromCurrentUser && daXem {
+                            // Chữ chứ không phải dấu tích: hai dấu tích
+                            // đặc/rỗng nhìn lướt không phân biệt được.
+                            Text(hienGio ? "· Đã xem" : "Đã xem")
+                                .font(.system(size: 11))
+                                .foregroundColor(AppColors.primary)
+                        }
                     }
+                    .padding(.horizontal, 4)
                 }
             }
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, hienGio ? 3 : 1)
         .contentShape(Rectangle())
         .onLongPressGesture {
             guard !message.daXoaHoacThuHoi else { return }
@@ -1266,6 +1313,17 @@ class ChatViewModel: ObservableObject {
 
     func isFromCurrentUser(_ message: Message) -> Bool {
         message.senderId == AppState.shared.currentUser?.id
+    }
+
+    /// Tin CUỐI của một cụm: tin kế tiếp khác người gửi, hoặc cách nhau quá 5
+    /// phút. Chỉ tin như vậy mới hiện giờ — giống Messenger.
+    func laCuoiCum(_ message: Message, in ds: [Message]) -> Bool {
+        guard let i = ds.firstIndex(where: { $0.id == message.id }) else { return true }
+        guard i < ds.count - 1 else { return true }
+        let sau = ds[i + 1]
+        if sau.senderId != message.senderId { return true }
+        guard let a = message.ngayGio, let b = sau.ngayGio else { return true }
+        return b.timeIntervalSince(a) > 5 * 60
     }
 
     func shouldShowAvatar(for message: Message, in messages: [Message]) -> Bool {

@@ -60,3 +60,26 @@ extension Date {
         return f.date(from: chuoi)
     }
 }
+
+extension TimeFormatter {
+    /// Giờ hiện dưới bong bóng chat. Messenger dùng giờ THẬT ("14:07"), thêm
+    /// thứ/ngày khi tin cũ hơn hôm nay — "2ngày trước" đọc trong khung chat rất
+    /// khó đối chiếu với nhau.
+    static func gioTrongChat(_ chuoi: String) -> String {
+        guard let d = Date.tuChuoiISO(chuoi) else { return "" }
+        let l = Locale(identifier: "vi_VN")
+        let f = DateFormatter()
+        f.locale = l
+        let cal = Calendar.current
+        if cal.isDateInToday(d) {
+            f.dateFormat = "HH:mm"
+        } else if cal.isDateInYesterday(d) {
+            f.dateFormat = "'Hôm qua' HH:mm"
+        } else if let cach = cal.dateComponents([.day], from: d, to: Date()).day, cach < 7 {
+            f.dateFormat = "EEEE HH:mm"
+        } else {
+            f.dateFormat = "d/M HH:mm"
+        }
+        return f.string(from: d)
+    }
+}

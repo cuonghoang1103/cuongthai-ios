@@ -104,7 +104,12 @@ struct MessagesView: View {
                             ThreadRow(thread: thread)
                         }
                         .listRowInsets(EdgeInsets())
-                        .listRowSeparator(.hidden)
+                        // Vạch ngăn dùng của List, thụt vào cho thẳng mép chữ.
+                        // Tự thêm `Divider()` vào ForEach là sai: trong List nó
+                        // thành MỘT HÀNG riêng, ăn nguyên chiều cao một hàng.
+                        .listRowSeparator(.visible)
+                        .listRowSeparatorTint(AppColors.divider)
+                        .alignmentGuide(.listRowSeparatorLeading) { _ in 76 }
                         .listRowBackground(AppColors.backgroundPrimary)
                         .swipeActions(edge: .leading, allowsFullSwipe: true) {
                             Button {
@@ -143,13 +148,6 @@ struct MessagesView: View {
                             }
                             .tint(.gray)
                         }
-
-                        Divider()
-                            .background(AppColors.divider)
-                            .padding(.leading, 76)
-                            .listRowInsets(EdgeInsets())
-                            .listRowSeparator(.hidden)
-                            .listRowBackground(AppColors.backgroundPrimary)
                     }
 
                     if viewModel.hasMore {
