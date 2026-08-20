@@ -16,7 +16,23 @@ struct MonGhiChuView: View {
     @State private var chuongSua: NoteChapter?
     @State private var hoiXoaChuong: NoteChapter?
 
-    private var ghiChuLe: [NoteSummary] { mon.notes ?? [] }
+    @AppStorage("ghichu-sap-xep") private var sapXep = "moi"
+
+    private var ghiChuLe: [NoteSummary] { sapXepGhiChu(mon.notes ?? []) }
+
+    /// Máy chủ trả ghi chú theo `[sortOrder asc, updatedAt desc]` — thứ tự
+    /// kéo-thả của web. Trên điện thoại mặc định xếp theo lần SỬA gần nhất,
+    /// vì đó là thứ người ta tìm khi mở app lên.
+    private func sapXepGhiChu(_ ds: [NoteSummary]) -> [NoteSummary] {
+        switch sapXep {
+        case "web": return ds
+        case "ten": return ds.sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
+        default:
+            return ds.sorted {
+                (Date.tuChuoiISO($0.updatedAt) ?? .distantPast) > (Date.tuChuoiISO($1.updatedAt) ?? .distantPast)
+            }
+        }
+    }
 
     var body: some View {
         ScrollView {
@@ -30,7 +46,7 @@ struct MonGhiChuView: View {
                         khoi(tieuDe: nil, ds: ghiChuLe)
                     }
                     ForEach(mon.chapters ?? []) { ch in
-                        khoi(tieuDe: ch.title, ds: ch.notes ?? [], chuongId: ch.id)
+                        khoi(tieuDe: ch.title, ds: sapXepGhiChu(ch.notes ?? []), chuongId: ch.id)
                     }
                 }
             }
@@ -235,7 +251,7 @@ struct HangGhiChu: View {
                     .font(.system(size: 15))
                     .foregroundColor(AppColors.textPrimary)
                     .lineLimit(1)
-                Text(TimeFormatter.formatTimeAgo(n.updatedAt))
+                Text(TimeFormatter.gioCuThe(n.updatedAt))
                     .font(.system(size: 11))
                     .foregroundColor(AppColors.textTertiary)
             }

@@ -118,7 +118,7 @@ struct GhiChuChiTietView: View {
             if g.isFavorite { nhan("star.fill", "Yêu thích", .yellow) }
             if g.isArchived { nhan("archivebox.fill", "Lưu trữ", .purple) }
             Spacer()
-            Text("Sửa \(TimeFormatter.formatTimeAgo(g.updatedAt))")
+            Text("Sửa \(TimeFormatter.gioCuThe(g.updatedAt))")
                 .font(.system(size: 11))
                 .foregroundColor(AppColors.textTertiary)
         }

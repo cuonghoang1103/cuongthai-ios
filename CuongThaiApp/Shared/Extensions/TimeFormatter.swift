@@ -83,3 +83,21 @@ extension TimeFormatter {
         return f.string(from: d)
     }
 }
+
+extension TimeFormatter {
+    /// Thời điểm CỤ THỂ cho danh sách ghi chú: "15:56 hôm nay", "Hôm qua 09:12",
+    /// "18/8 14:03". "2 ngày trước" đọc thì mượt nhưng không so được hai ghi
+    /// chú với nhau, mà đó chính là việc người ta làm khi nhìn danh sách.
+    static func gioCuThe(_ chuoi: String) -> String {
+        guard let d = Date.tuChuoiISO(chuoi) else { return "" }
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "vi_VN")
+        let cal = Calendar.current
+        if cal.isDateInToday(d) { f.dateFormat = "'Hôm nay' HH:mm" }
+        else if cal.isDateInYesterday(d) { f.dateFormat = "'Hôm qua' HH:mm" }
+        else if cal.component(.year, from: d) == cal.component(.year, from: Date()) {
+            f.dateFormat = "d/M HH:mm"
+        } else { f.dateFormat = "d/M/yyyy" }
+        return f.string(from: d)
+    }
+}

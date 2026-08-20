@@ -16,6 +16,7 @@ struct NotesView: View {
     @State private var monSua: NoteSubject?
     @State private var tenMonMoi = ""
     @State private var hoiXoaMon: NoteSubject?
+    @AppStorage("ghichu-sap-xep") private var sapXep = "moi"   // moi | web | ten
 
     var body: some View {
         NavigationStack {
@@ -53,6 +54,18 @@ struct NotesView: View {
                     // Menu chỉ còn MỘT mục thì bỏ menu, bấm phát ăn ngay.
                     // "Nhập ghi chú" đã gỡ: backend không có đường nhập nào.
                     HStack(spacing: Spacing.md) {
+                        Menu {
+                            Picker("Sắp xếp", selection: $sapXep) {
+                                Label("Mới nhất trước", systemImage: "clock").tag("moi")
+                                Label("Thứ tự trên web", systemImage: "hand.draw").tag("web")
+                                Label("Tên A → Z", systemImage: "textformat.abc").tag("ten")
+                            }
+                        } label: {
+                            Image(systemName: "arrow.up.arrow.down")
+                                .foregroundColor(AppColors.textPrimary)
+                        }
+                        .accessibilityLabel("Sắp xếp")
+
                         Button { hienLoc = true } label: {
                             Image(systemName: "line.3.horizontal.decrease.circle")
                                 .foregroundColor(AppColors.textPrimary)
@@ -130,6 +143,20 @@ struct NotesView: View {
 
     @State private var viecTim: Task<Void, Never>?
 
+    /// Máy chủ trả môn theo `[isPinned desc, sortOrder asc, createdAt asc]` —
+    /// tức môn VỪA TẠO nằm CUỐI danh sách. Đó là thứ tự kéo-thả của web, đúng
+    /// cho web nhưng trên điện thoại thì tạo xong không thấy đâu.
+    ///
+    /// Cây KHÔNG trả `createdAt` cho môn, nên "mới nhất" xếp theo `id` giảm dần
+    /// — id tự tăng nên id lớn hơn chắc chắn là tạo sau.
+    private func sapXepMon(_ ds: [NoteSubject]) -> [NoteSubject] {
+        switch sapXep {
+        case "web": return ds
+        case "ten": return ds.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+        default:    return ds.sorted { $0.id > $1.id }
+        }
+    }
+
     private var khoiKetQuaTim: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
             HStack {
@@ -163,7 +190,7 @@ struct NotesView: View {
                                 .foregroundColor(AppColors.textSecondary)
                                 .lineLimit(2)
                         }
-                        Text(TimeFormatter.formatTimeAgo(n.updatedAt))
+                        Text(TimeFormatter.gioCuThe(n.updatedAt))
                             .font(.system(size: 10))
                             .foregroundColor(AppColors.textTertiary)
                     }
@@ -219,7 +246,7 @@ struct NotesView: View {
                 emptySubjectsView
             } else {
                 LazyVStack(spacing: Spacing.md) {
-                    ForEach(tree.subjects) { subject in
+                    ForEach(sapXepMon(tree.subjects)) { subject in
                         NavigationLink {
                             MonGhiChuView(mon: subject) { await viewModel.loadNotesTree() }
                         } label: {
@@ -310,7 +337,7 @@ struct RecentNoteCard: View {
 
                     Spacer()
 
-                    Text(TimeFormatter.formatTimeAgo(note.updatedAt))
+                    Text(TimeFormatter.gioCuThe(note.updatedAt))
                         .font(.caption)
                         .foregroundColor(AppColors.textTertiary)
                 }
@@ -396,36 +423,63 @@ struct NewSubjectView: View {
                     TextField("Nhập tên môn học", text: $name)
                 }
 
+                // ⚠️ HAI lỗi ở khối này, cả hai đều làm nút "không bấm được":
+                // 1. Trong `Form`/`List`, nhiều Button chung một hàng thì
+                //    SwiftUI gộp CẢ HÀNG thành một nút — chạm ô nào cũng không
+                //    ăn. Phải `.buttonStyle(.plain)` cho từng cái.
+                // 2. Viền chọn tô màu TRẮNG trên nền hàng trắng ⇒ vô hình. Dù
+                //    có chọn trúng cũng không thấy gì đổi.
                 Section("Màu sắc") {
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 6), spacing: Spacing.md) {
                         ForEach(colors, id: \.self) { color in
                             Button {
+                                Haptics.cham()
                                 selectedColor = color
                             } label: {
                                 Circle()
                                     .fill(Color(hex: color) ?? AppColors.primary)
-                                    .frame(width: 40, height: 40)
+                                    .frame(width: 38, height: 38)
                                     .overlay(
-                                        Circle()
-                                            .stroke(Color.white, lineWidth: selectedColor == color ? 3 : 0)
+                                        Circle().stroke(AppColors.textPrimary,
+                                                        lineWidth: selectedColor == color ? 3 : 0)
+                                            .padding(-3)
                                     )
+                                    .overlay {
+                                        if selectedColor == color {
+                                            Image(systemName: "checkmark")
+                                                .font(.system(size: 15, weight: .bold))
+                                                .foregroundColor(.white)
+                                        }
+                                    }
                             }
+                            .buttonStyle(.plain)
                         }
                     }
+                    .padding(.vertical, 4)
                 }
 
                 Section("Biểu tượng") {
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 5), spacing: Spacing.md) {
                         ForEach(emojis, id: \.self) { emoji in
                             Button {
+                                Haptics.cham()
                                 selectedEmoji = emoji
                             } label: {
                                 Text(emoji)
                                     .font(.title)
                                     .padding(Spacing.sm)
-                                    .background(selectedEmoji == emoji ? AppColors.primary.opacity(0.2) : Color.clear)
-                                    .cornerRadius(CornerRadius.small)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: CornerRadius.small)
+                                            .fill(selectedEmoji == emoji
+                                                  ? AppColors.primary.opacity(0.22) : Color.clear)
+                                    )
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: CornerRadius.small)
+                                            .stroke(AppColors.primary,
+                                                    lineWidth: selectedEmoji == emoji ? 2 : 0)
+                                    )
                             }
+                            .buttonStyle(.plain)
                         }
                     }
                 }
