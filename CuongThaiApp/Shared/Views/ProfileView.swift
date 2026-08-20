@@ -552,9 +552,10 @@ class ProfileViewModel: ObservableObject {
         dangTaiDaLuu = true
         defer { dangTaiDaLuu = false }
         do {
-            let ds: (items: [SocialPost], nextCursor: Int?, hasMore: Bool) =
+            // `/social/saves` trả HÀNG LƯU bọc bài viết, không phải bài viết.
+            let ds: (items: [HangDaLuu], nextCursor: Int?, hasMore: Bool) =
                 try await APIClient.shared.requestList(.getSavedPosts(cursor: nil, limit: 30))
-            baiDaLuu = ds.items
+            baiDaLuu = ds.items.map(\.post)
         } catch {
             self.error = error.localizedDescription
         }

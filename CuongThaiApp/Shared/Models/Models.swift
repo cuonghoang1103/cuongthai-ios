@@ -369,9 +369,18 @@ struct MocDoc: Codable, Identifiable {
 }
 
 // MARK: - Notes
+/// ⚠️ `GET /notes/tree` trả `data: { tree, recent }` — KHÔNG phải
+/// `{ subjects, recentNotes }`. Bản cũ đọc `subjects` nên khoá đó luôn vắng ⇒
+/// giải mã NÉM và cả trang Ghi chú hỏng. Ánh xạ lại tên ở đây thay vì đổi
+/// backend, vì web đang dùng đúng hai tên `tree`/`recent`.
 struct NotesTree: Codable {
     let subjects: [NoteSubject]
     let recentNotes: [NoteSummary]?
+
+    enum CodingKeys: String, CodingKey {
+        case subjects = "tree"
+        case recentNotes = "recent"
+    }
 }
 
 struct NoteSubject: Codable, Identifiable {
@@ -389,6 +398,19 @@ struct NoteChapter: Codable, Identifiable {
     let title: String
     let sortOrder: Int?
     let notesCount: Int?
+    /// Máy chủ trả sẵn ghi chú của từng chương trong cây — không phải gọi thêm.
+    let notes: [NoteSummary]?
+}
+
+/// `GET /social/saves` KHÔNG trả bài viết, nó trả HÀNG LƯU bọc bài viết bên
+/// trong: `{ savedId, folder, savedAt, post }`. Giải mã thẳng thành
+/// `[SocialPost]` là thiếu khoá `id` ngay phần tử đầu ⇒ tab "Đã lưu" hỏng.
+struct HangDaLuu: Codable, Identifiable {
+    let savedId: Int
+    let folder: String?
+    let savedAt: String?
+    let post: SocialPost
+    var id: Int { savedId }
 }
 
 struct NoteSummary: Codable, Identifiable {
