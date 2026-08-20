@@ -55,12 +55,12 @@ struct AIChatView: View {
             .fileImporter(isPresented: $hienChonTep,
                           allowedContentTypes: HanMucDinhKem.loaiTep,
                           allowsMultipleSelection: true) { napTep($0) }
-            // Đổi xuống bậc nhanh thì bỏ đính kèm — bậc đó không nhận, giữ
-            // lại chỉ làm người dùng tưởng nó vẫn gửi đi.
+            // Đổi xuống bậc nhanh mà đang có đính kèm thì NÓI RA rồi bỏ —
+            // giữ lại chỉ làm người dùng tưởng nó vẫn được gửi đi.
             .onChange(of: vm.bac) { _, b in
                 if !b.nhanTep && !dinhKem.isEmpty {
                     dinhKem = []
-                    vm.loi = "CuongMini3.11 chưa đọc được ảnh và tệp — đã bỏ phần đính kèm. Chọn Pro hoặc Max để gửi kèm."
+                    vm.loi = "CuongMini3.11 chưa đọc được ảnh và tệp nên đã bỏ phần đính kèm."
                 }
             }
         }
@@ -186,9 +186,10 @@ struct AIChatView: View {
             Divider().background(AppColors.divider)
             if !dinhKem.isEmpty { daiDinhKem }
             HStack(alignment: .bottom, spacing: Spacing.sm) {
-                // Ảnh/tệp CHỈ đi được ở bậc Claude — bậc nhanh nhận chuỗi
-                // thuần, đính vào đó là rơi vào hư không mà không báo lỗi.
-                if vm.bac.nhanTep { nutKep }
+                // LUÔN hiện. Ẩn theo bậc thì người dùng mở app ở bậc mặc định
+                // là không thấy nút nào và tưởng app không gửi được ảnh —
+                // đúng thứ đã xảy ra. Đính kèm ở bậc nhanh thì tự nâng bậc.
+                nutKep
                 TextField("Nhắn cho CuongMini…", text: $cauHoi, axis: .vertical)
                     .font(.bodyMedium)
                     .lineLimit(1...6)
@@ -228,28 +229,28 @@ struct AIChatView: View {
 
     private var guiDuoc: Bool { coChu || !dinhKem.isEmpty }
 
+    /// Hai nút RIÊNG, không gộp vào Menu.
+    ///
+    /// ⚠️ `PhotosPicker` KHÔNG lồng được trong `Menu`: nó phải tự trình bày
+    /// sheet của hệ thống, nên đặt trong Menu thì cú chạm bị Menu nuốt và chỉ
+    /// mở được nhánh còn lại. Đã dính đúng lỗi này — bấm `+` luôn ra Tệp.
     private var nutKep: some View {
-        Menu {
-            Button { hienChonTep = true } label: {
-                Label("Tệp (PDF, Word, văn bản)", systemImage: "doc")
-            }
-        } label: {
-            Image(systemName: "plus.circle.fill")
-                .font(.system(size: 28))
-                .foregroundColor(AppColors.textSecondary)
-        } primaryAction: {
-            hienChonTep = true
-        }
-        .overlay(alignment: .center) {
-            // PhotosPicker phải là nút RIÊNG, không lồng trong Menu được:
-            // trình chọn ảnh của hệ thống cần chính nó trình bày sheet.
+        HStack(spacing: 10) {
             PhotosPicker(selection: $anhChon,
                          maxSelectionCount: HanMucDinhKem.soAnh,
                          matching: .images) {
-                Color.clear.frame(width: 28, height: 28)
+                Image(systemName: "photo.on.rectangle.angled")
+                    .font(.system(size: 22))
+                    .foregroundColor(AppColors.textSecondary)
             }
-            .opacity(0.011)
+            Button { hienChonTep = true } label: {
+                Image(systemName: "paperclip")
+                    .font(.system(size: 21))
+                    .foregroundColor(AppColors.textSecondary)
+            }
+            .buttonStyle(.plain)
         }
+        .padding(.bottom, 6)
     }
 
     private var daiDinhKem: some View {
@@ -283,6 +284,16 @@ struct AIChatView: View {
         .frame(maxHeight: 46)
     }
 
+    /// Bậc nhanh không đọc được ảnh/tệp, nên đính kèm là tự nâng lên Pro.
+    ///
+    /// Nâng thay vì chặn: người dùng vừa chọn xong cái ảnh, chặn lại rồi bắt
+    /// họ tự đi tìm bảng chọn bậc là một bước thừa mà họ không đoán ra.
+    private func namBacNeuCan() {
+        guard !vm.bac.nhanTep else { return }
+        vm.bac = .pro
+        vm.loi = "Đã chuyển sang CuongMini Pro — chỉ bậc Pro và Max mới đọc được ảnh và tệp."
+    }
+
     /// Đọc ảnh vừa chọn. `PhotosPickerItem` chỉ giao dữ liệu bất đồng bộ.
     private func napAnh(_ mucs: [PhotosPickerItem]) async {
         for muc in mucs.prefix(HanMucDinhKem.soAnh) {
@@ -290,6 +301,7 @@ struct AIChatView: View {
             // Nén lại: ảnh gốc iPhone ~4MB, mà cả thân yêu cầu bị chặn ở 10MB.
             // `jpegDataForUpload` còn thu nhỏ về 1600px trước khi nén.
             let nen = PlatformImage(data: d)?.jpegDataForUpload() ?? d
+            namBacNeuCan()
             dinhKem.append(DinhKemAI(ten: "ảnh.jpg", mime: "image/jpeg", duLieu: nen))
         }
         anhChon = []
@@ -308,6 +320,7 @@ struct AIChatView: View {
             guard d.count <= HanMucDinhKem.byteMoiTep else {
                 vm.loi = "“\(url.lastPathComponent)” nặng quá 6MB."; continue
             }
+            namBacNeuCan()
             dinhKem.append(DinhKemAI(ten: url.lastPathComponent,
                                      mime: HanMucDinhKem.mime(cho: url),
                                      duLieu: d))
