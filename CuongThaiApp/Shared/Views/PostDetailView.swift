@@ -13,6 +13,7 @@ struct PostDetailView: View {
     @State private var showShareSheet = false
     @State private var activeReport: ReportSheet.Target?
     @State private var showBlockConfirm = false
+    @State private var hienChonCamXuc = false
     @State private var didCopyLink = false
     @Environment(\.dismiss) private var dismiss
     @FocusState private var isCommentFocused: Bool
@@ -73,9 +74,15 @@ struct PostDetailView: View {
         .safeAreaInset(edge: .bottom) {
             commentInputBar
         }
-        .onAppear {
+        .task(id: post.id) {
             viewModel.post = post
             viewModel.isSaved = post.isSaved
+            viewModel.daThich = post.isLiked
+            viewModel.camXucHienTai = post.myReaction
+            // `loadComments()` CHƯA TỪNG được gọi — nên bài ghi "3 bình luận"
+            // mà bên dưới hiện "Chưa có bình luận nào". Hai con số ở hai chỗ,
+            // không ai nối lại.
+            await viewModel.loadComments()
         }
         .sheet(item: $activeReport) { target in
             ReportSheet(target: target)
@@ -417,78 +424,109 @@ struct PostDetailView: View {
         }
     }
 
+    /// Hàng nút dưới bài — ĐÚNG BA nút chia đều, như Facebook.
+    ///
+    /// Bản cũ nhồi 5 mục (Thích/Yêu thích/Haha/Bình luận/Chia sẻ) vào một hàng
+    /// ngang. Trên máy thật chữ vỡ thành "Thí ch", "Yêu thíc h", "Hah a" —
+    /// user chụp lại đúng cảnh đó. Ba nút thì đủ chỗ ở mọi cỡ máy, và các cảm
+    /// xúc còn lại chuyển vào thao tác GIỮ LÂU, giống hệt Facebook.
     private var reactionsSection: some View {
-        VStack(spacing: Spacing.sm) {
-            Divider()
-                .background(AppColors.divider)
+        VStack(spacing: 0) {
+            Divider().background(AppColors.divider)
 
-            // Quick reactions
-            HStack(spacing: Spacing.lg) {
-                reactionButton(emoji: "👍", label: "Thích", count: post.likesCount) {
-                    Task {
-                        await viewModel.toggleLike()
-                    }
+            HStack(spacing: 0) {
+                Button {
+                    Task { await viewModel.toggleLike() }
+                } label: {
+                    nutHanhDong(
+                        bieuTuong: viewModel.camXucHienTai != nil ? nil : "hand.thumbsup",
+                        hinh: hinhCamXuc,
+                        chu: chuCamXuc,
+                        noiBat: viewModel.camXucHienTai != nil || viewModel.daThich,
+                    )
+                }
+                .onLongPressGesture(minimumDuration: 0.35) {
+                    Haptics.cham()
+                    withAnimation(.snappy(duration: 0.2)) { hienChonCamXuc = true }
                 }
 
-                reactionButton(emoji: "❤️", label: "Yêu thích", count: nil) {
-                    Task {
-                        await viewModel.react(type: "LOVE")
-                    }
-                }
-
-                reactionButton(emoji: "😂", label: "Haha", count: nil) {
-                    Task {
-                        await viewModel.react(type: "HAHA")
-                    }
-                }
-
-                reactionButton(emoji: nil, label: "Bình luận", count: nil) {
+                Button {
                     isCommentFocused = true
+                } label: {
+                    nutHanhDong(bieuTuong: "bubble.right", hinh: nil, chu: "Bình luận", noiBat: false)
                 }
 
-                Spacer()
-
-                // ShareLink của hệ thống: người dùng chọn gửi đi đâu bằng
-                // bảng chia sẻ chuẩn của iOS, không phải dựng lại tay.
                 ShareLink(
                     item: URL(string: "https://cuongthai.com/feed/\(post.id)")!,
                     subject: Text(post.author.name),
                     message: Text(post.content.prefix(120)),
                 ) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "square.and.arrow.up")
-                        Text("Chia sẻ")
-                    }
-                    .font(.buttonSmall)
-                    .foregroundColor(AppColors.textSecondary)
+                    nutHanhDong(bieuTuong: "square.and.arrow.up", hinh: nil, chu: "Chia sẻ", noiBat: false)
                 }
             }
-            .padding(.horizontal, Spacing.md)
-            .padding(.vertical, Spacing.sm)
+            .padding(.vertical, 2)
+            .overlay(alignment: .topLeading) {
+                if hienChonCamXuc { bangChonCamXuc }
+            }
+
+            Divider().background(AppColors.divider)
         }
     }
 
-    private func reactionButton(emoji: String?, label: String, count: Int?, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 4) {
-                if let emoji = emoji {
-                    Text(emoji)
-                        .font(.title3)
-                } else {
-                    Image(systemName: label == "Bình luận" ? "bubble.right" : "hand.thumbsup")
-                        .foregroundColor(AppColors.textSecondary)
-                }
-                Text(label)
-                    .font(.buttonSmall)
-                    .foregroundColor(AppColors.textSecondary)
+    /// Một ô nút chiếm đúng 1/3 chiều ngang. `minimumScaleFactor` là lưới đỡ
+    /// cuối: máy hẹp hay cỡ chữ trợ năng lớn thì chữ co lại thay vì xuống dòng.
+    private func nutHanhDong(bieuTuong: String?, hinh: String?, chu: String, noiBat: Bool) -> some View {
+        HStack(spacing: 5) {
+            if let hinh {
+                Text(hinh).font(.system(size: 17))
+            } else if let bieuTuong {
+                Image(systemName: bieuTuong).font(.system(size: 15))
+            }
+            Text(chu)
+                .font(.system(size: 14, weight: noiBat ? .semibold : .regular))
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+        }
+        .foregroundColor(noiBat ? AppColors.primary : AppColors.textSecondary)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 10)
+        .contentShape(Rectangle())
+    }
 
-                if let count = count, count > 0 {
-                    Text("\(count)")
-                        .font(.caption)
-                        .foregroundColor(AppColors.textSecondary)
+    private static let cacCamXuc: [(String, String, String)] = [
+        ("LIKE", "👍", "Thích"), ("LOVE", "❤️", "Yêu thích"), ("HAHA", "😂", "Haha"),
+        ("SAD", "😢", "Buồn"), ("ANGRY", "😡", "Phẫn nộ"),
+    ]
+
+    private var hinhCamXuc: String? {
+        guard let c = viewModel.camXucHienTai else { return viewModel.daThich ? "👍" : nil }
+        return Self.cacCamXuc.first { $0.0 == c }?.1
+    }
+
+    private var chuCamXuc: String {
+        guard let c = viewModel.camXucHienTai else { return "Thích" }
+        return Self.cacCamXuc.first { $0.0 == c }?.2 ?? "Thích"
+    }
+
+    private var bangChonCamXuc: some View {
+        HStack(spacing: Spacing.sm) {
+            ForEach(Self.cacCamXuc, id: \.0) { loai, hinh, _ in
+                Button {
+                    Haptics.xong()
+                    withAnimation(.snappy(duration: 0.2)) { hienChonCamXuc = false }
+                    Task { await viewModel.datCamXuc(loai) }
+                } label: {
+                    Text(hinh).font(.system(size: 30))
                 }
             }
         }
+        .padding(.horizontal, Spacing.md)
+        .padding(.vertical, Spacing.sm)
+        .background(AppColors.backgroundTertiary)
+        .clipShape(Capsule())
+        .shadow(color: .black.opacity(0.3), radius: 12, y: 4)
+        .offset(x: Spacing.sm, y: -54)
+        .transition(.scale(scale: 0.85).combined(with: .opacity))
     }
 
     private var commentsSection: some View {
@@ -640,96 +678,109 @@ struct CommentRow: View {
     let onReply: () -> Void
     let onLike: () -> Void
     var onReport: (() -> Void)? = nil
+    /// Trả lời thì thụt vào, avatar nhỏ hơn — như Facebook.
+    var laTraLoi: Bool = false
 
-    @State private var showReplies = false
+    @State private var daThich: Bool
+    @State private var soThich: Int
+
+    init(comment: Comment, onReply: @escaping () -> Void, onLike: @escaping () -> Void,
+         onReport: (() -> Void)? = nil, laTraLoi: Bool = false) {
+        self.comment = comment
+        self.onReply = onReply
+        self.onLike = onLike
+        self.onReport = onReport
+        self.laTraLoi = laTraLoi
+        _daThich = State(initialValue: comment.isLiked)
+        _soThich = State(initialValue: comment.likesCount)
+    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            HStack(alignment: .top, spacing: Spacing.sm) {
-                NavigationLink(destination: UserProfileView(userId: comment.author.id)) {
-                    UserAvatarView(url: comment.author.avatarUrl, size: 36)
+        HStack(alignment: .top, spacing: Spacing.sm) {
+            NavigationLink(destination: UserProfileView(userId: comment.author.id)) {
+                UserAvatarView(url: comment.author.avatarUrl, size: laTraLoi ? 28 : 34)
+            }
+            .buttonStyle(.plain)
+
+            VStack(alignment: .leading, spacing: 3) {
+                // BONG BÓNG: tên + nội dung trong một khối bo tròn, đúng lối
+                // Facebook/Messenger. Bản cũ đổ tên và nội dung ra thành hai
+                // dòng chữ trần, không có ranh giới nào giữa các bình luận.
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(comment.author.name)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(AppColors.textPrimary)
+                    Text(comment.content)
+                        .font(.system(size: 15))
+                        .foregroundColor(AppColors.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(AppColors.backgroundTertiary)
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
 
-                VStack(alignment: .leading, spacing: 4) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        NavigationLink(destination: UserProfileView(userId: comment.author.id)) {
-                            Text(comment.author.name)
-                                .font(.titleSmall)
-                                .foregroundColor(AppColors.textPrimary)
-                        }
+                // Hàng hành động NGOÀI bong bóng, chữ nhỏ — cũng như Facebook.
+                HStack(spacing: Spacing.md) {
+                    Text(TimeFormatter.formatTimeAgo(comment.createdAt))
 
-                        Text(comment.content)
-                            .font(.bodyMedium)
-                            .foregroundColor(AppColors.textPrimary)
-                            .textSelection(.enabled)
+                    Button {
+                        doiThich()
+                    } label: {
+                        Text(daThich ? "Đã thích" : "Thích")
+                            .fontWeight(daThich ? .bold : .semibold)
+                            .foregroundColor(daThich ? AppColors.primary : AppColors.textSecondary)
                     }
 
-                    HStack(spacing: Spacing.md) {
-                        Text(TimeFormatter.formatTimeAgo(comment.createdAt))
-                            .font(.caption)
-                            .foregroundColor(AppColors.textTertiary)
+                    Button("Trả lời", action: onReply)
+                        .fontWeight(.semibold)
+                        .foregroundColor(AppColors.textSecondary)
 
-                        Button {
-                            onLike()
-                        } label: {
-                            HStack(spacing: 2) {
-                                Image(systemName: comment.isLiked ? "heart.fill" : "heart")
-                                    .font(.caption)
-                                if comment.likesCount > 0 {
-                                    Text("\(comment.likesCount)")
-                                        .font(.caption)
-                                }
+                    if let onReport {
+                        Menu {
+                            Button(role: .destructive, action: onReport) {
+                                Label("Báo cáo bình luận", systemImage: "flag")
                             }
-                            .foregroundColor(comment.isLiked ? AppColors.love : AppColors.textTertiary)
-                        }
-
-                        Button {
-                            onReply()
                         } label: {
-                            Text("Trả lời")
-                                .font(.caption)
+                            Image(systemName: "ellipsis")
                                 .foregroundColor(AppColors.textTertiary)
                         }
+                    }
 
-                        if let onReport {
-                            Menu {
-                                Button(role: .destructive, action: onReport) {
-                                    Label("Báo cáo bình luận", systemImage: "flag")
-                                }
-                            } label: {
-                                Image(systemName: "ellipsis")
-                                    .font(.caption)
-                                    .foregroundColor(AppColors.textTertiary)
-                            }
+                    Spacer(minLength: 0)
+
+                    // Số lượt thích bám vào MÉP PHẢI của bong bóng, như một
+                    // huy hiệu — thay vì nằm lẫn trong hàng chữ.
+                    if soThich > 0 {
+                        HStack(spacing: 3) {
+                            Text("👍").font(.system(size: 11))
+                            Text("\(soThich)")
+                                .font(.system(size: 12))
+                                .foregroundColor(AppColors.textSecondary)
                         }
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(AppColors.backgroundSecondary)
+                        .clipShape(Capsule())
                     }
                 }
-
-                Spacer()
-            }
-
-            // Replies toggle
-            if let repliesCount = comment.repliesCount, repliesCount > 0 {
-                Button {
-                    withAnimation {
-                        showReplies.toggle()
-                    }
-                } label: {
-                    HStack(spacing: 4) {
-                        Rectangle()
-                            .fill(AppColors.divider)
-                            .frame(width: 24, height: 1)
-                        Text(showReplies ? "Ẩn trả lời" : "Xem \(repliesCount) trả lời")
-                            .font(.caption)
-                            .foregroundColor(AppColors.primary)
-                    }
-                }
+                .font(.system(size: 12))
+                .foregroundColor(AppColors.textTertiary)
+                .padding(.leading, 4)
             }
         }
+        .padding(.leading, laTraLoi ? Spacing.xl : 0)
+    }
+
+    private func doiThich() {
+        Haptics.cham()
+        let muon = !daThich
+        daThich = muon
+        soThich += muon ? 1 : -1
+        onLike()
     }
 }
 
-// MARK: - Post Detail View Model
 @MainActor
 class PostDetailViewModel: ObservableObject {
     @Published var post: SocialPost?
@@ -743,6 +794,13 @@ class PostDetailViewModel: ObservableObject {
 
     /// Mirrors `post.isSaved` so the toolbar label flips without a refetch.
     @Published var isSaved = false
+
+    /// Cảm xúc hiện tại của mình với bài này (LIKE/LOVE/HAHA/SAD/ANGRY) và cờ
+    /// đã-thích. Tách khỏi `post` vì `post` là `let` hết, sửa tại chỗ không
+    /// được, mà dựng lại cả đối tượng chỉ để đổi một cờ thì vừa dài vừa dễ
+    /// quên một trường.
+    @Published var camXucHienTai: String?
+    @Published var daThich = false
 
     func toggleSave() async {
         guard let post else { return }
@@ -843,7 +901,24 @@ class PostDetailViewModel: ObservableObject {
         }
     }
 
+    /// Đặt cảm xúc. Đổi trên máy trước cho tay bấm thấy ngay, hỏng thì trả lại.
+    func datCamXuc(_ loai: String) async {
+        let truoc = camXucHienTai
+        let truocThich = daThich
+        camXucHienTai = loai
+        daThich = true
+        do {
+            try await APIClient.shared.send(.reactPost(id: post?.id ?? 0, type: loai))
+        } catch {
+            camXucHienTai = truoc
+            daThich = truocThich
+            Haptics.hong()
+        }
+    }
+
     func toggleLike() async {
+        daThich.toggle()
+        if !daThich { camXucHienTai = nil } else if camXucHienTai == nil { camXucHienTai = "LIKE" }
         guard let postId = post?.id else { return }
 
         // Toggle locally
