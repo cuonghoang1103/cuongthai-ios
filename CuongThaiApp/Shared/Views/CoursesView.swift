@@ -32,6 +32,13 @@ struct CoursesView: View {
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
+                    NavigationLink(destination: NgonNguView()) {
+                        Image(systemName: "globe")
+                            .foregroundColor(AppColors.primary)
+                    }
+                    .accessibilityLabel("Học ngoại ngữ")
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
                     NavigationLink(destination: MyCoursesView()) {
                         Image(systemName: "book.closed")
                             .foregroundColor(AppColors.textPrimary)

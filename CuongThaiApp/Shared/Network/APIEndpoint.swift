@@ -209,6 +209,19 @@ enum APIEndpoint {
     case getUnreadMessageCount
     /// Danh sách STUN/TURN kèm khoá tạm 10 phút cho một cuộc gọi.
     case mayChuIce
+
+    // ── My Language ─────────────────────────────────────────────
+    case dsNgonNgu
+    case chuDeTu(code: String)
+    case tuVung(code: String, categoryId: Int?, page: Int, limit: Int)
+    case hangDoiOnTap(code: String)
+    /// `quality` 0-5 theo thang SM-2. `nil` = chỉ đổi trạng thái, không chấm.
+    case ghiTienDo(itemId: Int, quality: Int?)
+    case ghiKetQuaQuiz(languageId: Int, categoryId: Int?, score: Int, total: Int)
+    case thongKeNgonNgu(code: String)
+    case dsYeuThich(code: String)
+    case idYeuThich(code: String)
+    case doiYeuThich(wordId: Int)
     /// PATCH — `nil` = đánh dấu đã đọc TẤT CẢ, hoặc truyền danh sách id.
     case markNotificationsRead(ids: [Int]?)
     /// Lấy một bài viết theo id, để bấm thông báo là mở đúng bài.
@@ -356,6 +369,17 @@ enum APIEndpoint {
         case .getNotifications: return "/api/v1/social/notifications"
         case .getUnreadMessageCount: return "/api/v1/messages/unread-count"
         case .mayChuIce: return "/api/v1/messages/ice-servers"
+
+        case .dsNgonNgu: return "/api/v1/my-language/"
+        case .chuDeTu(let c): return "/api/v1/my-language/\(c)/vocab/categories"
+        case .tuVung(let c, _, _, _): return "/api/v1/my-language/\(c)/vocab"
+        case .hangDoiOnTap: return "/api/v1/my-language/review-queue"
+        case .ghiTienDo: return "/api/v1/my-language/progress"
+        case .ghiKetQuaQuiz: return "/api/v1/my-language/quiz-result"
+        case .thongKeNgonNgu: return "/api/v1/my-language/stats"
+        case .dsYeuThich(let c): return "/api/v1/my-language/favorites/\(c)"
+        case .idYeuThich(let c): return "/api/v1/my-language/favorites/\(c)/ids"
+        case .doiYeuThich: return "/api/v1/my-language/favorites/toggle"
         case .markNotificationsRead: return "/api/v1/social/notifications"
         case .getPost(let id): return "/api/v1/social/posts/\(id)"
         }
@@ -363,7 +387,8 @@ enum APIEndpoint {
 
     var method: String {
         switch self {
-        case .login, .register, .oauthToken, .changePassword, .refreshToken,
+        case .ghiTienDo, .ghiKetQuaQuiz, .doiYeuThich,
+             .login, .register, .oauthToken, .changePassword, .refreshToken,
              .createPost, .likePost, .followUser, .unfollowUser,
              .createComment, .likeComment, .savePost, .sendMessage, .sendMessageWithFiles, .enrollCourse,
              .sendMessageMedia, .toggleMessageReaction, .recallMessage,
@@ -397,6 +422,18 @@ enum APIEndpoint {
             var m: [String: Any] = ["username": u, "password": p]
             if let t = c { m["cf-turnstile-response"] = t }
             return m
+        case .ghiTienDo(let id, let q):
+            var m: [String: Any] = ["itemType": "VOCAB", "itemId": id]
+            // Không chấm điểm thì máy chủ đi nhánh "đổi trạng thái" và
+            // KHÔNG đụng vào lịch ôn — dùng cho việc chỉ đánh dấu đã xem.
+            if let q { m["quality"] = q } else { m["status"] = "LEARNING" }
+            return m
+        case .ghiKetQuaQuiz(let lid, let cid, let s, let t):
+            var m: [String: Any] = ["languageId": lid, "score": s, "total": t]
+            if let cid { m["categoryId"] = cid }
+            return m
+        case .doiYeuThich(let w):
+            return ["wordId": w]
         case .register(let u, let e, let p, let f, let c):
             var m: [String: Any] = ["username": u, "email": e, "password": p]
             if let name = f { m["fullName"] = name }
@@ -592,6 +629,15 @@ enum APIEndpoint {
             return m
         case .searchUsers(let q):
             return ["q": q, "limit": 20]
+        case .tuVung(_, let cat, let p, let l):
+            var m: [String: Any] = ["page": p, "limit": l]
+            // ⚠️ KHÔNG có `level` ở đây. Đo thật: `?level=N5` trên /vocab
+            // trả về ĐỦ 7.209 từ, tức là nó bị bỏ qua chứ không lọc. Lọc
+            // theo cấp phải làm bằng cách chọn chủ đề thuộc cấp đó.
+            if let cat { m["categoryId"] = cat }
+            return m
+        case .hangDoiOnTap(let c), .thongKeNgonNgu(let c):
+            return ["languageCode": c]
         default: return nil
         }
     }

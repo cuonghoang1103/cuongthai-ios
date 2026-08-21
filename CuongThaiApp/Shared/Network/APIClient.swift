@@ -88,7 +88,7 @@ actor APIClient {
             return (
                 envelope.data ?? [],
                 envelope.pagination?.nextCursor,
-                envelope.pagination?.hasNextPage ?? false
+                conNua(envelope.pagination)
             )
         } catch let error as APIError {
             throw error
@@ -96,6 +96,21 @@ actor APIClient {
             Self.ghiLoiGiaiMa(error, duong: endpoint.path)
             throw APIError.decodingError(error)
         }
+    }
+
+    /// Còn trang sau không.
+    ///
+    /// ⚠️ Backend dùng HAI bộ tên: feed/bình luận trả `hasNextPage`, còn
+    /// khoá học và My Language trả `page`/`totalPages` và **không có**
+    /// `hasNextPage`. Bản cũ chỉ đọc `hasNextPage ?? false`, nên với nhóm
+    /// thứ hai nó LUÔN trả `false` — danh sách im lặng dừng ở trang đầu.
+    /// Với `/my-language/:code/vocab` (limit 50) thì mỗi chủ đề chỉ hiện 50
+    /// từ đầu trong khi có tới 220, và không có lỗi nào để thấy.
+    private func conNua(_ p: BackendPagination?) -> Bool {
+        guard let p else { return false }
+        if let co = p.hasNextPage { return co }
+        if let trang = p.page, let tong = p.totalPages { return trang < tong }
+        return false
     }
 
     // MARK: - Send (envelope carries no `data` — report, block, change-password…)
