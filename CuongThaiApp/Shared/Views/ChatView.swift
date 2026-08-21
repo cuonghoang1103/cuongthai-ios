@@ -42,12 +42,15 @@ struct ChatView: View {
     @StateObject private var viTri = DoViTri()
     @ObservedObject private var realtime = RealtimeClient.shared
     @FocusState private var isInputFocused: Bool
+    /// Nút quay lại tự vẽ — thanh hệ thống đã ẩn nên không còn nút của nó.
+    @Environment(\.dismiss) private var dismiss
 
     /// Hội thoại đang dùng để hiển thị: bản đã sửa nếu có, không thì bản gốc.
     private var hoiThoai: MessageThread { hoiThoaiSua ?? thread }
 
     var body: some View {
         VStack(spacing: 0) {
+            thanhDau
             if dangTimKiem { thanhTimKiem }
             messagesList
                 .background(
@@ -61,88 +64,18 @@ struct ChatView: View {
         .modifier(LopPhuGiuTin(tinDangGiu: $tinDangGiu, viewModel: viewModel,
                                hanhDong: hanhDongCho))
         .background(AppColors.backgroundPrimary)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            // ⚠️ `.principal` LUÔN căn giữa — không có cách nào bảo nó dán
-            // trái. Messenger đặt avatar + tên ngay sau nút quay lại, nên phải
-            // dùng `.navigationBarLeading`.
-            ToolbarItem(placement: .navigationBarLeading) {
-                chatHeader
-            }
-
-            ToolbarItem(placement: .navigationBarTrailing) {
-                // Gọi thoại BẬT từ 21/08/2026 — backend đã có kênh báo hiệu
-                // (`call.socket.ts`) và TURN riêng trên VPS. Gọi VIDEO thì vẫn
-                // chưa: chưa có nút, vì nút không ăn là thứ App Store đánh rớt
-                // theo 2.1.
-                //
-                // Chỉ hội thoại RIÊNG mới gọi được. Hội thoại `ADMIN` là kênh
-                // hỗ trợ, không có "người kia" cố định để gọi.
-                if hoiThoai.type == "USER", let ban = hoiThoai.peer {
-                    Button {
-                        BoGoi.shared.batDauGoi(
-                            threadId: hoiThoai.id,
-                            toUserId: ban.id,
-                            ten: hoiThoai.displayName,
-                            anh: hoiThoai.avatarUrl,
-                        )
-                    } label: {
-                        Image(systemName: "phone.fill")
-                            .foregroundColor(AppColors.primary)
-                    }
-                    .accessibilityLabel("Gọi thoại cho \(hoiThoai.displayName)")
-                }
-            }
-
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Menu {
-                    Button {
-                        withAnimation { dangTimKiem.toggle() }
-                        if !dangTimKiem { tuKhoa = "" }
-                    } label: {
-                        Label(dangTimKiem ? "Đóng tìm kiếm" : "Tìm trong hội thoại",
-                              systemImage: "magnifyingglass")
-                    }
-
-                    Button {
-                        hienChonNen = true
-                    } label: {
-                        Label("Đổi hình nền", systemImage: "photo.on.rectangle.angled")
-                    }
-
-                    Button {
-                        bietDanhMoi = hoiThoai.bietDanh ?? ""
-                        hienDatBietDanh = true
-                    } label: {
-                        Label(hoiThoai.bietDanh == nil ? "Đặt biệt danh" : "Đổi biệt danh",
-                              systemImage: "textformat.abc")
-                    }
-
-                    Divider()
-
-                    Menu {
-                        Button("15 phút") { Task { await tatThongBao(15) } }
-                        Button("1 giờ") { Task { await tatThongBao(60) } }
-                        Button("8 giờ") { Task { await tatThongBao(480) } }
-                        Button("1 ngày") { Task { await tatThongBao(1440) } }
-                        Button("Cho tới khi bật lại") { Task { await tatThongBao(nil) } }
-                        Divider()
-                        Button("Bật lại thông báo") { Task { await tatThongBao(0) } }
-                    } label: {
-                        Label("Tắt thông báo", systemImage: "bell.slash")
-                    }
-
-                    Button(role: .destructive) {
-                        Task { await baoCaoHoiThoai() }
-                    } label: {
-                        Label("Báo cáo hội thoại", systemImage: "flag")
-                    }
-                } label: {
-                    Image(systemName: "ellipsis")
-                        .foregroundColor(AppColors.textPrimary)
-                }
-            }
-        }
+        // Thanh đầu TỰ VẼ, không dùng `.toolbar`.
+        //
+        // ⚠️ iOS 26 đổi thanh điều hướng sang kiểu kính và **bọc MỖI mục
+        // trong một viên nang riêng**. Nút quay lại một viên, avatar+tên một
+        // viên, hai nút phải một viên — nhìn thành ba cục xám rời rạc, tên
+        // người bị bóp cụt vì vùng bên trái có bề ngang giới hạn, và tin nhắn
+        // lộ qua nền trong suốt. Đo thật trên iPhone 16 Pro Max / iOS 27.
+        //
+        // Messenger đặt tất cả trong MỘT hàng liền. Muốn vậy thì phải bỏ hẳn
+        // thanh hệ thống — không có tham số nào bảo nó đừng bọc viên nang.
+        .navigationBarBackButtonHidden(true)
+        .toolbar(.hidden, for: .navigationBar)
         .sheet(isPresented: $showUserProfile) {
             if let userId = thread.peer?.id {
                 UserProfileView(userId: userId)
@@ -250,35 +183,138 @@ struct ChatView: View {
         withAnimation { showAttachmentOptions = false }
     }
 
-    private var chatHeader: some View {
-        Button {
-            showUserProfile = true
-        } label: {
-            HStack(spacing: Spacing.sm) {
-                UserAvatarView(url: hoiThoai.avatarUrl, size: 36)
-
-                VStack(alignment: .leading, spacing: 0) {
-                    Text(hoiThoai.displayName)
-                        .font(.titleSmall)
-                        .foregroundColor(AppColors.textPrimary)
-
-                    // Trước đây dòng này ghi cứng "Đang hoạt động" cho mọi
-                    // người, kể cả người đã offline hàng tháng — một lời nói
-                    // dối nhỏ mà người dùng phát hiện ngay.
-                    Text(dongTrangThai)
-                        .font(.caption)
-                        .foregroundColor(mauTrangThai)
-                }
-                // Tên dài phải CẮT chứ không được đẩy — ở mép trái nó sẽ lấn
-                // sang chỗ nút ••• bên phải và đè lên nhau.
-                .lineLimit(1)
+    // ── Thanh đầu ───────────────────────────────────────────────
+    //
+    // Một hàng: quay lại · avatar · tên + trạng thái · gọi · menu.
+    // Đúng thứ tự của Messenger, và quan trọng hơn là đúng MỘT khung.
+    private var thanhDau: some View {
+        HStack(spacing: Spacing.sm) {
+            Button {
+                dismiss()
+            } label: {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(AppColors.primary)
+                    // Vùng chạm 44pt theo hướng dẫn của Apple — mũi tên vẽ ra
+                    // chỉ rộng ~12pt, để trần thì rất hay bấm trượt.
+                    .frame(width: 32, height: 44)
+                    .contentShape(Rectangle())
             }
-            .frame(maxWidth: 220, alignment: .leading)
+            .accessibilityLabel("Quay lại")
+
+            Button {
+                showUserProfile = true
+            } label: {
+                HStack(spacing: Spacing.sm) {
+                    UserAvatarView(url: hoiThoai.avatarUrl, size: 38)
+
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(hoiThoai.displayName)
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundColor(AppColors.textPrimary)
+                            .lineLimit(1)
+
+                        // Trước đây dòng này ghi cứng "Đang hoạt động" cho mọi
+                        // người, kể cả người đã offline hàng tháng — một lời
+                        // nói dối nhỏ mà người dùng phát hiện ngay.
+                        Text(dongTrangThai)
+                            .font(.system(size: 12))
+                            .foregroundColor(AppColors.textSecondary)
+                            .lineLimit(1)
+                    }
+                    // Tên dài phải CO LẠI chứ không được đẩy hai nút phải ra
+                    // ngoài màn hình.
+                    .layoutPriority(-1)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            // Chỉ hội thoại RIÊNG mới gọi được. `ADMIN` là kênh hỗ trợ, không
+            // có "người kia" cố định để gọi.
+            //
+            // Gọi VIDEO chưa có nút: nút không ăn là thứ App Store đánh rớt
+            // theo 2.1.
+            if hoiThoai.type == "USER", let ban = hoiThoai.peer {
+                Button {
+                    BoGoi.shared.batDauGoi(
+                        threadId: hoiThoai.id,
+                        toUserId: ban.id,
+                        ten: hoiThoai.displayName,
+                        anh: hoiThoai.avatarUrl,
+                    )
+                } label: {
+                    Image(systemName: "phone.fill")
+                        .font(.system(size: 19))
+                        .foregroundColor(AppColors.primary)
+                        .frame(width: 38, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .accessibilityLabel("Gọi thoại cho \(hoiThoai.displayName)")
+            }
+
+            Menu {
+            Button {
+                withAnimation { dangTimKiem.toggle() }
+                if !dangTimKiem { tuKhoa = "" }
+            } label: {
+                Label(dangTimKiem ? "Đóng tìm kiếm" : "Tìm trong hội thoại",
+                      systemImage: "magnifyingglass")
+            }
+
+            Button {
+                hienChonNen = true
+            } label: {
+                Label("Đổi hình nền", systemImage: "photo.on.rectangle.angled")
+            }
+
+            Button {
+                bietDanhMoi = hoiThoai.bietDanh ?? ""
+                hienDatBietDanh = true
+            } label: {
+                Label(hoiThoai.bietDanh == nil ? "Đặt biệt danh" : "Đổi biệt danh",
+                      systemImage: "textformat.abc")
+            }
+
+            Divider()
+
+            Menu {
+                Button("15 phút") { Task { await tatThongBao(15) } }
+                Button("1 giờ") { Task { await tatThongBao(60) } }
+                Button("8 giờ") { Task { await tatThongBao(480) } }
+                Button("1 ngày") { Task { await tatThongBao(1440) } }
+                Button("Cho tới khi bật lại") { Task { await tatThongBao(nil) } }
+                Divider()
+                Button("Bật lại thông báo") { Task { await tatThongBao(0) } }
+            } label: {
+                Label("Tắt thông báo", systemImage: "bell.slash")
+            }
+
+            Button(role: .destructive) {
+                Task { await baoCaoHoiThoai() }
+            } label: {
+                Label("Báo cáo hội thoại", systemImage: "flag")
+            }
+            } label: {
+                Image(systemName: "ellipsis")
+                    .font(.system(size: 19))
+                    .foregroundColor(AppColors.textPrimary)
+                    .frame(width: 32, height: 44)
+                    .contentShape(Rectangle())
+            }
+            .accessibilityLabel("Tuỳ chọn hội thoại")
         }
-        .buttonStyle(.plain)
+        .padding(.horizontal, Spacing.md)
+        .frame(height: 52)
+        // Nền ĐẶC. Bỏ thanh hệ thống rồi thì không còn lớp mờ nào của nó nữa —
+        // để trong suốt là tin nhắn cuộn lên nằm đè lên tên người.
+        .background(AppColors.backgroundSecondary)
+        .overlay(alignment: .bottom) {
+            Rectangle().fill(AppColors.divider).frame(height: 0.5)
+        }
     }
 
-    /// Người bên kia có đang gõ không.
     private var doiPhuongDangGo: Bool {
         guard let tap = realtime.dangGo[thread.id] else { return false }
         return tap.contains { $0 != AppState.shared.currentUser?.id }
