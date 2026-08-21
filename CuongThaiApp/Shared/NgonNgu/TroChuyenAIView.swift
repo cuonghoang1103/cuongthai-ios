@@ -17,7 +17,9 @@ final class TroChuyenAI: ObservableObject {
     @Published var dangCho = false
     @Published var loi: String?
     @Published var canPro = false
-    @Published var ranhTay = true
+    /// Vừa thả nút mà không ra chữ nào. Phải nói ra, không thì người dùng
+    /// thả tay xong thấy KHÔNG CÓ GÌ xảy ra và tưởng app hỏng.
+    @Published var chuaNgheRa = false
 
     let ngonNgu: NgonNgu
     let canhHuong: String
@@ -29,7 +31,13 @@ final class TroChuyenAI: ObservableObject {
         self.ngonNgu = ngonNgu
         self.canhHuong = canhHuong
         nghe.khiXongCau = { [weak self] chu in
-            Task { @MainActor in await self?.guiCau(chu) }
+            Task { @MainActor in
+                self?.chuaNgheRa = false
+                await self?.guiCau(chu)
+            }
+        }
+        nghe.khiRong = { [weak self] in
+            Task { @MainActor in self?.chuaNgheRa = true }
         }
     }
 
@@ -101,10 +109,12 @@ final class TroChuyenAI: ObservableObject {
         }
     }
 
-    func ngheTiep() {
-        guard ranhTay, !canPro else { return }
-        nghe.batDau(code: ngonNgu.code)
-    }
+    /// KHÔNG tự bật mic nữa. Người dùng giữ nút thì mới nghe.
+    ///
+    /// Bản trước tự bật lại sau mỗi câu AI nói, kèm đồng hồ tự cắt — và cái
+    /// đồng hồ đó cắt trước khi người ta kịp mở miệng. Tự bật mic còn một
+    /// cái dở nữa: người dùng không biết lúc nào máy đang nghe mình.
+    func ngheTiep() { }
 
     func dungHet() {
         nghe.dung()
@@ -383,24 +393,12 @@ struct TroChuyenAIView: View {
                     .foregroundColor(AppColors.textPrimary)
                 Text(vm.nghe.dangNghe ? "Đang nghe bạn nói…"
                      : doc.dangDoc != nil ? "AI đang nói…"
-                     : vm.dangCho ? "AI đang nghĩ…" : "Tạm dừng")
+                     : vm.dangCho ? "AI đang nghĩ…" : "Giữ nút mic để nói")
                     .font(.system(size: 11))
                     .foregroundColor(vm.nghe.dangNghe ? AppColors.success : AppColors.textSecondary)
             }
             Spacer()
 
-            // Tắt rảnh tay = dừng vòng lặp, chỉ nói khi bấm giữ.
-            Button {
-                vm.ranhTay.toggle()
-                if vm.ranhTay { vm.ngheTiep() } else { vm.nghe.dung() }
-                Haptics.cham()
-            } label: {
-                Image(systemName: vm.ranhTay ? "infinity.circle.fill" : "infinity.circle")
-                    .font(.system(size: 21))
-                    .foregroundColor(vm.ranhTay ? AppColors.primary : AppColors.textTertiary)
-                    .frame(width: 38, height: 38).contentShape(Rectangle())
-            }
-            .accessibilityLabel(vm.ranhTay ? "Tắt chế độ rảnh tay" : "Bật chế độ rảnh tay")
         }
         .padding(.horizontal, Spacing.sm)
         .frame(height: 50)
@@ -417,40 +415,61 @@ struct TroChuyenAIView: View {
                     .padding(.horizontal, Spacing.md)
             }
 
+            if vm.chuaNgheRa {
+                Text("Chưa nghe ra chữ nào. Giữ nút LÂU HƠN một chút rồi hãy nói, "
+                   + "và nói to hơn bình thường một chút.")
+                    .font(.system(size: 12))
+                    .foregroundColor(AppColors.warning)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, Spacing.md)
+            }
+
             if let l = vm.loi ?? vm.nghe.loi {
                 Text(l).font(.system(size: 12)).foregroundColor(AppColors.error)
                     .padding(.horizontal, Spacing.md)
             }
 
-            Button {
+            // GIỮ để nói, THẢ để gửi.
+            //
+            // `DragGesture(minimumDistance: 0)` chứ không phải `Button` hay
+            // `onLongPressGesture`: cả hai cái kia chỉ báo khi cử chỉ ĐÃ
+            // xong, còn ở đây cần biết đúng lúc ngón tay CHẠM XUỐNG và đúng
+            // lúc NHẤC LÊN.
+            ZStack {
                 if vm.nghe.dangNghe {
-                    vm.nghe.chotNgay()          // gửi ngay, khỏi đợi 1,4 giây
-                } else {
-                    doc.dung()                  // cắt lời AI để nói xen vào
-                    vm.ngheTiep()
+                    Circle().stroke(AppColors.success.opacity(0.35), lineWidth: 3)
+                        .frame(width: 88, height: 88)
+                        .scaleEffect(song > 0.5 ? 1.16 : 1)
                 }
-                Haptics.cham()
-            } label: {
-                ZStack {
-                    if vm.nghe.dangNghe {
-                        Circle().stroke(AppColors.success.opacity(0.35), lineWidth: 3)
-                            .frame(width: 84, height: 84)
-                            .scaleEffect(song > 0.5 ? 1.15 : 1)
-                    }
-                    Image(systemName: vm.nghe.dangNghe ? "waveform" : "mic.fill")
-                        .font(.system(size: 25))
-                        .foregroundColor(.white)
-                        .frame(width: 68, height: 68)
-                        .background(Circle().fill(vm.nghe.dangNghe
-                                                  ? AppColors.success : AppColors.primary))
-                }
+                Image(systemName: vm.nghe.dangNghe ? "waveform" : "mic.fill")
+                    .font(.system(size: 26))
+                    .foregroundColor(.white)
+                    .frame(width: 72, height: 72)
+                    .background(Circle().fill(vm.nghe.dangNghe
+                                              ? AppColors.success : AppColors.primary))
+                    .scaleEffect(vm.nghe.dangNghe ? 1.06 : 1)
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel(vm.nghe.dangNghe ? "Gửi ngay câu vừa nói" : "Bắt đầu nói")
+            .contentShape(Circle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in
+                        guard !vm.nghe.dangNghe, !vm.dangCho else { return }
+                        doc.dung()              // cắt lời AI để nói xen vào
+                        vm.nghe.batDau(code: ngonNgu.code)
+                        Haptics.cham()
+                    }
+                    .onEnded { _ in
+                        guard vm.nghe.dangNghe else { return }
+                        vm.nghe.chotNgay()
+                        Haptics.cham()
+                    }
+            )
+            .animation(.easeOut(duration: 0.15), value: vm.nghe.dangNghe)
+            .accessibilityLabel("Giữ để nói, thả để gửi")
 
             Text(vm.nghe.dangNghe
-                 ? "Nói xong cứ im — tôi tự gửi. Hoặc bấm để gửi ngay."
-                 : "Bấm để nói. AI sẽ trả lời và sửa lỗi cho bạn.")
+                 ? "Đang nghe… thả tay ra là gửi"
+                 : "GIỮ nút và nói. Thả ra là gửi cho AI.")
                 .font(.system(size: 11))
                 .foregroundColor(AppColors.textTertiary)
                 .multilineTextAlignment(.center)
