@@ -32,6 +32,10 @@
         <string>UIInterfaceOrientationLandscapeRight</string>
     </array>
     <key>NSCameraUsageDescription</key><string>CuongThai cần camera để bạn chụp ảnh hoặc quay video đăng lên bảng tin và đổi ảnh đại diện.</string>
+    <!-- Nhận giọng nói CHẠY TRÊN MÁY cho phần luyện nói với AI. Không có
+         khoá này thì `SFSpeechRecognizer` trả lỗi quyền và màn luyện nói
+         câm hoàn toàn — app vẫn chạy, chỉ là không nghe được gì. -->
+    <key>NSSpeechRecognitionUsageDescription</key><string>CuongThai chuyển lời bạn nói thành chữ để luyện hội thoại với gia sư AI. Việc này xử lý ngay trên máy.</string>
     <key>NSMicrophoneUsageDescription</key><string>CuongThai cần micro để bạn gọi thoại với bạn bè, ghi tin nhắn thoại và ghi âm khi quay video.</string>
     <!-- Cuộc gọi phải tiếp tục khi người dùng chuyển sang app khác hoặc khoá
          máy. Thiếu `audio` thì iOS treo tiến trình sau vài giây và cuộc gọi

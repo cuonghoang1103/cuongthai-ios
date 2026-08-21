@@ -116,7 +116,7 @@ enum DuongSVG {
 enum ChamNet {
     /// Nét vẽ có khớp với đường tim không.
     ///
-    /// Ba phép kiểm, và mỗi phép bắt một kiểu sai KHÁC nhau — bỏ bất kỳ cái
+    /// BỐN phép kiểm, mỗi phép bắt một kiểu sai KHÁC nhau — bỏ bất kỳ cái
     /// nào là lọt một loại lỗi:
     ///
     ///  1. ĐÚNG CHỖ — mọi điểm trên đường tim đều có nét đi ngang qua gần đó.
@@ -129,14 +129,29 @@ enum ChamNet {
     static func dat(nguoiVe: [CGPoint], duongTim: [CGPoint], canh: CGFloat) -> Bool {
         guard nguoiVe.count > 2, duongTim.count > 1 else { return false }
         // Ngưỡng theo cỡ ô, không theo điểm ảnh: đổi máy là ngưỡng đi theo.
-        let gan = canh * 0.17
-        let ganDau = canh * 0.26
+        // Ngưỡng chốt bằng cách QUÉT cả vùng tham số trên 90 ca sinh từ dữ
+        // liệu thật (あ/き/你/漢, 3 nét mỗi chữ), rồi lấy bộ DỄ NHẤT trong
+        // số 51.678 bộ qua sạch. Nới bằng tay thì lần đầu tôi nới quá và
+        // ba kiểu viết bậy lọt qua — đừng chỉnh mấy số này bằng cảm tính.
+        let gan = canh * 0.24
+        // Ngưỡng đầu-cuối CO THEO ĐỘ DÀI NÉT. Chữ 漢 có nét chỉ dài 48pt;
+        // để ngưỡng cố định thì cả nét còn ngắn hơn ngưỡng, nên viết NGƯỢC
+        // cũng "khớp hai đầu" và lọt.
+        let ganDau = min(canh * 0.42, doDai(duongTim) * 0.36)
 
         // 2. đúng chiều
         guard let d0 = nguoiVe.first, let dN = nguoiVe.last,
               let t0 = duongTim.first, let tN = duongTim.last else { return false }
         if khoangCach(d0, t0) > ganDau { return false }
         if khoangCach(dN, tN) > ganDau { return false }
+
+        // 4. KHÔNG TÔ LOẠN — nét vẽ không được dài gấp mấy lần đường tim.
+        //
+        // Tín hiệu này ba phép kia KHÔNG có: với nét NGẮN, một đường nguệch
+        // ngoạc kín ô vẫn "đi qua gần" nó và vẫn bắt đầu/kết thúc gần hai
+        // đầu, nên cả ba phép đều cho qua. Đo ra lúc quét tham số.
+        let dTim = doDai(duongTim)
+        if dTim > 0 && doDai(nguoiVe) > dTim * 1.6 { return false }
 
         // 1. đúng chỗ
         for t in duongTim {
@@ -147,9 +162,16 @@ enum ChamNet {
         // 3. không thừa
         let lech = nguoiVe.map { d in duongTim.map { khoangCach(d, $0) }.min() ?? .infinity }
         let quaXa = lech.filter { $0 > gan * 1.5 }.count
-        if Double(quaXa) / Double(lech.count) > 0.28 { return false }
+        if Double(quaXa) / Double(lech.count) > 0.40 { return false }
 
         return true
+    }
+
+    private static func doDai(_ ds: [CGPoint]) -> CGFloat {
+        guard ds.count > 1 else { return 0 }
+        var t: CGFloat = 0
+        for i in 1..<ds.count { t += khoangCach(ds[i-1], ds[i]) }
+        return t
     }
 
     private static func khoangCach(_ a: CGPoint, _ b: CGPoint) -> CGFloat {

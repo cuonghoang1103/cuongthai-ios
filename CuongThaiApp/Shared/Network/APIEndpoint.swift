@@ -230,6 +230,9 @@ enum APIEndpoint {
     /// `sangTiengNuocNgoai` = true nghĩa là Việt → ngôn ngữ đó.
     case aiDich(code: String, chu: String, sangTiengNuocNgoai: Bool)
     case aiKiemNguPhap(code: String, chu: String)
+    /// Một lượt hội thoại. Máy chủ KHÔNG nhớ hộ — lịch sử phải gửi kèm mỗi
+    /// lần, đúng khuôn của AI Chat.
+    case aiNoiChuyen(code: String, canhHuong: String, lichSu: [[String: String]], chu: String)
     /// PATCH — `nil` = đánh dấu đã đọc TẤT CẢ, hoặc truyền danh sách id.
     case markNotificationsRead(ids: [Int]?)
     /// Lấy một bài viết theo id, để bấm thông báo là mở đúng bài.
@@ -395,6 +398,7 @@ enum APIEndpoint {
         case .hoiDap(let c, _, _): return "/api/v1/my-language/\(c)/qna"
         case .aiDich: return "/api/v1/my-language/ai/translate"
         case .aiKiemNguPhap: return "/api/v1/my-language/ai/grammar-check"
+        case .aiNoiChuyen: return "/api/v1/my-language/ai/roleplay"
         case .markNotificationsRead: return "/api/v1/social/notifications"
         case .getPost(let id): return "/api/v1/social/posts/\(id)"
         }
@@ -402,7 +406,7 @@ enum APIEndpoint {
 
     var method: String {
         switch self {
-        case .ghiTienDo, .ghiKetQuaQuiz, .doiYeuThich, .aiDich, .aiKiemNguPhap,
+        case .ghiTienDo, .ghiKetQuaQuiz, .doiYeuThich, .aiDich, .aiKiemNguPhap, .aiNoiChuyen,
              .login, .register, .oauthToken, .changePassword, .refreshToken,
              .createPost, .likePost, .followUser, .unfollowUser,
              .createComment, .likeComment, .savePost, .sendMessage, .sendMessageWithFiles, .enrollCourse,
@@ -451,6 +455,8 @@ enum APIEndpoint {
             return ["languageCode": c, "text": chu, "direction": sang ? "to" : "from"]
         case .aiKiemNguPhap(let c, let chu):
             return ["languageCode": c, "text": chu]
+        case .aiNoiChuyen(let c, let ch, let ls, let chu):
+            return ["languageCode": c, "scenario": ch, "history": ls, "message": chu]
         case .doiYeuThich(let w):
             return ["wordId": w]
         case .register(let u, let e, let p, let f, let c):

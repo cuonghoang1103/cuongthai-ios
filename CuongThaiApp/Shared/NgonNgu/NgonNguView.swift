@@ -161,6 +161,9 @@ struct NgonNguHomeView: View {
                     HoiDapView(ngonNgu: ngonNgu)
                 }
             }
+            oMuc("Luyện nói với AI", "mic.circle.fill", 0xE5484D, nil) {
+                ChonChuDeNoiView(ngonNgu: ngonNgu)
+            }
             oMuc("Dịch", "character.book.closed.fill", 0x8C5AF0, nil) {
                 DichView(ngonNgu: ngonNgu)
             }

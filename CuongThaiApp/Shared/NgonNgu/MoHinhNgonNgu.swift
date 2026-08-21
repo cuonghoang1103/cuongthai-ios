@@ -284,3 +284,54 @@ struct KetQuaKiemNguPhap: Codable {
         }
     }
 }
+
+// ── Trò chuyện với AI ───────────────────────────────────────────
+
+struct LuotRolePlay: Codable {
+    /// Câu AI nói, bằng ngôn ngữ đang học.
+    let reply: String?
+    /// Nghĩa tiếng Việt của câu đó.
+    let translation: String?
+    /// Sửa lỗi câu VỪA RỒI của người học. Rỗng nghĩa là không có gì để sửa.
+    let correction: String?
+}
+
+struct LoiNoi: Identifiable, Hashable {
+    let id = UUID()
+    let cuaToi: Bool
+    let chu: String
+    var nghia: String?
+    /// Lời sửa gắn kèm câu của người học, hiện ngay dưới bong bóng đó.
+    var sua: String?
+}
+
+/// Chủ đề gợi ý. Máy chủ nhận `scenario` là chuỗi tự do nên tự tạo chủ đề
+/// cũng chạy được — danh sách này chỉ để người dùng khỏi phải nghĩ.
+struct ChuDeNoi: Identifiable, Hashable {
+    let id = UUID()
+    let icon: String
+    let ten: String
+    let canhHuong: String
+
+    static func goiY(_ code: String) -> [ChuDeNoi] {
+        let ten = code == "ja" ? "tiếng Nhật" : code == "zh" ? "tiếng Trung" : "tiếng Anh"
+        return [
+            .init(icon: "☕️", ten: "Gọi món ở quán",
+                  canhHuong: "Bạn là nhân viên quán cà phê, tôi là khách vào gọi món. Nói \(ten) tự nhiên, câu ngắn."),
+            .init(icon: "🧭", ten: "Hỏi đường",
+                  canhHuong: "Bạn là người địa phương, tôi là khách du lịch đang lạc đường và hỏi thăm."),
+            .init(icon: "🤝", ten: "Làm quen",
+                  canhHuong: "Chúng ta vừa gặp nhau lần đầu ở một buổi gặp mặt. Hỏi han làm quen."),
+            .init(icon: "💼", ten: "Phỏng vấn xin việc",
+                  canhHuong: "Bạn là nhà tuyển dụng, tôi là ứng viên. Hỏi tôi về kinh nghiệm và kỹ năng."),
+            .init(icon: "🏥", ten: "Đi khám bệnh",
+                  canhHuong: "Bạn là bác sĩ, tôi là bệnh nhân mô tả triệu chứng."),
+            .init(icon: "🛒", ten: "Đi mua sắm",
+                  canhHuong: "Bạn là người bán hàng, tôi hỏi giá và mặc cả."),
+            .init(icon: "✈️", ten: "Ở sân bay",
+                  canhHuong: "Bạn là nhân viên sân bay, tôi làm thủ tục bay và hỏi về hành lý."),
+            .init(icon: "💬", ten: "Nói chuyện phiếm",
+                  canhHuong: "Trò chuyện thoải mái như hai người bạn: thời tiết, phim ảnh, cuối tuần, sở thích."),
+        ]
+    }
+}
