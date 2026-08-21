@@ -23,6 +23,9 @@ struct CoursesView: View {
                     NgoaiNguEntryCard()
                         .padding(.horizontal, -Spacing.md)
 
+                    PhongThiEntryCard()
+                        .padding(.horizontal, -Spacing.md)
+
                     tieuDeNhanh("Khoá tự biên soạn", "sparkles")
                     categoriesSection
                     featuredCoursesSection

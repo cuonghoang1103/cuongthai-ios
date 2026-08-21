@@ -388,3 +388,47 @@ private struct TheBangChu: View {
         )
     }
 }
+
+// ── Lối vào Phòng thi từ tab Học ─────────────────────────────────
+struct PhongThiEntryCard: View {
+    var body: some View {
+        NavigationLink {
+            PhongThiView()
+        } label: {
+            HStack(spacing: Spacing.md) {
+                Image(systemName: "checklist")
+                    .font(.system(size: 22))
+                    .foregroundColor(AppColors.onPrimary)
+                    .frame(width: 46, height: 46)
+                    .background(
+                        LinearGradient(colors: [Color(hex: 0xD97706), Color(hex: 0xFF9933)],
+                                       startPoint: .topLeading, endPoint: .bottomTrailing)
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Phòng thi")
+                        .font(.titleSmall)
+                        .foregroundColor(AppColors.textPrimary)
+                    Text("190 đề · 5.191 câu · bấm giờ như thi thật")
+                        .font(.caption)
+                        .foregroundColor(AppColors.textSecondary)
+                        .lineLimit(1)
+                }
+                Spacer(minLength: Spacing.sm)
+                Image(systemName: "chevron.right")
+                    .font(.caption).foregroundColor(AppColors.textTertiary)
+            }
+            .padding(Spacing.md)
+            .background(AppColors.backgroundCard)
+            .overlay(
+                RoundedRectangle(cornerRadius: CornerRadius.medium)
+                    .stroke(AppColors.accent.opacity(0.3), lineWidth: 1),
+            )
+            .cornerRadius(CornerRadius.medium)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, Spacing.md)
+    }
+}
