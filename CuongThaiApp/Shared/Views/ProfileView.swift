@@ -792,6 +792,7 @@ struct UserProfile {
 
 // MARK: - Settings View
 struct SettingsView: View {
+    @StateObject private var giaoDien = QuanLyGiaoDien.shared
     @EnvironmentObject var appState: AppState
     @Environment(\.dismiss) var dismiss
     @State private var showLogoutAlert = false
@@ -799,6 +800,49 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             List {
+                // Giao diện — đặt TRÊN CÙNG vì đây là thứ người dùng vào
+                // Cài đặt để đổi nhiều nhất, và họ thấy kết quả ngay lập tức.
+                Section {
+                    ForEach(CheDoGiaoDien.allCases) { c in
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.25)) {
+                                giaoDien.cheDo = c
+                            }
+                            Haptics.cham()
+                        } label: {
+                            HStack(spacing: 12) {
+                                Image(systemName: c.bieuTuong)
+                                    .font(.system(size: 15))
+                                    .foregroundColor(giaoDien.cheDo == c ? AppColors.primary : AppColors.textSecondary)
+                                    .frame(width: 24)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(c.ten)
+                                        .foregroundColor(AppColors.textPrimary)
+                                    Text(c.moTa)
+                                        .font(.system(size: 12))
+                                        .foregroundColor(AppColors.textTertiary)
+                                }
+                                Spacer(minLength: 0)
+                                if giaoDien.cheDo == c {
+                                    Image(systemName: "checkmark")
+                                        .font(.system(size: 14, weight: .semibold))
+                                        .foregroundColor(AppColors.primary)
+                                }
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        // Nhiều Button trong MỘT hàng Form gộp thành một nút —
+                        // mỗi cái phải có `.plain` riêng.
+                        .buttonStyle(.plain)
+                    }
+                } header: {
+                    Text("Giao diện")
+                } footer: {
+                    if giaoDien.cheDo == .theoGio {
+                        Text("Đang \(QuanLyGiaoDien.dangLaBanNgay() ? "sáng" : "tối"). Tự đổi vào \(QuanLyGiaoDien.gioSang)h và \(QuanLyGiaoDien.gioToi)h mỗi ngày.")
+                    }
+                }
+
                 // Account
                 Section("Tài khoản") {
                     NavigationLink("Chỉnh sửa hồ sơ") { EditProfileView() }

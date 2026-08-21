@@ -162,6 +162,44 @@ struct MessagesView: View {
                         .listRowSeparatorTint(AppColors.divider)
                         .alignmentGuide(.listRowSeparatorLeading) { _ in 76 }
                         .listRowBackground(AppColors.backgroundPrimary)
+                        // Nhấn giữ kiểu Messenger: nền mờ + XEM TRƯỚC cuộc trò
+                        // chuyện + menu. `.contextMenu(menuItems:preview:)` cho
+                        // đúng hiệu ứng đó bằng đường của hệ thống — dựng tay
+                        // thì phải tự lo nền mờ, hoạt ảnh và cử chỉ, mà kết quả
+                        // vẫn khác iOS thật.
+                        .contextMenu {
+                            Button {
+                                Task { await viewModel.danhDauChuaDoc(thread) }
+                            } label: {
+                                Label("Đánh dấu là chưa đọc", systemImage: "envelope.badge")
+                            }
+                            Button {
+                                Task { await viewModel.doiGhim(thread) }
+                            } label: {
+                                Label(thread.daGhim ? "Bỏ ghim" : "Ghim",
+                                      systemImage: thread.daGhim ? "pin.slash" : "pin")
+                            }
+                            Button {
+                                Task { await viewModel.doiTatThongBao(thread, phut: thread.daTatThongBao ? nil : 60 * 8) }
+                            } label: {
+                                Label(thread.daTatThongBao ? "Bật thông báo" : "Tắt thông báo",
+                                      systemImage: thread.daTatThongBao ? "bell" : "bell.slash")
+                            }
+                            Button {
+                                Task { await viewModel.doiLuuTru(thread) }
+                            } label: {
+                                Label(thread.daLuuTru ? "Bỏ lưu trữ" : "Lưu trữ",
+                                      systemImage: thread.daLuuTru ? "tray.and.arrow.up" : "archivebox")
+                            }
+                            Divider()
+                            Button(role: .destructive) {
+                                Task { await viewModel.xoaHoiThoai(thread) }
+                            } label: {
+                                Label("Xoá", systemImage: "trash")
+                            }
+                        } preview: {
+                            XemTruocHoiThoai(thread: thread)
+                        }
                         .swipeActions(edge: .leading, allowsFullSwipe: true) {
                             Button {
                                 Haptics.cham()
@@ -583,6 +621,19 @@ class MessagesViewModel: ObservableObject {
 
     /// Đổi tại chỗ TRƯỚC rồi mới gọi mạng: vuốt xong mà hàng đứng im nửa giây
     /// thì người dùng vuốt lại lần nữa và bật-tắt hai lần.
+    /// Xoá hội thoại cho riêng mình. Bỏ khỏi màn hình NGAY rồi mới gọi mạng —
+    /// chờ mạng xong mới xoá thì hàng nằm đó vài trăm ms và người dùng bấm lần nữa.
+    func xoaHoiThoai(_ t: MessageThread) async {
+        let luu = threads
+        threads.removeAll { $0.id == t.id }
+        do {
+            try await APIClient.shared.send(.xoaHoiThoai(threadId: t.id))
+        } catch {
+            threads = luu
+            self.error = "Không xoá được: \(error.localizedDescription)"
+        }
+    }
+
     private func capNhat(_ threadId: Int, _ moi: ThreadPreferences?) {
         guard let i = threads.firstIndex(where: { $0.id == threadId }) else { return }
         threads[i] = threads[i].doiTuyChon(moi)
@@ -843,5 +894,74 @@ struct LamMoiKhiCanThiet: ViewModifier {
                     moHoiThoai()
                 }
             }
+    }
+}
+
+
+/// Xem trước cuộc trò chuyện khi nhấn giữ — phần nội dung của
+/// `.contextMenu(preview:)`.
+///
+/// Cố ý KHÔNG gọi mạng: xem trước phải hiện ngay lập tức, mà dữ liệu đã có sẵn
+/// trong hàng rồi (người kia, tin cuối, thời điểm). Tải thêm chỉ để lấp đầy
+/// khung thì người dùng nhìn thấy ô trống trong lúc chờ.
+struct XemTruocHoiThoai: View {
+    let thread: MessageThread
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 10) {
+                UserAvatarView(url: thread.peer?.avatarUrl, size: 40)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(thread.displayName)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(AppColors.textPrimary)
+                    if thread.daTatThongBao {
+                        Label("Đã tắt thông báo", systemImage: "bell.slash.fill")
+                            .font(.system(size: 11))
+                            .foregroundColor(AppColors.textTertiary)
+                    }
+                }
+                Spacer(minLength: 0)
+                if thread.daGhim {
+                    Image(systemName: "pin.fill")
+                        .font(.system(size: 12))
+                        .foregroundColor(.orange)
+                }
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .background(AppColors.backgroundSecondary)
+
+            Divider()
+
+            if let tin = thread.lastMessage {
+                // `Message` không có sẵn cờ "của tôi" — so người gửi, đúng cách
+                // các màn khác trong app đang làm.
+                let cuaToi = tin.senderId == AppState.shared.currentUser?.id
+                HStack(alignment: .bottom, spacing: 8) {
+                    if !cuaToi { UserAvatarView(url: thread.peer?.avatarUrl, size: 26) }
+                    Text(tin.xemTruoc)
+                        .font(.system(size: 14.5))
+                        .foregroundColor(cuaToi ? AppColors.onPrimary : AppColors.textPrimary)
+                        .padding(.horizontal, 12).padding(.vertical, 8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .fill(cuaToi ? AppColors.primary : AppColors.backgroundTertiary)
+                        )
+                        .frame(maxWidth: 230, alignment: cuaToi ? .trailing : .leading)
+                    if cuaToi { Spacer(minLength: 0) } 
+                }
+                .frame(maxWidth: .infinity, alignment: cuaToi ? .trailing : .leading)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 14)
+            } else {
+                Text("Chưa có tin nhắn")
+                    .font(.system(size: 13))
+                    .foregroundColor(AppColors.textTertiary)
+                    .padding(.vertical, 24)
+            }
+        }
+        .frame(width: 300)
+        .background(AppColors.backgroundPrimary)
     }
 }
