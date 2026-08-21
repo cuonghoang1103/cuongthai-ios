@@ -163,3 +163,24 @@ enum MucNho: Int, CaseIterable {
         }
     }
 }
+
+// ── Bảng chữ ────────────────────────────────────────────────────
+
+struct NhomChu: Codable, Identifiable, Hashable {
+    let id: Int
+    let name: String
+    let description: String?
+    let order: Int?
+    let items: [ChuCai]?
+
+    struct ChuCai: Codable, Identifiable, Hashable {
+        let id: Int
+        let groupId: Int?
+        let character: String
+        let romanization: String?
+        let note: String?
+        let order: Int?
+    }
+
+    var chu: [ChuCai] { items ?? [] }
+}

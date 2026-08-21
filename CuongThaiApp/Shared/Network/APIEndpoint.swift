@@ -222,6 +222,7 @@ enum APIEndpoint {
     case dsYeuThich(code: String)
     case idYeuThich(code: String)
     case doiYeuThich(wordId: Int)
+    case bangChu(code: String)
     /// PATCH — `nil` = đánh dấu đã đọc TẤT CẢ, hoặc truyền danh sách id.
     case markNotificationsRead(ids: [Int]?)
     /// Lấy một bài viết theo id, để bấm thông báo là mở đúng bài.
@@ -380,6 +381,7 @@ enum APIEndpoint {
         case .dsYeuThich(let c): return "/api/v1/my-language/favorites/\(c)"
         case .idYeuThich(let c): return "/api/v1/my-language/favorites/\(c)/ids"
         case .doiYeuThich: return "/api/v1/my-language/favorites/toggle"
+        case .bangChu(let c): return "/api/v1/my-language/\(c)/alphabet"
         case .markNotificationsRead: return "/api/v1/social/notifications"
         case .getPost(let id): return "/api/v1/social/posts/\(id)"
         }

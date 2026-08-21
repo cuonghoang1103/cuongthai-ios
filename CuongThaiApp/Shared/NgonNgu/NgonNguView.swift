@@ -90,6 +90,16 @@ struct NgonNguHomeView: View {
                 }
                 .buttonStyle(.plain)
 
+                // Bảng chữ chỉ hiện khi ngôn ngữ đó CÓ. Tiếng Anh có mục
+                // IPA nên vẫn đáng vào; ngôn ngữ không có thì ẩn hẳn thay
+                // vì mở ra một màn trống.
+                if (ngonNgu.counts?.alphabet ?? 0) > 0 {
+                    NavigationLink(destination: BangChuView(ngonNgu: ngonNgu)) {
+                        TheBangChu(code: ngonNgu.code)
+                    }
+                    .buttonStyle(.plain)
+                }
+
                 if !vm.dsCap.isEmpty { thanhCap }
 
                 if vm.dangTai && vm.tatCa.isEmpty {
@@ -254,5 +264,48 @@ struct NgoaiNguEntryCard: View {
         }
         .buttonStyle(.plain)
         .padding(.horizontal, Spacing.md)
+    }
+}
+
+private struct TheBangChu: View {
+    let code: String
+
+    private var mota: String {
+        switch code {
+        case "ja": return "Hiragana · Katakana — viết bằng ngón tay"
+        case "zh": return "Pinyin và nét chữ Hán — viết bằng ngón tay"
+        default:   return "Bảng chữ và phiên âm"
+        }
+    }
+
+    var body: some View {
+        HStack(spacing: Spacing.md) {
+            Image(systemName: "hand.draw.fill")
+                .font(.system(size: 21, weight: .medium))
+                .foregroundColor(.white)
+                .frame(width: 46, height: 46)
+                .background(Circle().fill(AppColors.secondary))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Bảng chữ & luyện viết")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(AppColors.textPrimary)
+                Text(mota)
+                    .font(.system(size: 12))
+                    .foregroundColor(AppColors.textSecondary)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: Spacing.sm)
+            Image(systemName: "chevron.right")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(AppColors.textTertiary)
+        }
+        .padding(Spacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: CornerRadius.large)
+                .fill(AppColors.backgroundCard)
+                .overlay(RoundedRectangle(cornerRadius: CornerRadius.large)
+                    .strokeBorder(AppColors.secondary.opacity(0.3), lineWidth: 1))
+        )
     }
 }
