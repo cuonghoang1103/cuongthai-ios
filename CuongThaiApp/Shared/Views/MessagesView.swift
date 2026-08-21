@@ -17,6 +17,14 @@ struct MessagesView: View {
                 threadsList
             }
             .background(AppColors.backgroundPrimary)
+            // Đổi biệt danh trong khung chat phải hiện NGAY ở danh sách.
+            // Máy chủ không phát sự kiện nào cho biệt danh (nó chỉ người xem
+            // thấy), nên đường duy nhất là kênh nội bộ này.
+            .onReceive(AppState.shared.bietDanhDoi) { su in
+                guard let i = viewModel.threads.firstIndex(where: { $0.id == su.threadId })
+                else { return }
+                viewModel.threads[i] = viewModel.threads[i].doiBietDanh(su.ten)
+            }
             .navigationTitle("Tin nhắn")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {

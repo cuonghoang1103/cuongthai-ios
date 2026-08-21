@@ -58,7 +58,20 @@ final class BoGoi: ObservableObject {
             .sink { [weak self] su in
                 RungChuong.dung()
                 guard let self else { return }
-                if su.lyDo == "khong-tra-loi" { self.goi.loi = "Không có ai trả lời." }
+                switch su.lyDo {
+                case "khong-tra-loi":
+                    self.goi.loi = "Không có ai trả lời."
+                case "khong-truc-tuyen":
+                    // Chặng A chỉ reo khi app bên kia ĐANG MỞ. Nói thẳng ra,
+                    // đừng để người dùng ngồi nhìn "Đang gọi…" 45 giây rồi
+                    // tưởng app hỏng — đúng thứ đã xảy ra 21/08/2026.
+                    self.goi.loi = "\(self.goi.tenBenKia) hiện không online. "
+                                 + "Cuộc gọi chỉ reo khi app của họ đang mở."
+                case "tu-choi":
+                    self.goi.loi = "Cuộc gọi bị từ chối."
+                default:
+                    break
+                }
                 self.goi.don()
                 self.dongMan()
             }
@@ -80,7 +93,9 @@ final class BoGoi: ObservableObject {
     /// Đóng phụt ngay thì cuộc gọi lỡ trông y hệt cuộc gọi chưa từng xảy ra.
     private func dongMan() {
         Task {
-            try? await Task.sleep(for: .milliseconds(1200))
+            // Câu báo dài thì phải để lâu hơn. 1,2 giây đủ cho "Đã kết
+            // thúc", không đủ để đọc hết một dòng giải thích.
+            try? await Task.sleep(for: .milliseconds(self.goi.loi == nil ? 1200 : 3200))
             self.hienMan = false
             self.goi.loi = nil
         }

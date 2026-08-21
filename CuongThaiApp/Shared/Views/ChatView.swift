@@ -44,6 +44,11 @@ struct ChatView: View {
     @FocusState private var isInputFocused: Bool
     /// Nút quay lại tự vẽ — thanh hệ thống đã ẩn nên không còn nút của nó.
     @Environment(\.dismiss) private var dismiss
+    /// Người dùng có đang nhìn phần cuối hội thoại không. Quyết định cả việc
+    /// tự cuộn khi có tin mới lẫn việc hiện nút nhảy-về-cuối.
+    @State private var dangODay = true
+    @State private var daCuonLanDau = false
+
 
     /// Hội thoại đang dùng để hiển thị: bản đã sửa nếu có, không thì bản gốc.
     private var hoiThoai: MessageThread { hoiThoaiSua ?? thread }
@@ -171,6 +176,10 @@ struct ChatView: View {
             } else {
                 hoiThoaiSua = hoiThoai.doiBietDanh(sach)
             }
+            // Báo cho màn danh sách. Nó giữ mảng hội thoại riêng và không có
+            // cách nào biết ta vừa đổi tên ở đây.
+            AppState.shared.bietDanhDoi.send(
+                (threadId: thread.id, ten: hoiThoaiSua?.displayName ?? sach))
             Haptics.xong()
         } catch {
             thongBaoTat = error.localizedDescription
@@ -574,19 +583,81 @@ struct ChatView: View {
                         }
 
                     }
+
+                    // Mốc vô hình ở ĐÁY. `LazyVStack` chỉ dựng thứ nằm trong
+                    // tầm nhìn, nên mốc này rời tầm nhìn đúng lúc người dùng
+                    // cuộn lên đọc tin cũ — đó là tín hiệu để hiện nút nhảy
+                    // về cuối, không cần đo toạ độ cuộn.
+                    Color.clear
+                        .frame(height: 1)
+                        .id(MOC_DAY)
+                        .onAppear { dangODay = true }
+                        .onDisappear { dangODay = false }
                 }
                 .padding(.horizontal, Spacing.md)
                 .padding(.vertical, Spacing.sm)
             }
             .onChange(of: viewModel.messages.count) { _, _ in
-                if let lastMessage = viewModel.messages.last {
-                    withAnimation {
-                        proxy.scrollTo(lastMessage.id, anchor: .bottom)
+                guard let tinCuoi = viewModel.messages.last else { return }
+
+                // ⚠️ LẦN ĐẦU PHẢI NHẢY THẲNG, KHÔNG ĐƯỢC CÓ HIỆU ỨNG.
+                //
+                // `LazyVStack` chưa dựng những tin nằm ngoài tầm nhìn nên nó
+                // KHÔNG biết chúng cao bao nhiêu. Cuộn có hiệu ứng tới một
+                // mục ở xa là nó tính theo chiều cao ước lượng rồi dừng giữa
+                // chừng — đúng cái người dùng gặp: mở hội thoại ra thì nằm ở
+                // GIỮA, phải tự kéo xuống mới đọc được tin mới nhất.
+                //
+                // Nhảy thẳng hai lần: lần đầu ép dựng phần dưới, lần sau sửa
+                // lại sai số chiều cao vừa lộ ra.
+                if !daCuonLanDau {
+                    daCuonLanDau = true
+                    proxy.scrollTo(tinCuoi.id, anchor: .bottom)
+                    Task { @MainActor in
+                        try? await Task.sleep(for: .milliseconds(60))
+                        proxy.scrollTo(tinCuoi.id, anchor: .bottom)
                     }
+                    return
+                }
+
+                // Đang đọc tin cũ mà bị giật xuống đáy là rất khó chịu. Chỉ
+                // tự cuộn khi người dùng vốn đã ở cuối; nếu không thì để nút
+                // nhảy-về-cuối làm việc đó.
+                //
+                // Điều này cũng lo luôn ca TẢI THÊM TIN CŨ: lúc đó người dùng
+                // đang ở trên đỉnh nên `dangODay` đã là false.
+                guard dangODay else { return }
+                withAnimation { proxy.scrollTo(tinCuoi.id, anchor: .bottom) }
+            }
+            .overlay(alignment: .bottomTrailing) {
+                if !dangODay && !viewModel.messages.isEmpty {
+                    Button {
+                        if let tinCuoi = viewModel.messages.last {
+                            withAnimation { proxy.scrollTo(tinCuoi.id, anchor: .bottom) }
+                        }
+                    } label: {
+                        Image(systemName: "arrow.down")
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundColor(.white)
+                            .frame(width: 42, height: 42)
+                            .background(
+                                Circle()
+                                    .fill(Color.black.opacity(0.55))
+                                    .overlay(Circle().strokeBorder(.white.opacity(0.14), lineWidth: 0.5))
+                            )
+                            .shadow(color: .black.opacity(0.3), radius: 6, y: 2)
+                    }
+                    .padding(.trailing, Spacing.md)
+                    .padding(.bottom, Spacing.md)
+                    .transition(.scale.combined(with: .opacity))
+                    .accessibilityLabel("Về tin nhắn mới nhất")
                 }
             }
+            .animation(.spring(response: 0.3, dampingFraction: 0.8), value: dangODay)
         }
     }
+
+    private let MOC_DAY = "moc-day-hoi-thoai"
 
     private var inputBar: some View {
         VStack(spacing: 0) {

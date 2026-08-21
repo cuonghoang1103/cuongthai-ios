@@ -4,6 +4,17 @@ import Combine
 // MARK: - App State
 @MainActor
 final class AppState: ObservableObject {
+
+    /// Biệt danh vừa đổi ở một hội thoại.
+    ///
+    /// Biệt danh là thứ **chỉ người xem thấy** — máy chủ không phát sự kiện
+    /// socket nào cho nó, nên không có đường realtime sẵn để bám vào. Mà
+    /// `MessagesViewModel` lại là `@StateObject` RIÊNG của màn danh sách:
+    /// `ChatView` không với tới được nó.
+    ///
+    /// Thiếu kênh này thì đổi biệt danh xong, danh sách bên ngoài vẫn hiện
+    /// tên cũ cho tới lượt tải lại kế tiếp — người dùng thấy là "app đơ".
+    let bietDanhDoi = PassthroughSubject<(threadId: Int, ten: String), Never>()
     static let shared = AppState()
 
     @Published var isAuthenticated = false
