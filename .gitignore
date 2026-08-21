@@ -27,3 +27,8 @@ Package.resolved
 *.certSigningRequest
 *.mobileprovision
 *.provisionprofile
+
+# Cấu hình phát hành: mã đội, mã khoá, mã issuer của App Store Connect.
+# Không phải bí mật như khoá riêng, nhưng vẫn là thứ nhận diện tài khoản —
+# và nó nằm ngay cạnh `AuthKey_*.p8`, nên để chung một luật cho khỏi nhầm.
+phat-hanh.env
