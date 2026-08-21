@@ -228,6 +228,20 @@ struct HomeView: View {
             case .ai: AIChatView()
             }
         }
+        // Chạm thông báo mạng xã hội từ ngoài app ⇒ mở thẳng bảng chuông.
+        .onChange(of: appState.moChuongThongBao) { _, bat in
+            guard bat else { return }
+            quickSheet = .notifications
+            appState.moChuongThongBao = false
+        }
+        .task {
+            // Cờ có thể đã bật TRƯỚC khi màn này dựng (mở nguội từ thông báo)
+            // — `onChange` không bắt được, phải kiểm một lượt.
+            if appState.moChuongThongBao {
+                quickSheet = .notifications
+                appState.moChuongThongBao = false
+            }
+        }
         .task {
             await vm.loadFeed(type: tabDangChon.loaiAPI)
             await vm.taiSoBai()

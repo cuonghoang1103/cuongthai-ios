@@ -495,17 +495,35 @@ struct MediaItemView: View {
 
     var body: some View {
         ZStack {
-            #if canImport(Kingfisher)
-            if let url = URL(string: media.thumbnail ?? media.url) {
-                KFImage(url)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-            } else {
-                AppColors.backgroundTertiary
-            }
-            #else
-            AppColors.backgroundTertiary
-            #endif
+            // ⚠️⚠️ ẢNH PHẢI NẰM TRONG `.overlay`, KHÔNG ĐƯỢC ĐỂ TRẦN Ở ZStack.
+            //
+            // `aspectRatio(.fill)` KHÔNG tự bó vào bề ngang cha — nó tính bề
+            // ngang theo tỉ lệ THẬT của ảnh rồi ĐÒI đúng chừng đó. Cha chỉ
+            // ghim chiều cao (`frame(height:)` ở `luoiAnh`) nên ảnh dọc đòi
+            // bề ngang lớn hơn màn hình, và ZStack nở theo ⇒ CẢ THẺ BÀI VIẾT
+            // rộng hơn màn hình: tên người đăng cụt bên trái, "0 bình luận"
+            // cụt bên phải. `.clipped()` ở ngoài KHÔNG cứu được — nó cắt phần
+            // vẽ, còn kích thước đã báo lên cha thì vẫn sai.
+            //
+            // Lớp phủ thì KHÔNG BAO GIỜ ảnh hưởng kích thước bố cục. Khung do
+            // `Color.clear` quyết định: rộng co theo cha, cao do cha ghim.
+            // Cùng bản vá đã dùng cho ảnh bìa trang cá nhân — đo thật ở đó:
+            // 480pt → 10pt.
+            Color.clear
+                .overlay {
+                    #if canImport(Kingfisher)
+                    if let url = URL(string: media.thumbnail ?? media.url) {
+                        KFImage(url)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                    } else {
+                        AppColors.backgroundTertiary
+                    }
+                    #else
+                    AppColors.backgroundTertiary
+                    #endif
+                }
+                .clipped()
 
             if media.type == "VIDEO" {
                 Image(systemName: "play.circle.fill")

@@ -22,6 +22,29 @@ final class ThongBaoDay: NSObject, ObservableObject, UNUserNotificationCenterDel
 
     private override init() { super.init() }
 
+    // MARK: Huy hiệu trên biểu tượng app
+
+    /// Đặt số trên biểu tượng app.
+    ///
+    /// ⚠️ TRƯỚC BẢN NÀY KHÔNG MỘT DÒNG NÀO trong app đụng tới huy hiệu — nó
+    /// CHỈ do gói thông báo đẩy đặt (`aps.badge`, backend gửi số tin chưa
+    /// đọc). Nghĩa là nó chỉ biết TĂNG: đọc hết tin rồi, đọc hết thông báo
+    /// rồi, huy hiệu vẫn treo con số của lần đẩy cuối cùng cho tới khi có
+    /// người nhắn tin mới. Người dùng gặp đúng thế: đọc sạch mà biểu tượng
+    /// vẫn hiện "2".
+    ///
+    /// Gọi ở mọi chỗ số chưa đọc thay đổi — xem `AppState.dongBoHuyHieu()`.
+    @MainActor static func datHuyHieu(_ so: Int) {
+        #if canImport(UIKit)
+        let n = max(0, so)
+        if #available(iOS 17.0, *) {
+            UNUserNotificationCenter.current().setBadgeCount(n)
+        } else {
+            UIApplication.shared.applicationIconBadgeNumber = n
+        }
+        #endif
+    }
+
     // MARK: Định tuyến chờ từ cú chạm thông báo
 
     /// ⚠️⚠️ VÌ SAO PHẢI "CẤT RỒI ÁP SAU" — ĐỌC TRƯỚC KHI SỬA LẠI THÀNH GỌI THẲNG
@@ -48,6 +71,9 @@ final class ThongBaoDay: NSObject, ObservableObject, UNUserNotificationCenterDel
     ///     (không có chuyển scene nào sắp xảy ra nên hai móc trên im lặng)
     @MainActor private static var canVaoTabTinNhan = false
     @MainActor private static var hoiThoaiCho: Int?
+    /// Chạm một thông báo mạng xã hội (bình luận, cảm xúc, kết bạn…) ⇒ mở
+    /// chuông thay vì tab Tin nhắn.
+    @MainActor private static var canMoChuong = false
 
     @MainActor static func catDinhTuyen(threadId: Int?) {
         canVaoTabTinNhan = true
@@ -55,8 +81,19 @@ final class ThongBaoDay: NSObject, ObservableObject, UNUserNotificationCenterDel
         NhatKy.thongBao.info("cất định tuyến — hội thoại \(threadId.map(String.init) ?? "(không rõ)")")
     }
 
+    @MainActor static func catDinhTuyenChuong() {
+        canMoChuong = true
+        NhatKy.thongBao.info("cất định tuyến — mở chuông")
+    }
+
     /// Idempotent: áp xong tự xoá, ba móc có gọi chồng cũng chỉ áp một lần.
     @MainActor static func apDungDinhTuyen() {
+        if canMoChuong {
+            canMoChuong = false
+            NhatKy.thongBao.info("ÁP định tuyến — mở chuông")
+            AppState.shared.selectedTab = .home
+            AppState.shared.moChuongThongBao = true
+        }
         guard canVaoTabTinNhan else { return }
         canVaoTabTinNhan = false
         let tid = hoiThoaiCho
@@ -189,21 +226,24 @@ final class ThongBaoDay: NSObject, ObservableObject, UNUserNotificationCenterDel
         DispatchQueue.main.async {
             MainActor.assumeIsolated {
                 NhatKy.thongBao.info("didReceive CHẠY — loai=\(loai ?? "(không có)") · threadId=\(tid.map(String.init) ?? "(không đọc được)")")
-                if loai == "tin-nhan" || tid != nil {
+                if loai == "xa-hoi" {
+                    Self.catDinhTuyenChuong()
+                } else if loai == "tin-nhan" || tid != nil {
                     // CHỈ CẤT — đổi tab dời sang `apDungDinhTuyen`, chạy khi
                     // scene đã active.
                     Self.catDinhTuyen(threadId: tid)
-                    #if canImport(UIKit)
-                    // Chạm banner khi app ĐANG mở: scene không đổi trạng thái
-                    // nên các móc kia im lặng — tự áp sau khi mọi thứ đã yên.
-                    Task { @MainActor in
-                        try? await Task.sleep(nanoseconds: 150_000_000)
-                        if UIApplication.shared.applicationState == .active {
-                            Self.apDungDinhTuyen()
-                        }
-                    }
-                    #endif
                 }
+                #if canImport(UIKit)
+                // Chạm banner khi app ĐANG mở: scene không đổi trạng thái nên
+                // các móc kia im lặng — tự áp sau khi mọi thứ đã yên. Đặt
+                // NGOÀI hai nhánh trên để cả thông báo xã hội cũng được áp.
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 150_000_000)
+                    if UIApplication.shared.applicationState == .active {
+                        Self.apDungDinhTuyen()
+                    }
+                }
+                #endif
                 completionHandler()
             }
         }
@@ -226,7 +266,8 @@ final class ThongBaoDay: NSObject, ObservableObject, UNUserNotificationCenterDel
             MainActor.assumeIsolated {
                 // Đang đứng ĐÚNG hội thoại đó thì tin đã hiện trong khung chat
                 // — banner chỉ thừa. Còn lại vẫn báo đầy đủ.
-                if let tid, tid == AppState.shared.hoiThoaiDangMo {
+                let laXaHoi = (info["loai"] as? String) == "xa-hoi"
+                if !laXaHoi, let tid, tid == AppState.shared.hoiThoaiDangMo {
                     completionHandler([])
                 } else {
                     completionHandler([.banner, .sound, .badge])

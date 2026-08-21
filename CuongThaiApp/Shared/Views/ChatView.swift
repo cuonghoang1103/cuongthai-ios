@@ -1392,6 +1392,13 @@ class ChatViewModel: ObservableObject {
 
         do {
             let _: EmptyResponse = try await APIClient.shared.request(.markRead(threadId: threadId))
+            // Hạ huy hiệu NGAY. Trước đây chỉ `fetchUnreadCounts()` lúc mở
+            // app mới hạ được, nên đọc xong thoát ra là biểu tượng vẫn treo
+            // số cũ tới lần mở app sau.
+            await MainActor.run {
+                AppState.shared.unreadMessages = max(0, AppState.shared.unreadMessages - 1)
+                AppState.shared.dongBoHuyHieu()
+            }
             localUnreadCount = 0
         } catch {
             // Silently fail

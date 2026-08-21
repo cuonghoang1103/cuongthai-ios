@@ -19,6 +19,9 @@ final class AppState: ObservableObject {
     /// Hội thoại cần mở sau khi người dùng chạm vào thông báo đẩy. Màn Tin
     /// nhắn đọc rồi xoá — không xoá thì lần sau vào tab đó nó tự mở lại.
     @Published var hoiThoaiCanMo: Int?
+    /// Bật lên khi người dùng chạm một thông báo mạng xã hội — Trang chủ mở
+    /// bảng chuông. Trang chủ tự hạ cờ sau khi mở.
+    @Published var moChuongThongBao = false
 
     // Five tabs is the iPhone maximum before iOS collapses the rest into
     // "More". Search moved into the Home toolbar so the Learn tab (courses +
@@ -63,6 +66,7 @@ final class AppState: ObservableObject {
                 guard su.message.senderId != self.currentUser?.id else { return }
                 guard su.threadId != self.hoiThoaiDangMo else { return }
                 self.unreadMessages += 1
+                self.dongBoHuyHieu()
             }
             .store(in: &huyDangKy)
     }
@@ -112,6 +116,15 @@ final class AppState: ObservableObject {
     /// trả `{ "count": 5 }` — một ĐỐI TƯỢNG. Lệnh giải mã luôn ném lỗi, lỗi
     /// bị `catch { }` nuốt, nên huy hiệu tin nhắn VĨNH VIỄN bằng 0 mà không
     /// một dòng log nào. Hỏng câm đúng nghĩa.
+    /// Huy hiệu app = tin chưa đọc + thông báo chưa đọc.
+    ///
+    /// Backend chỉ gửi SỐ TIN trong gói đẩy, nhưng người dùng nhìn biểu tượng
+    /// thì hiểu là "có bao nhiêu thứ đang chờ tôi" — nên cộng cả hai. Quan
+    /// trọng hơn: hàm này là chỗ DUY NHẤT biết cách hạ số xuống.
+    func dongBoHuyHieu() {
+        ThongBaoDay.datHuyHieu(unreadMessages + unreadNotifications)
+    }
+
     func fetchUnreadCounts() async {
         do {
             let tin: UnreadMessageCount = try await APIClient.shared.request(.getUnreadMessageCount)
@@ -124,5 +137,8 @@ final class AppState: ObservableObject {
             let tb: UnreadNotificationCount = try await APIClient.shared.request(.getUnreadNotificationCount)
             unreadNotifications = tb.unreadCount
         } catch { }
+        // Máy chủ là nguồn sự thật — đồng bộ huy hiệu theo nó, kể cả khi số
+        // GIẢM. Đây là lượt duy nhất huy hiệu có thể tụt xuống.
+        dongBoHuyHieu()
     }
 }

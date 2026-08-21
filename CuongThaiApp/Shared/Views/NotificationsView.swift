@@ -61,15 +61,18 @@ final class NotificationsViewModel: ObservableObject {
             let tap = Set(ids)
             items = items.map { $0.isRead || !tap.contains($0.id) ? $0 : $0.danhDauDoc() }
             AppState.shared.unreadNotifications = max(0, truocSo - tap.count)
+            AppState.shared.dongBoHuyHieu()
         } else {
             items = items.map { $0.isRead ? $0 : $0.danhDauDoc() }
             AppState.shared.unreadNotifications = 0
+            AppState.shared.dongBoHuyHieu()
         }
         do {
             try await APIClient.shared.send(.markNotificationsRead(ids: ids))
         } catch {
             items = truoc
             AppState.shared.unreadNotifications = truocSo
+            AppState.shared.dongBoHuyHieu()
             loi = error.localizedDescription
         }
     }
