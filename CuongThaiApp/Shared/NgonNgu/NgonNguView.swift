@@ -201,3 +201,58 @@ private struct HangChuDe: View {
         )
     }
 }
+
+// ── Lối vào từ tab Học ───────────────────────────────────────────
+//
+// ⚠️ Bản đầu tôi chỉ để một biểu tượng 🌐 nhỏ trên thanh công cụ. Người
+// dùng KHÔNG TÌM RA — và đó là mục họ mong đợi nhất trong cả app. Thanh
+// công cụ là chỗ để những thứ phụ trợ; một mảng chức năng lớn phải có mặt
+// ngay trong thân trang, cùng cỡ với Academy.
+struct NgoaiNguEntryCard: View {
+    var body: some View {
+        NavigationLink {
+            NgonNguView()
+        } label: {
+            HStack(spacing: Spacing.md) {
+                Image(systemName: "character.book.closed.fill")
+                    .font(.system(size: 22))
+                    .foregroundColor(AppColors.onPrimary)
+                    .frame(width: 46, height: 46)
+                    .background(
+                        LinearGradient(colors: [Color(hex: 0x0E93A6), Color(hex: 0x21D4ED)],
+                                       startPoint: .topLeading, endPoint: .bottomTrailing)
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 5) {
+                        Text("Ngoại ngữ")
+                            .font(.titleSmall)
+                            .foregroundColor(AppColors.textPrimary)
+                        Text("🇬🇧 🇯🇵 🇨🇳").font(.system(size: 12))
+                    }
+                    Text("25.000+ từ vựng · thẻ ghi nhớ · ôn tập theo lịch")
+                        .font(.caption)
+                        .foregroundColor(AppColors.textSecondary)
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: Spacing.sm)
+
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundColor(AppColors.textTertiary)
+            }
+            .padding(Spacing.md)
+            .background(AppColors.backgroundCard)
+            .overlay(
+                RoundedRectangle(cornerRadius: CornerRadius.medium)
+                    .stroke(AppColors.secondary.opacity(0.3), lineWidth: 1),
+            )
+            .cornerRadius(CornerRadius.medium)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, Spacing.md)
+    }
+}

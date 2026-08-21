@@ -20,6 +20,9 @@ struct CoursesView: View {
                     AcademyEntryCard()
                         .padding(.horizontal, -Spacing.md)
 
+                    NgoaiNguEntryCard()
+                        .padding(.horizontal, -Spacing.md)
+
                     tieuDeNhanh("Khoá tự biên soạn", "sparkles")
                     categoriesSection
                     featuredCoursesSection
@@ -31,13 +34,6 @@ struct CoursesView: View {
             .navigationTitle("Khóa học")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    NavigationLink(destination: NgonNguView()) {
-                        Image(systemName: "globe")
-                            .foregroundColor(AppColors.primary)
-                    }
-                    .accessibilityLabel("Học ngoại ngữ")
-                }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     NavigationLink(destination: MyCoursesView()) {
                         Image(systemName: "book.closed")
