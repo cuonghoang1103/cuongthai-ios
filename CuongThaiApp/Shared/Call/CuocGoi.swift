@@ -149,6 +149,13 @@ final class CuocGoi: NSObject, ObservableObject {
         // nhanh (đã ở trong phòng) không tốn gì cả.
         realtime.vaoPhong(threadId: threadId)
         try? await Task.sleep(for: .milliseconds(300))
+        NhatKy.goi.info("đã vào lại phòng thread:\(threadId), micro OK, sắp gửi offer")
+
+        // Chuông hồi âm. Phải phát SAU `batAmThanh()`: lúc đó WebRTC đã dựng
+        // phiên `.playAndRecord`, và cờ `dangTrongCuocGoi` bảo bộ phát ĐỪNG
+        // đụng vào chế độ phiên nữa — giành với WebRTC là mất tiếng cả cuộc.
+        AmThanh.shared.dangTrongCuocGoi = true
+        AmThanh.shared.phat(.goiDi, am: 0.55)
 
         guard let pc = dungPeer(await layIceServers()) else {
             loi = "Không dựng được kết nối."
@@ -160,6 +167,7 @@ final class CuocGoi: NSObject, ObservableObject {
             guard let self, let sdp else { return }
             pc.setLocalDescription(sdp) { _ in
                 Task { @MainActor in
+                    NhatKy.goi.info("→ call:offer (sdp \(sdp.sdp.count) ký tự)")
                     self.realtime.guiGoi(threadId: threadId, toUserId: toUserId,
                                          sdp: ["type": "offer", "sdp": sdp.sdp])
                 }
@@ -177,6 +185,9 @@ final class CuocGoi: NSObject, ObservableObject {
             sdpCho = RTCSessionDescription(type: .offer, sdp: chu)
         }
         trangThai = .doChuong
+        // Chưa dựng phiên WebRTC nên bộ phát được phép đặt `.playback` —
+        // chuông reo cả khi máy gạt sang im lặng, đúng như một cuộc gọi thật.
+        AmThanh.shared.phat(.goiDen)
     }
 
     func nhan() async {
@@ -186,6 +197,10 @@ final class CuocGoi: NSObject, ObservableObject {
             tuChoi()
             return
         }
+        // Dừng chuông TRƯỚC `batAmThanh()`. Để nó kêu tiếp thì tiếng chuông
+        // lọt vào micro và bên kia nghe rõ mồn một.
+        AmThanh.shared.dungHetTiengGoi()
+        AmThanh.shared.dangTrongCuocGoi = true
         batAmThanh()
         guard let pc = dungPeer(await layIceServers()) else { tuChoi(); return }
 
@@ -241,6 +256,7 @@ final class CuocGoi: NSObject, ObservableObject {
         callId = id
         let ds = iceGuiCho
         iceGuiCho = []
+        NhatKy.goi.info("có callId — đổ \(ds.count) ứng viên ICE đang xếp hàng")
         for c in ds { realtime.guiIce(callId: id, candidate: moTaIce(c)) }
     }
 
@@ -278,6 +294,17 @@ final class CuocGoi: NSObject, ObservableObject {
         daCoMoTaXa = false
         thuNoiLai = false
         tatAmThanh()
+
+        // Tiếng cúp máy phải kêu SAU khi đã trả phiên về hệ thống, nếu không
+        // `setActive(false)` cắt ngang nó. 80ms là đủ cho hệ thống chuyển.
+        AmThanh.shared.dungHetTiengGoi()
+        AmThanh.shared.dangTrongCuocGoi = false
+        let daTungGoi = trangThai != .roi
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(80))
+            if daTungGoi { AmThanh.shared.phat(.goiKetThuc, am: 0.6) }
+        }
+
         trangThai = .roi
     }
 
@@ -325,8 +352,9 @@ final class CuocGoi: NSObject, ObservableObject {
         do {
             let v: Vo = try await APIClient.shared.request(.mayChuIce)
             if !v.turn {
-                print("[gọi] TURN chưa cấu hình — gọi qua 4G nhiều khả năng hỏng")
+                NhatKy.goi.error("TURN chưa cấu hình — gọi qua 4G nhiều khả năng hỏng")
             }
+            NhatKy.goi.info("máy chủ ICE: \(v.iceServers.count) mục, TURN=\(v.turn)")
             return v.iceServers.map {
                 if let u = $0.username, let c = $0.credential {
                     return RTCIceServer(urlStrings: $0.urls, username: u, credential: c)
@@ -336,6 +364,7 @@ final class CuocGoi: NSObject, ObservableObject {
         } catch {
             // Mất mạng lúc hỏi thì vẫn thử bằng STUN công khai — còn hơn
             // không gọi được.
+            NhatKy.goi.error("KHÔNG lấy được máy chủ ICE: \(error)")
             return [RTCIceServer(urlStrings: ["stun:stun.l.google.com:19302"])]
         }
     }
@@ -368,6 +397,11 @@ extension CuocGoi: RTCPeerConnectionDelegate {
             guard let self else { return }
             switch newState {
             case .connected, .completed:
+                NhatKy.goi.info("ICE NỐI ĐƯỢC — đã nghe được nhau")
+                if self.trangThai != .dangNoi {
+                    AmThanh.shared.dungHetTiengGoi()
+                    AmThanh.shared.phat(.goiNoiDuoc, am: 0.5)
+                }
                 self.thuNoiLai = false
                 if self.trangThai != .dangNoi {
                     self.trangThai = .dangNoi
@@ -377,6 +411,7 @@ extension CuocGoi: RTCPeerConnectionDelegate {
                 // Thử nối lại MỘT lần: chuyển Wi-Fi↔4G hay sóng chập một nhịp
                 // là chuyện thường, cúp ngay là quá vội.
                 if !self.thuNoiLai {
+                    NhatKy.goi.error("ICE hỏng — thử nối lại một lần")
                     self.thuNoiLai = true
                     pc.restartIce()
                     return

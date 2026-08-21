@@ -27,7 +27,10 @@ final class BoGoi: ObservableObject {
         let rt = RealtimeClient.shared
 
         rt.goiDoChuong
-            .sink { [weak self] id in self?.goi.datCallId(id) }
+            .sink { [weak self] id in
+                NhatKy.goi.info("← call:ringing callId=\(id)")
+                self?.goi.datCallId(id)
+            }
             .store(in: &huy)
 
         rt.goiToi
@@ -35,7 +38,12 @@ final class BoGoi: ObservableObject {
                 guard let self else { return }
                 // Đang bận thì máy chủ đã tự trả `call:busy` cho người gọi;
                 // ở đây chỉ cần không đè lên cuộc đang nói.
-                guard self.goi.trangThai == .roi else { return }
+                NhatKy.goi.info("← call:incoming từ=\(su.tuUserId) ten=\(su.ten) "
+                              + "trangThai hiện tại=\(self.goi.trangThai)")
+                guard self.goi.trangThai == .roi else {
+                    NhatKy.goi.error("BỎ QUA cuộc gọi tới vì đang bận")
+                    return
+                }
                 self.anhBenKia = su.anh
                 self.goi.chuanBiNhan(callId: su.callId, sdp: su.sdp, ten: su.ten)
                 self.hienMan = true
@@ -45,17 +53,22 @@ final class BoGoi: ObservableObject {
 
         rt.goiDuocNhan
             .sink { [weak self] su in
+                NhatKy.goi.info("← call:answered")
                 RungChuong.dung()
                 self?.goi.benKiaDaNhan(sdp: su.sdp)
             }
             .store(in: &huy)
 
         rt.goiIce
-            .sink { [weak self] c in self?.goi.themIce(c) }
+            .sink { [weak self] c in
+                NhatKy.goi.info("← call:ice")
+                self?.goi.themIce(c)
+            }
             .store(in: &huy)
 
         rt.goiKetThuc
             .sink { [weak self] su in
+                NhatKy.goi.info("← call:end lyDo=\(su.lyDo) giay=\(su.giay)")
                 RungChuong.dung()
                 guard let self else { return }
                 switch su.lyDo {
@@ -102,6 +115,7 @@ final class BoGoi: ObservableObject {
     }
 
     func batDauGoi(threadId: Int, toUserId: Int, ten: String, anh: String?) {
+        NhatKy.goi.info("→ BẤM GỌI thread=\(threadId) toi=\(toUserId) ten=\(ten)")
         anhBenKia = anh
         hienMan = true
         Task { await goi.goi(threadId: threadId, toUserId: toUserId, ten: ten) }

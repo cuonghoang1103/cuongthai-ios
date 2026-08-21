@@ -54,6 +54,7 @@ enum NhatKy {
     static let socket = Kenh(ten: "socket")
     static let tinNhan = Kenh(ten: "tin-nhan")
     static let thongBao = Kenh(ten: "thong-bao")
+    static let goi = Kenh(ten: "goi")
 
     /// Đánh dấu một lượt chạy mới — KHÔNG xoá gì.
     ///

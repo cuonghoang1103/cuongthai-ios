@@ -240,12 +240,20 @@ struct ChatView: View {
             }
             .buttonStyle(.plain)
 
-            // Chỉ hội thoại RIÊNG mới gọi được. `ADMIN` là kênh hỗ trợ, không
-            // có "người kia" cố định để gọi.
+            // Có `peer` là gọi được — kể cả hội thoại `ADMIN`.
+            //
+            // ⚠️ Bản đầu tôi chặn thêm `type == "USER"` với lý do "ADMIN là
+            // kênh hỗ trợ, không có người kia cố định". SAI: hội thoại ADMIN
+            // có đủ `userId` và `adminUserId`, máy chủ tính `peer` cho cả hai
+            // loại, và `call.socket.ts` KHÔNG hề phân biệt — nó chỉ kiểm
+            // người gọi có trong phòng không. Tôi tự bịa ra một giới hạn máy
+            // chủ không có, và nó đội lốt "hạn chế có chủ ý" nên nhìn mã
+            // không ai thấy sai. Người dùng phát hiện: hội thoại này mất nút
+            // gọi trong khi hội thoại khác vẫn có.
             //
             // Gọi VIDEO chưa có nút: nút không ăn là thứ App Store đánh rớt
             // theo 2.1.
-            if hoiThoai.type == "USER", let ban = hoiThoai.peer {
+            if let ban = hoiThoai.peer {
                 Button {
                     BoGoi.shared.batDauGoi(
                         threadId: hoiThoai.id,
@@ -889,6 +897,7 @@ struct ChatView: View {
     }
 
     private func sendMessage() {
+        AmThanh.shared.phat(.guiDi, am: 0.32)
         guard !messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         Haptics.cham()
 
@@ -1656,6 +1665,23 @@ private struct VongDoiChat: ViewModifier {
             // Tin mới đẩy thẳng vào danh sách, không hỏi lại API.
             .onReceive(realtime.tinMoi) { su in
                 guard su.threadId == thread.id else { return }
+
+                // ⚠️ TIẾNG BÁO CHỈ PHÁT Ở ĐÂY, KHÔNG PHÁT Ở TẦNG APP.
+                //
+                // Tin nhắn về thì máy nhận CẢ hai đường: sự kiện socket này
+                // VÀ một thông báo đẩy. `willPresent` trong `ThongBaoDay` đã
+                // xin `[.banner, .sound, .badge]`, nên hội thoại KHÔNG mở đã
+                // có tiếng của hệ thống rồi. Thêm tiếng ở tầng app nữa là
+                // kêu hai lần cho một tin.
+                //
+                // Đúng hội thoại đang mở thì `willPresent` trả `[]` — im
+                // hoàn toàn. Đó mới là khoảng trống, và nó lấp ở đây.
+                if su.message.senderId != AppState.shared.currentUser?.id {
+                    // Khẽ thôi: người dùng đang nhìn thẳng vào màn hình, tiếng
+                    // này chỉ để xác nhận chứ không phải để gọi họ quay lại.
+                    AmThanh.shared.phat(.tinNhanToi, am: 0.4)
+                }
+
                 viewModel.chenTinMoi(su.message)
                 // Đang mở hội thoại mà tin tới thì coi như đọc luôn, không thì
                 // huy hiệu chưa đọc nhảy lên ngay trước mắt người đang đọc.
