@@ -184,3 +184,103 @@ struct NhomChu: Codable, Identifiable, Hashable {
 
     var chu: [ChuCai] { items ?? [] }
 }
+
+// ── Bốn mục nội dung ────────────────────────────────────────────
+//
+// ⚠️ NGỮ PHÁP TRẢ HÌNH DẠNG KHÁC BA MỤC KIA. Đo thật:
+//     grammar      → data = { items: [...], levels: [...] }
+//     conversation → data = [...]   , levels nằm ở TẦNG NGOÀI
+//     reading, qna → y như conversation
+// Khai một model chung cho cả bốn là giải mã hỏng ở đúng một mục, mà mục
+// đó lại là mục nhiều nội dung nhất (300 mục mỗi ngôn ngữ).
+
+struct NguPhap: Codable, Identifiable, Hashable {
+    let id: Int
+    let level: String?
+    let title: String
+    let structure: String?
+    let explanation: String?
+    let examples: [ViDu]?
+    let commonMistakes: String?
+    let comparedWith: String?
+
+    struct ViDu: Codable, Hashable {
+        let sentence: String?
+        let meaningVi: String?
+        let pronunciation: String?
+    }
+}
+
+/// Vỏ riêng của ngữ pháp — `data` là ĐỐI TƯỢNG, không phải mảng.
+struct GoiNguPhap: Codable {
+    let items: [NguPhap]
+    let levels: [String]?
+}
+
+struct HoiThoai: Codable, Identifiable, Hashable {
+    let id: Int
+    let level: String?
+    let question: String
+    let answer: String?
+    let questionPronunciation: String?
+    let answerPronunciation: String?
+    let meaningVi: String?
+    let note: String?
+}
+
+struct BaiDoc: Codable, Identifiable, Hashable {
+    let id: Int
+    let level: String?
+    let title: String
+    let type: String?
+    let content: String?
+    let translation: String?
+}
+
+struct HoiDap: Codable, Identifiable, Hashable {
+    let id: Int
+    let level: String?
+    let question: String
+    let answer: String?
+    let pronunciation: String?
+    let meaningVi: String?
+}
+
+// ── AI ──────────────────────────────────────────────────────────
+
+struct KetQuaDich: Codable {
+    let translation: String?
+    let reading: String?
+    let literal: String?
+    let notes: String?
+    let alternatives: [String]?
+}
+
+struct KetQuaKiemNguPhap: Codable {
+    let corrected: String?
+    let score: Int?
+    let issues: [Loi]?
+
+    struct Loi: Codable, Identifiable, Hashable {
+        let severity: String?
+        let original: String?
+        let suggestion: String?
+        let explanation: String?
+        var id: String { (original ?? "") + (suggestion ?? "") + (explanation ?? "") }
+
+        var mauMuc: UInt32 {
+            switch (severity ?? "").lowercased() {
+            case "error":   return 0xE5484D
+            case "warning": return 0xD97706
+            default:        return 0x0E93A6
+            }
+        }
+        var tenMuc: String {
+            switch (severity ?? "").lowercased() {
+            case "error":   return "Sai"
+            case "warning": return "Nên sửa"
+            default:        return "Văn phong"
+            }
+        }
+    }
+}

@@ -100,7 +100,17 @@ struct NgonNguHomeView: View {
                     .buttonStyle(.plain)
                 }
 
-                if !vm.dsCap.isEmpty { thanhCap }
+                luoiMuc
+
+                if !vm.dsCap.isEmpty {
+                    Text("TỪ VỰNG THEO CHỦ ĐỀ")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(AppColors.textTertiary)
+                        .kerning(0.6)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.top, Spacing.sm)
+                    thanhCap
+                }
 
                 if vm.dangTai && vm.tatCa.isEmpty {
                     ProgressView().padding(.top, Spacing.xl)
@@ -121,6 +131,72 @@ struct NgonNguHomeView: View {
         .navigationTitle("\(ngonNgu.co) \(ngonNgu.name)")
         .navigationBarTitleDisplayMode(.inline)
         .task { if vm.tatCa.isEmpty { await vm.tai(ngonNgu.code) } }
+    }
+
+    /// Lưới lối vào các mục. Mục nào ngôn ngữ đó KHÔNG có nội dung thì ẩn
+    /// hẳn — `counts` đã nói sẵn, không cần gọi thêm để biết. Ví dụ tiếng
+    /// Nhật và Trung đều 0 bài nghe, hiện ra chỉ để mở vào màn trống.
+    private var luoiMuc: some View {
+        let sl = ngonNgu.counts
+        return LazyVGrid(columns: [GridItem(.flexible(), spacing: Spacing.sm),
+                                   GridItem(.flexible(), spacing: Spacing.sm)],
+                         spacing: Spacing.sm) {
+            if (sl?.grammar ?? 0) > 0 {
+                oMuc("Ngữ pháp", "text.book.closed.fill", 0x7A45E8, sl?.grammar) {
+                    NguPhapView(ngonNgu: ngonNgu)
+                }
+            }
+            if (sl?.conversation ?? 0) > 0 {
+                oMuc("Hội thoại", "bubble.left.and.bubble.right.fill", 0x0E93A6, sl?.conversation) {
+                    HoiThoaiView(ngonNgu: ngonNgu)
+                }
+            }
+            if (sl?.reading ?? 0) > 0 {
+                oMuc("Bài đọc", "doc.text.fill", 0xD97706, sl?.reading) {
+                    BaiDocView(ngonNgu: ngonNgu)
+                }
+            }
+            if (sl?.qna ?? 0) > 0 {
+                oMuc("Hỏi đáp", "questionmark.bubble.fill", 0x2BA84A, sl?.qna) {
+                    HoiDapView(ngonNgu: ngonNgu)
+                }
+            }
+            oMuc("Dịch", "character.book.closed.fill", 0x8C5AF0, nil) {
+                DichView(ngonNgu: ngonNgu)
+            }
+            oMuc("Kiểm ngữ pháp", "checkmark.seal.fill", 0x21D4ED, nil) {
+                KiemNguPhapView(ngonNgu: ngonNgu)
+            }
+        }
+    }
+
+    private func oMuc<D: View>(_ ten: String, _ icon: String, _ mau: UInt32,
+                               _ so: Int?, @ViewBuilder _ den: @escaping () -> D) -> some View {
+        NavigationLink(destination: den()) {
+            VStack(alignment: .leading, spacing: Spacing.sm) {
+                Image(systemName: icon)
+                    .font(.system(size: 17, weight: .medium))
+                    .foregroundColor(.white)
+                    .frame(width: 36, height: 36)
+                    .background(RoundedRectangle(cornerRadius: 11, style: .continuous)
+                        .fill(Color(hex: mau)))
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(ten)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(AppColors.textPrimary)
+                        .lineLimit(1)
+                    Text(so.map { "\($0) mục" } ?? "Cần tài khoản Pro")
+                        .font(.system(size: 11))
+                        .foregroundColor(AppColors.textTertiary)
+                        .lineLimit(1)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(Spacing.md)
+            .background(RoundedRectangle(cornerRadius: CornerRadius.large)
+                .fill(AppColors.backgroundCard))
+        }
+        .buttonStyle(.plain)
     }
 
     private var thanhCap: some View {

@@ -223,6 +223,13 @@ enum APIEndpoint {
     case idYeuThich(code: String)
     case doiYeuThich(wordId: Int)
     case bangChu(code: String)
+    case nguPhap(code: String, level: String?, page: Int, limit: Int)
+    case hoiThoai(code: String, page: Int, limit: Int)
+    case baiDoc(code: String, page: Int, limit: Int)
+    case hoiDap(code: String, page: Int, limit: Int)
+    /// `sangTiengNuocNgoai` = true nghĩa là Việt → ngôn ngữ đó.
+    case aiDich(code: String, chu: String, sangTiengNuocNgoai: Bool)
+    case aiKiemNguPhap(code: String, chu: String)
     /// PATCH — `nil` = đánh dấu đã đọc TẤT CẢ, hoặc truyền danh sách id.
     case markNotificationsRead(ids: [Int]?)
     /// Lấy một bài viết theo id, để bấm thông báo là mở đúng bài.
@@ -382,6 +389,12 @@ enum APIEndpoint {
         case .idYeuThich(let c): return "/api/v1/my-language/favorites/\(c)/ids"
         case .doiYeuThich: return "/api/v1/my-language/favorites/toggle"
         case .bangChu(let c): return "/api/v1/my-language/\(c)/alphabet"
+        case .nguPhap(let c, _, _, _): return "/api/v1/my-language/\(c)/grammar"
+        case .hoiThoai(let c, _, _): return "/api/v1/my-language/\(c)/conversation"
+        case .baiDoc(let c, _, _): return "/api/v1/my-language/\(c)/reading"
+        case .hoiDap(let c, _, _): return "/api/v1/my-language/\(c)/qna"
+        case .aiDich: return "/api/v1/my-language/ai/translate"
+        case .aiKiemNguPhap: return "/api/v1/my-language/ai/grammar-check"
         case .markNotificationsRead: return "/api/v1/social/notifications"
         case .getPost(let id): return "/api/v1/social/posts/\(id)"
         }
@@ -389,7 +402,7 @@ enum APIEndpoint {
 
     var method: String {
         switch self {
-        case .ghiTienDo, .ghiKetQuaQuiz, .doiYeuThich,
+        case .ghiTienDo, .ghiKetQuaQuiz, .doiYeuThich, .aiDich, .aiKiemNguPhap,
              .login, .register, .oauthToken, .changePassword, .refreshToken,
              .createPost, .likePost, .followUser, .unfollowUser,
              .createComment, .likeComment, .savePost, .sendMessage, .sendMessageWithFiles, .enrollCourse,
@@ -434,6 +447,10 @@ enum APIEndpoint {
             var m: [String: Any] = ["languageId": lid, "score": s, "total": t]
             if let cid { m["categoryId"] = cid }
             return m
+        case .aiDich(let c, let chu, let sang):
+            return ["languageCode": c, "text": chu, "direction": sang ? "to" : "from"]
+        case .aiKiemNguPhap(let c, let chu):
+            return ["languageCode": c, "text": chu]
         case .doiYeuThich(let w):
             return ["wordId": w]
         case .register(let u, let e, let p, let f, let c):
@@ -640,6 +657,14 @@ enum APIEndpoint {
             return m
         case .hangDoiOnTap(let c), .thongKeNgonNgu(let c):
             return ["languageCode": c]
+        case .nguPhap(_, let lv, let p, let l):
+            var m: [String: Any] = ["page": p, "limit": l]
+            // Khác /vocab: ở đây `?level=` CÓ lọc thật — máy chủ trả kèm
+            // `levels` để dựng thanh chọn, đúng khuôn của trang ngữ pháp.
+            if let lv { m["level"] = lv }
+            return m
+        case .hoiThoai(_, let p, let l), .baiDoc(_, let p, let l), .hoiDap(_, let p, let l):
+            return ["page": p, "limit": l]
         default: return nil
         }
     }
