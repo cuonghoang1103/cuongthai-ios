@@ -55,6 +55,7 @@ enum NhatKy {
     static let tinNhan = Kenh(ten: "tin-nhan")
     static let thongBao = Kenh(ten: "thong-bao")
     static let goi = Kenh(ten: "goi")
+    static let noi = Kenh(ten: "luyen-noi")
 
     /// Đánh dấu một lượt chạy mới — KHÔNG xoá gì.
     ///

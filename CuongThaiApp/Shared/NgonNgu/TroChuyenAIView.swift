@@ -45,6 +45,7 @@ final class TroChuyenAI: ObservableObject {
             loiNoi.append(LoiNoi(cuaToi: true, chu: sach))
             lichSu.append(["role": "user", "content": sach])
         }
+        NhatKy.noi.info("→ gửi AI: '\(chu.prefix(40))' (lịch sử \(lichSu.count) lượt)")
         dangCho = true
         defer { dangCho = false }
 
@@ -62,6 +63,7 @@ final class TroChuyenAI: ObservableObject {
                 loiNoi[i].sua = sua
             }
 
+            NhatKy.noi.info("← AI: '\(noi.prefix(40))' · sửa=\(sua.isEmpty ? "không" : "CÓ")")
             loiNoi.append(LoiNoi(cuaToi: false, chu: noi, nghia: l.translation))
             lichSu.append(["role": "assistant", "content": noi])
             doc(noi)
@@ -70,6 +72,7 @@ final class TroChuyenAI: ObservableObject {
             if s.contains("pro/max") || s.contains("pro / max") || s.contains("403") {
                 canPro = true
             } else {
+                NhatKy.noi.error("gọi AI HỎNG: \(error)")
                 loi = error.localizedDescription
                 ngheTiep()
             }
@@ -80,6 +83,7 @@ final class TroChuyenAI: ObservableObject {
     private func doc(_ chu: String) {
         nghe.dung()   // CHẮC CHẮN micro tắt trước khi loa bật
         guard DocTu.doDuoc(ngonNgu.code) else { ngheTiep(); return }
+        NhatKy.noi.info("ĐỌC bắt đầu")
         DocTu.shared.doc(chu, code: ngonNgu.code, id: -99, chamHon: true)
         Task { @MainActor in
             // Đợi đọc xong. Không có sự kiện "đọc xong" nào bắn thẳng vào
@@ -91,6 +95,7 @@ final class TroChuyenAI: ObservableObject {
             }
             // Nghỉ một nhịp cho tiếng loa tắt hẳn khỏi phòng, không thì
             // micro bắt được đuôi câu vọng lại.
+            NhatKy.noi.info("ĐỌC xong, nghỉ 320ms rồi nghe tiếp")
             try? await Task.sleep(for: .milliseconds(320))
             self.ngheTiep()
         }

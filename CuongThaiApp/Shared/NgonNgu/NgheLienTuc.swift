@@ -68,6 +68,7 @@ final class NgheLienTuc: ObservableObject {
         guard !dangNghe else { return }
         guard let ma = Self.maNhan(code),
               let bn = SFSpeechRecognizer(locale: Locale(identifier: ma)), bn.isAvailable else {
+            NhatKy.noi.error("KHÔNG có bộ nhận cho \(code)")
             loi = "Máy chưa hỗ trợ nhận giọng nói cho ngôn ngữ này."
             return
         }
@@ -81,6 +82,7 @@ final class NgheLienTuc: ObservableObject {
                                   options: [.duckOthers, .defaultToSpeaker])
             try phien.setActive(true, options: .notifyOthersOnDeactivation)
         } catch {
+            NhatKy.noi.error("phiên âm thanh HỎNG: \(error)")
             loi = "Không mở được micro."
             return
         }
@@ -101,10 +103,12 @@ final class NgheLienTuc: ObservableObject {
 
         mayThu.prepare()
         do { try mayThu.start() } catch {
+            NhatKy.noi.error("mayThu.start HỎNG: \(error)")
             loi = "Không khởi động được micro."
             return
         }
         dangNghe = true
+        NhatKy.noi.info("NGHE bật · \(ma) · trên-máy=\(yc.requiresOnDeviceRecognition)")
 
         viec = bn.recognitionTask(with: yc) { [weak self] kq, _ in
             guard let self else { return }
@@ -132,6 +136,7 @@ final class NgheLienTuc: ObservableObject {
 
     private func chotCau() {
         let chu = chuTamThoi.trimmingCharacters(in: .whitespacesAndNewlines)
+        NhatKy.noi.info("im \(LANG_GIAY)s → chốt: '\(chu)'")
         dung()
         // Im lặng suốt mà không ra chữ nào thì không gửi gì cả — gửi chuỗi
         // rỗng lên AI là nó trả lời vu vơ và tự kéo cuộc nói chuyện đi.
@@ -140,6 +145,7 @@ final class NgheLienTuc: ObservableObject {
     }
 
     func dung() {
+        if dangNghe { NhatKy.noi.info("NGHE tắt") }
         dongHoLang?.invalidate(); dongHoLang = nil
         if mayThu.isRunning {
             mayThu.stop()
