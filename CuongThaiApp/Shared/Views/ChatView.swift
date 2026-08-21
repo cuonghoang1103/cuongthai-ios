@@ -25,6 +25,8 @@ struct ChatView: View {
     #endif
     @State private var hienChonTep = false
     @State private var hienChonGif = false
+    /// Tin đang bị nhấn giữ — khung chat vẽ lớp phủ kiểu Messenger cho nó.
+    @State private var tinDangGiu: Message?
     @State private var traLoiTin: Message?
     @State private var hienDatBietDanh = false
     @State private var hienChonNen = false
@@ -56,17 +58,43 @@ struct ChatView: View {
             if hienEmoji { bangEmoji }
             inputBar
         }
+        .modifier(LopPhuGiuTin(tinDangGiu: $tinDangGiu, viewModel: viewModel,
+                               hanhDong: hanhDongCho))
         .background(AppColors.backgroundPrimary)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .principal) {
+            // ⚠️ `.principal` LUÔN căn giữa — không có cách nào bảo nó dán
+            // trái. Messenger đặt avatar + tên ngay sau nút quay lại, nên phải
+            // dùng `.navigationBarLeading`.
+            ToolbarItem(placement: .navigationBarLeading) {
                 chatHeader
             }
 
             ToolbarItem(placement: .navigationBarTrailing) {
-                // Gọi video / gọi thoại đã GỠ: backend không có kênh gọi nào,
-                // để nút đó lại chỉ tạo ra hai chỗ bấm không ăn — đúng thứ
-                // App Store đánh rớt theo 2.1.
+                // Gọi thoại BẬT từ 21/08/2026 — backend đã có kênh báo hiệu
+                // (`call.socket.ts`) và TURN riêng trên VPS. Gọi VIDEO thì vẫn
+                // chưa: chưa có nút, vì nút không ăn là thứ App Store đánh rớt
+                // theo 2.1.
+                //
+                // Chỉ hội thoại RIÊNG mới gọi được. Hội thoại `ADMIN` là kênh
+                // hỗ trợ, không có "người kia" cố định để gọi.
+                if hoiThoai.type == "USER", let ban = hoiThoai.peer {
+                    Button {
+                        BoGoi.shared.batDauGoi(
+                            threadId: hoiThoai.id,
+                            toUserId: ban.id,
+                            ten: hoiThoai.displayName,
+                            anh: hoiThoai.avatarUrl,
+                        )
+                    } label: {
+                        Image(systemName: "phone.fill")
+                            .foregroundColor(AppColors.primary)
+                    }
+                    .accessibilityLabel("Gọi thoại cho \(hoiThoai.displayName)")
+                }
+            }
+
+            ToolbarItem(placement: .navigationBarTrailing) {
                 Menu {
                     Button {
                         withAnimation { dangTimKiem.toggle() }
@@ -241,8 +269,13 @@ struct ChatView: View {
                         .font(.caption)
                         .foregroundColor(mauTrangThai)
                 }
+                // Tên dài phải CẮT chứ không được đẩy — ở mép trái nó sẽ lấn
+                // sang chỗ nút ••• bên phải và đè lên nhau.
+                .lineLimit(1)
             }
+            .frame(maxWidth: 220, alignment: .leading)
         }
+        .buttonStyle(.plain)
     }
 
     /// Người bên kia có đang gõ không.
@@ -497,7 +530,8 @@ struct ChatView: View {
                                     traLoi: { traLoiTin = message },
                                     thuHoi: { Task { await viewModel.thuHoi(message) } },
                                     xoa: { Task { await viewModel.xoaTin(message) } },
-                                    hienGio: viewModel.laCuoiCum(message, in: group.messages)
+                                    hienGio: viewModel.laCuoiCum(message, in: group.messages),
+                                    giuTin: { tinDangGiu = message }
                                 )
                                 .id(message.id)
                             }
@@ -758,6 +792,26 @@ struct ChatView: View {
             traLoiTin = nil
         }
     }
+    /// Hành động cho một tin — đúng bộ Messenger có, bỏ những cái app chưa làm.
+    private func hanhDongCho(_ tin: Message) -> [HanhDongTin] {
+        var ds: [HanhDongTin] = [
+            HanhDongTin(ten: "Trả lời", icon: "arrowshape.turn.up.left") { traLoiTin = tin },
+            HanhDongTin(ten: "Sao chép", icon: "doc.on.doc") {
+                #if os(iOS)
+                UIPasteboard.general.string = tin.noiDung
+                #endif
+            },
+        ]
+        if viewModel.isFromCurrentUser(tin) {
+            ds.append(HanhDongTin(ten: "Thu hồi", icon: "arrow.uturn.backward") {
+                Task { await viewModel.thuHoi(tin) }
+            })
+            ds.append(HanhDongTin(ten: "Xoá", icon: "trash", doTuoi: true) {
+                Task { await viewModel.xoaTin(tin) }
+            })
+        }
+        return ds
+    }
 }
 
 // MARK: - Message Bubble
@@ -775,7 +829,9 @@ struct MessageBubble: View {
     /// phải mỗi tin — dán giờ vào từng dòng làm khung chat rời rạc hẳn ra.
     var hienGio: Bool = true
 
-    @State private var hienBangCamXuc = false
+    /// Khung chat cầm cờ này — bong bóng chỉ báo "tôi bị giữ", việc vẽ lớp
+    /// phủ là của khung chat (nó mới có toàn màn hình để vẽ).
+    var giuTin: (() -> Void)? = nil
 
     private var mauChu: Color { isFromCurrentUser ? AppColors.onPrimary : AppColors.textPrimary }
     private var mauNen: Color { isFromCurrentUser ? AppColors.primary : AppColors.backgroundTertiary }
@@ -845,7 +901,19 @@ struct MessageBubble: View {
                             .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
                             .frame(maxWidth: tranNgang,
                                    alignment: isFromCurrentUser ? .trailing : .leading)
-                            .textSelection(.enabled)
+                            // ⚠️ KHÔNG bật `.textSelection(.enabled)` ở đây.
+                            //
+                            // Bộ chọn văn bản của iOS NUỐT cử chỉ nhấn giữ:
+                            // giữ bong bóng thì hiện menu "Copy | Share | Look
+                            // Up" của hệ thống, còn menu cảm xúc của mình
+                            // KHÔNG BAO GIỜ chạy. Đo thật 21/08/2026: nhật ký
+                            // ghi 0 lần vào `onLongPressGesture`, trong khi 16
+                            // neo toạ độ vẫn báo về đủ — tức mọi thứ khác lành,
+                            // chỉ cú chạm là không tới nơi.
+                            //
+                            // Messenger cũng không cho bôi đen chữ trong bong
+                            // bóng; muốn chép thì dùng "Sao chép" trong menu
+                            // nhấn giữ, và app đã có sẵn mục đó.
                     }
                 }
 
@@ -883,68 +951,17 @@ struct MessageBubble: View {
         }
         .padding(.vertical, hienGio ? 3 : 1)
         .contentShape(Rectangle())
+        // Báo toạ độ thật của bong bóng lên khung chat, để lớp phủ nhấc nó
+        // lên ĐÚNG chỗ nó đang nằm thay vì nhảy ra giữa màn hình.
+        .anchorPreference(key: NeoTinKey.self, value: .bounds) { [message.id: $0] }
         .onLongPressGesture {
             guard !message.daXoaHoacThuHoi else { return }
             Haptics.cham()
-            hienBangCamXuc = true
-        }
-        .popover(isPresented: $hienBangCamXuc) {
-            bangCamXuc
-                .presentationCompactAdaptation(.popover)
+            giuTin?()
         }
     }
 
-    // MARK: Bảng nhấn giữ
 
-    private var bangCamXuc: some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 2) {
-                ForEach(ChatViewModel.camXuc, id: \.self) { e in
-                    Button {
-                        hienBangCamXuc = false
-                        thaCamXuc?(e)
-                    } label: {
-                        Text(e).font(.system(size: 26)).padding(6)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(.horizontal, 6)
-            .padding(.vertical, 4)
-
-            Divider()
-
-            VStack(spacing: 0) {
-                if let traLoi {
-                    hangMenu("Trả lời", "arrowshape.turn.up.left") { hienBangCamXuc = false; traLoi() }
-                }
-                if isFromCurrentUser, let thuHoi {
-                    hangMenu("Thu hồi", "arrow.uturn.backward") { hienBangCamXuc = false; thuHoi() }
-                }
-                if isFromCurrentUser, let xoa {
-                    hangMenu("Xoá", "trash", doTuoi: true) { hienBangCamXuc = false; xoa() }
-                }
-            }
-        }
-        .frame(width: 250)
-    }
-
-    private func hangMenu(_ chu: String, _ icon: String, doTuoi: Bool = false,
-                          _ cham: @escaping () -> Void) -> some View {
-        Button(action: cham) {
-            HStack(spacing: 10) {
-                Image(systemName: icon).frame(width: 20)
-                Text(chu)
-                Spacer()
-            }
-            .font(.system(size: 15))
-            .foregroundColor(doTuoi ? AppColors.error : AppColors.textPrimary)
-            .padding(.horizontal, Spacing.md)
-            .padding(.vertical, 11)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-    }
 
     // MARK: Chip cảm xúc
 
@@ -1239,6 +1256,13 @@ class ChatViewModel: ObservableObject {
 
     /// Bật/tắt một cảm xúc. Đổi TẠI CHỖ trước khi gọi mạng để nút phản hồi tức
     /// thì; máy chủ trả về bản gộp thật thì ghi đè lại.
+    /// Cảm xúc CHÍNH MÌNH đã thả cho tin này — để khoanh tròn nó trong bảng
+    /// nhấn giữ. `nil` = chưa thả gì.
+    func camXucCuaToi(_ tin: Message) -> String? {
+        let toi = AppState.shared.currentUser?.id
+        return tin.reactions?.first { $0.coCua(toi) }?.emoji
+    }
+
     func doiCamXuc(_ tin: Message, _ emoji: String) async {
         guard let toi = AppState.shared.currentUser?.id else { return }
         guard let i = messages.firstIndex(where: { $0.id == tin.id }) else { return }
@@ -1302,9 +1326,23 @@ class ChatViewModel: ObservableObject {
         await sendMessage("📍 Vị trí của tôi: \(link)")
     }
 
+    // ⚠️⚠️ `request()` ĐÒI vỏ có khoá `data`; `send()` thì không.
+    //
+    // Ba đường dưới đây trả về `{ success: true }` TRƠN — không `data`. Gọi
+    // bằng `request()` là nó ném `serverError("Máy chủ không trả về dữ liệu")`
+    // NGAY CẢ KHI máy chủ đã làm xong việc. Tin đã thu hồi/xoá thật trên máy
+    // chủ, mà app tưởng hỏng nên không cập nhật gì — người dùng thấy "bấm
+    // không ăn". Đo thật 21/08/2026:
+    //
+    //   POST   /messages/:id/recall  → res.json({ success: true })
+    //   DELETE /messages/:id         → res.json({ success: true })
+    //   PATCH  /threads/:id/read     → res.json({ success: true })
+    //
+    // Đã rà cả hai kho: 15 đường của backend trả vỏ trơn, và ĐÚNG ba đường
+    // trên là chỗ app gọi nhầm bằng `request()`.
     func thuHoi(_ tin: Message) async {
         do {
-            let _: EmptyResponse = try await APIClient.shared.request(.recallMessage(messageId: tin.id))
+            try await APIClient.shared.send(.recallMessage(messageId: tin.id))
             apDungThayDoi(messageId: tin.id, reactions: nil, thuHoi: true, daXoa: nil)
         } catch {
             self.error = error.localizedDescription
@@ -1313,7 +1351,7 @@ class ChatViewModel: ObservableObject {
 
     func xoaTin(_ tin: Message) async {
         do {
-            let _: EmptyResponse = try await APIClient.shared.request(.deleteMessage(messageId: tin.id))
+            try await APIClient.shared.send(.deleteMessage(messageId: tin.id))
             messages.removeAll { $0.id == tin.id }
         } catch {
             self.error = error.localizedDescription
@@ -1391,7 +1429,7 @@ class ChatViewModel: ObservableObject {
         guard let threadId = thread?.id else { return }
 
         do {
-            let _: EmptyResponse = try await APIClient.shared.request(.markRead(threadId: threadId))
+            try await APIClient.shared.send(.markRead(threadId: threadId))
             // Hạ huy hiệu NGAY. Trước đây chỉ `fetchUnreadCounts()` lúc mở
             // app mới hạ được, nên đọc xong thoát ra là biểu tượng vẫn treo
             // số cũ tới lần mở app sau.
@@ -1541,6 +1579,14 @@ private struct VongDoiChat: ViewModifier {
                 realtime.baoDangGo(threadId: thread.id, dangGo: false)
                 Task { await viewModel.markAsRead() }
             }
+            // Thu hồi / xoá / thả cảm xúc đều đặt `viewModel.error` khi hỏng —
+            // mà TRƯỚC BẢN NÀY không chỗ nào hiện nó ra. Hỏng là im lặng
+            // tuyệt đối, đúng cảm giác "menu không hoạt động".
+            .alert("Không thực hiện được",
+                   isPresented: Binding(get: { viewModel.error != nil },
+                                        set: { if !$0 { viewModel.error = nil } })) {
+                Button("OK") { viewModel.error = nil }
+            } message: { Text(viewModel.error ?? "") }
             .alert("Hội thoại", isPresented: .constant(thongBaoTat != nil)) {
                 Button("OK") { thongBaoTat = nil }
             } message: {
@@ -1592,5 +1638,46 @@ private struct MayAnhVaGhiAm: ViewModifier {
             } message: {
                 Text(ghiAm.loi ?? "")
             }
+    }
+}
+
+
+/// Lớp phủ nhấn giữ kiểu Messenger, tách khỏi `body` của ChatView.
+///
+/// ⚠️ Gộp thẳng vào `body` làm trình biên dịch bỏ cuộc: "unable to type-check
+/// this expression in reasonable time". `body` của màn chat vốn đã dài, thêm
+/// một `overlayPreferenceValue` lồng `GeometryReader` là quá sức suy kiểu.
+private struct LopPhuGiuTin: ViewModifier {
+    @Binding var tinDangGiu: Message?
+    @ObservedObject var viewModel: ChatViewModel
+    let hanhDong: (Message) -> [HanhDongTin]
+
+    func body(content: Content) -> some View {
+        content.overlayPreferenceValue(NeoTinKey.self) { neo in
+            // `overlayPreferenceValue` là chỗ DUY NHẤT đọc được toạ độ thật mà
+            // bong bóng đã báo lên qua `anchorPreference`.
+            if let tin = tinDangGiu, let a = neo[tin.id] {
+                GeometryReader { g in
+                    MenuGiuTin(
+                        bongBong: AnyView(
+                            MessageBubble(
+                                message: tin,
+                                isFromCurrentUser: viewModel.isFromCurrentUser(tin),
+                                showAvatar: false,
+                                hienGio: false
+                            )
+                        ),
+                        khung: g[a],
+                        cuaMinh: viewModel.isFromCurrentUser(tin),
+                        camXuc: ChatViewModel.camXuc,
+                        daChon: viewModel.camXucCuaToi(tin),
+                        thaCamXuc: { e in Task { await viewModel.doiCamXuc(tin, e) } },
+                        hanhDong: hanhDong(tin),
+                        dong: { tinDangGiu = nil }
+                    )
+                }
+                .ignoresSafeArea()
+            }
+        }
     }
 }

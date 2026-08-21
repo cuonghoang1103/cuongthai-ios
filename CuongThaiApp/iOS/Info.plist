@@ -32,7 +32,15 @@
         <string>UIInterfaceOrientationLandscapeRight</string>
     </array>
     <key>NSCameraUsageDescription</key><string>CuongThai cần camera để bạn chụp ảnh hoặc quay video đăng lên bảng tin và đổi ảnh đại diện.</string>
-    <key>NSMicrophoneUsageDescription</key><string>CuongThai cần micro để ghi âm thanh khi bạn quay video đăng lên bảng tin.</string>
+    <key>NSMicrophoneUsageDescription</key><string>CuongThai cần micro để bạn gọi thoại với bạn bè, ghi tin nhắn thoại và ghi âm khi quay video.</string>
+    <!-- Cuộc gọi phải tiếp tục khi người dùng chuyển sang app khác hoặc khoá
+         máy. Thiếu `audio` thì iOS treo tiến trình sau vài giây và cuộc gọi
+         chết câm — người kia chỉ nghe im lặng.
+         `voip` sẽ thêm ở chặng CallKit/PushKit, chưa cần bây giờ. -->
+    <key>UIBackgroundModes</key>
+    <array>
+      <string>audio</string>
+    </array>
     <key>NSPhotoLibraryUsageDescription</key><string>CuongThai cần thư viện ảnh để bạn chọn ảnh đính kèm vào bài viết và ảnh đại diện.</string>
     <!-- BẮT BUỘC: gọi requestWhenInUseAuthorization() mà thiếu khoá này thì iOS
          GIẾT app ngay, không phải hiện lỗi. Dùng cho nút "Vị trí" trong chat. -->

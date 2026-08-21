@@ -44,6 +44,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
 struct CuongThaiApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     @StateObject private var appState = AppState.shared
+    @StateObject private var giaoDien = QuanLyGiaoDien.shared
+    @Environment(\.scenePhase) private var scenePhase
 
     init() { NhatKy.xoaCu() }
 
@@ -51,6 +53,16 @@ struct CuongThaiApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(appState)
+                // Cuộc gọi tới phải reo dù người dùng đang ở màn nào.
+                .lopPhuCuocGoi()
+                // `nil` = để iOS quyết định. Màu của app vốn đã thích ứng nên
+                // chỉ cần một dòng này là cả app đổi theo.
+                .preferredColorScheme(giaoDien.mauSac)
+                .onChange(of: scenePhase) { _, moi in
+                    // Máy ngủ qua mốc 6h/18h thì `Timer` không chạy — tính lại
+                    // khi quay lại, không thì mở app buổi tối vẫn thấy nền sáng.
+                    if moi == .active { giaoDien.lamMoiKhiTroLai() }
+                }
                 // Google trả người dùng về app qua URL scheme riêng. Thiếu
                 // dòng này thì luồng đăng nhập mở ra được, người dùng chọn
                 // xong tài khoản, rồi app KHÔNG bao giờ nhận lại kết quả.

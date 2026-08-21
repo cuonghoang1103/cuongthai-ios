@@ -48,6 +48,21 @@ final class RealtimeClient: ObservableObject {
     let tinMoi = PassthroughSubject<(threadId: Int, message: Message), Never>()
     /// `thread:read` — người kia vừa mở hội thoại, dùng để dời mốc "Đã xem".
     let daDoc = PassthroughSubject<(threadId: Int, readerId: Int, readAt: Date), Never>()
+
+    // ── Gọi thoại ────────────────────────────────────────────────
+    //
+    // Chỉ chuyển hộ lời chào (SDP) và đường đi mạng (ICE). Tiếng nói KHÔNG đi
+    // qua socket — nó đi thẳng máy-tới-máy, hoặc vòng qua TURN khi không nối
+    // thẳng được.
+    /// Máy chủ báo mã cuộc gọi NGAY khi bắt đầu đổ chuông. Người gọi cần nó
+    /// để gửi ứng viên ICE, vốn bay ra trước lúc bên kia bắt máy nhiều giây.
+    let goiDoChuong = PassthroughSubject<String, Never>()
+    let goiToi = PassthroughSubject<(callId: String, threadId: Int, tuUserId: Int,
+                                     sdp: [String: Any], ten: String, anh: String?), Never>()
+    let goiDuocNhan = PassthroughSubject<(callId: String, sdp: [String: Any]), Never>()
+    let goiIce = PassthroughSubject<[String: Any], Never>()
+    let goiKetThuc = PassthroughSubject<(lyDo: String, giay: Int), Never>()
+    let goiBan = PassthroughSubject<String, Never>()
     /// `message:updated` — thả cảm xúc, thu hồi, xoá một tin đã gửi.
     let tinDoi = PassthroughSubject<(threadId: Int, messageId: Int,
                                      reactions: [MessageReaction]?,
@@ -119,6 +134,27 @@ final class RealtimeClient: ObservableObject {
 
     /// Chỉ cần khi mở hội thoại KHÔNG nằm trong danh sách máy chủ tự cho vào
     /// lúc bắt tay (ví dụ hội thoại vừa tạo xong).
+    // ── Gửi tín hiệu cuộc gọi ────────────────────────────────────
+    func guiGoi(threadId: Int, toUserId: Int, sdp: [String: Any]) {
+        socket?.emit("call:offer", ["threadId": threadId, "toUserId": toUserId, "sdp": sdp])
+    }
+
+    func guiNhanGoi(callId: String, sdp: [String: Any]) {
+        socket?.emit("call:answer", ["callId": callId, "sdp": sdp])
+    }
+
+    func guiIce(callId: String, candidate: [String: Any]) {
+        socket?.emit("call:ice", ["callId": callId, "candidate": candidate])
+    }
+
+    func guiTuChoi(callId: String) {
+        socket?.emit("call:reject", ["callId": callId])
+    }
+
+    func guiCupMay(callId: String) {
+        socket?.emit("call:end", ["callId": callId])
+    }
+
     func vaoPhong(threadId: Int) {
         socket?.emit("thread:join", ["threadId": threadId])
     }
@@ -179,6 +215,52 @@ final class RealtimeClient: ObservableObject {
                                    thuHoi: doi["recalled"] as? Bool,
                                    daXoa: doi["deleted"] as? Bool))
             }
+        }
+
+        // ── Sự kiện cuộc gọi ─────────────────────────────────────
+        socket.on("call:ringing") { [weak self] data, _ in
+            guard let d = data.first as? [String: Any],
+                  let id = d["callId"] as? String else { return }
+            Task { @MainActor in self?.goiDoChuong.send(id) }
+        }
+
+        socket.on("call:incoming") { [weak self] data, _ in
+            guard let d = data.first as? [String: Any],
+                  let id = d["callId"] as? String,
+                  let tid = d["threadId"] as? Int,
+                  let tu = d["fromUserId"] as? Int,
+                  let sdp = d["sdp"] as? [String: Any] else { return }
+            let ten = d["tenNguoiGoi"] as? String ?? "Người dùng"
+            let anh = d["anhNguoiGoi"] as? String
+            Task { @MainActor in
+                self?.goiToi.send((callId: id, threadId: tid, tuUserId: tu,
+                                   sdp: sdp, ten: ten, anh: anh))
+            }
+        }
+
+        socket.on("call:answered") { [weak self] data, _ in
+            guard let d = data.first as? [String: Any],
+                  let id = d["callId"] as? String,
+                  let sdp = d["sdp"] as? [String: Any] else { return }
+            Task { @MainActor in self?.goiDuocNhan.send((callId: id, sdp: sdp)) }
+        }
+
+        socket.on("call:ice") { [weak self] data, _ in
+            guard let d = data.first as? [String: Any],
+                  let c = d["candidate"] as? [String: Any] else { return }
+            Task { @MainActor in self?.goiIce.send(c) }
+        }
+
+        socket.on("call:end") { [weak self] data, _ in
+            guard let d = data.first as? [String: Any] else { return }
+            let lyDo = d["lyDo"] as? String ?? "cup-may"
+            let giay = d["giay"] as? Int ?? 0
+            Task { @MainActor in self?.goiKetThuc.send((lyDo: lyDo, giay: giay)) }
+        }
+
+        socket.on("call:busy") { [weak self] data, _ in
+            let ai = (data.first as? [String: Any])?["ai"] as? String ?? "ho"
+            Task { @MainActor in self?.goiBan.send(ai) }
         }
 
         socket.on("thread:read") { [weak self] data, _ in

@@ -12,7 +12,7 @@ options:
 settings:
   base:
     MARKETING_VERSION: "1.0.0"
-    CURRENT_PROJECT_VERSION: "22"
+    CURRENT_PROJECT_VERSION: "29"
     # Mã đội lấy từ chính chứng thư Developer ID (OU=UR32PFUQ38), không phải
     # gõ tay từ trang web — đỡ một chỗ sai chính tả im lặng.
     DEVELOPMENT_TEAM: "UR32PFUQ38"
@@ -38,6 +38,16 @@ packages:
   GoogleSignIn:
     url: https://github.com/google/GoogleSignIn-iOS.git
     from: "8.0.0"
+  # WebRTC cho gọi thoại. Apple KHÔNG có bộ này trong SDK — chỉ cho CallKit
+  # (màn hình gọi) và PushKit (đánh thức app), còn phần truyền tiếng nói phải
+  # tự lo. `stasel/WebRTC` là bản dựng sẵn của Google đóng thành XCFramework;
+  # tự dựng từ nguồn mất hàng giờ và cần depot_tools.
+  #
+  # ⚠️ ~30MB. Đó là lý do iOS tốn công gấp mấy lần web/desktop — hai cái kia
+  # có WebRTC sẵn trong trình duyệt.
+  WebRTC:
+    url: https://github.com/stasel/WebRTC.git
+    from: "125.0.0"
 
 targets:
   CuongThaiApp:
@@ -93,6 +103,8 @@ targets:
       - package: Kingfisher
       - package: SocketIO
         product: SocketIO
+      - package: WebRTC
+        product: WebRTC
       - package: GoogleSignIn
         product: GoogleSignIn
       # Nút dựng sẵn đúng nhận diện thương hiệu Google. Tự vẽ lại chữ G bốn

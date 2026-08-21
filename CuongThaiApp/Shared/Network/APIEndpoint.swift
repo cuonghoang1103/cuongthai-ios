@@ -148,6 +148,9 @@ enum APIEndpoint {
     case catPhien(id: String, tuChiSo: Int)
     /// Đặt việc đọc — trả `{ jobId }`, KHÔNG trả tiếng ngay. Xem `MayDoc`.
     case datViecDoc(text: String)
+    /// Xoá hội thoại CHO RIÊNG MÌNH — máy chủ đặt `deletedAt` theo người xem,
+    /// người kia vẫn thấy nguyên. Khôi phục ở tab "Đã xoá".
+    case xoaHoiThoai(threadId: Int)
     case xoaBaiViet(id: Int)
     /// Đổi nội dung và/hoặc quyền riêng tư. Máy chủ nhận `content`,
     /// `visibility` (PUBLIC | FRIENDS | PRIVATE).
@@ -204,6 +207,8 @@ enum APIEndpoint {
     case getUnreadNotificationCount
     case getNotifications(cursor: Int?, limit: Int)
     case getUnreadMessageCount
+    /// Danh sách STUN/TURN kèm khoá tạm 10 phút cho một cuộc gọi.
+    case mayChuIce
     /// PATCH — `nil` = đánh dấu đã đọc TẤT CẢ, hoặc truyền danh sách id.
     case markNotificationsRead(ids: [Int]?)
     /// Lấy một bài viết theo id, để bấm thông báo là mở đúng bài.
@@ -310,6 +315,7 @@ enum APIEndpoint {
         case .tachNhanhPhien(let id, _): return "/api/v1/ai/chat/sessions/\(id)/fork"
         case .catPhien(let id, _): return "/api/v1/ai/chat/sessions/\(id)/cat"
         case .datViecDoc: return "/api/v1/voice-mini/tts"
+        case .xoaHoiThoai(let id): return "/api/v1/messages/threads/\(id)"
         case .xoaBaiViet(let id): return "/api/v1/social/posts/\(id)"
         case .suaBaiViet(let id, _): return "/api/v1/social/posts/\(id)"
         case .ghimBaiViet(let id): return "/api/v1/social/posts/\(id)/pin"
@@ -349,6 +355,7 @@ enum APIEndpoint {
         case .getUnreadNotificationCount: return "/api/v1/social/notifications/unread-count"
         case .getNotifications: return "/api/v1/social/notifications"
         case .getUnreadMessageCount: return "/api/v1/messages/unread-count"
+        case .mayChuIce: return "/api/v1/messages/ice-servers"
         case .markNotificationsRead: return "/api/v1/social/notifications"
         case .getPost(let id): return "/api/v1/social/posts/\(id)"
         }
@@ -377,7 +384,7 @@ enum APIEndpoint {
         case .deletePost, .unlikePost, .unsavePost, .deleteNote,
              .unblockUser, .cancelDeletionRequest, .deleteMessage, .xoaTin, .xoaDongBang,
              .xoaMon, .xoaChuong, .xoaVinhVien, .goThietBi, .xoaTuVung, .xoaBaiViet,
-             .xoaPhienChat, .xoaThuMucChat:
+             .xoaPhienChat, .xoaThuMucChat, .xoaHoiThoai:
             return "DELETE"
         default:
             return "GET"
