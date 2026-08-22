@@ -241,6 +241,19 @@ enum APIEndpoint {
     /// ôn tập SM-2 nên gửi kèm là bài học tự nối vào phần Ôn tập.
     case nopBaiLuyen(code: String, lessonKey: String, dung: Int, tong: Int,
                      sai: Int, idSai: [Int], idDung: [Int])
+    // ── Sổ tay ngôn ngữ (tất cả ĐÒI đăng nhập) ──
+    case caySoTay(code: String)
+    case mucSoTay(id: Int)
+    case taoThuMucSoTay(code: String, ten: String, icon: String?, chaId: Int?)
+    case doiTenThuMucSoTay(id: Int, ten: String, icon: String?)
+    case xoaThuMucSoTay(id: Int)
+    case taoMucSoTay(code: String, thuMucId: Int?, loai: String, tieuDe: String,
+                     than: String, cachDoc: String?, nghia: String?)
+    case suaMucSoTay(id: Int, tieuDe: String, than: String, cachDoc: String?,
+                     nghia: String?, loai: String)
+    case chuyenMucSoTay(id: Int, thuMucId: Int?)
+    case onMucSoTay(id: Int, chatLuong: Int)
+    case xoaMucSoTay(id: Int)
     /// `sangTiengNuocNgoai` = true nghĩa là Việt → ngôn ngữ đó.
     case aiDich(code: String, chu: String, sangTiengNuocNgoai: Bool)
     case aiKiemNguPhap(code: String, chu: String)
@@ -424,6 +437,16 @@ enum APIEndpoint {
         case .bangXepHang(let c): return "/api/v1/my-language/\(c)/practice/leaderboard"
         case .thanhTich(let c): return "/api/v1/my-language/\(c)/practice/achievements"
         case .nopBaiLuyen: return "/api/v1/my-language/practice/complete"
+        case .caySoTay(let c): return "/api/v1/my-language/notebook/\(c)"
+        case .mucSoTay(let id): return "/api/v1/my-language/notebook/entry/\(id)"
+        case .taoThuMucSoTay: return "/api/v1/my-language/notebook/folders"
+        case .doiTenThuMucSoTay(let id, _, _): return "/api/v1/my-language/notebook/folders/\(id)"
+        case .xoaThuMucSoTay(let id): return "/api/v1/my-language/notebook/folders/\(id)"
+        case .taoMucSoTay: return "/api/v1/my-language/notebook/entries"
+        case .suaMucSoTay(let id, _, _, _, _, _): return "/api/v1/my-language/notebook/entries/\(id)"
+        case .chuyenMucSoTay(let id, _): return "/api/v1/my-language/notebook/entries/\(id)/move"
+        case .onMucSoTay(let id, _): return "/api/v1/my-language/notebook/entries/\(id)/review"
+        case .xoaMucSoTay(let id): return "/api/v1/my-language/notebook/entries/\(id)"
         case .aiDich: return "/api/v1/my-language/ai/translate"
         case .aiKiemNguPhap: return "/api/v1/my-language/ai/grammar-check"
         case .aiNoiChuyen: return "/api/v1/my-language/ai/roleplay"
@@ -440,7 +463,7 @@ enum APIEndpoint {
     var method: String {
         switch self {
         case .ghiTienDo, .ghiKetQuaQuiz, .doiYeuThich, .aiDich, .aiKiemNguPhap, .aiNoiChuyen, .batDauLuotThi, .nopBaiTracNghiem,
-             .doiNutLoTrinh, .nopBaiLuyen,
+             .doiNutLoTrinh, .nopBaiLuyen, .taoThuMucSoTay, .taoMucSoTay,
              .login, .register, .oauthToken, .changePassword, .refreshToken,
              .createPost, .likePost, .followUser, .unfollowUser,
              .createComment, .likeComment, .savePost, .sendMessage, .sendMessageWithFiles, .enrollCourse,
@@ -453,16 +476,16 @@ enum APIEndpoint {
              .openThread, .muteThread, .saveLessonProgress,
              .taoPhienChat, .taoThuMucChat, .tachNhanhPhien, .catPhien, .datViecDoc:
             return "POST"
-        case .updateProfile, .datBietDanh:
+        case .updateProfile, .datBietDanh, .doiTenThuMucSoTay, .suaMucSoTay:
             return "PUT"
         case .updateNote, .markRead, .reactPost, .markNotificationsRead, .datTuyChonHoiThoai,
              .suaDongBang, .suaMon, .suaChuong, .suaTuVung, .suaBaiViet,
-             .suaPhienChat, .chuyenThuMuc:
+             .suaPhienChat, .chuyenThuMuc, .chuyenMucSoTay, .onMucSoTay:
             return "PATCH"
         case .deletePost, .unlikePost, .unsavePost, .deleteNote,
              .unblockUser, .cancelDeletionRequest, .deleteMessage, .xoaTin, .xoaDongBang,
              .xoaMon, .xoaChuong, .xoaVinhVien, .goThietBi, .xoaTuVung, .xoaBaiViet,
-             .xoaPhienChat, .xoaThuMucChat, .xoaHoiThoai:
+             .xoaPhienChat, .xoaThuMucChat, .xoaHoiThoai, .xoaThuMucSoTay, .xoaMucSoTay:
             return "DELETE"
         default:
             return "GET"
@@ -495,6 +518,32 @@ enum APIEndpoint {
             return ["answers": da, "timeSpentSeconds": g]
         case .doiYeuThich(let w):
             return ["wordId": w]
+        case .taoThuMucSoTay(let c, let ten, let icon, let cha):
+            var m: [String: Any] = ["code": c, "name": ten]
+            if let icon { m["icon"] = icon }
+            if let cha { m["parentId"] = cha }
+            return m
+        case .doiTenThuMucSoTay(_, let ten, let icon):
+            var m: [String: Any] = ["name": ten]
+            if let icon { m["icon"] = icon }
+            return m
+        case .taoMucSoTay(let c, let tm, let loai, let td, let than, let cd, let ng):
+            var m: [String: Any] = ["code": c, "kind": loai, "title": td, "body": than]
+            // `folderId` KHÔNG gửi khi ở gốc: backend đọc `!= null` để phân
+            // biệt "thư mục gốc" với "không đổi".
+            if let tm { m["folderId"] = tm }
+            if let cd, !cd.isEmpty { m["reading"] = cd }
+            if let ng, !ng.isEmpty { m["meaning"] = ng }
+            return m
+        case .suaMucSoTay(_, let td, let than, let cd, let ng, let loai):
+            return ["title": td, "body": than, "kind": loai,
+                    "reading": cd ?? "", "meaning": ng ?? ""]
+        case .chuyenMucSoTay(_, let tm):
+            var m: [String: Any] = [:]
+            if let tm { m["folderId"] = tm }
+            return m
+        case .onMucSoTay(_, let cl):
+            return ["quality": cl]
         case .nopBaiLuyen(let c, let key, let dung, let tong, let sai, let idSai, let idDung):
             return ["languageCode": c, "lessonKey": key, "correct": dung,
                     "total": tong, "mistakes": sai,

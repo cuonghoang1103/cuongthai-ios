@@ -161,6 +161,13 @@ struct NgonNguHomeView: View {
         return LazyVGrid(columns: [GridItem(.flexible(), spacing: Spacing.sm),
                                    GridItem(.flexible(), spacing: Spacing.sm)],
                          spacing: Spacing.sm) {
+            // Sổ tay đứng ĐẦU lưới và không phụ thuộc `counts`: nội dung của
+            // nó do chính người dùng tạo, nên không bao giờ "rỗng vì kho chưa
+            // có". Để trong lưới chứ không thành thẻ riêng vì đây là chỗ tra
+            // cứu, khác với ba thẻ trên cùng vốn trả lời "giờ làm gì".
+            oMuc("Sổ tay", "book.closed.fill", 0x0E93A6, nil) {
+                SoTayView(ngonNgu: ngonNgu)
+            }
             if (sl?.grammar ?? 0) > 0 {
                 oMuc("Ngữ pháp", "text.book.closed.fill", 0x7A45E8, sl?.grammar) {
                     NguPhapView(ngonNgu: ngonNgu)

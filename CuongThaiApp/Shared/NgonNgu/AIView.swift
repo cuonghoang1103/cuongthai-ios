@@ -100,7 +100,7 @@ struct DichView: View {
                     Text(l).font(.system(size: 13)).foregroundColor(AppColors.error)
                 }
 
-                if let k = kq { ketQua(k) }
+                if let k = kq { ketQua(k); nutLuu(k) }
             }
             .padding(Spacing.md)
         }
@@ -177,6 +177,17 @@ struct DichView: View {
             if let a = k.alternatives, !a.isEmpty {
                 phu("Cách nói khác", a.joined(separator: "\n• "))
             }
+        }
+    }
+
+    /// Lưu bản dịch: tiêu đề là câu NGUỒN, thân là bản dịch — mở sổ tay ra
+    /// thấy ngay mình đã hỏi gì, chứ không phải một câu tiếng Nhật trơ trọi.
+    @ViewBuilder
+    private func nutLuu(_ k: KetQuaDich) -> some View {
+        if let t = k.translation, !t.isEmpty {
+            NutLuuSoTay(ngonNgu: ngonNgu, loai: .dich,
+                        tieuDe: nhap, than: t,
+                        cachDoc: k.reading, nghia: k.literal)
         }
     }
 
@@ -257,7 +268,14 @@ struct KiemNguPhapView: View {
                     Text(l).font(.system(size: 13)).foregroundColor(AppColors.error)
                 }
 
-                if let k = kq { ketQua(k) }
+                if let k = kq {
+                    ketQua(k)
+                    if let c = k.corrected, !c.isEmpty {
+                        NutLuuSoTay(ngonNgu: ngonNgu, loai: .kiemNguPhap,
+                                    tieuDe: nhap, than: c, cachDoc: nil,
+                                    nghia: k.issues?.compactMap { $0.suggestion }.joined(separator: " · "))
+                    }
+                }
             }
             .padding(Spacing.md)
         }
