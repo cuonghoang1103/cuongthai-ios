@@ -104,3 +104,90 @@ Sign in with Apple is offered alongside username/password.
 The app contains no purchases, no external purchase links, and no
 media downloading of any kind.
 ```
+
+---
+
+## Cho người duyệt TESTFLIGHT (bản 31 — cập nhật 22/08/2026)
+
+⚠️ Đây là ô **KHÁC** với ô App Store ở trên. Đường đi:
+App Store Connect → app CuongThai → tab **TestFlight** → **Test Information**
+→ ô **Review Notes** (áp cho vòng duyệt beta bên ngoài).
+
+Cùng trang đó có ô **Privacy Policy URL** — điền:
+
+```
+https://cuongthai.com/chinh-sach-bao-mat
+```
+
+(Đã kiểm 22/08: trả HTTP 200, 617 chữ, dẫn Nghị định 13/2023/NĐ-CP. Không
+phải trang 404 đội lốt 200.)
+
+Tài khoản thử **đã điền sẵn** trong Sign-In Information: `apple_review1` —
+đã thử đăng nhập thật vào `https://cuongthai.com/api/v1/auth/login` ngày
+22/08, HTTP 200 kèm token.
+
+### Dán nguyên khối dưới đây vào ô Review Notes
+
+```
+CuongThai is a Vietnamese-language learning and social platform: video
+courses, coding labs, notes, messaging, and foreign-language study
+(English, Japanese, Chinese). All content is in Vietnamese.
+
+=== SIGNING IN ===
+The app requires an account. Please use the demo account supplied in the
+Sign-In Information fields of this submission (username: apple_review1).
+Enter it on the first screen.
+
+=== WHAT IS NEW IN BUILD 31 ===
+1) Exam Room. Tab "Hoc" (Learn) -> card "Phong thi". 190 timed
+   multiple-choice exams. Open any exam, start it, answer the questions,
+   then submit to see the score.
+
+2) AI Speaking Practice. Tab "Hoc" -> card "Ngoai ngu" -> choose a
+   language -> "Luyen noi". iOS asks for Microphone and Speech Recognition
+   permission on first use.
+   IMPORTANT: speech is transcribed ON-DEVICE using SFSpeechRecognizer. No
+   audio recording is uploaded to our servers. Only the resulting text is
+   sent to the AI tutor to generate a reply.
+
+=== WHY EACH PERMISSION IS REQUESTED ===
+- Microphone + Speech Recognition: speaking practice, voice messages, and
+  1-to-1 voice calls.
+- Camera and Photo Library: attaching photos or video to posts, and
+  setting a profile picture.
+- Location: sent only when the user explicitly taps "share location"
+  inside a conversation. The app never tracks location in the background.
+- Notifications: new messages and incoming calls.
+
+=== MODERATION (Guideline 1.2) ===
+- Community rules must be accepted on first launch.
+- Every post has a ... menu: Hide, Report, Block author.
+- Every comment has a ... menu: Report.
+- Blocked users are managed in Settings > Danh sach chan (Blocked list).
+- Reports reach a moderation queue and are reviewed within 24 hours.
+
+=== ACCOUNT DELETION (Guideline 5.1.1(v)) ===
+Settings (gear icon on the Profile tab) > Xoa tai khoan (Delete account).
+The account and personal data are erased and cannot be recovered.
+
+=== OTHER ===
+- Sign in with Apple is offered alongside username/password.
+- The app contains no purchases, no external purchase links, and no media
+  downloading of any kind.
+- 1-to-1 voice calling needs two accounts signed in on two devices, so it
+  may not be fully exercisable with a single reviewer account. Every other
+  feature works with the demo account alone.
+
+Contact: cuongthaihnhe176322@gmail.com
+```
+
+### ⚠️ Vì sao phải dán tay
+
+Khoá API `SW4TM47WHC` **đọc được mọi thứ nhưng KHÔNG ghi được**. Đo thật
+22/08: `GET` apps / builds / betaAppReviewDetail / users đều 200, còn
+`PATCH betaAppReviewDetails` và `PATCH betaAppLocalizations` đều trả
+**403 `FORBIDDEN_ERROR` — "The API key in use does not allow this request"**.
+Nó đủ quyền `altool --upload-app` nhưng không đủ quyền sửa metadata.
+
+Muốn tự động hoá về sau thì tạo khoá mới vai trò **App Manager** (hoặc
+Admin) ở Users and Access → Integrations, rồi cập nhật `phat-hanh.env`.
