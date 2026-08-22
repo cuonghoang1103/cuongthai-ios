@@ -175,7 +175,32 @@ struct DichView: View {
             if let l = k.literal, !l.isEmpty { phu("Dịch sát nghĩa", l) }
             if let n = k.notes, !n.isEmpty { phu("Ghi chú", n) }
             if let a = k.alternatives, !a.isEmpty {
-                phu("Cách nói khác", a.joined(separator: "\n• "))
+                VStack(alignment: .leading, spacing: Spacing.sm) {
+                    Text("CÁCH NÓI KHÁC")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(AppColors.textTertiary).kerning(0.5)
+                    ForEach(a) { p in
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(p.text ?? "")
+                                .font(.system(size: 15))
+                                .foregroundColor(AppColors.textPrimary)
+                                .textSelection(.enabled)
+                            // Chính dòng này mới là thứ đáng học: nói RÕ khi
+                            // nào nên dùng cách này thay vì cách kia.
+                            if let n = p.note, !n.isEmpty {
+                                Text(n)
+                                    .font(.system(size: 12))
+                                    .foregroundColor(AppColors.textSecondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(Spacing.md)
+                .background(RoundedRectangle(cornerRadius: CornerRadius.medium)
+                    .fill(AppColors.backgroundTertiary))
             }
         }
     }
@@ -296,6 +321,19 @@ struct KiemNguPhapView: View {
                     Text("/ 100").font(.system(size: 13)).foregroundColor(AppColors.textTertiary)
                     Spacer()
                 }
+            }
+
+            // Nhận xét chung: backend vẫn gửi từ đầu, app cũ không khai nên
+            // vứt đi mất — mà đây là phần người học đọc được nhiều nhất.
+            if !k.nhanXet.isEmpty {
+                Text(k.nhanXet)
+                    .font(.system(size: 14))
+                    .foregroundColor(AppColors.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(Spacing.md)
+                    .background(RoundedRectangle(cornerRadius: CornerRadius.medium)
+                        .fill(Color(hex: k.mauKetLuan).opacity(0.12)))
             }
 
             if let c = k.corrected, !c.isEmpty {

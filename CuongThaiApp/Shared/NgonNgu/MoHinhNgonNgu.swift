@@ -253,13 +253,42 @@ struct KetQuaDich: Codable {
     let reading: String?
     let literal: String?
     let notes: String?
-    let alternatives: [String]?
+    /// ⚠️ **Mảng ĐỐI TƯỢNG `{text, note}`, KHÔNG phải mảng chuỗi.**
+    ///
+    /// Bản đầu khai `[String]?`. Kiểu không khớp thì `JSONDecoder` **NÉM LỖI**
+    /// (khác hẳn trả `nil`), làm hỏng cả màn Dịch. Nhưng nó chỉ hỏng KHI AI có
+    /// đưa phương án thay thế — mảng rỗng thì hợp với mọi kiểu phần tử nên
+    /// decode trót lọt. Tức lỗi lúc có lúc không, tuỳ câu người dùng gõ.
+    /// Phát hiện 22/08/2026 khi rà toàn bộ struct "mọi trường đều optional".
+    let alternatives: [PhuongAn]?
+
+    struct PhuongAn: Codable, Hashable, Identifiable {
+        let text: String?
+        /// Khi nào nên dùng cách nói này — phần đáng giá nhất, mà bản cũ
+        /// không thể hiện được vì đã ép cả đối tượng thành một chuỗi.
+        let note: String?
+        var id: String { (text ?? "") + (note ?? "") }
+    }
 }
 
 struct KetQuaKiemNguPhap: Codable {
     let corrected: String?
     let score: Int?
+    /// Nhận xét chung bằng tiếng Việt. Backend LUÔN gửi (`summary`) mà bản đầu
+    /// không khai nên app vứt đi — đây là phần người học đọc được nhiều nhất.
+    let summary: String?
+    /// `good` · `ok` · `poor`, backend tự suy từ điểm nếu AI không nói.
+    let verdict: String?
     let issues: [Loi]?
+
+    var nhanXet: String { (summary ?? "").trimmingCharacters(in: .whitespacesAndNewlines) }
+    var mauKetLuan: UInt32 {
+        switch (verdict ?? "").lowercased() {
+        case "good": return 0x2BA84A
+        case "poor": return 0xE5484D
+        default:     return 0xD97706
+        }
+    }
 
     struct Loi: Codable, Identifiable, Hashable {
         let severity: String?

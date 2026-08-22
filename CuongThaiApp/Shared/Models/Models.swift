@@ -110,10 +110,19 @@ struct SocialMedia: Codable, Identifiable {
     let sortOrder: Int?
 }
 
+/// ⚠️ Backend có **BẢY** loại (`REACTION_TYPES` trong `social.service.ts`):
+/// LIKE · LOVE · **CARE** · HAHA · **WOW** · SAD · ANGRY.
+///
+/// Bản đầu chỉ khai 5, thiếu CARE và WOW. Mọi trường đều optional nên decode
+/// vẫn xanh — chỉ là hai loại đó **biến mất khỏi bảng đếm**. Mà bộ chọn cảm
+/// xúc của app CÓ cho thả 🥰 và 😮, nên người dùng thả xong rồi không thấy
+/// cảm xúc của mình đâu. Phát hiện 22/08/2026 khi rà các struct toàn optional.
 struct ReactionBreakdown: Codable {
     let LIKE: Int?
     let LOVE: Int?
+    let CARE: Int?
     let HAHA: Int?
+    let WOW: Int?
     let SAD: Int?
     let ANGRY: Int?
 }

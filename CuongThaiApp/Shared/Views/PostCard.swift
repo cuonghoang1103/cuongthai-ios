@@ -172,8 +172,8 @@ struct PostCard: View {
     private var actionsRow: some View {
         HStack {
             // Chạm: thích/bỏ thích. GIỮ LÂU: chọn cảm xúc — backend có sẵn
-            // 5 loại (LIKE/LOVE/HAHA/SAD/ANGRY) qua `reactPost`, nhưng app
-            // trước đây chỉ dùng được đúng một loại.
+            // BẢY loại (LIKE/LOVE/CARE/HAHA/WOW/SAD/ANGRY) qua `reactPost`,
+            // nhưng app trước đây chỉ dùng được đúng một loại.
             Button { Task { await toggleLike() } } label: {
                 HStack(spacing: 4) {
                     Text(bieuTuongCamXuc)

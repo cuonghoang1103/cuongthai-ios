@@ -400,8 +400,23 @@ struct PostDetailView: View {
             )
     }
 
+    /// 🥰 CARE và 😮 WOW dùng emoji, không phải SF Symbol — để trùng đúng
+    /// biểu tượng người dùng vừa bấm trong bộ chọn cảm xúc.
+    private func oCamXuc(_ bieuTuong: String, _ so: Int?) -> some View {
+        Group {
+            if let n = so, n > 0 {
+                HStack(spacing: 2) {
+                    Text(bieuTuong).font(.system(size: 13))
+                    Text("\(n)").font(.caption).foregroundColor(AppColors.textSecondary)
+                }
+            }
+        }
+    }
+
     private func reactionsBreakdownView(_ breakdown: ReactionBreakdown) -> some View {
         HStack(spacing: Spacing.sm) {
+            oCamXuc("🥰", breakdown.CARE)
+            oCamXuc("😮", breakdown.WOW)
             if let like = breakdown.LIKE, like > 0 {
                 HStack(spacing: 2) {
                     Image(systemName: "hand.thumbsup.fill")
