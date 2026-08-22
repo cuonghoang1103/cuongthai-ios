@@ -102,6 +102,14 @@ struct NgonNguHomeView: View {
                 }
                 .buttonStyle(.plain)
 
+                // Luyện tập đi ngay sau Lộ trình: lộ trình nói HỌC GÌ, luyện
+                // tập là thứ khiến người ta quay lại ngày mai. Tách xa nhau
+                // thì mất cặp.
+                NavigationLink(destination: LuyenTapView(ngonNgu: ngonNgu)) {
+                    TheLuyenTap()
+                }
+                .buttonStyle(.plain)
+
                 // Bảng chữ chỉ hiện khi ngôn ngữ đó CÓ. Tiếng Anh có mục
                 // IPA nên vẫn đáng vào; ngôn ngữ không có thì ẩn hẳn thay
                 // vì mở ra một màn trống.
@@ -237,6 +245,44 @@ struct NgonNguHomeView: View {
             }
             .padding(.horizontal, 2)
         }
+    }
+}
+
+private struct TheLuyenTap: View {
+    var body: some View {
+        HStack(spacing: Spacing.md) {
+            Image(systemName: "dumbbell.fill")
+                .font(.system(size: 22, weight: .medium))
+                .foregroundColor(.white)
+                .frame(width: 46, height: 46)
+                .background(
+                    Circle().fill(
+                        LinearGradient(colors: [Color(hex: 0xF59E0B), Color(hex: 0xE5484D)],
+                                       startPoint: .topLeading, endPoint: .bottomTrailing)
+                    )
+                )
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Luyện tập")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(AppColors.textPrimary)
+                Text("XP · chuỗi ngày · vương miện · xếp hạng")
+                    .font(.system(size: 12))
+                    .foregroundColor(AppColors.textSecondary)
+                    .lineLimit(1).minimumScaleFactor(0.85)
+            }
+            Spacer()
+            Image(systemName: "chevron.right")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(AppColors.textTertiary)
+        }
+        .padding(Spacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: CornerRadius.large)
+                .fill(AppColors.backgroundCard)
+                .overlay(RoundedRectangle(cornerRadius: CornerRadius.large)
+                    .strokeBorder(Color(hex: 0xF59E0B).opacity(0.35), lineWidth: 1))
+        )
     }
 }
 

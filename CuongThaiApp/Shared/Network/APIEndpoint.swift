@@ -232,6 +232,15 @@ enum APIEndpoint {
     case loTrinh(code: String)
     /// Bật/tắt trạng thái đã học của một nút. Máy chủ trả về trạng thái MỚI.
     case doiNutLoTrinh(nodeId: Int)
+    /// Toàn bộ trạng thái chơi + danh sách bài. ĐÒI đăng nhập.
+    case luyenTap(code: String)
+    case bangXepHang(code: String)
+    case thanhTich(code: String)
+    /// Nộp kết quả một bài. `lessonKey` phải đúng dạng `vocab:<mã chủ đề>`,
+    /// máy chủ từ chối dạng khác. `wrongIds`/`rightIds` được đẩy vào hàng đợi
+    /// ôn tập SM-2 nên gửi kèm là bài học tự nối vào phần Ôn tập.
+    case nopBaiLuyen(code: String, lessonKey: String, dung: Int, tong: Int,
+                     sai: Int, idSai: [Int], idDung: [Int])
     /// `sangTiengNuocNgoai` = true nghĩa là Việt → ngôn ngữ đó.
     case aiDich(code: String, chu: String, sangTiengNuocNgoai: Bool)
     case aiKiemNguPhap(code: String, chu: String)
@@ -411,6 +420,10 @@ enum APIEndpoint {
         case .hoiDap(let c, _, _): return "/api/v1/my-language/\(c)/qna"
         case .loTrinh(let c): return "/api/v1/my-language/\(c)/roadmap"
         case .doiNutLoTrinh(let id): return "/api/v1/my-language/roadmap/\(id)/done"
+        case .luyenTap(let c): return "/api/v1/my-language/\(c)/practice"
+        case .bangXepHang(let c): return "/api/v1/my-language/\(c)/practice/leaderboard"
+        case .thanhTich(let c): return "/api/v1/my-language/\(c)/practice/achievements"
+        case .nopBaiLuyen: return "/api/v1/my-language/practice/complete"
         case .aiDich: return "/api/v1/my-language/ai/translate"
         case .aiKiemNguPhap: return "/api/v1/my-language/ai/grammar-check"
         case .aiNoiChuyen: return "/api/v1/my-language/ai/roleplay"
@@ -427,7 +440,7 @@ enum APIEndpoint {
     var method: String {
         switch self {
         case .ghiTienDo, .ghiKetQuaQuiz, .doiYeuThich, .aiDich, .aiKiemNguPhap, .aiNoiChuyen, .batDauLuotThi, .nopBaiTracNghiem,
-             .doiNutLoTrinh,
+             .doiNutLoTrinh, .nopBaiLuyen,
              .login, .register, .oauthToken, .changePassword, .refreshToken,
              .createPost, .likePost, .followUser, .unfollowUser,
              .createComment, .likeComment, .savePost, .sendMessage, .sendMessageWithFiles, .enrollCourse,
@@ -482,6 +495,10 @@ enum APIEndpoint {
             return ["answers": da, "timeSpentSeconds": g]
         case .doiYeuThich(let w):
             return ["wordId": w]
+        case .nopBaiLuyen(let c, let key, let dung, let tong, let sai, let idSai, let idDung):
+            return ["languageCode": c, "lessonKey": key, "correct": dung,
+                    "total": tong, "mistakes": sai,
+                    "wrongIds": idSai, "rightIds": idDung]
         case .register(let u, let e, let p, let f, let c):
             var m: [String: Any] = ["username": u, "email": e, "password": p]
             if let name = f { m["fullName"] = name }
