@@ -289,6 +289,16 @@ enum APIEndpoint {
                       sap: String?, trang: Int)
     case nhomCodeLab
     case thongKeCodeLab
+    /// Trọn chương trình học của một lộ trình: chương + bài tập theo đúng thứ tự.
+    case loTrinhChiTiet(slug: String)
+    /// Bài học của một chương — 5 loại khối, CÓ bản tiếng Việt.
+    case baiHocChuong(chuongId: Int)
+    /// Bài tập đầy đủ (đề bài, ví dụ, gợi ý, lời giải) theo slug.
+    case baiTapTheoSlug(slug: String)
+    /// Tiến độ của chính mình trong một lộ trình. ĐÒI đăng nhập.
+    case tienDoCodeLab(loTrinhId: Int)
+    /// `trangThai`: `SOLVED` hoặc `IN_PROGRESS`.
+    case ghiTienDoBaiTap(baiId: Int, trangThai: String)
     // ── Mẩu mã ──
     /// ⚠️ Tham số tìm là `search`, KHÔNG phải `q` — gõ `q` thì máy chủ trả
     /// về TOÀN BỘ danh sách mà không báo gì. Đã đo.
@@ -494,6 +504,11 @@ enum APIEndpoint {
         case .dsBaiTapCode: return "/api/v1/code-lab/exercises"
         case .nhomCodeLab: return "/api/v1/code-lab/groups"
         case .thongKeCodeLab: return "/api/v1/code-lab/stats"
+        case .loTrinhChiTiet(let s): return "/api/v1/code-lab/tracks/\(s)"
+        case .baiHocChuong(let id): return "/api/v1/code-lab/modules/\(id)/lesson"
+        case .baiTapTheoSlug(let s): return "/api/v1/code-lab/exercises/\(s)"
+        case .tienDoCodeLab: return "/api/v1/code-lab/progress/mine"
+        case .ghiTienDoBaiTap(let id, _): return "/api/v1/code-lab/exercises/\(id)/progress"
         case .dsSnippet: return "/api/v1/snippets"
         case .dsDanhMucSnippet: return "/api/v1/snippets/categories"
         case .ghiNhanChep(let id): return "/api/v1/snippets/\(id)/copy"
@@ -509,6 +524,7 @@ enum APIEndpoint {
         switch self {
         case .ghiTienDo, .ghiKetQuaQuiz, .doiYeuThich, .aiDich, .aiKiemNguPhap, .aiNoiChuyen, .batDauLuotThi, .nopBaiTracNghiem,
              .doiNutLoTrinh, .nopBaiLuyen, .taoThuMucSoTay, .taoMucSoTay, .ghiNhanChep,
+             .ghiTienDoBaiTap,
              .reactPost,   // ⚠️ backend khai POST, KHÔNG phải PATCH — xem ghi chú ở `case reactPost`
              .danhDauDeThi, .danhDauCauHoi,
              .login, .register, .oauthToken, .changePassword, .refreshToken,
@@ -591,6 +607,8 @@ enum APIEndpoint {
             return m
         case .onMucSoTay(_, let cl):
             return ["quality": cl]
+        case .ghiTienDoBaiTap(_, let tt):
+            return ["status": tt]
         case .ghiChuCauHoi(_, let g):
             return ["note": g]
         case .nopBaiLuyen(let c, let key, let dung, let tong, let sai, let idSai, let idDung):
@@ -733,6 +751,8 @@ enum APIEndpoint {
         // được, và tìm/lọc ghi chú cũng hỏng câm y hệt.
         case .searchGifs(let q):
             return q.isEmpty ? nil : ["q": q]
+        case .tienDoCodeLab(let id):
+            return ["trackId": id]
         case .dsSnippet(let dm, let ng, let tim, let trang):
             var m: [String: Any] = ["page": trang, "limit": 20]
             if let dm { m["categoryId"] = dm }

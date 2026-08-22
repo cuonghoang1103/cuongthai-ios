@@ -108,20 +108,9 @@ struct BaiTapCodeView: View {
     }
 
     private func doiMa(_ ten: String, _ chu: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(ten).font(.system(size: 10, weight: .semibold)).foregroundColor(AppColors.textTertiary)
-            // Cuộn NGANG: mã và JSON mẫu thường dài hơn màn hình, mà bẻ dòng
-            // giữa chừng thì đọc sai cấu trúc.
-            ScrollView(.horizontal, showsIndicators: false) {
-                Text(chu)
-                    .font(.system(size: 12, design: .monospaced))
-                    .foregroundColor(AppColors.textPrimary)
-                    .textSelection(.enabled)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(Spacing.sm)
-        .background(RoundedRectangle(cornerRadius: CornerRadius.small).fill(AppColors.backgroundTertiary))
+        // Vào/Ra của ví dụ thường là JSON hoặc giá trị mẫu — tô màu theo ngôn
+        // ngữ của chính bài để dấu ngoặc, chuỗi và số tách nhau ra.
+        KhoiMaNguon(ma: chu, ngonNgu: bai.language, tieuDe: ten, choChep: false)
     }
 
     /// Gợi ý mở DẦN từng cái một — mở hết cùng lúc thì người ta đọc luôn cái
@@ -161,22 +150,8 @@ struct BaiTapCodeView: View {
             if hienLoiGiai {
                 nhan("LỜI GIẢI")
                 ForEach(ma) { k in
-                    VStack(alignment: .leading, spacing: 3) {
-                        if let n = k.name ?? k.language, !n.isEmpty {
-                            Text(n).font(.system(size: 11, weight: .semibold))
-                                .foregroundColor(AppColors.textTertiary)
-                        }
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            Text(k.code ?? "")
-                                .font(.system(size: 12, design: .monospaced))
-                                .foregroundColor(AppColors.textPrimary)
-                                .textSelection(.enabled)
-                        }
-                        .padding(Spacing.sm)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(RoundedRectangle(cornerRadius: CornerRadius.small)
-                            .fill(AppColors.backgroundTertiary))
-                    }
+                    KhoiMaNguon(ma: k.code ?? "", ngonNgu: k.language ?? bai.language,
+                                tieuDe: k.name)
                 }
                 if let gt = bai.giaiThich { RichContent(html: gt) }
             } else {

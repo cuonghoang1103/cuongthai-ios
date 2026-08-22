@@ -13,6 +13,7 @@ final class CodeLabVM: ObservableObject {
     @Published var loi: String?
     @Published var tim = ""
     @Published var doKho: DoKho?
+    @Published var chonNhom: Int?
 
     private var viecTim: Task<Void, Never>?
 
@@ -29,6 +30,11 @@ final class CodeLabVM: ObservableObject {
     var tongBai: Int { thongKe?.exercises ?? nhom.reduce(0) { $0 + $1.soBai } }
     var tongLoTrinh: Int { nhom.reduce(0) { $0 + $1.dsLoTrinh.count } }
     var tongNhom: Int { nhom.count }
+    /// Nhóm đang hiện sau khi lọc theo chủ đề.
+    var nhomHien: [NhomCodeLab] {
+        guard let id = chonNhom else { return nhom }
+        return nhom.filter { $0.id == id }
+    }
 
     func taiNhom() async {
         guard nhom.isEmpty else { return }
@@ -82,6 +88,7 @@ struct CodeLabView: View {
             VStack(spacing: Spacing.md) {
                 oTim
                 locDoKho
+                locNhom
 
                 if vm.dangLoc {
                     ketQuaTim
@@ -91,7 +98,7 @@ struct CodeLabView: View {
                     trong(vm.loi ?? "Chưa có lộ trình nào.")
                 } else {
                     bangSo
-                    ForEach(vm.nhom) { n in phanNhom(n) }
+                    ForEach(vm.nhomHien) { n in phanNhom(n) }
                 }
             }
             .padding(Spacing.md)
@@ -143,6 +150,38 @@ struct CodeLabView: View {
         }
     }
 
+    /// Lọc theo CHỦ ĐỀ — đúng thứ web có (Backend, Database, CuongThai,
+    /// DevOps…). Thiếu nó thì muốn xem một mảng phải cuộn qua cả 12 nhóm.
+    private var locNhom: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: Spacing.sm) {
+                nutNhom("Tất cả", icon: "square.grid.2x2.fill", mau: 0x64748B,
+                        chon: vm.chonNhom == nil) { vm.chonNhom = nil }
+                ForEach(vm.nhom) { n in
+                    nutNhom(n.name, icon: n.bieuTuong, mau: mauNhom(n),
+                            chon: vm.chonNhom == n.id) {
+                        vm.chonNhom = vm.chonNhom == n.id ? nil : n.id
+                    }
+                }
+            }
+            .padding(.horizontal, 1)
+        }
+    }
+
+    private func nutNhom(_ ten: String, icon: String, mau: UInt32,
+                         chon: Bool, _ bam: @escaping () -> Void) -> some View {
+        Button { withAnimation(.easeInOut(duration: 0.15)) { bam() } } label: {
+            HStack(spacing: 5) {
+                Image(systemName: icon).font(.system(size: 11, weight: .semibold))
+                Text(ten).font(.system(size: 12, weight: .semibold)).lineLimit(1)
+            }
+            .foregroundColor(chon ? AppColors.onPrimary : Color(hex: mau))
+            .padding(.horizontal, Spacing.sm + 2).padding(.vertical, 7)
+            .background(Capsule().fill(chon ? Color(hex: mau) : Color(hex: mau).opacity(0.14)))
+        }
+        .buttonStyle(.plain)
+    }
+
     private var bangSo: some View {
         HStack(spacing: 0) {
             oSo("\(vm.tongBai)", "bài tập")
@@ -186,7 +225,7 @@ struct CodeLabView: View {
             .padding(.top, Spacing.sm)
 
             ForEach(n.dsLoTrinh) { lt in
-                NavigationLink { BaiTapTheoLoTrinhView(loTrinh: lt) } label: { theLoTrinh(lt) }
+                NavigationLink { ChuongTrinhHocView(loTrinh: lt) } label: { theLoTrinh(lt) }
                     .buttonStyle(.plain)
             }
         }
