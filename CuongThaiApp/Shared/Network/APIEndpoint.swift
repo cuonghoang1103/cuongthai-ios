@@ -227,6 +227,11 @@ enum APIEndpoint {
     case hoiThoai(code: String, page: Int, limit: Int)
     case baiDoc(code: String, page: Int, limit: Int)
     case hoiDap(code: String, page: Int, limit: Int)
+    /// Lộ trình học. `optionalAuth` — gọi KHÔNG token vẫn ra đủ nút, chỉ là
+    /// `doneNodeIds` về rỗng, nên đừng suy ra "chưa học gì" từ mảng rỗng.
+    case loTrinh(code: String)
+    /// Bật/tắt trạng thái đã học của một nút. Máy chủ trả về trạng thái MỚI.
+    case doiNutLoTrinh(nodeId: Int)
     /// `sangTiengNuocNgoai` = true nghĩa là Việt → ngôn ngữ đó.
     case aiDich(code: String, chu: String, sangTiengNuocNgoai: Bool)
     case aiKiemNguPhap(code: String, chu: String)
@@ -404,6 +409,8 @@ enum APIEndpoint {
         case .hoiThoai(let c, _, _): return "/api/v1/my-language/\(c)/conversation"
         case .baiDoc(let c, _, _): return "/api/v1/my-language/\(c)/reading"
         case .hoiDap(let c, _, _): return "/api/v1/my-language/\(c)/qna"
+        case .loTrinh(let c): return "/api/v1/my-language/\(c)/roadmap"
+        case .doiNutLoTrinh(let id): return "/api/v1/my-language/roadmap/\(id)/done"
         case .aiDich: return "/api/v1/my-language/ai/translate"
         case .aiKiemNguPhap: return "/api/v1/my-language/ai/grammar-check"
         case .aiNoiChuyen: return "/api/v1/my-language/ai/roleplay"
@@ -420,6 +427,7 @@ enum APIEndpoint {
     var method: String {
         switch self {
         case .ghiTienDo, .ghiKetQuaQuiz, .doiYeuThich, .aiDich, .aiKiemNguPhap, .aiNoiChuyen, .batDauLuotThi, .nopBaiTracNghiem,
+             .doiNutLoTrinh,
              .login, .register, .oauthToken, .changePassword, .refreshToken,
              .createPost, .likePost, .followUser, .unfollowUser,
              .createComment, .likeComment, .savePost, .sendMessage, .sendMessageWithFiles, .enrollCourse,

@@ -90,6 +90,18 @@ struct NgonNguHomeView: View {
                 }
                 .buttonStyle(.plain)
 
+                // Lộ trình đặt ngay dưới Ôn tập, TRÊN mọi thứ khác.
+                //
+                // Trước đây mở một ngôn ngữ ra là gặp thẳng danh sách chủ đề
+                // phẳng — người mới không biết nên bắt đầu từ đâu, và cũng
+                // không thấy mình đang ở đâu trong cả chặng đường. Lộ trình
+                // là thứ trả lời hai câu đó. Vẫn để dưới Ôn tập vì ôn đúng
+                // hạn cấp bách hơn học phần mới.
+                NavigationLink(destination: LoTrinhView(ngonNgu: ngonNgu)) {
+                    TheLoTrinh(code: ngonNgu.code)
+                }
+                .buttonStyle(.plain)
+
                 // Bảng chữ chỉ hiện khi ngôn ngữ đó CÓ. Tiếng Anh có mục
                 // IPA nên vẫn đáng vào; ngôn ngữ không có thì ẩn hẳn thay
                 // vì mở ra một màn trống.
@@ -228,6 +240,57 @@ struct NgonNguHomeView: View {
     }
 }
 
+private struct TheLoTrinh: View {
+    let code: String
+
+    /// Nói thẳng chặng đầu và chặng cuối của đúng ngôn ngữ đó, thay vì một
+    /// câu chung chung. "Kana → N1" cho người ta biết ngay quãng đường dài
+    /// bao nhiêu, còn "Lộ trình học" thì không nói được gì.
+    private var quang: String {
+        switch code {
+        case "ja": return "Kana → N1 · 37 chặng"
+        case "zh": return "Pinyin → HSK6 · 36 chặng"
+        case "en": return "A1 → C2 · 38 chặng"
+        default: return "Từng bước, theo cấp"
+        }
+    }
+
+    var body: some View {
+        HStack(spacing: Spacing.md) {
+            Image(systemName: "map.fill")
+                .font(.system(size: 22, weight: .medium))
+                .foregroundColor(.white)
+                .frame(width: 46, height: 46)
+                .background(
+                    Circle().fill(
+                        LinearGradient(colors: [Color(hex: 0x0E93A6), Color(hex: 0x21D4ED)],
+                                       startPoint: .topLeading, endPoint: .bottomTrailing)
+                    )
+                )
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Lộ trình học")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(AppColors.textPrimary)
+                Text(quang)
+                    .font(.system(size: 12))
+                    .foregroundColor(AppColors.textSecondary)
+            }
+            Spacer()
+            Image(systemName: "chevron.right")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(AppColors.textTertiary)
+        }
+        .padding(Spacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: CornerRadius.large)
+                .fill(AppColors.backgroundCard)
+                .overlay(RoundedRectangle(cornerRadius: CornerRadius.large)
+                    .strokeBorder(AppColors.secondary.opacity(0.35), lineWidth: 1))
+        )
+    }
+}
+
 private struct TheOnTap: View {
     var body: some View {
         HStack(spacing: Spacing.md) {
@@ -260,7 +323,8 @@ private struct TheOnTap: View {
     }
 }
 
-private struct HangChuDe: View {
+/// Dùng chung với `LoTrinhView` — bỏ `private` để khỏi chép bản thứ hai.
+struct HangChuDe: View {
     let c: ChuDeTu
 
     var body: some View {
