@@ -287,6 +287,13 @@ enum APIEndpoint {
     /// HARD→2.605, `q=zzzqqqxxx`→0), không như `?level=`/`?q=` của My Language.
     case dsBaiTapCode(nhom: Int?, doKho: String?, ngonNgu: String?, tim: String, trang: Int)
     case nhomCodeLab
+    // ── Mẩu mã ──
+    /// ⚠️ Tham số tìm là `search`, KHÔNG phải `q` — gõ `q` thì máy chủ trả
+    /// về TOÀN BỘ danh sách mà không báo gì. Đã đo.
+    case dsSnippet(danhMuc: Int?, ngonNgu: String?, tim: String, trang: Int)
+    case dsDanhMucSnippet
+    /// Ghi nhận một lượt chép. Không cần đăng nhập (máy chủ đếm theo IP).
+    case ghiNhanChep(id: Int)
     case dsDeDaLuu
     case dsCauHoiDaLuu
     /// Ghi chú riêng cho câu đã lưu. Gửi chuỗi RỖNG là xoá ghi chú.
@@ -484,6 +491,9 @@ enum APIEndpoint {
         case .danhDauCauHoi(let id): return "/api/v1/exams/questions/\(id)/bookmark"
         case .dsBaiTapCode: return "/api/v1/code-lab/exercises"
         case .nhomCodeLab: return "/api/v1/code-lab/groups"
+        case .dsSnippet: return "/api/v1/snippets"
+        case .dsDanhMucSnippet: return "/api/v1/snippets/categories"
+        case .ghiNhanChep(let id): return "/api/v1/snippets/\(id)/copy"
         case .dsDeDaLuu: return "/api/v1/exams/bookmarks/exams"
         case .dsCauHoiDaLuu: return "/api/v1/exams/bookmarks/questions"
         case .ghiChuCauHoi(let id, _): return "/api/v1/exams/questions/\(id)/bookmark-note"
@@ -495,7 +505,7 @@ enum APIEndpoint {
     var method: String {
         switch self {
         case .ghiTienDo, .ghiKetQuaQuiz, .doiYeuThich, .aiDich, .aiKiemNguPhap, .aiNoiChuyen, .batDauLuotThi, .nopBaiTracNghiem,
-             .doiNutLoTrinh, .nopBaiLuyen, .taoThuMucSoTay, .taoMucSoTay,
+             .doiNutLoTrinh, .nopBaiLuyen, .taoThuMucSoTay, .taoMucSoTay, .ghiNhanChep,
              .reactPost,   // ⚠️ backend khai POST, KHÔNG phải PATCH — xem ghi chú ở `case reactPost`
              .danhDauDeThi, .danhDauCauHoi,
              .login, .register, .oauthToken, .changePassword, .refreshToken,
@@ -720,6 +730,12 @@ enum APIEndpoint {
         // được, và tìm/lọc ghi chú cũng hỏng câm y hệt.
         case .searchGifs(let q):
             return q.isEmpty ? nil : ["q": q]
+        case .dsSnippet(let dm, let ng, let tim, let trang):
+            var m: [String: Any] = ["page": trang, "limit": 20]
+            if let dm { m["categoryId"] = dm }
+            if let ng { m["language"] = ng }
+            if !tim.isEmpty { m["search"] = tim }   // ⚠️ `search`, không phải `q`
+            return m
         case .dsBaiTapCode(let nhom, let kho, let ng, let tim, let trang):
             // Trang 12, cố ý NHỎ. Danh sách trả về cả HTML đề bài lẫn mã lời
             // giải, và cỡ bài rất chênh: đo thật 25 bài trung bình ~343KB,

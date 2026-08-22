@@ -29,6 +29,12 @@ struct CoursesView: View {
                     // app chưa hề mở. Đặt cạnh Phòng thi vì cùng là "luyện",
                     // khác với Academy/Ngoại ngữ là "học".
                     CodeLabEntryCard()
+
+                    // Mẩu mã: 48/51 mẩu là hướng dẫn cài môi trường bằng
+                    // TIẾNG VIỆT kèm lệnh chép được — thứ người ta tra trên
+                    // điện thoại đúng lúc đang dựng máy, không phải lúc ngồi
+                    // trước máy tính.
+                    SnippetEntryCard()
                         .padding(.horizontal, -Spacing.md)
 
                     tieuDeNhanh("Khoá tự biên soạn", "sparkles")
