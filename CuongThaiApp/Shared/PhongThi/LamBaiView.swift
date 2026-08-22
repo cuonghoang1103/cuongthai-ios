@@ -19,7 +19,7 @@ final class LamBaiVM: ObservableObject {
     /// Đáp án đã chọn: id câu → các chỉ số đáp án.
     @Published var chon: [Int: Set<Int>] = [:]
     @Published var conLai: Int = 0
-    @Published var ketQua: KetQuaThi?
+    @Published var ketQua: XemLaiBaiThi?
     @Published var dangNop = false
 
     private let examId: Int
@@ -417,7 +417,7 @@ struct LamBaiView: View {
 // ── Kết quả ─────────────────────────────────────────────────────
 
 struct KetQuaView: View {
-    let kq: KetQuaThi
+    let kq: XemLaiBaiThi
     let de: DeThi
     let dong: () -> Void
 
@@ -438,7 +438,7 @@ struct KetQuaView: View {
                     .foregroundColor(AppColors.textTertiary)
             }
 
-            if let dung = kq.correctCount, let tong = kq.totalQuestions {
+            if let dung = kq.soDung, let tong = kq.soCau {
                 Text("Đúng \(dung)/\(tong) câu")
                     .font(.system(size: 15)).foregroundColor(AppColors.textSecondary)
             }
@@ -450,6 +450,24 @@ struct KetQuaView: View {
                 .padding(.horizontal, Spacing.xl)
 
             Spacer()
+
+            // Đáp án đúng + lời giải của TỪNG câu đã nằm sẵn trong phản hồi
+            // nộp bài, nên nút này không tốn thêm lời gọi mạng nào.
+            NavigationLink {
+                XemLaiView(xemLai: kq, tenDe: de.ten)
+            } label: {
+                HStack(spacing: Spacing.sm) {
+                    Image(systemName: "list.bullet.rectangle.portrait")
+                    Text("Xem lại từng câu")
+                        .font(.system(size: 16, weight: .semibold))
+                }
+                .foregroundColor(AppColors.primary)
+                .frame(maxWidth: .infinity).padding(.vertical, 13)
+                .background(Capsule().strokeBorder(AppColors.primary.opacity(0.5), lineWidth: 1.5))
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, Spacing.lg)
+
             Button(action: dong) {
                 Text("Xong")
                     .font(.system(size: 17, weight: .semibold))

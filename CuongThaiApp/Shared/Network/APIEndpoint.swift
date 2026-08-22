@@ -271,6 +271,11 @@ enum APIEndpoint {
     case batDauLuotThi(examId: Int)
     case nopBaiTracNghiem(attemptId: Int, dapAn: [String: [Int]], giay: Int)
     case luotThiCuaToi
+    /// Bản xem lại một lượt đã nộp — đáp án đúng + lời giải từng câu.
+    case xemLaiLuotThi(attemptId: Int)
+    /// Cả hai đều LẬT trạng thái (toggle) và trả `{bookmarked: Bool}`.
+    case danhDauDeThi(examId: Int)
+    case danhDauCauHoi(questionId: Int)
     /// PATCH — `nil` = đánh dấu đã đọc TẤT CẢ, hoặc truyền danh sách id.
     case markNotificationsRead(ids: [Int]?)
     /// Lấy một bài viết theo id, để bấm thông báo là mở đúng bài.
@@ -459,6 +464,9 @@ enum APIEndpoint {
         case .batDauLuotThi(let e): return "/api/v1/exams/\(e)/attempts"
         case .nopBaiTracNghiem(let a, _, _): return "/api/v1/exams/attempts/\(a)/submit-fe"
         case .luotThiCuaToi: return "/api/v1/exams/attempts/mine"
+        case .xemLaiLuotThi(let id): return "/api/v1/exams/attempts/\(id)"
+        case .danhDauDeThi(let id): return "/api/v1/exams/\(id)/bookmark"
+        case .danhDauCauHoi(let id): return "/api/v1/exams/questions/\(id)/bookmark"
         case .markNotificationsRead: return "/api/v1/social/notifications"
         case .getPost(let id): return "/api/v1/social/posts/\(id)"
         }
@@ -468,6 +476,7 @@ enum APIEndpoint {
         switch self {
         case .ghiTienDo, .ghiKetQuaQuiz, .doiYeuThich, .aiDich, .aiKiemNguPhap, .aiNoiChuyen, .batDauLuotThi, .nopBaiTracNghiem,
              .doiNutLoTrinh, .nopBaiLuyen, .taoThuMucSoTay, .taoMucSoTay,
+             .danhDauDeThi, .danhDauCauHoi,
              .login, .register, .oauthToken, .changePassword, .refreshToken,
              .createPost, .likePost, .followUser, .unfollowUser,
              .createComment, .likeComment, .savePost, .sendMessage, .sendMessageWithFiles, .enrollCourse,

@@ -71,6 +71,13 @@ struct PhongThiView: View {
         }
         .background(AppColors.backgroundPrimary)
         .navigationTitle("Phòng thi")
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                NavigationLink { LichSuThiView() } label: {
+                    Image(systemName: "clock.arrow.circlepath")
+                }
+            }
+        }
         .navigationBarTitleDisplayMode(.inline)
         .task { if de.isEmpty { await tai() } }
         .refreshable { await tai() }

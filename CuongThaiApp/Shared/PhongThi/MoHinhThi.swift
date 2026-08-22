@@ -95,14 +95,100 @@ struct LuotThi: Codable {
     let resumed: Bool?
 }
 
-struct KetQuaThi: Codable {
-    let score: Double?
-    let totalPoints: Double?
-    let passed: Bool?
-    let correctCount: Int?
-    let totalQuestions: Int?
+// ════════════════════════════════════════════════════════════════
+// XEM LẠI BÀI THI
+//
+// ⚠️⚠️ **`POST /attempts/:id/submit-fe` KHÔNG trả về một bảng điểm gọn** —
+// nó trả về TRỌN BỘ bản xem lại: `{attempt, exam, examBookmarked, questions}`,
+// tức `score`/`passed` nằm trong `attempt`, không phải ở tầng ngoài.
+//
+// Bản đầu của màn Phòng thi khai một `KetQuaThi` phẳng `{score, passed,
+// correctCount…}` và đọc ở tầng ngoài. Mọi trường đều optional nên **decode
+// vẫn THÀNH CÔNG, chỉ toàn `nil`** — không lỗi, không cảnh báo, build xanh.
+// Kết quả: **mọi bài thi đều hiện "Chưa đạt" và "0 / 10"** dù làm đúng hết.
+// Phát hiện 22/08/2026 khi đọc `submitFinalExam`, nó kết thúc bằng
+// `return buildReview(updated.id, userId)`.
+//
+// Cái lợi kèm theo: đã có sẵn đáp án đúng + lời giải của TỪNG câu ngay trong
+// phản hồi nộp bài, nên xem lại bài KHÔNG tốn thêm một lời gọi mạng nào.
 
-    var diem: Double { score ?? 0 }
-    var tongDiem: Double { totalPoints ?? 10 }
-    var dat: Bool { passed ?? false }
+struct XemLaiBaiThi: Codable {
+    let attempt: LuotDaLam
+    let examBookmarked: Bool?
+    let questions: [CauHoiXemLai]
+
+    var diem: Double { attempt.score ?? 0 }
+    var tongDiem: Double { attempt.maxScore ?? 10 }
+    var dat: Bool { attempt.passed ?? false }
+    var soDung: Int? { attempt.feedback?.correctCount }
+    var soCau: Int? { attempt.feedback?.total }
+}
+
+struct LuotDaLam: Codable, Identifiable, Hashable {
+    let id: Int
+    let examId: Int
+    let status: String?
+    let submittedAt: String?
+    let timeSpentSeconds: Int?
+    let score: Double?
+    let maxScore: Double?
+    let passed: Bool?
+    let bookmarked: Bool?
+    let feedback: PhanHoi?
+    let exam: DeThi?
+
+    struct PhanHoi: Codable, Hashable {
+        let correctCount: Int?
+        let total: Int?
+    }
+
+    var phut: Int { (timeSpentSeconds ?? 0) / 60 }
+    var giay: Int { (timeSpentSeconds ?? 0) % 60 }
+}
+
+/// Đáp án người dùng đã chọn.
+///
+/// ⚠️ Máy chủ lưu `answers` dạng JSON tự do: câu trắc nghiệm là **mảng số**,
+/// còn câu code/tự luận là **chuỗi**. Khai thẳng `[Int]?` thì gặp câu code là
+/// decode NÉM LỖI (không phải trả `nil`) và hỏng cả màn xem lại chỉ vì một
+/// câu. Nhận cả hai dạng ở đây.
+struct DapAnCuaToi: Codable, Hashable {
+    let chiSo: [Int]
+    let chu: String?
+
+    init(from d: Decoder) throws {
+        let c = try d.singleValueContainer()
+        if let a = try? c.decode([Int].self) { chiSo = a; chu = nil }
+        else if let s = try? c.decode(String.self) { chiSo = []; chu = s }
+        else { chiSo = []; chu = nil }
+    }
+    func encode(to e: Encoder) throws {
+        var c = e.singleValueContainer()
+        if let chu { try c.encode(chu) } else { try c.encode(chiSo) }
+    }
+    var trong: Bool { chiSo.isEmpty && (chu ?? "").isEmpty }
+}
+
+struct CauHoiXemLai: Codable, Identifiable, Hashable {
+    let id: Int
+    let kind: String?
+    let sortOrder: Int?
+    let points: Double?
+    let prompt: String
+    let imageUrl: String?
+    let options: [CauHoiThi.LuaChon]?
+    /// Chỉ số các đáp án ĐÚNG. Bản `/take` cố ý không có trường này.
+    let correctIndexes: [Int]?
+    let explanation: String?
+    let myAnswer: DapAnCuaToi?
+    let bookmarked: Bool?
+    let bookmarkNote: String?
+
+    var dapAnDung: [Int] { correctIndexes ?? [] }
+    var daChon: [Int] { myAnswer?.chiSo ?? [] }
+    var laTracNghiem: Bool { (options?.isEmpty == false) && !dapAnDung.isEmpty }
+    var boTrong: Bool { myAnswer?.trong ?? true }
+    /// Chỉ kết luận đúng/sai với câu trắc nghiệm — câu code/tự luận do người
+    /// chấm, client không tự phán được.
+    var lamDung: Bool { laTracNghiem && Set(daChon) == Set(dapAnDung) }
 }
