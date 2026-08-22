@@ -292,7 +292,7 @@ struct SnippetEntryCard: View {
         NavigationLink { SnippetsView() } label: {
             HStack(spacing: Spacing.md) {
                 Image(systemName: "curlybraces")
-                    .font(.system(size: 21, weight: .semibold))
+                    .font(.system(size: 22, weight: .semibold))
                     .foregroundColor(AppColors.onPrimary)
                     .frame(width: 46, height: 46)
                     .background(

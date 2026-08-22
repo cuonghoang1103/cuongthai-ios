@@ -244,13 +244,12 @@ struct AcademyEntryCard: View {
             .padding(Spacing.md)
             .background(AppColors.backgroundCard)
             .overlay(
-                RoundedRectangle(cornerRadius: CornerRadius.medium)
+                RoundedRectangle(cornerRadius: CornerRadius.large)
                     .stroke(AppColors.primary.opacity(0.25), lineWidth: 1),
             )
             .cornerRadius(CornerRadius.medium)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .padding(.horizontal, Spacing.md)
     }
 }

@@ -457,14 +457,13 @@ struct NgoaiNguEntryCard: View {
             .padding(Spacing.md)
             .background(AppColors.backgroundCard)
             .overlay(
-                RoundedRectangle(cornerRadius: CornerRadius.medium)
+                RoundedRectangle(cornerRadius: CornerRadius.large)
                     .stroke(AppColors.secondary.opacity(0.3), lineWidth: 1),
             )
             .cornerRadius(CornerRadius.medium)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .padding(.horizontal, Spacing.md)
     }
 }
 
@@ -544,13 +543,12 @@ struct PhongThiEntryCard: View {
             .padding(Spacing.md)
             .background(AppColors.backgroundCard)
             .overlay(
-                RoundedRectangle(cornerRadius: CornerRadius.medium)
+                RoundedRectangle(cornerRadius: CornerRadius.large)
                     .stroke(AppColors.accent.opacity(0.3), lineWidth: 1),
             )
             .cornerRadius(CornerRadius.medium)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .padding(.horizontal, Spacing.md)
     }
 }

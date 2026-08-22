@@ -13,15 +13,22 @@ struct CoursesView: View {
             ScrollView {
                 VStack(spacing: Spacing.lg) {
                     searchBar
+                    // ⚠️ MỌI thẻ lối vào chỉ nhận lề từ `.padding(Spacing.md)`
+                    // của VStack này. ĐỪNG thêm `.padding(.horizontal, …)` vào
+                    // riêng thẻ nào, và cũng đừng kéo ngược bằng số ÂM.
+                    //
+                    // 22/08/2026 làm đúng cả hai việc đó cùng lúc: ba thẻ cũ tự
+                    // thêm +16 bên trong, còn ngoài này rải -16 cho ba thẻ
+                    // (không phải cùng ba thẻ đó) ⇒ lề thật thành 0 · 16 · 32,
+                    // năm thẻ ba bề rộng. Người dùng nhìn ảnh là thấy ngay.
+                    //
                     // Academy đặt NGAY dưới ô tìm kiếm, thành một nhánh riêng
                     // có viền — không trộn vào lưới khoá bên dưới. Hai thứ
                     // khác mục đích: một bên là chương trình đại học theo kỳ,
                     // một bên là khoá chọn học tuỳ ý.
                     AcademyEntryCard()
-                        .padding(.horizontal, -Spacing.md)
 
                     NgoaiNguEntryCard()
-                        .padding(.horizontal, -Spacing.md)
 
                     PhongThiEntryCard()
 
@@ -35,7 +42,6 @@ struct CoursesView: View {
                     // điện thoại đúng lúc đang dựng máy, không phải lúc ngồi
                     // trước máy tính.
                     SnippetEntryCard()
-                        .padding(.horizontal, -Spacing.md)
 
                     tieuDeNhanh("Khoá tự biên soạn", "sparkles")
                     categoriesSection

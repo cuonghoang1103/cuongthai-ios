@@ -195,7 +195,7 @@ struct CodeLabEntryCard: View {
         NavigationLink { CodeLabView() } label: {
             HStack(spacing: Spacing.md) {
                 Image(systemName: "chevron.left.forwardslash.chevron.right")
-                    .font(.system(size: 20, weight: .semibold))
+                    .font(.system(size: 22, weight: .semibold))
                     .foregroundColor(AppColors.onPrimary)
                     .frame(width: 46, height: 46)
                     .background(
