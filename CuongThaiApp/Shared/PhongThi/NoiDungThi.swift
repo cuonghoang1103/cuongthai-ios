@@ -13,14 +13,108 @@ import WebKit
 // nhau kèm ba gạch đứng giữa câu. App mới tách cho TÊN ĐỀ (`DeThi.tach`), còn
 // đề bài và đáp án thì chưa — mà đó mới là chỗ người ta đọc.
 
+/// Ngôn ngữ đang xem của đề thi.
+///
+/// ⚠️ Mặc định là **TIẾNG ANH**, đúng như web (`useState<'en'|'vi'>('en')`
+/// ở cả ba màn thi, kèm ghi chú "exams default to English"). Đề gốc là tiếng
+/// Anh; bản tiếng Việt là bản dịch kèm theo, người thi bật khi cần.
+enum NgonNguDe: String {
+    case anh = "en", viet = "vi"
+
+    /// Nhãn nút: hiện ngôn ngữ SẮP chuyển sang, không phải ngôn ngữ hiện tại —
+    /// giống hệt web.
+    var nhanNut: String { self == .viet ? "EN" : "VI" }
+    var doiSang: NgonNguDe { self == .viet ? .anh : .viet }
+}
+
+private struct KhoaNgonNguDe: EnvironmentKey {
+    static let defaultValue: NgonNguDe = .anh
+}
+
+extension EnvironmentValues {
+    /// Cả màn hình dùng CHUNG một giá trị: bấm một nút là đề bài, đáp án và
+    /// lời giải đổi cùng lúc.
+    var ngonNguDe: NgonNguDe {
+        get { self[KhoaNgonNguDe.self] }
+        set { self[KhoaNgonNguDe.self] = newValue }
+    }
+}
+
 extension String {
-    /// Lấy nửa tiếng Việt; rỗng thì lấy nửa còn lại; không có `|||` thì giữ
-    /// nguyên (đề đơn ngữ vẫn hiện bình thường).
-    var tachSongNgu: String {
+    /// Lấy đúng nửa theo ngôn ngữ; nửa đó rỗng thì lấy nửa còn lại; không có
+    /// `|||` thì giữ nguyên (đề đơn ngữ vẫn hiện bình thường). Cùng quy tắc
+    /// với `pickLang` của web.
+    func tachSongNgu(_ ngonNgu: NgonNguDe = .anh) -> String {
         guard let r = range(of: "|||") else { return self }
         let en = String(self[startIndex..<r.lowerBound]).trimmingCharacters(in: .whitespacesAndNewlines)
         let vi = String(self[r.upperBound...]).trimmingCharacters(in: .whitespacesAndNewlines)
-        return vi.isEmpty ? en : vi
+        return ngonNgu == .viet ? (vi.isEmpty ? en : vi) : (en.isEmpty ? vi : en)
+    }
+
+    /// Xuống dòng trước mỗi mục đánh số La Mã `(i) (ii) (iii)…`.
+    ///
+    /// Đề FPTU liệt kê các lựa chọn NGAY TRONG một dòng đề bài
+    /// ("(i) … (ii) … (iii) …"), đọc rất tức mắt. Cổng đúng ba chỗ:
+    ///
+    /// 1. **Bỏ qua đoạn công thức.** `(x)` trong `$f(x)$` hay `(i)` là đơn vị
+    ///    ảo mà bị chèn `<br>` vào giữa là KaTeX vỡ luôn cả công thức.
+    /// 2. **Phải có từ HAI mục trở lên.** Một chữ "(i)" lẻ trong câu văn xuôi
+    ///    thì để yên.
+    /// 3. **Mục dài đứng trước** trong biểu thức, không thì "(iv)" bị "(i)"
+    ///    khớp mất một nửa.
+    ///
+    /// Chỉ dùng cho ĐỀ BÀI, không dùng cho đáp án.
+    var xuongDongMucLaMa: String {
+        // Chuỗi THÔ `#"…"#`: biểu thức chính quy đầy dấu chéo, viết kiểu
+        // chuỗi thường thì mỗi dấu phải nhân đôi, và sai một cái là Swift
+        // báo "invalid escape sequence" — đúng thứ vừa xảy ra.
+        let doanCongThuc = #"(\$\$[\s\S]*?\$\$|\$[^$]*?\$|\\\([\s\S]*?\\\)|\\\[[\s\S]*?\\\])"#
+        let mucLaMa = #"\s*(?:<br\s*/?>)?\s*\((viii|vii|iii|ii|iv|ix|vi|xi|x|v|i)\)"#
+
+        guard let reDoan = try? NSRegularExpression(pattern: doanCongThuc),
+              let reMuc = try? NSRegularExpression(pattern: mucLaMa, options: .caseInsensitive)
+        else { return self }
+
+        let ns = self as NSString
+        // Cắt chuỗi thành các mảnh: mảnh nào là công thức thì KHÔNG đụng tới.
+        var manh: [(String, Bool)] = []
+        var viTri = 0
+        for m in reDoan.matches(in: self, range: NSRange(location: 0, length: ns.length)) {
+            if m.range.location > viTri {
+                manh.append((ns.substring(with: NSRange(location: viTri, length: m.range.location - viTri)), false))
+            }
+            manh.append((ns.substring(with: m.range), true))
+            viTri = m.range.location + m.range.length
+        }
+        if viTri < ns.length {
+            manh.append((ns.substring(from: viTri), false))
+        }
+
+        let dem = manh.filter { !$0.1 }.reduce(0) { d, m in
+            d + reMuc.numberOfMatches(in: m.0, range: NSRange(location: 0, length: (m.0 as NSString).length))
+        }
+        guard dem >= 2 else { return self }
+
+        let ra = manh.map { m -> String in
+            guard !m.1 else { return m.0 }
+            return reMuc.stringByReplacingMatches(
+                in: m.0, range: NSRange(location: 0, length: (m.0 as NSString).length),
+                withTemplate: "<br>($1)")
+        }.joined()
+        // Bỏ `<br>` thừa ở ngay đầu.
+        return ra.replacingOccurrences(of: #"^(?:\s*<br\s*/?>)+"#, with: "",
+                                       options: .regularExpression)
+    }
+
+    /// Thoát ký tự để chuỗi CHỮ THUẦN đi qua đường HTML mà không bị hiểu sai.
+    ///
+    /// ⚠️ Chèn `<br>` vào một đề bài chữ thuần là đẩy nó sang bộ dựng HTML —
+    /// và lúc đó `a < b` trong đề sẽ bị nuốt thành một thẻ không tồn tại, mất
+    /// luôn phần sau. Thoát trước rồi mới chèn.
+    var thoatHTML: String {
+        replacingOccurrences(of: "&", with: "&amp;")
+            .replacingOccurrences(of: "<", with: "&lt;")
+            .replacingOccurrences(of: ">", with: "&gt;")
     }
 
     /// Có cần tới bộ dựng HTML không, hay `Text` thường là đủ.
@@ -203,10 +297,25 @@ struct NoiDungThi: View {
     let chu: String
     var coChu: CGFloat = 16
     var mauChu: Color = AppColors.textPrimary
+    /// Đề bài thì xuống dòng cho các mục `(i) (ii) (iii)`; đáp án thì KHÔNG —
+    /// một đáp án chỉ là "(i)" mà xuống dòng thì thành dòng trống.
+    var laDeBai = false
 
     @State private var cao: CGFloat = 24
+    @Environment(\.ngonNguDe) private var ngonNgu
 
-    private var da: String { chu.tachSongNgu }
+    private var da: String {
+        let t = chu.tachSongNgu(ngonNgu)
+        guard laDeBai else { return t }
+        // Đề đã là HTML thì chèn thẳng; đề chữ thuần thì phải thoát ký tự
+        // trước, vì chèn `<br>` là đẩy nó sang bộ dựng HTML.
+        let laHTML = t.contains("<") && t.contains(">")
+        let nen = laHTML ? t : t.thoatHTML
+        let ra = nen.xuongDongMucLaMa
+        // Không có mục La Mã nào thì trả NGUYÊN BẢN, để chuỗi chữ thuần vẫn đi
+        // đường `Text` nhanh chứ không dựng WebView vì mấy ký tự vừa thoát.
+        return ra == nen ? t : ra
+    }
 
     var body: some View {
         #if os(iOS)

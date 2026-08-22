@@ -54,6 +54,8 @@ struct ManXemThu: View {
 /// sơ đồ mermaid, bảng, mã đã tô màu sẵn ở máy chủ, ảnh — để kiểm bộ dựng mà
 /// không cần tài khoản.
 struct ThuNoiDungThi: View {
+    @State private var ngonNgu: NgonNguDe = .anh
+
     private let mau: [(String, String)] = [
         ("Song ngữ (|||)",
          "Which feature of critique can be found in the theorist's writing?|||Đặc điểm phê phán nào thể hiện trong bài viết của nhà lý luận?"),
@@ -69,6 +71,10 @@ struct ThuNoiDungThi: View {
          "<pre><code><span class=\"hljs-keyword\">SELECT</span> <span class=\"hljs-built_in\">count</span>(*) <span class=\"hljs-keyword\">FROM</span> orders <span class=\"hljs-comment\">-- đếm đơn</span>\n<span class=\"hljs-keyword\">WHERE</span> total &gt; <span class=\"hljs-number\">100</span>;</code></pre>"),
         ("Sơ đồ",
          "<pre class=\"mermaid\">flowchart LR\n  A[Nhập đơn] --> B{Đã thanh toán?}\n  B -->|Rồi| C[Giao hàng]\n  B -->|Chưa| D[Chờ]</pre>"),
+        ("Mục La Mã trong đề (phải xuống dòng)",
+         "Cho \\(P(x)\\) là hàm mệnh đề trên \\(\\{-2,-1,0,1,2,3\\}\\). Tìm mệnh đề tương đương logic với \\(\\forall x[(x \\ge 1) \\to P(x)]\\). (i) \\(P(1) \\to (P(2) \\wedge P(3))\\) (ii) \\(P(1) \\vee P(2) \\vee P(3)\\) (iii) \\(P(1) \\wedge P(2) \\wedge P(3)\\) (iv) \\(P(1) \\to (P(2) \\vee P(3))\\)"),
+        ("Một (i) lẻ — KHÔNG được xuống dòng",
+         "Đơn vị ảo (i) thoả \\(i^2 = -1\\), dùng trong số phức."),
         ("Định dạng",
          "<p><strong>In đậm</strong>, <em>in nghiêng</em>, <u>gạch chân</u>, mã <code>x = 1</code>.</p><ul><li>Gạch đầu dòng một</li><li>Gạch đầu dòng hai</li></ul>"),
     ]
@@ -81,7 +87,7 @@ struct ThuNoiDungThi: View {
                         Text(m.0.uppercased())
                             .font(.system(size: 10, weight: .bold)).kerning(0.5)
                             .foregroundColor(AppColors.textTertiary)
-                        NoiDungThi(chu: m.1, coChu: 15)
+                        NoiDungThi(chu: m.1, coChu: 15, laDeBai: m.0.contains("La Mã") || m.0.contains("lẻ"))
                     }
                     .padding(Spacing.md)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -94,6 +100,14 @@ struct ThuNoiDungThi: View {
         .background(AppColors.backgroundPrimary)
         .navigationTitle("Thử nội dung đề")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button { ngonNgu = ngonNgu.doiSang } label: {
+                    Text(ngonNgu.nhanNut).font(.system(size: 13, weight: .bold))
+                }
+            }
+        }
+        .environment(\.ngonNguDe, ngonNgu)
     }
 }
 #endif

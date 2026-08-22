@@ -12,6 +12,7 @@ struct DaLuuView: View {
     @State private var loi: String?
     @State private var suaGhiChu: CauHoiDaLuu?
     @State private var chuGhiChu = ""
+    @State private var ngonNgu: NgonNguDe = .anh
 
     /// Nhóm theo MÔN. Người ôn thi nghĩ theo môn, không theo thứ tự lưu.
     private var theoMon: [(String, [CauHoiDaLuu])] {
@@ -43,6 +44,14 @@ struct DaLuuView: View {
         .background(AppColors.backgroundPrimary)
         .navigationTitle("Đã lưu")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button { ngonNgu = ngonNgu.doiSang } label: {
+                    Text(ngonNgu.nhanNut).font(.system(size: 13, weight: .bold))
+                }
+            }
+        }
+        .environment(\.ngonNguDe, ngonNgu)
         .alert("Ghi chú riêng", isPresented: Binding(
             get: { suaGhiChu != nil },
             set: { if !$0 { suaGhiChu = nil } })) {
@@ -96,7 +105,7 @@ struct DaLuuView: View {
                 .buttonStyle(.plain)
             }
 
-            NoiDungThi(chu: c.question.prompt, coChu: 15)
+            NoiDungThi(chu: c.question.prompt, coChu: 15, laDeBai: true)
 
             // CHỈ hiện đáp án đúng, không hiện cả 4 phương án: đây là chỗ ôn
             // lại, người ta cần nhớ ĐÁP ÁN chứ không phải làm lại bài.

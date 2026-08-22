@@ -109,6 +109,9 @@ final class LamBaiVM: ObservableObject {
 
 struct LamBaiView: View {
     let de: DeThi
+    /// ⚠️ Mặc định TIẾNG ANH — đề gốc là tiếng Anh, bản Việt là bản dịch kèm
+    /// theo. Đúng như web (`useState<'en'|'vi'>('en')`).
+    @State private var ngonNgu: NgonNguDe = .anh
     @StateObject private var vm: LamBaiVM
     @Environment(\.dismiss) private var dismiss
     @State private var hoiThoat = false
@@ -166,6 +169,9 @@ struct LamBaiView: View {
                  + (vm.daLam < vm.cauHoi.count ? " Những câu chưa làm sẽ tính 0 điểm." : ""))
         }
         .sheet(isPresented: $hienLuoi) { luoiCau }
+        // Cả màn dùng CHUNG một ngôn ngữ: bấm nút là đề bài và mọi đáp án đổi
+        // cùng lúc, không có chuyện đề tiếng Anh mà đáp án tiếng Việt.
+        .environment(\.ngonNguDe, ngonNgu)
     }
 
     // ── Thanh trên ──────────────────────────────────────────────
@@ -193,6 +199,18 @@ struct LamBaiView: View {
                     .foregroundColor(vm.conLai < 300 ? AppColors.error : AppColors.textPrimary)
                 }
                 Spacer()
+
+                // Nút đổi ngôn ngữ, đúng chỗ web đặt. Nhãn là ngôn ngữ SẮP
+                // chuyển sang, không phải ngôn ngữ đang xem.
+                Button { ngonNgu = ngonNgu.doiSang } label: {
+                    Text(ngonNgu.nhanNut)
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(AppColors.textPrimary)
+                        .padding(.horizontal, 9).padding(.vertical, 6)
+                        .background(RoundedRectangle(cornerRadius: 8)
+                            .strokeBorder(AppColors.border, lineWidth: 1))
+                }
+                .accessibilityLabel(ngonNgu == .viet ? "Chuyển sang tiếng Anh" : "Chuyển sang tiếng Việt")
 
                 Button { hienLuoi = true } label: {
                     Image(systemName: "square.grid.3x3")
@@ -242,7 +260,7 @@ struct LamBaiView: View {
                 // Đề bài đi qua `NoiDungThi`: tách `|||`, dựng công thức
                 // KaTeX, sơ đồ mermaid, bảng, ảnh và mã đã tô màu — đúng bộ
                 // mà web dựng (`ExamRichContent.tsx`).
-                NoiDungThi(chu: c.prompt, coChu: 17)
+                NoiDungThi(chu: c.prompt, coChu: 17, laDeBai: true)
 
                 // Ảnh đề bài (sơ đồ, đoạn mã chụp màn hình…). Qua
                 // `getMediaUrl` vì máy chủ trả về KHOÁ R2 trần, không phải

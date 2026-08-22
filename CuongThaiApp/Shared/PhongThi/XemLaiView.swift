@@ -7,6 +7,8 @@ struct XemLaiView: View {
     let tenDe: String
 
     @State private var chiCauSai = false
+    /// Mặc định TIẾNG ANH, như web.
+    @State private var ngonNgu: NgonNguDe = .anh
     @State private var daDanhDau: Set<Int> = []
 
     private var cau: [CauHoiXemLai] {
@@ -34,6 +36,14 @@ struct XemLaiView: View {
         .background(AppColors.backgroundPrimary)
         .navigationTitle("Xem lại")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button { ngonNgu = ngonNgu.doiSang } label: {
+                    Text(ngonNgu.nhanNut).font(.system(size: 13, weight: .bold))
+                }
+            }
+        }
+        .environment(\.ngonNguDe, ngonNgu)
         .task {
             daDanhDau = Set(xemLai.questions.filter { $0.bookmarked == true }.map(\.id))
         }
@@ -95,7 +105,7 @@ struct XemLaiView: View {
                 .buttonStyle(.plain)
             }
 
-            NoiDungThi(chu: c.prompt, coChu: 15)
+            NoiDungThi(chu: c.prompt, coChu: 15, laDeBai: true)
 
             if let ds = c.options, !ds.isEmpty {
                 VStack(spacing: Spacing.xs) {
