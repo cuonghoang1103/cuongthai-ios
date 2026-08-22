@@ -34,6 +34,12 @@ enum APIEndpoint {
     case deletePost(id: Int)
     case likePost(id: Int)
     case unlikePost(id: Int)
+    /// ⚠️⚠️ **POST, không phải PATCH.** Backend khai
+    /// `router.post('/posts/:id/react')`. App gửi PATCH suốt từ đầu ⇒ mọi lượt
+    /// thả cảm xúc đều nhận `404 "Route PATCH … not found"`, tức **cả bộ chọn
+    /// cảm xúc chưa từng hoạt động** — mà 404 thì giao diện lặng thinh, không
+    /// khác gì mạng chậm. Phát hiện 22/08/2026 bằng cách đối chiếu TOÀN BỘ 173
+    /// endpoint của app với 1.685 route backend; đây là cái duy nhất lệch.
     case reactPost(id: Int, type: String)
     case getComments(postId: Int, cursor: Int?, limit: Int)
     case createComment(postId: Int, content: String, parentId: Int?, mediaUrl: String? = nil, mediaKind: String? = nil)
@@ -476,6 +482,7 @@ enum APIEndpoint {
         switch self {
         case .ghiTienDo, .ghiKetQuaQuiz, .doiYeuThich, .aiDich, .aiKiemNguPhap, .aiNoiChuyen, .batDauLuotThi, .nopBaiTracNghiem,
              .doiNutLoTrinh, .nopBaiLuyen, .taoThuMucSoTay, .taoMucSoTay,
+             .reactPost,   // ⚠️ backend khai POST, KHÔNG phải PATCH — xem ghi chú ở `case reactPost`
              .danhDauDeThi, .danhDauCauHoi,
              .login, .register, .oauthToken, .changePassword, .refreshToken,
              .createPost, .likePost, .followUser, .unfollowUser,
@@ -491,7 +498,7 @@ enum APIEndpoint {
             return "POST"
         case .updateProfile, .datBietDanh, .doiTenThuMucSoTay, .suaMucSoTay:
             return "PUT"
-        case .updateNote, .markRead, .reactPost, .markNotificationsRead, .datTuyChonHoiThoai,
+        case .updateNote, .markRead, .markNotificationsRead, .datTuyChonHoiThoai,
              .suaDongBang, .suaMon, .suaChuong, .suaTuVung, .suaBaiViet,
              .suaPhienChat, .chuyenThuMuc, .chuyenMucSoTay, .onMucSoTay:
             return "PATCH"
