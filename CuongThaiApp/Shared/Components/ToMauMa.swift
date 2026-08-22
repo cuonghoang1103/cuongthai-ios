@@ -17,21 +17,29 @@ enum ToMauMa {
 
     // MARK: Bảng màu
 
+    /// ⚠️ Màu TỰ THÍCH ỨNG qua `Color.theoCheDo`, KHÔNG nhận cờ sáng/tối từ
+    /// bên ngoài.
+    ///
+    /// Bản đầu nhận `toi: Bool` lấy từ `@Environment(\.colorScheme)`. Soi thật
+    /// 23/08/2026: app đang ở chế độ tối mà giá trị đó ra `false`, nên mã hiện
+    /// bằng bảng SÁNG — chữ gần như ĐEN trên nền tối, không đọc nổi, và không
+    /// có lỗi nào. Nguyên nhân: `AppColors` thích ứng qua `UIColor { traits }`
+    /// tức bám TRAIT COLLECTION thật, còn `\.colorScheme` của SwiftUI lại đi
+    /// theo `.preferredColorScheme` của app — hai đường khác nhau, và chúng
+    /// lệch nhau. Dùng đúng một đường như phần còn lại của app thì hết cửa sai.
     private struct Bang {
         let thuong, chuThich, chuoi, so, tuKhoa, kieu, ham: Color
     }
 
-    private static func bang(_ toi: Bool) -> Bang {
-        toi
-        ? Bang(thuong: Color(hex: 0xD4D4D4), chuThich: Color(hex: 0x6A9955),
-               chuoi: Color(hex: 0xCE9178), so: Color(hex: 0xB5CEA8),
-               tuKhoa: Color(hex: 0x569CD6), kieu: Color(hex: 0x4EC9B0),
-               ham: Color(hex: 0xDCDCAA))
-        : Bang(thuong: Color(hex: 0x1F1F1F), chuThich: Color(hex: 0x008000),
-               chuoi: Color(hex: 0xA31515), so: Color(hex: 0x098658),
-               tuKhoa: Color(hex: 0x0000FF), kieu: Color(hex: 0x267F99),
-               ham: Color(hex: 0x795E26))
-    }
+    /// Bảng màu VS Code Dark+ / Light+.
+    private static let bang = Bang(
+        thuong:   .theoCheDo(sang: Color(hex: 0x1F1F1F), toi: Color(hex: 0xD4D4D4)),
+        chuThich: .theoCheDo(sang: Color(hex: 0x008000), toi: Color(hex: 0x6A9955)),
+        chuoi:    .theoCheDo(sang: Color(hex: 0xA31515), toi: Color(hex: 0xCE9178)),
+        so:       .theoCheDo(sang: Color(hex: 0x098658), toi: Color(hex: 0xB5CEA8)),
+        tuKhoa:   .theoCheDo(sang: Color(hex: 0x0000FF), toi: Color(hex: 0x569CD6)),
+        kieu:     .theoCheDo(sang: Color(hex: 0x267F99), toi: Color(hex: 0x4EC9B0)),
+        ham:      .theoCheDo(sang: Color(hex: 0x795E26), toi: Color(hex: 0xDCDCAA)))
 
     // MARK: Từ khoá theo họ ngôn ngữ
 
@@ -80,31 +88,89 @@ enum ToMauMa {
     /// ⚠️ Duyệt trên `Array<Character>` chứ không trên `String.Index`: chuỗi mã
     /// vài nghìn ký tự mà nhảy chỉ số kiểu `String` thì mỗi bước phải giải mã
     /// lại từ đầu cụm, chậm thấy rõ khi cuộn.
-    static func to(_ ma: String, ngonNgu: String?, toi: Bool) -> AttributedString {
-        let b = bang(toi)
+    // MARK: Loại token
+
+    enum Loai { case thuong, chuThich, chuoi, so, tuKhoaL, kieuL, hamL }
+
+    private static func mau(_ l: Loai) -> Color {
+        switch l {
+        case .thuong: return bang.thuong
+        case .chuThich: return bang.chuThich
+        case .chuoi: return bang.chuoi
+        case .so: return bang.so
+        case .tuKhoaL: return bang.tuKhoa
+        case .kieuL: return bang.kieu
+        case .hamL: return bang.ham
+        }
+    }
+
+    #if os(iOS)
+    /// Bản UIColor cho `UITextView`.
+    ///
+    /// ⚠️⚠️ **`NSAttributedString(AttributedString)` KHÔNG mang theo
+    /// `foregroundColor` của SwiftUI.** Màu đó nằm trong phạm vi thuộc tính
+    /// riêng của SwiftUI; chuyển sang `NSAttributedString` thì UIKit không đọc
+    /// được, nên `UITextView` vẽ TOÀN BỘ bằng màu mặc định của nó. Soi thật
+    /// 23/08/2026: ô soạn mã hiện chữ gần như đen trên nền tối, trong khi cùng
+    /// bộ tô màu đó chạy đúng ở `Text` của SwiftUI. Phải dựng thẳng bằng khoá
+    /// `NSAttributedString.Key.foregroundColor` như dưới đây.
+    private static func mauUI(_ l: Loai) -> UIColor {
+        func d(_ sang: UInt32, _ toi: UInt32) -> UIColor {
+            UIColor { $0.userInterfaceStyle == .dark ? UIColor(Color(hex: toi)) : UIColor(Color(hex: sang)) }
+        }
+        switch l {
+        case .thuong: return d(0x1F1F1F, 0xD4D4D4)
+        case .chuThich: return d(0x008000, 0x6A9955)
+        case .chuoi: return d(0xA31515, 0xCE9178)
+        case .so: return d(0x098658, 0xB5CEA8)
+        case .tuKhoaL: return d(0x0000FF, 0x569CD6)
+        case .kieuL: return d(0x267F99, 0x4EC9B0)
+        case .hamL: return d(0x795E26, 0xDCDCAA)
+        }
+    }
+
+    /// Dựng `NSAttributedString` cho `UITextView`, kèm phông đơn cách.
+    static func toNS(_ ma: String, ngonNgu: String?, coChu: CGFloat = 13.5) -> NSAttributedString {
+        let font = UIFont.monospacedSystemFont(ofSize: coChu, weight: .regular)
+        let ra = NSMutableAttributedString()
+        for (chu, loai) in cat(ma, ngonNgu: ngonNgu) {
+            ra.append(NSAttributedString(string: chu, attributes: [
+                .font: font, .foregroundColor: mauUI(loai),
+            ]))
+        }
+        return ra
+    }
+    #endif
+
+    /// Bản SwiftUI.
+    static func to(_ ma: String, ngonNgu: String?) -> AttributedString {
+        var ra = AttributedString()
+        for (chu, loai) in cat(ma, ngonNgu: ngonNgu) {
+            var s = AttributedString(chu)
+            s.foregroundColor = mau(loai)
+            ra += s
+        }
+        return ra
+    }
+
+    /// Cắt mã thành các mẩu `(chuỗi, loại)`. Dùng chung cho cả hai bản dựng —
+    /// một bộ luật, không có chuyện hai nơi tô khác nhau.
+    private static func cat(_ ma: String, ngonNgu: String?) -> [(String, Loai)] {
         let l = (ngonNgu ?? "").lowercased()
         let tk = tuKhoa(l)
         let dungThang = chuThichThang(l)
         let dungGachDoi = l.contains("sql")
 
-        var ra = AttributedString()
+        var ra: [(String, Loai)] = []
         let c = Array(ma)
         var i = 0
         var dem = ""
 
         func xa() {
             guard !dem.isEmpty else { return }
-            var s = AttributedString(dem)
-            s.foregroundColor = b.thuong
-            ra += s
-            dem = ""
+            ra.append((dem, .thuong)); dem = ""
         }
-        func them(_ chu: String, _ mau: Color) {
-            xa()
-            var s = AttributedString(chu)
-            s.foregroundColor = mau
-            ra += s
-        }
+        func them(_ chu: String, _ l: Loai) { xa(); ra.append((chu, l)) }
 
         while i < c.count {
             let ch = c[i]
@@ -113,23 +179,23 @@ enum ToMauMa {
             if ch == "/" && i + 1 < c.count && c[i + 1] == "/" {
                 var j = i
                 while j < c.count && c[j] != "\n" { j += 1 }
-                them(String(c[i..<j]), b.chuThich); i = j; continue
+                them(String(c[i..<j]), .chuThich); i = j; continue
             }
             if ch == "/" && i + 1 < c.count && c[i + 1] == "*" {
                 var j = i + 2
                 while j + 1 < c.count && !(c[j] == "*" && c[j + 1] == "/") { j += 1 }
                 j = min(j + 2, c.count)
-                them(String(c[i..<j]), b.chuThich); i = j; continue
+                them(String(c[i..<j]), .chuThich); i = j; continue
             }
             if dungThang && ch == "#" {
                 var j = i
                 while j < c.count && c[j] != "\n" { j += 1 }
-                them(String(c[i..<j]), b.chuThich); i = j; continue
+                them(String(c[i..<j]), .chuThich); i = j; continue
             }
             if dungGachDoi && ch == "-" && i + 1 < c.count && c[i + 1] == "-" {
                 var j = i
                 while j < c.count && c[j] != "\n" { j += 1 }
-                them(String(c[i..<j]), b.chuThich); i = j; continue
+                them(String(c[i..<j]), .chuThich); i = j; continue
             }
 
             // ── chuỗi ──
@@ -144,7 +210,7 @@ enum ToMauMa {
                     if c[j] == "\n" && mo != "`" { break }
                     j += 1
                 }
-                them(String(c[i..<min(j, c.count)]), b.chuoi); i = min(j, c.count); continue
+                them(String(c[i..<min(j, c.count)]), .chuoi); i = min(j, c.count); continue
             }
 
             // ── số ──
@@ -152,7 +218,7 @@ enum ToMauMa {
                 var j = i
                 while j < c.count && (c[j].isNumber || c[j] == "." || c[j] == "x"
                                       || (c[j].isHexDigit && j > i && c[i + 1 <= j ? i + 1 : i] == "x")) { j += 1 }
-                them(String(c[i..<j]), b.so); i = j; continue
+                them(String(c[i..<j]), .so); i = j; continue
             }
 
             // ── định danh ──
@@ -166,15 +232,15 @@ enum ToMauMa {
                 let laHam = k < c.count && c[k] == "("
 
                 if tk.contains(tu.lowercased()) || tk.contains(tu) {
-                    them(tu, b.tuKhoa)
+                    them(tu, .tuKhoaL)
                 } else if kieuChung.contains(tu) {
-                    them(tu, b.kieu)
+                    them(tu, .kieuL)
                 } else if let f = tu.first, f.isUppercase, tu.count > 1 {
                     // Tên bắt đầu bằng chữ HOA coi là kiểu — quy ước đúng với
                     // Java/C#/Swift/TS, và với SQL thì từ khoá đã bắt ở trên.
-                    them(tu, b.kieu)
+                    them(tu, .kieuL)
                 } else if laHam {
-                    them(tu, b.ham)
+                    them(tu, .hamL)
                 } else {
                     dem += tu
                 }
@@ -244,7 +310,7 @@ struct KhoiMaNguon: View {
             }
 
             ScrollView(.horizontal, showsIndicators: false) {
-                Text(ToMauMa.to(ma, ngonNgu: ngonNgu, toi: che == .dark))
+                Text(ToMauMa.to(ma, ngonNgu: ngonNgu))
                     .font(.system(size: 12.5, design: .monospaced))
                     .textSelection(.enabled)
                     .padding(.horizontal, Spacing.sm + 2)

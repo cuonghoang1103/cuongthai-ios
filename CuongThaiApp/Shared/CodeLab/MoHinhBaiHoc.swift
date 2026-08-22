@@ -136,6 +136,82 @@ struct TienDoBai: Codable, Hashable {
     let exerciseId: Int
     let status: String?
     let solvedAt: String?
+    /// Mã người học đã lưu. Máy chủ chuẩn hoá thành mảng `{name, language,
+    /// code}`, tối đa 20 khối — xem `normalizeCodeBlocks`.
+    let savedCode: [BaiTapCode.KhoiMa]?
 
     var daGiai: Bool { (status ?? "").uppercased() == "SOLVED" }
+    var maDaLuu: String? {
+        let c = savedCode?.first?.code
+        return (c?.isEmpty == false) ? c : nil
+    }
+}
+
+// MARK: - AI chấm mã theo đề bài
+
+/// `POST /code-lab/exercises/:id/coach/check` — gửi mã, AI đối chiếu với TỪNG
+/// yêu cầu của đề bài.
+///
+/// ⚠️ Đây KHÔNG phải chạy mã. Nền tảng không có bộ thực thi; cái này là chấm
+/// theo đặc tả. Với người học thì nó nói được nhiều hơn một dòng "sai" — nó
+/// chỉ ra yêu cầu nào thiếu và sửa thế nào.
+///
+/// ⚠️ **Chỉ Pro** (`assertPro`) và tốn AI, nên phải để người dùng tự bấm, đừng
+/// gọi tự động. Trần 24.000 ký tự.
+struct KetQuaChamMa: Codable {
+    let summary: String?
+    let summaryVi: String?
+    let met: Int?
+    let total: Int?
+    let items: [MucYeuCau]?
+    let risks: [String]?
+    let risksVi: [String]?
+
+    var tomTat: String { (summaryVi?.isEmpty == false ? summaryVi : summary) ?? "" }
+    var dsRuiRo: [String] { (risksVi?.isEmpty == false ? risksVi : risks) ?? [] }
+    var dat: Int { met ?? 0 }
+    var tong: Int { total ?? (items?.count ?? 0) }
+
+    struct MucYeuCau: Codable, Identifiable, Hashable {
+        let requirement: String?
+        let requirementVi: String?
+        /// `met` · `partial` · `missing`
+        let status: String?
+        let evidence: String?
+        let evidenceVi: String?
+        let fix: String?
+        let fixVi: String?
+
+        var id: String { (requirement ?? "") + (status ?? "") }
+        var yeuCau: String { (requirementVi?.isEmpty == false ? requirementVi : requirement) ?? "" }
+        var bangChung: String { (evidenceVi?.isEmpty == false ? evidenceVi : evidence) ?? "" }
+        var cachSua: String { (fixVi?.isEmpty == false ? fixVi : fix) ?? "" }
+
+        var mucDat: MucDat { MucDat(rawValue: (status ?? "").lowercased()) ?? .thieu }
+    }
+
+    enum MucDat: String {
+        case dat = "met", motPhan = "partial", thieu = "missing"
+        var ten: String {
+            switch self {
+            case .dat: return "Đạt"
+            case .motPhan: return "Một phần"
+            case .thieu: return "Thiếu"
+            }
+        }
+        var mau: UInt32 {
+            switch self {
+            case .dat: return 0x2BA84A
+            case .motPhan: return 0xD97706
+            case .thieu: return 0xE5484D
+            }
+        }
+        var bieuTuong: String {
+            switch self {
+            case .dat: return "checkmark.circle.fill"
+            case .motPhan: return "exclamationmark.circle.fill"
+            case .thieu: return "xmark.circle.fill"
+            }
+        }
+    }
 }

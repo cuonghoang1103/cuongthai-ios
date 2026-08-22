@@ -299,6 +299,11 @@ enum APIEndpoint {
     case tienDoCodeLab(loTrinhId: Int)
     /// `trangThai`: `SOLVED` hoặc `IN_PROGRESS`.
     case ghiTienDoBaiTap(baiId: Int, trangThai: String)
+    /// Lưu mã người học đang viết. Máy chủ nhận MẢNG khối `{name, language, code}`.
+    case luuMaBaiTap(baiId: Int, ma: String, ngonNgu: String)
+    /// AI đối chiếu mã với từng yêu cầu của đề. **Chỉ Pro**, tốn AI — phải để
+    /// người dùng tự bấm.
+    case chamMaBaiTap(baiId: Int, ma: String)
     // ── Mẩu mã ──
     /// ⚠️ Tham số tìm là `search`, KHÔNG phải `q` — gõ `q` thì máy chủ trả
     /// về TOÀN BỘ danh sách mà không báo gì. Đã đo.
@@ -509,6 +514,8 @@ enum APIEndpoint {
         case .baiTapTheoSlug(let s): return "/api/v1/code-lab/exercises/\(s)"
         case .tienDoCodeLab: return "/api/v1/code-lab/progress/mine"
         case .ghiTienDoBaiTap(let id, _): return "/api/v1/code-lab/exercises/\(id)/progress"
+        case .luuMaBaiTap(let id, _, _): return "/api/v1/code-lab/exercises/\(id)/progress"
+        case .chamMaBaiTap(let id, _): return "/api/v1/code-lab/exercises/\(id)/coach/check"
         case .dsSnippet: return "/api/v1/snippets"
         case .dsDanhMucSnippet: return "/api/v1/snippets/categories"
         case .ghiNhanChep(let id): return "/api/v1/snippets/\(id)/copy"
@@ -524,7 +531,7 @@ enum APIEndpoint {
         switch self {
         case .ghiTienDo, .ghiKetQuaQuiz, .doiYeuThich, .aiDich, .aiKiemNguPhap, .aiNoiChuyen, .batDauLuotThi, .nopBaiTracNghiem,
              .doiNutLoTrinh, .nopBaiLuyen, .taoThuMucSoTay, .taoMucSoTay, .ghiNhanChep,
-             .ghiTienDoBaiTap,
+             .ghiTienDoBaiTap, .luuMaBaiTap, .chamMaBaiTap,
              .reactPost,   // ⚠️ backend khai POST, KHÔNG phải PATCH — xem ghi chú ở `case reactPost`
              .danhDauDeThi, .danhDauCauHoi,
              .login, .register, .oauthToken, .changePassword, .refreshToken,
@@ -609,6 +616,10 @@ enum APIEndpoint {
             return ["quality": cl]
         case .ghiTienDoBaiTap(_, let tt):
             return ["status": tt]
+        case .luuMaBaiTap(_, let ma, let ng):
+            return ["savedCode": [["name": "main", "language": ng, "code": ma]]]
+        case .chamMaBaiTap(_, let ma):
+            return ["code": ma]
         case .ghiChuCauHoi(_, let g):
             return ["note": g]
         case .nopBaiLuyen(let c, let key, let dung, let tong, let sai, let idSai, let idDung):

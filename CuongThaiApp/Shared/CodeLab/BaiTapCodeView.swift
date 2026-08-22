@@ -22,6 +22,24 @@ struct BaiTapCodeView: View {
                 if let s = bai.outputSpec, !s.isEmpty { o("ĐẦU RA", s) }
                 if let s = bai.constraints, !s.isEmpty { o("RÀNG BUỘC", s) }
 
+                // Nút viết mã đặt NGAY dưới đề bài, trên cả ví dụ: người ta
+                // đọc đề xong là muốn bắt tay vào viết, không phải cuộn qua
+                // gợi ý và lời giải mới thấy chỗ gõ.
+                NavigationLink { SoanMaView(bai: bai) } label: {
+                    HStack(spacing: Spacing.sm) {
+                        Image(systemName: "chevron.left.forwardslash.chevron.right")
+                        Text("Viết mã và kiểm tra")
+                            .font(.system(size: 15, weight: .bold))
+                        Spacer()
+                        Image(systemName: "chevron.right").font(.system(size: 12, weight: .semibold))
+                    }
+                    .foregroundColor(AppColors.onPrimary)
+                    .padding(Spacing.md)
+                    .background(RoundedRectangle(cornerRadius: CornerRadius.large)
+                        .fill(Color(hex: bai.doKho.mau)))
+                }
+                .buttonStyle(.plain)
+
                 if let vd = bai.examplesJson, !vd.isEmpty {
                     nhan("VÍ DỤ")
                     ForEach(Array(vd.enumerated()), id: \.offset) { i, v in theViDu(i + 1, v) }
