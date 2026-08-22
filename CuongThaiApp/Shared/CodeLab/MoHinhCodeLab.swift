@@ -69,10 +69,21 @@ struct BaiTapCode: Codable, Identifiable, Hashable {
         let language: String?
         var id: String { (name ?? "") + (language ?? "") }
     }
+    /// ⚠️ Trường là **`name`**, KHÔNG phải `title` — giống `LoTrinhCode`.
+    /// Đo thật: `module` = `{id, name, slug}`, `track` = `{id, name, slug,
+    /// language, color, groupId}`. Khai `title` thì decode vẫn xanh mà tên
+    /// luôn rỗng. Giữ `title` lại để lỡ chỗ nào backend dùng tên đó.
     struct Nhan: Codable, Hashable {
         let id: Int?
+        let name: String?
         let title: String?
         let slug: String?
+        let color: String?
+
+        var ten: String? {
+            let t = name ?? title
+            return (t?.isEmpty == false) ? t : nil
+        }
     }
 
     var doKho: DoKho { DoKho(difficulty) }
@@ -107,21 +118,124 @@ enum DoKho: String, CaseIterable {
     }
 }
 
+// MARK: - Nhóm và lộ trình
+//
+// Đo thật 22/08/2026: **12 nhóm · 72 lộ trình**. Nhóm lớn nhất là "CuongThai"
+// (22 lộ trình · 3.155 bài). Cấp: BEGINNER 56 · INTERMEDIATE 15 · ADVANCED 1.
+
 struct NhomCodeLab: Codable, Identifiable, Hashable {
     let id: Int
     let name: String
     let slug: String?
     let description: String?
     let icon: String?
+    /// Mã màu hex kiểu `#e11d48` — web dùng chính giá trị này.
     let color: String?
     let tracks: [LoTrinhCode]?
 
-    var soLoTrinh: Int { tracks?.count ?? 0 }
+    var dsLoTrinh: [LoTrinhCode] { tracks ?? [] }
+    var soBai: Int { dsLoTrinh.reduce(0) { $0 + $1.soBai } }
+
+    /// Tên icon của web (`star`, `backend`, `devops`…) sang SF Symbol.
+    var bieuTuong: String {
+        switch icon ?? "" {
+        case "star": return "star.fill"
+        case "languages": return "chevron.left.forwardslash.chevron.right"
+        case "backend": return "server.rack"
+        case "frontend": return "macwindow"
+        case "database": return "cylinder.split.1x2.fill"
+        case "mobile": return "iphone"
+        case "devops": return "shippingbox.fill"
+        case "algorithms": return "function"
+        case "game": return "gamecontroller.fill"
+        case "web": return "globe"
+        case "credit-card": return "creditcard.fill"
+        case "fptu": return "building.columns.fill"
+        default: return "folder.fill"
+        }
+    }
 }
 
 struct LoTrinhCode: Codable, Identifiable, Hashable {
     let id: Int
-    let title: String?
+    /// ⚠️ Trường là **`name`**, KHÔNG phải `title`. Bản đầu tôi khai `title` —
+    /// backend trả `null` cho nó nên mọi lộ trình sẽ hiện tên TRỐNG, mà decode
+    /// vẫn xanh vì optional.
+    let name: String?
     let slug: String?
     let description: String?
+    let language: String?
+    let level: String?
+    let color: String?
+    let exerciseCount: Int?
+    let moduleCount: Int?
+
+    var ten: String { name ?? slug ?? "Lộ trình" }
+    var soBai: Int { exerciseCount ?? 0 }
+    var soChuong: Int { moduleCount ?? 0 }
+    var cap: CapDoLoTrinh { CapDoLoTrinh(level) }
+
+    /// ⚠️ Mô tả mở đầu bằng **`⟦ctv⟧`** nghĩa là "CuongThai kiểm chứng" — web
+    /// cắt tiền tố đó ra và vẽ thành huy hiệu. Đo thật: 44/72 lộ trình có nó.
+    /// Không cắt thì người dùng đọc thấy một chuỗi ký hiệu lạ ngay đầu dòng.
+    private static let dauKiemChung = "⟦ctv⟧"
+    var kiemChung: Bool { (description ?? "").hasPrefix(Self.dauKiemChung) }
+    var moTa: String {
+        (description ?? "")
+            .replacingOccurrences(of: Self.dauKiemChung, with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// Chữ cái đầu làm biểu tượng. Backend KHÔNG trả icon hay ảnh bìa cho lộ
+    /// trình (đo: `icon` null 72/72, `coverImageUrl` 0/72) — web dùng logo
+    /// thương hiệu lấy từ tài nguyên riêng của nó, app không có bộ đó.
+    var chuDau: String {
+        let s = ten.trimmingCharacters(in: .whitespaces)
+        guard let c = s.first else { return "?" }
+        // MỘT chữ cái thôi. Lấy hai chữ ra "NO" cho Node.js và "PO" cho
+        // PostgreSQL — đọc thành từ có nghĩa khác, trông như lỗi.
+        return String(c).uppercased()
+    }
+
+    /// `#336791` → 0x336791. Hỏng thì về màu trung tính chứ không nhuộm bừa.
+    var mau: UInt32 {
+        let h = (color ?? "").trimmingCharacters(in: CharacterSet(charactersIn: "# "))
+        return h.count == 6 ? (UInt32(h, radix: 16) ?? 0x64748B) : 0x64748B
+    }
+}
+
+enum CapDoLoTrinh: String {
+    case coBan = "BEGINNER", trungCap = "INTERMEDIATE", nangCao = "ADVANCED"
+
+    init(_ raw: String?) { self = CapDoLoTrinh(rawValue: (raw ?? "").uppercased()) ?? .coBan }
+
+    var ten: String {
+        switch self {
+        case .coBan: return "Cơ bản"
+        case .trungCap: return "Trung cấp"
+        case .nangCao: return "Nâng cao"
+        }
+    }
+    var mau: UInt32 {
+        switch self {
+        case .coBan: return 0x2BA84A
+        case .trungCap: return 0xD97706
+        case .nangCao: return 0xE5484D
+        }
+    }
+}
+
+
+/// `/code-lab/stats` — con số CHÍNH THỨC của kho.
+///
+/// ⚠️ Cộng dồn `exerciseCount` của các lộ trình trong `/groups` KHÔNG ra con
+/// số này (đo 22/08: cộng dồn 10.626 vs stats 12.549) — `/groups` chỉ trả lộ
+/// trình đã xuất bản và có nhóm, còn stats đếm toàn bộ. Lấy số từ đây, đừng
+/// tự cộng: hai chỗ trên cùng một màn hình nói hai con số là người dùng mất
+/// tin ngay.
+struct ThongKeCodeLab: Codable {
+    let groups: Int?
+    let tracks: Int?
+    let modules: Int?
+    let exercises: Int?
 }

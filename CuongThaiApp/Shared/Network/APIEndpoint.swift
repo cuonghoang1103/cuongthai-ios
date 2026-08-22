@@ -285,8 +285,10 @@ enum APIEndpoint {
     // ── Code Lab ──
     /// 12.549 bài tập. Bộ lọc ĐÃ ĐO là có tác dụng thật (EASY→2.381,
     /// HARD→2.605, `q=zzzqqqxxx`→0), không như `?level=`/`?q=` của My Language.
-    case dsBaiTapCode(nhom: Int?, doKho: String?, ngonNgu: String?, tim: String, trang: Int)
+    case dsBaiTapCode(nhom: Int?, loTrinh: Int?, doKho: String?, ngonNgu: String?, tim: String,
+                      sap: String?, trang: Int)
     case nhomCodeLab
+    case thongKeCodeLab
     // ── Mẩu mã ──
     /// ⚠️ Tham số tìm là `search`, KHÔNG phải `q` — gõ `q` thì máy chủ trả
     /// về TOÀN BỘ danh sách mà không báo gì. Đã đo.
@@ -491,6 +493,7 @@ enum APIEndpoint {
         case .danhDauCauHoi(let id): return "/api/v1/exams/questions/\(id)/bookmark"
         case .dsBaiTapCode: return "/api/v1/code-lab/exercises"
         case .nhomCodeLab: return "/api/v1/code-lab/groups"
+        case .thongKeCodeLab: return "/api/v1/code-lab/stats"
         case .dsSnippet: return "/api/v1/snippets"
         case .dsDanhMucSnippet: return "/api/v1/snippets/categories"
         case .ghiNhanChep(let id): return "/api/v1/snippets/\(id)/copy"
@@ -736,16 +739,18 @@ enum APIEndpoint {
             if let ng { m["language"] = ng }
             if !tim.isEmpty { m["search"] = tim }   // ⚠️ `search`, không phải `q`
             return m
-        case .dsBaiTapCode(let nhom, let kho, let ng, let tim, let trang):
+        case .dsBaiTapCode(let nhom, let lt, let kho, let ng, let tim, let sap, let trang):
             // Trang 12, cố ý NHỎ. Danh sách trả về cả HTML đề bài lẫn mã lời
             // giải, và cỡ bài rất chênh: đo thật 25 bài trung bình ~343KB,
             // nhưng 25 bài **Java là 1.005KB** (~40KB/bài). Để 20 thì gặp
             // đúng lô Java là mỗi lần cuộn tải ~800KB — quá nặng cho 4G.
             var m: [String: Any] = ["page": trang, "limit": 12]
             if let nhom { m["groupId"] = nhom }
+            if let lt { m["trackId"] = lt }
             if let kho { m["difficulty"] = kho }
             if let ng { m["language"] = ng }
             if !tim.isEmpty { m["q"] = tim }
+            if let sap { m["sort"] = sap }
             return m
         case .dsPhienChat(let luuTru, let fid):
             var d: [String: Any] = [:]

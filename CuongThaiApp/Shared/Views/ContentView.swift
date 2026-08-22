@@ -7,7 +7,13 @@ struct ContentView: View {
 
     var body: some View {
         Group {
-            if !hasAcceptedTerms {
+            // Cửa xem màn hình cho việc soi giao diện — xem `ManXemThu`.
+            // ⚠️ `#if DEBUG` KHÔNG cắt ngang được chuỗi `if / else if` của
+            // Swift (nó là một câu lệnh, không phải mấy khối rời), nên phần
+            // điều kiện phải tách ra ngoài như dưới đây.
+            if let man = manXemThu {
+                cuaXemThu(man)
+            } else if !hasAcceptedTerms {
                 // App Store Guideline 1.2: the community rules must be agreed
                 // to before any user-generated content is shown.
                 TermsConsentView { hasAcceptedTerms = true }
@@ -18,6 +24,25 @@ struct ContentView: View {
             }
         }
         .animation(.easeInOut, value: appState.isAuthenticated)
+    }
+
+    /// Tên màn cần xem, chỉ đọc được ở bản DEBUG.
+    private var manXemThu: String? {
+        #if DEBUG
+        let v = ProcessInfo.processInfo.environment["CT_XEM_MAN"] ?? ""
+        return v.isEmpty ? nil : v
+        #else
+        return nil
+        #endif
+    }
+
+    @ViewBuilder
+    private func cuaXemThu(_ ten: String) -> some View {
+        #if DEBUG
+        ManXemThu(ten: ten)
+        #else
+        EmptyView()
+        #endif
     }
 }
 
