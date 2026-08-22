@@ -73,6 +73,11 @@ struct PhongThiView: View {
         .navigationTitle("Phòng thi")
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
+                NavigationLink { DaLuuView() } label: {
+                    Image(systemName: "bookmark")
+                }
+            }
+            ToolbarItem(placement: .navigationBarTrailing) {
                 NavigationLink { LichSuThiView() } label: {
                     Image(systemName: "clock.arrow.circlepath")
                 }

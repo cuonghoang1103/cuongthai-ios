@@ -282,6 +282,10 @@ enum APIEndpoint {
     /// Cả hai đều LẬT trạng thái (toggle) và trả `{bookmarked: Bool}`.
     case danhDauDeThi(examId: Int)
     case danhDauCauHoi(questionId: Int)
+    case dsDeDaLuu
+    case dsCauHoiDaLuu
+    /// Ghi chú riêng cho câu đã lưu. Gửi chuỗi RỖNG là xoá ghi chú.
+    case ghiChuCauHoi(questionId: Int, ghiChu: String)
     /// PATCH — `nil` = đánh dấu đã đọc TẤT CẢ, hoặc truyền danh sách id.
     case markNotificationsRead(ids: [Int]?)
     /// Lấy một bài viết theo id, để bấm thông báo là mở đúng bài.
@@ -473,6 +477,9 @@ enum APIEndpoint {
         case .xemLaiLuotThi(let id): return "/api/v1/exams/attempts/\(id)"
         case .danhDauDeThi(let id): return "/api/v1/exams/\(id)/bookmark"
         case .danhDauCauHoi(let id): return "/api/v1/exams/questions/\(id)/bookmark"
+        case .dsDeDaLuu: return "/api/v1/exams/bookmarks/exams"
+        case .dsCauHoiDaLuu: return "/api/v1/exams/bookmarks/questions"
+        case .ghiChuCauHoi(let id, _): return "/api/v1/exams/questions/\(id)/bookmark-note"
         case .markNotificationsRead: return "/api/v1/social/notifications"
         case .getPost(let id): return "/api/v1/social/posts/\(id)"
         }
@@ -496,7 +503,7 @@ enum APIEndpoint {
              .openThread, .muteThread, .saveLessonProgress,
              .taoPhienChat, .taoThuMucChat, .tachNhanhPhien, .catPhien, .datViecDoc:
             return "POST"
-        case .updateProfile, .datBietDanh, .doiTenThuMucSoTay, .suaMucSoTay:
+        case .updateProfile, .datBietDanh, .doiTenThuMucSoTay, .suaMucSoTay, .ghiChuCauHoi:
             return "PUT"
         case .updateNote, .markRead, .markNotificationsRead, .datTuyChonHoiThoai,
              .suaDongBang, .suaMon, .suaChuong, .suaTuVung, .suaBaiViet,
@@ -564,6 +571,8 @@ enum APIEndpoint {
             return m
         case .onMucSoTay(_, let cl):
             return ["quality": cl]
+        case .ghiChuCauHoi(_, let g):
+            return ["note": g]
         case .nopBaiLuyen(let c, let key, let dung, let tong, let sai, let idSai, let idDung):
             return ["languageCode": c, "lessonKey": key, "correct": dung,
                     "total": tong, "mistakes": sai,

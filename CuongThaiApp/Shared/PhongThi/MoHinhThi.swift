@@ -192,3 +192,36 @@ struct CauHoiXemLai: Codable, Identifiable, Hashable {
     /// chấm, client không tự phán được.
     var lamDung: Bool { laTracNghiem && Set(daChon) == Set(dapAnDung) }
 }
+
+// ════════════════════════════════════════════════════════════════
+// ĐỀ VÀ CÂU HỎI ĐÃ LƯU
+//
+// Dùng lại `DeThi` và `CauHoiXemLai`: payload của mục đã lưu là TẬP CON của
+// hai cái đó (thiếu `myAnswer`, `sortOrder`… nhưng chúng đều optional), nên
+// không cần model thứ ba. Đã đối chiếu với `select:` thật của
+// `listMyExamBookmarks` / `listMyQuestionBookmarks`.
+
+struct DeDaLuu: Codable, Identifiable {
+    let id: Int
+    let examId: Int
+    let createdAt: String?
+    let exam: DeThi
+    let course: DeThi.KhoaHoc?
+    let semester: DeThi.HocKy?
+}
+
+struct CauHoiDaLuu: Codable, Identifiable {
+    let id: Int
+    let questionId: Int
+    let examId: Int
+    /// Ghi chú riêng của người học — thứ đáng giá nhất ở đây, vì nó ghi lại
+    /// LÝ DO câu này khó với chính họ.
+    let note: String?
+    let createdAt: String?
+    let question: CauHoiXemLai
+    let exam: DeThi
+    let course: DeThi.KhoaHoc?
+    let semester: DeThi.HocKy?
+
+    var tenMon: String { course?.title ?? exam.ten }
+}
