@@ -242,6 +242,9 @@ enum APIEndpoint {
     case nopBaiLuyen(code: String, lessonKey: String, dung: Int, tong: Int,
                      sai: Int, idSai: [Int], idDung: [Int])
     // ── Sổ tay ngôn ngữ (tất cả ĐÒI đăng nhập) ──
+    /// TOÀN BỘ kho từ của một ngôn ngữ trong một lượt (en 2,2MB). Công khai,
+    /// không cần đăng nhập. Máy chủ KHÔNG lọc — `?q=` vô tác dụng.
+    case tuDien(code: String)
     case caySoTay(code: String)
     case mucSoTay(id: Int)
     case taoThuMucSoTay(code: String, ten: String, icon: String?, chaId: Int?)
@@ -437,6 +440,7 @@ enum APIEndpoint {
         case .bangXepHang(let c): return "/api/v1/my-language/\(c)/practice/leaderboard"
         case .thanhTich(let c): return "/api/v1/my-language/\(c)/practice/achievements"
         case .nopBaiLuyen: return "/api/v1/my-language/practice/complete"
+        case .tuDien(let c): return "/api/v1/my-language/\(c)/dictionary"
         case .caySoTay(let c): return "/api/v1/my-language/notebook/\(c)"
         case .mucSoTay(let id): return "/api/v1/my-language/notebook/entry/\(id)"
         case .taoThuMucSoTay: return "/api/v1/my-language/notebook/folders"

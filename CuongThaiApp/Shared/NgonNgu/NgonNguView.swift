@@ -168,6 +168,11 @@ struct NgonNguHomeView: View {
             oMuc("Sổ tay", "book.closed.fill", 0x0E93A6, nil) {
                 SoTayView(ngonNgu: ngonNgu)
             }
+            // Từ điển cũng không dựa vào `counts`: nó lấy TOÀN BỘ kho từ của
+            // ngôn ngữ, mà ngôn ngữ nào lọt vào danh sách thì đã có từ rồi.
+            oMuc("Từ điển", "character.book.closed.fill", 0x2563EB, ngonNgu.counts?.words) {
+                TuDienView(ngonNgu: ngonNgu)
+            }
             if (sl?.grammar ?? 0) > 0 {
                 oMuc("Ngữ pháp", "text.book.closed.fill", 0x7A45E8, sl?.grammar) {
                     NguPhapView(ngonNgu: ngonNgu)
