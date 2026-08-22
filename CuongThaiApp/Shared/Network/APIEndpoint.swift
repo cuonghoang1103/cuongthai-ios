@@ -282,6 +282,11 @@ enum APIEndpoint {
     /// Cả hai đều LẬT trạng thái (toggle) và trả `{bookmarked: Bool}`.
     case danhDauDeThi(examId: Int)
     case danhDauCauHoi(questionId: Int)
+    // ── Code Lab ──
+    /// 12.549 bài tập. Bộ lọc ĐÃ ĐO là có tác dụng thật (EASY→2.381,
+    /// HARD→2.605, `q=zzzqqqxxx`→0), không như `?level=`/`?q=` của My Language.
+    case dsBaiTapCode(nhom: Int?, doKho: String?, ngonNgu: String?, tim: String, trang: Int)
+    case nhomCodeLab
     case dsDeDaLuu
     case dsCauHoiDaLuu
     /// Ghi chú riêng cho câu đã lưu. Gửi chuỗi RỖNG là xoá ghi chú.
@@ -477,6 +482,8 @@ enum APIEndpoint {
         case .xemLaiLuotThi(let id): return "/api/v1/exams/attempts/\(id)"
         case .danhDauDeThi(let id): return "/api/v1/exams/\(id)/bookmark"
         case .danhDauCauHoi(let id): return "/api/v1/exams/questions/\(id)/bookmark"
+        case .dsBaiTapCode: return "/api/v1/code-lab/exercises"
+        case .nhomCodeLab: return "/api/v1/code-lab/groups"
         case .dsDeDaLuu: return "/api/v1/exams/bookmarks/exams"
         case .dsCauHoiDaLuu: return "/api/v1/exams/bookmarks/questions"
         case .ghiChuCauHoi(let id, _): return "/api/v1/exams/questions/\(id)/bookmark-note"
@@ -713,6 +720,17 @@ enum APIEndpoint {
         // được, và tìm/lọc ghi chú cũng hỏng câm y hệt.
         case .searchGifs(let q):
             return q.isEmpty ? nil : ["q": q]
+        case .dsBaiTapCode(let nhom, let kho, let ng, let tim, let trang):
+            // Trang 12, cố ý NHỎ. Danh sách trả về cả HTML đề bài lẫn mã lời
+            // giải, và cỡ bài rất chênh: đo thật 25 bài trung bình ~343KB,
+            // nhưng 25 bài **Java là 1.005KB** (~40KB/bài). Để 20 thì gặp
+            // đúng lô Java là mỗi lần cuộn tải ~800KB — quá nặng cho 4G.
+            var m: [String: Any] = ["page": trang, "limit": 12]
+            if let nhom { m["groupId"] = nhom }
+            if let kho { m["difficulty"] = kho }
+            if let ng { m["language"] = ng }
+            if !tim.isEmpty { m["q"] = tim }
+            return m
         case .dsPhienChat(let luuTru, let fid):
             var d: [String: Any] = [:]
             // Chỉ gửi khi BẬT: backend đọc `archived === '1'`, gửi "0" cũng

@@ -24,6 +24,11 @@ struct CoursesView: View {
                         .padding(.horizontal, -Spacing.md)
 
                     PhongThiEntryCard()
+
+                    // Code Lab: kho lớn nhất của nền tảng (12.549 bài tập) mà
+                    // app chưa hề mở. Đặt cạnh Phòng thi vì cùng là "luyện",
+                    // khác với Academy/Ngoại ngữ là "học".
+                    CodeLabEntryCard()
                         .padding(.horizontal, -Spacing.md)
 
                     tieuDeNhanh("Khoá tự biên soạn", "sparkles")
