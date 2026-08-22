@@ -239,11 +239,10 @@ struct LamBaiView: View {
                         .font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
                 }
 
-                Text(c.prompt)
-                    .font(.system(size: 17))
-                    .foregroundColor(AppColors.textPrimary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .textSelection(.enabled)
+                // Đề bài đi qua `NoiDungThi`: tách `|||`, dựng công thức
+                // KaTeX, sơ đồ mermaid, bảng, ảnh và mã đã tô màu — đúng bộ
+                // mà web dựng (`ExamRichContent.tsx`).
+                NoiDungThi(chu: c.prompt, coChu: 17)
 
                 // Ảnh đề bài (sơ đồ, đoạn mã chụp màn hình…). Qua
                 // `getMediaUrl` vì máy chủ trả về KHOÁ R2 trần, không phải
@@ -257,13 +256,7 @@ struct LamBaiView: View {
                 }
 
                 if let sc = c.starterCode, !sc.isEmpty {
-                    Text(sc)
-                        .font(.system(size: 13, design: .monospaced))
-                        .foregroundColor(AppColors.textPrimary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(Spacing.sm)
-                        .background(RoundedRectangle(cornerRadius: CornerRadius.small)
-                            .fill(AppColors.backgroundTertiary))
+                    KhoiMaNguon(ma: sc, ngonNgu: c.language, tieuDe: nil, choChep: false)
                 }
 
                 if let ds = c.options, !ds.isEmpty {
@@ -300,11 +293,11 @@ struct LamBaiView: View {
                       : (chon ? "largecircle.fill.circle" : "circle"))
                     .font(.system(size: 19))
                     .foregroundColor(chon ? AppColors.primary : AppColors.textTertiary)
-                Text(chu)
-                    .font(.system(size: 15))
-                    .foregroundColor(AppColors.textPrimary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .multilineTextAlignment(.leading)
+                // Đáp án cũng có thể mang `|||`, công thức hay mã — dùng
+                // chung một bộ dựng với đề bài. `NoiDungThi` tự chọn: chuỗi
+                // thường thì vẽ bằng `Text`, chỉ khi có thẻ/công thức mới
+                // dựng WebView, nên 60 câu × 4 đáp án không thành 240 WebView.
+                NoiDungThi(chu: chu, coChu: 15)
                 Spacer(minLength: 0)
             }
             .padding(Spacing.md)

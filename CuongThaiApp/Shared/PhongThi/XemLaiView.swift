@@ -95,10 +95,7 @@ struct XemLaiView: View {
                 .buttonStyle(.plain)
             }
 
-            Text(c.prompt)
-                .font(.system(size: 15))
-                .foregroundColor(AppColors.textPrimary)
-                .fixedSize(horizontal: false, vertical: true)
+            NoiDungThi(chu: c.prompt, coChu: 15)
 
             if let ds = c.options, !ds.isEmpty {
                 VStack(spacing: Spacing.xs) {
@@ -109,13 +106,7 @@ struct XemLaiView: View {
             } else if let chu = c.myAnswer?.chu, !chu.isEmpty {
                 // Câu code/tự luận: hiện đúng thứ mình đã nộp, không phán
                 // đúng sai — chấm là việc của người chấm.
-                Text(chu)
-                    .font(.system(size: 13, design: .monospaced))
-                    .foregroundColor(AppColors.textSecondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(Spacing.sm)
-                    .background(RoundedRectangle(cornerRadius: CornerRadius.small)
-                        .fill(AppColors.backgroundTertiary))
+                KhoiMaNguon(ma: chu, ngonNgu: nil, tieuDe: "Bài bạn đã nộp", choChep: false)
             }
 
             if let gt = c.explanation, !gt.isEmpty {
@@ -123,10 +114,8 @@ struct XemLaiView: View {
                     Image(systemName: "lightbulb.fill")
                         .font(.system(size: 13))
                         .foregroundColor(Color(hex: 0xD97706))
-                    Text(gt)
-                        .font(.system(size: 13))
-                        .foregroundColor(AppColors.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                    // Lời giải cũng song ngữ và cũng có thể mang công thức.
+                    NoiDungThi(chu: gt, coChu: 13, mauChu: AppColors.textSecondary)
                 }
                 .padding(Spacing.sm + 2)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -159,10 +148,7 @@ struct XemLaiView: View {
                 .font(.system(size: 15))
                 .foregroundColor(dung ? AppColors.success
                                  : (daChon ? AppColors.error : AppColors.textTertiary))
-            Text(chu)
-                .font(.system(size: 14))
-                .foregroundColor(AppColors.textPrimary)
-                .fixedSize(horizontal: false, vertical: true)
+            NoiDungThi(chu: chu, coChu: 14)
             Spacer(minLength: 0)
             if daChon && !dung {
                 Text("bạn chọn")

@@ -96,10 +96,7 @@ struct DaLuuView: View {
                 .buttonStyle(.plain)
             }
 
-            Text(c.question.prompt)
-                .font(.system(size: 15))
-                .foregroundColor(AppColors.textPrimary)
-                .fixedSize(horizontal: false, vertical: true)
+            NoiDungThi(chu: c.question.prompt, coChu: 15)
 
             // CHỈ hiện đáp án đúng, không hiện cả 4 phương án: đây là chỗ ôn
             // lại, người ta cần nhớ ĐÁP ÁN chứ không phải làm lại bài.
@@ -110,20 +107,16 @@ struct DaLuuView: View {
                             Image(systemName: "checkmark.circle.fill")
                                 .font(.system(size: 13))
                                 .foregroundColor(AppColors.success)
-                            Text(ds[i].text)
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(AppColors.success)
-                                .fixedSize(horizontal: false, vertical: true)
+                            // Đáp án đúng cũng là nội dung đề — cũng phải
+                            // tách `|||` và dựng công thức nếu có.
+                            NoiDungThi(chu: ds[i].text, coChu: 14, mauChu: AppColors.success)
                         }
                     }
                 }
             }
 
             if let gt = c.question.explanation, !gt.isEmpty {
-                Text(gt)
-                    .font(.system(size: 12))
-                    .foregroundColor(AppColors.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                NoiDungThi(chu: gt, coChu: 12, mauChu: AppColors.textSecondary)
             }
 
             if let n = c.note, !n.isEmpty {

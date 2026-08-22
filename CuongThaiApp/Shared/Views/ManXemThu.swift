@@ -33,16 +33,67 @@ struct ManXemThu: View {
             case "tudien": TuDienView(ngonNgu: tiengNhat)
             case "lotrinh": LoTrinhView(ngonNgu: tiengNhat)
             case "phongthi": PhongThiView()
+            case "noidungthi": ThuNoiDungThi()
             default:
                 VStack(spacing: Spacing.sm) {
                     Text("Không có màn tên “\(ten)”")
                         .font(.system(size: 15, weight: .semibold))
-                    Text("codelab · snippets · tudien · lotrinh · phongthi")
+                    Text("codelab · snippets · tudien · lotrinh · phongthi · noidungthi")
                         .font(.system(size: 12))
                         .foregroundColor(AppColors.textSecondary)
                 }
             }
         }
+    }
+}
+
+/// Bàn thử cho `NoiDungThi`.
+///
+/// Phòng thi ĐÒI ĐĂNG NHẬP nên không mở được đề thật để soi. Màn này dựng
+/// đúng những dạng nội dung mà đề thi có — song ngữ `|||`, công thức KaTeX,
+/// sơ đồ mermaid, bảng, mã đã tô màu sẵn ở máy chủ, ảnh — để kiểm bộ dựng mà
+/// không cần tài khoản.
+struct ThuNoiDungThi: View {
+    private let mau: [(String, String)] = [
+        ("Song ngữ (|||)",
+         "Which feature of critique can be found in the theorist's writing?|||Đặc điểm phê phán nào thể hiện trong bài viết của nhà lý luận?"),
+        ("Đáp án song ngữ",
+         "Unjust ideologies maintain unequal power structures.|||Các ý thức hệ bất công duy trì cấu trúc quyền lực bất bình đẳng."),
+        ("Công thức trong dòng",
+         "<p>Cho \\(f(x)=x^2+3x-4\\). Nghiệm của \\(f(x)=0\\) là bao nhiêu?</p>"),
+        ("Công thức tách dòng",
+         "<p>Tính tích phân sau:</p>$$\\int_{0}^{1} \\frac{2x}{x^2+1}\\,dx = \\ln 2$$"),
+        ("Bảng",
+         "<table><thead><tr><th>Toán tử</th><th>Ý nghĩa</th><th>Độ ưu tiên</th></tr></thead><tbody><tr><td><code>*</code></td><td>Nhân</td><td>Cao</td></tr><tr><td><code>+</code></td><td>Cộng</td><td>Thấp</td></tr></tbody></table>"),
+        ("Mã đã tô màu ở máy chủ",
+         "<pre><code><span class=\"hljs-keyword\">SELECT</span> <span class=\"hljs-built_in\">count</span>(*) <span class=\"hljs-keyword\">FROM</span> orders <span class=\"hljs-comment\">-- đếm đơn</span>\n<span class=\"hljs-keyword\">WHERE</span> total &gt; <span class=\"hljs-number\">100</span>;</code></pre>"),
+        ("Sơ đồ",
+         "<pre class=\"mermaid\">flowchart LR\n  A[Nhập đơn] --> B{Đã thanh toán?}\n  B -->|Rồi| C[Giao hàng]\n  B -->|Chưa| D[Chờ]</pre>"),
+        ("Định dạng",
+         "<p><strong>In đậm</strong>, <em>in nghiêng</em>, <u>gạch chân</u>, mã <code>x = 1</code>.</p><ul><li>Gạch đầu dòng một</li><li>Gạch đầu dòng hai</li></ul>"),
+    ]
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: Spacing.md) {
+                ForEach(Array(mau.enumerated()), id: \.offset) { _, m in
+                    VStack(alignment: .leading, spacing: Spacing.xs) {
+                        Text(m.0.uppercased())
+                            .font(.system(size: 10, weight: .bold)).kerning(0.5)
+                            .foregroundColor(AppColors.textTertiary)
+                        NoiDungThi(chu: m.1, coChu: 15)
+                    }
+                    .padding(Spacing.md)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(RoundedRectangle(cornerRadius: CornerRadius.large)
+                        .fill(AppColors.backgroundCard))
+                }
+            }
+            .padding(Spacing.md)
+        }
+        .background(AppColors.backgroundPrimary)
+        .navigationTitle("Thử nội dung đề")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 #endif
