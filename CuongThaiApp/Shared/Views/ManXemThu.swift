@@ -34,13 +34,37 @@ struct ManXemThu: View {
             case "lotrinh": LoTrinhView(ngonNgu: tiengNhat)
             case "phongthi": PhongThiView()
             case "noidungthi": ThuNoiDungThi()
+
+            // ── Cần PHIÊN ĐĂNG NHẬP mới có dữ liệu ───────────────────
+            //
+            // Cửa xem màn KHÔNG bỏ qua xác thực — nó chỉ bỏ qua màn đăng
+            // nhập. Token nằm ở Keychain của máy mô phỏng, mà Keychain đó
+            // **sống qua cả `simctl install` đè lẫn `simctl uninstall`**
+            // (đo thật 23/08/2026: một token admin cũ sót lại làm danh sách
+            // trả về cả bản nháp). Nên người dùng đăng nhập MỘT lần là mọi
+            // lần dựng sau đều mở thẳng vào được, suốt 7 ngày — bằng tuổi
+            // `JWT_REFRESH_EXPIRES_IN`.
+            //
+            // ⛔ `xcrun simctl erase` XOÁ Keychain ⇒ mất phiên, phải nhờ
+            //    người dùng đăng nhập lại. Cần sạch thì dùng `uninstall`.
+            case "trangchu": HomeView()
+            case "khoahoc": CoursesView()      // → vào khoá → bài → màn HỌC BÀI
+            case "daluu": DaLuuView()
+            case "lichsu": LichSuThiView()
+            case "tim": SearchView()
+
             default:
                 VStack(spacing: Spacing.sm) {
                     Text("Không có màn tên “\(ten)”")
                         .font(.system(size: 15, weight: .semibold))
-                    Text("codelab · snippets · tudien · lotrinh · phongthi · noidungthi")
+                    Text("Không cần đăng nhập:\ncodelab · snippets · tudien · lotrinh · phongthi · noidungthi")
                         .font(.system(size: 12))
                         .foregroundColor(AppColors.textSecondary)
+                        .multilineTextAlignment(.center)
+                    Text("Cần phiên đăng nhập:\ntrangchu · khoahoc · daluu · lichsu · tim")
+                        .font(.system(size: 12))
+                        .foregroundColor(AppColors.textSecondary)
+                        .multilineTextAlignment(.center)
                 }
             }
         }
