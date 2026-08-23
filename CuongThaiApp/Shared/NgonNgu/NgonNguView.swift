@@ -210,11 +210,25 @@ struct NgonNguHomeView: View {
             oMuc("Kiểm ngữ pháp", "checkmark.seal.fill", 0x21D4ED, nil) {
                 KiemNguPhapView(ngonNgu: ngonNgu)
             }
+            // Tuyến `/stats` đã khai trong `APIEndpoint` từ lâu mà không màn
+            // nào gọi — số liệu học tập nằm im trên máy chủ suốt.
+            // KHÔNG phải tính năng Pro: `/my-language/stats` chỉ có
+            // `authenticate`, không có `assertPro`.
+            oMuc("Thống kê", "chart.bar.xaxis", 0xEC4899, nil,
+                 phu: "Chuỗi ngày · tiến độ · lịch sử") {
+                ThongKeView(ngonNgu: ngonNgu)
+            }
         }
     }
 
+    /// Một ô trong lưới.
+    ///
+    /// ⚠️ `so == nil` MẶC ĐỊNH ghi "Cần tài khoản Pro" — đúng với Sổ tay,
+    /// Dịch, Luyện nói, Kiểm ngữ pháp, nhưng SAI với ô nào chỉ cần đăng
+    /// nhập. Truyền `phu:` để nói đúng thứ ô đó cần.
     private func oMuc<D: View>(_ ten: String, _ icon: String, _ mau: UInt32,
-                               _ so: Int?, @ViewBuilder _ den: @escaping () -> D) -> some View {
+                               _ so: Int?, phu: String? = nil,
+                               @ViewBuilder _ den: @escaping () -> D) -> some View {
         NavigationLink(destination: den()) {
             VStack(alignment: .leading, spacing: Spacing.sm) {
                 Image(systemName: icon)
@@ -228,7 +242,7 @@ struct NgonNguHomeView: View {
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(AppColors.textPrimary)
                         .lineLimit(1)
-                    Text(so.map { "\($0) mục" } ?? "Cần tài khoản Pro")
+                    Text(so.map { "\($0) mục" } ?? phu ?? "Cần tài khoản Pro")
                         .font(.system(size: 11))
                         .foregroundColor(AppColors.textTertiary)
                         .lineLimit(1)

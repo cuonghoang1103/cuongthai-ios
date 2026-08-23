@@ -284,6 +284,96 @@ struct HoiDap: Codable, Identifiable, Hashable {
     let meaningVi: String?
 }
 
+// ── Thống kê học tập ────────────────────────────────────────────
+
+/// `GET /my-language/stats?languageCode=`.
+///
+/// ⚠️ `perSection` là đối tượng có KHOÁ ĐỘNG (`VOCAB`, `ALPHABET`,
+/// `GRAMMAR`, `LISTENING`, `CONVERSATION`, `READING`, `QNA`) chứ không phải
+/// mảng, nên phải giải mã bằng `CodingKey` tự viết. Khai thành `[Muc]` thẳng
+/// là `typeMismatch` và cả màn trắng.
+///
+/// ⚠️ `perSection` KHÔNG lọc theo ngôn ngữ — `getStats` ở backend chỉ dùng
+/// `where: { userId }` cho phần này, `languageCode` chỉ lọc `quizHistory`.
+/// Màn hình phải nói ra, đừng gắn nhãn một thứ tiếng lên số gộp.
+struct ThongKeHoc: Codable {
+    let streak: Int
+    let perSection: [String: Muc]?
+    let quizHistory: [LuotQuiz]?
+
+    struct Muc: Codable, Hashable {
+        var ma: String = ""
+        let learning: Int
+        let reviewing: Int
+        let mastered: Int
+        let total: Int
+
+        private enum CodingKeys: String, CodingKey {
+            case learning, reviewing, mastered, total
+        }
+
+        /// Số mục ở trạng thái `NEW` — backend KHÔNG trả riêng.
+        ///
+        /// `getStats` cộng `total` cho MỌI dòng nhưng chỉ tách ba trạng thái
+        /// `LEARNING`/`REVIEWING`/`MASTERED`; enum còn có `NEW`. Đo thật
+        /// 24/08/2026 trên tài khoản thử: Từ vựng total 33 mà 0+23+8 = 31 —
+        /// 2 mục lệch chính là `NEW`. Không tính bù thì thanh có một khoảng
+        /// trống không ai giải thích được, và ba con số không cộng ra tổng.
+        var moi: Int { max(0, total - learning - reviewing - mastered) }
+
+        var ten: String {
+            switch ma {
+            case "VOCAB": return "Từ vựng"
+            case "ALPHABET": return "Bảng chữ"
+            case "GRAMMAR": return "Ngữ pháp"
+            case "LISTENING": return "Luyện nghe"
+            case "CONVERSATION": return "Hội thoại"
+            case "READING": return "Bài đọc"
+            case "QNA": return "Hỏi đáp"
+            default: return ma
+            }
+        }
+    }
+
+    struct LuotQuiz: Codable, Identifiable, Hashable {
+        let id: Int
+        let score: Int
+        let total: Int
+        let createdAt: String?
+
+        var phanTram: Int { total > 0 ? score * 100 / total : 0 }
+        var phanTramChu: String { "\(phanTram)% đúng" }
+        // ⚠️ Màu KHÔNG nằm ở đây: file này chỉ `import Foundation`, và mô
+        // hình không nên biết về giao diện. Xem `ThongKeView.mauDiem`.
+        /// "24/08 15:30". Trả nil nếu máy chủ đổi định dạng — thà không hiện
+        /// ngày còn hơn hiện một chuỗi ISO thô giữa giao diện tiếng Việt.
+        var ngayGon: String? {
+            guard let createdAt else { return nil }
+            let vao = ISO8601DateFormatter()
+            vao.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            let d = vao.date(from: createdAt) ?? ISO8601DateFormatter().date(from: createdAt)
+            guard let d else { return nil }
+            let ra = DateFormatter()
+            ra.dateFormat = "dd/MM HH:mm"
+            return ra.string(from: d)
+        }
+    }
+
+    /// Chỉ những mục ĐÃ CÓ dữ liệu, theo thứ tự học. Backend luôn trả đủ 7
+    /// khoá kể cả khi total = 0, hiện hết là 7 thanh rỗng chồng nhau.
+    var dsMuc: [Muc] {
+        let thuTu = ["VOCAB", "ALPHABET", "GRAMMAR", "LISTENING",
+                     "CONVERSATION", "READING", "QNA"]
+        return thuTu.compactMap { k in
+            guard var m = perSection?[k], m.total > 0 else { return nil }
+            m.ma = k
+            return m
+        }
+    }
+
+    var dsQuiz: [LuotQuiz] { quizHistory ?? [] }
+}
+
 // ── AI ──────────────────────────────────────────────────────────
 
 struct KetQuaDich: Codable {
