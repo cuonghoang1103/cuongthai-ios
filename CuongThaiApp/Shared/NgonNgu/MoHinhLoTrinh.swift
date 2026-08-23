@@ -114,12 +114,15 @@ enum LoaiNoiDung: String {
     /// có (11 bài; Nhật và Trung đều 0), nhưng 7 bài có lời thoại + bản dịch
     /// và 10 bài có 4 câu hỏi, đủ để học thật.
     ///
-    /// `tapViet` thì vẫn CHƯA: 4 nút nữa của lộ trình tiếng Anh. Nó cần
-    /// `POST /ai/writing` (AI chấm bài viết), không phải màn viết tay bằng
-    /// ngón đã có — hai thứ khác hẳn nhau dù trùng tên.
+    /// `tapViet` cũng ĐÃ CÓ từ 24/08/2026 (`ChamBaiVietView`, gọi
+    /// `POST /ai/writing`) — 4 nút cuối cùng của lộ trình tiếng Anh hết chết.
+    /// Nó KHÔNG phải màn viết tay bằng ngón (`LuyenVietView`); hai thứ trùng
+    /// tên tiếng Việt nhưng khác hẳn nhau.
+    ///
+    /// Còn lại `ngoai` — đường dẫn ra ngoài app, cố ý không dựng màn.
     var coManHinh: Bool {
         switch self {
-        case .tapViet, .ngoai: return false
+        case .ngoai: return false
         default: return true
         }
     }

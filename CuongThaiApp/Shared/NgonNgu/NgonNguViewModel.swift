@@ -28,6 +28,31 @@ final class ChuDeVM: ObservableObject {
     @Published var dangTai = false
     @Published var loi: String?
 
+    /// Từ khoá tìm. Lọc chủ đề tại chỗ (346 mục đã nằm sẵn trong bộ nhớ, không
+    /// cần gọi mạng) và song song hỏi máy chủ tìm TỪ trong cả 13.226 từ.
+    @Published var tim = "" { didSet { if tim != oldValue { doiTuKhoa() } } }
+    @Published var tuTimDuoc: [TuNgoaiNgu] = []
+    @Published var dangTimTu = false
+    private var viecTim: Task<Void, Never>?
+    private var maNgonNgu = ""
+
+    private func doiTuKhoa() {
+        viecTim?.cancel()
+        let k = tim.trimmingCharacters(in: .whitespaces)
+        guard k.count >= 2, !maNgonNgu.isEmpty else { tuTimDuoc = []; dangTimTu = false; return }
+        dangTimTu = true
+        viecTim = Task { [maNgonNgu] in
+            // Chờ một nhịp: gõ "programming" là 11 phím, không nên thành 11
+            // lượt gọi mạng.
+            try? await Task.sleep(nanoseconds: 350_000_000)
+            guard !Task.isCancelled else { return }
+            let ds: [TuNgoaiNgu] = (try? await APIClient.shared
+                .request(.timTuVung(code: maNgonNgu, q: k))) ?? []
+            guard !Task.isCancelled else { return }
+            await MainActor.run { self.tuTimDuoc = ds; self.dangTimTu = false }
+        }
+    }
+
     /// Thẻ cho những chủ đề KHÔNG gắn cấp độ nào.
     ///
     /// ⚠️ Trước 23/08/2026 chúng biến mất hoàn toàn khỏi app: `dsCap` dùng
@@ -61,7 +86,16 @@ final class ChuDeVM: ObservableObject {
         return ra
     }
 
-    var hienThi: [ChuDeTu] {
+    /// Ngưỡng "chủ đề quá nhỏ".
+    ///
+    /// Đo tiếng Anh 24/08/2026: 75 trong 346 chủ đề có DƯỚI 10 từ, nhưng cả
+    /// 75 cái gộp lại chỉ 287 từ = 2% kho. Tức 21% số dòng người dùng phải
+    /// cuộn qua chỉ để tới 2% nội dung — và chúng nằm xen kẽ, "1 từ" đứng
+    /// ngay cạnh "252 từ". Dồn xuống cuối chứ KHÔNG ẩn: 287 từ vẫn là từ.
+    static let nguongNho = 10
+
+    /// Lọc theo cấp đang chọn, chưa tách nhỏ/lớn.
+    private var theoCap: [ChuDeTu] {
         let ds: [ChuDeTu]
         switch cap {
         case nil:                 ds = tatCa
@@ -72,7 +106,24 @@ final class ChuDeVM: ObservableObject {
                  .sorted { ($0.order ?? 0, $0.id) < ($1.order ?? 0, $1.id) }
     }
 
+    /// Khi ĐANG TÌM thì bỏ qua bộ lọc cấp — người gõ "phrasal" muốn tìm
+    /// trong CẢ kho, không phải trong mỗi cấp họ tình cờ đang mở.
+    var hienThi: [ChuDeTu] {
+        let k = tim.trimmingCharacters(in: .whitespaces)
+        guard !k.isEmpty else { return theoCap.filter { $0.soTu >= Self.nguongNho } }
+        return tatCa.filter { $0.soTu > 0 && $0.tenGon.localizedCaseInsensitiveContains(k) }
+                    .sorted { $0.soTu > $1.soTu }
+    }
+
+    /// Chủ đề dưới ngưỡng, dồn xuống cuối. Rỗng khi đang tìm.
+    var chuDeNho: [ChuDeTu] {
+        tim.trimmingCharacters(in: .whitespaces).isEmpty
+            ? theoCap.filter { $0.soTu < Self.nguongNho }
+            : []
+    }
+
     func tai(_ code: String) async {
+        maNgonNgu = code
         dangTai = true; defer { dangTai = false }
         do {
             tatCa = try await APIClient.shared.request(.chuDeTu(code: code))

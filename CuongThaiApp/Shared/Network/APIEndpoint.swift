@@ -233,6 +233,8 @@ enum APIEndpoint {
     case hoiThoai(code: String, page: Int, limit: Int)
     case baiDoc(code: String, page: Int, limit: Int)
     case baiNghe(code: String, page: Int, limit: Int)
+    case timTuVung(code: String, q: String)
+    case aiChamBaiViet(code: String, chu: String, deBai: String?)
     case hoiDap(code: String, page: Int, limit: Int)
     /// Lộ trình học. `optionalAuth` — gọi KHÔNG token vẫn ra đủ nút, chỉ là
     /// `doneNodeIds` về rỗng, nên đừng suy ra "chưa học gì" từ mảng rỗng.
@@ -479,6 +481,8 @@ enum APIEndpoint {
         case .hoiThoai(let c, _, _): return "/api/v1/my-language/\(c)/conversation"
         case .baiDoc(let c, _, _): return "/api/v1/my-language/\(c)/reading"
         case .baiNghe(let c, _, _): return "/api/v1/my-language/\(c)/listening"
+        case .timTuVung(let c, _): return "/api/v1/my-language/\(c)/vocab/search"
+        case .aiChamBaiViet: return "/api/v1/my-language/ai/writing"
         case .hoiDap(let c, _, _): return "/api/v1/my-language/\(c)/qna"
         case .loTrinh(let c): return "/api/v1/my-language/\(c)/roadmap"
         case .doiNutLoTrinh(let id): return "/api/v1/my-language/roadmap/\(id)/done"
@@ -531,7 +535,8 @@ enum APIEndpoint {
 
     var method: String {
         switch self {
-        case .ghiTienDo, .ghiKetQuaQuiz, .doiYeuThich, .aiDich, .aiKiemNguPhap, .aiNoiChuyen, .batDauLuotThi, .nopBaiTracNghiem,
+        case .ghiTienDo, .ghiKetQuaQuiz, .doiYeuThich, .aiDich, .aiKiemNguPhap, .aiNoiChuyen,
+             .aiChamBaiViet, .batDauLuotThi, .nopBaiTracNghiem,
              .doiNutLoTrinh, .nopBaiLuyen, .taoThuMucSoTay, .taoMucSoTay, .ghiNhanChep,
              .ghiTienDoBaiTap, .luuMaBaiTap, .chamMaBaiTap,
              .reactPost,   // ⚠️ backend khai POST, KHÔNG phải PATCH — xem ghi chú ở `case reactPost`
@@ -584,6 +589,12 @@ enum APIEndpoint {
             return ["languageCode": c, "text": chu, "direction": sang ? "to" : "from"]
         case .aiKiemNguPhap(let c, let chu):
             return ["languageCode": c, "text": chu]
+        case .aiChamBaiViet(let c, let chu, let de):
+            var m: [String: Any] = ["languageCode": c, "text": chu]
+            // `prompt` là ĐỀ BÀI, không bắt buộc. Gửi chuỗi rỗng thì máy chủ
+            // vẫn nhét "ĐỀ BÀI: " vào lời nhắc — bỏ hẳn trường mới đúng.
+            if let de, !de.isEmpty { m["prompt"] = de }
+            return m
         case .aiNoiChuyen(let c, let ch, let ls, let chu):
             return ["languageCode": c, "scenario": ch, "history": ls, "message": chu]
         case .nopBaiTracNghiem(_, let da, let g):
@@ -859,6 +870,8 @@ enum APIEndpoint {
             // `levels` để dựng thanh chọn, đúng khuôn của trang ngữ pháp.
             if let lv { m["level"] = lv }
             return m
+        case .timTuVung(_, let q):
+            return ["q": q]
         case .hoiThoai(_, let p, let l), .baiDoc(_, let p, let l), .hoiDap(_, let p, let l),
              .baiNghe(_, let p, let l):
             return ["page": p, "limit": l]

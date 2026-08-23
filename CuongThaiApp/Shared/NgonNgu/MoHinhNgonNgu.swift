@@ -376,6 +376,47 @@ struct ThongKeHoc: Codable {
 
 // ── AI ──────────────────────────────────────────────────────────
 
+/// `POST /my-language/ai/writing` — AI chấm một bài viết tự do.
+///
+/// ⚠️ **Chỉ Pro** (`isProEffective`) và trần **4.000 ký tự** (`text.length >
+/// 4000` là `BadRequestError`). Chặn ở client luôn, đừng để người dùng gõ 20
+/// phút rồi mới nhận lỗi.
+///
+/// ⚠️ Đây KHÔNG phải màn viết tay bằng ngón (`LuyenVietView`). Lộ trình tiếng
+/// Anh có 4 nút `writing` trỏ vào đúng tính năng này.
+struct ChamBaiViet: Codable {
+    let score: Int?
+    let level: String?
+    /// `good` (≥85) · `ok` (60–84) · `poor` (<60)
+    let verdict: String?
+    let feedback: String?
+    let corrected: String?
+    let corrections: [Sua]?
+
+    struct Sua: Codable, Hashable, Identifiable {
+        let original: String?
+        let suggestion: String?
+        let note: String?
+        var id: String { (original ?? "") + (suggestion ?? "") }
+    }
+
+    var diem: Int { score ?? 0 }
+    var dsSua: [Sua] { (corrections ?? []).filter { ($0.suggestion?.isEmpty == false) } }
+    var nhanXet: String { feedback ?? "" }
+    var banSua: String? {
+        let c = corrected
+        return (c?.isEmpty == false) ? c : nil
+    }
+    var tenMuc: String {
+        switch (verdict ?? "").lowercased() {
+        case "good": return "Tốt"
+        case "ok": return "Tạm được"
+        case "poor": return "Cần sửa nhiều"
+        default: return ""
+        }
+    }
+}
+
 struct KetQuaDich: Codable {
     let translation: String?
     let reading: String?

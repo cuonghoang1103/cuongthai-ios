@@ -78,6 +78,8 @@ private struct TheNgonNgu: View {
 struct NgonNguHomeView: View {
     let ngonNgu: NgonNgu
     @StateObject private var vm = ChuDeVM()
+    /// Khối "chủ đề ít từ" mặc định GẤP. Mở sẵn thì đúng bằng cũ.
+    @State private var moChuDeNho = false
 
     var body: some View {
         ScrollView {
@@ -129,7 +131,9 @@ struct NgonNguHomeView: View {
                         .kerning(0.6)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.top, Spacing.sm)
-                    thanhCap
+                    oTimTu
+                    // Đang tìm thì thanh cấp vô nghĩa: kết quả lấy từ CẢ kho.
+                    if vm.tim.trimmingCharacters(in: .whitespaces).isEmpty { thanhCap }
                 }
 
                 if vm.dangTai && vm.tatCa.isEmpty {
@@ -142,6 +146,8 @@ struct NgonNguHomeView: View {
                             }
                             .buttonStyle(.plain)
                         }
+                        khoiTuTimDuoc
+                        khoiChuDeNho
                     }
                 }
             }
@@ -151,6 +157,112 @@ struct NgonNguHomeView: View {
         .navigationTitle("\(ngonNgu.co) \(ngonNgu.name)")
         .navigationBarTitleDisplayMode(.inline)
         .task { if vm.tatCa.isEmpty { await vm.tai(ngonNgu.code) } }
+    }
+
+    // ── Tìm ──────────────────────────────────────────────────────
+    //
+    // 346 chủ đề và 13.226 từ mà trước đây KHÔNG có đường nào tìm — muốn tới
+    // "Phrasal verbs" thì chỉ còn cách cuộn. Một ô làm hai việc: lọc chủ đề
+    // tại chỗ (đã nằm sẵn trong bộ nhớ) và hỏi `/vocab/search` tìm TỪ.
+    private var oTimTu: some View {
+        HStack(spacing: Spacing.sm) {
+            Image(systemName: "magnifyingglass").foregroundColor(AppColors.textTertiary)
+            TextField("Tìm chủ đề hoặc từ…", text: $vm.tim)
+                .textFieldStyle(.plain)
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.never)
+            if vm.dangTimTu { ProgressView().scaleEffect(0.7) }
+            if !vm.tim.isEmpty {
+                Button { vm.tim = "" } label: {
+                    Image(systemName: "xmark.circle.fill").foregroundColor(AppColors.textTertiary)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(Spacing.sm + 2)
+        .background(RoundedRectangle(cornerRadius: CornerRadius.medium)
+            .fill(AppColors.backgroundCard))
+    }
+
+    /// Từ tìm được trong cả kho. Máy chủ trả tối đa 50 (`LIMIT 50` trong
+    /// `searchVocab`) — nói ra khi chạm trần, đừng để người dùng tưởng chỉ có
+    /// đúng chừng đó từ khớp.
+    @ViewBuilder
+    private var khoiTuTimDuoc: some View {
+        if !vm.tuTimDuoc.isEmpty {
+            Text("TỪ KHỚP (\(vm.tuTimDuoc.count)\(vm.tuTimDuoc.count >= 50 ? "+" : ""))")
+                .font(.system(size: 10, weight: .bold)).kerning(0.5)
+                .foregroundColor(AppColors.textTertiary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.top, Spacing.sm)
+            ForEach(vm.tuTimDuoc) { t in hangTu(t) }
+        } else if vm.tim.trimmingCharacters(in: .whitespaces).count >= 2
+                    && !vm.dangTimTu && vm.hienThi.isEmpty {
+            Text("Không tìm thấy chủ đề hay từ nào khớp “\(vm.tim)”.")
+                .font(.system(size: 13))
+                .foregroundColor(AppColors.textSecondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.top, Spacing.md)
+        }
+    }
+
+    private func hangTu(_ t: TuNgoaiNgu) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            HStack(alignment: .firstTextBaseline, spacing: Spacing.sm) {
+                Text(t.word)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(AppColors.textPrimary)
+                if let pa = t.phienAm, !pa.isEmpty {
+                    Text(pa).font(.system(size: 12))
+                        .foregroundColor(AppColors.textTertiary)
+                }
+                Spacer(minLength: 0)
+            }
+            if !t.nghia.isEmpty {
+                Text(t.nghia)
+                    .font(.system(size: 13))
+                    .foregroundColor(AppColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            if let vd = t.exampleSentence, !vd.isEmpty {
+                Text(vd)
+                    .font(.system(size: 12).italic())
+                    .foregroundColor(AppColors.textTertiary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(Spacing.md)
+        .background(RoundedRectangle(cornerRadius: CornerRadius.medium)
+            .fill(AppColors.backgroundCard))
+    }
+
+    /// Chủ đề dưới 10 từ, gấp lại ở cuối. Xem `ChuDeVM.nguongNho`.
+    @ViewBuilder
+    private var khoiChuDeNho: some View {
+        if !vm.chuDeNho.isEmpty {
+            DisclosureGroup(isExpanded: $moChuDeNho) {
+                VStack(spacing: Spacing.sm) {
+                    ForEach(vm.chuDeNho) { c in
+                        NavigationLink(destination: TuNgoaiNguView(ngonNgu: ngonNgu, chuDe: c)) {
+                            HangChuDe(c: c)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.top, Spacing.sm)
+            } label: {
+                Text("Chủ đề ít từ (\(vm.chuDeNho.count))")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(AppColors.textSecondary)
+            }
+            .tint(AppColors.textTertiary)
+            .padding(.horizontal, Spacing.md)
+            .padding(.vertical, Spacing.sm)
+            .background(RoundedRectangle(cornerRadius: CornerRadius.medium)
+                .fill(AppColors.backgroundCard))
+            .padding(.top, Spacing.sm)
+        }
     }
 
     /// Lưới lối vào các mục. Mục nào ngôn ngữ đó KHÔNG có nội dung thì ẩn
@@ -217,6 +329,11 @@ struct NgonNguHomeView: View {
             oMuc("Thống kê", "chart.bar.xaxis", 0xEC4899, nil,
                  phu: "Chuỗi ngày · tiến độ · lịch sử") {
                 ThongKeView(ngonNgu: ngonNgu)
+            }
+            // ⚠️ KHÁC `LuyenVietView` (viết chữ bằng ngón tay) — đây là AI
+            // chấm bài viết tự do, đúng thứ 4 nút `writing` của lộ trình cần.
+            oMuc("Luyện viết", "square.and.pencil", 0x16A34A, nil) {
+                ChamBaiVietView(ngonNgu: ngonNgu)
             }
         }
     }
