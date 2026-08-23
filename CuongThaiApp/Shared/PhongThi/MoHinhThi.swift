@@ -29,17 +29,23 @@ struct DeThi: Codable, Identifiable, Hashable {
     /// Máy chủ ghép hai thứ tiếng vào MỘT trường, ngăn bằng `|||`:
     /// "Đề 1 — SP26 Block 5 Retake Exam|||Đề 1 — Thi lại B".
     /// Hiện thẳng cả chuỗi là người dùng đọc thấy ba gạch đứng giữa câu.
-    private static func tach(_ s: String) -> (String, String?) {
-        let p = s.components(separatedBy: "|||")
-        guard p.count >= 2 else { return (s, nil) }
-        let vi = p[1].trimmingCharacters(in: .whitespaces)
-        let en = p[0].trimmingCharacters(in: .whitespaces)
-        // Ưu tiên tiếng Việt làm dòng chính, tiếng Anh làm dòng phụ.
-        return (vi.isEmpty ? en : vi, vi.isEmpty ? nil : en)
+    /// Tên theo NGÔN NGỮ ĐANG XEM. Dùng chung một quy tắc với đề bài và đáp
+    /// án (`String.tachSongNgu`) để cả Phòng thi nói cùng một thứ tiếng.
+    ///
+    /// ⚠️ CỐ Ý không có bản không-đối-số. Mặc định là tiếng Anh (khớp
+    /// `ExamPortalClient` của web: `useState<'en'|'vi'>('en')` — "exams
+    /// default to English"), nhưng mặc định đó nằm ở `@State` của từng màn,
+    /// không nằm ở đây. Có sẵn một `var ten` là sớm muộn cũng có chỗ gọi nó
+    /// rồi nút EN/VI bấm không ăn ở đúng chỗ ấy.
+    func ten(_ ngonNgu: NgonNguDe) -> String { title.tachSongNgu(ngonNgu) }
+
+    /// Nửa còn lại, để hiện làm dòng phụ khi có chỗ.
+    func tenPhu(_ ngonNgu: NgonNguDe) -> String? {
+        let chinh = ten(ngonNgu)
+        let kia = title.tachSongNgu(ngonNgu.doiSang)
+        return (kia.isEmpty || kia == chinh) ? nil : kia
     }
 
-    var ten: String { Self.tach(title).0 }
-    var tenPhu: String? { Self.tach(title).1 }
     var soCau: Int { questionCount ?? 0 }
     var phut: Int { durationMinutes ?? 0 }
     var tenKhoa: String { course?.title ?? "Khác" }
@@ -223,5 +229,8 @@ struct CauHoiDaLuu: Codable, Identifiable {
     let course: DeThi.KhoaHoc?
     let semester: DeThi.HocKy?
 
-    var tenMon: String { course?.title ?? exam.ten }
+    /// Chuỗi GỐC còn `|||`: dùng làm KHOÁ nhóm nên phải ổn định, không
+    /// được đổi theo nút EN/VI (đổi khoá là các nhóm nhảy chỗ). Chỗ hiện
+    /// ra màn hình mới gọi `tachSongNgu`.
+    var khoaMon: String { course?.title ?? exam.title }
 }

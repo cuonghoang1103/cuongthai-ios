@@ -16,7 +16,7 @@ struct DaLuuView: View {
 
     /// Nhóm theo MÔN. Người ôn thi nghĩ theo môn, không theo thứ tự lưu.
     private var theoMon: [(String, [CauHoiDaLuu])] {
-        Dictionary(grouping: cau, by: \.tenMon)
+        Dictionary(grouping: cau, by: \.khoaMon)
             .sorted { $0.key < $1.key }
             .map { ($0.key, $0.value) }
     }
@@ -70,7 +70,7 @@ struct DaLuuView: View {
             trong("bookmark", loi ?? "Chưa có câu nào được lưu.\nTrong màn xem lại bài thi, bấm dấu trang ở câu bạn muốn ôn lại.")
         } else {
             ForEach(theoMon, id: \.0) { mon, ds in
-                Text("\(mon.uppercased()) · \(ds.count)")
+                Text("\(mon.tachSongNgu(ngonNgu).uppercased()) · \(ds.count)")
                     .font(.system(size: 11, weight: .bold))
                     .kerning(0.5)
                     .foregroundColor(AppColors.textTertiary)
@@ -84,7 +84,7 @@ struct DaLuuView: View {
     private func theCau(_ c: CauHoiDaLuu) -> some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
             HStack(alignment: .top) {
-                Text(c.exam.code ?? c.exam.ten)
+                Text(c.exam.code ?? c.exam.ten(ngonNgu))
                     .font(.system(size: 10, weight: .bold))
                     .foregroundColor(AppColors.primary)
                 Spacer()
@@ -157,11 +157,11 @@ struct DaLuuView: View {
                 NavigationLink { LamBaiView(de: d.exam) } label: {
                     HStack(spacing: Spacing.md) {
                         VStack(alignment: .leading, spacing: 3) {
-                            Text(d.exam.ten)
+                            Text(d.exam.ten(ngonNgu))
                                 .font(.system(size: 14, weight: .semibold))
                                 .foregroundColor(AppColors.textPrimary)
                                 .lineLimit(2).multilineTextAlignment(.leading)
-                            Text("\(d.course?.title ?? "") · \(d.exam.soCau) câu · \(d.exam.phut)′")
+                            Text("\((d.course?.title ?? "").tachSongNgu(ngonNgu)) · \(d.exam.soCau) câu · \(d.exam.phut)′")
                                 .font(.system(size: 11))
                                 .foregroundColor(AppColors.textTertiary)
                                 .lineLimit(1)

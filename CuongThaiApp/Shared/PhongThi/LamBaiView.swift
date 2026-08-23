@@ -431,6 +431,8 @@ struct KetQuaView: View {
     let kq: XemLaiBaiThi
     let de: DeThi
     let dong: () -> Void
+    // Nằm trong cây của LamBaiView nên nhận thẳng ngôn ngữ đang chọn.
+    @Environment(\.ngonNguDe) private var ngonNgu
 
     var body: some View {
         VStack(spacing: Spacing.lg) {
@@ -454,7 +456,7 @@ struct KetQuaView: View {
                     .font(.system(size: 15)).foregroundColor(AppColors.textSecondary)
             }
 
-            Text(de.ten)
+            Text(de.ten(ngonNgu))
                 .font(.system(size: 13))
                 .foregroundColor(AppColors.textTertiary)
                 .multilineTextAlignment(.center)
@@ -465,7 +467,7 @@ struct KetQuaView: View {
             // Đáp án đúng + lời giải của TỪNG câu đã nằm sẵn trong phản hồi
             // nộp bài, nên nút này không tốn thêm lời gọi mạng nào.
             NavigationLink {
-                XemLaiView(xemLai: kq, tenDe: de.ten)
+                XemLaiView(xemLai: kq, tenDe: de.title)
             } label: {
                 HStack(spacing: Spacing.sm) {
                     Image(systemName: "list.bullet.rectangle.portrait")

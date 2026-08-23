@@ -8,6 +8,8 @@ import SwiftUI
 
 struct LichSuThiView: View {
     @State private var ds: [LuotDaLam] = []
+    /// Mặc định TIẾNG ANH, giống Phòng thi và màn làm bài.
+    @State private var ngonNgu: NgonNguDe = .anh
     @State private var dangTai = true
     @State private var loi: String?
 
@@ -39,6 +41,15 @@ struct LichSuThiView: View {
         .background(AppColors.backgroundPrimary)
         .navigationTitle("Lượt thi của tôi")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button { ngonNgu = ngonNgu.doiSang } label: {
+                    Text(ngonNgu.nhanNut).font(.system(size: 13, weight: .bold))
+                }
+                .accessibilityLabel(ngonNgu == .viet ? "Chuyển sang tiếng Anh" : "Chuyển sang tiếng Việt")
+            }
+        }
+        .environment(\.ngonNguDe, ngonNgu)
         .task {
             dangTai = true
             do { ds = try await APIClient.shared.request(.luotThiCuaToi) }
@@ -60,7 +71,7 @@ struct LichSuThiView: View {
             .frame(width: 52)
 
             VStack(alignment: .leading, spacing: 3) {
-                Text(l.exam?.ten ?? "Đề thi")
+                Text(l.exam?.ten(ngonNgu) ?? "Đề thi")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(AppColors.textPrimary)
                     .lineLimit(2)
@@ -109,7 +120,7 @@ struct NapXemLaiView: View {
     var body: some View {
         Group {
             if let x = xemLai {
-                XemLaiView(xemLai: x, tenDe: luot.exam?.ten ?? "Đề thi")
+                XemLaiView(xemLai: x, tenDe: luot.exam?.title ?? "Đề thi")
             } else if let l = loi {
                 VStack(spacing: Spacing.sm) {
                     Image(systemName: "exclamationmark.triangle")

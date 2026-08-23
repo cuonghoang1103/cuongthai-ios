@@ -4,6 +4,8 @@ import SwiftUI
 
 struct XemLaiView: View {
     let xemLai: XemLaiBaiThi
+    /// Chuỗi GỐC còn nguyên `|||` — tách tại chỗ hiện, để nút EN/VI
+    /// của màn này đổi luôn cả tiêu đề chứ không chỉ nội dung câu hỏi.
     let tenDe: String
 
     @State private var chiCauSai = false
@@ -51,7 +53,7 @@ struct XemLaiView: View {
 
     private var tomTat: some View {
         VStack(spacing: Spacing.sm) {
-            Text(tenDe)
+            Text(tenDe.tachSongNgu(ngonNgu))
                 .font(.system(size: 13))
                 .foregroundColor(AppColors.textSecondary)
                 .multilineTextAlignment(.center)

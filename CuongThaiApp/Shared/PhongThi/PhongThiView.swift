@@ -8,6 +8,8 @@ struct PhongThiView: View {
     @State private var loi: String?
     @State private var tuKhoa = ""
     @State private var khoaChon: String?
+    /// ⚠️ Mặc định TIẾNG ANH, khớp `ExamPortalClient` của web.
+    @State private var ngonNgu: NgonNguDe = .anh
 
     private var khoaCo: [String] {
         Array(Set(de.map(\.tenKhoa))).sorted()
@@ -19,7 +21,10 @@ struct PhongThiView: View {
         let t = tuKhoa.trimmingCharacters(in: .whitespaces).lowercased()
         if !t.isEmpty {
             ds = ds.filter {
-                $0.ten.lowercased().contains(t)
+                // Tìm trên chuỗi GỐC, tức quét cả nửa Anh lẫn nửa Việt: gõ
+                // "thi lại" hay "retake" đều phải ra, bất kể đang xem tiếng
+                // nào.
+                $0.title.lowercased().contains(t)
                 || ($0.code ?? "").lowercased().contains(t)
                 || $0.tenKhoa.lowercased().contains(t)
             }
@@ -73,6 +78,12 @@ struct PhongThiView: View {
         .navigationTitle("Phòng thi")
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
+                Button { ngonNgu = ngonNgu.doiSang } label: {
+                    Text(ngonNgu.nhanNut).font(.system(size: 13, weight: .bold))
+                }
+                .accessibilityLabel(ngonNgu == .viet ? "Chuyển sang tiếng Anh" : "Chuyển sang tiếng Việt")
+            }
+            ToolbarItem(placement: .navigationBarTrailing) {
                 NavigationLink { DaLuuView() } label: {
                     Image(systemName: "bookmark")
                 }
@@ -83,6 +94,8 @@ struct PhongThiView: View {
                 }
             }
         }
+        // Màn chi tiết đề mở ra từ đây phải nói CÙNG thứ tiếng với danh sách.
+        .environment(\.ngonNguDe, ngonNgu)
         .navigationBarTitleDisplayMode(.inline)
         .task { if de.isEmpty { await tai() } }
         .refreshable { await tai() }
@@ -147,7 +160,7 @@ struct PhongThiView: View {
                         .font(.system(size: 10))
                         .foregroundColor(AppColors.textTertiary)
                 }
-                Text(d.ten)
+                Text(d.ten(ngonNgu))
                     .font(.system(size: 15, weight: .medium))
                     .foregroundColor(AppColors.textPrimary)
                     .lineLimit(2).multilineTextAlignment(.leading)
@@ -176,6 +189,7 @@ struct PhongThiView: View {
 // ── Trước khi vào thi ───────────────────────────────────────────
 
 struct ChiTietDeView: View {
+    @Environment(\.ngonNguDe) private var ngonNgu
     let de: DeThi
     @State private var vaoThi = false
 
@@ -183,11 +197,13 @@ struct ChiTietDeView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.lg) {
                 VStack(alignment: .leading, spacing: Spacing.sm) {
-                    Text(de.ten)
+                    Text(de.ten(ngonNgu))
                         .font(.system(size: 20, weight: .semibold))
                         .foregroundColor(AppColors.textPrimary)
                         .fixedSize(horizontal: false, vertical: true)
-                    if let phu = de.tenPhu {
+                    // Dòng phụ là nửa còn lại — ở màn chi tiết có chỗ, và
+                    // thấy cả hai tên giúp đối chiếu với đề giấy.
+                    if let phu = de.tenPhu(ngonNgu) {
                         Text(phu)
                             .font(.system(size: 13))
                             .foregroundColor(AppColors.textSecondary)
