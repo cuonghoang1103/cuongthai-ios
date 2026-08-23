@@ -45,6 +45,17 @@ struct CreatePostView: View {
                     .disabled(!canPost || viewModel.isLoading)
                 }
             }
+            // ⚠️ Không có dòng này thì KHÔNG có đường nào tắt bàn phím:
+            // `isContentFocused` chưa từng bị đặt `false` ở đâu, và Return
+            // trong `TextEditor` là xuống dòng chứ không phải "xong". Bàn
+            // phím che mất "Thêm ảnh", thăm dò và cả hàng chọn quyền xem.
+            .scrollDismissesKeyboard(.interactively)
+            .toolbar {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Xong") { isContentFocused = false }
+                }
+            }
             .onChange(of: selectedPhotosPickerItems) { _, newItems in
                 Task {
                     await viewModel.loadPhotos(from: newItems)
@@ -208,10 +219,11 @@ struct CreatePostView: View {
 
     private var optionsSection: some View {
         VStack(spacing: Spacing.sm) {
-            optionRow(icon: "at", title: "Nhắc đến", showChevron: true)
-            optionRow(icon: "tag", title: "Hashtag", showChevron: true)
-
-            Divider().background(AppColors.divider)
+            // ⚠️ ĐÃ BỎ hai dòng "Nhắc đến" và "Hashtag": chúng gọi
+            // `optionRow(...)` KHÔNG truyền `action`, tức là hai cái nút
+            // không làm gì — mà vẫn vẽ mũi tên `chevron.right` như thể bấm
+            // vào sẽ mở ra màn khác. Nhắc tên và hashtag vốn gõ thẳng `@`
+            // và `#` trong nội dung, không cần lối vào riêng.
 
             if viewModel.isPollEnabled {
                 pollSection
@@ -351,24 +363,48 @@ struct CreatePostView: View {
         viewModel.pollQuestion = ""
         viewModel.pollOptions = ["", ""]
         selectedPhotosPickerItems = []
+        // ⚠️ PHẢI hạ cờ này. Thiếu nó thì `.onChange(of: postCreated)` chỉ
+        // bắn ĐÚNG MỘT LẦN: lần đăng thứ hai `postCreated` đã là `true` sẵn
+        // nên không "đổi", form không được dọn, chữ cũ nằm nguyên trong ô.
+        // Người dùng tưởng đăng hỏng và bấm Đăng lại ⇒ ĐĂNG TRÙNG.
+        // Tái hiện thật 24/08/2026 trên máy ảo.
+        viewModel.postCreated = false
     }
 }
 
 // MARK: - Post Visibility
+/// ⚠️⚠️ `rawValue` là MÃ CỦA MÁY CHỦ, không phải chữ hiện ra màn hình.
+///
+/// Trước 24/08/2026 nó là chuỗi tiếng Việt ("Công khai"…) và `createPost`
+/// gửi thẳng `visibility.rawValue` lên. Cột `Post.visibility` là
+/// `String @db.VarChar(20)` chứ KHÔNG phải enum Prisma, nên máy chủ nhận và
+/// LƯU NGUYÊN VĂN "Công khai" — không lỗi, không cảnh báo, bài đăng thành
+/// công.
+///
+/// Hậu quả câm: bộ lọc cho người CHƯA đăng nhập là `{ visibility: 'PUBLIC' }`
+/// (xem `social.service.ts`), nên mọi bài đăng từ app iOS **chỉ chính tác giả
+/// nhìn thấy**. Tác giả mở bảng tin thấy bài mình nằm đó (luật "own posts,
+/// any visibility") nên tưởng đã đăng bình thường.
+///
+/// Đo thật 24/08/2026: bảng tin khách trả 50/50 bài `PUBLIC`, và KHÔNG bài
+/// nào do app tạo lọt vào 100 bài lấy về.
+///
+/// ⚠️ Các bài ĐÃ đăng từ app vẫn mang chuỗi sai trong CSDL — sửa app không
+/// chữa được chúng, phải sửa dữ liệu.
 enum PostVisibility: String, CaseIterable {
-    case `public` = "Công khai"
-    case friends = "Bạn bè"
-    case privateOnly = "Riêng tư"
+    case `public` = "PUBLIC"
+    case friends = "FRIENDS"
+    case privateOnly = "PRIVATE"
 
-    var title: String { rawValue }
-
-    var shortTitle: String {
+    var title: String {
         switch self {
         case .public: return "Công khai"
         case .friends: return "Bạn bè"
         case .privateOnly: return "Riêng tư"
         }
     }
+
+    var shortTitle: String { title }
 
     var icon: String {
         switch self {
@@ -394,16 +430,25 @@ class CreatePostViewModel: ObservableObject {
     @Published var postCreated = false
     private var uploadError: String?
 
+    /// Trần 4 ảnh mỗi bài.
+    ///
+    /// ⚠️ Bản cũ kiểm `count < 4` BÊN TRONG vòng lặp rồi bỏ qua trong im
+    /// lặng — chọn 10 ảnh thì 6 ảnh biến mất mà không ai nói gì. Nay đếm
+    /// trước và BÁO số bị bỏ.
     func loadPhotos(from items: [PhotosPickerItem]) async {
+        guard !items.isEmpty else { return }
+        var themDuoc = max(0, 4 - selectedImages.count)
+        var boQua = 0
         for item in items {
-            if let data = try? await item.loadTransferable(type: Data.self),
-               let image = PlatformImage(data: data) {
-                await MainActor.run {
-                    if selectedImages.count < 4 {
-                        selectedImages.append(image)
-                    }
-                }
-            }
+            guard themDuoc > 0 else { boQua += 1; continue }
+            guard let data = try? await item.loadTransferable(type: Data.self),
+                  let image = PlatformImage(data: data) else { boQua += 1; continue }
+            selectedImages.append(image)
+            themDuoc -= 1
+        }
+        if boQua > 0 {
+            alertMessage = "Mỗi bài chỉ đăng được 4 ảnh — đã bỏ qua \(boQua) ảnh."
+            showAlert = true
         }
     }
 
@@ -450,16 +495,32 @@ class CreatePostViewModel: ObservableObject {
                 postData["media"] = mediaUrls
             }
 
-            // Add poll if enabled
-            if isPollEnabled && !pollQuestion.isEmpty {
-                let validOptions = pollOptions.filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
-                if validOptions.count >= 2 {
-                    postData["poll"] = [
-                        "question": pollQuestion,
-                        "options": validOptions,
-                        "multiChoice": false
-                    ]
+            // Thăm dò. Cùng nguyên tắc với ảnh ở trên: KHÔNG đăng một bài
+            // mà cuộc thăm dò biến mất không lời nào.
+            //
+            // ⚠️ Bản cũ chỉ `if ... { }` rồi thôi — bật thăm dò mà bỏ trống
+            // câu hỏi hoặc mới điền 1 lựa chọn thì bài vẫn đăng, thăm dò bốc
+            // hơi. Máy chủ cũng đòi 2–10 lựa chọn và không được để trống
+            // (`POLL_OPTIONS_RANGE` / `POLL_OPTIONS_BLANK`), nên chặn ở đây
+            // luôn cho người dùng biết ngay.
+            if isPollEnabled {
+                let cauHoi = pollQuestion.trimmingCharacters(in: .whitespacesAndNewlines)
+                let luaChon = pollOptions
+                    .map { $0.trimmingCharacters(in: .whitespaces) }
+                    .filter { !$0.isEmpty }
+                if cauHoi.isEmpty {
+                    alertMessage = "Bạn đang bật thăm dò nhưng chưa nhập câu hỏi. Bài viết chưa được đăng."
+                    showAlert = true; isLoading = false; return
                 }
+                if luaChon.count < 2 {
+                    alertMessage = "Thăm dò cần ít nhất 2 lựa chọn (đang có \(luaChon.count)). Bài viết chưa được đăng."
+                    showAlert = true; isLoading = false; return
+                }
+                postData["poll"] = [
+                    "question": cauHoi,
+                    "options": luaChon,
+                    "multiChoice": false
+                ]
             }
 
             let _: SocialPost = try await APIClient.shared.request(
