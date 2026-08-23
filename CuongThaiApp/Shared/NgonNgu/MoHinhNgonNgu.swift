@@ -237,6 +237,44 @@ struct BaiDoc: Codable, Identifiable, Hashable {
     let translation: String?
 }
 
+/// Một bài luyện nghe. `GET /:code/listening` — cùng khuôn với `reading`:
+/// `data` là mảng, `levels`/`pagination` nằm ở tầng ngoài.
+///
+/// ⚠️ Kho MỎNG và không đều, đo thật 24/08/2026 trên tiếng Anh (Nhật và Trung
+/// đều 0 bài): **11 bài · 7 có transcript + bản dịch · 10 có 4 câu hỏi**.
+/// Bài duy nhất trống trơn là "Podcast" — chỉ mỗi đường YouTube. Vì thế màn
+/// hình phải chịu được mọi trường hợp thiếu, đừng cho rằng bài nào cũng đủ.
+///
+/// `sourceType` = `UPLOAD` (có `audioUrl` .mp3 trên media.cuongthai.com, đo
+/// thật trả 206 `audio/mpeg`) hoặc `YOUTUBE` (chỉ có `youtubeUrl`).
+struct BaiNghe: Codable, Identifiable, Hashable {
+    let id: Int
+    let level: String?
+    let title: String
+    let sourceType: String?
+    let audioUrl: String?
+    let youtubeUrl: String?
+    let transcript: String?
+    let translation: String?
+    let questions: [CauHoiNghe]?
+
+    struct CauHoiNghe: Codable, Hashable, Identifiable {
+        let question: String?
+        let answer: String?
+        var id: String { (question ?? "") + (answer ?? "") }
+    }
+
+    var laYouTube: Bool { (sourceType ?? "").uppercased() == "YOUTUBE" }
+    var duongAmThanh: URL? { URL(string: audioUrl ?? "") }
+    var duongYouTube: URL? { URL(string: youtubeUrl ?? "") }
+    var dsCauHoi: [CauHoiNghe] { (questions ?? []).filter { ($0.question?.isEmpty == false) } }
+    var coLoiThoai: Bool { transcript?.isEmpty == false }
+
+    /// Có gì để LÀM ngoài việc bấm nút phát hay không. Bài chỉ có mỗi đường
+    /// YouTube thì hiện thẳng nút mở, không dựng cả màn học rỗng.
+    var coNoiDungHoc: Bool { coLoiThoai || !dsCauHoi.isEmpty }
+}
+
 struct HoiDap: Codable, Identifiable, Hashable {
     let id: Int
     let level: String?

@@ -193,6 +193,14 @@ struct NgonNguHomeView: View {
                     HoiDapView(ngonNgu: ngonNgu)
                 }
             }
+            // Đặt cạnh Bài đọc: nghe và đọc là hai kỹ năng nhận. Kho có sẵn
+            // từ 07/07/2026 mà app không đọc tới suốt — đo 24/08: tiếng Anh
+            // 11 bài, Nhật và Trung 0, nên thẻ tự ẩn ở hai thứ tiếng kia.
+            if (sl?.listening ?? 0) > 0 {
+                oMuc("Luyện nghe", "headphones", 0x0EA5E9, sl?.listening) {
+                    NgheView(ngonNgu: ngonNgu)
+                }
+            }
             oMuc("Luyện nói với AI", "mic.circle.fill", 0xE5484D, nil) {
                 ChonChuDeNoiView(ngonNgu: ngonNgu)
             }

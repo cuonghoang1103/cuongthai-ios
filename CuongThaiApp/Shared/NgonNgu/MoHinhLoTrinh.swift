@@ -109,12 +109,17 @@ enum LoaiNoiDung: String {
 
     /// App đã có màn hình cho loại này chưa.
     ///
-    /// `nghe` và `tapViet` thì CHƯA — 19 nút trong tổng số 111. Cố mở ra là
-    /// màn trống. Mà kể cả dựng màn nghe thì kho cũng gần rỗng: đo 22/08 chỉ
-    /// tiếng Anh có 11 bài, Nhật và Trung đều 0.
+    /// `nghe` ĐÃ CÓ từ 24/08/2026 (`NgheView`) — trước đó 3 trong 38 nút của
+    /// lộ trình tiếng Anh mở ra màn trống. Kho vẫn mỏng và chỉ tiếng Anh mới
+    /// có (11 bài; Nhật và Trung đều 0), nhưng 7 bài có lời thoại + bản dịch
+    /// và 10 bài có 4 câu hỏi, đủ để học thật.
+    ///
+    /// `tapViet` thì vẫn CHƯA: 4 nút nữa của lộ trình tiếng Anh. Nó cần
+    /// `POST /ai/writing` (AI chấm bài viết), không phải màn viết tay bằng
+    /// ngón đã có — hai thứ khác hẳn nhau dù trùng tên.
     var coManHinh: Bool {
         switch self {
-        case .nghe, .tapViet, .ngoai: return false
+        case .tapViet, .ngoai: return false
         default: return true
         }
     }

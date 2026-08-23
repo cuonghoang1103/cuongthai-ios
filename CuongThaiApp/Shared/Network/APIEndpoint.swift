@@ -232,6 +232,7 @@ enum APIEndpoint {
     case nguPhap(code: String, level: String?, page: Int, limit: Int)
     case hoiThoai(code: String, page: Int, limit: Int)
     case baiDoc(code: String, page: Int, limit: Int)
+    case baiNghe(code: String, page: Int, limit: Int)
     case hoiDap(code: String, page: Int, limit: Int)
     /// Lộ trình học. `optionalAuth` — gọi KHÔNG token vẫn ra đủ nút, chỉ là
     /// `doneNodeIds` về rỗng, nên đừng suy ra "chưa học gì" từ mảng rỗng.
@@ -477,6 +478,7 @@ enum APIEndpoint {
         case .nguPhap(let c, _, _, _): return "/api/v1/my-language/\(c)/grammar"
         case .hoiThoai(let c, _, _): return "/api/v1/my-language/\(c)/conversation"
         case .baiDoc(let c, _, _): return "/api/v1/my-language/\(c)/reading"
+        case .baiNghe(let c, _, _): return "/api/v1/my-language/\(c)/listening"
         case .hoiDap(let c, _, _): return "/api/v1/my-language/\(c)/qna"
         case .loTrinh(let c): return "/api/v1/my-language/\(c)/roadmap"
         case .doiNutLoTrinh(let id): return "/api/v1/my-language/roadmap/\(id)/done"
@@ -857,7 +859,8 @@ enum APIEndpoint {
             // `levels` để dựng thanh chọn, đúng khuôn của trang ngữ pháp.
             if let lv { m["level"] = lv }
             return m
-        case .hoiThoai(_, let p, let l), .baiDoc(_, let p, let l), .hoiDap(_, let p, let l):
+        case .hoiThoai(_, let p, let l), .baiDoc(_, let p, let l), .hoiDap(_, let p, let l),
+             .baiNghe(_, let p, let l):
             return ["page": p, "limit": l]
         default: return nil
         }

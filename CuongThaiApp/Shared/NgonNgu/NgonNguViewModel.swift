@@ -28,6 +28,19 @@ final class ChuDeVM: ObservableObject {
     @Published var dangTai = false
     @Published var loi: String?
 
+    /// Thẻ cho những chủ đề KHÔNG gắn cấp độ nào.
+    ///
+    /// ⚠️ Trước 23/08/2026 chúng biến mất hoàn toàn khỏi app: `dsCap` dùng
+    /// `compactMap` nên `level == nil` không sinh ra thẻ nào, mà `hienThi`
+    /// lại lọc `level == cap` với `cap` luôn khác nil sau khi tải. Đo trên
+    /// prod: tiếng Anh có **17 chủ đề / 1.257 từ** kiểu này — và đúng là
+    /// nhóm đáng giá nhất với người học ở đây: Lập trình cơ bản (99), OOP &
+    /// Design Patterns (100), Database & SQL (78), Web & API (77), DevOps &
+    /// Cloud (90), AI/LLM (70), Frameworks & tools (72), Meeting & sync (80),
+    /// Nghề nghiệp & Phỏng vấn (79), Collocations (112), Phrasal verbs (49)…
+    /// Tiếng Nhật mất 10 từ, tiếng Trung 0 — nên lỗi này chỉ lộ ở tiếng Anh.
+    static let capChuyenDe = "Chuyên đề"
+
     /// Các cấp có thật, theo thứ tự học chứ không theo bảng chữ cái.
     ///
     /// ⚠️ Sắp bằng `sorted()` thường thì tiếng Anh ra A1,A2,B1… (may mắn
@@ -40,11 +53,21 @@ final class ChuDeVM: ObservableObject {
                      "HSK1","HSK2","HSK3","HSK4","HSK5","HSK6"]
         var ra = thuTu.filter { co.contains($0) }
         ra.append(contentsOf: co.subtracting(ra).sorted())
+        // Đặt CUỐI thang: đây không phải một bậc CEFR/JLPT, mà là các bộ từ
+        // theo lĩnh vực. Chen vào giữa là làm hỏng thứ tự học.
+        if tatCa.contains(where: { $0.level == nil && $0.soTu > 0 }) {
+            ra.append(Self.capChuyenDe)
+        }
         return ra
     }
 
     var hienThi: [ChuDeTu] {
-        let ds = cap == nil ? tatCa : tatCa.filter { $0.level == cap }
+        let ds: [ChuDeTu]
+        switch cap {
+        case nil:                 ds = tatCa
+        case Self.capChuyenDe:    ds = tatCa.filter { $0.level == nil }
+        case let c:               ds = tatCa.filter { $0.level == c }
+        }
         return ds.filter { $0.soTu > 0 }
                  .sorted { ($0.order ?? 0, $0.id) < ($1.order ?? 0, $1.id) }
     }

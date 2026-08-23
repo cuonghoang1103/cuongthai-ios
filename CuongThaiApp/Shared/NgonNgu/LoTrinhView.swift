@@ -456,7 +456,8 @@ struct NutLoTrinhChiTietView: View {
             } else {
                 ChuDeTheoCapView(ngonNgu: ngonNgu, cap: nut.level, tenNut: nut.title, vm: vm)
             }
-        case .nghe, .tapViet, .ngoai:
+        case .nghe: NgheView(ngonNgu: ngonNgu)
+        case .tapViet, .ngoai:
             EmptyView()
         }
     }
