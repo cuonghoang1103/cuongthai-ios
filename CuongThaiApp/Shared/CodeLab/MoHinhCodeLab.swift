@@ -11,11 +11,23 @@ import Foundation
 // Bù lại: mở chi tiết KHÔNG cần gọi mạng lần hai, mọi thứ đã nằm sẵn trong
 // đối tượng của danh sách.
 //
-// ⚠️ **Đề bài tập CHƯA hề có bản tiếng Việt.** Đo lại 23/08/2026 trên 2.849
-// bài — 1.500 trang mới nhất + 1.349 trang cũ nhất, rải khắp 40+ lộ trình:
-// `problemHtmlVi` và `solutionExplanationHtmlVi` null **100%**. Nên nút EN/VI
-// của màn bài tập gần như không bao giờ hiện, đúng như web (`LangSwitch` chỉ
-// vẽ khi `ex.problemHtmlVi` có giá trị). Bản dịch nằm ở BÀI HỌC, không ở đề.
+// ⚠️ **Bản dịch đề bài chỉ có ở LAB211** — và suýt kết luận ngược lại.
+//
+// Lần đo đầu lấy 2.849 bài theo TRANG (1.500 trang mới nhất + 1.349 trang cũ
+// nhất) ra `problemHtmlVi` null 100%, nên tôi ghi là "chưa lộ trình nào được
+// dịch". Sai: `/exercises` sắp theo `createdAt desc` trên 12.549 bài, và
+// LAB211 chỉ có 54 bài nên KHÔNG rơi vào trang nào của mẫu ấy.
+//
+// Đo lại bằng `trackId` của từng lộ trình (23/08/2026):
+//   lab211      54/54 có `problemHtmlVi` VÀ 54/54 có `solutionExplanationHtmlVi`
+//   8 lộ trình khác (postgresql, java-core, javascript, react, nextjs,
+//   typescript, python, sql) — 0/100 mỗi cái.
+//
+// Bài học: xem `MoHinhBaiHoc.swift` (phe khác hẳn — postgresql/react/nextjs…
+// đều dịch, còn java/python/sql thì không).
+//
+// ⚠️ **Lấy mẫu theo trang KHÔNG thay được hỏi theo `trackId`.** Một lộ trình
+// nhỏ lọt hẳn khỏi mẫu, và con số ra 0% trông rất thuyết phục.
 
 struct TrangBaiTapCode: Codable {
     let exercises: [BaiTapCode]
@@ -54,6 +66,35 @@ struct BaiTapCode: Codable, Identifiable, Hashable {
 
     let diagramMermaid: String?
     let youtubeUrl: String?
+
+    // ── Đề gốc đính kèm ──────────────────────────────────────────
+    //
+    // ⚠️ Bốn trường này TỪNG BỊ BỎ QUÊN trong mô hình, nên app không hiện đề
+    // gốc dù web hiện. Đo 23/08/2026: **54/54 bài lab211 có `briefPdfUrl`**
+    // (`media.cuongthai.com/code-lab/lab211/briefs/*.pdf`, tải về HTTP 206
+    // `application/pdf`), 45/54 có thêm file Word gốc ở `briefFileUrl`, và
+    // 54/54 có `referenceUrl` trỏ sang kho mã tham khảo trên GitHub.
+    //
+    // ⚠️ Cùng cái bẫy lấy mẫu nói ở đầu file: 0/2.849 bài có đính kèm, chỉ
+    // vì lab211 không nằm trong mẫu. Hỏi bằng `trackId` mới ra 54/54.
+
+    /// Đề gốc dạng PDF. Web nhúng bằng `<iframe>` và tự thừa nhận "trên điện
+    /// thoại khung này có thể trắng"; app dùng PDFKit nên đọc được thật.
+    let briefPdfUrl: String?
+    /// File gốc chưa đổi định dạng (thường là .docx). Chỉ đáng hiện khi KHÁC
+    /// `briefPdfUrl` — 9/54 bài hai trường trỏ cùng một file.
+    let briefFileUrl: String?
+    let diagramImageUrl: String?
+    let imagesJson: [AnhKem]?
+    let referenceUrl: String?
+    let githubUrl: String?
+    let sourceUrl: String?
+
+    struct AnhKem: Codable, Hashable, Identifiable {
+        let url: String?
+        let caption: String?
+        var id: String { url ?? UUID().uuidString }
+    }
     let solveCount: Int?
     let viewCount: Int?
     let track: Nhan?
@@ -103,6 +144,22 @@ struct BaiTapCode: Codable, Identifiable, Hashable {
     }
     var phut: Int { estimatedMinutes ?? 0 }
     var diem: Int { Int(points ?? 0) }
+
+    var pdfDeGoc: URL? { URL(string: briefPdfUrl ?? "") }
+    /// `nil` khi không có file riêng HOẶC khi nó trùng đúng cái PDF đang xem.
+    var fileGoc: URL? {
+        guard let f = briefFileUrl, !f.isEmpty, f != briefPdfUrl else { return nil }
+        return URL(string: f)
+    }
+    var dsAnh: [AnhKem] { (imagesJson ?? []).filter { $0.url?.isEmpty == false } }
+    /// Các đường dẫn ngoài, gộp sẵn để vẽ một khối duy nhất.
+    var dsThamKhao: [(String, URL)] {
+        [("Kho mã tham khảo", referenceUrl), ("GitHub", githubUrl), ("Mã nguồn", sourceUrl)]
+            .compactMap { ten, u in
+                guard let u, !u.isEmpty, let url = URL(string: u) else { return nil }
+                return (ten, url)
+            }
+    }
 }
 
 enum DoKho: String, CaseIterable {

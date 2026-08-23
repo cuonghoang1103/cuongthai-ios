@@ -52,8 +52,38 @@ final class CodeLabVM: ObservableObject {
                                                       description: n.description, icon: n.icon,
                                                       color: n.color, tracks: co)
             }
+            nhom = ghimLab211(nhom)
             loi = nhom.isEmpty ? "Chưa có lộ trình nào." : nil
         } catch { loi = error.localizedDescription }
+    }
+
+    /// Đưa LAB211 lên đầu danh sách.
+    ///
+    /// Máy chủ xếp nhóm theo `sortOrder` và LAB211 nằm ở nhóm FPTU — nhóm
+    /// CUỐI cùng trong 12 nhóm, phải vuốt hết hàng thẻ lọc mới thấy. Đây là
+    /// môn người dùng đang học nên nó phải nằm ngay trên.
+    ///
+    /// Ghim theo **slug**, không theo id hay vị trí: id lộ trình đổi theo môi
+    /// trường, còn "nhóm cuối cùng" thì đúng hôm nay và sai ngay hôm thêm
+    /// nhóm mới.
+    private func ghimLab211(_ ds: [NhomCodeLab]) -> [NhomCodeLab] {
+        let ghim = "lab211"
+        guard let vt = ds.firstIndex(where: { $0.dsLoTrinh.contains { $0.slug == ghim } })
+        else { return ds }                       // không thấy thì để nguyên
+
+        var n = ds[vt]
+        // Trong nhóm cũng đẩy lên đầu — hôm nay FPTU chỉ có mình nó, nhưng
+        // thêm môn thứ hai vào là thứ tự lại phụ thuộc `sortOrder`.
+        if let j = n.dsLoTrinh.firstIndex(where: { $0.slug == ghim }), j != 0 {
+            var lt = n.dsLoTrinh
+            lt.insert(lt.remove(at: j), at: 0)
+            n = NhomCodeLab(id: n.id, name: n.name, slug: n.slug, description: n.description,
+                            icon: n.icon, color: n.color, tracks: lt)
+        }
+        var kq = ds
+        kq.remove(at: vt)
+        kq.insert(n, at: 0)
+        return kq
     }
 
     func timLai() {
