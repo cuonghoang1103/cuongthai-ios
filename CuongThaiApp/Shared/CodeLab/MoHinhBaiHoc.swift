@@ -71,9 +71,6 @@ struct BaiTapGon: Codable, Identifiable, Hashable {
 // MARK: - Bài học của một chương
 
 /// `GET /code-lab/modules/:id/lesson` → `{id, name, lessonGeneratedAt, blocks}`.
-///
-/// ⚠️ Bài học **CÓ bản tiếng Việt** (`textVi`, `htmlVi`) — khác hẳn bài tập
-/// vốn `problemHtmlVi` null 40/40. Nên bài học phải ưu tiên tiếng Việt.
 struct BaiHocChuong: Codable {
     let id: Int
     let name: String?
@@ -81,10 +78,21 @@ struct BaiHocChuong: Codable {
     let blocks: [KhoiBaiHoc]?
 
     var dsKhoi: [KhoiBaiHoc] { blocks ?? [] }
+
+    /// Bài này có bản tiếng Việt hay không — quyết định CÓ HIỆN nút EN/VI.
+    /// Cùng phép thử với `hasVietnamese()` của web.
+    var coTiengViet: Bool { dsKhoi.contains(where: \.coTiengViet) }
 }
 
-/// Năm loại khối, đo thật trên 6 chương đầu của PostgreSQL:
-/// prose 63 · heading 55 · code 47 · mermaid 16 · links 6.
+/// Bảy loại khối, đo thật 23/08/2026 trên 36 bài học của 12 lộ trình
+/// (1.582 khối): prose 604 · code 448 · heading 360 · mermaid 92 · part 33 ·
+/// links 30 · practice 15.
+///
+/// ⚠️ `part` và `practice` TỪNG BỊ MẤT HẲN: `LoaiKhoi(rawValue:) ?? .chu`
+/// đẩy mọi loại lạ về `prose`, mà `prose` chỉ vẽ trường `html` — hai loại này
+/// không có `html` nên ra ô rỗng, không lỗi, không log. `part` là vách ngăn
+/// chương của bài học (33/33 khối đều có tiếng Việt) và `practice` là các
+/// đường dẫn sang bài tập nên mất chúng là mất cả bộ khung.
 struct KhoiBaiHoc: Codable, Identifiable, Hashable {
     let type: String?
     let text: String?
@@ -92,32 +100,75 @@ struct KhoiBaiHoc: Codable, Identifiable, Hashable {
     let html: String?
     let htmlVi: String?
     let code: String?
+    let codeVi: String?
     let title: String?
     let titleVi: String?
     let language: String?
+    /// Riêng `part`: số thứ tự phần ("1", "2"…) và dòng mô tả dưới tiêu đề.
+    let number: String?
+    let subtitle: String?
+    let subtitleVi: String?
+    /// Riêng `image`.
+    let url: String?
+    let caption: String?
+    let captionVi: String?
     let items: [LienKet]?
 
     struct LienKet: Codable, Hashable, Identifiable {
         let url: String?
+        /// ⚠️ Tên hiện ra là **`label`**, `note` chỉ là dòng mô tả bên dưới.
+        /// Trước 23/08 app chỉ đọc `note` nên mọi đường dẫn mất tiêu đề.
+        let label: String?
+        let labelVi: String?
         let note: String?
-        var id: String { (url ?? "") + (note ?? "") }
+        let noteVi: String?
+
+        var id: String { (url ?? "") + (label ?? "") + (note ?? "") }
+
+        func ten(_ n: NgonNguDe) -> String {
+            let t = label.theo(n, viet: labelVi)
+            return t.isEmpty ? (url ?? "") : t
+        }
+        func moTa(_ n: NgonNguDe) -> String? {
+            let t = note.theo(n, viet: noteVi)
+            return t.isEmpty ? nil : t
+        }
+        var coTiengViet: Bool {
+            (labelVi?.isEmpty == false) || (noteVi?.isEmpty == false)
+        }
     }
 
     /// `Identifiable` bằng nội dung: máy chủ không đánh số khối, mà dùng chỉ
     /// số mảng làm id thì khối bị vẽ lại sai chỗ khi danh sách đổi.
     var id: String {
-        [type, text, title, code?.prefix(40).description, html?.prefix(40).description]
+        [type, number, text, title, code?.prefix(40).description, html?.prefix(40).description]
             .compactMap { $0 }.joined(separator: "|")
     }
 
-    var loai: LoaiKhoi { LoaiKhoi(rawValue: type ?? "") ?? .chu }
+    var loai: LoaiKhoi { LoaiKhoi(rawValue: type ?? "") ?? .khac }
 
-    /// Ưu tiên tiếng Việt, rơi về bản gốc nếu chưa dịch.
-    var tieuDeHien: String { (textVi?.isEmpty == false ? textVi : text) ?? "" }
-    var htmlHien: String { (htmlVi?.isEmpty == false ? htmlVi : html) ?? "" }
-    var tenMaHien: String? {
-        let t = (titleVi?.isEmpty == false ? titleVi : title)
-        return (t?.isEmpty == false) ? t : nil
+    // ── Nội dung theo NGÔN NGỮ ĐANG ĐỌC ──────────────────────────
+    // ⚠️ CỐ Ý không để bản không-đối-số nào. Trước 23/08 ở đây là
+    // `tieuDeHien`/`htmlHien` ép cứng "ưu tiên tiếng Việt": lộ trình có dịch
+    // thì không có đường về tiếng Anh, lộ trình chưa dịch thì lại ra tiếng
+    // Anh — cùng một nút bấm, hai kết quả khác nhau tuỳ lộ trình.
+    func tieuDe(_ n: NgonNguDe) -> String { text.theo(n, viet: textVi) }
+    func noiDungHTML(_ n: NgonNguDe) -> String { html.theo(n, viet: htmlVi) }
+    func ma(_ n: NgonNguDe) -> String { code.theo(n, viet: codeVi) }
+    func phuDe(_ n: NgonNguDe) -> String? {
+        let t = subtitle.theo(n, viet: subtitleVi); return t.isEmpty ? nil : t
+    }
+    func chuThich(_ n: NgonNguDe) -> String? {
+        let t = caption.theo(n, viet: captionVi); return t.isEmpty ? nil : t
+    }
+    func tenMa(_ n: NgonNguDe) -> String? {
+        let t = title.theo(n, viet: titleVi); return t.isEmpty ? nil : t
+    }
+
+    var coTiengViet: Bool {
+        [textVi, htmlVi, codeVi, titleVi, subtitleVi, captionVi]
+            .contains { $0?.isEmpty == false }
+            || (items ?? []).contains(where: \.coTiengViet)
     }
 
     enum LoaiKhoi: String {
@@ -126,6 +177,12 @@ struct KhoiBaiHoc: Codable, Identifiable, Hashable {
         case soDo = "mermaid"
         case ma = "code"
         case lienKet = "links"
+        case phan = "part"
+        case thucHanh = "practice"
+        case anh = "image"
+        /// Loại máy chủ thêm sau này. Vẽ ra một vạch báo khi chạy bản DEBUG
+        /// thay vì im lặng biến mất như `part`/`practice` từng bị.
+        case khac
     }
 }
 
@@ -158,6 +215,12 @@ struct TienDoBai: Codable, Hashable {
 ///
 /// ⚠️ **Chỉ Pro** (`assertPro`) và tốn AI, nên phải để người dùng tự bấm, đừng
 /// gọi tự động. Trần 24.000 ký tự.
+///
+/// ⚠️ Chỗ này CỐ Ý ưu tiên TIẾNG VIỆT, ngược với bài học/đề bài vốn mặc định
+/// tiếng Anh. Không phải bỏ sót: web cũng vậy — `CoachPanel.tsx` giữ state
+/// riêng `useState<Lang>('vi')` và KHÔNG dùng chung khoá `codelab.lessonLang`.
+/// Lời phê của AI là nói với người học, không phải tài liệu kỹ thuật; đổi nó
+/// sang tiếng Anh theo nút của bài học là làm hỏng đúng chỗ nó có ích nhất.
 struct KetQuaChamMa: Codable {
     let summary: String?
     let summaryVi: String?

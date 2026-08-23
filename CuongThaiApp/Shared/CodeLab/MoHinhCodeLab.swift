@@ -11,9 +11,11 @@ import Foundation
 // Bù lại: mở chi tiết KHÔNG cần gọi mạng lần hai, mọi thứ đã nằm sẵn trong
 // đối tượng của danh sách.
 //
-// ⚠️ **`problemHtmlVi`, `solutionExplanationHtmlVi`, `youtubeUrl` đang NULL
-// 40/40** khi đo — bản dịch tiếng Việt chưa được điền, nội dung là tiếng Anh.
-// Đừng dựng giao diện dựa vào việc có bản tiếng Việt.
+// ⚠️ **Đề bài tập CHƯA hề có bản tiếng Việt.** Đo lại 23/08/2026 trên 2.849
+// bài — 1.500 trang mới nhất + 1.349 trang cũ nhất, rải khắp 40+ lộ trình:
+// `problemHtmlVi` và `solutionExplanationHtmlVi` null **100%**. Nên nút EN/VI
+// của màn bài tập gần như không bao giờ hiện, đúng như web (`LangSwitch` chỉ
+// vẽ khi `ex.problemHtmlVi` có giá trị). Bản dịch nằm ở BÀI HỌC, không ở đề.
 
 struct TrangBaiTapCode: Codable {
     let exercises: [BaiTapCode]
@@ -87,11 +89,17 @@ struct BaiTapCode: Codable, Identifiable, Hashable {
     }
 
     var doKho: DoKho { DoKho(difficulty) }
-    /// Ưu tiên bản tiếng Việt nếu có ngày nào backend điền vào.
-    var deBai: String { (problemHtmlVi?.isEmpty == false ? problemHtmlVi : problemHtml) ?? "" }
-    var giaiThich: String? {
-        let v = solutionExplanationHtmlVi?.isEmpty == false ? solutionExplanationHtmlVi : solutionExplanationHtml
-        return (v?.isEmpty == false) ? v : nil
+
+    /// Theo ngôn ngữ đang đọc, rơi về tiếng Anh theo TỪNG TRƯỜNG.
+    func deBai(_ n: NgonNguDe) -> String { problemHtml.theo(n, viet: problemHtmlVi) }
+    func giaiThich(_ n: NgonNguDe) -> String? {
+        let v = solutionExplanationHtml.theo(n, viet: solutionExplanationHtmlVi)
+        return v.isEmpty ? nil : v
+    }
+    /// Quyết định CÓ HIỆN nút EN/VI. Ngày backend điền bản dịch là nút tự mọc,
+    /// không phải sửa app.
+    var coTiengViet: Bool {
+        (problemHtmlVi?.isEmpty == false) || (solutionExplanationHtmlVi?.isEmpty == false)
     }
     var phut: Int { estimatedMinutes ?? 0 }
     var diem: Int { Int(points ?? 0) }

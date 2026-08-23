@@ -10,13 +10,14 @@ struct BaiTapCodeView: View {
 
     @State private var hienGoiY = 0
     @State private var hienLoiGiai = false
+    @AppStorage(CodeLabNgonNgu.khoa) private var ngonNgu: NgonNguDe = .anh
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.md) {
                 dauTrang
 
-                if !bai.deBai.isEmpty { RichContent(html: bai.deBai) }
+                if !bai.deBai(ngonNgu).isEmpty { RichContent(html: bai.deBai(ngonNgu)) }
 
                 if let s = bai.inputSpec, !s.isEmpty { o("ĐẦU VÀO", s) }
                 if let s = bai.outputSpec, !s.isEmpty { o("ĐẦU RA", s) }
@@ -59,6 +60,15 @@ struct BaiTapCodeView: View {
         .background(AppColors.backgroundPrimary)
         .navigationTitle(bai.doKho.ten)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            // Đo 23/08: 0/2.849 bài có bản dịch ⇒ hôm nay nút này không hiện
+            // ở đâu cả. Vẫn cắm sẵn để ngày backend dịch là tự có, giống web.
+            if bai.coTiengViet {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    NutDoiNgonNgu(ngonNgu: $ngonNgu)
+                }
+            }
+        }
     }
 
     // MARK: Mảnh
@@ -171,7 +181,7 @@ struct BaiTapCodeView: View {
                     KhoiMaNguon(ma: k.code ?? "", ngonNgu: k.language ?? bai.language,
                                 tieuDe: k.name)
                 }
-                if let gt = bai.giaiThich { RichContent(html: gt) }
+                if let gt = bai.giaiThich(ngonNgu) { RichContent(html: gt) }
             } else {
                 Button {
                     withAnimation { hienLoiGiai = true }
