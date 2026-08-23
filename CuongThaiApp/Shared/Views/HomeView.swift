@@ -324,8 +324,10 @@ struct HomeView: View {
                 }
                 Spacer()
             } else {
+                ScrollViewReader { cuon in
                 ScrollView {
                     LazyVStack(spacing: Spacing.md) {
+                        NeoDauTrang()
                         // Blocked authors and hidden posts never reach the screen.
                         ForEach(moderation.filter(vm.posts)) { post in
                             ZStack(alignment: .topTrailing) {
@@ -357,6 +359,12 @@ struct HomeView: View {
                 }
                 .refreshable {
                     await vm.refresh(type: tabDangChon.loaiAPI)
+                }
+                // Hàng thẻ lọc GHIM phía trên (`filterBar` nằm ngoài
+                // `ScrollView`), nên đổi tab lúc đang cuộn sâu là bảng tin
+                // mới mở ra ngay giữa chừng. Khác Code Lab / Phòng thi: ở đó
+                // thẻ lọc nằm TRONG vùng cuộn nên tự trôi mất.
+                .onChange(of: tabDangChon) { _, _ in cuon.veDauTrang() }
                 }
             }
         }

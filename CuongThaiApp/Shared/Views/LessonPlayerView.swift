@@ -153,8 +153,10 @@ struct LessonPlayerView: View {
     }
 
     var body: some View {
+        ScrollViewReader { cuon in
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.md) {
+                NeoDauTrang()
                 khungVideo
                 tieuDe
                 if let bai = baiHienTai, (bai.videoTracks?.count ?? 0) > 1 {
@@ -191,6 +193,10 @@ struct LessonPlayerView: View {
         }
         .task(id: lessonId) { await vm.tai(courseId: course.id, lessonId: lessonId) }
         .onDisappear { vm.luuViTriNeuCan(courseId: course.id, lessonId: lessonId) }
+        // Bài trước/Bài tiếp nằm ở CUỐI trang, và mục lục mở từ thanh trên —
+        // cả hai đều đổi bài trong khi vẫn đang cuộn sâu.
+        .onChange(of: lessonId) { _, _ in cuon.veDauTrang() }
+        }
     }
 
     // MARK: Khối

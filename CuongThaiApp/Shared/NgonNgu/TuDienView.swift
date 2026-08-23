@@ -128,11 +128,19 @@ struct TuDienView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
+                ScrollViewReader { cuon in
                 ScrollView {
                     LazyVStack(spacing: Spacing.sm) {
+                        NeoDauTrang()
                         ForEach(vm.ketQua) { t in hang(t) }
                     }
                     .padding(Spacing.md)
+                }
+                // Ô tìm GHIM trên vùng cuộn: gõ từ mới lúc đang cuộn sâu là
+                // kết quả mới mở ra ở giữa chừng. Bám vào từ ĐẦU TIÊN của kết
+                // quả chứ không vào `chu`: `vm.tim` chạy sau mỗi phím gõ, nghe
+                // theo `chu` là cuộn trước lúc danh sách kịp đổi.
+                .onChange(of: vm.ketQua.first?.id) { _, _ in cuon.veDauTrang() }
                 }
             }
         }

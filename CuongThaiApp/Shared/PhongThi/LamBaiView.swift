@@ -239,8 +239,10 @@ struct LamBaiView: View {
 
     // ── Câu hỏi ─────────────────────────────────────────────────
     private func khungCau(_ c: CauHoiThi) -> some View {
+        ScrollViewReader { cuon in
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.md) {
+                NeoDauTrang()
                 HStack(spacing: Spacing.sm) {
                     Text("Câu \(vm.viTri + 1)/\(vm.cauHoi.count)")
                         .font(.system(size: 12, weight: .semibold))
@@ -297,6 +299,12 @@ struct LamBaiView: View {
                 }
             }
             .padding(Spacing.md)
+        }
+        // Ba đường cùng đổi câu mà KHÔNG rời màn: nút "Câu tiếp" ở thanh đáy
+        // cố định, lưới câu trong sheet, và cú tự nhảy sau khi chọn đáp án
+        // câu một-lựa-chọn (`danhDau`). Câu dài thì cả ba đều mở câu mới ra
+        // ngay giữa trang.
+        .onChange(of: vm.viTri) { _, _ in cuon.veDauTrang() }
         }
     }
 

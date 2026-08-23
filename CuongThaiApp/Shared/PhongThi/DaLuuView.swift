@@ -32,12 +32,18 @@ struct DaLuuView: View {
             if dangTai {
                 ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
+                ScrollViewReader { cuon in
                 ScrollView {
                     LazyVStack(spacing: Spacing.sm) {
+                        NeoDauTrang()
                         if tab == .cau { khungCau } else { khungDe }
                     }
                     .padding(.horizontal, Spacing.md)
                     .padding(.bottom, Spacing.xl)
+                }
+                // Picker phân đoạn GHIM trên vùng cuộn: đổi tab lúc đang cuộn
+                // sâu là danh sách bên kia mở ra ở giữa chừng.
+                .onChange(of: tab) { _, _ in cuon.veDauTrang() }
                 }
             }
         }

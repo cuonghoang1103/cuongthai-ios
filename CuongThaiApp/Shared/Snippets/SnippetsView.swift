@@ -116,8 +116,10 @@ struct SnippetsView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
+                ScrollViewReader { cuon in
                 ScrollView {
                     LazyVStack(spacing: Spacing.sm) {
+                        NeoDauTrang()
                         ForEach(vm.ds) { s in
                             NavigationLink { SnippetChiTietView(mau: s) } label: { hang(s) }
                                 .buttonStyle(.plain)
@@ -130,6 +132,13 @@ struct SnippetsView: View {
                         if vm.dangTai { ProgressView().padding(.vertical, Spacing.md) }
                     }
                     .padding(Spacing.md)
+                }
+                // Ô tìm và hàng thẻ danh mục GHIM phía trên vùng cuộn, nên
+                // đổi danh mục hay gõ tìm lúc đang cuộn sâu là danh sách mới
+                // mở ra ở giữa chừng. Bám vào `id` bài ĐẦU TIÊN chứ không bám
+                // vào ô lọc: `nap(lai:)` chạy bất đồng bộ, nghe theo ô lọc là
+                // cuộn xong rồi danh sách cũ mới bị thay.
+                .onChange(of: vm.ds.first?.id) { _, _ in cuon.veDauTrang() }
                 }
             }
         }

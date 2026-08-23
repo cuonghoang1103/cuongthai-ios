@@ -58,8 +58,10 @@ struct SearchView: View {
     }
 
     private var searchResults: some View {
+        ScrollViewReader { cuon in
         ScrollView {
             LazyVStack(spacing: Spacing.md) {
+                NeoDauTrang()
                 if viewModel.searchQuery.isEmpty {
                     emptySearchState
                 } else if viewModel.isLoading && viewModel.users.isEmpty && viewModel.posts.isEmpty {
@@ -80,6 +82,11 @@ struct SearchView: View {
                 }
             }
             .padding(Spacing.md)
+        }
+        // `filterTabs` GHIM trên vùng cuộn, và ô tìm cũng vậy. Đổi bộ lọc hay
+        // gõ từ khoá mới lúc đang cuộn sâu là kết quả mới mở ra ở giữa chừng.
+        .onChange(of: viewModel.selectedFilter) { _, _ in cuon.veDauTrang() }
+        .onChange(of: viewModel.searchQuery) { _, _ in cuon.veDauTrang() }
         }
     }
 
