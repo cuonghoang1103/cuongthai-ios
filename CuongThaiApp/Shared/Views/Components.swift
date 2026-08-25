@@ -80,7 +80,7 @@ struct NotificationBadge: View {
 struct LoadingView: View {
     let message: String
 
-    init(_ message: String = "Đang tải...") {
+    init(_ message: String = T("Đang tải...")) {
         self.message = message
     }
 
@@ -178,7 +178,7 @@ struct ErrorView: View {
                 .foregroundColor(AppColors.error)
 
             VStack(spacing: Spacing.sm) {
-                Text("Đã xảy ra lỗi")
+                Text(T("Đã xảy ra lỗi"))
                     .font(.titleMedium)
                     .foregroundColor(AppColors.textPrimary)
 
@@ -191,7 +191,7 @@ struct ErrorView: View {
             Button(action: retryAction) {
                 HStack {
                     Image(systemName: "arrow.clockwise")
-                    Text("Thử lại")
+                    Text(T("Thử lại"))
                 }
                 .secondaryButtonStyle()
             }
@@ -505,9 +505,9 @@ extension View {
 
         AppEmptyStateView(
             icon: "doc.text",
-            title: "Không có dữ liệu",
-            message: "Thử tải lại trang",
-            buttonTitle: "Tải lại",
+            title: T("Không có dữ liệu"),
+            message: T("Thử tải lại trang"),
+            buttonTitle: T("Tải lại"),
             buttonAction: {}
         )
     }

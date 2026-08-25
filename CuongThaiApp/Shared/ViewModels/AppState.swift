@@ -43,11 +43,11 @@ final class AppState: ObservableObject {
         var id: Int { rawValue }
         var title: String {
             switch self {
-            case .home: return "Trang chủ"
-            case .learn: return "Học"
-            case .create: return "Tạo"
-            case .messages: return "Tin nhắn"
-            case .profile: return "Cá nhân"
+            case .home: return T("Trang chủ")
+            case .learn: return T("Học")
+            case .create: return T("Tạo")
+            case .messages: return T("Tin nhắn")
+            case .profile: return T("Cá nhân")
             }
         }
         var icon: String {

@@ -104,11 +104,11 @@ struct HomeView: View {
 
         var ten: String {
             switch self {
-            case .tatCa: return "Tất cả"
-            case .hocTap: return "Học tập"
-            case .baiViet: return "Bài viết"
-            case .video: return "Video"
-            case .file: return "File"
+            case .tatCa: return T("Tất cả")
+            case .hocTap: return T("Học tập")
+            case .baiViet: return T("Bài viết")
+            case .video: return T("Video")
+            case .file: return T("File")
             }
         }
 
@@ -303,8 +303,8 @@ struct HomeView: View {
                 VStack(spacing: Spacing.md) {
                     EmptyStateView(
                         icon: "newspaper",
-                        title: "Chưa có bài viết",
-                        subtitle: "Hãy là người đầu tiên chia sẻ!"
+                        title: T("Chưa có bài viết"),
+                        subtitle: T("Hãy là người đầu tiên chia sẻ!")
                     )
                     // Bài của ba loạt 100 ngày đã bị lọc khỏi bảng tin, nên tab
                     // này rỗng KHÔNG có nghĩa là web không có nội dung — chỉ ra
@@ -313,7 +313,7 @@ struct HomeView: View {
                         Haptics.cham()
                         tabDangChon = .hocTap
                     } label: {
-                        Label("Xem loạt bài 100 ngày", systemImage: "graduationcap.fill")
+                        Label(T("Xem loạt bài 100 ngày"), systemImage: "graduationcap.fill")
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundColor(AppColors.onPrimary)
                             .padding(.horizontal, Spacing.lg)

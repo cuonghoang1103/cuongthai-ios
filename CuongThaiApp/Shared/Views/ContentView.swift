@@ -140,7 +140,7 @@ struct macOSNavigationView: View {
             if let tab = selectedTab {
                 detailView(for: tab)
             } else {
-                Text("Chọn một mục")
+                Text(T("Chọn một mục"))
                     .foregroundColor(.secondary)
             }
         }

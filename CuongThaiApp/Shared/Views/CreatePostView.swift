@@ -24,18 +24,18 @@ struct CreatePostView: View {
                 .padding(Spacing.md)
             }
             .background(AppColors.backgroundPrimary)
-            .navigationTitle("Tạo bài viết")
+            .navigationTitle(T("Tạo bài viết"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Hủy") {
+                    Button(T("Hủy")) {
                         resetForm()
                     }
                     .foregroundColor(AppColors.textSecondary)
                 }
 
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Đăng") {
+                    Button(T("Đăng")) {
                         Task {
                             await viewModel.createPost()
                         }
@@ -53,7 +53,7 @@ struct CreatePostView: View {
             .toolbar {
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
-                    Button("Xong") { isContentFocused = false }
+                    Button(T("Xong")) { isContentFocused = false }
                 }
             }
             .onChange(of: selectedPhotosPickerItems) { _, newItems in
@@ -61,7 +61,7 @@ struct CreatePostView: View {
                     await viewModel.loadPhotos(from: newItems)
                 }
             }
-            .alert("Thông báo", isPresented: $viewModel.showAlert) {
+            .alert(T("Thông báo"), isPresented: $viewModel.showAlert) {
                 Button("OK") { }
             } message: {
                 Text(viewModel.alertMessage)
@@ -120,7 +120,7 @@ struct CreatePostView: View {
                 .focused($isContentFocused)
                 .overlay(alignment: .topLeading) {
                     if viewModel.content.isEmpty {
-                        Text("Bạn đang nghĩ gì?")
+                        Text(T("Bạn đang nghĩ gì?"))
                             .font(.bodyLarge)
                             .foregroundColor(AppColors.textTertiary)
                             .padding(.top, 8)
@@ -192,7 +192,7 @@ struct CreatePostView: View {
                         maxSelectionCount: 4,
                         matching: .images
                     ) {
-                        mediaButton(icon: "photo", title: "Thêm ảnh")
+                        mediaButton(icon: "photo", title: T("Thêm ảnh"))
                     }
                 }
             }
@@ -228,7 +228,7 @@ struct CreatePostView: View {
             if viewModel.isPollEnabled {
                 pollSection
             } else {
-                optionRow(icon: "chart.bar", title: "Tạo cuộc thăm dò", showChevron: false) {
+                optionRow(icon: "chart.bar", title: T("Tạo cuộc thăm dò"), showChevron: false) {
                     viewModel.isPollEnabled = true
                 }
             }
@@ -239,7 +239,7 @@ struct CreatePostView: View {
     private var pollSection: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
             HStack {
-                Text("Tạo cuộc thăm dò")
+                Text(T("Tạo cuộc thăm dò"))
                     .font(.titleSmall)
                     .foregroundColor(AppColors.textPrimary)
 
@@ -250,13 +250,13 @@ struct CreatePostView: View {
                     viewModel.pollQuestion = ""
                     viewModel.pollOptions = ["", ""]
                 } label: {
-                    Text("Hủy")
+                    Text(T("Hủy"))
                         .font(.caption)
                         .foregroundColor(AppColors.primary)
                 }
             }
 
-            TextField("Câu hỏi của bạn", text: $viewModel.pollQuestion)
+            TextField(T("Câu hỏi của bạn"), text: $viewModel.pollQuestion)
                 .font(.bodyMedium)
                 .foregroundColor(AppColors.textPrimary)
                 .inputFieldStyle()
@@ -285,7 +285,7 @@ struct CreatePostView: View {
                 } label: {
                     HStack {
                         Image(systemName: "plus.circle")
-                        Text("Thêm tùy chọn")
+                        Text(T("Thêm tùy chọn"))
                     }
                     .font(.buttonSmall)
                     .foregroundColor(AppColors.primary)
@@ -319,7 +319,7 @@ struct CreatePostView: View {
 
     private var visibilitySection: some View {
         VStack(spacing: Spacing.sm) {
-            Text("Ai có thể xem bài viết?")
+            Text(T("Ai có thể xem bài viết?"))
                 .font(.caption)
                 .foregroundColor(AppColors.textSecondary)
 
@@ -398,9 +398,9 @@ enum PostVisibility: String, CaseIterable {
 
     var title: String {
         switch self {
-        case .public: return "Công khai"
-        case .friends: return "Bạn bè"
-        case .privateOnly: return "Riêng tư"
+        case .public: return T("Công khai")
+        case .friends: return T("Bạn bè")
+        case .privateOnly: return T("Riêng tư")
         }
     }
 
@@ -459,7 +459,7 @@ class CreatePostViewModel: ObservableObject {
 
     func createPost() async {
         guard !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            alertMessage = "Vui lòng nhập nội dung bài viết"
+            alertMessage = T("Vui lòng nhập nội dung bài viết")
             showAlert = true
             return
         }
@@ -509,7 +509,7 @@ class CreatePostViewModel: ObservableObject {
                     .map { $0.trimmingCharacters(in: .whitespaces) }
                     .filter { !$0.isEmpty }
                 if cauHoi.isEmpty {
-                    alertMessage = "Bạn đang bật thăm dò nhưng chưa nhập câu hỏi. Bài viết chưa được đăng."
+                    alertMessage = T("Bạn đang bật thăm dò nhưng chưa nhập câu hỏi. Bài viết chưa được đăng.")
                     showAlert = true; isLoading = false; return
                 }
                 if luaChon.count < 2 {
@@ -528,7 +528,7 @@ class CreatePostViewModel: ObservableObject {
             )
 
             postCreated = true
-            alertMessage = "Bài viết đã được đăng!"
+            alertMessage = T("Bài viết đã được đăng!")
             showAlert = true
 
         } catch {

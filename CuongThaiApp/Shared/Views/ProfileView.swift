@@ -39,7 +39,7 @@ struct ProfileView: View {
                 }
             }
             .background(AppColors.backgroundPrimary)
-            .navigationTitle("Hồ sơ")
+            .navigationTitle(T("Hồ sơ"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -67,7 +67,7 @@ struct ProfileView: View {
                 guard let item else { return }
                 Task { await viewModel.doiAnh(item, truong: .bia) }
             }
-            .alert("Không đổi được ảnh", isPresented: .constant(viewModel.loiDoiAnh != nil)) {
+            .alert(T("Không đổi được ảnh"), isPresented: .constant(viewModel.loiDoiAnh != nil)) {
                 Button("OK") { viewModel.loiDoiAnh = nil }
             } message: {
                 Text(viewModel.loiDoiAnh ?? "")
@@ -186,7 +186,7 @@ struct ProfileView: View {
                 VStack(alignment: .trailing, spacing: Spacing.sm) {
                     if !viewModel.isCurrentUser {
                         if viewModel.profile?.isFollowing == true {
-                            Button("Đang theo dõi") {
+                            Button(T("Đang theo dõi")) {
                                 Task { await viewModel.toggleFollow() }
                             }
                             .font(.buttonSmall)
@@ -199,7 +199,7 @@ struct ProfileView: View {
                             Button {
                                 Task { await viewModel.toggleFollow() }
                             } label: {
-                                Text("Theo dõi")
+                                Text(T("Theo dõi"))
                                     .font(.buttonSmall)
                                     .foregroundColor(AppColors.onPrimary)
                                     .padding(.horizontal, Spacing.md)
@@ -213,7 +213,7 @@ struct ProfileView: View {
                         Button {
                             sheet = .editProfile
                         } label: {
-                            Text("Chỉnh sửa")
+                            Text(T("Chỉnh sửa"))
                                 .font(.buttonSmall)
                                 .foregroundColor(AppColors.textPrimary)
                                 .padding(.horizontal, Spacing.md)
@@ -276,11 +276,11 @@ struct ProfileView: View {
 
     private var profileStats: some View {
         HStack(spacing: 0) {
-            statItem(value: viewModel.profile?.postsCount ?? 0, label: "Bài viết")
+            statItem(value: viewModel.profile?.postsCount ?? 0, label: T("Bài viết"))
             Divider().frame(height: 30)
-            statItem(value: viewModel.profile?.followersCount ?? 0, label: "Người theo dõi")
+            statItem(value: viewModel.profile?.followersCount ?? 0, label: T("Người theo dõi"))
             Divider().frame(height: 30)
-            statItem(value: viewModel.profile?.followingCount ?? 0, label: "Đang theo dõi")
+            statItem(value: viewModel.profile?.followingCount ?? 0, label: T("Đang theo dõi"))
         }
         .padding(.vertical, Spacing.md)
         .background(AppColors.backgroundSecondary)
@@ -302,21 +302,21 @@ struct ProfileView: View {
 
     private var profileActions: some View {
         HStack(spacing: Spacing.sm) {
-            actionButton(icon: "square.grid.2x2", title: "Bài viết", isActive: viewModel.selectedTab == .posts) {
+            actionButton(icon: "square.grid.2x2", title: T("Bài viết"), isActive: viewModel.selectedTab == .posts) {
                 viewModel.selectedTab = .posts
             }
 
             // "Đã lưu" và "Khoá học" là thông tin RIÊNG TƯ — chỉ hiện ở hồ sơ
             // của chính mình, không khoe ở hồ sơ người khác.
             if viewModel.isCurrentUser {
-                actionButton(icon: "bookmark", title: "Đã lưu", isActive: viewModel.selectedTab == .saved) {
+                actionButton(icon: "bookmark", title: T("Đã lưu"), isActive: viewModel.selectedTab == .saved) {
                     viewModel.selectedTab = .saved
                 }
 
             // Tab Nhạc đã GỠ: module nhạc bị bỏ khỏi app vì App Store
             // Guideline 5.2.3 (rút audio từ YouTube). Để lại một tab mở ra
             // màn trống còn tệ hơn không có tab.
-                actionButton(icon: "graduationcap", title: "Khoá học", isActive: viewModel.selectedTab == .courses) {
+                actionButton(icon: "graduationcap", title: T("Khoá học"), isActive: viewModel.selectedTab == .courses) {
                     viewModel.selectedTab = .courses
                 }
             }
@@ -362,8 +362,8 @@ struct ProfileView: View {
             if viewModel.dangTaiDaLuu && viewModel.baiDaLuu.isEmpty {
                 ProgressView().padding(.top, Spacing.xxl)
             } else if viewModel.baiDaLuu.isEmpty {
-                khoiRong(icon: "bookmark", tieuDe: "Chưa lưu bài nào",
-                         phu: "Chạm ••• trên một bài viết rồi chọn Lưu để đọc lại sau.")
+                khoiRong(icon: "bookmark", tieuDe: T("Chưa lưu bài nào"),
+                         phu: T("Chạm ••• trên một bài viết rồi chọn Lưu để đọc lại sau."))
             } else {
                 ForEach(viewModel.baiDaLuu) { post in
                     ZStack(alignment: .topTrailing) {
@@ -389,8 +389,8 @@ struct ProfileView: View {
             if viewModel.dangTaiKhoa && viewModel.khoaDaHoc.isEmpty {
                 ProgressView().padding(.top, Spacing.xxl)
             } else if viewModel.khoaDaHoc.isEmpty {
-                khoiRong(icon: "graduationcap", tieuDe: "Chưa ghi danh khoá nào",
-                         phu: "Vào tab Học, chọn một khoá và bấm Ghi danh.")
+                khoiRong(icon: "graduationcap", tieuDe: T("Chưa ghi danh khoá nào"),
+                         phu: T("Vào tab Học, chọn một khoá và bấm Ghi danh."))
             } else {
                 ForEach(viewModel.khoaDaHoc) { gd in
                     NavigationLink(destination: CourseDetailView(slug: gd.courseSlug)) {
@@ -508,11 +508,11 @@ struct ProfileView: View {
                 .font(.system(size: 50))
                 .foregroundColor(AppColors.textTertiary)
 
-            Text("Chưa có bài viết nào")
+            Text(T("Chưa có bài viết nào"))
                 .font(.titleMedium)
                 .foregroundColor(AppColors.textPrimary)
 
-            Text(viewModel.isCurrentUser ? "Tạo bài viết đầu tiên của bạn" : "Người dùng này chưa đăng bài viết nào")
+            Text(viewModel.isCurrentUser ? T("Tạo bài viết đầu tiên của bạn") : T("Người dùng này chưa đăng bài viết nào"))
                 .font(.bodyMedium)
                 .foregroundColor(AppColors.textSecondary)
                 .multilineTextAlignment(.center)
@@ -521,7 +521,7 @@ struct ProfileView: View {
                 Button {
                     appState.selectedTab = .create
                 } label: {
-                    Text("Tạo bài viết")
+                    Text(T("Tạo bài viết"))
                         .primaryButtonStyle()
                 }
                 .padding(.top, Spacing.md)
@@ -633,7 +633,7 @@ class ProfileViewModel: ObservableObject {
                   let anh = PlatformImage(data: data),
                   let jpeg = anh.jpegDataForUpload()
             else {
-                loiDoiAnh = "Không đọc được ảnh vừa chọn."
+                loiDoiAnh = T("Không đọc được ảnh vừa chọn.")
                 return
             }
 
@@ -793,6 +793,7 @@ struct UserProfile {
 // MARK: - Settings View
 struct SettingsView: View {
     @StateObject private var giaoDien = QuanLyGiaoDien.shared
+    @StateObject private var quanLyNN = QuanLyNgonNguApp.shared
     @EnvironmentObject var appState: AppState
     @Environment(\.dismiss) var dismiss
     @State private var showLogoutAlert = false
@@ -836,35 +837,73 @@ struct SettingsView: View {
                         .buttonStyle(.plain)
                     }
                 } header: {
-                    Text("Giao diện")
+                    Text(T("Giao diện"))
                 } footer: {
                     if giaoDien.cheDo == .theoGio {
                         Text("Đang \(QuanLyGiaoDien.dangLaBanNgay() ? "sáng" : "tối"). Tự đổi vào \(QuanLyGiaoDien.gioSang)h và \(QuanLyGiaoDien.gioToi)h mỗi ngày.")
                     }
                 }
 
+                // Ngôn ngữ — ngay dưới Giao diện, cùng nhóm "đổi là thấy
+                // ngay". Tên mỗi lựa chọn viết bằng CHÍNH thứ tiếng đó, để
+                // người đang lạc trong giao diện tiếng lạ vẫn tìm được đường về.
+                Section {
+                    ForEach(NgonNguApp.allCases) { n in
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                quanLyNN.ngonNgu = n
+                            }
+                            Haptics.cham()
+                        } label: {
+                            HStack(spacing: 12) {
+                                Text(n.co).font(.system(size: 17))
+                                    .frame(width: 24)
+                                Text(n.ten)
+                                    .foregroundColor(AppColors.textPrimary)
+                                Spacer(minLength: 0)
+                                if quanLyNN.ngonNgu == n {
+                                    Image(systemName: "checkmark")
+                                        .font(.system(size: 14, weight: .semibold))
+                                        .foregroundColor(AppColors.primary)
+                                }
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                } header: {
+                    Text(T("Ngôn ngữ"))
+                } footer: {
+                    // Nói THẲNG giới hạn. Bật English mà bài viết, nghĩa từ
+                    // vựng và lời phê của AI vẫn tiếng Việt thì người dùng sẽ
+                    // tưởng app hỏng — trong khi đó là nội dung do máy chủ
+                    // trả về và vốn viết bằng tiếng Việt.
+                    Text(quanLyNN.ngonNgu == .anh
+                         ? "Menus and buttons switch to English. Content written in Vietnamese — posts, word meanings, grammar notes, AI feedback — stays as it is."
+                         : "Đổi chữ của giao diện. Nội dung do máy chủ trả về (bài viết, nghĩa từ vựng, giải thích ngữ pháp, lời phê của AI) vẫn giữ nguyên tiếng Việt.")
+                }
+
                 // Account
-                Section("Tài khoản") {
-                    NavigationLink("Chỉnh sửa hồ sơ") { EditProfileView() }
-                    NavigationLink("Đổi mật khẩu") { ChangePasswordView() }
+                Section(T("Tài khoản")) {
+                    NavigationLink(T("Chỉnh sửa hồ sơ")) { EditProfileView() }
+                    NavigationLink(T("Đổi mật khẩu")) { ChangePasswordView() }
                 }
 
                 // Safety & privacy — App Store Guideline 1.2 surfaces
                 Section {
-                    NavigationLink("Danh sách chặn") { BlockedUsersView() }
-                    NavigationLink("Quy tắc cộng đồng & Điều khoản") { TermsView() }
-                    NavigationLink("Chính sách bảo mật") { PrivacyPolicyView() }
+                    NavigationLink(T("Danh sách chặn")) { BlockedUsersView() }
+                    NavigationLink(T("Quy tắc cộng đồng & Điều khoản")) { TermsView() }
+                    NavigationLink(T("Chính sách bảo mật")) { PrivacyPolicyView() }
                 } header: {
-                    Text("An toàn & quyền riêng tư")
+                    Text(T("An toàn & quyền riêng tư"))
                 } footer: {
-                    Text("Chúng tôi không khoan nhượng với nội dung phản cảm. Mọi báo cáo được xử lý trong 24 giờ.")
+                    Text(T("Chúng tôi không khoan nhượng với nội dung phản cảm. Mọi báo cáo được xử lý trong 24 giờ."))
                 }
 
                 // Support
-                Section("Hỗ trợ") {
-                    NavigationLink("Trợ giúp & liên hệ") { HelpView() }
+                Section(T("Hỗ trợ")) {
+                    NavigationLink(T("Trợ giúp & liên hệ")) { HelpView() }
                     HStack {
-                        Text("Email hỗ trợ")
+                        Text(T("Email hỗ trợ"))
                         Spacer()
                         Text(SupportContact.email)
                             .font(.caption)
@@ -874,9 +913,9 @@ struct SettingsView: View {
                 }
 
                 // About
-                Section("Giới thiệu") {
+                Section(T("Giới thiệu")) {
                     HStack {
-                        Text("Phiên bản")
+                        Text(T("Phiên bản"))
                         Spacer()
                         Text(Bundle.main.appVersionString)
                             .foregroundColor(AppColors.textSecondary)
@@ -888,7 +927,7 @@ struct SettingsView: View {
                     Button(role: .destructive) {
                         showLogoutAlert = true
                     } label: {
-                        HStack { Spacer(); Text("Đăng xuất"); Spacer() }
+                        HStack { Spacer(); Text(T("Đăng xuất")); Spacer() }
                     }
                 }
 
@@ -897,28 +936,28 @@ struct SettingsView: View {
                     NavigationLink {
                         DeleteAccountView()
                     } label: {
-                        Text("Xoá tài khoản")
+                        Text(T("Xoá tài khoản"))
                             .foregroundColor(AppColors.error)
                     }
                 } footer: {
-                    Text("Xoá vĩnh viễn tài khoản và dữ liệu cá nhân của bạn.")
+                    Text(T("Xoá vĩnh viễn tài khoản và dữ liệu cá nhân của bạn."))
                 }
             }
-            .navigationTitle("Cài đặt")
+            .navigationTitle(T("Cài đặt"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Đóng") { dismiss() }
+                    Button(T("Đóng")) { dismiss() }
                 }
             }
-            .alert("Đăng xuất", isPresented: $showLogoutAlert) {
-                Button("Hủy", role: .cancel) { }
-                Button("Đăng xuất", role: .destructive) {
+            .alert(T("Đăng xuất"), isPresented: $showLogoutAlert) {
+                Button(T("Hủy"), role: .cancel) { }
+                Button(T("Đăng xuất"), role: .destructive) {
                     appState.logout()
                     dismiss()
                 }
             } message: {
-                Text("Bạn có chắc muốn đăng xuất không?")
+                Text(T("Bạn có chắc muốn đăng xuất không?"))
             }
         }
     }

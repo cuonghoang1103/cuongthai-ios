@@ -45,6 +45,7 @@ struct CuongThaiApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     @StateObject private var appState = AppState.shared
     @StateObject private var giaoDien = QuanLyGiaoDien.shared
+    @StateObject private var ngonNgu = QuanLyNgonNguApp.shared
     @Environment(\.scenePhase) private var scenePhase
 
     init() { NhatKy.xoaCu() }
@@ -58,6 +59,15 @@ struct CuongThaiApp: App {
                 // `nil` = để iOS quyết định. Màu của app vốn đã thích ứng nên
                 // chỉ cần một dòng này là cả app đổi theo.
                 .preferredColorScheme(giaoDien.mauSac)
+                // ⚠️ `.id(...)` dựng lại TOÀN BỘ cây khi đổi ngôn ngữ.
+                //
+                // `T(...)` là hàm thường, không phải `@Published`, nên
+                // SwiftUI không có cách nào biết chữ vừa đổi — thiếu dòng này
+                // thì bấm sang English xong màn hình vẫn y nguyên tiếng Việt
+                // cho tới khi vô tình chuyển màn. Cái giá: trạng thái tạm của
+                // màn đang mở bị dựng lại. Đổi ngôn ngữ là việc hiếm, và dựng
+                // lại còn ĐÚNG hơn là để nửa màn hai thứ tiếng.
+                .id(ngonNgu.ngonNgu)
                 .onChange(of: scenePhase) { _, moi in
                     // Máy ngủ qua mốc 6h/18h thì `Timer` không chạy — tính lại
                     // khi quay lại, không thì mở app buổi tối vẫn thấy nền sáng.
