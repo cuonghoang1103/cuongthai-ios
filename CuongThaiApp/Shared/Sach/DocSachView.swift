@@ -1,5 +1,6 @@
 import SwiftUI
 import WebKit
+import SafariServices
 
 // ════════════════════════════════════════════════════════════════
 // ĐỌC SÁCH
@@ -42,6 +43,8 @@ struct DocSachView: View {
     @State private var dangTai = true
     @State private var loi: String?
     @State private var nhayToi: String?
+    /// Bật khi bộ đọc trong app chịu thua — mở bằng Safari ngay trong app.
+    @State private var moSafari = false
 
     private var cheDo: CheDoChu { CheDoChu(rawValue: maCheDo) ?? .anh }
 
@@ -78,11 +81,9 @@ struct DocSachView: View {
                         .foregroundColor(AppColors.textSecondary)
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
-                    if let u = sach.duongSach {
-                        Link("Mở bằng trình duyệt", destination: u)
-                            .font(.system(size: 14, weight: .semibold))
-                            .padding(.top, Spacing.xs)
-                    }
+                    Button("Mở bằng trình duyệt") { moSafari = true }
+                        .font(.system(size: 14, weight: .semibold))
+                        .padding(.top, Spacing.xs)
                 }
                 .padding(Spacing.xl)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -117,6 +118,18 @@ struct DocSachView: View {
                 Button { hienMucLuc = true } label: { Image(systemName: "list.bullet") }
                     .disabled(mucLuc.isEmpty)
             }
+        }
+        // ⚠️ Bộ đọc trong app chịu thua thì MỞ SAFARI LUÔN, đừng bắt người
+        // dùng bấm thêm một nút nữa. Họ đã chờ qua ba lần thử rồi.
+        //
+        // Vì sao Safari qua được: `SFSafariViewController` chạy trong tiến
+        // trình RIÊNG của hệ thống, ngân sách bộ nhớ lớn hơn hẳn WebView nhúng
+        // trong app. Cùng một trang 1 MB, chỗ này chết chỗ kia không.
+        .onChange(of: loi) { _, m in
+            if m != nil { moSafari = true }
+        }
+        .fullScreenCover(isPresented: $moSafari) {
+            if let u = sach.duongSach { KhungSafari(duong: u).ignoresSafeArea() }
         }
         .sheet(isPresented: $hienMucLuc) {
             MucLucSachView(mucLuc: mucLuc, mau: sach.mau, cheDo: cheDo) { m in
@@ -578,4 +591,19 @@ private struct KhungSach: UIViewRepresentable {
         })();
         """ }
     }
+}
+
+
+// MARK: - Safari trong app
+
+/// Đường lùi cuối cùng cho sách quá nặng. Giữ người dùng ở TRONG app thay vì
+/// đá sang Safari ngoài rồi mất chỗ đang đọc.
+private struct KhungSafari: UIViewControllerRepresentable {
+    let duong: URL
+    func makeUIViewController(context: Context) -> SFSafariViewController {
+        let c = SFSafariViewController.Configuration()
+        c.entersReaderIfAvailable = false
+        return SFSafariViewController(url: duong, configuration: c)
+    }
+    func updateUIViewController(_ v: SFSafariViewController, context: Context) {}
 }
