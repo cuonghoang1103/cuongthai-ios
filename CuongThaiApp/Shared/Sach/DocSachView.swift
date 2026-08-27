@@ -380,7 +380,16 @@ private struct KhungSach: UIViewRepresentable {
                   var td = sec.querySelector('h2') || sec.querySelector('h1.chap-title');
                   if (!td) return;
                   var v = bang[bam((td.textContent || '').replace(/\\s+/g, ' ').trim())];
-                  if (v) tuaVi[n] = v;
+                  // ⚠️ Bản dịch mang thẻ HTML (`<b>`, `<code>`,
+                  // `<span class="n">`). Trong TRANG thì chèn bằng
+                  // `innerHTML` là đúng, nhưng mục lục là `Text` của SwiftUI
+                  // — đưa thẳng vào là hiện ra nguyên `<b>Encapsulation</b>`.
+                  // Dựng tạm một thẻ rồi lấy `textContent` để còn CHỮ THUẦN.
+                  if (v) {
+                    var tmp = document.createElement('div');
+                    tmp.innerHTML = v;
+                    tuaVi[n] = (tmp.textContent || '').replace(/\\s+/g, ' ').trim();
+                  }
                 });
                 window.ctsTuaVi = tuaVi;
                 guiMucLuc();
@@ -410,18 +419,31 @@ private struct KhungSach: UIViewRepresentable {
             }).catch(function () { daNap = false; });
           }
 
+          // ⚠️ Nhảy tới chương bằng ID, KHÔNG mò thẻ <a> và KHÔNG dùng chỉ
+          // số mảng.
+          //
+          // Bản đầu tìm hàng mục lục rồi bấm thẻ <a> bên trong — nhưng
+          // `.toc-row` KHÔNG có <a> nào cả (đo thật), nên nhánh đó không bao
+          // giờ chạy. Nhánh dự phòng thì lấy `.chap[k-1]`, tức lại ghép theo
+          // vị trí — đúng cái bẫy đã làm mục lục gán nhầm tựa chương.
+          //
+          // Mỗi chương có `id="ch<số>"`, tra thẳng là xong.
           window.ctsNhayToi = function (n) {
+            var sec = document.getElementById('ch' + n);
+            if (sec && sec.scrollIntoView) {
+              sec.scrollIntoView({ block: 'start' });
+              return;
+            }
+            // Không thấy id thì so số ở mục lục rồi cuộn tới chính hàng đó,
+            // còn hơn là không nhúc nhích.
             var hang = document.querySelectorAll('.toc-row');
             for (var i = 0; i < hang.length; i++) {
-              var s = hang[i].querySelector('.toc-n');
-              if (s && s.textContent.trim() === n) {
-                var a = hang[i].querySelector('a') || hang[i];
-                if (a.click) { a.click(); return; }
+              var sn = hang[i].querySelector('.toc-n');
+              if (sn && sn.textContent.trim() === n) {
+                hang[i].scrollIntoView({ block: 'start' });
+                return;
               }
             }
-            var ch = document.querySelectorAll('.chap');
-            var k = parseInt(n, 10);
-            if (!isNaN(k) && ch[k - 1]) ch[k - 1].scrollIntoView({ block: 'start' });
           };
 
           function guiMucLuc() {
