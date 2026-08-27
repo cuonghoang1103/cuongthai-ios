@@ -40,6 +40,7 @@ struct DocSachView: View {
     @State private var hienMucLuc = false
     @State private var tienDo: Double = 0
     @State private var dangTai = true
+    @State private var loi: String?
     @State private var nhayToi: String?
 
     private var cheDo: CheDoChu { CheDoChu(rawValue: maCheDo) ?? .anh }
@@ -53,7 +54,8 @@ struct DocSachView: View {
                           nhayToi: $nhayToi,
                           mucLuc: $mucLuc,
                           tienDo: $tienDo,
-                          dangTai: $dangTai)
+                          dangTai: $dangTai,
+                          loi: $loi)
                     .ignoresSafeArea(edges: .bottom)
             }
             // Thanh tiến độ mảnh, bám mép trên — biết đang ở đâu trong 800
@@ -64,9 +66,36 @@ struct DocSachView: View {
                     .frame(width: g.size.width * tienDo, height: 2.5)
             }
             .frame(height: 2.5)
-            if dangTai {
-                ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(AppColors.backgroundPrimary)
+            if let l = loi {
+                VStack(spacing: Spacing.sm) {
+                    Image(systemName: "wifi.exclamationmark")
+                        .font(.system(size: 40)).foregroundColor(AppColors.textTertiary)
+                    Text("Không mở được sách")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(AppColors.textPrimary)
+                    Text(l)
+                        .font(.system(size: 13))
+                        .foregroundColor(AppColors.textSecondary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if let u = sach.duongSach {
+                        Link("Mở bằng trình duyệt", destination: u)
+                            .font(.system(size: 14, weight: .semibold))
+                            .padding(.top, Spacing.xs)
+                    }
+                }
+                .padding(Spacing.xl)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(AppColors.backgroundPrimary)
+            } else if dangTai {
+                VStack(spacing: Spacing.sm) {
+                    ProgressView()
+                    Text("Đang tải sách…")
+                        .font(.system(size: 13))
+                        .foregroundColor(AppColors.textTertiary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(AppColors.backgroundPrimary)
             }
         }
         .background(AppColors.backgroundPrimary)
@@ -152,6 +181,7 @@ private struct KhungSach: UIViewRepresentable {
     @Binding var mucLuc: [MucLucSach]
     @Binding var tienDo: Double
     @Binding var dangTai: Bool
+    @Binding var loi: String?
 
     func makeCoordinator() -> Dieu { Dieu(self) }
 
@@ -191,6 +221,23 @@ private struct KhungSach: UIViewRepresentable {
             let dich = cha.duongDich?.absoluteString ?? ""
             v.evaluateJavaScript(Self.kichBan(duongDich: dich, cheDo: cha.cheDo.rawValue))
             cheDoDaApDung = cha.cheDo
+            // ⚠️ Tắt vòng xoay NGAY Ở ĐÂY, đừng đợi JS gửi mục lục về.
+            //
+            // Bản đầu chỉ hạ `dangTai` khi nhận được tin `mucLuc` — nghĩa là
+            // JS ném lỗi, hoặc cuốn sách không có khối `.toc-row`, hoặc cầu
+            // `webkit.messageHandlers` chưa sẵn sàng, là vòng xoay quay MÃI
+            // MÃI dù trang đã hiện xong bên dưới. Người dùng báo đúng cảnh
+            // này. Trang đã dựng xong thì phải cho người ta thấy trang.
+            Task { @MainActor in cha.dangTai = false; cha.loi = nil }
+        }
+
+        // Không có hai hàm này thì mất mạng giữa chừng = vòng xoay vĩnh viễn,
+        // không một lời giải thích.
+        func webView(_ v: WKWebView, didFail nav: WKNavigation!, withError e: Error) {
+            Task { @MainActor in cha.dangTai = false; cha.loi = e.localizedDescription }
+        }
+        func webView(_ v: WKWebView, didFailProvisionalNavigation nav: WKNavigation!, withError e: Error) {
+            Task { @MainActor in cha.dangTai = false; cha.loi = e.localizedDescription }
         }
 
         func userContentController(_ u: WKUserContentController, didReceive m: WKScriptMessage) {
@@ -201,7 +248,6 @@ private struct KhungSach: UIViewRepresentable {
                         guard let n = $0["n"], let t = $0["t"] else { return nil }
                         return MucLucSach(id: n, tua: t)
                     }
-                    cha.dangTai = false
                 }
                 if let p = d["tienDo"] as? Double { cha.tienDo = min(1, max(0, p)) }
             }

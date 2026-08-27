@@ -111,44 +111,144 @@ struct ThuVienSachView: View {
     }
 
     // ── Bìa sách ─────────────────────────────────────────────────
+    //
+    // Dựng lại BÌA VẢI ÉP NHŨ của web bằng SwiftUI thuần. Web làm bằng CSS:
+    // nền `color-mix(--c 80%, #14121b)` + hai lớp sáng chếch · sợi linen bằng
+    // hai lưới `repeating-linear-gradient` trộn soft-light · khung nhũ ép chìm
+    // cách mép · gáy sách 18px · logo hãng phủ `-webkit-mask` ăn màu nhũ ·
+    // tựa chữ nhũ serif.
+    //
+    // Bản đầu tôi làm nền phẳng + chữ trắng, người dùng nói ngay là "trên web
+    // có ảnh bìa đẹp mà app không có". Đúng — bìa mới là thứ làm nó ra dáng
+    // sách chứ không phải cái thẻ màu.
     private func bia(_ s: Sach) -> some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
             ZStack(alignment: .topLeading) {
-                // Gáy sách: dải đậm bên trái, đúng dáng bìa cứng nhìn nghiêng.
-                RoundedRectangle(cornerRadius: CornerRadius.medium)
-                    .fill(LinearGradient(colors: [s.mau, s.mau.opacity(0.72)],
-                                         startPoint: .topLeading, endPoint: .bottomTrailing))
-                HStack(spacing: 0) {
-                    Rectangle().fill(.black.opacity(0.22)).frame(width: 9)
-                    Spacer(minLength: 0)
-                }
-                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
-
-                VStack(alignment: .leading, spacing: Spacing.xs) {
-                    Text("VOL \(s.vol)")
-                        .font(.system(size: 10, weight: .heavy).monospacedDigit())
-                        .kerning(1.2)
-                        .foregroundColor(.white.opacity(0.85))
-                    Spacer(minLength: 0)
-                    Text(s.tua)
-                        .font(.system(size: 14, weight: .bold, design: .serif))
-                        .foregroundColor(.white)
-                        .lineLimit(4)
-                        .multilineTextAlignment(.leading)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .padding(.leading, Spacing.md + 6)
-                .padding([.trailing, .top, .bottom], Spacing.md)
+                nenVai(s)
+                soiLinen
+                khungNhu
+                gay(s)
+                noiDungBia(s)
             }
-            .frame(height: 168)
-            .overlay(RoundedRectangle(cornerRadius: CornerRadius.medium)
-                .strokeBorder(.white.opacity(0.14), lineWidth: 1))
+            .frame(height: 232)
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .strokeBorder(.black.opacity(0.45), lineWidth: 1))
+            .shadow(color: .black.opacity(0.5), radius: 10, x: -3, y: 6)
 
             Text("\(s.soChuong) chương · \(s.soBaiTap) bài tập")
                 .font(.system(size: 11))
                 .foregroundColor(AppColors.textTertiary)
                 .lineLimit(1)
         }
+    }
+
+    /// Nhũ vàng — cố định, KHÔNG theo chế độ sáng/tối của app. Bìa sách thật
+    /// không đổi màu theo đèn phòng.
+    private static let nhu = Color(hex: 0xE6C583)
+    private static let nhuSang = Color(hex: 0xF5E7C2)
+
+    private func nenVai(_ s: Sach) -> some View {
+        // `color-mix(in oklab, var(--c) 80%, #14121b)` — trộn 80% màu tập với
+        // nền tối, cho ra tông vải sâu thay vì màu tươi.
+        ZStack {
+            s.mau.opacity(0.8)
+            Color(hex: 0x14121B).opacity(0.55)
+            LinearGradient(colors: [.white.opacity(0.12), .clear],
+                           startPoint: .topLeading, endPoint: .center)
+            LinearGradient(colors: [.black.opacity(0.4), .clear],
+                           startPoint: .bottomTrailing, endPoint: .center)
+        }
+    }
+
+    /// Sợi vải: hai lưới kẻ mảnh 1px cách 3px, một ngang một dọc.
+    private var soiLinen: some View {
+        Canvas { ctx, cd in
+            var ngang = Path()
+            var y: CGFloat = 0
+            while y < cd.height { ngang.addRect(CGRect(x: 0, y: y, width: cd.width, height: 1)); y += 3 }
+            ctx.fill(ngang, with: .color(.black.opacity(0.07)))
+            var doc = Path()
+            var x: CGFloat = 0
+            while x < cd.width { doc.addRect(CGRect(x: x, y: 0, width: 1, height: cd.height)); x += 3 }
+            ctx.fill(doc, with: .color(.white.opacity(0.05)))
+        }
+        .allowsHitTesting(false)
+    }
+
+    private var khungNhu: some View {
+        RoundedRectangle(cornerRadius: 2)
+            .strokeBorder(Self.nhu.opacity(0.42), lineWidth: 1)
+            .padding(EdgeInsets(top: 11, leading: 25, bottom: 11, trailing: 11))
+            .allowsHitTesting(false)
+    }
+
+    /// Gáy sách bên trái: tông sâu hơn, số tập ép nhũ, hai vạch nhũ.
+    private func gay(_ s: Sach) -> some View {
+        HStack(spacing: 0) {
+            ZStack {
+                LinearGradient(colors: [.black.opacity(0.55), .black.opacity(0.28)],
+                               startPoint: .leading, endPoint: .trailing)
+                VStack(spacing: 5) {
+                    Rectangle().fill(Self.nhu.opacity(0.55)).frame(width: 10, height: 0.8)
+                    Text(s.vol)
+                        .font(.system(size: 10, weight: .heavy, design: .serif).monospacedDigit())
+                        .foregroundColor(Self.nhuSang)
+                    Rectangle().fill(Self.nhu.opacity(0.55)).frame(width: 10, height: 0.8)
+                    Spacer(minLength: 0)
+                }
+                .padding(.top, 12)
+            }
+            .frame(width: 18)
+            Spacer(minLength: 0)
+        }
+        .allowsHitTesting(false)
+    }
+
+    private func noiDungBia(_ s: Sach) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("CUONGTHAI")
+                .font(.system(size: 7, weight: .semibold))
+                .kerning(1.4)
+                .foregroundColor(Self.nhu.opacity(0.75))
+
+            // Dấu ấn giữa bìa: logo hãng vẽ từ path SVG, tô bằng gradient nhũ
+            // — đúng vai trò của `-webkit-mask` bên web.
+            Spacer(minLength: 0)
+            HStack {
+                Spacer(minLength: 0)
+                if let d = LogoSach.choTap(s.vol) {
+                    HinhSVG(d: d)
+                        .fill(LinearGradient(colors: [Self.nhuSang, Self.nhu],
+                                             startPoint: .top, endPoint: .bottom))
+                        .frame(width: 52, height: 52)
+                        .shadow(color: .black.opacity(0.4), radius: 0, x: 0, y: 1)
+                } else {
+                    // Bốn tập là khái niệm thuần, web cũng không có logo hãng.
+                    Image(systemName: "book.closed")
+                        .font(.system(size: 34, weight: .light))
+                        .foregroundStyle(LinearGradient(colors: [Self.nhuSang, Self.nhu],
+                                                        startPoint: .top, endPoint: .bottom))
+                }
+                Spacer(minLength: 0)
+            }
+            Spacer(minLength: 0)
+
+            Text(s.tua)
+                .font(.system(size: 13.5, weight: .bold, design: .serif))
+                .foregroundColor(Self.nhuSang)
+                .lineLimit(3)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+                .shadow(color: .black.opacity(0.4), radius: 0, x: 0, y: 1)
+            Divider().overlay(.white.opacity(0.14)).padding(.top, 7)
+            Text("VOL \(s.vol) · \(s.soTu) từ")
+                .font(.system(size: 9))
+                .kerning(0.4)
+                .foregroundColor(.white.opacity(0.6))
+                .padding(.top, 6)
+        }
+        .padding(EdgeInsets(top: 18, leading: 32, bottom: 16, trailing: 16))
     }
 }
 
