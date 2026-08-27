@@ -37,6 +37,11 @@ struct CoursesView: View {
                     // khác với Academy/Ngoại ngữ là "học".
                     CodeLabEntryCard()
 
+                    // Bộ sách 25 tập: 412 chương, 809.780 từ, song ngữ Anh–Việt
+                    // phủ 100%. Đọc trên điện thoại hợp hơn hẳn — sách dài,
+                    // người ta đọc lúc nằm chứ không ngồi trước máy.
+                    SachEntryCard()
+
                     // Mẩu mã: 48/51 mẩu là hướng dẫn cài môi trường bằng
                     // TIẾNG VIỆT kèm lệnh chép được — thứ người ta tra trên
                     // điện thoại đúng lúc đang dựng máy, không phải lúc ngồi
