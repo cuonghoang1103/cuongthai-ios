@@ -225,6 +225,9 @@ private struct KhungSach: UIViewRepresentable {
     final class Dieu: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
         let cha: KhungSach
         var cheDoDaApDung: CheDoChu?
+        /// Kịch bản đã gắn vào TRANG HIỆN TẠI chưa. Tải lại trang là mất hết,
+        /// phải gắn lại.
+        var daGanLai = false
         init(_ cha: KhungSach) { self.cha = cha }
 
         func webView(_ v: WKWebView, didFinish nav: WKNavigation!) {
@@ -250,6 +253,22 @@ private struct KhungSach: UIViewRepresentable {
             Task { @MainActor in cha.dangTai = false; cha.loi = e.localizedDescription }
         }
 
+        /// ⚠️ Tiến trình nội dung của WebView BỊ GIẾT — thường do sách quá
+        /// nặng (tập 25 là 1,0 MB HTML, 4.621 khối dịch) gặp lúc máy đang
+        /// thiếu bộ nhớ. Khi đó `WKWebView` không báo lỗi gì cả: nó chỉ
+        /// **trắng/đen trơn**, không `didFail`, không gì. Người dùng thấy màn
+        /// đen mãi và tưởng app treo.
+        ///
+        /// Không cài hàm này thì KHÔNG có đường nào biết chuyện đó xảy ra.
+        func webViewWebContentProcessDidTerminate(_ v: WKWebView) {
+            Task { @MainActor in
+                cha.dangTai = true
+                cha.loi = nil
+            }
+            daGanLai = false
+            v.reload()
+        }
+
         func userContentController(_ u: WKUserContentController, didReceive m: WKScriptMessage) {
             guard let d = m.body as? [String: Any] else { return }
             Task { @MainActor in
@@ -261,6 +280,10 @@ private struct KhungSach: UIViewRepresentable {
                     }
                 }
                 if let p = d["tienDo"] as? Double { cha.tienDo = min(1, max(0, p)) }
+                // Lỗi trong JS không nổi lên đâu cả nếu không tự gửi về.
+                if let e = d["loiJS"] as? String {
+                    NhatKy.sach.error("JS — \(e)")
+                }
             }
         }
 
@@ -271,6 +294,13 @@ private struct KhungSach: UIViewRepresentable {
         static func kichBan(duongDich: String, cheDo: String) -> String { """
         (function () {
           if (window.ctsDaGan) return; window.ctsDaGan = true;
+          function bao(e) {
+            try {
+              webkit.messageHandlers.sach.postMessage({ loiJS: String(e && e.message || e) });
+            } catch (x) {}
+          }
+          window.addEventListener('error', function (ev) { bao(ev.message); });
+          try {
 
           var st = document.createElement('style');
           st.textContent = [
@@ -284,7 +314,13 @@ private struct KhungSach: UIViewRepresentable {
             '       padding-right: 16px !important; }',
             /* Bảng và khối lệnh phải CUỘN NGANG được, không thì tràn ra ngoài
                và cả trang bị kéo lệch. */
-            'pre, table, .terminal { max-width: 100%; overflow-x: auto; }',
+            /* ⚠️ `overflow-x` đặt thẳng lên <table> KHÔNG tạo vùng cuộn —
+               thẻ table không phải khối cuộn được. Phải BỌC nó (xem
+               `bocBangCuon` bên dưới). `pre`/`.terminal` là khối nên đặt
+               thẳng được. */
+            'pre, .terminal { max-width: 100%; overflow-x: auto; }',
+            '.ctsCuon { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }',
+            '.ctsCuon > table { max-width: none; }',
             ':root { --cts-gold: oklch(52% 0.13 82); }',
             '@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --cts-gold: oklch(80% 0.12 82); } }',
             ':root[data-theme="dark"] { --cts-gold: oklch(80% 0.12 82); }',
@@ -416,7 +452,7 @@ private struct KhungSach: UIViewRepresentable {
                 v.innerHTML = vi;
                 el.appendChild(v);
               });
-            }).catch(function () { daNap = false; });
+            }).catch(function (e) { daNap = false; bao('tải bản dịch hỏng: ' + e); });
           }
 
           // ⚠️ Nhảy tới chương bằng ID, KHÔNG mò thẻ <a> và KHÔNG dùng chỉ
@@ -446,6 +482,20 @@ private struct KhungSach: UIViewRepresentable {
             }
           };
 
+          /// Bọc mỗi <table> vào một khối cuộn ngang riêng.
+          ///
+          /// Không bọc thì bảng rộng đẩy cả trang giãn ra, chữ hai bên bị cắt
+          /// mép — thấy rõ ở bảng "TRƯỜNG · VÍ DỤ · NÓ QUYẾT ĐỊNH" của tập 25.
+          function bocBangCuon() {
+            document.querySelectorAll('table').forEach(function (t) {
+              if (t.parentElement && t.parentElement.classList.contains('ctsCuon')) return;
+              var h = document.createElement('div');
+              h.className = 'ctsCuon';
+              t.parentNode.insertBefore(h, t);
+              h.appendChild(t);
+            });
+          }
+
           function guiMucLuc() {
             var ra = [];
             document.querySelectorAll('.toc-row').forEach(function (r) {
@@ -474,8 +524,10 @@ private struct KhungSach: UIViewRepresentable {
             }, 120);
           }, { passive: true });
 
+          bocBangCuon();
           guiMucLuc();
           window.ctsDatCheDo('\(cheDo)');
+          } catch (e) { bao(e); }
         })();
         """ }
     }
