@@ -119,7 +119,7 @@ struct DocSachView: View {
             }
         }
         .sheet(isPresented: $hienMucLuc) {
-            MucLucSachView(mucLuc: mucLuc, mau: sach.mau) { m in
+            MucLucSachView(mucLuc: mucLuc, mau: sach.mau, cheDo: cheDo) { m in
                 nhayToi = m.id
                 hienMucLuc = false
             }
@@ -130,6 +130,15 @@ struct DocSachView: View {
 struct MucLucSach: Identifiable, Hashable {
     let id: String      // số chương, dùng luôn làm mã nhảy tới
     let tua: String
+    /// Tựa tiếng Việt, `nil` khi cuốn đó chưa có bản dịch tiêu đề chương.
+    var tuaVi: String?
+
+    /// ⚠️ Chế độ SONG NGỮ giữ tựa tiếng Anh — người dùng yêu cầu vậy: đang
+    /// đọc đối chiếu thì mục lục phải khớp với tiêu đề tiếng Anh trên trang.
+    /// Chỉ chế độ VI mới đổi.
+    func hien(_ c: CheDoChu) -> String {
+        c == .viet ? (tuaVi ?? tua) : tua
+    }
 }
 
 // MARK: - Mục lục
@@ -137,6 +146,7 @@ struct MucLucSach: Identifiable, Hashable {
 private struct MucLucSachView: View {
     let mucLuc: [MucLucSach]
     let mau: Color
+    let cheDo: CheDoChu
     let chon: (MucLucSach) -> Void
     @Environment(\.dismiss) private var dong
 
@@ -149,7 +159,7 @@ private struct MucLucSachView: View {
                             .font(.system(size: 13, weight: .bold).monospacedDigit())
                             .foregroundColor(mau)
                             .frame(width: 30, alignment: .leading)
-                        Text(m.tua)
+                        Text(m.hien(cheDo))
                             .font(.system(size: 15))
                             .foregroundColor(AppColors.textPrimary)
                             .multilineTextAlignment(.leading)
@@ -246,7 +256,8 @@ private struct KhungSach: UIViewRepresentable {
                 if let ml = d["mucLuc"] as? [[String: String]] {
                     cha.mucLuc = ml.compactMap {
                         guard let n = $0["n"], let t = $0["t"] else { return nil }
-                        return MucLucSach(id: n, tua: t)
+                        let vi = $0["vi"]
+                        return MucLucSach(id: n, tua: t, tuaVi: (vi?.isEmpty == false) ? vi : nil)
                     }
                 }
                 if let p = d["tienDo"] as? Double { cha.tienDo = min(1, max(0, p)) }
@@ -330,6 +341,51 @@ private struct KhungSach: UIViewRepresentable {
             fetch('\(duongDich)').then(function (r) { return r.json(); }).then(function (d) {
               var bang = {};
               (d.blocks || []).forEach(function (b) { bang[b.h] = b.vi; });
+
+              // ── Tựa chương tiếng Việt cho mục lục ───────────────
+              //
+              // ⚠️ PHẢI làm TRƯỚC vòng chèn bên dưới. Chèn xong rồi thì
+              // `textContent` của tiêu đề lẫn CẢ Anh LẪN Việt (span `.ctsVi`
+              // tuy `display:none` vẫn tính vào `textContent`), băm ra hash
+              // khác và không tra được gì.
+              //
+              // ⚠️ Tra qua thẻ tiêu đề CỦA CHÍNH CHƯƠNG, không so chữ với
+              // `.toc-t`: đo trên 25 cuốn thì khoảng nửa số chương có chữ ở
+              // mục lục hơi khác chữ tiêu đề thật.
+              //
+              // Đo 25/08/2026: 11/25 cuốn tra được ĐỦ. 14 cuốn còn lại
+              // (tập 12–25) dùng `<h1 class="chap-title">` nằm NGOÀI `.col`
+              // nên tiêu đề chương chưa từng được trích để dịch — những cuốn
+              // đó mục lục GIỮ tiếng Anh, không để trống.
+              try {
+                // ⚠️⚠️ Ghép theo SỐ CHƯƠNG, TUYỆT ĐỐI không theo vị trí.
+                //
+                // Thứ tự các hàng `.toc-row` KHÔNG trùng thứ tự các
+                // `section.chap-open` trong DOM. Đo thật trên tập 09 (Git):
+                // mục lục chạy 0,1,…,7,9,8,10,13,11,12,14,… trong khi các
+                // section chạy ch0…ch16 đều tăm tắp — lệch 5/17 chương.
+                // Ghép theo vị trí là gán tựa chương 9 cho chương 8, và cái
+                // sai đó KHÔNG lộ ra ở đâu cả: mục lục vẫn đầy đủ, vẫn tiếng
+                // Việt, chỉ là sai chương.
+                //
+                // Mỗi section có `id="ch<số>"` nên tra thẳng bằng số ở
+                // `.toc-n` là chính xác tuyệt đối.
+                var tuaVi = {};
+                document.querySelectorAll('.toc-row').forEach(function (r) {
+                  var sn = r.querySelector('.toc-n');
+                  if (!sn) return;
+                  var n = sn.textContent.trim();
+                  var sec = document.getElementById('ch' + n);
+                  if (!sec) return;
+                  var td = sec.querySelector('h2') || sec.querySelector('h1.chap-title');
+                  if (!td) return;
+                  var v = bang[bam((td.textContent || '').replace(/\\s+/g, ' ').trim())];
+                  if (v) tuaVi[n] = v;
+                });
+                window.ctsTuaVi = tuaVi;
+                guiMucLuc();
+              } catch (e) { /* mục lục giữ tiếng Anh, không chặn phần dịch */ }
+
               layKhoi().forEach(function (el) {
                 if (el.dataset.ctsXong) return;
                 var vi = bang[bam((el.textContent || '').replace(/\\s+/g, ' ').trim())];
@@ -376,7 +432,11 @@ private struct KhungSach: UIViewRepresentable {
               var c = t.cloneNode(true);
               c.querySelectorAll('small').forEach(function (s) { s.remove(); });
               var tua = (c.textContent || '').replace(/\\s+/g, ' ').trim();
-              if (tua) ra.push({ n: n.textContent.trim(), t: tua });
+              if (tua) {
+                var so = n.textContent.trim();
+                ra.push({ n: so, t: tua,
+                          vi: (window.ctsTuaVi && window.ctsTuaVi[so]) || '' });
+              }
             });
             webkit.messageHandlers.sach.postMessage({ mucLuc: ra });
           }
