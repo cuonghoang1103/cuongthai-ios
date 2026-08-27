@@ -212,7 +212,9 @@ private struct KhungSach: UIViewRepresentable {
     func updateUIView(_ v: WKWebView, context: Context) {
         // Đổi chế độ chữ: chỉ bật/tắt lớp CSS, KHÔNG tải lại trang — tải lại
         // là mất vị trí đang đọc giữa cuốn 800 trang.
-        if context.coordinator.cheDoDaApDung != cheDo {
+        // Đang ở chế độ rút gọn vì máy hết bộ nhớ thì ĐỪNG bật lại song ngữ,
+        // không thì lại giết tiếp.
+        if !context.coordinator.boSongNgu, context.coordinator.cheDoDaApDung != cheDo {
             context.coordinator.cheDoDaApDung = cheDo
             v.evaluateJavaScript("window.ctsDatCheDo && window.ctsDatCheDo('\(cheDo.rawValue)')")
         }
@@ -225,15 +227,19 @@ private struct KhungSach: UIViewRepresentable {
     final class Dieu: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
         let cha: KhungSach
         var cheDoDaApDung: CheDoChu?
-        /// Kịch bản đã gắn vào TRANG HIỆN TẠI chưa. Tải lại trang là mất hết,
-        /// phải gắn lại.
-        var daGanLai = false
+        /// Số lần tiến trình nội dung bị giết trong PHIÊN ĐỌC này.
+        var soLanChet = 0
+        /// Bật lên sau lần chết thứ hai: tải lại mà KHÔNG ghép song ngữ nữa.
+        var boSongNgu = false
         init(_ cha: KhungSach) { self.cha = cha }
 
         func webView(_ v: WKWebView, didFinish nav: WKNavigation!) {
             let dich = cha.duongDich?.absoluteString ?? ""
-            v.evaluateJavaScript(Self.kichBan(duongDich: dich, cheDo: cha.cheDo.rawValue))
-            cheDoDaApDung = cha.cheDo
+            // Sau hai lần bị giết thì ép EN: bỏ hẳn phần chèn bản dịch, thứ
+            // nặng nhất trong cả kịch bản.
+            let che = boSongNgu ? CheDoChu.anh : cha.cheDo
+            v.evaluateJavaScript(Self.kichBan(duongDich: dich, cheDo: che.rawValue))
+            cheDoDaApDung = che
             // ⚠️ Tắt vòng xoay NGAY Ở ĐÂY, đừng đợi JS gửi mục lục về.
             //
             // Bản đầu chỉ hạ `dangTai` khi nhận được tin `mucLuc` — nghĩa là
@@ -260,12 +266,36 @@ private struct KhungSach: UIViewRepresentable {
         /// đen mãi và tưởng app treo.
         ///
         /// Không cài hàm này thì KHÔNG có đường nào biết chuyện đó xảy ra.
+        /// ⚠️⚠️ CÓ TRẦN. Tải lại vô điều kiện là VÒNG LẶP VÔ TẬN.
+        ///
+        /// Bản trước gọi thẳng `reload()` mỗi lần tiến trình nội dung bị giết.
+        /// Nhưng thứ giết nó là chính cuốn sách nặng — tải lại thì nó lại bị
+        /// giết, lại tải lại… Người dùng thấy "đang tải → hiện sách → đang
+        /// tải" quay mãi. Đúng lỗi tôi vừa gây ra.
+        ///
+        /// Nay:
+        ///   lần 1 → tải lại như cũ (giết một lần có thể chỉ là máy nhất thời
+        ///           thiếu bộ nhớ)
+        ///   lần 2 → tải lại nhưng BỎ phần ghép song ngữ. Đó là thứ nặng
+        ///           nhất: tập 25 chèn ~3.500 thẻ mới vào một trang đã 1 MB.
+        ///           Đọc được bản tiếng Anh vẫn hơn là không đọc được gì.
+        ///   lần 3 → thôi, báo lỗi kèm nút mở bằng trình duyệt.
         func webViewWebContentProcessDidTerminate(_ v: WKWebView) {
+            soLanChet += 1
+            NhatKy.sach.error("tiến trình nội dung bị giết lần \(soLanChet)")
+            guard soLanChet < 3 else {
+                Task { @MainActor in
+                    cha.dangTai = false
+                    cha.loi = "Cuốn này quá nặng so với bộ nhớ còn trống của máy. "
+                            + "Đóng bớt ứng dụng khác rồi thử lại, hoặc mở bằng trình duyệt."
+                }
+                return
+            }
+            if soLanChet == 2 { boSongNgu = true }
             Task { @MainActor in
                 cha.dangTai = true
                 cha.loi = nil
             }
-            daGanLai = false
             v.reload()
         }
 
@@ -431,7 +461,23 @@ private struct KhungSach: UIViewRepresentable {
                 guiMucLuc();
               } catch (e) { /* mục lục giữ tiếng Anh, không chặn phần dịch */ }
 
-              layKhoi().forEach(function (el) {
+              // ⚠️ Chèn theo TỪNG MẺ, không làm một lượt.
+              //
+              // Tập 25 có 4.863 khối và ~3.500 khối khớp bản dịch: chèn hết
+              // trong một vòng là dựng ~7.000 thẻ mới vào một trang đã 1 MB,
+              // khoá luồng chính vài giây và dựng đỉnh bộ nhớ — đúng lúc
+              // iOS ra tay giết tiến trình nội dung. Cắt thành mẻ 150 khối,
+              // nhường máy giữa các mẻ bằng `requestAnimationFrame`.
+              var ds = layKhoi();
+              var vt = 0;
+              function meKe() {
+                var het = Math.min(vt + 150, ds.length);
+                for (; vt < het; vt++) chenMot(ds[vt]);
+                if (vt < ds.length) {
+                  (window.requestAnimationFrame || setTimeout)(meKe, 0);
+                }
+              }
+              function chenMot(el) {
                 if (el.dataset.ctsXong) return;
                 var vi = bang[bam((el.textContent || '').replace(/\\s+/g, ' ').trim())];
                 if (!vi) return;
@@ -451,7 +497,8 @@ private struct KhungSach: UIViewRepresentable {
                 // liệu người lạ gửi tới.
                 v.innerHTML = vi;
                 el.appendChild(v);
-              });
+              }
+              meKe();
             }).catch(function (e) { daNap = false; bao('tải bản dịch hỏng: ' + e); });
           }
 
