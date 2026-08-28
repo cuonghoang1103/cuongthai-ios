@@ -32,7 +32,7 @@ final class SnippetVM: ObservableObject {
             // suy hết trang bằng "trang này trả về ÍT hơn số yêu cầu".
             het = t.count < moiTrang
             trang += 1
-            loi = ds.isEmpty ? "Không tìm thấy mẩu nào." : nil
+            loi = ds.isEmpty ? T("Không tìm thấy snippet nào.") : nil
         } catch { loi = error.localizedDescription }
 
         if danhMuc.isEmpty,
@@ -64,7 +64,7 @@ struct SnippetsView: View {
         VStack(spacing: 0) {
             HStack(spacing: Spacing.sm) {
                 Image(systemName: "magnifyingglass").foregroundColor(AppColors.textTertiary)
-                TextField("Tìm mẩu mã, lệnh cài đặt…", text: $vm.tim)
+                TextField(T("Tìm snippet, lệnh cài đặt…"), text: $vm.tim)
                     .textFieldStyle(.plain)
                     .autocorrectionDisabled()
                     .textInputAutocapitalization(.never)
@@ -84,20 +84,16 @@ struct SnippetsView: View {
             if !vm.danhMuc.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: Spacing.sm) {
+                        the(nhan: T("Tất cả"), chon: vm.chonDanhMuc == nil) {
+                            vm.chonDanhMuc = nil
+                            Task { await vm.nap(lai: true) }
+                        }
                         ForEach(vm.danhMuc) { d in
-                            Button {
+                            the(nhan: DanhMucSnippet.tenGon(d.name),
+                                chon: vm.chonDanhMuc == d.id) {
                                 vm.chonDanhMuc = vm.chonDanhMuc == d.id ? nil : d.id
                                 Task { await vm.nap(lai: true) }
-                            } label: {
-                                Text("\(d.name) \(d.soMau)")
-                                    .font(.system(size: 12, weight: .semibold))
-                                    .lineLimit(1)
-                                    .foregroundColor(vm.chonDanhMuc == d.id ? AppColors.onPrimary : AppColors.textSecondary)
-                                    .padding(.horizontal, Spacing.sm + 2).padding(.vertical, 6)
-                                    .background(Capsule().fill(vm.chonDanhMuc == d.id
-                                                               ? AppColors.primary : AppColors.backgroundTertiary))
                             }
-                            .buttonStyle(.plain)
                         }
                     }
                     .padding(.horizontal, Spacing.md)
@@ -111,7 +107,7 @@ struct SnippetsView: View {
                 VStack(spacing: Spacing.sm) {
                     Image(systemName: "curlybraces").font(.system(size: 40))
                         .foregroundColor(AppColors.textTertiary)
-                    Text(vm.loi ?? "Chưa có mẩu nào.")
+                    Text(vm.loi ?? T("Chưa có snippet nào."))
                         .font(.system(size: 14)).foregroundColor(AppColors.textSecondary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -130,8 +126,11 @@ struct SnippetsView: View {
                                 }
                         }
                         if vm.dangTai { ProgressView().padding(.vertical, Spacing.md) }
+                        // Thanh tab nổi che mất thẻ cuối — chừa chỗ cho nó.
+                        Color.clear.frame(height: 72)
                     }
-                    .padding(Spacing.md)
+                    .padding(.horizontal, Spacing.md)
+                    .padding(.top, Spacing.sm)
                 }
                 // Ô tìm và hàng thẻ danh mục GHIM phía trên vùng cuộn, nên
                 // đổi danh mục hay gõ tìm lúc đang cuộn sâu là danh sách mới
@@ -143,45 +142,135 @@ struct SnippetsView: View {
             }
         }
         .background(AppColors.backgroundPrimary)
-        .navigationTitle("Mẩu mã")
+        .navigationTitle("Snippets")
         .navigationBarTitleDisplayMode(.inline)
         .task { if vm.ds.isEmpty { await vm.nap(lai: true) } }
     }
 
+    /// Thẻ lọc danh mục.
+    ///
+    /// ⚠️ KHÔNG hiện số đếm. `_count.snippets` của máy chủ SAI: đo 28/08/2026
+    /// nó báo Lab211 = 3 trong khi gọi `?categoryId=1` chỉ trả về **1**, và
+    /// tổng cộng lại thành 53 trong khi danh sách thật có **51**. Một con số
+    /// sai ngay trên nút lọc — bấm "3" ra 1 mẩu — đọc như app hỏng, tệ hơn
+    /// hẳn so với không có số. App cũng không tự đếm được: `pagination` nằm
+    /// ngoài `data` nên `APIResponse` không lấy tới.
+    ///
+    /// ⚠️ Tên đầy đủ dài cỡ "FPTU — Cài đặt môi trường học": để nguyên thì MỘT
+    /// thẻ chiếm gần hết bề ngang và đẩy các thẻ còn lại ra ngoài mép phải,
+    /// người dùng không biết là còn thẻ để cuộn tới. Xem `DanhMucSnippet.tenGon`.
+    private func the(nhan: String, chon: Bool, lam: @escaping () -> Void) -> some View {
+        Button(action: lam) {
+            Text(nhan)
+                .font(.system(size: 12.5, weight: .semibold))
+                .lineLimit(1)
+                .foregroundColor(chon ? AppColors.onPrimary : AppColors.textSecondary)
+                .padding(.horizontal, Spacing.sm + 4)
+                .padding(.vertical, 6)
+                .background(Capsule().fill(chon ? AppColors.primary : AppColors.backgroundTertiary))
+        }
+        .buttonStyle(.plain)
+    }
+
     private func hang(_ s: Snippet) -> some View {
-        VStack(alignment: .leading, spacing: Spacing.xs) {
-            Text(s.title)
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundColor(AppColors.textPrimary)
-                .lineLimit(2).multilineTextAlignment(.leading)
-                .fixedSize(horizontal: false, vertical: true)
-            if let d = s.description, !d.isEmpty {
-                Text(d)
-                    .font(.system(size: 12))
-                    .foregroundColor(AppColors.textSecondary)
-                    .lineLimit(2).multilineTextAlignment(.leading)
-            }
-            HStack(spacing: Spacing.sm) {
-                if let l = s.language, !l.isEmpty {
-                    Text(l)
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(AppColors.primary)
-                        .padding(.horizontal, Spacing.sm).padding(.vertical, 2)
-                        .background(Capsule().fill(AppColors.primary.opacity(0.14)))
-                }
+        HStack(alignment: .top, spacing: Spacing.sm + 2) {
+            // Neo thị giác. 51 mẩu mà thẻ nào cũng chữ trắng trên nền xám thì
+            // không quét mắt được — một ô màu theo ngôn ngữ là nhận ra ngay.
+            VStack(spacing: 3) {
+                Text(NgonNguMa.nhan(s.ngonNguHien))
+                    .font(.system(size: 11, weight: .heavy, design: .monospaced))
+                    .foregroundColor(NgonNguMa.mau(s.ngonNguHien))
+                    .lineLimit(1).minimumScaleFactor(0.6)
+                    .frame(width: 42, height: 42)
+                    .background(RoundedRectangle(cornerRadius: 11, style: .continuous)
+                        .fill(NgonNguMa.mau(s.ngonNguHien).opacity(0.15)))
+                    .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous)
+                        .strokeBorder(NgonNguMa.mau(s.ngonNguHien).opacity(0.35), lineWidth: 1))
                 if s.cacKhoi.count > 1 {
-                    Text("\(s.cacKhoi.count) khối mã")
-                        .font(.system(size: 10)).foregroundColor(AppColors.textTertiary)
+                    Text("\(s.cacKhoi.count)×")
+                        .font(.system(size: 9.5, weight: .bold).monospacedDigit())
+                        .foregroundColor(AppColors.textTertiary)
                 }
-                if let c = s.copyCount, c > 0 {
-                    Text("· \(c) lượt chép").font(.system(size: 10)).foregroundColor(AppColors.textTertiary)
-                }
-                Spacer(minLength: 0)
             }
+
+            VStack(alignment: .leading, spacing: 3) {
+                if let c = s.category?.name, !c.isEmpty {
+                    Text(DanhMucSnippet.tenGon(c).uppercased())
+                        .font(.system(size: 9.5, weight: .bold))
+                        .tracking(0.6)
+                        .foregroundColor(AppColors.textTertiary)
+                        .lineLimit(1)
+                }
+                Text(s.title)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(AppColors.textPrimary)
+                    .lineLimit(2).multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+                if let d = s.description, !d.isEmpty {
+                    Text(d)
+                        .font(.system(size: 12))
+                        .foregroundColor(AppColors.textSecondary)
+                        .lineLimit(2).multilineTextAlignment(.leading)
+                        .padding(.top, 1)
+                }
+                if let tags = s.tagNames, !tags.isEmpty {
+                    HStack(spacing: 4) {
+                        ForEach(tags.prefix(3), id: \.self) { t in
+                            Text(t)
+                                .font(.system(size: 9.5, weight: .medium))
+                                .foregroundColor(AppColors.textSecondary)
+                                .lineLimit(1)
+                                .padding(.horizontal, 6).padding(.vertical, 2)
+                                .background(RoundedRectangle(cornerRadius: 5)
+                                    .fill(AppColors.backgroundTertiary))
+                        }
+                        if tags.count > 3 {
+                            Text("+\(tags.count - 3)")
+                                .font(.system(size: 9.5)).foregroundColor(AppColors.textTertiary)
+                        }
+                    }
+                    .padding(.top, 3)
+                }
+                soLieu(s)
+            }
+            Spacer(minLength: 0)
         }
         .padding(Spacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: CornerRadius.large).fill(AppColors.backgroundCard))
+        .background(
+            RoundedRectangle(cornerRadius: CornerRadius.large)
+                .fill(AppColors.backgroundCard)
+                .overlay(alignment: .leading) {
+                    // Vạch màu ngôn ngữ chạy dọc mép trái — web dùng
+                    // `border-l-2`, giữ cùng ngôn ngữ thị giác.
+                    UnevenRoundedRectangle(topLeadingRadius: CornerRadius.large,
+                                           bottomLeadingRadius: CornerRadius.large)
+                        .fill(NgonNguMa.mau(s.ngonNguHien).opacity(0.55))
+                        .frame(width: 3)
+                }
+        )
+    }
+
+    /// Hàng số liệu — web có, app trước đây bỏ hết trừ lượt chép.
+    @ViewBuilder private func soLieu(_ s: Snippet) -> some View {
+        let muc: [(String, Int)] = [
+            ("doc.on.doc", s.copyCount ?? 0),
+            ("eye", s.viewCount ?? 0),
+            ("heart", s.upvoteCount ?? 0),
+            ("bubble.left", s.commentCount ?? 0),
+        ].filter { $0.1 > 0 }
+        if !muc.isEmpty {
+            HStack(spacing: 10) {
+                ForEach(muc, id: \.0) { m in
+                    HStack(spacing: 3) {
+                        Image(systemName: m.0).font(.system(size: 9))
+                        Text("\(m.1)").font(.system(size: 10).monospacedDigit())
+                    }
+                    .foregroundColor(AppColors.textTertiary)
+                }
+            }
+            .padding(.top, 5)
+        }
     }
 }
 
@@ -267,11 +356,20 @@ struct SnippetChiTietView: View {
                 }
                 .buttonStyle(.plain)
             }
-            ScrollView(.horizontal, showsIndicators: false) {
+            // ⚠️ `.fixedSize(horizontal: true, …)` là BẮT BUỘC. Không có nó
+            // thì `Text` vẫn nhận bề rộng khung đề xuất và tự CẮT CỤT dòng
+            // dài — `ScrollView(.horizontal)` bọc ngoài chẳng có gì để cuộn
+            // tới, nhìn y như đã cuộn được. Với trang toàn lệnh cài đặt thì
+            // đó là mất luôn nội dung: dòng
+            //   `curl -o- https://raw.githubusercontent.com/nvm-sh/...`
+            // hiện ra cụt ở giữa URL.
+            ScrollView(.horizontal, showsIndicators: true) {
                 Text(k.code ?? "")
                     .font(.system(size: 12, design: .monospaced))
                     .foregroundColor(AppColors.textPrimary)
                     .textSelection(.enabled)
+                    .fixedSize(horizontal: true, vertical: false)
+                    .padding(.trailing, Spacing.sm)
             }
             .padding(Spacing.sm)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -311,10 +409,10 @@ struct SnippetEntryCard: View {
                     .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Mẩu mã")
+                    Text("Snippets")
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(AppColors.textPrimary)
-                    Text("Lệnh cài môi trường, chép một chạm")
+                    Text(T("Lệnh cài môi trường, chép một chạm"))
                         .font(.system(size: 12))
                         .foregroundColor(AppColors.textSecondary)
                         .lineLimit(1).minimumScaleFactor(0.85)

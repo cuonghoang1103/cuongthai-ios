@@ -59,6 +59,10 @@ enum KhoSach {
         ("1,469,374", "từ"),
     ]
 
+    /// Một dòng cho thẻ lối vào ở tab Học — sinh cùng chỗ với số liệu
+    /// trên, nên không thể lệch nhau.
+    static let tomTat = "41 tập · 649 chương · song ngữ Anh–Việt"
+
     static let nhom: [NhomSach] = [
         NhomSach(tua: "Foundations", moTa: "The ground everything else stands on.", sach: [
             Sach(vol: "24", file: "24-the-terminal-from-zero-to-fluent.html", mauHex: "#256B4F",

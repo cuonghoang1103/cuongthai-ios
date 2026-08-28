@@ -128,6 +128,10 @@ for k, nhan in NHAN:
     if k in thong_ke:
         ra.append(f'        ("{thong_ke[k]}", "{nhan}"),')
 ra.append('    ]\n')
+ra.append('    /// Một dòng cho thẻ lối vào ở tab Học — sinh cùng chỗ với số liệu')
+ra.append('    /// trên, nên không thể lệch nhau.')
+so_tap = thong_ke.get('volumes', '?'); so_ch = thong_ke.get('chapters', '?')
+ra.append(f'    static let tomTat = "{so_tap} tập · {so_ch} chương · song ngữ Anh–Việt"\n')
 ra.append('    static let nhom: [NhomSach] = [')
 tong = 0
 for g in nhom:

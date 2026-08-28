@@ -54,6 +54,17 @@ struct Snippet: Codable, Identifiable, Hashable {
         return []
     }
     var tenDanhMuc: String { category?.name ?? "Khác" }
+
+    /// Ngôn ngữ để hiện trên thẻ.
+    ///
+    /// ⚠️ `language` có thể TRỐNG — đo 28/08/2026: 1/51 mẩu không đặt. Lùi về
+    /// ngôn ngữ của khối mã đầu tiên trước khi chịu thua, không thì thẻ hiện
+    /// một dấu hỏi vô nghĩa.
+    var ngonNguHien: String? {
+        if let l = language, !l.trimmingCharacters(in: .whitespaces).isEmpty { return l }
+        return cacKhoi.compactMap { $0.language }
+            .first { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
+    }
 }
 
 struct DanhMucSnippet: Codable, Identifiable, Hashable {
@@ -76,4 +87,18 @@ struct DanhMucSnippet: Codable, Identifiable, Hashable {
     /// CuongThai 1 · Game 1). Lọc kiểu đó thì thanh danh mục dài 20 nút mà 16
     /// nút bấm vào ra danh sách trống.
     var soMau: Int { _count?.snippets ?? 0 }
+
+    /// Tên gọn để nhét vừa một thẻ lọc.
+    ///
+    /// ⚠️ Tên thật dài cỡ "FPTU — Cài đặt môi trường học": để nguyên thì MỘT
+    /// thẻ chiếm gần hết bề ngang màn hình và đẩy ba thẻ còn lại ra ngoài mép
+    /// phải, người dùng không biết là còn thẻ để cuộn tới. Cắt ở dấu gạch dài
+    /// — phần trước nó luôn là cái tên thật ("FPTU", "Lab211", "CuongThai").
+    static func tenGon(_ ten: String) -> String {
+        for dau in ["—", "–", " - ", ":"] where ten.contains(dau) {
+            let t = ten.components(separatedBy: dau)[0].trimmingCharacters(in: .whitespaces)
+            if !t.isEmpty { return t }
+        }
+        return ten.count > 20 ? String(ten.prefix(19)) + "…" : ten
+    }
 }

@@ -274,7 +274,10 @@ struct SachEntryCard: View {
                     Text("Thư viện sách")
                         .font(.system(size: 16, weight: .bold))
                         .foregroundColor(AppColors.textPrimary)
-                    Text("25 tập · 412 chương · song ngữ Anh–Việt")
+                    // ⚠️ Đừng ghi cứng con số ở đây. Nó từng đứng ở "25 tập ·
+                    // 412 chương" trong khi thư viện đã lên 41 tập — sai ngay
+                    // ở lối vào, chỗ người dùng nhìn thấy đầu tiên.
+                    Text(KhoSach.tomTat)
                         .font(.system(size: 12))
                         .foregroundColor(AppColors.textSecondary)
                         .lineLimit(1)
