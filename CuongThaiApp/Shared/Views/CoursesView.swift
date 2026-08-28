@@ -47,6 +47,7 @@ struct CoursesView: View {
                     // điện thoại đúng lúc đang dựng máy, không phải lúc ngồi
                     // trước máy tính.
                     LoTrinhNgheEntryCard()
+                    DuAnEntryCard()
                     SnippetEntryCard()
 
                     tieuDeNhanh("Khoá tự biên soạn", "sparkles")
