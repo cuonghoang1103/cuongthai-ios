@@ -333,6 +333,26 @@ enum APIEndpoint {
     case danhDauNutLoTrinhNghe(nodeId: Int)
 
     // ── Dự án (Projects) ──────────────────────────────────────
+    // ── Phỏng vấn (Interview) ─────────────────────────────────
+    //
+    // ⚠️ TOÀN BỘ nhóm này CẦN đăng nhập (`router.use(authenticate)` ở đầu
+    // `interview.routes.ts`) — kể cả `/tracks` vốn nhìn như dữ liệu chung.
+    // Chưa đăng nhập là 401 chứ không phải danh sách rỗng.
+    case pvTaxonomy
+    case pvTaoPhien(than: [String: Any])
+    case pvTrangThai(id: Int)
+    case pvTraLoi(id: Int, thuTu: Int, than: [String: Any])
+    case pvTuCham(id: Int, thuTu: Int, than: [String: Any])
+    case pvKetThuc(id: Int)
+    case pvBaoCao(id: Int)
+    case pvLichSu
+    case pvBaoLoiCau(id: Int, thuTu: Int, lyDo: String)
+    case pvTaoCauPhu(id: Int, thuTu: Int)
+    case pvTraLoiCauPhu(id: Int, thuTu: Int, than: [String: Any])
+    case pvOnTap
+    case pvChamOnTap(cardId: Int, than: [String: Any])
+    case pvThanhThao
+
     case dsDuAn(danhMuc: String?, tim: String, trang: Int)
     case duAn(slug: String)
     /// Ghi nhận một lượt chép. Không cần đăng nhập (máy chủ đếm theo IP).
@@ -550,6 +570,20 @@ enum APIEndpoint {
         case .dsLoTrinh: return "/api/v1/roadmaps"
         case .loTrinhNghe(let slug): return "/api/v1/roadmaps/\(slug)"
         case .danhDauNutLoTrinhNghe(let id): return "/api/v1/roadmaps/nodes/\(id)/done"
+        case .pvTaxonomy: return "/api/v1/interview/tracks"
+        case .pvTaoPhien: return "/api/v1/interview/sessions"
+        case .pvTrangThai(let id): return "/api/v1/interview/sessions/\(id)"
+        case .pvTraLoi(let id, let t, _): return "/api/v1/interview/sessions/\(id)/turns/\(t)/answer"
+        case .pvTuCham(let id, let t, _): return "/api/v1/interview/sessions/\(id)/turns/\(t)/self-assess"
+        case .pvKetThuc(let id): return "/api/v1/interview/sessions/\(id)/finish"
+        case .pvBaoCao(let id): return "/api/v1/interview/sessions/\(id)/report"
+        case .pvLichSu: return "/api/v1/interview/history"
+        case .pvBaoLoiCau(let id, let t, _): return "/api/v1/interview/sessions/\(id)/turns/\(t)/flag"
+        case .pvTaoCauPhu(let id, let t): return "/api/v1/interview/sessions/\(id)/turns/\(t)/followup"
+        case .pvTraLoiCauPhu(let id, let t, _): return "/api/v1/interview/sessions/\(id)/turns/\(t)/followup/answer"
+        case .pvOnTap: return "/api/v1/interview/drill"
+        case .pvChamOnTap(let c, _): return "/api/v1/interview/drill/\(c)/grade"
+        case .pvThanhThao: return "/api/v1/interview/mastery"
         case .dsDuAn: return "/api/v1/projects"
         case .duAn(let slug): return "/api/v1/projects/\(slug)"
         case .ghiNhanChep(let id): return "/api/v1/snippets/\(id)/copy"
@@ -565,7 +599,9 @@ enum APIEndpoint {
         switch self {
         case .ghiTienDo, .ghiKetQuaQuiz, .doiYeuThich, .aiDich, .aiKiemNguPhap, .aiNoiChuyen,
              .aiChamBaiViet, .batDauLuotThi, .nopBaiTracNghiem,
-             .doiNutLoTrinh, .danhDauNutLoTrinhNghe, .nopBaiLuyen, .taoThuMucSoTay, .taoMucSoTay, .ghiNhanChep,
+             .doiNutLoTrinh, .danhDauNutLoTrinhNghe, .nopBaiLuyen,
+             .pvTaoPhien, .pvTraLoi, .pvTuCham, .pvKetThuc, .pvBaoLoiCau,
+             .pvTaoCauPhu, .pvTraLoiCauPhu, .pvChamOnTap, .taoThuMucSoTay, .taoMucSoTay, .ghiNhanChep,
              .ghiTienDoBaiTap, .luuMaBaiTap, .chamMaBaiTap,
              .reactPost,   // ⚠️ backend khai POST, KHÔNG phải PATCH — xem ghi chú ở `case reactPost`
              .danhDauDeThi, .danhDauCauHoi,
@@ -599,6 +635,12 @@ enum APIEndpoint {
 
     var body: [String: Any]? {
         switch self {
+        case .pvTaoPhien(let m): return m
+        case .pvTraLoi(_, _, let m): return m
+        case .pvTuCham(_, _, let m): return m
+        case .pvTraLoiCauPhu(_, _, let m): return m
+        case .pvChamOnTap(_, let m): return m
+        case .pvBaoLoiCau(_, _, let l): return ["reason": l]
         case .login(let u, let p, let c):
             var m: [String: Any] = ["username": u, "password": p]
             if let t = c { m["cf-turnstile-response"] = t }

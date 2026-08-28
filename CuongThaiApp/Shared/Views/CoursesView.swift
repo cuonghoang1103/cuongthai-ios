@@ -48,6 +48,7 @@ struct CoursesView: View {
                     // trước máy tính.
                     LoTrinhNgheEntryCard()
                     DuAnEntryCard()
+                    PhongVanEntryCard()
                     SnippetEntryCard()
 
                     tieuDeNhanh("Khoá tự biên soạn", "sparkles")
