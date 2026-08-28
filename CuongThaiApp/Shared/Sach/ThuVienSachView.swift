@@ -16,10 +16,15 @@ struct ThuVienSachView: View {
 
     private var nhomHien: [NhomSach] {
         let k = tim.trimmingCharacters(in: .whitespaces)
+        // ⚠️ Bỏ dấu trước khi so. Từ khi có 16 tập tiếng Việt (26–41), gõ
+        // "lanh dao" — kiểu gõ tự nhiên nhất trên điện thoại — không ra
+        // "Lãnh đạo và quản lý con người". Hồi thư viện chỉ có sách tiếng Anh
+        // thì lỗi này không lộ ra.
+        let kh = k.chuanHoaTim
         guard !k.isEmpty else { return KhoSach.nhom }
         return KhoSach.nhom.compactMap { n in
             let ds = n.sach.filter {
-                $0.tua.localizedCaseInsensitiveContains(k) || $0.vol.contains(k)
+                $0.tua.chuanHoaTim.contains(kh) || $0.vol.contains(k)
             }
             return ds.isEmpty ? nil : NhomSach(tua: n.tua, moTa: n.moTa, sach: ds)
         }

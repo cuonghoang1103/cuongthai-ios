@@ -47,31 +47,76 @@ enum KhoSachCucBo {
 
     /// Tải (hoặc lấy từ máy) rồi cắt sẵn. Ném lỗi nếu không có mạng mà cũng
     /// chưa có bản lưu.
+    ///
+    /// Web sửa sách thì bản trong máy phải theo — nhưng KHÔNG tải lại 1 MB mỗi
+    /// lần mở. Hỏi một câu `HEAD` (~1 KB) lấy `etag`/`last-modified`; giống
+    /// dấu vết đã lưu thì đọc thẳng từ đĩa. Hỏi hỏng (mất mạng) cũng đọc từ
+    /// đĩa — sách phải mở được khi không có mạng.
     static func nap(_ s: Sach) async throws -> SachDaCat {
-        let html = try await lay(ten: "\(s.slug).html", tu: s.duongSach)
-        // Bản dịch KHÔNG bắt buộc: thiếu thì đọc tiếng Anh, đừng chặn cả cuốn.
-        let jsonChu = try? await lay(ten: "\(s.slug).vi.json", tu: s.duongDich)
-        return cat(html, dichJSON: jsonChu)
+        async let htmlChu = lay(ten: "\(s.slug).html", tu: s.duongSach)
+        // Bản dịch KHÔNG bắt buộc: 16 tập tiếng Việt gốc không có, và thiếu
+        // nó thì đọc bản gốc chứ đừng chặn cả cuốn.
+        async let dichChu = try? lay(ten: "\(s.slug).vi.json", tu: s.duongDich)
+        return cat(try await htmlChu, dichJSON: await dichChu)
     }
 
     private static func lay(ten: String, tu: URL?) async throws -> String {
         let tep = thuMuc?.appendingPathComponent(ten)
-        if let tep, let s = try? String(contentsOf: tep, encoding: .utf8), !s.isEmpty {
-            return s
+        let tepDauVet = thuMuc?.appendingPathComponent(ten + ".dauvet")
+        let daLuu = tep.flatMap { try? String(contentsOf: $0, encoding: .utf8) }
+            .flatMap { $0.isEmpty ? nil : $0 }
+
+        if let daLuu {
+            let cu = tepDauVet.flatMap { try? String(contentsOf: $0, encoding: .utf8) }
+            // Không hỏi được (mất mạng) → dùng bản trong máy. Đây chính là chỗ
+            // làm sách đọc được khi offline.
+            guard let moi = await dauVet(tu), moi != cu else { return daLuu }
+            NhatKy.sach.info("\(ten): web đã đổi, tải lại")
         }
+
         guard let tu else { throw URLError(.badURL) }
         let (d, resp) = try await URLSession.shared.data(from: tu)
         if let h = resp as? HTTPURLResponse, !(200...299).contains(h.statusCode) {
+            // Web hỏng mà máy còn bản cũ thì đọc bản cũ, đừng để trắng màn hình.
+            if let daLuu { return daLuu }
             throw URLError(.badServerResponse)
         }
-        guard let s = String(data: d, encoding: .utf8) else { throw URLError(.cannotDecodeContentData) }
+        guard let s = String(data: d, encoding: .utf8) else {
+            if let daLuu { return daLuu }
+            throw URLError(.cannotDecodeContentData)
+        }
         if let tep { try? s.write(to: tep, atomically: true, encoding: .utf8) }
+        if let tepDauVet, let v = await dauVet(tu) {
+            try? v.write(to: tepDauVet, atomically: true, encoding: .utf8)
+        }
         return s
     }
 
-    /// Xoá bản lưu của một cuốn — dùng khi web cập nhật nội dung.
+    /// Dấu vết bản trên web, lấy bằng `HEAD`. `nil` = không hỏi được.
+    ///
+    /// ⚠️ Máy chủ dán `cache-control: no-cache, no-store` lên MỌI thứ (nginx
+    /// ghi đè, xem CLAUDE.md), nên không thể nhờ `URLCache` lo việc này —
+    /// phải tự so dấu vết.
+    private static func dauVet(_ tu: URL?) async -> String? {
+        guard let tu else { return nil }
+        var yc = URLRequest(url: tu)
+        yc.httpMethod = "HEAD"
+        yc.timeoutInterval = 6
+        yc.cachePolicy = .reloadIgnoringLocalCacheData
+        guard let (_, resp) = try? await URLSession.shared.data(for: yc),
+              let h = resp as? HTTPURLResponse, (200...299).contains(h.statusCode)
+        else { return nil }
+        let et = h.value(forHTTPHeaderField: "Etag") ?? ""
+        let lm = h.value(forHTTPHeaderField: "Last-Modified") ?? ""
+        let cl = h.value(forHTTPHeaderField: "Content-Length") ?? ""
+        let v = et + "|" + lm + "|" + cl
+        return v == "||" ? nil : v
+    }
+
+    /// Xoá bản lưu của một cuốn — nút "Thử lại" dùng, để ép tải lại sạch.
     static func xoa(_ s: Sach) {
-        for t in ["\(s.slug).html", "\(s.slug).vi.json"] {
+        for t in ["\(s.slug).html", "\(s.slug).vi.json",
+                  "\(s.slug).html.dauvet", "\(s.slug).vi.json.dauvet"] {
             if let u = thuMuc?.appendingPathComponent(t) { try? FileManager.default.removeItem(at: u) }
         }
     }

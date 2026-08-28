@@ -129,15 +129,19 @@ struct DocSachView: View {
         .navigationTitle(sach.tua)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Menu {
-                    Picker("", selection: $maCheDo) {
-                        ForEach(CheDoChu.allCases, id: \.rawValue) { c in
-                            Text(c.nhan).tag(c.rawValue)
+            // Tập tiếng Việt gốc không có bản dịch — bày ra nút EN/VI bấm
+            // vào không đổi gì thì tệ hơn là không có nút.
+            if sach.coSongNgu {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Menu {
+                        Picker("", selection: $maCheDo) {
+                            ForEach(CheDoChu.allCases, id: \.rawValue) { c in
+                                Text(c.nhan).tag(c.rawValue)
+                            }
                         }
+                    } label: {
+                        Text(cheDo.nhan).font(.system(size: 13, weight: .bold))
                     }
-                } label: {
-                    Text(cheDo.nhan).font(.system(size: 13, weight: .bold))
                 }
             }
             ToolbarItem(placement: .navigationBarTrailing) {
