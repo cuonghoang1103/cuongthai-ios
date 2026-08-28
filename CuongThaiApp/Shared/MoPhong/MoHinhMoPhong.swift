@@ -129,6 +129,8 @@ struct BuocMP: Codable, Identifiable, Hashable {
     let nodeStates: [String: String]?
     let ops: [ThaoTacPanel]?
     let log: ChuSongNgu?
+    /// Tên hiệu ứng âm thanh kịch bản chọn cho bước này — 9 tên, xem `TiengMP`.
+    let sfx: String?
 
     var cacOps: [ThaoTacPanel] { ops ?? [] }
     /// 13 loại luồng — quyết định màu viên gói tin.

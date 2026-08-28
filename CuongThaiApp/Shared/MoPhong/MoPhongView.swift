@@ -145,6 +145,7 @@ struct ChayMoPhongView: View {
     @State private var viec: Task<Void, Never>?
     @State private var phong: CGFloat = 1
     @State private var mocPhong: CGFloat = 1
+    @State private var coAm = AmMoPhong.bat
 
     private var b: BuocMP? { may.buoc.indices.contains(buoc) ? may.buoc[buoc] : nil }
 
@@ -179,10 +180,25 @@ struct ChayMoPhongView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
+                Button {
+                    coAm.toggle()
+                    AmMoPhong.bat = coAm
+                    if coAm { AmMoPhong.shared.phat(.click) }
+                } label: {
+                    Image(systemName: coAm ? "speaker.wave.2.fill" : "speaker.slash.fill")
+                        .font(.system(size: 13))
+                }
+            }
+            ToolbarItem(placement: .navigationBarTrailing) {
                 Button { anh.toggle() } label: {
                     Text(anh ? "EN" : "VI").font(.system(size: 13, weight: .bold))
                 }
             }
+        }
+        // Mỗi bước tự khai `sfx` — phát đúng thứ kịch bản chọn, không tự đặt.
+        .onChange(of: buoc) { _, m in
+            guard may.buoc.indices.contains(m) else { return }
+            AmMoPhong.shared.phat(may.buoc[m].sfx)
         }
         .task {
             if chon.isEmpty {

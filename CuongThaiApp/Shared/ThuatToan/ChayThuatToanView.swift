@@ -9,6 +9,7 @@ struct ChayThuatToanView: View {
     @State private var ma = ""
     @State private var moMa = false
     @State private var viecPhat: Task<Void, Never>?
+    @State private var coAm = AmThuatToan.bat
 
     private var khung: [String: TrangThaiTracer] { may.khung(buoc) }
     /// Dòng mã đang chạy ở bước này (`-1` = không xác định).
@@ -46,11 +47,25 @@ struct ChayThuatToanView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
+                Button {
+                    coAm.toggle()
+                    AmThuatToan.bat = coAm
+                    if coAm { AmMoPhong.shared.phat(.click) }
+                } label: {
+                    Image(systemName: coAm ? "speaker.wave.2.fill" : "speaker.slash.fill")
+                        .font(.system(size: 13))
+                }
+            }
+            ToolbarItem(placement: .navigationBarTrailing) {
                 Button { moMa.toggle() } label: {
                     Image(systemName: moMa ? "chevron.left.forwardslash.chevron.right.rtl"
                                            : "chevron.left.forwardslash.chevron.right")
                 }
             }
+        }
+        .onChange(of: buoc) { cu, m in
+            AmThuatToan.theoKhung(truoc: may.khung(cu), sau: may.khung(m),
+                                  cuoi: m == may.soKhung - 1)
         }
         .task {
             if ma.isEmpty { ma = tt.ma }
