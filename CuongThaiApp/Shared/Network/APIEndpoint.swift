@@ -312,6 +312,29 @@ enum APIEndpoint {
     /// về TOÀN BỘ danh sách mà không báo gì. Đã đo.
     case dsSnippet(danhMuc: Int?, ngonNgu: String?, tim: String, trang: Int)
     case dsDanhMucSnippet
+
+    // ── Lộ trình (Roadmap) ────────────────────────────────────
+    /// Danh sách lộ trình, trả về `{ role: [...], skill: [...] }`.
+    case dsLoTrinh
+    /// Chi tiết một lộ trình: các chặng + nút + `doneNodeIds` của người đang
+    /// đăng nhập (`optionalAuth`, nên chưa đăng nhập vẫn xem được nội dung).
+    ///
+    /// ⚠️ TÊN PHẢI KHÁC `loTrinh(code:)` của Ngoại ngữ. Đặt trùng tên thì
+    /// `switch` KHÔNG phân biệt được: mẫu `case .loTrinh(let c)` viết trước
+    /// khớp CẢ HAI (cùng một tham số), nên lời gọi ở đây âm thầm đi sang
+    /// `/my-language/<slug>/roadmap` và trả về "Không tìm thấy ngôn ngữ".
+    /// Trình biên dịch không kêu ca gì — nhãn tham số khác nhau là hợp lệ.
+    case loTrinhNghe(slug: String)
+    /// Bật/tắt đánh dấu đã học một nút. CẦN đăng nhập.
+    ///
+    /// ⚠️ ĐỪNG lẫn với `doiNutLoTrinh` — cái đó là lộ trình học NGOẠI NGỮ
+    /// (`/my-language/roadmap/:id/done`), một hệ hoàn toàn khác. Hai cái tên
+    /// gần giống nhau là chỗ dễ gọi nhầm nhất trong tệp này.
+    case danhDauNutLoTrinhNghe(nodeId: Int)
+
+    // ── Dự án (Projects) ──────────────────────────────────────
+    case dsDuAn(danhMuc: String?, tim: String, trang: Int)
+    case duAn(slug: String)
     /// Ghi nhận một lượt chép. Không cần đăng nhập (máy chủ đếm theo IP).
     case ghiNhanChep(id: Int)
     case dsDeDaLuu
@@ -524,6 +547,11 @@ enum APIEndpoint {
         case .chamMaBaiTap(let id, _): return "/api/v1/code-lab/exercises/\(id)/coach/check"
         case .dsSnippet: return "/api/v1/snippets"
         case .dsDanhMucSnippet: return "/api/v1/snippets/categories"
+        case .dsLoTrinh: return "/api/v1/roadmaps"
+        case .loTrinhNghe(let slug): return "/api/v1/roadmaps/\(slug)"
+        case .danhDauNutLoTrinhNghe(let id): return "/api/v1/roadmaps/nodes/\(id)/done"
+        case .dsDuAn: return "/api/v1/projects"
+        case .duAn(let slug): return "/api/v1/projects/\(slug)"
         case .ghiNhanChep(let id): return "/api/v1/snippets/\(id)/copy"
         case .dsDeDaLuu: return "/api/v1/exams/bookmarks/exams"
         case .dsCauHoiDaLuu: return "/api/v1/exams/bookmarks/questions"
@@ -537,7 +565,7 @@ enum APIEndpoint {
         switch self {
         case .ghiTienDo, .ghiKetQuaQuiz, .doiYeuThich, .aiDich, .aiKiemNguPhap, .aiNoiChuyen,
              .aiChamBaiViet, .batDauLuotThi, .nopBaiTracNghiem,
-             .doiNutLoTrinh, .nopBaiLuyen, .taoThuMucSoTay, .taoMucSoTay, .ghiNhanChep,
+             .doiNutLoTrinh, .danhDauNutLoTrinhNghe, .nopBaiLuyen, .taoThuMucSoTay, .taoMucSoTay, .ghiNhanChep,
              .ghiTienDoBaiTap, .luuMaBaiTap, .chamMaBaiTap,
              .reactPost,   // ⚠️ backend khai POST, KHÔNG phải PATCH — xem ghi chú ở `case reactPost`
              .danhDauDeThi, .danhDauCauHoi,
@@ -777,6 +805,11 @@ enum APIEndpoint {
             return q.isEmpty ? nil : ["q": q]
         case .tienDoCodeLab(let id):
             return ["trackId": id]
+        case .dsDuAn(let dm, let tim, let trang):
+            var m: [String: Any] = ["page": trang, "limit": 12]
+            if let dm, !dm.isEmpty { m["category"] = dm }
+            if !tim.isEmpty { m["search"] = tim }
+            return m
         case .dsSnippet(let dm, let ng, let tim, let trang):
             var m: [String: Any] = ["page": trang, "limit": 20]
             if let dm { m["categoryId"] = dm }

@@ -46,6 +46,7 @@ struct CoursesView: View {
                     // TIẾNG VIỆT kèm lệnh chép được — thứ người ta tra trên
                     // điện thoại đúng lúc đang dựng máy, không phải lúc ngồi
                     // trước máy tính.
+                    LoTrinhNgheEntryCard()
                     SnippetEntryCard()
 
                     tieuDeNhanh("Khoá tự biên soạn", "sparkles")
