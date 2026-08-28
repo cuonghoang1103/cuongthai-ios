@@ -15,6 +15,61 @@ import SwiftUI
 
 // MARK: - Sơ đồ mạng
 
+/// Vẽ chữ ĐÃ CẮT cho vừa bề rộng, thêm dấu … khi phải cắt.
+///
+/// ⚠️ `Canvas.draw(Text)` KHÔNG cắt và KHÔNG xuống dòng — nó vẽ tràn ra ngoài
+/// hộp và không báo gì. Web có `ellipsize()` dùng `ctx.measureText`; bên này
+/// phải tự đo bằng `ctx.resolve(...).measure(in:)`. Thiếu bước này thì
+/// "Prisma · connection pool" chạy vượt khỏi khung nút PostgreSQL.
+@discardableResult
+func veChuCat(_ c: inout GraphicsContext, _ chu: String, font: Font, mau: Color,
+              tai: CGPoint, rongToiDa: CGFloat, anchor: UnitPoint = .leading) -> Bool {
+    func rong(_ t: String) -> CGFloat {
+        c.resolve(Text(t).font(font))
+            .measure(in: CGSize(width: CGFloat.greatestFiniteMagnitude,
+                                height: CGFloat.greatestFiniteMagnitude)).width
+    }
+    var ra = chu
+    var catBot = false
+    if rong(ra) > rongToiDa {
+        catBot = true
+        while ra.count > 1, rong(ra + "…") > rongToiDa { ra.removeLast() }
+        ra += "…"
+    }
+    c.draw(Text(ra).font(font).foregroundColor(mau), at: tai, anchor: anchor)
+    return catBot
+}
+
+/// Ngắt dòng theo bề rộng THẬT, tối đa `toiDaDong` dòng, dòng cuối cắt bằng …
+///
+/// Web dùng `wrapText(ctx, sub, box.w - 96, 2)`. Xuống dòng giữ được nhiều
+/// chữ hơn hẳn so với cắt cụt trong cùng một bề rộng.
+func xuongDong(_ c: inout GraphicsContext, _ chu: String, font: Font,
+               rongToiDa: CGFloat, toiDaDong: Int) -> [String] {
+    guard !chu.isEmpty else { return [] }
+    func rong(_ t: String) -> CGFloat {
+        c.resolve(Text(t).font(font))
+            .measure(in: CGSize(width: CGFloat.greatestFiniteMagnitude,
+                                height: CGFloat.greatestFiniteMagnitude)).width
+    }
+    var ra: [String] = []
+    var dong = ""
+    for tu in chu.split(separator: " ") {
+        let thu = dong.isEmpty ? String(tu) : dong + " " + tu
+        if rong(thu) <= rongToiDa { dong = thu; continue }
+        if !dong.isEmpty { ra.append(dong) }
+        dong = String(tu)
+        if ra.count == toiDaDong { break }
+    }
+    if ra.count < toiDaDong, !dong.isEmpty { ra.append(dong) }
+    // Dòng cuối bị tràn thì cắt kèm …
+    if var cuoi = ra.last, rong(cuoi) > rongToiDa {
+        while cuoi.count > 1, rong(cuoi + "…") > rongToiDa { cuoi.removeLast() }
+        ra[ra.count - 1] = cuoi + "…"
+    }
+    return ra
+}
+
 struct VeSoDo: View {
     let kb: KichBan
     let buoc: BuocMP?
@@ -22,103 +77,226 @@ struct VeSoDo: View {
     let tien: Double
     let anh: Bool
 
+    /// Bề rộng khung vẽ, đặt khi dựng — dùng để tự căn.
+    private let veW: Double = 1000
+    private let veH: Double = 620
+
     var body: some View {
-        // ⚠️ Khung phải ÔM SÁT nội dung: đặt `frame(height: 300)` cố định thì
-        // tỉ lệ thu theo BỀ NGANG (390/1000 ≈ 0,39) chỉ dùng 0,39 × 560 ≈
-        // 218pt, thừa lại gần một phần ba khung là khoảng trống chết. Buộc
-        // theo đúng tỉ lệ của sân khấu.
         Canvas { ctx, size in
             var c = ctx
-            let ty = size.width / SAN_KHAU_W
+            let ty = size.width / veW
             c.scaleBy(x: ty, y: ty)
-            veCanh(&c)
-            veNut(&c)
-            veGoiTin(&c)
+            let bd = boCuc()
+            veNen(&c)
+            veCanh(&c, bd)
+            veNut(&c, bd)
+            veGoiTin(&c, bd)
         }
-        .aspectRatio(SAN_KHAU_W / SAN_KHAU_H, contentMode: .fit)
+        .aspectRatio(veW / veH, contentMode: .fit)
+        .background(MauSanKhau.nenNgoai)
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
     }
 
-    private var viTri: [String: CGPoint] {
-        Dictionary(uniqueKeysWithValues: kb.cacNut.map { ($0.id, CGPoint(x: $0.x, y: $0.y)) })
+    // MARK: Tự căn
+
+    /// Ánh xạ toạ độ kịch bản → khung vẽ.
+    ///
+    /// ⚠️ KHÔNG ánh xạ cứng cả hệ 1000×560. Kịch bản REST API chỉ trải từ
+    /// y=116 tới y=320, ánh xạ cứng là bỏ trống gần nửa khung và mọi thứ nhìn
+    /// bé tí. Web lấy HỘP BAO của các nút rồi phóng + căn giữa nó — làm theo.
+    ///
+    /// ⚠️ Chỉ phóng VỊ TRÍ, còn hộp nút vẽ bằng kích thước CỐ ĐỊNH — nếu
+    /// phóng cả hộp thì chữ bị kéo giãn theo và mỗi kịch bản một cỡ chữ.
+    private struct BoCuc {
+        let ty: Double
+        let dx: Double
+        let dy: Double
+        func p(_ x: Double, _ y: Double) -> CGPoint { CGPoint(x: x * ty + dx, y: y * ty + dy) }
+        func p(_ q: CGPoint) -> CGPoint { p(q.x, q.y) }
     }
 
-    private func veCanh(_ c: inout GraphicsContext) {
-        let vt = viTri
+    private func boCuc() -> BoCuc {
+        let ns = kb.cacNut
+        guard !ns.isEmpty else { return BoCuc(ty: 1, dx: 0, dy: 0) }
+        let xs = ns.map(\.x), ys = ns.map(\.y)
+        let x0 = xs.min()!, x1 = xs.max()!, y0 = ys.min()!, y1 = ys.max()!
+        // Chừa chỗ cho nửa hộp nút + nhãn loại phía trên + badge phía dưới.
+        let leD = 100.0, leT = 46.0, leD2 = 34.0
+        let rong = max(x1 - x0, 1), cao = max(y1 - y0, 1)
+        let ty = min((veW - leD * 2) / rong, (veH - leT - leD2) / cao)
+        // Trần 2,2 lần: sơ đồ hai nút mà phóng hết cỡ thì hộp trôi ra mép.
+        let t = min(ty, 2.2)
+        return BoCuc(ty: t,
+                     dx: (veW - rong * t) / 2 - x0 * t,
+                     dy: (veH - cao * t) / 2 - y0 * t)
+    }
+
+    // MARK: Nền
+
+    private func veNen(_ c: inout GraphicsContext) {
+        let r = CGRect(x: 0, y: 0, width: veW, height: veH)
+        c.fill(Path(r), with: .radialGradient(
+            Gradient(colors: [MauSanKhau.nenTrong, MauSanKhau.nenNgoai]),
+            center: CGPoint(x: veW * 0.5, y: veH * 0.34),
+            startRadius: 80, endRadius: veW * 0.78))
+        for x in stride(from: 0.0, through: veW, by: 60) {
+            var p = Path(); p.move(to: CGPoint(x: x, y: 0)); p.addLine(to: CGPoint(x: x, y: veH))
+            c.stroke(p, with: .color(x.truncatingRemainder(dividingBy: 240) == 0
+                                     ? MauSanKhau.luoiChinh : MauSanKhau.luoi), lineWidth: 1)
+        }
+        for y in stride(from: 0.0, through: veH, by: 60) {
+            var p = Path(); p.move(to: CGPoint(x: 0, y: y)); p.addLine(to: CGPoint(x: veW, y: y))
+            c.stroke(p, with: .color(y.truncatingRemainder(dividingBy: 240) == 0
+                                     ? MauSanKhau.luoiChinh : MauSanKhau.luoi), lineWidth: 1)
+        }
+        // Bụi sao — vị trí CỐ ĐỊNH theo hash, không random: tua đi tua lại
+        // phải thấy đúng một hình.
+        for i in 0..<70 {
+            let x = bam01(i * 7 + 1) * veW
+            let y = bam01(i * 13 + 5) * veH
+            let a = 0.10 + 0.16 * bam01(i * 29 + 3)
+            c.fill(Path(CGRect(x: x, y: y, width: 2, height: 2)), with: .color(kb.mau.opacity(a)))
+        }
+    }
+
+    // MARK: Cạnh
+
+    private func veCanh(_ c: inout GraphicsContext, _ bd: BoCuc) {
+        let vt = Dictionary(uniqueKeysWithValues: kb.cacNut.map { ($0.id, bd.p($0.x, $0.y)) })
         for e in kb.cacCanh {
             guard let a = vt[e.from], let b = vt[e.to] else { continue }
             let sang = buoc?.edge == e.id
+            let kl = MauSanKhau.luong(buoc?.kind)
             var p = Path()
             p.move(to: a)
-            // `curve` dịch điểm điều khiển Bézier theo phương vuông góc — giữ
-            // đúng hình dạng của web, nếu không thì cạnh song song chồng nhau.
             if let k = e.curve, k != 0 {
                 let dx = b.x - a.x, dy = b.y - a.y
                 let d = max(sqrt(dx * dx + dy * dy), 1)
-                let giua = CGPoint(x: (a.x + b.x) / 2 - dy / d * k,
-                                   y: (a.y + b.y) / 2 + dx / d * k)
-                p.addQuadCurve(to: b, control: giua)
+                // Độ cong phải nhân theo hệ số phóng, không thì sơ đồ phóng to
+                // mà cạnh vẫn cong theo bán kính cũ ⇒ méo.
+                let k2 = k * bd.ty
+                p.addQuadCurve(to: b, control: CGPoint(x: (a.x + b.x) / 2 - dy / d * k2,
+                                                       y: (a.y + b.y) / 2 + dx / d * k2))
             } else {
                 p.addLine(to: b)
             }
-            c.stroke(p, with: .color(sang ? (buoc?.mauLuong ?? .blue)
-                                          : Color(hex: 0x334155)),
-                     style: StrokeStyle(lineWidth: sang ? 3 : 1.6, lineCap: .round))
+            if sang {
+                var g = c
+                g.addFilter(.blur(radius: 6))
+                g.stroke(p, with: .color(kl.quang.opacity(0.55)),
+                         style: StrokeStyle(lineWidth: 8, lineCap: .round))
+                c.stroke(p, with: .color(kl.loi),
+                         style: StrokeStyle(lineWidth: 3.2, lineCap: .round))
+                c.stroke(p, with: .color(kl.quang.opacity(0.9)),
+                         style: StrokeStyle(lineWidth: 1.8, lineCap: .round,
+                                            dash: [16, 22], dashPhase: -tien * 38))
+            } else {
+                c.stroke(p, with: .color(Color(hex: 0x2A3550)),
+                         style: StrokeStyle(lineWidth: 1.8, lineCap: .round))
+            }
         }
     }
 
-    private func veNut(_ c: inout GraphicsContext) {
+    // MARK: Nút
+
+    private func veNut(_ c: inout GraphicsContext, _ bd: BoCuc) {
         for n in kb.cacNut {
+            let (mauLoai, nhanLoai) = MauSanKhau.nut(n.kind)
             let tt = buoc?.nodeStates?[n.id] ?? "idle"
-            let m = mauTrangThaiNut(tt)
-            let r = CGRect(x: n.x - 46, y: n.y - 26, width: 92, height: 52)
-            let hinh = Path(roundedRect: r, cornerRadius: 12)
-            c.fill(hinh, with: .color(Color(hex: 0x0F172A)))
-            c.stroke(hinh, with: .color(m), lineWidth: tt == "idle" ? 1.2 : 2.4)
-            c.draw(Text(n.label).font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(tt == "idle" ? Color(hex: 0x94A3B8) : .white),
-                   at: CGPoint(x: n.x, y: n.y - 5))
-            if let s = n.sublabel?.chu(anh), !s.isEmpty {
-                c.draw(Text(s).font(.system(size: 9)).foregroundColor(Color(hex: 0x64748B)),
-                       at: CGPoint(x: n.x, y: n.y + 12))
+            let ngoi = tt != "idle"
+            let m = MauSanKhau.trangThai(tt, mac: mauLoai)
+            let tam = bd.p(n.x, n.y)
+            // Kích thước CỐ ĐỊNH — không nhân theo hệ số phóng, để chữ luôn
+            // cùng một cỡ ở mọi kịch bản.
+            let w = 186.0, h = 68.0
+            let r = CGRect(x: tam.x - w / 2, y: tam.y - h / 2, width: w, height: h)
+            let hinh = Path(roundedRect: r, cornerRadius: 16)
+
+            if ngoi {
+                var g = c
+                g.addFilter(.blur(radius: 14))
+                g.fill(hinh, with: .color(m.opacity(0.45)))
             }
+            c.fill(hinh, with: .linearGradient(
+                Gradient(colors: [ngoi ? m.opacity(0.22) : Color(hex: 0x141A2C).opacity(0.94),
+                                  Color(hex: 0x080B16).opacity(0.97)]),
+                startPoint: CGPoint(x: r.minX, y: r.minY),
+                endPoint: CGPoint(x: r.minX, y: r.maxY)))
+            c.stroke(hinh, with: .color(ngoi ? m : mauLoai.opacity(0.34)),
+                     lineWidth: ngoi ? 2.8 : 1.6)
+            c.fill(Path(roundedRect: CGRect(x: r.minX + 7, y: r.minY + 15,
+                                            width: 4.5, height: h - 30), cornerRadius: 2.5),
+                   with: .color(m.opacity(ngoi ? 1 : 0.55)))
+            let oIcon = CGRect(x: r.minX + 19, y: tam.y - 17, width: 34, height: 34)
+            c.fill(Path(roundedRect: oIcon, cornerRadius: 10),
+                   with: .color(m.opacity(ngoi ? 0.30 : 0.16)))
+            c.draw(Text(Image(systemName: n.bieuTuong))
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundColor(m.opacity(ngoi ? 1 : 0.72)),
+                   at: CGPoint(x: oIcon.midX, y: oIcon.midY))
+
+            let xChu = r.minX + 62
+            let rongChu = r.maxX - xChu - 11
+            let phu = n.sublabel?.chu(anh) ?? ""
+            // Web xuống DÒNG chữ phụ (tối đa 2 dòng) thay vì cắt — giữ được
+            // nhiều chữ hơn hẳn trong cùng bề rộng.
+            let dong = xuongDong(&c, phu, font: .system(size: 9.5),
+                                 rongToiDa: rongChu, toiDaDong: 2)
+            let yTen = tam.y + (dong.isEmpty ? 0 : (dong.count > 1 ? -13 : -8))
+            veChuCat(&c, n.label, font: .system(size: 15, weight: .bold),
+                     mau: ngoi ? .white : Color(hex: 0xC8D3E6),
+                     tai: CGPoint(x: xChu, y: yTen), rongToiDa: rongChu)
+            for (k, d) in dong.enumerated() {
+                c.draw(Text(d).font(.system(size: 9.5))
+                        .foregroundColor(Color(hex: 0x7C8AA3)),
+                       at: CGPoint(x: xChu, y: yTen + 13 + Double(k) * 11), anchor: .leading)
+            }
+            veChuCat(&c, nhanLoai, font: .system(size: 8.5, weight: .heavy, design: .monospaced),
+                     mau: mauLoai.opacity(ngoi ? 0.95 : 0.62),
+                     tai: CGPoint(x: r.minX + 9, y: r.minY - 10), rongToiDa: w - 14)
             if let b = n.badge, !b.isEmpty {
-                c.draw(Text(b).font(.system(size: 8.5, design: .monospaced))
-                        .foregroundColor(Color(hex: 0x94A3B8)),
-                       at: CGPoint(x: n.x, y: n.y + 36))
+                veChuCat(&c, b, font: .system(size: 9, design: .monospaced),
+                         mau: m.opacity(0.9), tai: CGPoint(x: tam.x, y: r.maxY + 11),
+                         rongToiDa: w, anchor: .center)
             }
         }
     }
 
-    private func veGoiTin(_ c: inout GraphicsContext) {
+    // MARK: Gói tin
+
+    private func veGoiTin(_ c: inout GraphicsContext, _ bd: BoCuc) {
         guard let b = buoc else { return }
-        let vt = viTri
+        let vt = Dictionary(uniqueKeysWithValues: kb.cacNut.map { ($0.id, bd.p($0.x, $0.y)) })
         var tam: CGPoint?
         if let eid = b.edge, let e = kb.cacCanh.first(where: { $0.id == eid }),
            let a = vt[e.from], let z = vt[e.to] {
             let (p0, p1) = (b.reverse == true) ? (z, a) : (a, z)
-            tam = CGPoint(x: p0.x + (p1.x - p0.x) * tien,
-                          y: p0.y + (p1.y - p0.y) * tien)
+            // Giảm tốc hai đầu — chuyển động đều nhìn như máy, có gia tốc mới
+            // ra cảm giác "gói tin rời đi rồi cập bến".
+            let t = tien < 0.5 ? 4 * tien * tien * tien : 1 - pow(-2 * tien + 2, 3) / 2
+            tam = CGPoint(x: p0.x + (p1.x - p0.x) * t, y: p0.y + (p1.y - p0.y) * t)
         } else if let at = b.at, let p = vt[at] {
-            tam = CGPoint(x: p.x, y: p.y - 46)   // xử lý nội bộ: nổi trên nút
+            tam = CGPoint(x: p.x, y: p.y - 60)
         }
         guard let t = tam else { return }
+        let kl = MauSanKhau.luong(b.kind)
         let nhan = b.packetLabel ?? b.kind ?? ""
-        let rong = max(46.0, Double(nhan.count) * 7.5 + 18)
-        let r = CGRect(x: t.x - rong / 2, y: t.y - 13, width: rong, height: 26)
-        let hinh = Path(roundedRect: r, cornerRadius: 13)
-        c.fill(hinh, with: .color(b.mauLuong))
-        c.draw(Text(nhan).font(.system(size: 11, weight: .bold)).foregroundColor(.white), at: t)
-    }
+        let rong = max(58.0, Double(nhan.count) * 7.6 + 24)
+        let r = CGRect(x: t.x - rong / 2, y: t.y - 15, width: rong, height: 30)
 
-    private func mauTrangThaiNut(_ s: String) -> Color {
-        switch s {
-        case "active": return Color(hex: 0x3B82F6)
-        case "processing": return Color(hex: 0xF59E0B)
-        case "success": return Color(hex: 0x22C55E)
-        case "error": return Color(hex: 0xEF4444)
-        case "waiting": return Color(hex: 0xA855F7)
-        default: return Color(hex: 0x334155)
-        }
+        c.fill(Path(ellipseIn: CGRect(x: t.x - 50, y: t.y - 50, width: 100, height: 100)),
+               with: .radialGradient(
+                Gradient(colors: [kl.quang.opacity(0.32), kl.quang.opacity(0)]),
+                center: t, startRadius: 0, endRadius: 50))
+        var g = c
+        g.addFilter(.blur(radius: 9))
+        g.fill(Path(roundedRect: r, cornerRadius: 15), with: .color(kl.loi.opacity(0.85)))
+        c.fill(Path(roundedRect: r, cornerRadius: 15), with: .linearGradient(
+            Gradient(colors: [kl.quang, kl.loi]),
+            startPoint: CGPoint(x: r.minX, y: r.minY),
+            endPoint: CGPoint(x: r.minX, y: r.maxY)))
+        veChuCat(&c, nhan, font: .system(size: 11.5, weight: .heavy),
+                 mau: Color(hex: 0x08111F), tai: t, rongToiDa: rong - 12, anchor: .center)
     }
 }
 

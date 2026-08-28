@@ -54,22 +54,39 @@ private struct VeMang1D: View {
         let d = tt.data ?? []
         let sel = Set(tt.selected ?? [])
         let pat = Set(tt.patched ?? [])
-        // Mảng dài thì ô co lại chứ KHÔNG tràn ra ngoài — thuật toán có bài
-        // chạy trên 30-40 phần tử.
         let rong = max(16.0, min(38.0, 330.0 / Double(max(d.count, 1))))
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 3) {
                 ForEach(Array(d.enumerated()), id: \.offset) { i, v in
-                    Text(so(v))
-                        .font(.system(size: rong > 26 ? 12 : 9, weight: .semibold, design: .monospaced))
-                        .foregroundColor(.white)
-                        .lineLimit(1).minimumScaleFactor(0.5)
-                        .frame(width: rong, height: 34)
-                        .background(RoundedRectangle(cornerRadius: 6)
-                            .fill(pat.contains(i) ? MauTracer.danhDau
-                                  : sel.contains(i) ? MauTracer.dangXet : MauTracer.thuong))
+                    let m = pat.contains(i) ? MauTracer.danhDau
+                          : sel.contains(i) ? MauTracer.dangXet : MauTracer.thuong
+                    let noi = pat.contains(i) || sel.contains(i)
+                    VStack(spacing: 2) {
+                        Text(so(v))
+                            .font(.system(size: rong > 26 ? 12.5 : 9, weight: .bold, design: .monospaced))
+                            .foregroundColor(.white)
+                            .lineLimit(1).minimumScaleFactor(0.5)
+                            .frame(width: rong, height: 36)
+                            .background(
+                                RoundedRectangle(cornerRadius: 7)
+                                    // Gradient dọc thay vì một màu phẳng — ô có
+                                    // khối, đọc nhanh hơn hẳn khi cả hàng cùng màu.
+                                    .fill(LinearGradient(colors: [m.opacity(0.95), m.opacity(0.62)],
+                                                         startPoint: .top, endPoint: .bottom))
+                            )
+                            .overlay(RoundedRectangle(cornerRadius: 7)
+                                .strokeBorder(noi ? m.opacity(0.9) : .clear, lineWidth: 1.4))
+                            // Quầng sáng CHỈ ở ô đang được thuật toán đụng tới.
+                            .shadow(color: noi ? m.opacity(0.75) : .clear, radius: 7)
+                        // Chỉ số — thiếu nó thì không đối chiếu được với dòng
+                        // mã đang chạy ("swap D[3] ↔ D[4]").
+                        Text("\(i)")
+                            .font(.system(size: 8, design: .monospaced).monospacedDigit())
+                            .foregroundColor(noi ? m : AppColors.textTertiary.opacity(0.65))
+                    }
                 }
             }
+            .padding(.vertical, 3)
         }
     }
 }
@@ -88,15 +105,19 @@ private struct VeBieuDo: View {
             let w = max(2.0, (g.size.width - Double(max(d.count - 1, 0)) * 2) / Double(max(d.count, 1)))
             HStack(alignment: .bottom, spacing: 2) {
                 ForEach(Array(d.enumerated()), id: \.offset) { i, v in
-                    RoundedRectangle(cornerRadius: 2)
-                        .fill(pat.contains(i) ? MauTracer.danhDau
-                              : sel.contains(i) ? MauTracer.dangXet : MauTracer.thuong)
-                        .frame(width: w, height: max(2, g.size.height * (v / lonNhat)))
+                    let m = pat.contains(i) ? MauTracer.danhDau
+                          : sel.contains(i) ? MauTracer.dangXet : MauTracer.thuong
+                    let noi = pat.contains(i) || sel.contains(i)
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(LinearGradient(colors: [m, m.opacity(0.45)],
+                                             startPoint: .top, endPoint: .bottom))
+                        .frame(width: w, height: max(3, g.size.height * (v / lonNhat)))
+                        .shadow(color: noi ? m.opacity(0.8) : .clear, radius: 6)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
         }
-        .frame(height: 130)
+        .frame(height: 150)
     }
 }
 
@@ -137,10 +158,17 @@ private struct VeDoThi: View {
             for e in es {
                 guard let a = toa[e.source], let b = toa[e.target] else { continue }
                 var p = Path(); p.move(to: a); p.addLine(to: b)
-                ctx.stroke(p, with: .color(e.selected ? MauTracer.dangXet
-                                           : e.visited ? MauTracer.daQua
-                                           : MauTracer.thuong.opacity(0.5)),
-                           lineWidth: e.selected || e.visited ? 2.5 : 1.2)
+                let m = e.selected ? MauTracer.dangXet
+                      : e.visited ? MauTracer.daQua : MauTracer.thuong.opacity(0.45)
+                if e.selected || e.visited {
+                    // Cạnh đã đi qua phát sáng — nhìn ra CÂY duyệt ngay lập tức,
+                    // không phải dò từng nét.
+                    var g = ctx
+                    g.addFilter(.blur(radius: 4))
+                    g.stroke(p, with: .color(m.opacity(0.7)), lineWidth: 5)
+                }
+                ctx.stroke(p, with: .color(m),
+                           lineWidth: e.selected || e.visited ? 2.6 : 1.2)
                 if let w = e.weight {
                     let giua = CGPoint(x: (a.x + b.x) / 2, y: (a.y + b.y) / 2)
                     ctx.draw(Text(so(w)).font(.system(size: 9, design: .monospaced))
@@ -149,10 +177,20 @@ private struct VeDoThi: View {
             }
             for n in ns {
                 guard let p = toa[n.id] else { continue }
-                let r: CGFloat = 15
+                let r: CGFloat = 16
                 let o = Path(ellipseIn: CGRect(x: p.x - r, y: p.y - r, width: r * 2, height: r * 2))
-                ctx.fill(o, with: .color(n.selected ? MauTracer.dangXet
-                                         : n.visited ? MauTracer.daQua : MauTracer.thuong))
+                let m = n.selected ? MauTracer.dangXet
+                      : n.visited ? MauTracer.daQua : MauTracer.thuong
+                if n.selected || n.visited {
+                    var g = ctx
+                    g.addFilter(.blur(radius: 7))
+                    g.fill(o, with: .color(m.opacity(0.65)))
+                }
+                ctx.fill(o, with: .radialGradient(
+                    Gradient(colors: [m, m.opacity(0.6)]),
+                    center: CGPoint(x: p.x - r * 0.3, y: p.y - r * 0.3),
+                    startRadius: 1, endRadius: r * 1.6))
+                ctx.stroke(o, with: .color(.white.opacity(n.selected ? 0.85 : 0.18)), lineWidth: 1.4)
                 ctx.draw(Text(n.id).font(.system(size: 10, weight: .bold))
                             .foregroundColor(.white), at: p)
                 if let w = n.weight {
@@ -162,7 +200,7 @@ private struct VeDoThi: View {
                 }
             }
         }
-        .frame(height: 230)
+        .frame(height: 250)
     }
 
     /// Nút nào có sẵn `x`/`y` thì dùng (thuật toán hình học đặt toạ độ thật),

@@ -143,6 +143,8 @@ struct ChayMoPhongView: View {
     @State private var tien: Double = 1
     @State private var dangPhat = false
     @State private var viec: Task<Void, Never>?
+    @State private var phong: CGFloat = 1
+    @State private var mocPhong: CGFloat = 1
 
     private var b: BuocMP? { may.buoc.indices.contains(buoc) ? may.buoc[buoc] : nil }
 
