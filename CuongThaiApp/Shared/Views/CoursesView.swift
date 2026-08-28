@@ -51,6 +51,7 @@ struct CoursesView: View {
                     PhongVanEntryCard()
                     ThuatToanEntryCard()
                     MoPhongEntryCard()
+                    CVEntryCard()
                     SnippetEntryCard()
 
                     tieuDeNhanh("Khoá tự biên soạn", "sparkles")

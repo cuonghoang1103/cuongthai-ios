@@ -353,6 +353,46 @@ enum APIEndpoint {
     case pvChamOnTap(cardId: Int, than: [String: Any])
     case pvThanhThao
 
+    // ── CV Builder ────────────────────────────────────────────
+    //
+    // ⚠️ CẦN đăng nhập. Đường gốc là `/api/v1/cv`.
+    // ⚠️ `GET /profile` TỰ TẠO hồ sơ nếu chưa có (upsert) — nên nó không bao
+    // giờ 404, và cũng không được gọi từ chỗ chỉ muốn ĐỌC.
+    case cvHoSo
+    case cvLuuHoSo(than: [String: Any])
+    case cvDoDay
+    /// Mục kinh nghiệm / dự án / học vấn…
+    case cvThemMuc(than: [String: Any])
+    case cvSuaMuc(id: Int, than: [String: Any])
+    case cvXoaMuc(id: Int)
+    case cvThemGach(mucId: Int, than: [String: Any])
+    case cvSuaGach(id: Int, than: [String: Any])
+    case cvXoaGach(id: Int)
+    case cvVietLaiGach(id: Int, than: [String: Any])
+    case cvTrangThaiVietLai
+    case cvThemKyNang(than: [String: Any])
+    case cvXoaKyNang(id: Int)
+    case cvThemChungChi(than: [String: Any])
+    case cvXoaChungChi(id: Int)
+    case cvThemNgonNgu(than: [String: Any])
+    case cvXoaNgonNgu(id: Int)
+    case cvSoiLoi
+    case cvMauCV
+    case cvDsTaiLieu
+    case cvTaoTaiLieu(than: [String: Any])
+    case cvTaiLieu(id: Int)
+    case cvXoaTaiLieu(id: Int)
+    case cvSoiLoiTaiLieu(id: Int)
+    case cvDsViecLam
+    case cvThemViecLam(than: [String: Any])
+    case cvXoaViecLam(id: Int)
+    case cvDoPhu(id: Int)
+    case cvGoiYTheoViec(id: Int)
+    case cvThuXinViec(id: Int, than: [String: Any])
+    case cvTrangThaiThu
+    case cvChamCV(than: [String: Any])
+    case cvTrangThaiCham
+
     case dsDuAn(danhMuc: String?, tim: String, trang: Int)
     case duAn(slug: String)
     /// Ghi nhận một lượt chép. Không cần đăng nhập (máy chủ đếm theo IP).
@@ -584,6 +624,33 @@ enum APIEndpoint {
         case .pvOnTap: return "/api/v1/interview/drill"
         case .pvChamOnTap(let c, _): return "/api/v1/interview/drill/\(c)/grade"
         case .pvThanhThao: return "/api/v1/interview/mastery"
+        case .cvHoSo, .cvLuuHoSo: return "/api/v1/cv/profile"
+        case .cvDoDay: return "/api/v1/cv/profile/completeness"
+        case .cvThemMuc: return "/api/v1/cv/items"
+        case .cvSuaMuc(let id, _), .cvXoaMuc(let id): return "/api/v1/cv/items/\(id)"
+        case .cvThemGach(let id, _): return "/api/v1/cv/items/\(id)/bullets"
+        case .cvSuaGach(let id, _), .cvXoaGach(let id): return "/api/v1/cv/bullets/\(id)"
+        case .cvVietLaiGach(let id, _): return "/api/v1/cv/bullets/\(id)/rewrite"
+        case .cvTrangThaiVietLai: return "/api/v1/cv/rewrite/status"
+        case .cvThemKyNang: return "/api/v1/cv/skills"
+        case .cvXoaKyNang(let id): return "/api/v1/cv/skills/\(id)"
+        case .cvThemChungChi: return "/api/v1/cv/certifications"
+        case .cvXoaChungChi(let id): return "/api/v1/cv/certifications/\(id)"
+        case .cvThemNgonNgu: return "/api/v1/cv/languages"
+        case .cvXoaNgonNgu(let id): return "/api/v1/cv/languages/\(id)"
+        case .cvSoiLoi: return "/api/v1/cv/lint"
+        case .cvMauCV: return "/api/v1/cv/templates"
+        case .cvDsTaiLieu, .cvTaoTaiLieu: return "/api/v1/cv/documents"
+        case .cvTaiLieu(let id), .cvXoaTaiLieu(let id): return "/api/v1/cv/documents/\(id)"
+        case .cvSoiLoiTaiLieu(let id): return "/api/v1/cv/documents/\(id)/lint"
+        case .cvDsViecLam, .cvThemViecLam: return "/api/v1/cv/jobs"
+        case .cvXoaViecLam(let id): return "/api/v1/cv/jobs/\(id)"
+        case .cvDoPhu(let id): return "/api/v1/cv/jobs/\(id)/coverage"
+        case .cvGoiYTheoViec(let id): return "/api/v1/cv/jobs/\(id)/tailor"
+        case .cvThuXinViec(let id, _): return "/api/v1/cv/jobs/\(id)/cover-letter"
+        case .cvTrangThaiThu: return "/api/v1/cv/cover-letter/status"
+        case .cvChamCV: return "/api/v1/cv/critique"
+        case .cvTrangThaiCham: return "/api/v1/cv/critique/status"
         case .dsDuAn: return "/api/v1/projects"
         case .duAn(let slug): return "/api/v1/projects/\(slug)"
         case .ghiNhanChep(let id): return "/api/v1/snippets/\(id)/copy"
@@ -601,7 +668,10 @@ enum APIEndpoint {
              .aiChamBaiViet, .batDauLuotThi, .nopBaiTracNghiem,
              .doiNutLoTrinh, .danhDauNutLoTrinhNghe, .nopBaiLuyen,
              .pvTaoPhien, .pvTraLoi, .pvTuCham, .pvKetThuc, .pvBaoLoiCau,
-             .pvTaoCauPhu, .pvTraLoiCauPhu, .pvChamOnTap, .taoThuMucSoTay, .taoMucSoTay, .ghiNhanChep,
+             .pvTaoCauPhu, .pvTraLoiCauPhu, .pvChamOnTap,
+             .cvThemMuc, .cvThemGach, .cvVietLaiGach, .cvThemKyNang,
+             .cvThemChungChi, .cvThemNgonNgu, .cvSoiLoi, .cvTaoTaiLieu,
+             .cvSoiLoiTaiLieu, .cvThemViecLam, .cvThuXinViec, .cvChamCV, .taoThuMucSoTay, .taoMucSoTay, .ghiNhanChep,
              .ghiTienDoBaiTap, .luuMaBaiTap, .chamMaBaiTap,
              .reactPost,   // ⚠️ backend khai POST, KHÔNG phải PATCH — xem ghi chú ở `case reactPost`
              .danhDauDeThi, .danhDauCauHoi,
@@ -617,7 +687,8 @@ enum APIEndpoint {
              .openThread, .muteThread, .saveLessonProgress,
              .taoPhienChat, .taoThuMucChat, .tachNhanhPhien, .catPhien, .datViecDoc:
             return "POST"
-        case .updateProfile, .datBietDanh, .doiTenThuMucSoTay, .suaMucSoTay, .ghiChuCauHoi:
+        case .updateProfile, .datBietDanh, .doiTenThuMucSoTay, .suaMucSoTay, .ghiChuCauHoi,
+             .cvLuuHoSo, .cvSuaMuc, .cvSuaGach:
             return "PUT"
         case .updateNote, .markRead, .markNotificationsRead, .datTuyChonHoiThoai,
              .suaDongBang, .suaMon, .suaChuong, .suaTuVung, .suaBaiViet,
@@ -626,7 +697,9 @@ enum APIEndpoint {
         case .deletePost, .unlikePost, .unsavePost, .deleteNote,
              .unblockUser, .cancelDeletionRequest, .deleteMessage, .xoaTin, .xoaDongBang,
              .xoaMon, .xoaChuong, .xoaVinhVien, .goThietBi, .xoaTuVung, .xoaBaiViet,
-             .xoaPhienChat, .xoaThuMucChat, .xoaHoiThoai, .xoaThuMucSoTay, .xoaMucSoTay:
+             .xoaPhienChat, .xoaThuMucChat, .xoaHoiThoai, .xoaThuMucSoTay, .xoaMucSoTay,
+             .cvXoaMuc, .cvXoaGach, .cvXoaKyNang, .cvXoaChungChi,
+             .cvXoaNgonNgu, .cvXoaTaiLieu, .cvXoaViecLam:
             return "DELETE"
         default:
             return "GET"
@@ -635,6 +708,12 @@ enum APIEndpoint {
 
     var body: [String: Any]? {
         switch self {
+        case .cvLuuHoSo(let m), .cvThemMuc(let m), .cvThemGach(_, let m),
+             .cvSuaMuc(_, let m), .cvSuaGach(_, let m), .cvVietLaiGach(_, let m),
+             .cvThemKyNang(let m), .cvThemChungChi(let m), .cvThemNgonNgu(let m),
+             .cvTaoTaiLieu(let m), .cvThemViecLam(let m), .cvThuXinViec(_, let m),
+             .cvChamCV(let m):
+            return m
         case .pvTaoPhien(let m): return m
         case .pvTraLoi(_, _, let m): return m
         case .pvTuCham(_, _, let m): return m
