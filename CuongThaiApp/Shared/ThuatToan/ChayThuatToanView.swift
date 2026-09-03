@@ -71,7 +71,7 @@ struct ChayThuatToanView: View {
             if ma.isEmpty { ma = tt.ma }
             await chay()
         }
-        .onDisappear { viecPhat?.cancel() }
+        .onDisappear { viecPhat?.cancel(); AmMoPhong.shared.im() }
     }
 
     // MARK: Đầu trang

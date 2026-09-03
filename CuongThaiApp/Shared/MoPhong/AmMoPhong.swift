@@ -43,13 +43,45 @@ final class AmMoPhong {
         set { UserDefaults.standard.set(newValue, forKey: "mophong.am") }
     }
 
+    /// Mốc lần phát gần nhất — chặn phát dồn.
+    private var lanCuoi = Date.distantPast
+
     func phat(_ t: TiengMP) {
         guard Self.bat else { return }
+        // ⚠️ CHẶN PHÁT DỒN. Kéo thanh tua là `onChange` nổ hàng chục lần trong
+        // một cái vuốt, và chạy ở 4× thì mỗi 45ms một tiếng — chồng lên nhau
+        // thành tiếng rè chứ không còn là hiệu ứng. 70ms là ngưỡng tai vẫn
+        // nghe ra hai tiếng RIÊNG.
+        let gio = Date()
+        guard gio.timeIntervalSince(lanCuoi) > 0.07 else { return }
+        lanCuoi = gio
+
         chuanBi()
         guard let nut, let b = dem[t] ?? dung(t) else { return }
         dem[t] = b
         nut.scheduleBuffer(b, at: nil, options: [], completionHandler: nil)
         if !nut.isPlaying { nut.play() }
+    }
+
+    /// Im ngay lập tức, bỏ hàng đợi, THÁO luôn máy âm.
+    ///
+    /// ⚠️ BẮT BUỘC gọi khi rời màn hình. `scheduleBuffer` xếp vào hàng đợi và
+    /// nút phát cứ chạy hết hàng — thoát ra ngoài rồi mà tiếng vẫn kêu tiếp,
+    /// đúng lỗi người dùng gặp. `stop()` mới xoá hàng đợi; `pause()` thì không.
+    ///
+    /// ⚠️ Và phải tháo cả `AVAudioEngine`, không chỉ nút phát: engine còn chạy
+    /// là app còn giữ đường tiếng của hệ thống dù không phát gì. Dựng lại tốn
+    /// ~30ms, chỉ xảy ra một lần khi vào lại màn — rẻ hơn nhiều so với việc
+    /// giữ tài nguyên âm thanh suốt phiên.
+    ///
+    /// GIỮ lại đệm đã dựng — chúng không phụ thuộc vào engine, và dựng lại
+    /// tuy nhanh nhưng không có lý do gì phải làm lại.
+    func im() {
+        nut?.stop()
+        may?.stop()
+        may = nil
+        nut = nil
+        lanCuoi = .distantPast
     }
 
     func phat(_ ten: String?) {
@@ -92,8 +124,29 @@ final class AmMoPhong {
 
     // MARK: Tổng hợp
 
+    /// Thời lượng THẬT của từng hiệu ứng = mốc kết thúc muộn nhất trong các
+    /// thành phần của nó.
+    ///
+    /// ⚠️ Cấp cứng 1,2 s cho mọi hiệu ứng là LỖI, không phải lãng phí: tiếng
+    /// `click` dài 45ms mà đệm 1,2 s nghĩa là mỗi lần phát xếp thêm hơn một
+    /// giây gần như im lặng vào hàng đợi. Chạy nhanh vài chục bước là hàng đợi
+    /// dài tới hàng chục giây — thoát màn hình rồi vẫn kêu.
+    private func doDai(_ t: TiengMP) -> Double {
+        switch t {
+        case .click:   return 0.09
+        case .blip:    return 0.13
+        case .swoosh:  return 0.34
+        case .stream:  return 0.55
+        case .ping:    return 0.38
+        case .success: return 0.55
+        case .lock:    return 0.23
+        case .buzz:    return 0.30
+        case .error:   return 0.46
+        }
+    }
+
     private func dung(_ t: TiengMP) -> AVAudioPCMBuffer? {
-        var v = [Float](repeating: 0, count: Int(mau * 1.2))   // 1,2 s là đủ cho hiệu ứng dài nhất
+        var v = [Float](repeating: 0, count: Int(mau * doDai(t)))
         switch t {
         case .click:
             not(&v, 0, 1400, .vuong, 0.045, 0.06)

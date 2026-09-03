@@ -42,6 +42,8 @@ struct KichBan: Codable, Identifiable, Hashable {
     let icon: String?
     let accent: String?
     let group: String?
+    /// Bài học trên web mà kịch bản này minh hoạ — cho người đọc đường đi tiếp.
+    let lesson: BaiHocMP?
     let nodes: [NutMP]?
     let edges: [CanhMP]?
     let options: [TuyChonMP]?
@@ -53,6 +55,13 @@ struct KichBan: Codable, Identifiable, Hashable {
     var mau: Color { mauHex(accent, mac: 0x38BDF8) }
     /// `icon` là tên bộ **lucide** của web — bắc sang SF Symbols.
     var bieuTuong: String { BieuTuongLucide.sf(icon) }
+}
+
+struct BaiHocMP: Codable, Hashable {
+    let course: String?
+    let code: String?
+    let slug: String?
+    let title: ChuSongNgu?
 }
 
 struct NutMP: Codable, Identifiable, Hashable {

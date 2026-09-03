@@ -22,6 +22,10 @@ struct TrangThaiPanel {
     var dong: [Int] = []
     /// Đồng hồ / cột biểu đồ: khoá → (giá trị, nhãn, sắc thái).
     var giaTri: [String: (Double, String?, String?)] = [:]
+    /// ⚠️ THỨ TỰ khoá theo lần xuất hiện đầu tiên. Từ điển Swift không giữ
+    /// thứ tự, mà biểu đồ không khai `series` thì cột phải xếp đúng thứ tự
+    /// kịch bản đặt — nếu không thì mỗi lần dựng lại cột nhảy chỗ.
+    var thuTuKhoa: [String] = []
     /// Biểu đồ đường: khoá → danh sách điểm.
     var diem: [String: [(Double, Double)]] = [:]
 }
@@ -120,7 +124,10 @@ final class MayMoPhong: ObservableObject {
                 case "lines":
                     t.dong = o.valueMang ?? []
                 case "value":
-                    if let k = o.key { t.giaTri[k] = (o.valueSo ?? 0, o.label, o.tone) }
+                    if let k = o.key {
+                        if t.giaTri[k] == nil { t.thuTuKhoa.append(k) }
+                        t.giaTri[k] = (o.valueSo ?? 0, o.label, o.tone)
+                    }
                 case "point":
                     if let k = o.key { t.diem[k, default: []].append((o.x ?? 0, o.y ?? 0)) }
                 default: break

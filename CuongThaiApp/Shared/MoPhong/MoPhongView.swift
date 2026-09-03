@@ -146,6 +146,7 @@ struct ChayMoPhongView: View {
     @State private var phong: CGFloat = 1
     @State private var mocPhong: CGFloat = 1
     @State private var coAm = AmMoPhong.bat
+    @AppStorage("mophong.tocDo") private var tocDo = 1.0
 
     private var b: BuocMP? { may.buoc.indices.contains(buoc) ? may.buoc[buoc] : nil }
 
@@ -154,6 +155,7 @@ struct ChayMoPhongView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: Spacing.sm) {
                     NeoDauTrang()
+                    khoiGioiThieu
                     if !kb.cacTuyChon.isEmpty { khoiTuyChon }
                     if let e = may.loi { khoiLoi(e) }
                     else if kb.laSoDo {
@@ -206,7 +208,56 @@ struct ChayMoPhongView: View {
             }
             dungLai()
         }
-        .onDisappear { viec?.cancel() }
+        .onDisappear { viec?.cancel(); AmMoPhong.shared.im() }
+    }
+
+    // MARK: Kịch bản này là gì
+
+    /// ⚠️ `tagline` là câu DUY NHẤT nói kịch bản này dạy điều gì. Bản đầu tôi
+    /// chỉ hiện nó ở danh sách rồi bỏ mất ở màn chạy — vào tới nơi thì người
+    /// đọc thấy một mớ bảng số mà không biết đang xem cái gì. Người dùng nói
+    /// thẳng: "không hiểu gì hết".
+    private var khoiGioiThieu: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 6) {
+                Image(systemName: kb.bieuTuong)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(kb.mau)
+                Text(kb.name?.chu(anh) ?? kb.id)
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundColor(AppColors.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 0)
+            }
+            if let t = kb.tagline?.chu(anh), !t.isEmpty {
+                Text(t)
+                    .font(.system(size: 13))
+                    .foregroundColor(AppColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            if let l = kb.lesson, let tua = l.title?.chu(anh), !tua.isEmpty {
+                HStack(spacing: 5) {
+                    Image(systemName: "book.closed.fill")
+                        .font(.system(size: 9)).foregroundColor(AppColors.textTertiary)
+                    Text("\(T("Bài")) \(l.code ?? "") · \(tua)")
+                        .font(.system(size: 11))
+                        .foregroundColor(AppColors.textTertiary)
+                        .lineLimit(2).multilineTextAlignment(.leading)
+                    Spacer(minLength: 0)
+                }
+                .padding(.top, 2)
+            }
+            Text("\(may.buoc.count) \(T("bước")) · \(kb.laSoDo ? T("sơ đồ mạng") : T("bảng số liệu"))")
+                .font(.system(size: 10.5).monospacedDigit())
+                .foregroundColor(AppColors.textTertiary)
+                .padding(.top, 1)
+        }
+        .padding(Spacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: CornerRadius.large)
+            .fill(AppColors.backgroundCard)
+            .overlay(RoundedRectangle(cornerRadius: CornerRadius.large)
+                .strokeBorder(kb.mau.opacity(0.3), lineWidth: 1)))
     }
 
     // MARK: Tuỳ chọn
@@ -368,6 +419,22 @@ struct ChayMoPhongView: View {
                 nut("forward.fill") { dung(); if buoc < may.buoc.count - 1 { buoc += 1 }; tien = 1 }
                 nut("arrow.counterclockwise") { dung(); buoc = 0; tien = 1 }
                 Spacer(minLength: 0)
+                // ⚠️ Mỗi bước tự khai `duration` (kịch bản chọn nhịp riêng cho
+                // từng đoạn), nhưng nhịp đó soạn cho MÀN HÌNH LỚN và người dạy
+                // đang nói kèm. Đọc một mình trên điện thoại thì cần chậm hơn,
+                // nên chia thời lượng cho hệ số này thay vì áp một nhịp cố định
+                // — vẫn giữ được "truy vấn CSDL lâu hơn đọc cache".
+                Menu {
+                    ForEach([0.25, 0.5, 0.75, 1.0, 1.5, 2.0], id: \.self) { t in
+                        Button("\(so(t))×") { tocDo = t }
+                    }
+                } label: {
+                    Text("\(so(tocDo))×")
+                        .font(.system(size: 12, weight: .bold).monospacedDigit())
+                        .foregroundColor(AppColors.textSecondary)
+                        .padding(.horizontal, 9).padding(.vertical, 6)
+                        .background(Capsule().fill(AppColors.backgroundTertiary))
+                }
             }
         }
         .padding(.horizontal, Spacing.md)
@@ -404,7 +471,7 @@ struct ChayMoPhongView: View {
                 // Mỗi bước tự khai `duration` — kịch bản đã chọn nhịp cho từng
                 // đoạn (một truy vấn CSDL chậm hơn một lần đọc cache), tôn
                 // trọng nó thay vì áp một nhịp đều.
-                let ms = may.buoc[buoc].duration ?? 900
+                let ms = (may.buoc[buoc].duration ?? 900) / max(tocDo, 0.1)
                 let khung = 26
                 for k in 1...khung {
                     guard !Task.isCancelled else { return }

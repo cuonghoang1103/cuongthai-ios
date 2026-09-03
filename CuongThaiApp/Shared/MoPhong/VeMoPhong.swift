@@ -356,7 +356,11 @@ struct VePanel: View {
     // ── code ──
     private var veMa: some View {
         let bd = p.startLine ?? 1
-        return VStack(alignment: .leading, spacing: 1) {
+        // ⚠️ Mã phải CUỘN NGANG, không xuống dòng. Xuống dòng thì phần bị đẩy
+        // xuống mất thụt lề và chú thích `// 1. hỏi cache` rơi xuống dòng
+        // dưới — đọc như mã hỏng. Đây là chỗ người dùng kêu "khó nhìn".
+        return ScrollView(.horizontal, showsIndicators: true) {
+        VStack(alignment: .leading, spacing: 1) {
             ForEach(Array((p.lines ?? []).enumerated()), id: \.offset) { i, l in
                 let so = bd + i
                 let sang = tt.dong.contains(so)
@@ -366,22 +370,25 @@ struct VePanel: View {
                         .foregroundColor(AppColors.textTertiary.opacity(0.7))
                         .frame(width: 18, alignment: .trailing)
                     Text(l)
-                        .font(.system(size: 10, design: .monospaced))
+                        .font(.system(size: 10.5, design: .monospaced))
                         .foregroundColor(sang ? .white : AppColors.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Spacer(minLength: 0)
+                        .lineLimit(1)
                 }
-                .padding(.vertical, 0.5).padding(.horizontal, 3)
+                .padding(.vertical, 1).padding(.horizontal, 3)
                 .background(sang ? p.mau.opacity(0.22) : .clear)
                 .clipShape(RoundedRectangle(cornerRadius: 3))
             }
+        }
+        .fixedSize(horizontal: true, vertical: false)
         }
     }
 
     // ── log ──
     private var veNhatKy: some View {
         let ds = mucChinh.suffix(p.maxLines ?? 12)
-        return VStack(alignment: .leading, spacing: 1.5) {
+        // Nhật ký là dòng lệnh — cắt xuống dòng làm mất căn cột số liệu.
+        return ScrollView(.horizontal, showsIndicators: true) {
+        VStack(alignment: .leading, spacing: 2) {
             ForEach(Array(ds.enumerated()), id: \.offset) { _, m in
                 HStack(alignment: .top, spacing: 5) {
                     if let b = m.badge, !b.isEmpty {
@@ -391,13 +398,14 @@ struct VePanel: View {
                             .background(Capsule().fill(mauSacThai(m.tone).opacity(0.16)))
                     }
                     Text(m.label ?? "")
-                        .font(.system(size: 10, design: .monospaced))
+                        .font(.system(size: 10.5, design: .monospaced))
                         .foregroundColor(AppColors.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Spacer(minLength: 0)
+                        .lineLimit(1)
                 }
             }
             if ds.isEmpty { Text("—").font(.system(size: 10)).foregroundColor(AppColors.textTertiary) }
+        }
+        .fixedSize(horizontal: true, vertical: false)
         }
     }
 
@@ -477,13 +485,16 @@ struct VePanel: View {
                             .foregroundColor(v?.2 != nil ? mauSacThai(v?.2) : p.mau)
                     }
                     GeometryReader { g in
+                        let m = v?.2 != nil ? mauSacThai(v?.2) : p.mau
                         ZStack(alignment: .leading) {
                             Capsule().fill(AppColors.backgroundTertiary)
-                            Capsule().fill(v?.2 != nil ? mauSacThai(v?.2) : p.mau)
-                                .frame(width: g.size.width * min(max(gt / tran, 0), 1))
+                            Capsule()
+                                .fill(LinearGradient(colors: [m, m.opacity(0.55)],
+                                                     startPoint: .leading, endPoint: .trailing))
+                                .frame(width: max(3, g.size.width * min(max(gt / tran, 0), 1)))
                         }
                     }
-                    .frame(height: 5)
+                    .frame(height: 9)
                 }
             }
         }
@@ -491,29 +502,43 @@ struct VePanel: View {
 
     // ── chart ──
     private var veBieuDo: some View {
-        let ds = p.series ?? []
+        // ⚠️ Nhiều biểu đồ KHÔNG khai `series` — cột sinh hoàn toàn từ lệnh
+        // `value`. Chỉ dựng theo `series` thì những biểu đồ đó TRỐNG TRƠN,
+        // đúng lỗi người dùng gặp ở kịch bản `nodejs-cache-aside`.
+        let ds: [(String, String)] = (p.series?.isEmpty == false)
+            ? p.series!.map { ($0.id, $0.label ?? $0.id) }
+            : tt.thuTuKhoa.map { ($0, tt.giaTri[$0]?.1 ?? $0) }
         let tran = max(p.max ?? (tt.giaTri.values.map { $0.0 }.max() ?? 1), 0.0001)
-        return VStack(alignment: .leading, spacing: 3) {
-            ForEach(ds) { s in
-                let v = tt.giaTri[s.id]
-                HStack(spacing: 5) {
-                    Text(s.label ?? s.id)
-                        .font(.system(size: 9)).foregroundColor(AppColors.textSecondary)
-                        .frame(width: 78, alignment: .leading).lineLimit(1)
+        return VStack(alignment: .leading, spacing: 5) {
+            ForEach(Array(ds.enumerated()), id: \.offset) { _, x in
+                let v = tt.giaTri[x.0]
+                let mau = v?.2 != nil ? mauSacThai(v?.2)
+                        : mauHex(p.series?.first { $0.id == x.0 }?.accent, mac: 0x3B82F6)
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack {
+                        Text(x.1).font(.system(size: 10.5))
+                            .foregroundColor(AppColors.textSecondary)
+                            .lineLimit(1)
+                        Spacer(minLength: 6)
+                        Text("\(so(v?.0 ?? 0))\(p.unit ?? "")")
+                            .font(.system(size: 11, weight: .bold).monospacedDigit())
+                            .foregroundColor(mau)
+                    }
                     GeometryReader { g in
                         ZStack(alignment: .leading) {
-                            RoundedRectangle(cornerRadius: 3).fill(AppColors.backgroundTertiary)
-                            RoundedRectangle(cornerRadius: 3)
-                                .fill(v?.2 != nil ? mauSacThai(v?.2) : mauHex(s.accent, mac: 0x3B82F6))
-                                .frame(width: g.size.width * min(max((v?.0 ?? 0) / tran, 0), 1))
+                            RoundedRectangle(cornerRadius: 4).fill(AppColors.backgroundTertiary)
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(LinearGradient(colors: [mau, mau.opacity(0.55)],
+                                                     startPoint: .leading, endPoint: .trailing))
+                                .frame(width: max(3, g.size.width * min(max((v?.0 ?? 0) / tran, 0), 1)))
                         }
                     }
-                    .frame(height: 13)
-                    Text((v?.1) ?? so(v?.0 ?? 0))
-                        .font(.system(size: 9, weight: .semibold).monospacedDigit())
-                        .foregroundColor(AppColors.textTertiary)
-                        .frame(width: 52, alignment: .trailing).lineLimit(1)
+                    .frame(height: 12)
                 }
+            }
+            if ds.isEmpty {
+                Text(T("Chưa có số liệu ở bước này."))
+                    .font(.system(size: 10.5)).foregroundColor(AppColors.textTertiary)
             }
         }
     }

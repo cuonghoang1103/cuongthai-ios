@@ -26,18 +26,39 @@ enum AmThuatToan {
     ///   · dữ liệu ĐỔI CHỖ  → tiếng gõ ngắn (đây là thao tác đắt nhất)
     ///   · vùng đang xét đổi → tiếng blip nhẹ
     ///   · chạy tới bước cuối → hợp âm xong việc
+    /// Chọn tiếng theo thứ THẬT SỰ đổi giữa hai khung, không phát bừa mỗi bước.
+    ///
+    /// ⚠️ Một thuật toán 500 bước mà bước nào cũng kêu thì thành tiếng ồn và
+    /// người học tắt ngay. Chỉ kêu khi có việc đáng chú ý:
+    ///   · dữ liệu ĐỔI CHỖ  → tiếng gõ ngắn (thao tác đắt nhất của thuật toán)
+    ///   · vùng đang xét đổi → blip nhẹ
+    ///   · chạy tới bước cuối → hợp âm xong việc
+    ///
+    /// ⚠️ Duyệt theo THỨ TỰ khoá, không duyệt từ điển thẳng. Từ điển Swift
+    /// không giữ thứ tự, nên cùng một bước lúc chạm khối mảng trước, lúc chạm
+    /// khối nhật ký trước ⇒ ra tiếng khác nhau ở những lần chạy khác nhau.
+    /// Đó chính là cái "kêu không đúng".
+    ///
+    /// ⚠️ Và ưu tiên có THỨ BẬC: đổi dữ liệu quan trọng hơn đổi vùng chọn, nên
+    /// phải quét HẾT mọi tracer tìm thay đổi dữ liệu rồi mới xét vùng chọn —
+    /// thoát sớm ở tracer đầu tiên là bỏ sót phép hoán vị ở tracer thứ hai.
     static func theoKhung(truoc: [String: TrangThaiTracer],
                           sau: [String: TrangThaiTracer],
                           cuoi: Bool) {
         guard bat else { return }
         if cuoi { AmMoPhong.shared.phat(.success); return }
-        for (k, b) in sau {
-            guard let a = truoc[k] else { continue }
-            if let d1 = a.data, let d2 = b.data, d1 != d2 {
+        let khoa = sau.keys.sorted()
+        for k in khoa {
+            guard let a = truoc[k], let b = sau[k] else { continue }
+            if a.data != b.data || a.data2 != b.data2 {
                 AmMoPhong.shared.phat(.click)
                 return
             }
-            if a.selected != b.selected || a.patched != b.patched {
+        }
+        for k in khoa {
+            guard let a = truoc[k], let b = sau[k] else { continue }
+            if a.selected != b.selected || a.patched != b.patched
+                || a.selectedKeys != b.selectedKeys || a.patchedKeys != b.patchedKeys {
                 AmMoPhong.shared.phat(.blip)
                 return
             }
