@@ -104,7 +104,8 @@ final class GiaSuBaiVM: ObservableObject {
              khoaCache: String? = nil,
              tiengAnh: Bool = false,
              hienCauHoi: Bool = true,
-             boLichSu: Bool = false) {
+             boLichSu: Bool = false,
+             lamMoi: Bool = false) {
         let q = cau.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !q.isEmpty, !dangHoi else { return }
 
@@ -114,7 +115,13 @@ final class GiaSuBaiVM: ObservableObject {
         if hienCauHoi { luot.append(LuotGiaSu(cuaToi: true, noiDung: q)) }
         luot.append(LuotGiaSu(cuaToi: false, noiDung: "", dangChay: true,
                               laTiengAnh: tiengAnh,
-                              cauGoc: tiengAnh ? nil : q, khoaCache: khoaCache))
+                              // ⚠️ GIỮ `cauGoc` cả cho lượt tiếng Anh. Bản đầu để
+                              // `nil`, và hậu quả là nút "Hỏi lại mới" KHÔNG hiện
+                              // trên chính lượt tiếng Anh — tức đúng cái lượt đang
+                              // giữ mục cache hỏng thì lại không sinh lại được.
+                              // Việc "có mời dịch sang tiếng Anh không" đã do
+                              // `laTiengAnh` quyết, không cần mượn `cauGoc`.
+                              cauGoc: q, khoaCache: khoaCache))
         let viTri = luot.count - 1
         dangHoi = true
         loi = nil
@@ -125,7 +132,7 @@ final class GiaSuBaiVM: ObservableObject {
             var coChu = false
             for await sk in LuongGiaSuBai.hoi(lessonId: lessonId, cauHoi: q,
                                               lichSu: lichSu, tiengAnh: tiengAnh,
-                                              khoaCache: khoaCache) {
+                                              khoaCache: khoaCache, lamMoi: lamMoi) {
                 if Task.isCancelled { break }
                 switch sk {
                 case .mau(let t):
@@ -146,7 +153,7 @@ final class GiaSuBaiVM: ObservableObject {
                         loi = m
                     } else {
                         await lui(q, khoaCache, tiengAnh, lichSu, viTri,
-                                  hienCauHoi: hienCauHoi, loiSSE: m)
+                                  hienCauHoi: hienCauHoi, lamMoi: lamMoi, loiSSE: m)
                     }
                 }
             }
@@ -161,15 +168,12 @@ final class GiaSuBaiVM: ObservableObject {
     /// SSE hỏng mà chưa nhả chữ nào → gọi `/ai/ask` một cục, đúng như web.
     private func lui(_ cau: String, _ khoaCache: String?, _ tiengAnh: Bool,
                      _ lichSu: [[String: String]], _ viTri: Int,
-                     hienCauHoi: Bool, loiSSE: String) async {
-        // Cùng cách nhắc như đường SSE — hai đường mà nhắc khác nhau thì
-        // cùng một nút trả về hai thứ tiếng tuỳ hôm nào SSE hỏng.
-        var than: [String: Any] = ["question": tiengAnh
-            ? "[Answer entirely in English, regardless of the language of this question.]\n\n" + cau
-            : cau]
+                     hienCauHoi: Bool, lamMoi: Bool, loiSSE: String) async {
+        var than: [String: Any] = ["question": cau]
         if !lichSu.isEmpty { than["history"] = lichSu }
         if tiengAnh { than["english"] = true }
         if let khoaCache { than["cacheKey"] = khoaCache }
+        if lamMoi { than["refresh"] = true }
         do {
             let r: TraLoiGiaSu = try await APIClient.shared.request(
                 .hoiGiaSuBai(lessonId: lessonId, than: than))
@@ -217,14 +221,19 @@ final class GiaSuBaiVM: ObservableObject {
             hienCauHoi: false, boLichSu: true)
     }
 
-    /// Bỏ cache, sinh câu trả lời tươi. KHÔNG gửi `cacheKey` — đó chính là
-    /// cách bỏ qua cache (máy chủ chỉ tra cache khi có khoá). Cũng bỏ lịch sử,
-    /// cùng lý do như `xinTiengAnh`: hỏi lại đúng câu vừa hỏi mà còn kèm lịch
-    /// sử thì model chỉ nói "đã trả lời ở trên rồi".
+    /// Sinh câu trả lời tươi VÀ ghi đè cache cho người sau.
+    ///
+    /// ⚠️ GIỮ `khoaCache` và gửi kèm `refresh: true`. Bản đầu bỏ luôn khoá để
+    /// né bước ĐỌC cache — nhưng máy chủ cũng chỉ GHI khi có khoá, nên nó vừa
+    /// không đọc vừa không ghi đè, và một mục cache hỏng nằm lại đó VĨNH VIỄN
+    /// cho mọi người (cache này dùng chung, không phải của riêng ai). Cờ
+    /// `refresh` thêm ở máy chủ 05/09/2026 là đường DUY NHẤT gỡ được.
+    ///
+    /// Cũng bỏ lịch sử, cùng lý do như `xinTiengAnh`.
     func hoiLaiMoi(_ i: Int) {
         guard i < luot.count, let cau = luot[i].cauGoc, !dangHoi else { return }
-        hoi(cau, khoaCache: nil, tiengAnh: luot[i].laTiengAnh,
-            hienCauHoi: false, boLichSu: true)
+        hoi(cau, khoaCache: luot[i].khoaCache, tiengAnh: luot[i].laTiengAnh,
+            hienCauHoi: false, boLichSu: true, lamMoi: true)
     }
 
     func dung() { viec?.cancel(); viec = nil; dangHoi = false }
@@ -346,8 +355,10 @@ struct GiaSuBaiHocView: View {
     @ViewBuilder
     private func hangHanhDong(_ l: LuotGiaSu, _ i: Int) -> some View {
         let coAnh = !l.laTiengAnh && l.cauGoc != nil && !l.daXinAnh
-        let coMoi = l.coSan && l.cauGoc != nil
-        if l.coSan || coAnh {
+        // Hiện cho MỌI câu trả lời có nguồn, không chỉ câu lấy từ cache: một
+        // câu tươi mà dở thì cũng vừa bị GHI vào cache dùng chung rồi.
+        let coMoi = l.cauGoc != nil && l.khoaCache != nil
+        if l.coSan || coAnh || coMoi {
             HStack(spacing: Spacing.md) {
                 if l.coSan {
                     Label("Trả lời có sẵn", systemImage: "bolt.fill")
@@ -487,27 +498,19 @@ enum LuongGiaSuBai {
                     cauHoi: String,
                     lichSu: [[String: String]],
                     tiengAnh: Bool,
-                    khoaCache: String?) -> AsyncStream<SuKienHoiDap> {
-        // ⚠️⚠️ Nhắc lại yêu cầu tiếng Anh NGAY TRONG câu hỏi, không chỉ dựa
-        // vào cờ `english`.
-        //
-        // Máy chủ có nhận cờ đó và có đổi system prompt sang
-        // `LANGUAGE — Answer ENTIRELY in English` (đo được: nó tạo mục cache
-        // riêng dưới `lang='en'`). Nhưng đo thật 05/09/2026, model VẪN trả lời
-        // TIẾNG VIỆT: câu hỏi tiếng Việt + nội dung bài tiếng Việt lấn át một
-        // dòng lệnh nằm cuối một system prompt dài — xem
-        // [[feedback_fewshot_language_beats_instruction]].
-        //
-        // Lệnh đặt ngay đầu lượt NGƯỜI DÙNG thì gần chỗ sinh chữ nhất và
-        // model nghe. Web KHÔNG có dòng này, nên nút "Bản tiếng Anh" bên đó
-        // cũng đang trả về tiếng Việt.
-        let cauGui = tiengAnh
-            ? "[Answer entirely in English, regardless of the language of this question.]\n\n" + cauHoi
-            : cauHoi
-        var than: [String: Any] = ["question": cauGui]
+                    khoaCache: String?,
+                    lamMoi: Bool) -> AsyncStream<SuKienHoiDap> {
+        // ⚠️ KHÔNG tự chèn lệnh ép tiếng Anh vào câu hỏi nữa. Bản đầu của app
+        // phải tự nhắc vì máy chủ chỉ ghi lệnh đó ở CUỐI system prompt và model
+        // bỏ qua (lượt mồi của trợ lý bằng tiếng Việt lấn át — xem
+        // [[feedback_fewshot_language_beats_instruction]]). Từ 05/09/2026 máy
+        // chủ ép ở BA chỗ: lượt mồi trợ lý · nhãn ngữ cảnh · đầu lượt người
+        // dùng. Nhắc thêm ở đây chỉ tổ lệnh hiện hai lần trong cùng một lượt.
+        var than: [String: Any] = ["question": cauHoi]
         if !lichSu.isEmpty { than["history"] = lichSu }
         if tiengAnh { than["english"] = true }
         if let khoaCache { than["cacheKey"] = khoaCache }
+        if lamMoi { than["refresh"] = true }
 
         return LuongHoiDap.doc(
             duong: "/api/v1/courses/lessons/\(lessonId)/ai/ask-stream",
