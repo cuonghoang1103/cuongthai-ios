@@ -23,7 +23,14 @@ struct DeThi: Codable, Identifiable, Hashable {
     let course: KhoaHoc?
     let semester: HocKy?
 
-    struct KhoaHoc: Codable, Hashable { let title: String?; let slug: String? }
+    /// ⚠️ `courseCode` CÓ trong phản hồi (`/exams` trả `course.courseCode`,
+    /// ví dụ "PRF192") nhưng bản model đầu bỏ sót, nên màn danh sách phải
+    /// gom nhóm theo `title` dài dòng thay vì mã môn ngắn gọn.
+    struct KhoaHoc: Codable, Hashable {
+        let title: String?
+        let slug: String?
+        let courseCode: String?
+    }
     struct HocKy: Codable, Hashable { let name: String?; let ordinal: Int?; let code: String? }
 
     /// Máy chủ ghép hai thứ tiếng vào MỘT trường, ngăn bằng `|||`:

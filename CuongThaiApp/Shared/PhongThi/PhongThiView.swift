@@ -1,50 +1,121 @@
 import SwiftUI
 
-// ── Danh sách đề ────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════
+// PHÒNG THI — DANH SÁCH ĐỀ
+//
+// Đo thật 05/09/2026: **800 đề · 23 môn · 5 kỳ học**. Bản trước đổ tất cả
+// thành một danh sách phẳng gom theo tên khoá học — người dùng nói đúng:
+// "rất lộn xộn". Ba việc phải làm cùng lúc thì nó mới tra được:
+//
+//   1. Xếp cây **Kỳ học → Môn → đề**, gập mở được, đúng lối Academy.
+//   2. Trong mỗi môn, đề xếp theo **KỲ THI, mới nhất trước** (Spring 2026 →
+//      Fall 2022), có dòng ngăn ghi rõ tên kỳ.
+//   3. Mỗi **loại đề một màu riêng** (FE/PE/PT/ME/Đọc/Nghe/Nói/Quiz) —
+//      xem `PhanLoaiDe.swift` — kèm thanh lọc theo loại.
+//
+// ⚠️ Cả cây phải dựng LƯỜI. 800 đề × mỗi đề một `NavigationLink` dựng sẵn
+// là màn hình đứng vài giây khi mở. Mặc định mọi kỳ ĐÓNG, chỉ kỳ nào bấm mở
+// mới dựng nội dung.
+// ════════════════════════════════════════════════════════════════
 
 struct PhongThiView: View {
     @State private var de: [DeThi] = []
     @State private var dangTai = true
     @State private var loi: String?
     @State private var tuKhoa = ""
-    @State private var khoaChon: String?
+    @State private var loaiChon: LoaiDe?
+    @State private var kyMo: Set<Int> = []
+    @State private var monMo: Set<String> = []
     /// ⚠️ Mặc định TIẾNG ANH, khớp `ExamPortalClient` của web.
     @State private var ngonNgu: NgonNguDe = .anh
 
-    private var khoaCo: [String] {
-        Array(Set(de.map(\.tenKhoa))).sorted()
-    }
-
+    // ── Lọc ─────────────────────────────────────────────────────
     private var hienThi: [DeThi] {
         var ds = de
-        if let k = khoaChon { ds = ds.filter { $0.tenKhoa == k } }
+        if let l = loaiChon { ds = ds.filter { $0.loai == l } }
         let t = tuKhoa.trimmingCharacters(in: .whitespaces).lowercased()
         if !t.isEmpty {
             ds = ds.filter {
                 // Tìm trên chuỗi GỐC, tức quét cả nửa Anh lẫn nửa Việt: gõ
                 // "thi lại" hay "retake" đều phải ra, bất kể đang xem tiếng
-                // nào.
+                // nào. Thêm mã môn và tên kỳ thi để gõ "PRF192" hay
+                // "spring 2026" cũng tìm được.
                 $0.title.lowercased().contains(t)
                 || ($0.code ?? "").lowercased().contains(t)
                 || $0.tenKhoa.lowercased().contains(t)
+                || $0.maMon.lowercased().contains(t)
+                || ($0.kyThi?.ten.lowercased().contains(t) ?? false)
             }
         }
         return ds
     }
 
-    /// Gom theo khoá học. 190 đề đổ thành một danh sách phẳng thì không tìm
-    /// nổi cái mình cần.
-    private var theoKhoa: [(String, [DeThi])] {
-        Dictionary(grouping: hienThi, by: \.tenKhoa)
-            .map { ($0.key, $0.value.sorted { ($0.code ?? "") < ($1.code ?? "") }) }
-            .sorted { $0.0 < $1.0 }
+    /// Những loại đề THỰC SỰ có trong dữ liệu — không hiện nút lọc cho loại
+    /// không có đề nào, bấm vào chỉ ra danh sách trống.
+    private var loaiCo: [(LoaiDe, Int)] {
+        var dem: [LoaiDe: Int] = [:]
+        for d in de { dem[d.loai, default: 0] += 1 }
+        return dem.map { ($0.key, $0.value) }.sorted { $0.0.thuTu < $1.0.thuTu }
+    }
+
+    // ── Cây Kỳ học → Môn → đề ───────────────────────────────────
+    private struct Mon: Identifiable {
+        let ma: String
+        let ten: String
+        let de: [DeThi]
+        var id: String { ma + "|" + ten }
+    }
+    private struct Ky: Identifiable {
+        /// `semester.ordinal` — dùng để XẾP THỨ TỰ, không phải để hiện ra.
+        let so: Int
+        let ten: String
+        let mon: [Mon]
+        var id: Int { so }
+        var soDe: Int { mon.reduce(0) { $0 + $1.de.count } }
+
+        /// ⚠️ `ordinal` KHÔNG phải số kỳ: "Kỳ 3" có ordinal = 5, "Kỳ 5" có
+        /// ordinal = 7. Lấy ordinal làm huy hiệu là hiện ô số "5" ngay cạnh
+        /// dòng chữ "Kỳ 3". Số thật nằm trong `name` — cùng cái bẫy mà
+        /// `Semester.soKy` bên Academy đã ghi chú sẵn, và tôi vẫn giẫm vào.
+        var soHien: String {
+            let d = ten.filter(\.isNumber)
+            return d.isEmpty ? "—" : d
+        }
+    }
+
+    private var cay: [Ky] {
+        Dictionary(grouping: hienThi, by: \.soKyHoc)
+            .map { soKy, dsKy in
+                let mon = Dictionary(grouping: dsKy, by: \.maMon)
+                    .map { ma, ds -> Mon in
+                        Mon(ma: ma,
+                            ten: ds.first?.tenKhoa ?? ma,
+                            // Kỳ thi MỚI nhất trước; cùng kỳ thì theo SỐ đề
+                            // (không phải chuỗi mã — xem `DeThi.soDe`), rồi
+                            // mới tới mã để thứ tự ổn định giữa các lần dựng.
+                            de: ds.sorted {
+                                if $0.mocKy != $1.mocKy { return $0.mocKy > $1.mocKy }
+                                if $0.soDe != $1.soDe { return $0.soDe < $1.soDe }
+                                return ($0.code ?? "") < ($1.code ?? "")
+                            })
+                    }
+                    .sorted { $0.ma < $1.ma }
+                return Ky(so: soKy, ten: dsKy.first?.tenKyHoc ?? "Chưa xếp kỳ", mon: mon)
+            }
+            .sorted { $0.so < $1.so }
+    }
+
+    /// Đang tìm kiếm thì mở sẵn mọi nhóm — bắt người dùng gõ xong rồi còn
+    /// phải bấm mở từng kỳ mới thấy kết quả là hỏng hẳn việc tìm.
+    private var dangTim: Bool {
+        !tuKhoa.trimmingCharacters(in: .whitespaces).isEmpty || loaiChon != nil
     }
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: Spacing.md) {
+            LazyVStack(alignment: .leading, spacing: Spacing.md, pinnedViews: []) {
                 oTim
-                if !khoaCo.isEmpty { thanhKhoa }
+                thanhLoai
 
                 if dangTai && de.isEmpty {
                     ProgressView().frame(maxWidth: .infinity).padding(.top, Spacing.xl)
@@ -57,19 +128,8 @@ struct PhongThiView: View {
                     }
                     .frame(maxWidth: .infinity).padding(.top, Spacing.xl)
                 } else {
-                    ForEach(theoKhoa, id: \.0) { khoa, ds in
-                        VStack(alignment: .leading, spacing: Spacing.sm) {
-                            Text(khoa.uppercased())
-                                .font(.system(size: 11, weight: .bold))
-                                .foregroundColor(AppColors.textTertiary).kerning(0.6)
-                            ForEach(ds) { d in
-                                NavigationLink(destination: ChiTietDeView(de: d)) {
-                                    hang(d)
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
-                    }
+                    tomTat
+                    ForEach(cay) { k in theKy(k) }
                 }
             }
             .padding(Spacing.md)
@@ -101,11 +161,12 @@ struct PhongThiView: View {
         .refreshable { await tai() }
     }
 
+    // ── Ô tìm ───────────────────────────────────────────────────
     private var oTim: some View {
         HStack(spacing: Spacing.sm) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 14)).foregroundColor(AppColors.textTertiary)
-            TextField("Tìm đề, mã đề, môn…", text: $tuKhoa)
+            TextField("Tìm đề, mã đề, môn, kỳ thi…", text: $tuKhoa)
                 .font(.system(size: 15))
                 .oKhongTuSua()
             if !tuKhoa.isEmpty {
@@ -121,60 +182,196 @@ struct PhongThiView: View {
             .fill(AppColors.backgroundCard))
     }
 
-    private var thanhKhoa: some View {
+    // ── Thanh lọc theo LOẠI đề ──────────────────────────────────
+    private var thanhLoai: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: Spacing.sm) {
-                ForEach(khoaCo, id: \.self) { k in
-                    let chon = khoaChon == k
-                    Button {
-                        withAnimation(.easeOut(duration: 0.15)) { khoaChon = chon ? nil : k }
-                        Haptics.cham()
-                    } label: {
-                        Text(k)
-                            .font(.system(size: 12, weight: chon ? .semibold : .regular))
-                            .foregroundColor(chon ? .white : AppColors.textSecondary)
-                            .lineLimit(1)
-                            .padding(.horizontal, 12).padding(.vertical, 6)
-                            .background(Capsule().fill(chon ? AppColors.primary
-                                                            : AppColors.backgroundTertiary))
-                    }
-                    .buttonStyle(.plain)
+                nutLoai(nil, "Tất cả", de.count, AppColors.textSecondary)
+                ForEach(loaiCo, id: \.0) { l, n in
+                    nutLoai(l, l.ma, n, l.mau)
                 }
             }
             .padding(.horizontal, 2)
         }
     }
 
-    private func hang(_ d: DeThi) -> some View {
-        HStack(spacing: Spacing.md) {
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 6) {
-                    if let c = d.code {
-                        Text(c)
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 6).padding(.vertical, 2)
-                            .background(Capsule().fill(AppColors.secondary))
+    private func nutLoai(_ l: LoaiDe?, _ nhan: String, _ soLuong: Int, _ mau: Color) -> some View {
+        let chon = loaiChon == l
+        return Button {
+            withAnimation(.easeOut(duration: 0.15)) { loaiChon = chon ? nil : l }
+            Haptics.cham()
+        } label: {
+            HStack(spacing: 5) {
+                if let l { Image(systemName: l.bieuTuong).font(.system(size: 10)) }
+                Text(nhan).font(.system(size: 12, weight: .semibold))
+                Text("\(soLuong)")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(chon ? .white.opacity(0.75) : AppColors.textTertiary)
+            }
+            .foregroundColor(chon ? .white : mau)
+            .lineLimit(1)
+            .padding(.horizontal, 11).padding(.vertical, 6)
+            .background(Capsule()
+                .fill(chon ? mau : mau.opacity(0.12))
+                .overlay(Capsule().strokeBorder(chon ? .clear : mau.opacity(0.35), lineWidth: 1)))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var tomTat: some View {
+        Text("\(hienThi.count) đề · \(cay.reduce(0) { $0 + $1.mon.count }) môn · \(cay.count) kỳ")
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundColor(AppColors.textTertiary).kerning(0.4)
+    }
+
+    // ── Thẻ Kỳ học ──────────────────────────────────────────────
+    private func theKy(_ k: Ky) -> some View {
+        let mo = dangTim || kyMo.contains(k.so)
+        return VStack(spacing: 0) {
+            Button {
+                Haptics.cham()
+                withAnimation(.snappy(duration: 0.22)) {
+                    if kyMo.contains(k.so) { kyMo.remove(k.so) } else { kyMo.insert(k.so) }
+                }
+            } label: {
+                HStack(spacing: Spacing.md) {
+                    Text(k.soHien)
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(AppColors.primary)
+                        .frame(width: 38, height: 38)
+                        .background(AppColors.primary.opacity(0.14))
+                        .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(k.ten)
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(AppColors.textPrimary)
+                        Text("\(k.mon.count) môn · \(k.soDe) đề")
+                            .font(.system(size: 12))
+                            .foregroundColor(AppColors.textTertiary)
                     }
-                    Text(d.nhanLoai)
-                        .font(.system(size: 10))
+                    Spacer(minLength: 0)
+                    Image(systemName: mo ? "chevron.up" : "chevron.down")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(AppColors.textSecondary)
+                }
+                .padding(Spacing.md)
+                .background(AppColors.backgroundCard)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(dangTim)   // đang tìm thì mọi nhóm mở sẵn, gập lại là mất kết quả
+
+            if mo {
+                VStack(spacing: 0) {
+                    ForEach(k.mon) { m in theMon(m, soKy: k.so) }
+                }
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
+    }
+
+    // ── Thẻ Môn ─────────────────────────────────────────────────
+    private func theMon(_ m: Mon, soKy: Int) -> some View {
+        let khoa = "\(soKy)|\(m.ma)"
+        let mo = dangTim || monMo.contains(khoa)
+        return VStack(spacing: 0) {
+            Divider().background(AppColors.divider)
+            Button {
+                Haptics.cham()
+                withAnimation(.snappy(duration: 0.2)) {
+                    if monMo.contains(khoa) { monMo.remove(khoa) } else { monMo.insert(khoa) }
+                }
+            } label: {
+                HStack(spacing: Spacing.sm) {
+                    // Mã môn thay cho tên dài: nhận ra ngay và mọi dòng thẳng cột.
+                    Text(m.ma)
+                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                        .foregroundColor(AppColors.secondary)
+                        .frame(width: 62, alignment: .leading)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(m.ten.tachSongNgu(ngonNgu))
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(AppColors.textPrimary)
+                            .lineLimit(1)
+                        Text("\(m.de.count) đề")
+                            .font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+                    }
+                    Spacer(minLength: 0)
+                    Image(systemName: mo ? "chevron.up" : "chevron.down")
+                        .font(.system(size: 10, weight: .semibold))
                         .foregroundColor(AppColors.textTertiary)
                 }
+                .padding(.horizontal, Spacing.md).padding(.vertical, 11)
+                .background(AppColors.backgroundSecondary)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(dangTim)
+
+            if mo {
+                // Dòng ngăn theo KỲ THI, chỉ hiện khi sang kỳ mới — nhìn là
+                // thấy ngay "đây là chỗ đề Spring 2026 kết thúc".
+                ForEach(Array(m.de.enumerated()), id: \.element.id) { i, d in
+                    let truoc = i > 0 ? m.de[i - 1].mocKy : Int.min
+                    if d.mocKy != truoc { vachKy(d) }
+                    NavigationLink(destination: ChiTietDeView(de: d)) { hang(d) }
+                        .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+
+    private func vachKy(_ d: DeThi) -> some View {
+        HStack(spacing: Spacing.sm) {
+            Text(d.kyThi?.ten ?? "Không rõ kỳ")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundColor(d.kyThi == nil ? AppColors.textTertiary : AppColors.textSecondary)
+            Rectangle().fill(AppColors.divider).frame(height: 1)
+        }
+        .padding(.horizontal, Spacing.md)
+        .padding(.top, Spacing.sm + 2).padding(.bottom, 2)
+        .background(AppColors.backgroundPrimary)
+    }
+
+    // ── Một đề ──────────────────────────────────────────────────
+    private func hang(_ d: DeThi) -> some View {
+        let l = d.loai
+        return HStack(spacing: Spacing.sm) {
+            // Vạch màu theo loại: lướt nhanh vẫn phân biệt được bằng đuôi mắt.
+            RoundedRectangle(cornerRadius: 2).fill(l.mau).frame(width: 3)
+
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 5) {
+                    Label(l.ma, systemImage: l.bieuTuong)
+                        .font(.system(size: 10, weight: .bold))
+                        .labelStyle(.titleAndIcon)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 6).padding(.vertical, 2)
+                        .background(Capsule().fill(l.mau))
+                    if let c = d.code {
+                        Text(c)
+                            .font(.system(size: 10, weight: .medium, design: .monospaced))
+                            .foregroundColor(AppColors.textTertiary)
+                            .lineLimit(1)
+                    }
+                    Spacer(minLength: 0)
+                }
                 Text(d.ten(ngonNgu))
-                    .font(.system(size: 15, weight: .medium))
+                    .font(.system(size: 14.5, weight: .medium))
                     .foregroundColor(AppColors.textPrimary)
                     .lineLimit(2).multilineTextAlignment(.leading)
                 Text("\(d.soCau) câu · \(d.phut) phút")
-                    .font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                    .font(.system(size: 11.5)).foregroundColor(AppColors.textSecondary)
             }
             Spacer(minLength: 0)
             Image(systemName: "chevron.right")
-                .font(.system(size: 12, weight: .semibold))
+                .font(.system(size: 11, weight: .semibold))
                 .foregroundColor(AppColors.textTertiary)
         }
-        .padding(Spacing.md)
-        .background(RoundedRectangle(cornerRadius: CornerRadius.medium)
-            .fill(AppColors.backgroundCard))
+        .padding(.horizontal, Spacing.md).padding(.vertical, 10)
+        .background(AppColors.backgroundCard)
+        .contentShape(Rectangle())
     }
 
     private func tai() async {
@@ -198,6 +395,24 @@ struct ChiTietDeView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.lg) {
                 VStack(alignment: .leading, spacing: Spacing.sm) {
+                    // Cùng bộ huy hiệu màu với danh sách — mở một đề ra mà
+                    // mất hết dấu nhận biết thì phải cuộn lên đọc chữ mới
+                    // biết mình đang xem loại gì.
+                    HStack(spacing: 6) {
+                        Label(de.loai.ten, systemImage: de.loai.bieuTuong)
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 8).padding(.vertical, 3)
+                            .background(Capsule().fill(de.loai.mau))
+                        if let k = de.kyThi {
+                            Text(k.ten)
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundColor(AppColors.textSecondary)
+                                .padding(.horizontal, 8).padding(.vertical, 3)
+                                .background(Capsule().fill(AppColors.backgroundTertiary))
+                        }
+                        Spacer(minLength: 0)
+                    }
                     Text(de.ten(ngonNgu))
                         .font(.system(size: 20, weight: .semibold))
                         .foregroundColor(AppColors.textPrimary)
