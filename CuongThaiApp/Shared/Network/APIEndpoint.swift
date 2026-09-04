@@ -209,6 +209,13 @@ enum APIEndpoint {
     /// Lưu tiến độ. `lastPositionSeconds` cho phép mở lại đúng chỗ đang dở.
     case saveLessonProgress(courseId: Int, lessonId: Int, isCompleted: Bool?, watchTimeSeconds: Int?, lastPositionSeconds: Int?)
 
+    /// Gia sư AI cho MỘT bài học Academy — bản KHÔNG stream, đường lùi khi SSE
+    /// hỏng. Đường chính là `LuongGiaSuBai` (SSE).
+    ///
+    /// ⚠️ CHỈ Pro. Ngữ cảnh bài học do MÁY CHỦ tự ghép từ `lessonId`, client
+    /// không gửi nội dung bài — gửi kèm chỉ tốn token mà máy chủ vẫn tự đọc lại.
+    case hoiGiaSuBai(lessonId: Int, than: [String: Any])
+
     // Notifications
     case getUnreadNotificationCount
     case getNotifications(cursor: Int?, limit: Int)
@@ -563,6 +570,7 @@ enum APIEndpoint {
         case .getSemesters: return "/api/v1/academy/semesters"
         case .getCoursesBySemester(let id): return "/api/v1/courses/semester/\(id)"
         case .getLesson(let c, let l): return "/api/v1/courses/\(c)/lessons/\(l)"
+        case .hoiGiaSuBai(let l, _): return "/api/v1/courses/lessons/\(l)/ai/ask"
         case .getCourseProgress(let id): return "/api/v1/courses/\(id)/progress"
         case .saveLessonProgress(let id, _, _, _, _): return "/api/v1/courses/\(id)/progress"
 
@@ -695,7 +703,7 @@ enum APIEndpoint {
         switch self {
         case .ghiTienDo, .ghiKetQuaQuiz, .doiYeuThich, .aiDich, .aiKiemNguPhap, .aiNoiChuyen,
              .aiChamBaiViet, .batDauLuotThi, .nopBaiTracNghiem,
-             .hienDapAn, .baiHocLienQuan, .hoiCuongMini, .themBinhLuanCauHoi,
+             .hienDapAn, .baiHocLienQuan, .hoiCuongMini, .themBinhLuanCauHoi, .hoiGiaSuBai,
              .doiNutLoTrinh, .danhDauNutLoTrinhNghe, .nopBaiLuyen,
              .pvTaoPhien, .pvTraLoi, .pvTuCham, .pvKetThuc, .pvBaoLoiCau,
              .pvTaoCauPhu, .pvTraLoiCauPhu, .pvChamOnTap,
@@ -786,7 +794,7 @@ enum APIEndpoint {
             return coAI ? ["aiAssisted": true] : nil
         case .hienDapAn(_, let q), .baiHocLienQuan(_, let q):
             return ["questionId": q]
-        case .hoiCuongMini(_, let m):
+        case .hoiCuongMini(_, let m), .hoiGiaSuBai(_, let m):
             return m
         case .themBinhLuanCauHoi(_, let chu, let cha):
             var m: [String: Any] = ["content": chu]

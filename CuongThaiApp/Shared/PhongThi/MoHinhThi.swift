@@ -3,7 +3,8 @@ import Foundation
 // ════════════════════════════════════════════════════════════════
 // PHÒNG THI — lớp dữ liệu
 //
-// Đo thật production 21/08/2026: 190 đề, 5.191 câu hỏi.
+// Đo thật production 05/09/2026: 800 đề · 31.039 câu · 23 môn · 5 kỳ học
+// (21/08/2026 mới có 190 đề — nó lớn nhanh, đừng tin con số chép trong mã).
 //
 // ⚠️ Đường gắn là `/api/v1/exams` (SỐ NHIỀU). `/api/v1/exam` trả 404 —
 // đoán theo tên file `exam.routes.ts` là sai.

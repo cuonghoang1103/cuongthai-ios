@@ -308,7 +308,7 @@ struct CuongMiniView: View {
                 // lại được sau MỖI mẩu chữ. Xong mới dựng công thức, đúng
                 // như web (`renderMath={!t.streaming}`): công thức về một
                 // nửa mà đem dựng thì nó nhảy loạn suốt lúc model đang gõ.
-                TraLoiMini(chu: l.noiDung, xong: !l.dangChay)
+                TraLoiAI(chu: l.noiDung, xong: !l.dangChay)
                 if l.coSan {
                     Label("Có sẵn — từng hỏi trước đó", systemImage: "bolt.fill")
                         .font(.system(size: 10, weight: .semibold))
@@ -401,6 +401,13 @@ struct CuongMiniView: View {
             HStack(alignment: .bottom, spacing: Spacing.sm) {
                 TextField("Hỏi CuongMini về câu này…", text: $chu, axis: .vertical)
                     .font(.system(size: 14.5))
+                    // ⚠️ TẮT tự sửa. Đo thật 05/09/2026: gõ "phân biệt
+                    // architecture và organization" bị bàn phím sửa thành
+                    // "phân biệt ả chiết tử va ọganization" — câu hỏi kỹ
+                    // thuật đầy từ tiếng Anh và mã nguồn, tự sửa chỉ phá.
+                    // KHÔNG dùng `oKhongTuSua()`: nó tắt luôn viết hoa đầu
+                    // câu, mà đây là ô gõ văn xuôi.
+                    .autocorrectionDisabled()
                     .lineLimit(1...4)
                     .focused($dangGo)
                     .padding(.horizontal, Spacing.sm).padding(.vertical, 9)
@@ -489,35 +496,5 @@ struct CuongMiniView: View {
                     .strokeBorder(chacChan ? AppColors.warning : AppColors.border, lineWidth: 1))
         }
         .buttonStyle(.plain)
-    }
-}
-
-// MARK: - Dựng câu trả lời
-
-/// Markdown lúc đang chảy, markdown + công thức khi xong.
-///
-/// ⚠️ Đừng dựng WebView trong lúc chữ còn chảy: mỗi mẩu chữ là một lần nạp
-/// lại cả trang, và công thức mới về một nửa (`$x =`) thì KaTeX dựng ra một
-/// khối đỏ nhấp nháy. Web tránh đúng chỗ này bằng `renderMath={!t.streaming}`.
-private struct TraLoiMini: View {
-    let chu: String
-    let xong: Bool
-    @State private var cao: CGFloat = 40
-
-    private var coCongThuc: Bool {
-        chu.contains("$") || chu.contains("\\(") || chu.contains("\\[")
-    }
-
-    var body: some View {
-        #if os(iOS)
-        if xong && coCongThuc {
-            NoiDungThiWeb(html: chu, chieuCao: $cao, laMarkdown: true)
-                .frame(height: cao)
-        } else {
-            NoiDungMarkdown(noiDung: chu)
-        }
-        #else
-        NoiDungMarkdown(noiDung: chu)
-        #endif
     }
 }

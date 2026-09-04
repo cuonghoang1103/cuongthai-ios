@@ -114,6 +114,7 @@ struct LessonPlayerView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var vm = LessonPlayerViewModel()
     @State private var hienMucLuc = false
+    @State private var hienGiaSu = false
     @State private var luongDangChon: String?
 
     init(course: Course, sections: [CourseSection], lessonId: Int) {
@@ -154,6 +155,7 @@ struct LessonPlayerView: View {
 
     var body: some View {
         ScrollViewReader { cuon in
+        ZStack(alignment: .bottomTrailing) {
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.md) {
                 NeoDauTrang()
@@ -170,9 +172,16 @@ struct LessonPlayerView: View {
                 dieuHuongBai
             }
             .padding(.horizontal, Spacing.md)
-            .padding(.bottom, Spacing.xxl)
+            // Chừa chỗ cho nút nổi "Hỏi AI" khỏi che mất nút Bài tiếp.
+            .padding(.bottom, Spacing.xxl + 44)
         }
         .background(AppColors.backgroundPrimary)
+
+        // Gia sư AI cho ĐÚNG bài đang mở. Nút nổi thay vì một khối chèn giữa
+        // trang như web: trên điện thoại, khối chat nằm lọt giữa bài giảng thì
+        // hoặc phải cuộn qua nó mỗi lần, hoặc phải cuộn đi tìm nó mỗi lần hỏi.
+        nutGiaSu
+        }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
@@ -181,6 +190,20 @@ struct LessonPlayerView: View {
                 } label: {
                     Image(systemName: "list.bullet")
                 }
+            }
+        }
+        .sheet(isPresented: $hienGiaSu) {
+            if let bai = baiHienTai {
+                GiaSuBaiHocView(lessonId: bai.id,
+                                tenBai: bai.title.tachSongNgu(.viet),
+                                tenMon: course.courseCode)
+                    // ⚠️ `id` phải đổi theo BÀI: `sheet` giữ nguyên view khi
+                    // nội dung bên dưới đổi, nên không có dòng này thì mở gia
+                    // sư ở bài 5 vẫn thấy cuộc hỏi của bài 4 — đúng cái web né
+                    // bằng `useEffect(..., [lessonId])`.
+                    .id(bai.id)
+                    .presentationDetents([.fraction(0.68), .large])
+                    .presentationDragIndicator(.visible)
             }
         }
         .sheet(isPresented: $hienMucLuc) {
@@ -200,6 +223,29 @@ struct LessonPlayerView: View {
     }
 
     // MARK: Khối
+
+    private var nutGiaSu: some View {
+        Button {
+            hienGiaSu = true
+            Haptics.cham()
+        } label: {
+            HStack(spacing: 7) {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 15, weight: .semibold))
+                Text("Hỏi AI")
+                    .font(.system(size: 15, weight: .semibold))
+            }
+            .foregroundColor(.white)
+            .padding(.horizontal, 16).padding(.vertical, 12)
+            .background(Capsule().fill(
+                LinearGradient(colors: [AppColors.primary, AppColors.primaryDark],
+                               startPoint: .topLeading, endPoint: .bottomTrailing)))
+            .shadow(color: AppColors.primary.opacity(0.35), radius: 10, y: 4)
+        }
+        .buttonStyle(.plain)
+        .padding(.trailing, Spacing.md)
+        .padding(.bottom, Spacing.md)
+    }
 
     @ViewBuilder
     private var khungVideo: some View {

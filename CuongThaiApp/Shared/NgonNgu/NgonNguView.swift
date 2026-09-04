@@ -670,7 +670,11 @@ struct PhongThiEntryCard: View {
                     Text("Phòng thi")
                         .font(.titleSmall)
                         .foregroundColor(AppColors.textPrimary)
-                    Text("190 đề · 5.191 câu · bấm giờ như thi thật")
+                    // Đo thật 05/09/2026: 800 đề · 31.039 câu · 23 môn.
+                    // ⚠️ Con số này gõ TAY nên nó cũ dần: dòng cũ vẫn ghi
+                    // "190 đề · 5.191 câu" từ 21/08, tức thiếu mất 610 đề.
+                    // Đếm lại khi thấy nó lệch: `curl .../api/v1/exams`.
+                    Text("800 đề · 23 môn · xếp theo kỳ, bấm giờ như thi thật")
                         .font(.caption)
                         .foregroundColor(AppColors.textSecondary)
                         .lineLimit(1)
