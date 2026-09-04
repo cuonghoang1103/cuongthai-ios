@@ -670,11 +670,14 @@ struct PhongThiEntryCard: View {
                     Text("Phòng thi")
                         .font(.titleSmall)
                         .foregroundColor(AppColors.textPrimary)
-                    // Đo thật 05/09/2026: 800 đề · 31.039 câu · 23 môn.
-                    // ⚠️ Con số này gõ TAY nên nó cũ dần: dòng cũ vẫn ghi
-                    // "190 đề · 5.191 câu" từ 21/08, tức thiếu mất 610 đề.
-                    // Đếm lại khi thấy nó lệch: `curl .../api/v1/exams`.
-                    Text("800 đề · 23 môn · xếp theo kỳ, bấm giờ như thi thật")
+                    // ⚠️ KHÔNG gõ số đề vào đây nữa. Dòng này từng ghi
+                    // "190 đề · 5.191 câu" (21/08), tôi sửa thành 800 sáng
+                    // 05/09 — và ĐẾN CHIỀU CÙNG NGÀY đã là 844, vì một trần
+                    // cứng `take: 800` ở `GET /exams` vừa được gỡ. Con số gõ
+                    // tay ở màn giới thiệu thì chỉ có cũ dần.
+                    // Số THẬT hiện ngay trong Phòng thi ("844 đề · 25 môn ·
+                    // 5 kỳ"), tính từ chính dữ liệu vừa tải.
+                    Text("Đề thi thật FPTU · xếp theo kỳ và môn · bấm giờ như thi thật")
                         .font(.caption)
                         .foregroundColor(AppColors.textSecondary)
                         .lineLimit(1)

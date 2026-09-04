@@ -3,8 +3,12 @@ import Foundation
 // ════════════════════════════════════════════════════════════════
 // PHÒNG THI — lớp dữ liệu
 //
-// Đo thật production 05/09/2026: 800 đề · 31.039 câu · 23 môn · 5 kỳ học
-// (21/08/2026 mới có 190 đề — nó lớn nhanh, đừng tin con số chép trong mã).
+// Đo thật production 05/09/2026: 844 đề · 32.025 câu · 25 môn · 5 kỳ học.
+//
+// ⚠️ Con số này lớn nhanh và ĐỪNG chép nó ra giao diện: 21/08 mới 190 đề,
+// sáng 05/09 là 800, chiều cùng ngày 844 (một trần cứng `take: 800` ở
+// `GET /exams` vừa được gỡ — tức con số 800 tôi đo buổi sáng là CÁI TRẦN,
+// không phải tổng thật). Chỗ nào cần số thì đếm từ dữ liệu vừa tải.
 //
 // ⚠️ Đường gắn là `/api/v1/exams` (SỐ NHIỀU). `/api/v1/exam` trả 404 —
 // đoán theo tên file `exam.routes.ts` là sai.
