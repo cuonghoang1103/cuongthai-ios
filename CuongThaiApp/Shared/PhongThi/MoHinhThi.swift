@@ -227,6 +227,13 @@ struct DeDaLuu: Codable, Identifiable {
     let exam: DeThi
     let course: DeThi.KhoaHoc?
     let semester: DeThi.HocKy?
+
+    /// Cùng cảnh báo như `CauHoiDaLuu.maMon`: đọc môn/kỳ từ TẦNG NGOÀI, không
+    /// đọc từ `exam`.
+    var maMon: String { course?.courseCode ?? "—" }
+    var tenMon: String { course?.title ?? exam.title }
+    var soKyHoc: Int { semester?.ordinal ?? 99 }
+    var tenKyHoc: String { semester?.name ?? "" }
 }
 
 struct CauHoiDaLuu: Codable, Identifiable {
@@ -246,4 +253,13 @@ struct CauHoiDaLuu: Codable, Identifiable {
     /// được đổi theo nút EN/VI (đổi khoá là các nhóm nhảy chỗ). Chỗ hiện
     /// ra màn hình mới gọi `tachSongNgu`.
     var khoaMon: String { course?.title ?? exam.title }
+
+    /// ⚠️ `exam` trong mục đã lưu KHÔNG mang `course`/`semester` — máy chủ
+    /// trả chúng thành trường ANH EM ở tầng ngoài (`listMyQuestionBookmarks`
+    /// map `course: b.exam.course`, `semester: b.exam.course?.semester`).
+    /// Gọi `exam.maMon` ở đây là ra "—" cho mọi mục, và cả màn gom vào một
+    /// nhóm vô danh mà không có lỗi nào để thấy.
+    var maMon: String { course?.courseCode ?? "—" }
+    var soKyHoc: Int { semester?.ordinal ?? 99 }
+    var tenKyHoc: String { semester?.name ?? "" }
 }

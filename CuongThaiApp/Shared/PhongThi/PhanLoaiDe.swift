@@ -198,3 +198,103 @@ extension DeThi {
     var soKyHoc: Int { semester?.ordinal ?? 99 }
     var tenKyHoc: String { semester?.name ?? "Chưa xếp kỳ" }
 }
+
+// MARK: - Mảnh dùng chung cho mọi danh sách đề
+
+/// Một dòng đề — dùng ở CẢ màn Phòng thi lẫn màn Đã lưu.
+///
+/// ⚠️ Tách ra đây chứ không chép sang hai chỗ: hai bản chép rồi sẽ trôi khỏi
+/// nhau, và cái giá là người dùng thấy đề cùng loại mang hai màu khác nhau ở
+/// hai màn — đúng thứ "lộn xộn" vừa phải đi sửa.
+struct HangDeThi: View {
+    let de: DeThi
+    let ngonNgu: NgonNguDe
+    /// Dòng phụ dưới tên đề. Mặc định là "N câu · M phút".
+    var phu: String?
+
+    var body: some View {
+        let l = de.loai
+        return HStack(spacing: Spacing.sm) {
+            // Vạch màu theo loại: lướt nhanh vẫn phân biệt được bằng đuôi mắt.
+            RoundedRectangle(cornerRadius: 2).fill(l.mau).frame(width: 3)
+
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 5) {
+                    Label(l.ma, systemImage: l.bieuTuong)
+                        .font(.system(size: 10, weight: .bold))
+                        .labelStyle(.titleAndIcon)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 6).padding(.vertical, 2)
+                        .background(Capsule().fill(l.mau))
+                    if let c = de.code {
+                        Text(c)
+                            .font(.system(size: 10, weight: .medium, design: .monospaced))
+                            .foregroundColor(AppColors.textTertiary)
+                            .lineLimit(1)
+                    }
+                    Spacer(minLength: 0)
+                }
+                Text(de.ten(ngonNgu))
+                    .font(.system(size: 14.5, weight: .medium))
+                    .foregroundColor(AppColors.textPrimary)
+                    .lineLimit(2).multilineTextAlignment(.leading)
+                Text(phu ?? "\(de.soCau) câu · \(de.phut) phút")
+                    .font(.system(size: 11.5)).foregroundColor(AppColors.textSecondary)
+            }
+            Spacer(minLength: 0)
+            Image(systemName: "chevron.right")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundColor(AppColors.textTertiary)
+        }
+        .padding(.horizontal, Spacing.md).padding(.vertical, 10)
+        .background(AppColors.backgroundCard)
+        .contentShape(Rectangle())
+    }
+}
+
+/// Dòng ngăn giữa hai kỳ thi ("Spring 2026 ─────").
+struct VachKyThi: View {
+    let ky: KyThi?
+    var nen: Color = AppColors.backgroundPrimary
+
+    var body: some View {
+        HStack(spacing: Spacing.sm) {
+            Text(ky?.ten ?? "Không rõ kỳ")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundColor(ky == nil ? AppColors.textTertiary : AppColors.textSecondary)
+            Rectangle().fill(AppColors.divider).frame(height: 1)
+        }
+        .padding(.horizontal, Spacing.md)
+        .padding(.top, Spacing.sm + 2).padding(.bottom, 2)
+        .background(nen)
+    }
+}
+
+/// Huy hiệu loại + kỳ thi, hàng ngang — dùng ở đầu màn chi tiết và trên thẻ
+/// câu đã lưu.
+struct NhanLoaiVaKy: View {
+    let de: DeThi
+    var coChu: CGFloat = 11
+
+    var body: some View {
+        HStack(spacing: 5) {
+            Label(de.loai.ma, systemImage: de.loai.bieuTuong)
+                .font(.system(size: coChu, weight: .bold))
+                .labelStyle(.titleAndIcon)
+                .foregroundColor(.white)
+                .padding(.horizontal, 7).padding(.vertical, 2)
+                .background(Capsule().fill(de.loai.mau))
+            if let c = de.code {
+                Text(c)
+                    .font(.system(size: coChu - 1, weight: .medium, design: .monospaced))
+                    .foregroundColor(AppColors.textTertiary)
+            }
+            if let k = de.kyThi {
+                Text(k.ten)
+                    .font(.system(size: coChu - 1, weight: .semibold))
+                    .foregroundColor(AppColors.textSecondary)
+            }
+            Spacer(minLength: 0)
+        }
+    }
+}

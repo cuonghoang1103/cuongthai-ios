@@ -1,5 +1,18 @@
 import SwiftUI
 
+// ════════════════════════════════════════════════════════════════
+// ĐÃ LƯU — câu đã lưu + đề đã lưu
+//
+// Nói CÙNG một thứ tiếng hình ảnh với màn Phòng thi (05/09/2026): gom theo
+// MÔN, trong mỗi môn xếp theo KỲ THI mới nhất trước, và mỗi loại đề một màu
+// riêng — dùng chung `HangDeThi` / `VachKyThi` / `NhanLoaiVaKy` ở
+// `PhanLoaiDe.swift` chứ KHÔNG chép lại, để hai màn không trôi khỏi nhau.
+//
+// ⚠️ Ở đây `exam` KHÔNG mang `course`/`semester` (máy chủ trả chúng thành
+// trường anh em ở tầng ngoài) — luôn đọc `maMon` / `soKyHoc` của CHÍNH mục
+// đã lưu, đừng đọc qua `exam`.
+// ════════════════════════════════════════════════════════════════
+
 // MARK: - Màn hình
 
 struct DaLuuView: View {
@@ -15,10 +28,36 @@ struct DaLuuView: View {
     @State private var ngonNgu: NgonNguDe = .anh
 
     /// Nhóm theo MÔN. Người ôn thi nghĩ theo môn, không theo thứ tự lưu.
-    private var theoMon: [(String, [CauHoiDaLuu])] {
+    ///
+    /// Khoá nhóm là chuỗi GỐC còn `|||` (ổn định, không đổi theo nút EN/VI);
+    /// xếp thì theo kỳ học rồi mã môn, đúng thứ tự màn Phòng thi.
+    private var cauTheoMon: [(khoa: String, ma: String, ky: String, ds: [CauHoiDaLuu])] {
         Dictionary(grouping: cau, by: \.khoaMon)
-            .sorted { $0.key < $1.key }
-            .map { ($0.key, $0.value) }
+            .map { (khoa: $0.key, ma: $0.value.first?.maMon ?? "—",
+                    ky: $0.value.first?.tenKyHoc ?? "",
+                    ds: $0.value) }
+            .sorted {
+                let a = $0.ds.first?.soKyHoc ?? 99, b = $1.ds.first?.soKyHoc ?? 99
+                return a != b ? a < b : $0.ma < $1.ma
+            }
+    }
+
+    /// Đề đã lưu: cùng cách gom, và trong mỗi môn xếp theo KỲ THI mới nhất
+    /// trước — y hệt màn Phòng thi.
+    private var deTheoMon: [(khoa: String, ma: String, ky: String, ds: [DeDaLuu])] {
+        Dictionary(grouping: de, by: \.tenMon)
+            .map { khoa, ds in
+                (khoa: khoa, ma: ds.first?.maMon ?? "—", ky: ds.first?.tenKyHoc ?? "",
+                 ds: ds.sorted {
+                     if $0.exam.mocKy != $1.exam.mocKy { return $0.exam.mocKy > $1.exam.mocKy }
+                     if $0.exam.soDe != $1.exam.soDe { return $0.exam.soDe < $1.exam.soDe }
+                     return ($0.exam.code ?? "") < ($1.exam.code ?? "")
+                 })
+            }
+            .sorted {
+                let a = $0.ds.first?.soKyHoc ?? 99, b = $1.ds.first?.soKyHoc ?? 99
+                return a != b ? a < b : $0.ma < $1.ma
+            }
     }
 
     var body: some View {
@@ -68,6 +107,29 @@ struct DaLuuView: View {
         .task { await tai() }
     }
 
+    /// Tiêu đề một nhóm môn — cùng khuôn cho cả hai tab.
+    private func tieuDeMon(_ ma: String, _ ten: String, _ ky: String, _ soLuong: Int) -> some View {
+        HStack(spacing: Spacing.sm) {
+            Text(ma)
+                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                .foregroundColor(AppColors.secondary)
+            Text(ten.tachSongNgu(ngonNgu))
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(AppColors.textSecondary)
+                .lineLimit(1)
+            if !ky.isEmpty {
+                Text("· \(ky)")
+                    .font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+            }
+            Spacer(minLength: 0)
+            Text("\(soLuong)")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundColor(AppColors.textTertiary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, Spacing.sm)
+    }
+
     // MARK: Câu đã lưu
 
     @ViewBuilder
@@ -75,14 +137,9 @@ struct DaLuuView: View {
         if cau.isEmpty {
             trong("bookmark", loi ?? "Chưa có câu nào được lưu.\nTrong màn xem lại bài thi, bấm dấu trang ở câu bạn muốn ôn lại.")
         } else {
-            ForEach(theoMon, id: \.0) { mon, ds in
-                Text("\(mon.tachSongNgu(ngonNgu).uppercased()) · \(ds.count)")
-                    .font(.system(size: 11, weight: .bold))
-                    .kerning(0.5)
-                    .foregroundColor(AppColors.textTertiary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.top, Spacing.sm)
-                ForEach(ds) { c in theCau(c) }
+            ForEach(cauTheoMon, id: \.khoa) { n in
+                tieuDeMon(n.ma, n.khoa, n.ky, n.ds.count)
+                ForEach(n.ds) { c in theCau(c) }
             }
         }
     }
@@ -90,10 +147,11 @@ struct DaLuuView: View {
     private func theCau(_ c: CauHoiDaLuu) -> some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
             HStack(alignment: .top) {
-                Text(c.exam.code ?? c.exam.ten(ngonNgu))
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundColor(AppColors.primary)
-                Spacer()
+                // Huy hiệu loại + mã đề + kỳ thi, cùng bộ màu với Phòng thi:
+                // câu lưu từ một đề PE và câu lưu từ một bài Nghe phải nhìn
+                // ra được sự khác nhau ngay, không cần mở lên đọc.
+                NhanLoaiVaKy(de: c.exam, coChu: 10)
+                Spacer(minLength: Spacing.sm)
                 Button {
                     chuGhiChu = c.note ?? ""
                     suaGhiChu = c
@@ -159,29 +217,30 @@ struct DaLuuView: View {
         if de.isEmpty {
             trong("doc.text", "Chưa có đề nào được lưu.")
         } else {
-            ForEach(de) { d in
-                NavigationLink { LamBaiView(de: d.exam) } label: {
-                    HStack(spacing: Spacing.md) {
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(d.exam.ten(ngonNgu))
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(AppColors.textPrimary)
-                                .lineLimit(2).multilineTextAlignment(.leading)
-                            Text("\((d.course?.title ?? "").tachSongNgu(ngonNgu)) · \(d.exam.soCau) câu · \(d.exam.phut)′")
-                                .font(.system(size: 11))
-                                .foregroundColor(AppColors.textTertiary)
-                                .lineLimit(1)
+            ForEach(deTheoMon, id: \.khoa) { n in
+                tieuDeMon(n.ma, n.khoa, n.ky, n.ds.count)
+                VStack(spacing: 0) {
+                    ForEach(Array(n.ds.enumerated()), id: \.element.id) { i, d in
+                        let truoc = i > 0 ? n.ds[i - 1].exam.mocKy : Int.min
+                        if d.exam.mocKy != truoc {
+                            VachKyThi(ky: d.exam.kyThi, nen: AppColors.backgroundPrimary)
                         }
-                        Spacer(minLength: 0)
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundColor(AppColors.textTertiary)
+                        // ⚠️ Mở màn CHI TIẾT, không lao thẳng vào `LamBaiView`.
+                        // Vào thẳng là đồng hồ chạy ngay và mất luôn đường vào
+                        // phòng ôn tập CuongMini — một cú chạm nhầm ở màn dấu
+                        // trang thành một lượt thi tính giờ.
+                        NavigationLink {
+                            // Truyền hộ dòng "Môn · Kỳ": `d.exam` không mang
+                            // `course`/`semester` nên tự nó chỉ hiện "Khác".
+                            ChiTietDeView(de: d.exam, moTaMon: [n.khoa, n.ky]
+                                .filter { !$0.isEmpty }.joined(separator: " · "))
+                        } label: {
+                            HangDeThi(de: d.exam, ngonNgu: ngonNgu)
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .padding(Spacing.md)
-                    .background(RoundedRectangle(cornerRadius: CornerRadius.large)
-                        .fill(AppColors.backgroundCard))
                 }
-                .buttonStyle(.plain)
+                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
             }
         }
     }

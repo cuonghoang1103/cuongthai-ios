@@ -314,64 +314,14 @@ struct PhongThiView: View {
                 // thấy ngay "đây là chỗ đề Spring 2026 kết thúc".
                 ForEach(Array(m.de.enumerated()), id: \.element.id) { i, d in
                     let truoc = i > 0 ? m.de[i - 1].mocKy : Int.min
-                    if d.mocKy != truoc { vachKy(d) }
-                    NavigationLink(destination: ChiTietDeView(de: d)) { hang(d) }
-                        .buttonStyle(.plain)
-                }
-            }
-        }
-    }
-
-    private func vachKy(_ d: DeThi) -> some View {
-        HStack(spacing: Spacing.sm) {
-            Text(d.kyThi?.ten ?? "Không rõ kỳ")
-                .font(.system(size: 11, weight: .bold))
-                .foregroundColor(d.kyThi == nil ? AppColors.textTertiary : AppColors.textSecondary)
-            Rectangle().fill(AppColors.divider).frame(height: 1)
-        }
-        .padding(.horizontal, Spacing.md)
-        .padding(.top, Spacing.sm + 2).padding(.bottom, 2)
-        .background(AppColors.backgroundPrimary)
-    }
-
-    // ── Một đề ──────────────────────────────────────────────────
-    private func hang(_ d: DeThi) -> some View {
-        let l = d.loai
-        return HStack(spacing: Spacing.sm) {
-            // Vạch màu theo loại: lướt nhanh vẫn phân biệt được bằng đuôi mắt.
-            RoundedRectangle(cornerRadius: 2).fill(l.mau).frame(width: 3)
-
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 5) {
-                    Label(l.ma, systemImage: l.bieuTuong)
-                        .font(.system(size: 10, weight: .bold))
-                        .labelStyle(.titleAndIcon)
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 6).padding(.vertical, 2)
-                        .background(Capsule().fill(l.mau))
-                    if let c = d.code {
-                        Text(c)
-                            .font(.system(size: 10, weight: .medium, design: .monospaced))
-                            .foregroundColor(AppColors.textTertiary)
-                            .lineLimit(1)
+                    if d.mocKy != truoc { VachKyThi(ky: d.kyThi) }
+                    NavigationLink(destination: ChiTietDeView(de: d)) {
+                        HangDeThi(de: d, ngonNgu: ngonNgu)
                     }
-                    Spacer(minLength: 0)
+                    .buttonStyle(.plain)
                 }
-                Text(d.ten(ngonNgu))
-                    .font(.system(size: 14.5, weight: .medium))
-                    .foregroundColor(AppColors.textPrimary)
-                    .lineLimit(2).multilineTextAlignment(.leading)
-                Text("\(d.soCau) câu · \(d.phut) phút")
-                    .font(.system(size: 11.5)).foregroundColor(AppColors.textSecondary)
             }
-            Spacer(minLength: 0)
-            Image(systemName: "chevron.right")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundColor(AppColors.textTertiary)
         }
-        .padding(.horizontal, Spacing.md).padding(.vertical, 10)
-        .background(AppColors.backgroundCard)
-        .contentShape(Rectangle())
     }
 
     private func tai() async {
@@ -388,8 +338,17 @@ struct PhongThiView: View {
 struct ChiTietDeView: View {
     @Environment(\.ngonNguDe) private var ngonNgu
     let de: DeThi
+    /// Dòng "Môn · Kỳ" khi nơi gọi biết rõ hơn chính `de`.
+    ///
+    /// ⚠️ Mở từ màn ĐÃ LƯU thì `de` là `bookmark.exam`, mà bản đó KHÔNG mang
+    /// `course`/`semester` (máy chủ trả chúng thành trường anh em) — để mặc
+    /// thì dòng này hiện "Khác". Nơi gọi truyền hộ.
+    var moTaMon: String?
     @State private var vaoThi = false
     @State private var vaoOnTap = false
+    /// `nil` = chưa biết (đang hỏi máy chủ). Không đoán `false` rồi vẽ nút
+    /// rỗng: bấm vào lúc đó là GỠ mất dấu trang người dùng đã lưu từ web.
+    @State private var daLuu: Bool?
 
     var body: some View {
         ScrollView {
@@ -398,21 +357,7 @@ struct ChiTietDeView: View {
                     // Cùng bộ huy hiệu màu với danh sách — mở một đề ra mà
                     // mất hết dấu nhận biết thì phải cuộn lên đọc chữ mới
                     // biết mình đang xem loại gì.
-                    HStack(spacing: 6) {
-                        Label(de.loai.ten, systemImage: de.loai.bieuTuong)
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 8).padding(.vertical, 3)
-                            .background(Capsule().fill(de.loai.mau))
-                        if let k = de.kyThi {
-                            Text(k.ten)
-                                .font(.system(size: 11, weight: .semibold))
-                                .foregroundColor(AppColors.textSecondary)
-                                .padding(.horizontal, 8).padding(.vertical, 3)
-                                .background(Capsule().fill(AppColors.backgroundTertiary))
-                        }
-                        Spacer(minLength: 0)
-                    }
+                    NhanLoaiVaKy(de: de, coChu: 12)
                     Text(de.ten(ngonNgu))
                         .font(.system(size: 20, weight: .semibold))
                         .foregroundColor(AppColors.textPrimary)
@@ -435,8 +380,11 @@ struct ChiTietDeView: View {
                     o("Điểm đạt", nz(de.passMark), "checkmark.seal")
                 }
 
-                if !de.tenKy.isEmpty || !de.tenKhoa.isEmpty {
-                    Text([de.tenKhoa, de.tenKy].filter { !$0.isEmpty }.joined(separator: " · "))
+                let dongMon = moTaMon ?? [de.tenKhoa, de.tenKy]
+                    .filter { !$0.isEmpty && $0 != "Khác" }
+                    .joined(separator: " · ")
+                if !dongMon.isEmpty {
+                    Text(dongMon.tachSongNgu(ngonNgu))
                         .font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
                 }
 
@@ -493,11 +441,61 @@ struct ChiTietDeView: View {
         .background(AppColors.backgroundPrimary)
         .navigationTitle(de.code ?? "Đề thi")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) { nutLuu }
+        }
+        .task { await hoiDaLuu() }
         .fullScreenCover(isPresented: $vaoThi) {
             LamBaiView(de: de)
         }
         .fullScreenCover(isPresented: $vaoOnTap) {
             LamBaiView(de: de, coAI: true)
+        }
+    }
+
+    // ── Lưu đề ──────────────────────────────────────────────────
+    //
+    // ⚠️ `POST /exams/:id/bookmark` là LẬT trạng thái, không phải "đặt", nên
+    // phải biết trạng thái hiện tại trước khi cho bấm. Máy chủ KHÔNG gửi kèm
+    // cờ đó trong `/take`, nên phải hỏi riêng danh sách đã lưu.
+    //
+    // Trước 05/09/2026 app KHÔNG có nút này ở đâu cả — `danhDauDeThi` đã khai
+    // trong `APIEndpoint` nhưng không nơi nào gọi, nên tab "Đề đã lưu" chỉ
+    // đầy lên được nếu người dùng lưu bên WEB. Một màn hình chỉ để hiện thứ
+    // mà chính nó không tạo ra được.
+    @ViewBuilder
+    private var nutLuu: some View {
+        if let co = daLuu {
+            Button {
+                Task { await lat(dangCo: co) }
+            } label: {
+                Image(systemName: co ? "bookmark.fill" : "bookmark")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(co ? AppColors.accent : AppColors.textSecondary)
+            }
+            .accessibilityLabel(co ? "Bỏ lưu đề" : "Lưu đề")
+        } else {
+            ProgressView().controlSize(.small)
+        }
+    }
+
+    private func hoiDaLuu() async {
+        guard daLuu == nil else { return }
+        let ds: [DeDaLuu]? = try? await APIClient.shared.request(.dsDeDaLuu)
+        // Hỏi hỏng thì coi như CHƯA lưu — vẫn bấm được, và cú bấm đầu tiên
+        // trả về trạng thái thật từ máy chủ nên nó tự sửa mình.
+        daLuu = ds?.contains { $0.examId == de.id } ?? false
+    }
+
+    private func lat(dangCo: Bool) async {
+        struct R: Codable { let bookmarked: Bool }
+        daLuu = !dangCo                        // đổi ngay cho tay bấm thấy phản hồi
+        Haptics.cham()
+        do {
+            let r: R = try await APIClient.shared.request(.danhDauDeThi(examId: de.id))
+            daLuu = r.bookmarked               // máy chủ mới là nguồn sự thật
+        } catch {
+            daLuu = dangCo                     // hỏng thì trả lại như cũ
         }
     }
 
