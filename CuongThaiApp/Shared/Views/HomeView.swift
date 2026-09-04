@@ -93,6 +93,10 @@ struct HomeView: View {
         var id: String { rawValue }
     }
     @State private var tabDangChon: TabTrangChu = .tatCa
+    /// Bấm logo → cuộn về đầu. Dùng cờ thay vì gọi thẳng: `ScrollViewReader`
+    /// nằm sâu trong `feedContent`, còn thanh công cụ ở ngoài — hai bên không
+    /// với tới `proxy` của nhau.
+    @State private var veDau = false
 
     /// Năm mục của Trang chủ. "Học tập" KHÔNG phải một bộ lọc của bảng tin —
     /// nó là một màn khác hẳn, nên để chung một enum thay vì một `String?` type
@@ -167,14 +171,19 @@ struct HomeView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Text("CuongThai")
-                        .font(.system(size: 22, weight: .heavy, design: .rounded))
-                        // Dùng CHUNG `brandGradient` thay vì tự khai — không
-                        // thì đổi màu thương hiệu phải nhớ sửa từng màn.
-                        .foregroundStyle(AppColors.brandGradient)
-                        // Không cho hệ thống cắt chữ thương hiệu — thà đẩy
-                        // nút bên phải hẹp lại còn hơn hiện "C…".
-                        .fixedSize()
+                    // Dấu hiệu "CT" một nét + chữ. Bấm logo: vệt sáng chạy hết
+                    // nét, trang trượt LÊN ĐẦU và TẢI LẠI — làm cả hai.
+                    //
+                    // ⚠️ Bản đầu có thêm một cái đo vị trí cuộn để "ở đầu rồi
+                    // mới tải lại". Đo bằng log: `onPreferenceChange` KHÔNG
+                    // chạy lần nào, cờ kẹt ở `true`, nên nút chỉ đi nhánh tải
+                    // lại và KHÔNG BAO GIỜ cuộn. Bỏ hẳn — một cái đo mong manh
+                    // để tách hai hành vi mà người dùng muốn cả hai thì chỉ tổ
+                    // thêm chỗ hỏng.
+                    LogoCuongThai(canh: 27) {
+                        veDau = true
+                        Task { await vm.refresh(type: tabDangChon.loaiAPI) }
+                    }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     HStack(spacing: Spacing.md) {
@@ -326,8 +335,15 @@ struct HomeView: View {
             } else {
                 ScrollViewReader { cuon in
                 ScrollView {
+                    // ⚠️ Neo đầu trang phải nằm NGOÀI `LazyVStack`. Để bên
+                    // trong thì cuộn sâu là nó bị huỷ (đó chính là nghĩa của
+                    // "lazy"), và `scrollTo(NeoCuon.dau)` không tìm ra id nào
+                    // để nhảy tới — bấm logo không có gì xảy ra. Chỗ khác
+                    // không lộ ra vì `veDauTrang()` ở đó chạy lúc ĐỔI TAB,
+                    // tức danh sách vừa dựng lại từ đầu nên neo còn sống.
+                    VStack(spacing: 0) {
+                    NeoDauTrang()
                     LazyVStack(spacing: Spacing.md) {
-                        NeoDauTrang()
                         // Blocked authors and hidden posts never reach the screen.
                         ForEach(moderation.filter(vm.posts)) { post in
                             ZStack(alignment: .topTrailing) {
@@ -355,7 +371,19 @@ struct HomeView: View {
                             ProgressView().padding()
                         }
                     }
+                    }
                     .padding(.horizontal, Spacing.md)
+                }
+                .onChange(of: veDau) { _, bat in
+                    guard bat else { return }
+                    // Ở ĐÂY cuộn CÓ hoạt ảnh, khác `veDauTrang()`: nội dung
+                    // không đổi nên người dùng thấy trang trượt lên — đúng thứ
+                    // vừa yêu cầu. `veDauTrang()` tắt hoạt ảnh vì lúc đó nội
+                    // dung đã là bài MỚI, cuộn mượt sẽ lướt qua giữa bài.
+                    withAnimation(.easeOut(duration: 0.3)) {
+                        cuon.scrollTo(NeoCuon.dau, anchor: .top)
+                    }
+                    veDau = false
                 }
                 .refreshable {
                     await vm.refresh(type: tabDangChon.loaiAPI)

@@ -34,6 +34,7 @@ struct ManXemThu: View {
             case "lotrinh": LoTrinhView(ngonNgu: tiengNhat)
             case "phongthi": PhongThiView()
             case "noidungthi": ThuNoiDungThi()
+            case "logo": ThuLogo()
 
             // ── Cần PHIÊN ĐĂNG NHẬP mới có dữ liệu ───────────────────
             //
@@ -57,7 +58,7 @@ struct ManXemThu: View {
                 VStack(spacing: Spacing.sm) {
                     Text("Không có màn tên “\(ten)”")
                         .font(.system(size: 15, weight: .semibold))
-                    Text("Không cần đăng nhập:\ncodelab · snippets · tudien · lotrinh · phongthi · noidungthi")
+                    Text("Không cần đăng nhập:\ncodelab · snippets · tudien · lotrinh · phongthi · noidungthi · logo")
                         .font(.system(size: 12))
                         .foregroundColor(AppColors.textSecondary)
                         .multilineTextAlignment(.center)
@@ -68,6 +69,29 @@ struct ManXemThu: View {
                 }
             }
         }
+    }
+}
+
+/// Bàn thử LOGO — soi hình nét ở cỡ lớn và cỡ THẬT, bấm để xem vệt sáng chạy.
+///
+/// Thiết kế thì phải NHÌN mới biết, đọc mã không ra. Ba phương án đã soi ở đây
+/// rồi mới chọn — xem ghi chú ở `NetLogo`.
+struct ThuLogo: View {
+    var body: some View {
+        VStack(spacing: Spacing.xl) {
+            LogoCuongThai(canh: 140, doDamNet: 11, coChu: false)
+            // Cỡ THẬT trên thanh trên cùng — hình đẹp ở 140pt mà rối ở 30pt
+            // thì vẫn là hỏng.
+            LogoCuongThai(canh: 30, coChu: true)
+            Text("Bấm vào logo để xem vệt sáng chạy hết nét")
+                .font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
+            Spacer()
+        }
+        .padding(.top, Spacing.xl)
+        .frame(maxWidth: .infinity)
+        .background(AppColors.backgroundPrimary)
+        .navigationTitle("Thử logo")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
