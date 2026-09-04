@@ -23,10 +23,12 @@ final class LamBaiVM: ObservableObject {
     @Published var dangNop = false
 
     private let examId: Int
+    /// Phòng ôn tập CuongMini: KHÔNG tính giờ, có khung hỏi AI và bình luận.
+    let coAI: Bool
     private var dongHo: Timer?
     private var batDauLuc = Date()
 
-    init(examId: Int) { self.examId = examId }
+    init(examId: Int, coAI: Bool) { self.examId = examId; self.coAI = coAI }
 
     var cauHoi: [CauHoiThi] { de?.questions ?? [] }
     var hienTai: CauHoiThi? { viTri < cauHoi.count ? cauHoi[viTri] : nil }
@@ -37,7 +39,7 @@ final class LamBaiVM: ObservableObject {
         do {
             // Bắt đầu lượt TRƯỚC rồi mới lấy đề: máy chủ tự nối lại lượt
             // đang dở nếu có, nên thoát ra vào lại là làm tiếp, không mất bài.
-            luot = try await APIClient.shared.request(.batDauLuotThi(examId: examId))
+            luot = try await APIClient.shared.request(.batDauLuotThi(examId: examId, coAI: coAI))
             de = try await APIClient.shared.request(.deDangLam(examId: examId))
             batDauLuc = Date()
             batDongHo()
@@ -46,6 +48,11 @@ final class LamBaiVM: ObservableObject {
     }
 
     private func batDongHo() {
+        // ⚠️ Phòng CuongMini KHÔNG tính giờ — máy chủ trả `expiresAt = null`
+        // cho lượt `aiAssisted`. Không chặn ở đây thì nhánh `else` bên dưới
+        // thấy `expiresAt` rỗng và tự đặt đồng hồ đủ `durationMinutes`, rồi
+        // hết giờ là TỰ NỘP một bài ôn tập người ta đang làm dở.
+        guard !coAI else { conLai = 0; return }
         let phut = de?.durationMinutes ?? 0
         guard phut > 0 else { return }
         // Nối lại lượt cũ thì đồng hồ phải tính từ `expiresAt` của máy chủ,
@@ -109,6 +116,9 @@ final class LamBaiVM: ObservableObject {
 
 struct LamBaiView: View {
     let de: DeThi
+    /// `true` → "Bắt đầu thi với CuongMini": không đồng hồ, có nút hỏi AI và
+    /// bình luận dưới mỗi câu.
+    let coAI: Bool
     /// ⚠️ Mặc định TIẾNG ANH — đề gốc là tiếng Anh, bản Việt là bản dịch kèm
     /// theo. Đúng như web (`useState<'en'|'vi'>('en')`).
     @State private var ngonNgu: NgonNguDe = .anh
@@ -117,10 +127,12 @@ struct LamBaiView: View {
     @State private var hoiThoat = false
     @State private var hoiNop = false
     @State private var hienLuoi = false
+    @State private var hienMini = false
 
-    init(de: DeThi) {
+    init(de: DeThi, coAI: Bool = false) {
         self.de = de
-        _vm = StateObject(wrappedValue: LamBaiVM(examId: de.id))
+        self.coAI = coAI
+        _vm = StateObject(wrappedValue: LamBaiVM(examId: de.id, coAI: coAI))
     }
 
     var body: some View {
@@ -150,6 +162,13 @@ struct LamBaiView: View {
                     if let c = vm.hienTai { khungCau(c) } else { Spacer() }
                     thanhDuoi
                 }
+                // Nút nổi, đúng chỗ web đặt (góc phải dưới). Nằm TRÊN nội
+                // dung chứ không chen vào thanh đáy: thanh đáy đã kín chỗ
+                // với Trước/Sau/Nộp bài, thêm nút thứ tư là cái nào cũng
+                // nhỏ tới mức bấm trượt.
+                if coAI, vm.luot != nil, vm.hienTai != nil {
+                    nutMini
+                }
             }
         }
         .task { if vm.de == nil { await vm.batDau() } }
@@ -158,8 +177,12 @@ struct LamBaiView: View {
             Button("Ở lại", role: .cancel) { }
             Button("Thoát", role: .destructive) { vm.dung(); dismiss() }
         } message: {
-            Text("Bài đang làm được giữ lại. Vào lại đề này là làm tiếp, "
-               + "nhưng ĐỒNG HỒ VẪN CHẠY.")
+            // Phòng ôn tập KHÔNG có đồng hồ — dọa "đồng hồ vẫn chạy" ở đó là
+            // nói sai, và người ta sẽ vội vàng vì một sức ép không có thật.
+            Text(coAI
+                 ? "Bài ôn tập được giữ lại. Vào lại đề này là làm tiếp từ đúng chỗ đang dở."
+                 : "Bài đang làm được giữ lại. Vào lại đề này là làm tiếp, "
+                 + "nhưng ĐỒNG HỒ VẪN CHẠY.")
         }
         .alert("Nộp bài?", isPresented: $hoiNop) {
             Button("Xem lại", role: .cancel) { }
@@ -169,9 +192,53 @@ struct LamBaiView: View {
                  + (vm.daLam < vm.cauHoi.count ? " Những câu chưa làm sẽ tính 0 điểm." : ""))
         }
         .sheet(isPresented: $hienLuoi) { luoiCau }
+        .sheet(isPresented: $hienMini) {
+            if let l = vm.luot, let c = vm.hienTai {
+                CuongMiniView(examId: de.id, attemptId: l.attemptId,
+                              questionId: c.id, nhanCau: "Câu \(vm.viTri + 1)")
+                    // ⚠️ `id` phải đổi theo CÂU: `sheet` giữ nguyên view khi
+                    // nội dung bên dưới đổi, nên không có dòng này thì mở
+                    // CuongMini ở câu 6 vẫn thấy cuộc hỏi của câu 5 — đúng
+                    // cái web né bằng `key={questionId}`.
+                    .id(c.id)
+                    .presentationDetents([.fraction(0.62), .large])
+                    .presentationDragIndicator(.visible)
+            }
+        }
         // Cả màn dùng CHUNG một ngôn ngữ: bấm nút là đề bài và mọi đáp án đổi
         // cùng lúc, không có chuyện đề tiếng Anh mà đáp án tiếng Việt.
         .environment(\.ngonNguDe, ngonNgu)
+    }
+
+    // ── Nút nổi mở CuongMini ────────────────────────────────────
+    private var nutMini: some View {
+        VStack {
+            Spacer()
+            HStack {
+                Spacer()
+                Button {
+                    hienMini = true
+                    Haptics.cham()
+                } label: {
+                    HStack(spacing: 7) {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 15, weight: .semibold))
+                        Text("Hỏi CuongMini")
+                            .font(.system(size: 15, weight: .semibold))
+                    }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 16).padding(.vertical, 12)
+                    .background(Capsule().fill(
+                        LinearGradient(colors: [AppColors.primary, AppColors.primaryDark],
+                                       startPoint: .topLeading, endPoint: .bottomTrailing)))
+                    .shadow(color: AppColors.primary.opacity(0.35), radius: 10, y: 4)
+                }
+                .buttonStyle(.plain)
+                .padding(.trailing, Spacing.md)
+                .padding(.bottom, 78)   // trên thanh Trước/Sau/Nộp bài
+            }
+        }
+        .allowsHitTesting(true)
     }
 
     // ── Thanh trên ──────────────────────────────────────────────
@@ -187,7 +254,18 @@ struct LamBaiView: View {
                 .accessibilityLabel("Thoát")
 
                 Spacer()
-                if vm.conLai > 0 {
+                if coAI {
+                    // Chỗ của đồng hồ, nhưng nói ngược lại: KHÔNG có đồng hồ.
+                    // Để trống thì người quen phòng thi thật sẽ tưởng đồng hồ
+                    // chưa kịp chạy và vẫn làm bài trong tâm thế bị đuổi.
+                    HStack(spacing: 5) {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 11))
+                        Text("Ôn tập · không tính giờ")
+                            .font(.system(size: 12, weight: .semibold))
+                    }
+                    .foregroundColor(AppColors.primary)
+                } else if vm.conLai > 0 {
                     HStack(spacing: 5) {
                         Image(systemName: "clock")
                             .font(.system(size: 12))
@@ -296,6 +374,22 @@ struct LamBaiView: View {
                         .padding(Spacing.md)
                         .background(RoundedRectangle(cornerRadius: CornerRadius.medium)
                             .fill(AppColors.warning.opacity(0.12)))
+                }
+
+                // Bình luận theo câu — CHỈ trong phòng CuongMini, đúng như
+                // web. Trong lượt thi tính điểm mà mở sẵn lời giải của người
+                // khác ngay dưới đề thì không còn là thi nữa.
+                //
+                // ⚠️ Đặt NGOÀI nhánh `options`: câu lập trình cũng phải có
+                // bình luận (web gate trên `kind === 'FE' && aiAssisted`, chứ
+                // không phải trên "câu này có đáp án trắc nghiệm không").
+                if coAI {
+                    BinhLuanCauHoiView(questionId: c.id,
+                                       toiLa: AppState.shared.currentUser?.id)
+                        .id(c.id)
+                    // Chỗ trống cho nút nổi CuongMini khỏi che mất nút "Gửi"
+                    // của bình luận cuối cùng.
+                    Color.clear.frame(height: 64)
                 }
             }
             .padding(Spacing.md)

@@ -277,7 +277,11 @@ enum APIEndpoint {
     /// ⚠️ SỐ NHIỀU: `/api/v1/exams`. `/exam` trả 404.
     case dsDeThi
     case deDangLam(examId: Int)
-    case batDauLuotThi(examId: Int)
+    /// `coAI = true` → "Bắt đầu thi với CuongMini": máy chủ tạo lượt
+    /// `aiAssisted`, **không tính giờ** (`expiresAt = null`) và tách hẳn khỏi
+    /// lượt thi thật (`startAttempt` lọc `where: { …, aiAssisted }`, nên một
+    /// cú bấm CuongMini KHÔNG bao giờ nối nhầm vào lượt đang chạy đồng hồ).
+    case batDauLuotThi(examId: Int, coAI: Bool)
     case nopBaiTracNghiem(attemptId: Int, dapAn: [String: [Int]], giay: Int)
     case luotThiCuaToi
     /// Bản xem lại một lượt đã nộp — đáp án đúng + lời giải từng câu.
@@ -285,6 +289,24 @@ enum APIEndpoint {
     /// Cả hai đều LẬT trạng thái (toggle) và trả `{bookmarked: Bool}`.
     case danhDauDeThi(examId: Int)
     case danhDauCauHoi(questionId: Int)
+
+    // ── CuongMini — AI đồng hành khi thi ─────────────────────────
+    /// "Hiện đáp án" — KHÔNG gọi AI, tra thẳng đáp án đã có trên câu hỏi.
+    /// Mở cho MỌI tài khoản (chỉ `/ai/ask*` mới cần Pro).
+    case hienDapAn(attemptId: Int, questionId: Int)
+    /// "Câu này học ở bài nào" — tra `ExamQuestion.sectionId`, không gọi AI.
+    /// ⚠️ Trả `data: null` khi câu chưa được gán chương. `APIClient.request`
+    /// coi `data == nil` là LỖI, nên nơi gọi phải bắt lỗi rồi coi như "không
+    /// có bài liên quan" — đúng cách web làm (`.catch(() => …null)`).
+    case baiHocLienQuan(attemptId: Int, questionId: Int)
+    /// Hỏi CuongMini — bản KHÔNG stream, chỉ dùng làm đường lùi khi SSE hỏng.
+    /// Đường chính là `LuongCuongMini` (SSE), giống hệt web.
+    case hoiCuongMini(attemptId: Int, than: [String: Any])
+    /// Bình luận theo câu hỏi — mở cho mọi tài khoản, không cần Pro.
+    case dsBinhLuanCauHoi(questionId: Int)
+    case themBinhLuanCauHoi(questionId: Int, noiDung: String, traLoiId: Int?)
+    case suaBinhLuanCauHoi(id: Int, noiDung: String)
+    case xoaBinhLuanCauHoi(id: Int)
     // ── Code Lab ──
     /// 12.549 bài tập. Bộ lọc ĐÃ ĐO là có tác dụng thật (EASY→2.381,
     /// HARD→2.605, `q=zzzqqqxxx`→0), không như `?level=`/`?q=` của My Language.
@@ -589,7 +611,14 @@ enum APIEndpoint {
         case .aiNoiChuyen: return "/api/v1/my-language/ai/roleplay"
         case .dsDeThi: return "/api/v1/exams"
         case .deDangLam(let e): return "/api/v1/exams/\(e)/take"
-        case .batDauLuotThi(let e): return "/api/v1/exams/\(e)/attempts"
+        case .batDauLuotThi(let e, _): return "/api/v1/exams/\(e)/attempts"
+        case .hienDapAn(let a, _): return "/api/v1/exams/attempts/\(a)/ai/reveal"
+        case .baiHocLienQuan(let a, _): return "/api/v1/exams/attempts/\(a)/ai/related-lesson"
+        case .hoiCuongMini(let a, _): return "/api/v1/exams/attempts/\(a)/ai/ask"
+        case .dsBinhLuanCauHoi(let q), .themBinhLuanCauHoi(let q, _, _):
+            return "/api/v1/exams/questions/\(q)/comments"
+        case .suaBinhLuanCauHoi(let id, _), .xoaBinhLuanCauHoi(let id):
+            return "/api/v1/exams/comments/\(id)"
         case .nopBaiTracNghiem(let a, _, _): return "/api/v1/exams/attempts/\(a)/submit-fe"
         case .luotThiCuaToi: return "/api/v1/exams/attempts/mine"
         case .xemLaiLuotThi(let id): return "/api/v1/exams/attempts/\(id)"
@@ -666,6 +695,7 @@ enum APIEndpoint {
         switch self {
         case .ghiTienDo, .ghiKetQuaQuiz, .doiYeuThich, .aiDich, .aiKiemNguPhap, .aiNoiChuyen,
              .aiChamBaiViet, .batDauLuotThi, .nopBaiTracNghiem,
+             .hienDapAn, .baiHocLienQuan, .hoiCuongMini, .themBinhLuanCauHoi,
              .doiNutLoTrinh, .danhDauNutLoTrinhNghe, .nopBaiLuyen,
              .pvTaoPhien, .pvTraLoi, .pvTuCham, .pvKetThuc, .pvBaoLoiCau,
              .pvTaoCauPhu, .pvTraLoiCauPhu, .pvChamOnTap,
@@ -688,13 +718,14 @@ enum APIEndpoint {
              .taoPhienChat, .taoThuMucChat, .tachNhanhPhien, .catPhien, .datViecDoc:
             return "POST"
         case .updateProfile, .datBietDanh, .doiTenThuMucSoTay, .suaMucSoTay, .ghiChuCauHoi,
+             .suaBinhLuanCauHoi,
              .cvLuuHoSo, .cvSuaMuc, .cvSuaGach:
             return "PUT"
         case .updateNote, .markRead, .markNotificationsRead, .datTuyChonHoiThoai,
              .suaDongBang, .suaMon, .suaChuong, .suaTuVung, .suaBaiViet,
              .suaPhienChat, .chuyenThuMuc, .chuyenMucSoTay, .onMucSoTay:
             return "PATCH"
-        case .deletePost, .unlikePost, .unsavePost, .deleteNote,
+        case .deletePost, .unlikePost, .unsavePost, .deleteNote, .xoaBinhLuanCauHoi,
              .unblockUser, .cancelDeletionRequest, .deleteMessage, .xoaTin, .xoaDongBang,
              .xoaMon, .xoaChuong, .xoaVinhVien, .goThietBi, .xoaTuVung, .xoaBaiViet,
              .xoaPhienChat, .xoaThuMucChat, .xoaHoiThoai, .xoaThuMucSoTay, .xoaMucSoTay,
@@ -748,6 +779,21 @@ enum APIEndpoint {
             return ["languageCode": c, "scenario": ch, "history": ls, "message": chu]
         case .nopBaiTracNghiem(_, let da, let g):
             return ["answers": da, "timeSpentSeconds": g]
+        case .batDauLuotThi(_, let coAI):
+            // ⚠️ Không gửi `{aiAssisted:false}` cho lượt thường: máy chủ đọc
+            // `req.body?.aiAssisted === true` nên gửi false cũng đúng, nhưng
+            // web gửi `undefined` — giữ y hệt để không có đường nào khác nhau.
+            return coAI ? ["aiAssisted": true] : nil
+        case .hienDapAn(_, let q), .baiHocLienQuan(_, let q):
+            return ["questionId": q]
+        case .hoiCuongMini(_, let m):
+            return m
+        case .themBinhLuanCauHoi(_, let chu, let cha):
+            var m: [String: Any] = ["content": chu]
+            if let cha { m["parentId"] = cha }
+            return m
+        case .suaBinhLuanCauHoi(_, let chu):
+            return ["content": chu]
         case .doiYeuThich(let w):
             return ["wordId": w]
         case .taoThuMucSoTay(let c, let ten, let icon, let cha):

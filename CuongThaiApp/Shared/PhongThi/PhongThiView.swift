@@ -192,6 +192,7 @@ struct ChiTietDeView: View {
     @Environment(\.ngonNguDe) private var ngonNgu
     let de: DeThi
     @State private var vaoThi = false
+    @State private var vaoOnTap = false
 
     var body: some View {
         ScrollView {
@@ -240,6 +241,37 @@ struct ChiTietDeView: View {
                         .background(Capsule().fill(AppColors.primary))
                 }
                 .buttonStyle(.plain)
+
+                // ── Phòng ôn tập cùng CuongMini ──────────────────────
+                // Lượt RIÊNG, tách hẳn khỏi lượt thi thật: máy chủ lọc
+                // `where: { …, aiAssisted }` nên bấm nút này KHÔNG bao giờ
+                // nối nhầm vào bài đang chạy đồng hồ, và ngược lại.
+                VStack(spacing: Spacing.sm) {
+                    Button {
+                        vaoOnTap = true
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "sparkles")
+                                .font(.system(size: 15, weight: .semibold))
+                            Text("Thi cùng CuongMini")
+                                .font(.system(size: 17, weight: .semibold))
+                        }
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity).padding(.vertical, 14)
+                        .background(Capsule().fill(
+                            LinearGradient(colors: [AppColors.primary, AppColors.primaryDark],
+                                           startPoint: .leading, endPoint: .trailing)))
+                    }
+                    .buttonStyle(.plain)
+
+                    Text("Phòng ôn tập — KHÔNG tính giờ. Làm từng câu, hỏi AI về "
+                       + "đúng câu đang mở, xem đáp án và bình luận thoải mái.")
+                        .font(.system(size: 12))
+                        .foregroundColor(AppColors.textTertiary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity)
+                }
             }
             .padding(Spacing.md)
         }
@@ -248,6 +280,9 @@ struct ChiTietDeView: View {
         .navigationBarTitleDisplayMode(.inline)
         .fullScreenCover(isPresented: $vaoThi) {
             LamBaiView(de: de)
+        }
+        .fullScreenCover(isPresented: $vaoOnTap) {
+            LamBaiView(de: de, coAI: true)
         }
     }
 

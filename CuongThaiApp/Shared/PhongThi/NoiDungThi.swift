@@ -140,6 +140,14 @@ extension String {
 struct NoiDungThiWeb: UIViewRepresentable {
     let html: String
     @Binding var chieuCao: CGFloat
+    /// `true` → `html` thật ra là **markdown** (câu trả lời của CuongMini),
+    /// dựng bằng `marked` ngay trong trang trước khi KaTeX chạy.
+    ///
+    /// ⚠️ Vì sao không đổi markdown sang HTML ở tầng Swift: web dựng bằng
+    /// `react-markdown + remark-gfm`, tức có bảng, gạch ngang, danh sách việc.
+    /// Viết lại bộ đó bằng Swift là chép một thư viện — mà chép thiếu chỗ nào
+    /// thì chỗ đó hiện nguyên dấu cú pháp ra màn hình.
+    var laMarkdown = false
 
     func makeUIView(context: Context) -> WKWebView {
         let ch = WKWebViewConfiguration()
@@ -156,10 +164,20 @@ struct NoiDungThiWeb: UIViewRepresentable {
 
     func updateUIView(_ w: WKWebView, context: Context) {
         let toi = w.traitCollection.userInterfaceStyle == .dark
-        let khoa = "\(html.hashValue)|\(toi)"
+        let khoa = "\(html.hashValue)|\(toi)|\(laMarkdown)"
         guard context.coordinator.khoa != khoa else { return }
         context.coordinator.khoa = khoa
-        w.loadHTMLString(trang(toi: toi), baseURL: nil)
+        let trangHTML = trang(toi: toi)
+        #if DEBUG
+        // ⛔ Chốt chặn cho lỗi 05/09/2026: một thẻ đóng script lọt vào phần
+        // JS (dù chỉ trong chú thích) là bộ phân tích HTML cắt khối script
+        // tại đó — KaTeX, mermaid và phép đo chiều cao đều không chạy, mà
+        // HTML vẫn dựng nên nhìn KHÔNG giống lỗi cú pháp. Đếm là bắt được
+        // ngay lần dựng đầu tiên, thay vì phải soi từng khối bằng mắt.
+        assert(trangHTML.components(separatedBy: "</scr" + "ipt>").count == 2,
+               "Trang có nhiều hơn MỘT thẻ đóng script — khối JS đã bị cắt sớm.")
+        #endif
+        w.loadHTMLString(trangHTML, baseURL: nil)
     }
 
     func makeCoordinator() -> Dieu { Dieu(self) }
@@ -193,6 +211,9 @@ struct NoiDungThiWeb: UIViewRepresentable {
             of: "(?i)(?:background-)?color\\s*:\\s*[^;\"']+;?",
             with: "", options: .regularExpression)
     }
+
+    /// Markdown gói trong base64 để đi qua chuỗi HTML an toàn tuyệt đối.
+    private var nguonB64: String { Data(html.utf8).base64EncodedString() }
 
     private func trang(toi: Bool) -> String {
         let chuChinh = toi ? "#FFFFFF" : "#14141C"
@@ -243,11 +264,41 @@ struct NoiDungThiWeb: UIViewRepresentable {
           .so-do{display:flex;justify-content:center;margin:10px 0}
           .so-do svg{max-width:100%;height:auto}
         </style></head>
-        <body><div id="v">\(htmlSach)</div>
+        <body><div id="v">\(laMarkdown ? "" : htmlSach)</div>
         <script>
           const bao = () => window.webkit?.messageHandlers?.cao?.postMessage(document.body.scrollHeight);
           const el = document.getElementById('v');
           (async () => {
+            // ── Markdown → HTML ──────────────────────────────────────
+            // Nguồn đi qua base64: markdown của model đầy dấu nháy, dấu chéo
+            // ngược và có thể chứa cả thẻ đóng script. Nhét thẳng vào trang
+            // là sớm muộn cũng có một câu trả lời làm vỡ cả trang, và nó vỡ
+            // CÂM (trang trắng, không lỗi nào để thấy).
+            //
+            // ⛔⛔ VÀ ĐỪNG VIẾT THẺ ĐÓNG SCRIPT RA ĐÂY, KỂ CẢ TRONG CHÚ THÍCH.
+            // Bộ phân tích HTML cắt khối script tại chuỗi đó BẤT KỂ nó nằm
+            // trong chú thích hay trong chuỗi ký tự — 05/09/2026 tôi viết
+            // đúng thẻ ấy vào chính dòng cảnh báo này, và cả phần JS còn lại
+            // (KaTeX, mermaid, phép đo chiều cao) không bao giờ chạy: mọi
+            // khối WebView cụt còn một dòng, công thức hiện thô. HTML vẫn
+            // dựng nên nhìn KHÔNG giống lỗi cú pháp chút nào.
+            if (\(laMarkdown ? "true" : "false")) {
+              try {
+                const md = new TextDecoder().decode(
+                  Uint8Array.from(atob("\(nguonB64)"), c => c.charCodeAt(0)));
+                const { marked } = await import('https://cdn.jsdelivr.net/npm/marked@14/lib/marked.esm.js');
+                // ⚠️ CẤT công thức đi TRƯỚC khi chạy marked. `$x_1 + x_2$` qua
+                // markdown thì hai dấu `_` thành một cặp `<em>` và công thức
+                // hỏng câm. Web né bằng `remarkMath` đứng TRƯỚC mọi plugin
+                // khác — đây là cùng một mẹo, làm bằng tay.
+                const kho = [];
+                const cat = md.replace(
+                  /(\\$\\$[\\s\\S]*?\\$\\$|\\\\\\[[\\s\\S]*?\\\\\\]|\\\\\\([\\s\\S]*?\\\\\\)|\\$[^\\n$]*?\\$)/g,
+                  m => { kho.push(m); return '@@CTOAN' + (kho.length - 1) + '@@'; });
+                el.innerHTML = marked.parse(cat, { gfm: true, breaks: true })
+                  .replace(/@@CTOAN(\\d+)@@/g, (_, i) => kho[+i]);
+              } catch (e) { el.textContent = 'Không dựng được nội dung.'; }
+            }
             try {
               // Công thức: chỉ nạp KaTeX khi có dấu hiệu, không thì mỗi câu
               // hỏi đều kéo về một thư viện chẳng dùng tới.

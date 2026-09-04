@@ -101,6 +101,12 @@ struct ThuNoiDungThi: View {
          "Đơn vị ảo (i) thoả \\(i^2 = -1\\), dùng trong số phức."),
         ("Định dạng",
          "<p><strong>In đậm</strong>, <em>in nghiêng</em>, <u>gạch chân</u>, mã <code>x = 1</code>.</p><ul><li>Gạch đầu dòng một</li><li>Gạch đầu dòng hai</li></ul>"),
+        // ⚠️ Mẫu này để bắt LỖI CHIỀU CAO: một đoạn HTML dài NHIỀU DÒNG.
+        // 05/09/2026 lời giải trong thẻ "Hiện đáp án" của CuongMini bị cắt
+        // đúng sau dòng đầu — phải có chỗ tái hiện được mà không cần đăng
+        // nhập thì mới truy được nguyên nhân.
+        ("Lời giải DÀI nhiều dòng (kiểm chiều cao)",
+         "<p>In academic contexts an <strong>argument</strong> is a reasoned attempt to defend, validate or explain a conclusion by giving specific reasons or evidence. It is <em>not</em> an angry disagreement, nor a polite word for a fight, and it is not simply another word for the conclusion itself.</p><p>Therefore option B is the only one that matches the academic definition used throughout this course.</p>"),
     ]
 
     var body: some View {

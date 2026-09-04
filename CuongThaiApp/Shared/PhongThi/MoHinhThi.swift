@@ -99,6 +99,12 @@ struct LuotThi: Codable {
     let startedAt: String?
     let expiresAt: String?
     let resumed: Bool?
+    /// Lượt này là phòng ôn tập CuongMini hay lượt thi thật.
+    ///
+    /// ⚠️ `expiresAt = nil` KHÔNG suy ra được "đây là phòng CuongMini": đề
+    /// `durationMinutes = 0` cũng cho `expiresAt` rỗng. Máy chủ nói thẳng ra
+    /// bằng trường này — đọc nó, đừng suy.
+    let aiAssisted: Bool?
 }
 
 // ════════════════════════════════════════════════════════════════
