@@ -93,6 +93,15 @@ enum GoogleSignInService {
             "providerId": providerId,
         ]
         if let ten = nguoiDung.profile?.name { payload["fullName"] = ten }
+        // Ảnh đại diện Google. Máy chủ TẢI VỀ rồi đẩy lên R2 chứ không lưu
+        // thẳng URL này — địa chỉ `lh3.googleusercontent.com` gắn theo phiên
+        // và sẽ chết, lúc đó avatar thành ô trống mà không có lỗi nào để thấy.
+        //
+        // ⚠️ Chỉ điền khi tài khoản CHƯA có ảnh — máy chủ tự lo, app không
+        // cần biết. Đè ảnh người dùng tự chọn là mất dữ liệu.
+        if let anh = nguoiDung.profile?.imageURL(withDimension: 256) {
+            payload["avatarUrl"] = anh.absoluteString
+        }
         // Gửi kèm để backend xác minh chữ ký khi nào siết bảo mật — hôm nay
         // endpoint bỏ qua trường thừa, nên gửi trước thì sau này không phải
         // cập nhật app. Giống hệt cách làm với Sign in with Apple.
