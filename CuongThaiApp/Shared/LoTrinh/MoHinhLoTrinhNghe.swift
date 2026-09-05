@@ -70,6 +70,10 @@ struct ChangLoTrinhNghe: Codable, Identifiable, Hashable {
 struct NutLoTrinhNghe: Codable, Identifiable, Hashable {
     let id: Int
     let stage: Int?
+    /// Tên chặng, máy chủ lặp lại trên TỪNG nút (không chỉ ở tầng `stages`).
+    /// Tiện cho tấm chi tiết: mở một bước ra là biết nó thuộc chặng nào mà
+    /// không phải truyền thêm gì từ màn ngoài vào.
+    let stageLabel: String?
     let order: Int?
     let side: String?
     let kind: String?

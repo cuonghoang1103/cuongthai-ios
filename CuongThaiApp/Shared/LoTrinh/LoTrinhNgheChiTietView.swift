@@ -47,8 +47,22 @@ struct LoTrinhNgheChiTietView: View {
     @StateObject private var vm = LoTrinhNgheChiTietVM()
     @State private var moChang: Set<Int> = [0]
     @State private var chiConThieu = false
+    @State private var moBuocTiep = false
 
     private var mau: Color { vm.lt?.mau ?? tom.mau }
+
+    /// Bước CHƯA học đầu tiên, theo đúng thứ tự chặng → thứ tự trong chặng.
+    ///
+    /// Lộ trình dài tới 87 bước và mở ra là 22 chặng đóng — không có cái này
+    /// thì mỗi lần vào lại phải tự nhớ hôm qua học tới đâu rồi xổ từng chặng
+    /// đi tìm.
+    private var buocTiep: NutLoTrinhNghe? {
+        for c in (vm.lt?.cacChang ?? []).sorted(by: { $0.stage < $1.stage }) {
+            for n in c.cacNut.sorted(by: { ($0.order ?? 0) < ($1.order ?? 0) })
+            where !vm.daXong.contains(n.id) { return n }
+        }
+        return nil
+    }
     private var tong: Int { vm.lt?.tongNut ?? tom.soNut }
     private var xong: Int { vm.daXong.count }
 
@@ -113,6 +127,37 @@ struct LoTrinhNgheChiTietView: View {
                 }
             }
             .frame(height: 6)
+
+            if let b = buocTiep {
+                Button { moBuocTiep = true } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: xong == 0 ? "play.fill" : "arrow.turn.down.right")
+                            .font(.system(size: 13, weight: .bold))
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(xong == 0 ? T("Bắt đầu học") : T("Tiếp tục"))
+                                .font(.system(size: 11, weight: .bold))
+                                .opacity(0.85)
+                            Text(b.title)
+                                .font(.system(size: 14, weight: .semibold))
+                                .lineLimit(1)
+                        }
+                        Spacer(minLength: 0)
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 11, weight: .bold)).opacity(0.7)
+                    }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, Spacing.md).padding(.vertical, 11)
+                    .background(RoundedRectangle(cornerRadius: CornerRadius.medium).fill(mau))
+                }
+                .buttonStyle(.plain)
+                .sheet(isPresented: $moBuocTiep) {
+                    ChiTietNutLoTrinhView(nut: b, mau: mau, daXong: false) {
+                        Task { await vm.doiXong(b.id) }
+                    }
+                    .presentationDetents([.medium, .large])
+                    .presentationDragIndicator(.visible)
+                }
+            }
 
             HStack(spacing: Spacing.sm) {
                 Toggle(isOn: $chiConThieu) {
@@ -184,21 +229,35 @@ private struct NutNgheView: View {
     let nut: NutLoTrinhNghe
     let mau: Color
     @ObservedObject var vm: LoTrinhNgheChiTietVM
-    @State private var mo = false
+    @State private var moChiTiet = false
 
     private var xong: Bool { vm.daXong.contains(nut.id) }
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.xs) {
-            HStack(alignment: .top, spacing: Spacing.sm) {
-                Button { Task { await vm.doiXong(nut.id) } } label: {
-                    Image(systemName: xong ? "checkmark.circle.fill" : "circle")
-                        .font(.system(size: 20))
-                        .foregroundColor(xong ? mau : AppColors.textTertiary.opacity(0.6))
-                }
-                .buttonStyle(.plain)
+    /// Bước này dẫn được tới chỗ học thật không (Code Lab / lộ trình khác /
+    /// tài liệu ngoài). Đo thật: 56/225 bước có — một phần tư lộ trình.
+    private var coLienKet: Bool {
+        !(nut.linkRef ?? "").isEmpty && !(nut.linkType ?? "").isEmpty
+    }
 
-                VStack(alignment: .leading, spacing: 2) {
+    var body: some View {
+        HStack(alignment: .top, spacing: Spacing.sm) {
+            // Ô tick đứng RIÊNG: chạm nó là đánh dấu, chạm chỗ khác là mở chi
+            // tiết. Gộp làm một thì không đánh dấu nhanh được, mà tách ra rồi
+            // vẫn phải để nó đủ to để không bấm trượt sang mở tấm.
+            Button { Task { await vm.doiXong(nut.id) } } label: {
+                Image(systemName: xong ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 20))
+                    .foregroundColor(xong ? mau : AppColors.textTertiary.opacity(0.6))
+                    .frame(width: 30, height: 30)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            // ⚠️ CẢ HÀNG mở tấm chi tiết. Bản trước giấu nội dung sau một mũi
+            // tên rộng 10pt ở mép phải, chạm vào tên bước thì không có gì xảy
+            // ra — người dùng báo đúng thế: "ấn vào không thấy nội dung gì".
+            Button { moChiTiet = true } label: {
+                VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 5) {
                         Image(systemName: nut.bieuTuong)
                             .font(.system(size: 11)).foregroundColor(mau.opacity(0.85))
@@ -207,9 +266,14 @@ private struct NutNgheView: View {
                             .foregroundColor(xong ? AppColors.textTertiary : AppColors.textPrimary)
                             .strikethrough(xong, color: AppColors.textTertiary)
                             .multilineTextAlignment(.leading)
+                        Spacer(minLength: 0)
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(AppColors.textTertiary)
                     }
                     if let s = nut.subtitle, !s.isEmpty {
                         Text(s).font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+                            .multilineTextAlignment(.leading)
                     }
                     HStack(spacing: 5) {
                         Text(nut.nhanLoai)
@@ -217,58 +281,54 @@ private struct NutNgheView: View {
                             .foregroundColor(nhanMau)
                             .padding(.horizontal, 5).padding(.vertical, 1.5)
                             .background(Capsule().fill(nhanMau.opacity(0.15)))
+                        // Huy hiệu "Học ngay" — dấu hiệu DUY NHẤT cho biết
+                        // bước này dẫn vào bài học thật, nhìn từ ngoài danh
+                        // sách. Không có nó thì phải mở từng bước mới biết.
+                        if coLienKet {
+                            Label(nhanLienKet, systemImage: bieuTuongLienKet)
+                                .font(.system(size: 9, weight: .bold))
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 5).padding(.vertical, 1.5)
+                                .background(Capsule().fill(mau))
+                        }
                         if !nut.cacTaiNguyen.isEmpty {
                             Text("\(nut.cacTaiNguyen.count) \(T("tài nguyên"))")
                                 .font(.system(size: 9)).foregroundColor(AppColors.textTertiary)
                         }
+                        Spacer(minLength: 0)
                     }
                     .padding(.top, 1)
                 }
-                Spacer(minLength: 0)
-                if nut.description != nil || !nut.cacTaiNguyen.isEmpty {
-                    Button { withAnimation(.easeInOut(duration: 0.16)) { mo.toggle() } } label: {
-                        Image(systemName: mo ? "chevron.up" : "chevron.down")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundColor(AppColors.textTertiary)
-                            .padding(4)
-                    }
-                    .buttonStyle(.plain)
-                }
+                .contentShape(Rectangle())
             }
-
-            if mo {
-                if let d = nut.description, !d.isEmpty {
-                    Text(d)
-                        .font(.system(size: 12))
-                        .foregroundColor(AppColors.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.leading, 28)
-                }
-                ForEach(nut.cacTaiNguyen) { r in
-                    if let u = URL(string: r.url) {
-                        Link(destination: u) {
-                            HStack(spacing: 6) {
-                                Image(systemName: r.bieuTuong).font(.system(size: 10))
-                                Text(r.title ?? r.url)
-                                    .font(.system(size: 11.5))
-                                    .lineLimit(1)
-                                Image(systemName: "arrow.up.right")
-                                    .font(.system(size: 8, weight: .bold))
-                                Spacer(minLength: 0)
-                            }
-                            .foregroundColor(mau)
-                            .padding(.horizontal, Spacing.sm).padding(.vertical, 5)
-                            .background(RoundedRectangle(cornerRadius: 7).fill(mau.opacity(0.10)))
-                        }
-                        .padding(.leading, 28)
-                    }
-                }
-            }
+            .buttonStyle(.plain)
         }
         .padding(Spacing.sm + 2)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: CornerRadius.medium)
             .fill(AppColors.backgroundTertiary.opacity(xong ? 0.35 : 0.7)))
+        .sheet(isPresented: $moChiTiet) {
+            ChiTietNutLoTrinhView(nut: nut, mau: mau, daXong: xong) {
+                Task { await vm.doiXong(nut.id) }
+            }
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
+        }
+    }
+
+    private var nhanLienKet: String {
+        switch (nut.linkType ?? "").lowercased() {
+        case "code-lab": return T("Học ngay")
+        case "roadmap":  return T("Lộ trình")
+        default:         return T("Tài liệu")
+        }
+    }
+    private var bieuTuongLienKet: String {
+        switch (nut.linkType ?? "").lowercased() {
+        case "code-lab": return "play.fill"
+        case "roadmap":  return "map.fill"
+        default:         return "arrow.up.right"
+        }
     }
 
     private var nhanMau: Color {
