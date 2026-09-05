@@ -345,12 +345,12 @@ struct LamBaiView: View {
                 // Ảnh đề bài (sơ đồ, đoạn mã chụp màn hình…). Qua
                 // `getMediaUrl` vì máy chủ trả về KHOÁ R2 trần, không phải
                 // URL đầy đủ.
-                if let m = c.imageUrl, !m.isEmpty, let u = URL(string: duongAnh(m)) {
-                    KFImage(u)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(maxWidth: .infinity)
-                        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
+                if let m = c.imageUrl, !m.isEmpty {
+                    // ⚠️ Qua `AnhCauHoi`, KHÔNG dựng `KFImage` thẳng: ảnh đề
+                    // là ảnh cắt tự động và có cả một lượt cắt hỏng thành dải
+                    // trắng 56×484 — vẽ đúng tỉ lệ là một khối trắng cao
+                    // ~3.400pt đẩy hết đáp án ra khỏi màn hình.
+                    AnhCauHoi(duong: duongAnh(m))
                 }
 
                 if let sc = c.starterCode, !sc.isEmpty {
