@@ -96,7 +96,7 @@ struct ProfileView: View {
             .sheet(item: $sheet) { which in
                 switch which {
                 case .settings: SettingsView()
-                case .editProfile: NavigationStack { EditProfileView() }
+                case .editProfile: NavigationStack { ChinhSuaHoSoView() }
                 }
             }
             // Đổi ảnh: chọn xong là tải lên rồi ghi vào hồ sơ ngay, không có
@@ -1007,7 +1007,7 @@ struct SettingsView: View {
 
                 // Account
                 Section(T("Tài khoản")) {
-                    NavigationLink(T("Chỉnh sửa hồ sơ")) { EditProfileView() }
+                    NavigationLink(T("Chỉnh sửa hồ sơ")) { ChinhSuaHoSoView() }
                     NavigationLink(T("Đổi mật khẩu")) { ChangePasswordView() }
                 }
 

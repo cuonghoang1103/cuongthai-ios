@@ -175,81 +175,10 @@ struct DeleteAccountView: View {
 
 // MARK: - Edit profile
 
-struct EditProfileView: View {
-    @EnvironmentObject private var appState: AppState
-    @Environment(\.dismiss) private var dismiss
-
-    @State private var fullName = ""
-    @State private var displayName = ""
-    @State private var bio = ""
-    @State private var isSaving = false
-    @State private var errorMessage: String?
-    @State private var didSave = false
-
-    var body: some View {
-        Form {
-            Section("Tên hiển thị") {
-                TextField("Tên hiển thị", text: $displayName)
-                TextField("Họ và tên", text: $fullName)
-            }
-
-            Section("Giới thiệu") {
-                TextField("Vài dòng về bạn", text: $bio, axis: .vertical)
-                    .lineLimit(3...6)
-            }
-
-            if let errorMessage {
-                Section { Text(errorMessage).foregroundColor(AppColors.error) }
-            }
-
-            if didSave {
-                Section {
-                    Label("Đã lưu", systemImage: "checkmark.circle.fill")
-                        .foregroundColor(AppColors.success)
-                }
-            }
-
-            Section {
-                Button {
-                    Task { await save() }
-                } label: {
-                    HStack {
-                        Spacer()
-                        if isSaving { ProgressView() } else { Text("Lưu thay đổi") }
-                        Spacer()
-                    }
-                }
-                .disabled(isSaving)
-            }
-        }
-        .navigationTitle("Chỉnh sửa hồ sơ")
-        .navigationBarTitleDisplayMode(.inline)
-        .onAppear {
-            guard let user = appState.currentUser else { return }
-            fullName = user.fullName ?? ""
-            displayName = user.displayName ?? ""
-            bio = user.bio ?? ""
-        }
-    }
-
-    private func save() async {
-        isSaving = true
-        errorMessage = nil
-        didSave = false
-        var payload: [String: Any] = [:]
-        if !fullName.isEmpty { payload["fullName"] = fullName }
-        if !displayName.isEmpty { payload["displayName"] = displayName }
-        payload["bio"] = bio
-        do {
-            try await APIClient.shared.send(.updateProfile(payload))
-            await appState.fetchProfile()
-            didSave = true
-        } catch {
-            errorMessage = error.localizedDescription
-        }
-        isSaving = false
-    }
-}
+// `EditProfileView` cũ đã GỠ 06/09/2026 — thay bằng
+// `Profile/ChinhSuaHoSoView.swift`. Bản cũ chỉ sửa được 3 trong 11 trường
+// backend nhận, và mang lỗi `if !fullName.isEmpty` khiến xoá trắng một ô rồi
+// Lưu thì giá trị cũ vẫn nguyên.
 
 // MARK: - Change password
 

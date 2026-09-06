@@ -52,6 +52,34 @@ struct User: Codable, Identifiable, Hashable {
     let postsCount: Int?
     let createdAt: String?
 
+    // ── Trường hồ sơ mở rộng ──────────────────────────────────────────────
+    //
+    // `/api/v1/profile` TRẢ VỀ hết những trường này từ lâu, nhưng mô hình
+    // Swift không khai nên chúng bị vứt lúc giải mã — và màn "Chỉnh sửa hồ
+    // sơ" vì thế không điền sẵn được gì ngoài tên với bio.
+    //
+    // ⚠️ TẤT CẢ phải là optional. Endpoint hồ sơ NGƯỜI KHÁC không trả những
+    // trường riêng tư này; khai non-optional là mọi hồ sơ người khác đều
+    // giải mã hỏng, mà lỗi giải mã trong app này bị nuốt im lặng.
+    var gender: String? = nil
+    var birthYear: Int? = nil
+    var phone: String? = nil
+    /// Backend lưu JSONB dạng ĐỐI TƯỢNG `{"github": "https://…"}`, không phải
+    /// mảng. Khai sai kiểu là hỏng cả lượt giải mã.
+    var socialLinks: [String: String]? = nil
+    var allowMessagesFromStrangers: Bool? = nil
+    var isPro: Bool? = nil
+    var emailVerified: Bool? = nil
+    /// "local" | "google" | "apple" — tài khoản đăng nhập bằng nhà cung cấp
+    /// ngoài thì không có mật khẩu để đổi.
+    ///
+    /// ⚠️ PHẢI là `var`, không được `let`. Đo thật bằng Swift: thuộc tính
+    /// `let` CÓ giá trị khởi tạo bị trình biên dịch coi là đã gán xong nên
+    /// `init(from:)` sinh tự động BỎ QUA nó — giải mã `{"provider":"google"}`
+    /// vẫn ra `nil`, im lặng, không lỗi. `var` + mặc định thì giải mã bình
+    /// thường và rơi về mặc định khi thiếu khoá.
+    var provider: String? = nil
+
     var name: String {
         displayName ?? fullName ?? username
     }
