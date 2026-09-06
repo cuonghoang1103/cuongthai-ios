@@ -48,6 +48,10 @@ struct LoTrinhNgheChiTietView: View {
     @State private var moChang: Set<Int> = [0]
     @State private var chiConThieu = false
     @State private var moBuocTiep = false
+    /// Lộ trình đã lên tới ~280 bước / 8-13 chặng. Không có ô tìm thì muốn
+    /// xem một chủ đề phải xổ từng chặng ra mò bằng mắt.
+    @State private var tim = ""
+    @FocusState private var dangGoTim: Bool
 
     private var mau: Color { vm.lt?.mau ?? tom.mau }
 
@@ -63,6 +67,58 @@ struct LoTrinhNgheChiTietView: View {
         }
         return nil
     }
+    private var khoaTim: String {
+        tim.trimmingCharacters(in: .whitespaces).lowercased()
+    }
+
+    /// Lọc theo tiêu đề + phụ đề + mô tả, bỏ dấu để gõ không dấu vẫn ra.
+    private func khop(_ n: NutLoTrinhNghe) -> Bool {
+        guard !khoaTim.isEmpty else { return true }
+        let kho = [n.title, n.subtitle ?? "", n.description ?? ""].joined(separator: " ")
+        return boDau(kho).contains(boDau(khoaTim))
+    }
+
+    private func boDau(_ s: String) -> String {
+        s.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "vi"))
+    }
+
+    private var soKhop: Int {
+        (vm.lt?.cacChang ?? []).reduce(0) { $0 + $1.cacNut.filter(khop).count }
+    }
+
+    private var oTim: some View {
+        HStack(spacing: Spacing.sm) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(AppColors.textTertiary)
+            TextField("Tìm trong \(tong) bước…", text: $tim)
+                .font(.system(size: 14))
+                .foregroundColor(AppColors.textPrimary)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .submitLabel(.search)
+                .focused($dangGoTim)
+            if !tim.isEmpty {
+                Button {
+                    tim = ""
+                    dangGoTim = false
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 15))
+                        .foregroundColor(AppColors.textTertiary)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, Spacing.md)
+        .padding(.vertical, 10)
+        .background(RoundedRectangle(cornerRadius: CornerRadius.large).fill(AppColors.backgroundCard))
+        .overlay(
+            RoundedRectangle(cornerRadius: CornerRadius.large)
+                .stroke(dangGoTim ? mau.opacity(0.5) : Color.clear, lineWidth: 1)
+        )
+    }
+
     private var tong: Int { vm.lt?.tongNut ?? tom.soNut }
     private var xong: Int { vm.daXong.count }
 
@@ -74,6 +130,14 @@ struct LoTrinhNgheChiTietView: View {
                 if vm.dangTai && vm.lt == nil {
                     ProgressView().frame(maxWidth: .infinity).padding(.top, Spacing.xl)
                 } else if let l = vm.lt {
+                    oTim
+                    if !khoaTim.isEmpty && soKhop == 0 {
+                        Text("Không có bước nào khớp “\(tim.trimmingCharacters(in: .whitespaces))”")
+                            .font(.system(size: 13))
+                            .foregroundColor(AppColors.textSecondary)
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, Spacing.lg)
+                    }
                     ForEach(l.cacChang) { c in chang(c) }
                 }
                 if let e = vm.loi, vm.lt == nil {
@@ -177,12 +241,16 @@ struct LoTrinhNgheChiTietView: View {
     // MARK: Một chặng
 
     @ViewBuilder private func chang(_ c: ChangLoTrinhNghe) -> some View {
-        let nut = chiConThieu ? c.cacNut.filter { !vm.daXong.contains($0.id) } : c.cacNut
+        let loc = chiConThieu ? c.cacNut.filter { !vm.daXong.contains($0.id) } : c.cacNut
+        let nut = loc.filter(khop)
         if !nut.isEmpty {
-            let mo = moChang.contains(c.stage)
+            // Đang tìm thì chặng nào có kết quả tự mở — không bắt người dùng
+            // bấm thêm một nhịp nữa mới thấy thứ vừa tìm ra.
+            let mo = !khoaTim.isEmpty || moChang.contains(c.stage)
             let xongChang = c.cacNut.filter { vm.daXong.contains($0.id) }.count
             VStack(alignment: .leading, spacing: 0) {
                 Button {
+                    guard khoaTim.isEmpty else { return }
                     withAnimation(.easeInOut(duration: 0.18)) {
                         if mo { moChang.remove(c.stage) } else { moChang.insert(c.stage) }
                     }
@@ -199,10 +267,10 @@ struct LoTrinhNgheChiTietView: View {
                             .foregroundColor(AppColors.textPrimary)
                             .multilineTextAlignment(.leading)
                         Spacer(minLength: 0)
-                        Text("\(xongChang)/\(c.cacNut.count)")
+                        Text(khoaTim.isEmpty ? "\(xongChang)/\(c.cacNut.count)" : "\(nut.count) khớp")
                             .font(.system(size: 11).monospacedDigit())
                             .foregroundColor(AppColors.textTertiary)
-                        Image(systemName: mo ? "chevron.up" : "chevron.down")
+                        Image(systemName: khoaTim.isEmpty ? (mo ? "chevron.up" : "chevron.down") : "magnifyingglass")
                             .font(.system(size: 11, weight: .bold))
                             .foregroundColor(AppColors.textTertiary)
                     }

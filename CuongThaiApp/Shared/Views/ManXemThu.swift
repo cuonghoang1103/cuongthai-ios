@@ -36,6 +36,28 @@ struct ManXemThu: View {
             case "noidungthi": ThuNoiDungThi()
             case "logo": ThuLogo()
 
+            // Ba trạng thái của màn Hồ sơ khi CHƯA có dữ liệu. Không có cửa
+            // này thì không cách nào nhìn thấy chúng: muốn tái hiện phải làm
+            // hỏng mạng đúng lúc mở app.
+            case "hoso-tai": ScrollView { HoSoDangTaiView() }
+            case "hoso-loi":
+                ScrollView {
+                    HoSoTrongView(
+                        bieuTuong: "wifi.exclamationmark",
+                        tieuDe: "Không tải được hồ sơ",
+                        moTa: "The Internet connection appears to be offline.",
+                        nhanNut: "Thử lại", hanhDong: {},
+                        nhanPhu: "Đăng xuất", hanhDongPhu: {})
+                }
+            case "hoso-chuadn":
+                ScrollView {
+                    HoSoTrongView(
+                        bieuTuong: "person.crop.circle",
+                        tieuDe: "Đăng nhập để xem hồ sơ",
+                        moTa: "Hồ sơ lưu bài viết, khoá học và tiến độ học của bạn trên mọi thiết bị.",
+                        nhanNut: "Đăng nhập", hanhDong: {})
+                }
+
             // ── Cần PHIÊN ĐĂNG NHẬP mới có dữ liệu ───────────────────
             //
             // Cửa xem màn KHÔNG bỏ qua xác thực — nó chỉ bỏ qua màn đăng

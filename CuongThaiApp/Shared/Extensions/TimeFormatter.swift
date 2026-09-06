@@ -38,10 +38,10 @@ struct TimeFormatter {
         if seconds < 60 { return "Vừa xong" }
         if minutes < 60 { return "\(minutes)p trước" }
         if hours < 24 { return "\(hours)h trước" }
-        if days < 7 { return "\(days)ngày trước" }
-        if weeks < 4 { return "\(weeks)tuần trước" }
-        if months < 12 { return "\(months)tháng trước" }
-        return "\(years)năm trước"
+        if days < 7 { return "\(days) ngày trước" }
+        if weeks < 4 { return "\(weeks) tuần trước" }
+        if months < 12 { return "\(months) tháng trước" }
+        return "\(years) năm trước"
     }
 }
 

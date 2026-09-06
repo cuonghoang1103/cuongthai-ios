@@ -106,18 +106,50 @@ final class AppState: ObservableObject {
         ModerationStore.shared.reset()
         isAuthenticated = false
         currentUser = nil
+        trangThaiHoSo = .chuaNap
         unreadMessages = 0
         unreadNotifications = 0
     }
 
+    /// Hồ sơ nạp được chưa — để màn Hồ sơ biết vẽ gì.
+    ///
+    /// ⚠️ Trước 06/09/2026 hàm này nuốt MỌI lỗi không phải 401. `checkAuth()`
+    /// bật `isAuthenticated = true` chỉ vì máy CÓ token (chưa hỏi máy chủ),
+    /// nên một lần gọi hỏng lúc mở app — mạng chập, 500 thoáng qua, giải mã
+    /// lệch — để lại trạng thái "đã đăng nhập mà không có người dùng"
+    /// VĨNH VIỄN: không ai thử lại, không log, và ProfileView lấp chỗ trống
+    /// bằng `?? "User"` nên người dùng thấy một hồ sơ giả "User / @username /
+    /// 0 / 0 / 0". Nhìn y như app hỏng, và App Store đánh trượt vì đúng là
+    /// nội dung giữ chỗ (Guideline 2.1).
+    enum TrangThaiHoSo: Equatable { case chuaNap, dangNap, xong, loi(String) }
+    @Published var trangThaiHoSo: TrangThaiHoSo = .chuaNap
+
     func fetchProfile() async {
-        do {
-            let user: User = try await APIClient.shared.request(.getProfile)
-            currentUser = user
-            storage.saveCurrentUser(user)
-            await ModerationStore.shared.refreshBlocks()
-        } catch {
-            if case APIError.unauthorized = error { logout() }
+        if case .dangNap = trangThaiHoSo { return }
+        trangThaiHoSo = .dangNap
+        // Thử lại có giãn cách: hỏng lúc mở app phần lớn là mạng chưa sẵn sàng.
+        for lan in 0..<3 {
+            do {
+                let user: User = try await APIClient.shared.request(.getProfile)
+                currentUser = user
+                storage.saveCurrentUser(user)
+                trangThaiHoSo = .xong
+                await ModerationStore.shared.refreshBlocks()
+                return
+            } catch {
+                if case APIError.unauthorized = error { logout(); return }
+                if lan == 2 {
+                    trangThaiHoSo = .loi(error.localizedDescription)
+                    // Có bản lưu trong máy thì dùng tạm — thà hồ sơ cũ còn hơn
+                    // hồ sơ giả.
+                    if currentUser == nil, let luu = storage.getCurrentUser() {
+                        currentUser = luu
+                        trangThaiHoSo = .xong
+                    }
+                    return
+                }
+                try? await Task.sleep(nanoseconds: UInt64(400_000_000) << lan)
+            }
         }
     }
 

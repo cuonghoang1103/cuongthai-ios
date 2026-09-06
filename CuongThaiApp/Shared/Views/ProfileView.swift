@@ -27,16 +27,58 @@ struct ProfileView: View {
         var id: String { rawValue }
     }
 
+    /// KHÔNG BAO GIỜ vẽ hồ sơ khi chưa có hồ sơ.
+    ///
+    /// Bản cũ vẽ thẳng `profileHeader` với `?? "User"` / `?? "username"`, nên
+    /// mọi lúc dữ liệu chưa về — đang tải, mạng hỏng, token hết hạn — người
+    /// dùng thấy một hồ sơ GIẢ đầy đủ nút bấm. Xem `HoSoTrangThaiView.swift`.
+    @ViewBuilder private var than: some View {
+        if viewModel.profile != nil {
+            VStack(spacing: 0) {
+                profileHeader
+                profileStats
+                profileActions
+                contentTabs
+                noiDungTheoTab
+                // Thanh tab là một viên nổi đè lên nội dung. Không chừa chỗ
+                // thì mục cuối cùng vĩnh viễn nằm dưới nó, không cuộn tới được.
+                Color.clear.frame(height: 96)
+            }
+        } else if !appState.isAuthenticated && userIdKhac == nil {
+            HoSoTrongView(
+                bieuTuong: "person.crop.circle",
+                tieuDe: T("Đăng nhập để xem hồ sơ"),
+                moTa: T("Hồ sơ lưu bài viết, khoá học và tiến độ học của bạn trên mọi thiết bị."),
+                nhanNut: T("Đăng nhập"),
+                hanhDong: { appState.logout() }
+            )
+        } else if case .loi(let e) = appState.trangThaiHoSo, userIdKhac == nil {
+            HoSoTrongView(
+                bieuTuong: "wifi.exclamationmark",
+                tieuDe: T("Không tải được hồ sơ"),
+                moTa: e,
+                nhanNut: T("Thử lại"),
+                hanhDong: { Task { await appState.fetchProfile(); await viewModel.loadProfile() } },
+                nhanPhu: T("Đăng xuất"),
+                hanhDongPhu: { appState.logout() }
+            )
+        } else if viewModel.error != nil {
+            HoSoTrongView(
+                bieuTuong: "exclamationmark.triangle",
+                tieuDe: T("Không tải được hồ sơ"),
+                moTa: viewModel.error ?? "",
+                nhanNut: T("Thử lại"),
+                hanhDong: { Task { await viewModel.loadProfile() } }
+            )
+        } else {
+            HoSoDangTaiView()
+        }
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 0) {
-                    profileHeader
-                    profileStats
-                    profileActions
-                    contentTabs
-                    noiDungTheoTab
-                }
+                than
             }
             .background(AppColors.backgroundPrimary)
             .navigationTitle(T("Hồ sơ"))
@@ -94,6 +136,7 @@ struct ProfileView: View {
         VStack(spacing: 0) {
             // Cover Photo
             ZStack(alignment: .bottom) {
+                // (lớp tối chân ảnh nằm ở overlay bên dưới ZStack này)
                 if let coverUrl = viewModel.profile?.coverPhotoUrl,
                    let url = URL(string: coverUrl) {
                     // ⚠️ Ảnh bìa phải vẽ dạng LỚP PHỦ, không được nằm thẳng
@@ -128,6 +171,9 @@ struct ProfileView: View {
                         }
                         .clipped()
                 } else {
+                    // Chưa có ảnh bìa: KHÔNG để một mảng tím phẳng. Thêm hai
+                    // quầng sáng lệch tâm cho có chiều sâu — vẫn thuần mã, không
+                    // tốn tài nguyên, và không bao giờ hỏng vì thiếu ảnh.
                     Rectangle()
                         .fill(LinearGradient(
                             colors: [AppColors.primary, AppColors.primaryDark],
@@ -135,6 +181,17 @@ struct ProfileView: View {
                             endPoint: .bottomTrailing
                         ))
                         .frame(height: 180)
+                        .overlay(alignment: .topTrailing) {
+                            Circle().fill(Color.white.opacity(0.14))
+                                .frame(width: 190, height: 190).blur(radius: 44)
+                                .offset(x: 54, y: -74)
+                        }
+                        .overlay(alignment: .bottomLeading) {
+                            Circle().fill(AppColors.secondary.opacity(0.28))
+                                .frame(width: 160, height: 160).blur(radius: 50)
+                                .offset(x: -50, y: 58)
+                        }
+                        .clipped()
                 }
 
                 // Edit Cover Button
@@ -161,7 +218,11 @@ struct ProfileView: View {
             // Avatar and Info
             HStack(alignment: .bottom, spacing: Spacing.md) {
                 ZStack(alignment: .bottomTrailing) {
-                    UserAvatarView(url: viewModel.profile?.avatarUrl, size: 90)
+                    // Viền dày cùng màu nền: chuẩn Facebook/X — tách avatar
+                    // khỏi ảnh bìa dù ảnh bìa sáng hay tối.
+                    UserAvatarView(url: viewModel.profile?.avatarUrl, size: 96)
+                        .overlay(Circle().stroke(AppColors.backgroundPrimary, lineWidth: 4))
+                        .shadow(color: .black.opacity(0.28), radius: 8, y: 3)
 
                     if viewModel.isCurrentUser {
                         PhotosPicker(selection: $avatarItem, matching: .images) {
@@ -179,74 +240,43 @@ struct ProfileView: View {
                         .disabled(viewModel.dangTaiAvatar)
                     }
                 }
-                .offset(y: -45)
+                .offset(y: -46)
 
                 Spacer()
-
-                VStack(alignment: .trailing, spacing: Spacing.sm) {
-                    if !viewModel.isCurrentUser {
-                        if viewModel.profile?.isFollowing == true {
-                            Button(T("Đang theo dõi")) {
-                                Task { await viewModel.toggleFollow() }
-                            }
-                            .font(.buttonSmall)
-                            .foregroundColor(AppColors.textPrimary)
-                            .padding(.horizontal, Spacing.md)
-                            .padding(.vertical, Spacing.sm)
-                            .background(AppColors.backgroundTertiary)
-                            .cornerRadius(CornerRadius.medium)
-                        } else {
-                            Button {
-                                Task { await viewModel.toggleFollow() }
-                            } label: {
-                                Text(T("Theo dõi"))
-                                    .font(.buttonSmall)
-                                    .foregroundColor(AppColors.onPrimary)
-                                    .padding(.horizontal, Spacing.md)
-                                    .padding(.vertical, Spacing.sm)
-                                    .background(AppColors.primary)
-                                    .cornerRadius(CornerRadius.medium)
-                            }
-                            .disabled(viewModel.isLoading)
-                        }
-                    } else {
-                        Button {
-                            sheet = .editProfile
-                        } label: {
-                            Text(T("Chỉnh sửa"))
-                                .font(.buttonSmall)
-                                .foregroundColor(AppColors.textPrimary)
-                                .padding(.horizontal, Spacing.md)
-                                .padding(.vertical, Spacing.sm)
-                                .background(AppColors.backgroundTertiary)
-                                .cornerRadius(CornerRadius.medium)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: CornerRadius.medium)
-                                        .stroke(AppColors.border, lineWidth: 1)
-                                )
-                        }
-                    }
-                }
-                .offset(y: -20)
             }
             .padding(.horizontal, Spacing.md)
 
             // User Info
             VStack(alignment: .leading, spacing: Spacing.sm) {
-                HStack(spacing: Spacing.sm) {
-                    Text(viewModel.profile?.name ?? "User")
-                        .font(.titleLarge)
+                // KHÔNG có `?? "User"` ở đây nữa. Khối này chỉ được vẽ khi
+                // `viewModel.profile != nil` (xem `than`), nên giá trị giữ
+                // chỗ vừa thừa vừa là thứ đã tạo ra màn hình hồ sơ giả.
+                HStack(spacing: 6) {
+                    Text(viewModel.profile?.name ?? "")
+                        .font(.system(size: 24, weight: .bold))
                         .foregroundColor(AppColors.textPrimary)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.8)
 
-                    if let verified = viewModel.profile?.isVerified, verified {
+                    if viewModel.profile?.isVerified == true {
                         Image(systemName: "checkmark.seal.fill")
+                            .font(.system(size: 17))
                             .foregroundColor(AppColors.primary)
                     }
                 }
 
-                Text("@\(viewModel.profile?.username ?? "username")")
-                    .font(.bodyMedium)
+                Text("@\(viewModel.profile?.username ?? "")")
+                    .font(.system(size: 14))
                     .foregroundColor(AppColors.textSecondary)
+
+                if let ngay = ngayThamGia {
+                    HStack(spacing: 5) {
+                        Image(systemName: "calendar").font(.system(size: 11))
+                        Text(ngay).font(.system(size: 12.5))
+                    }
+                    .foregroundColor(AppColors.textTertiary)
+                    .padding(.top, 1)
+                }
 
                 if let bio = viewModel.profile?.bio, !bio.isEmpty {
                     Text(bio)
@@ -271,7 +301,76 @@ struct ProfileView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, Spacing.md)
             .offset(y: -20)
+
+            // Hàng nút TOÀN CHIỀU RỘNG, đặt DƯỚI tên — chuẩn Facebook/X.
+            //
+            // ⚠️ Trước đây nút nằm cùng hàng với avatar, căn phải. Trên máy
+            // hẹp (iPhone SE/mini) một cái tên dài đẩy thẳng vào nút, và nút
+            // "Chỉnh sửa hồ sơ" dài hơn "Chỉnh sửa" cũ nên khoảng thở gần như
+            // không còn. Xuống hàng riêng thì tên dài bao nhiêu cũng không
+            // chạm nút.
+            hangNut
+                .padding(.horizontal, Spacing.md)
+                .offset(y: -12)
         }
+    }
+
+    @ViewBuilder private var hangNut: some View {
+                    if !viewModel.isCurrentUser {
+                        if viewModel.profile?.isFollowing == true {
+                            Button {
+                                Task { await viewModel.toggleFollow() }
+                            } label: {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "checkmark").font(.system(size: 12, weight: .bold))
+                                    Text(T("Đang theo dõi")).font(.system(size: 14, weight: .semibold))
+                                }
+                                .foregroundColor(AppColors.textPrimary)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 10)
+                                .background(AppColors.backgroundTertiary)
+                                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
+                                .overlay(RoundedRectangle(cornerRadius: CornerRadius.medium)
+                                    .stroke(AppColors.border, lineWidth: 1))
+                            }
+                        } else {
+                            Button {
+                                Task { await viewModel.toggleFollow() }
+                            } label: {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "person.badge.plus").font(.system(size: 13, weight: .semibold))
+                                    Text(T("Theo dõi")).font(.system(size: 14, weight: .semibold))
+                                }
+                                .foregroundColor(AppColors.onPrimary)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 10)
+                                .background(
+                                    LinearGradient(colors: [AppColors.primary, AppColors.primaryDark],
+                                                   startPoint: .leading, endPoint: .trailing)
+                                )
+                                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
+                            }
+                            .disabled(viewModel.isLoading)
+                        }
+                    } else {
+                        Button {
+                            sheet = .editProfile
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: "square.and.pencil").font(.system(size: 13, weight: .semibold))
+                                Text(T("Chỉnh sửa hồ sơ")).font(.system(size: 14, weight: .semibold))
+                            }
+                            .foregroundColor(AppColors.onPrimary)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .background(
+                                LinearGradient(colors: [AppColors.primary, AppColors.primaryDark],
+                                               startPoint: .leading, endPoint: .trailing)
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
+                        }
+                    }
+                
     }
 
     private var profileStats: some View {
@@ -288,16 +387,34 @@ struct ProfileView: View {
     }
 
     private func statItem(value: Int, label: String) -> some View {
-        VStack(spacing: 4) {
+        VStack(spacing: 3) {
             Text(formatCount(value))
-                .font(.titleMedium)
+                .font(.system(size: 19, weight: .bold).monospacedDigit())
                 .foregroundColor(AppColors.textPrimary)
 
             Text(label)
-                .font(.caption)
+                .font(.system(size: 12))
                 .foregroundColor(AppColors.textSecondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
         }
         .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(value) \(label)")
+    }
+
+    /// "Tham gia tháng 3, 2025" — mốc quen thuộc trên mọi mạng xã hội, và là
+    /// thứ duy nhất trong đầu trang chứng minh đây là tài khoản THẬT.
+    private var ngayThamGia: String? {
+        guard let raw = viewModel.profile?.createdAt else { return nil }
+        let vao = ISO8601DateFormatter()
+        vao.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let d = vao.date(from: raw) ?? ISO8601DateFormatter().date(from: raw)
+        guard let d else { return nil }
+        let ra = DateFormatter()
+        ra.locale = Locale(identifier: QuanLyNgonNguApp.shared.ngonNgu == .anh ? "en_US" : "vi_VN")
+        ra.setLocalizedDateFormatFromTemplate("MMMM yyyy")
+        return (QuanLyNgonNguApp.shared.ngonNgu == .anh ? "Joined " : "Tham gia ") + ra.string(from: d)
     }
 
     private var profileActions: some View {
@@ -673,15 +790,21 @@ class ProfileViewModel: ObservableObject {
         isLoading = true
         error = nil
 
+        // ⚠️ Bản cũ chỉ có `if let userId = ...` không kèm `else`: không có
+        // id thì hàm im lặng không làm gì, `error` vẫn nil, `isLoading` về
+        // false — màn hình đứng yên mà không ai biết vì sao. Phải NÓI RA.
+        guard let userId = userId ?? AppState.shared.currentUser?.id else {
+            error = T("Chưa xác định được tài khoản. Thử lại hoặc đăng nhập lại.")
+            isLoading = false
+            return
+        }
         do {
-            if let userId = userId ?? AppState.shared.currentUser?.id {
-                let user: User = try await APIClient.shared.request(.getUserProfile(id: userId))
-                profile = UserProfile(from: user)
-                cursor = nil
-                posts = []
-                hasMore = true
-                await loadPosts(reset: true)
-            }
+            let user: User = try await APIClient.shared.request(.getUserProfile(id: userId))
+            profile = UserProfile(from: user)
+            cursor = nil
+            posts = []
+            hasMore = true
+            await loadPosts(reset: true)
         } catch {
             self.error = error.localizedDescription
         }
