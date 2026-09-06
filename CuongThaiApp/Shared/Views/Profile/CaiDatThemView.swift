@@ -9,6 +9,8 @@ import UserNotifications
 struct CaiDatThongBaoView: View {
     @State private var trangThai: UNAuthorizationStatus = .notDetermined
     @State private var soNhacHoc = 0
+    @State private var soNhacToi = 0
+    @State private var gioNhac = Date()
 
     var body: some View {
         Form {
@@ -32,6 +34,38 @@ struct CaiDatThongBaoView: View {
                 Text(trangThai == .denied
                      ? T("Bạn đã từ chối thông báo. iOS không cho app hỏi lại — phải bật trong Cài đặt hệ thống.")
                      : T("Cần bật để nhận nhắc đi học, tin nhắn và thông báo mới."))
+            }
+
+            // ── Học ở nhà ────────────────────────────────────────────────
+            Section {
+                Toggle(T("Nhắc học ở nhà"), isOn: Binding(
+                    get: { HocONha.bat },
+                    set: { v in
+                        HocONha.bat = v
+                        Task { if v { await ganLai() } else { await HocONha.xoaNhacToi(); await dem() } }
+                    }))
+                if HocONha.bat {
+                    DatePicker(T("Nhắc lúc"), selection: $gioNhac, displayedComponents: .hourAndMinute)
+                        .onChange(of: gioNhac) { _, d in
+                            let c = Calendar.current
+                            HocONha.phutNhac = c.component(.hour, from: d) * 60 + c.component(.minute, from: d)
+                            Task { await ganLai() }
+                        }
+                    HStack {
+                        Text(T("Lời nhắc đang đặt"))
+                        Spacer()
+                        Text("\(soNhacToi)")
+                            .font(.system(size: 15, weight: .semibold).monospacedDigit())
+                            .foregroundColor(AppColors.textSecondary)
+                    }
+                }
+            } header: {
+                Text(T("Học ở nhà"))
+            } footer: {
+                // Nói rõ CƠ CHẾ, vì hai điều dưới đây gây bất ngờ nhất:
+                // ngày trống không nhắc, và app phải mở ít nhất một lần sau
+                // khi đổi lịch thì lời nhắc mới khớp lịch mới.
+                Text(T("Mỗi ngày có lớp, app nhắc một lần vào giờ này và nói rõ hôm nay bạn học môn gì. Ngày không có lớp thì không nhắc. Việc “Ôn <môn> — 20 phút” được tự thêm vào Tổng quan sau khi buổi học kết thúc."))
             }
 
             Section {
@@ -80,6 +114,20 @@ struct CaiDatThongBaoView: View {
         trangThai = await tt.notificationSettings().authorizationStatus
         soNhacHoc = await tt.pendingNotificationRequests()
             .filter { $0.identifier.hasPrefix("buoihoc-") }.count
+        soNhacToi = await HocONha.demNhacToi()
+        gioNhac = Calendar.current.date(bySettingHour: HocONha.phutNhac / 60,
+                                        minute: HocONha.phutNhac % 60,
+                                        second: 0, of: Date()) ?? Date()
+    }
+
+    /// Đặt lại lời nhắc buổi tối. Cần LỊCH mới biết mỗi thứ học môn gì, nên
+    /// phải hỏi máy chủ — không cache được ở màn Cài đặt.
+    private func ganLai() async {
+        if let d: DapAnLichHoc = try? await APIClient.shared.request(
+            .lichHoc(ngay: PhamViViec.today.moc())) {
+            await HocONha.datLaiNhacToi(d.items)
+        }
+        await dem()
     }
 
     private func moCaiDat() {

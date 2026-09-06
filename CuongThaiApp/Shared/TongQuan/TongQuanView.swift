@@ -409,9 +409,20 @@ private struct HangViec: View {
                     }
                 }
                 Spacer(minLength: 0)
-                Text("+\(viec.exp)")
-                    .font(.system(size: 11, weight: .semibold).monospacedDigit())
-                    .foregroundColor(AppColors.primary.opacity(viec.done ? 0.4 : 1))
+                if viec.done {
+                    Button { Task { await vm.xoaViec(viec) } } label: {
+                        Image(systemName: "trash")
+                            .font(.system(size: 13))
+                            .foregroundColor(AppColors.textTertiary)
+                            .frame(width: 30, height: 30)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(T("Xoá việc"))
+                } else {
+                    Text("+\(viec.exp)")
+                        .font(.system(size: 11, weight: .semibold).monospacedDigit())
+                        .foregroundColor(AppColors.primary)
+                }
             }
             .padding(.vertical, 9)
 
@@ -435,11 +446,12 @@ private struct HangViec: View {
             }
         }
         .contentShape(Rectangle())
-        .swipeActions(edge: .trailing) {
-            Button(role: .destructive) { Task { await vm.xoaViec(viec) } } label: {
-                Label(T("Xoá"), systemImage: "trash")
-            }
-        }
+        // ⚠️ KHÔNG dùng `.swipeActions` ở đây. Nó CHỈ chạy bên trong `List`;
+        // gắn vào một hàng trong `VStack` thì trình biên dịch nhận, chạy
+        // không lỗi, và vuốt KHÔNG làm gì cả — đo thật trên máy ảo. Danh sách
+        // việc nằm trong một thẻ có nền riêng nên không thể là `List` (lồng
+        // cuộn trong cuộn). Giữ `.contextMenu` (giữ để mở) và thêm nút xoá
+        // hiện rõ khi việc ĐÃ XONG — lúc đó dòng không còn gì để bấm nhầm.
         .contextMenu {
             Button { Task { await vm.doiViec(viec, ["priority": viec.priority == 3 ? 0 : 3]) } } label: {
                 Label(viec.priority == 3 ? T("Bỏ ưu tiên cao") : T("Ưu tiên cao"), systemImage: "flag")

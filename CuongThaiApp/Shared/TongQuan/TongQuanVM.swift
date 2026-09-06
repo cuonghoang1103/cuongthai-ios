@@ -89,6 +89,11 @@ final class TongQuanVM: ObservableObject {
             let d: DapAnLichHoc = try await APIClient.shared.request(.lichHoc(ngay: PhamViViec.today.moc()))
             buoiHoc = d.items
             await NhacHoc.datLai(d.items)
+            await HocONha.datLaiNhacToi(d.items)
+            // Sinh việc ôn cho buổi đã học xong hôm nay. Chạy SAU khi có lịch
+            // (cần biết buổi nào đã kết thúc) và sau khi có `viec` (để không
+            // tạo trùng thứ người dùng tự thêm).
+            if await HocONha.sinhViecHomNay(d.items, daCo: viec) > 0 { await nap() }
         } catch {
             loi = error.localizedDescription
         }
