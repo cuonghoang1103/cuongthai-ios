@@ -201,10 +201,16 @@ struct ProfileView: View {
                             if viewModel.dangTaiAnhBia {
                                 ProgressView().tint(.white)
                             } else {
-                                Image(systemName: "camera.fill").foregroundColor(AppColors.onPrimary)
+                                // Cỡ ĐIỂM cố định, không dùng font hệ thống:
+                                // đây là nút biểu tượng, không phải chữ đọc.
+                                // Ở cỡ chữ trợ năng lớn nhất nó phình to gần
+                                // bằng 1/4 ảnh bìa — đo thật trên máy ảo.
+                                Image(systemName: "camera.fill")
+                                    .font(.system(size: 15))
+                                    .foregroundColor(AppColors.onPrimary)
                             }
                         }
-                        .padding(Spacing.sm)
+                        .frame(width: 34, height: 34)
                         .background(Color.black.opacity(0.5))
                         .clipShape(Circle())
                     }
@@ -230,21 +236,32 @@ struct ProfileView: View {
                                 if viewModel.dangTaiAvatar {
                                     ProgressView().tint(.white).scaleEffect(0.7)
                                 } else {
-                                    Image(systemName: "camera.fill").font(.caption).foregroundColor(AppColors.onPrimary)
+                                    Image(systemName: "camera.fill")
+                                        .font(.system(size: 11))
+                                        .foregroundColor(AppColors.onPrimary)
                                 }
                             }
-                            .padding(6)
+                            .frame(width: 26, height: 26)
                             .background(AppColors.primary)
                             .clipShape(Circle())
                         }
                         .disabled(viewModel.dangTaiAvatar)
                     }
                 }
-                .offset(y: -46)
 
                 Spacer()
             }
             .padding(.horizontal, Spacing.md)
+            // ⚠️ `.padding(.top, âm)` chứ KHÔNG phải `.offset(y:)`.
+            //
+            // `.offset` chỉ dịch chỗ VẼ, chỗ CHIẾM giữ nguyên — nên khối bên
+            // dưới không hề biết avatar đã nhích lên, và chỉ cần chiều cao
+            // chữ đổi một chút (tên xuống dòng, cỡ chữ hệ thống lớn hơn, máy
+            // khác) là nút "Chỉnh sửa hồ sơ" vẽ đè lên dòng giới thiệu. Đo
+            // thật trên iPhone 16 Pro Max: nút cắt mất chữ đầu của bio.
+            // `.padding` âm đổi CẢ chiều cao bố cục nên mọi khối sau tự dịch
+            // theo, không bao giờ chồng nhau.
+            .padding(.top, -46)
 
             // User Info
             VStack(alignment: .leading, spacing: Spacing.sm) {
@@ -300,7 +317,7 @@ struct ProfileView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, Spacing.md)
-            .offset(y: -20)
+            .padding(.top, Spacing.sm)
 
             // Hàng nút TOÀN CHIỀU RỘNG, đặt DƯỚI tên — chuẩn Facebook/X.
             //
@@ -311,7 +328,8 @@ struct ProfileView: View {
             // chạm nút.
             hangNut
                 .padding(.horizontal, Spacing.md)
-                .offset(y: -12)
+                .padding(.top, Spacing.md)
+                .padding(.bottom, Spacing.sm)
         }
     }
 
@@ -383,7 +401,9 @@ struct ProfileView: View {
         }
         .padding(.vertical, Spacing.md)
         .background(AppColors.backgroundSecondary)
-        .padding(.top, -Spacing.md)
+        // Không còn `.padding(.top, -16)`: số âm đó chỉ để bù cho mấy cái
+        // `.offset` ở đầu trang. Đầu trang giờ khai chiều cao thật, nên giữ
+        // lại số âm này là thanh số liệu ăn vào nút "Chỉnh sửa hồ sơ".
     }
 
     private func statItem(value: Int, label: String) -> some View {
