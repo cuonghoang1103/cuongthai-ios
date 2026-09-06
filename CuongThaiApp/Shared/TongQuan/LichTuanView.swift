@@ -13,6 +13,7 @@ struct LichTuanView: View {
     @State private var themMoi = false
     @State private var suaThi: BuoiThi?
     @State private var themThi = false
+    @State private var nhapNhanh = false
     @State private var hoiXoa: BuoiHoc?
 
     private var homNay: String { PhamViViec.dinhDang.string(from: Date()) }
@@ -49,6 +50,7 @@ struct LichTuanView: View {
                 Menu {
                     Button { themMoi = true } label: { Label(T("Thêm buổi học"), systemImage: "calendar.badge.plus") }
                     Button { themThi = true } label: { Label(T("Thêm buổi thi"), systemImage: "pencil.and.list.clipboard") }
+                    Button { nhapNhanh = true } label: { Label(T("Nhập nhanh cả tuần"), systemImage: "text.badge.plus") }
                     NavigationLink { HocKyView(vm: vm) } label: { Label(T("Kỳ học"), systemImage: "graduationcap") }
                 } label: { Image(systemName: "plus") }
             }
@@ -56,6 +58,7 @@ struct LichTuanView: View {
         .sheet(isPresented: $themMoi) { NavigationStack { SuaBuoiHocView(vm: vm, buoi: nil) } }
         .sheet(item: $sua) { b in NavigationStack { SuaBuoiHocView(vm: vm, buoi: b) } }
         .sheet(isPresented: $themThi) { NavigationStack { SuaBuoiThiView(vm: vm, thi: nil) } }
+        .sheet(isPresented: $nhapNhanh) { NavigationStack { NhapNhanhLichView(vm: vm) } }
         .sheet(item: $suaThi) { t in NavigationStack { SuaBuoiThiView(vm: vm, thi: t) } }
         .confirmationDialog(T("Xoá buổi học này?"), isPresented: .constant(hoiXoa != nil), titleVisibility: .visible) {
             Button(T("Xoá"), role: .destructive) {
@@ -195,6 +198,9 @@ struct LichTuanView: View {
                     .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
             }
             .padding(.top, Spacing.xs)
+            Button(T("Nhập nhanh cả tuần")) { nhapNhanh = true }
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(AppColors.primary)
         }
         .padding(Spacing.lg).frame(maxWidth: 380).frame(maxWidth: .infinity).padding(.top, Spacing.xl)
     }
