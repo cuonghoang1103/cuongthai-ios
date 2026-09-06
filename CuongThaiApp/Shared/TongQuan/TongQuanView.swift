@@ -12,6 +12,7 @@ struct TongQuanView: View {
     @State private var moLich = false
     @State private var moFeed = false
     @State private var moCon: Set<Int> = []
+    @State private var monDangMo: String?
     @FocusState private var dangGo: Bool
 
     var body: some View {
@@ -52,6 +53,11 @@ struct TongQuanView: View {
             }
             .navigationDestination(isPresented: $moLich) { LichTuanView(vm: vm) }
             .navigationDestination(isPresented: $moFeed) { HomeView() }
+            .sheet(item: Binding(
+                get: { monDangMo.map(MonMo.init) },
+                set: { monDangMo = $0?.ma })) { m in
+                HocGiChoMonView(mon: m.ma)
+            }
             .alert(T("Đã kết thúc ngày"), isPresented: Binding(
                 get: { vm.vuaCong != nil }, set: { if !$0 { vm.vuaCong = nil } })) {
                 Button("OK") { vm.vuaCong = nil }
@@ -151,7 +157,13 @@ struct TongQuanView: View {
             the("\(vm.soXong)/\(vm.soTong)", T("việc hôm nay"), "checklist", AppColors.primary)
             the("\(appState.unreadMessages)", T("tin nhắn chưa đọc"), "message", AppColors.secondary)
             the("\(appState.unreadNotifications)", T("thông báo mới"), "bell", AppColors.warning)
-            the("\(vm.trangThai.totalExp)", T("tổng EXP"), "flame", AppColors.error)
+            // Chuỗi ngày THAY thẻ "tổng EXP": EXP và cấp đã nằm trong vòng
+            // tròn ở đầu trang, để lại một thẻ nữa là nói cùng một chuyện hai
+            // lần. Chuỗi là con số duy nhất nói về THÓI QUEN chứ không về
+            // điểm — đúng thứ người dùng đang thiếu.
+            the(vm.chuoiNgay > 0 ? "\(vm.chuoiNgay)" : "—",
+                vm.chuoiNgay > 0 ? T("ngày liên tiếp") : T("chưa có chuỗi"),
+                "flame", vm.chuoiNgay > 0 ? AppColors.error : AppColors.textTertiary)
         }
     }
 
@@ -280,6 +292,7 @@ struct TongQuanView: View {
                 ForEach(vm.viecHienTai) { v in
                     HangViec(viec: v, con: vm.viecCon(v.id), moCon: moCon.contains(v.id),
                              batCon: { if moCon.contains(v.id) { moCon.remove(v.id) } else { moCon.insert(v.id) } },
+                             moMon: { monDangMo = $0 },
                              vm: vm)
                 }
             }
@@ -426,6 +439,9 @@ struct TongQuanView: View {
     }
 }
 
+/// Bọc chuỗi mã môn để dùng được với `.sheet(item:)`.
+private struct MonMo: Identifiable { let ma: String; var id: String { ma } }
+
 // MARK: - Một hàng việc
 
 private struct HangViec: View {
@@ -433,6 +449,7 @@ private struct HangViec: View {
     let con: [ViecTongQuan]
     let moCon: Bool
     let batCon: () -> Void
+    let moMon: (String) -> Void
     @ObservedObject var vm: TongQuanVM
 
     var body: some View {
@@ -446,11 +463,30 @@ private struct HangViec: View {
                 .buttonStyle(.plain)
 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(viec.title)
-                        .font(.system(size: 15))
-                        .foregroundColor(viec.done ? AppColors.textTertiary : AppColors.textPrimary)
-                        .strikethrough(viec.done, color: AppColors.textTertiary)
-                        .fixedSize(horizontal: false, vertical: true)
+                    // Bấm tiêu đề → "Học gì cho môn này". Chỉ mở khi tiêu đề
+                    // CÓ mã môn: bấm vào "2 bài Lab" mà hiện màn tra cứu môn
+                    // rỗng thì tệ hơn là không làm gì.
+                    if let ma = HocGiChoMonView.maMon(tu: viec.title) {
+                        Button { moMon(ma) } label: {
+                            HStack(spacing: 5) {
+                                Text(viec.title)
+                                    .font(.system(size: 15))
+                                    .foregroundColor(viec.done ? AppColors.textTertiary : AppColors.textPrimary)
+                                    .strikethrough(viec.done, color: AppColors.textTertiary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                Image(systemName: "arrow.up.right.square")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(AppColors.primary.opacity(viec.done ? 0.35 : 0.8))
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    } else {
+                        Text(viec.title)
+                            .font(.system(size: 15))
+                            .foregroundColor(viec.done ? AppColors.textTertiary : AppColors.textPrimary)
+                            .strikethrough(viec.done, color: AppColors.textTertiary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
 
                     HStack(spacing: 6) {
                         if let u = viec.nhanUuTien {

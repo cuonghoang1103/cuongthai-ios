@@ -3,6 +3,12 @@ import PhotosUI
 
 /// Trò chuyện với AI. Chữ hiện DẦN theo luồng SSE, không đợi cả câu.
 struct AIChatView: View {
+    /// Câu hỏi điền sẵn khi mở màn. Dùng khi vào từ một ngữ cảnh cụ thể —
+    /// vd bấm "Nhờ AI kiểm tra bài" ở một môn: câu mở đầu đã hướng sẵn sang
+    /// "hỏi mình 5 câu", chứ để trống thì người dùng lại gõ "tóm tắt giúp
+    /// mình" và mất đúng phần có ích (tự trả lời).
+    var cauMoDau: String? = nil
+
     @Environment(\.dismiss) private var dismiss
     @StateObject private var vm = AIChatViewModel()
     @State private var cauHoi = ""
@@ -32,6 +38,11 @@ struct AIChatView: View {
                 oNhap
             }
             .background(AppColors.backgroundPrimary)
+            .onAppear {
+                // Chỉ điền khi ô còn trống: người dùng quay lại màn này giữa
+                // chừng thì không được đè lên thứ họ đang gõ dở.
+                if cauHoi.isEmpty, let c = cauMoDau { cauHoi = c }
+            }
             .navigationTitle(vm.bacHienTai.ten)
             .navigationBarTitleDisplayModeInline()
             .toolbar {

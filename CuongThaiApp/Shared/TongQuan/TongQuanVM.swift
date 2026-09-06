@@ -11,6 +11,7 @@ struct DapAnTongQuan: Codable {
     var exp: Int?
     var totalExp: Int?
     var celebratedToday: Bool?
+    var streak: Int?
     var tasks: [ViecTongQuan]
 }
 
@@ -39,6 +40,8 @@ final class TongQuanVM: ObservableObject {
     /// Hôm nay đã kết thúc ngày chưa. EXP chỉ cộng MỘT lần mỗi ngày.
     @Published var daKetThucNgay = false
     @Published var vuaCong: Int?
+    /// Số ngày tổng kết liên tiếp, do MÁY CHỦ tính.
+    @Published var chuoiNgay = 0
 
     /// Việc của phạm vi đang chọn, ĐÚNG mốc ngày theo giờ máy.
     ///
@@ -88,6 +91,7 @@ final class TongQuanVM: ObservableObject {
             viec = d.tasks
             trangThai = TrangThaiTongQuan(level: d.level ?? 1, exp: d.exp ?? 0, totalExp: d.totalExp ?? 0)
             daKetThucNgay = d.celebratedToday ?? false
+            chuoiNgay = d.streak ?? 0
         } catch {
             loi = error.localizedDescription
         }
