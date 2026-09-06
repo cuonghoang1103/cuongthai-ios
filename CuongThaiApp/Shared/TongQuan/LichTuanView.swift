@@ -174,6 +174,10 @@ struct LichTuanView: View {
             ForEach(ds) { b in
                 OBuoiHoc(buoi: b, ngay: ngay, vm: vm,
                          moSua: { sua = b }, moXoa: { hoiXoa = b })
+                    // Bấm để sửa. Bản viết lại theo lối FAP làm rơi mất cái
+                    // này, chỉ còn giữ-để-mở-menu — mà giữ là thao tác không
+                    // ai đoán ra nếu chưa từng được chỉ.
+                    .onTapGesture { sua = b }
             }
         }
     }

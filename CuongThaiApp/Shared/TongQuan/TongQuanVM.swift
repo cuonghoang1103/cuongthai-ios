@@ -56,6 +56,18 @@ final class TongQuanVM: ObservableObject {
             }
     }
 
+    /// Việc đã đặt cho những NGÀY TỚI, gom theo ngày.
+    ///
+    /// Cần có: việc ôn lặp được đặt sẵn vào ngày tương lai, nên hôm nay danh
+    /// sách không đổi gì cả — người dùng sẽ tưởng tính năng không chạy. Cho
+    /// thấy nó đã đặt gì là cách duy nhất để họ tin.
+    var viecSapToi: [(ngay: String, viec: [ViecTongQuan])] {
+        let moc = PhamViViec.today.moc()
+        let sau = Dictionary(grouping: viec.filter { $0.date > moc && !$0.done && $0.parentId == nil },
+                             by: \.date)
+        return sau.keys.sorted().prefix(4).map { ($0, sau[$0]!.sorted { $0.id < $1.id }) }
+    }
+
     func viecCon(_ cha: Int) -> [ViecTongQuan] {
         viec.filter { $0.parentId == cha }.sorted { ($0.sortOrder ?? 0, $0.id) < ($1.sortOrder ?? 0, $1.id) }
     }

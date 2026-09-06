@@ -22,6 +22,7 @@ struct TongQuanView: View {
                     theSo
                     if vm.buoiKeTiep != nil || !vm.hocHomNay.isEmpty { khoiHocHomNay }
                     khoiViec
+                    if !vm.viecSapToi.isEmpty { khoiSapToi }
                     khoiDiNhanh
                     Color.clear.frame(height: 90)
                 }
@@ -320,6 +321,74 @@ struct TongQuanView: View {
         oViecMoi = ""
         dangGo = false
         Task { await vm.themViec(t) }
+    }
+
+    // MARK: Sắp tới
+
+    /// Việc đã đặt cho những ngày tới — chủ yếu là việc ôn lặp.
+    private var khoiSapToi: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            HStack(spacing: 6) {
+                Text(T("SẮP TỚI"))
+                    .font(.system(size: 11, weight: .heavy)).tracking(1)
+                    .foregroundColor(AppColors.textTertiary)
+                Text(T("giữ để xoá"))
+                    .font(.system(size: 10))
+                    .foregroundColor(AppColors.textTertiary.opacity(0.7))
+            }
+            VStack(spacing: 0) {
+                ForEach(Array(vm.viecSapToi.enumerated()), id: \.offset) { _, nhom in
+                    HStack(alignment: .top, spacing: Spacing.md) {
+                        VStack(spacing: 1) {
+                            Text(ngayNgan(nhom.ngay))
+                                .font(.system(size: 12, weight: .bold).monospacedDigit())
+                                .foregroundColor(AppColors.primary)
+                            Text(thuNgan(nhom.ngay))
+                                .font(.system(size: 9.5))
+                                .foregroundColor(AppColors.textTertiary)
+                        }
+                        .frame(width: 46)
+                        VStack(alignment: .leading, spacing: 3) {
+                            ForEach(nhom.viec) { v in
+                                // Giữ để XOÁ. Không có nó thì việc đặt cho
+                                // ngày tương lai KHÔNG xoá được từ bất cứ đâu:
+                                // danh sách "Hôm nay" lọc theo đúng ngày hôm
+                                // nay, nên phải đợi tới đúng hôm đó mới đụng
+                                // được vào. Đo thật khi tự dùng.
+                                Text(v.title)
+                                    .font(.system(size: 13))
+                                    .foregroundColor(AppColors.textSecondary)
+                                    .lineLimit(1)
+                                    .contentShape(Rectangle())
+                                    .contextMenu {
+                                        Button(role: .destructive) {
+                                            Task { await vm.xoaViec(v) }
+                                        } label: {
+                                            Label(T("Xoá việc"), systemImage: "trash")
+                                        }
+                                    }
+                            }
+                        }
+                        Spacer(minLength: 0)
+                    }
+                    .padding(.vertical, 8)
+                    if nhom.ngay != vm.viecSapToi.last?.ngay { Divider().opacity(0.3) }
+                }
+            }
+            .padding(Spacing.md)
+            .background(RoundedRectangle(cornerRadius: CornerRadius.large).fill(AppColors.backgroundCard))
+        }
+    }
+
+    private func ngayNgan(_ iso: String) -> String {
+        guard let d = PhamViViec.dinhDang.date(from: iso) else { return iso }
+        let f = DateFormatter(); f.dateFormat = "dd/MM"
+        return f.string(from: d)
+    }
+
+    private func thuNgan(_ iso: String) -> String {
+        guard let d = PhamViViec.dinhDang.date(from: iso) else { return "" }
+        return BuoiHoc.tenThu(BuoiHoc.thuViet(tuLich: Calendar.current.component(.weekday, from: d)))
     }
 
     // MARK: Đi nhanh

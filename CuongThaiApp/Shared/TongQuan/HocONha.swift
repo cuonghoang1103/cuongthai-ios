@@ -35,6 +35,25 @@ enum HocONha {
     }
 
     static let PHUT_ON = 20
+    /// Ôn LẠI ngắn hơn lần đầu — đọc lại thứ đã tóm tắt, không dựng lại từ đầu.
+    static let PHUT_ON_LAI = 10
+
+    /// Ôn lặp ngắt quãng: sau buổi học thì ôn lại sau BAO NHIÊU ngày.
+    ///
+    /// ⚠️ Cố ý THƯA hơn thang chuẩn (1-3-7-14). Ba lý do:
+    ///
+    /// 1. Buổi học đã LẶP HẰNG TUẦN. Mốc 7 ngày trùng đúng buổi kế tiếp của
+    ///    chính môn đó, nên nó không thêm lần chạm nào — chỉ thêm một dòng
+    ///    trong danh sách.
+    /// 2. Người dùng đang học 0 giờ/tuần. Thang 1-3-7 với 10 buổi/tuần ra ~40
+    ///    việc/tuần; đó không phải kế hoạch, đó là một danh sách để bỏ.
+    /// 3. Mốc "cùng ngày" đã có (việc "Ôn <môn> — 20 phút"), tức lần chạm đầu
+    ///    và quan trọng nhất không nằm ở đây.
+    ///
+    /// Còn đúng MỘT mốc: 3 ngày. Cùng với buổi học tuần sau, mỗi môn được
+    /// chạm 3 lần/tuần ở khoảng cách tăng dần — đủ để chống quên mà vẫn ~35
+    /// phút/ngày. Thêm mốc chỉ nên làm khi người dùng đã giữ được nhịp này.
+    static let MOC_ON_LAI = [3]
     private static let tienTo = "hoconha-"
 
     // MARK: A — sinh việc sau buổi học
@@ -73,6 +92,24 @@ enum HocONha {
                 ]))
                 soTao += 1
             } catch { /* mạng hỏng thì thôi, mai mở lại sinh tiếp */ }
+        }
+
+        // Ôn lặp: đặt sẵn việc ôn lại vào NGÀY TƯƠNG LAI. Đặt trước chứ không
+        // đợi tới hôm đó mới sinh — app có thể không được mở hôm đó, mà việc
+        // đã nằm sẵn trên máy chủ thì nó vẫn hiện.
+        let f = PhamViViec.dinhDang
+        let tenMoiNoi = Set(daCo.map { "\($0.date)|\($0.title)" })
+        for b in xong {
+            for cach in MOC_ON_LAI {
+                guard let d = Calendar.current.date(byAdding: .day, value: cach, to: Date()) else { continue }
+                let ngay = f.string(from: d)
+                let ten = String(format: T("Ôn lại %@ (%d ngày) — %d phút"), b.subject, cach, PHUT_ON_LAI)
+                if tenMoiNoi.contains("\(ngay)|\(ten)") { continue }
+                try? await APIClient.shared.send(.themViec([
+                    "scope": "today", "date": ngay, "title": ten, "exp": 15,
+                ]))
+                soTao += 1
+            }
         }
 
         // Một việc xem trước cho ngày mai, nếu mai có lớp.
