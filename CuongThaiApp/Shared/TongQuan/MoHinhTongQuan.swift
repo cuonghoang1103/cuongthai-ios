@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 // MARK: - Phạm vi việc
 
@@ -150,6 +151,10 @@ struct BuoiHoc: Codable, Identifiable, Equatable {
     var startDate: String?
     var endDate: String?
 
+    var slot: Int?
+    var meetUrl: String?
+    var materialsUrl: String?
+
     static let thuNho = 2
     static let thuLon = 8
 
@@ -175,4 +180,153 @@ struct BuoiHoc: Codable, Identifiable, Equatable {
         let p = startTime.split(separator: ":").compactMap { Int($0) }
         return p.count == 2 ? p[0] * 60 + p[1] : 0
     }
+}
+
+
+// MARK: - Slot của FAP
+
+/// Khung giờ slot theo lối FPT. Đây là BẢNG TRA để nhập nhanh, không phải
+/// nguồn sự thật: giờ thật vẫn nằm ở `startTime`/`endTime` của từng buổi, vì
+/// trường có thể đổi khung giờ giữa kỳ mà lịch đã nhập phải kêu đúng giờ cũ.
+enum SlotFAP {
+    static let khung: [Int: (String, String)] = [
+        1: ("07:30", "09:50"),
+        2: ("10:00", "12:20"),
+        3: ("12:50", "15:10"),
+        4: ("15:20", "17:40"),
+        5: ("17:50", "20:10"),
+    ]
+    /// Slot có khung giờ, xếp theo thứ tự.
+    static var coKhung: [Int] { khung.keys.sorted() }
+
+    static func ten(_ n: Int) -> String {
+        if let k = khung[n] { return String(format: T("Slot %d · %@–%@"), n, k.0, k.1) }
+        return String(format: T("Slot %d"), n)
+    }
+
+    /// Dò slot từ giờ bắt đầu — để lịch nhập trước khi có cột `slot` vẫn xếp
+    /// đúng hàng trong bảng tuần.
+    static func doTuGio(_ batDau: String) -> Int? {
+        khung.first { $0.value.0 == batDau }?.key
+    }
+}
+
+// MARK: - Điểm danh
+
+/// Khớp `ClassAttendance` do phiên khác dựng: 'co' | 'vang' | 'phep'.
+/// Không có bản ghi = CHƯA chấm (FAP hiện "(Not yet)").
+enum TrangThaiDiemDanh: String, CaseIterable, Identifiable, Codable {
+    case co, vang, phep
+    var id: String { rawValue }
+
+    var ten: String {
+        switch self {
+        case .co:   return T("Có mặt")
+        case .vang: return T("Vắng")
+        case .phep: return T("Có phép")
+        }
+    }
+    var bieuTuong: String {
+        switch self {
+        case .co:   return "checkmark.circle.fill"
+        case .vang: return "xmark.circle.fill"
+        case .phep: return "hand.raised.circle.fill"
+        }
+    }
+}
+
+struct DiemDanh: Codable, Identifiable, Equatable {
+    let id: Int
+    var scheduleId: Int
+    /// Máy chủ trả ISO đầy đủ ("2026-09-07T00:00:00.000Z") vì cột là `@db.Date`
+    /// nhưng Prisma vẫn tuần tự hoá thành DateTime. Cắt 10 ký tự đầu để so.
+    var date: String
+    var status: String
+    var note: String?
+
+    var ngay: String { String(date.prefix(10)) }
+    var trangThai: TrangThaiDiemDanh? { TrangThaiDiemDanh(rawValue: status) }
+}
+
+// MARK: - Kỳ học & lịch thi
+
+struct HocKy: Codable, Identifiable, Equatable {
+    let id: Int
+    var ten: String
+    var batDau: String
+    var soTuan: Int
+    var tuanThi: Int
+    var dangHoc: Bool
+
+    var ngayBatDau: Date? { PhamViViec.dinhDang.date(from: String(batDau.prefix(10))) }
+
+    /// Tuần thứ mấy của kỳ, tính theo GIỜ MÁY. `nil` khi ngày nằm ngoài kỳ.
+    func tuan(_ ngay: Date = Date()) -> Int? {
+        guard let goc = ngayBatDau else { return nil }
+        var l = Calendar(identifier: .gregorian)
+        l.firstWeekday = 2
+        l.timeZone = .current
+        let d = l.dateComponents([.day], from: l.startOfDay(for: goc), to: l.startOfDay(for: ngay)).day ?? 0
+        guard d >= 0 else { return nil }
+        let t = d / 7 + 1
+        return t <= soTuan ? t : nil
+    }
+}
+
+enum LoaiThi: String, CaseIterable, Identifiable, Codable {
+    case PE, FE, PT, ME, NOI, NGHE, VIET, KHAC
+    var id: String { rawValue }
+
+    var ten: String {
+        switch self {
+        case .PE:   return T("PE — Thi thực hành")
+        case .FE:   return T("FE — Thi cuối kỳ")
+        case .PT:   return T("PT — Kiểm tra tiến độ")
+        case .ME:   return T("ME — Thi giữa kỳ")
+        case .NOI:  return T("Thi nói")
+        case .NGHE: return T("Thi nghe")
+        case .VIET: return T("Thi viết")
+        case .KHAC: return T("Khác")
+        }
+    }
+    var nhan: String {
+        switch self {
+        case .NOI:  return T("NÓI")
+        case .NGHE: return T("NGHE")
+        case .VIET: return T("VIẾT")
+        case .KHAC: return T("KHÁC")
+        default:    return rawValue
+        }
+    }
+    /// Mỗi loại một màu — nhìn bảng là biết ngay hôm đó thi kiểu gì.
+    var mau: Color {
+        switch self {
+        case .PE:   return AppColors.primary
+        case .FE:   return AppColors.error
+        case .PT:   return AppColors.warning
+        case .ME:   return AppColors.accent
+        case .NOI:  return AppColors.secondary
+        case .NGHE: return AppColors.success
+        case .VIET: return AppColors.primaryLight
+        case .KHAC: return AppColors.textSecondary
+        }
+    }
+}
+
+struct BuoiThi: Codable, Identifiable, Equatable {
+    let id: Int
+    var monHoc: String
+    var maMon: String?
+    var loai: String
+    var ngay: String
+    var batDau: String
+    var ketThuc: String
+    var phong: String?
+    var soBaoDanh: String?
+    var ghiChu: String?
+    var nhacTruoc: Int
+    var hocKyId: Int?
+
+    var ngayGon: String { String(ngay.prefix(10)) }
+    var kieu: LoaiThi { LoaiThi(rawValue: loai) ?? .KHAC }
 }

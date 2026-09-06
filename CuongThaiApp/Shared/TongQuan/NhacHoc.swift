@@ -11,6 +11,7 @@ import UserNotifications
 enum NhacHoc {
     /// Tiền tố id để gỡ đúng nhóm của mình, không đụng thông báo khác của app.
     private static let tienTo = "buoihoc-"
+    private static let tienToThi = "buoithi-"
 
     /// Đặt lại TOÀN BỘ lời nhắc theo danh sách buổi học hiện tại.
     ///
@@ -37,11 +38,49 @@ enum NhacHoc {
         }
     }
 
+    /// Đặt lời nhắc cho các buổi THI. Khác buổi học: thi xảy ra ĐÚNG MỘT LẦN
+    /// vào một ngày cụ thể nên không `repeats`, và hệ điều hành tự dọn sau khi
+    /// nó kêu — không cần ai đi xoá.
+    static func datLaiThi(_ ds: [BuoiThi]) async {
+        let tt = UNUserNotificationCenter.current()
+        let cho = await tt.pendingNotificationRequests()
+        tt.removePendingNotificationRequests(withIdentifiers:
+            cho.map(\.identifier).filter { $0.hasPrefix(tienToThi) })
+
+        let can = ds.filter { $0.nhacTruoc > 0 }
+        guard !can.isEmpty, await xinQuyen() else { return }
+
+        for t in can {
+            guard let ngay = PhamViViec.dinhDang.date(from: t.ngayGon) else { continue }
+            let p = t.batDau.split(separator: ":").compactMap { Int($0) }
+            guard p.count == 2 else { continue }
+            var l = Calendar.current
+            l.timeZone = .current
+            guard let gio = l.date(bySettingHour: p[0], minute: p[1], second: 0, of: ngay),
+                  let luc = l.date(byAdding: .minute, value: -t.nhacTruoc, to: gio),
+                  luc > Date() else { continue }   // đã qua thì đặt cũng không kêu
+
+            let nd = UNMutableNotificationContent()
+            nd.title = String(format: T("%@ %@ — %d phút nữa"), t.kieu.nhan, t.monHoc, t.nhacTruoc)
+            var dong = ["\(t.batDau)–\(t.ketThuc)"]
+            if let ph = t.phong, !ph.isEmpty { dong.append(ph) }
+            if let sbd = t.soBaoDanh, !sbd.isEmpty { dong.append("SBD \(sbd)") }
+            nd.body = dong.joined(separator: " · ")
+            nd.sound = .default
+            nd.userInfo = ["loai": "buoi-thi", "id": t.id]
+
+            let kh = l.dateComponents([.year, .month, .day, .hour, .minute], from: luc)
+            try? await tt.add(UNNotificationRequest(
+                identifier: "\(tienToThi)\(t.id)", content: nd,
+                trigger: UNCalendarNotificationTrigger(dateMatching: kh, repeats: false)))
+        }
+    }
+
     static func xoaHet() async {
         let tt = UNUserNotificationCenter.current()
         let cho = await tt.pendingNotificationRequests()
         tt.removePendingNotificationRequests(withIdentifiers:
-            cho.map(\.identifier).filter { $0.hasPrefix(tienTo) })
+            cho.map(\.identifier).filter { $0.hasPrefix(tienTo) || $0.hasPrefix(tienToThi) })
     }
 
     // MARK: Riêng

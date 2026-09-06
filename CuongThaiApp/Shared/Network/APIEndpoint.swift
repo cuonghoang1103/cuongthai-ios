@@ -32,6 +32,18 @@ enum APIEndpoint {
     case suaBuoiHoc(id: Int, [String: Any])
     case xoaBuoiHoc(id: Int)
     case nhapLichHoc(items: [[String: Any]], thayThe: Bool)
+    /// Điểm danh — API do phiên khác dựng (`ClassAttendance`), iOS dùng lại.
+    case diemDanhTrongKhoang(tu: String, den: String)
+    case chamDiemDanh(id: Int, [String: Any])
+    // Kỳ học + lịch thi
+    case dsHocKy
+    case themHocKy([String: Any])
+    case suaHocKy(id: Int, [String: Any])
+    case xoaHocKy(id: Int)
+    case dsLichThi(tu: String?, den: String?)
+    case themBuoiThi([String: Any])
+    case suaBuoiThi(id: Int, [String: Any])
+    case xoaBuoiThi(id: Int)
     case updateProfile([String: Any])
     case getDeletionRequest
     case requestDeletion(reason: String?)
@@ -477,6 +489,17 @@ enum APIEndpoint {
         case .suaBuoiHoc(let id, _): return "/api/v1/class-schedule/\(id)"
         case .xoaBuoiHoc(let id): return "/api/v1/class-schedule/\(id)"
         case .nhapLichHoc: return "/api/v1/class-schedule/bulk"
+        case .diemDanhTrongKhoang(let tu, let den): return "/api/v1/class-schedule/attendance?tu=\(tu)&den=\(den)"
+        case .chamDiemDanh(let id, _): return "/api/v1/class-schedule/\(id)/attendance"
+        case .dsHocKy, .themHocKy: return "/api/v1/hoc-ky"
+        case .suaHocKy(let id, _): return "/api/v1/hoc-ky/\(id)"
+        case .xoaHocKy(let id): return "/api/v1/hoc-ky/\(id)"
+        case .dsLichThi(let tu, let den):
+            if let tu, let den { return "/api/v1/hoc-ky/lich-thi?tu=\(tu)&den=\(den)" }
+            return "/api/v1/hoc-ky/lich-thi"
+        case .themBuoiThi: return "/api/v1/hoc-ky/lich-thi"
+        case .suaBuoiThi(let id, _): return "/api/v1/hoc-ky/lich-thi/\(id)"
+        case .xoaBuoiThi(let id): return "/api/v1/hoc-ky/lich-thi/\(id)"
         case .updateProfile: return "/api/v1/profile"
         case .getDeletionRequest: return "/api/v1/profile/deletion-request"
         case .requestDeletion: return "/api/v1/profile/deletion-request"
@@ -758,15 +781,17 @@ enum APIEndpoint {
              .openThread, .muteThread, .saveLessonProgress,
              .taoPhienChat, .taoThuMucChat, .tachNhanhPhien, .catPhien, .datViecDoc:
             return "POST"
+        case .chamDiemDanh:
+            return "PUT"
         case .updateProfile, .datBietDanh, .doiTenThuMucSoTay, .suaMucSoTay, .ghiChuCauHoi,
              .suaBinhLuanCauHoi,
              .cvLuuHoSo, .cvSuaMuc, .cvSuaGach:
             return "PUT"
-        case .themViec, .themBuoiHoc, .nhapLichHoc, .ketThucNgay:
+        case .themViec, .themBuoiHoc, .nhapLichHoc, .ketThucNgay, .themHocKy, .themBuoiThi:
             return "POST"
-        case .suaViec, .suaBuoiHoc:
+        case .suaViec, .suaBuoiHoc, .suaHocKy, .suaBuoiThi:
             return "PATCH"
-        case .xoaViec, .xoaBuoiHoc:
+        case .xoaViec, .xoaBuoiHoc, .xoaHocKy, .xoaBuoiThi:
             return "DELETE"
         case .updateNote, .markRead, .markNotificationsRead, .datTuyChonHoiThoai,
              .suaDongBang, .suaMon, .suaChuong, .suaTuVung, .suaBaiViet,
@@ -899,6 +924,11 @@ enum APIEndpoint {
         case .themBuoiHoc(let d): return d
         case .suaBuoiHoc(_, let d): return d
         case .nhapLichHoc(let items, let thayThe): return ["items": items, "thayThe": thayThe]
+        case .chamDiemDanh(_, let d): return d
+        case .themHocKy(let d): return d
+        case .suaHocKy(_, let d): return d
+        case .themBuoiThi(let d): return d
+        case .suaBuoiThi(_, let d): return d
         case .updateNote(_, let d): return d
         case .reactPost(_, let t): return ["type": t]
         // Backend `POST /users/follow` is a toggle keyed by `targetId`.

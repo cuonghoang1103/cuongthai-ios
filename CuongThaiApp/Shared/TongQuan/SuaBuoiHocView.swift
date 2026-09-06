@@ -15,6 +15,9 @@ struct SuaBuoiHocView: View {
     @State private var giangVien = ""
     @State private var phong = ""
     @State private var thu = 2
+    @State private var slot = 0          // 0 = không dùng slot
+    @State private var meetUrl = ""
+    @State private var tailieuUrl = ""
     @State private var batDau = Date()
     @State private var ketThuc = Date()
     @State private var nhacTruoc = 30
@@ -33,15 +36,30 @@ struct SuaBuoiHocView: View {
         Form {
             Section(T("Môn học")) {
                 TextField(T("Tên môn"), text: $mon)
+
+                    // ⚠️ `.asciiCapable`: bàn phím tiếng Việt kiểu Telex biến
+                    // "W" thành "Ư", nên gõ mã môn SWT301 / SWR302 ra SƯT301 —
+                    // đo thật khi dùng. Mấy ô này LUÔN là mã ASCII nên ép được;
+                    // riêng "Tên môn" thì không, vì tên có thể là tiếng Việt.
                 TextField(T("Mã lớp (tuỳ chọn)"), text: $maLop)
+                    .keyboardType(.asciiCapable).autocorrectionDisabled()
                 TextField(T("Giảng viên (tuỳ chọn)"), text: $giangVien)
                 TextField(T("Phòng (tuỳ chọn)"), text: $phong)
+                    .keyboardType(.asciiCapable).autocorrectionDisabled()
             }
 
             Section {
                 Picker(T("Thứ"), selection: $thu) {
                     ForEach(BuoiHoc.thuNho...BuoiHoc.thuLon, id: \.self) { t in
                         Text(BuoiHoc.tenThu(t)).tag(t)
+                    }
+                }
+                // Chọn slot ĐIỀN SẴN giờ, không khoá giờ: người dùng vẫn sửa
+                // được sau đó. Trường có thể đổi khung giờ slot giữa kỳ.
+                Picker(T("Slot"), selection: $slot) {
+                    Text(T("Tự nhập giờ")).tag(0)
+                    ForEach(SlotFAP.coKhung, id: \.self) { n in
+                        Text(SlotFAP.ten(n)).tag(n)
                     }
                 }
                 DatePicker(T("Bắt đầu"), selection: $batDau, displayedComponents: .hourAndMinute)
@@ -79,6 +97,17 @@ struct SuaBuoiHocView: View {
                 Text(T("Có kỳ học thì hết kỳ app tự thôi nhắc, không cần bạn vào xoá."))
             }
 
+            Section {
+                TextField("https://meet.google.com/…", text: $meetUrl)
+                    .keyboardType(.URL).textInputAutocapitalization(.never).autocorrectionDisabled()
+                TextField(T("Link tài liệu"), text: $tailieuUrl)
+                    .keyboardType(.URL).textInputAutocapitalization(.never).autocorrectionDisabled()
+            } header: {
+                Text(T("Liên kết"))
+            } footer: {
+                Text(T("Link lớp trực tuyến sẽ hiện thành nút ngay trên ô buổi học."))
+            }
+
             Section(T("Ghi chú")) {
                 TextField(T("Ghi chú (tuỳ chọn)"), text: $ghiChu, axis: .vertical).lineLimit(2...5)
             }
@@ -111,6 +140,16 @@ struct SuaBuoiHocView: View {
                         .font(.system(size: 16, weight: .semibold))
                         .disabled(!hopLe)
                 }
+            }
+        }
+        .onChange(of: slot) { _, n in
+            // Đổi slot thì điền giờ theo bảng FAP. Chọn "Tự nhập giờ" (0) thì
+            // giữ nguyên giờ đang có, không xoá thứ người dùng vừa gõ.
+            if let k = SlotFAP.khung[n] {
+                let a = k.0.split(separator: ":").compactMap { Int($0) }
+                let b = k.1.split(separator: ":").compactMap { Int($0) }
+                if a.count == 2 { batDau = ngay(a[0], a[1]) }
+                if b.count == 2 { ketThuc = ngay(b[0], b[1]) }
             }
         }
         .onAppear(perform: nap)
@@ -157,6 +196,9 @@ struct SuaBuoiHocView: View {
         batDau = ngay(p1.first ?? 7, p1.count > 1 ? p1[1] : 0)
         ketThuc = ngay(p2.first ?? 9, p2.count > 1 ? p2[1] : 0)
         nhacTruoc = mocNhac.contains(b.remindMinutes) ? b.remindMinutes : 30
+        slot = b.slot ?? SlotFAP.doTuGio(b.startTime) ?? 0
+        meetUrl = b.meetUrl ?? ""
+        tailieuUrl = b.materialsUrl ?? ""
         ghiChu = b.note ?? ""
         if let t = b.startDate, let d = PhamViViec.dinhDang.date(from: String(t.prefix(10))) {
             coKy = true; tuNgay = d
@@ -186,6 +228,8 @@ struct SuaBuoiHocView: View {
             "weekday": thu,
             "startTime": hhmm(batDau), "endTime": hhmm(ketThuc),
             "remindMinutes": nhacTruoc,
+            "meetUrl": chu(meetUrl), "materialsUrl": chu(tailieuUrl),
+            "slot": slot == 0 ? NSNull() : slot,
         ]
         p["startDate"] = coKy ? PhamViViec.dinhDang.string(from: tuNgay) : NSNull()
         p["endDate"] = coKy ? PhamViViec.dinhDang.string(from: denNgay) : NSNull()

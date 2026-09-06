@@ -15,6 +15,9 @@ struct DapAnTongQuan: Codable {
 }
 
 struct DapAnLichHoc: Codable { var items: [BuoiHoc] }
+struct DapAnDiemDanh: Codable { var items: [DiemDanh] }
+struct DapAnHocKy: Codable { var items: [HocKy] }
+struct DapAnLichThi: Codable { var items: [BuoiThi] }
 struct DapAnMotBuoi: Codable { var item: BuoiHoc }
 struct DapAnMotViec: Codable { var task: ViecTongQuan? }
 
@@ -23,6 +26,12 @@ final class TongQuanVM: ObservableObject {
     @Published var viec: [ViecTongQuan] = []
     @Published var trangThai = TrangThaiTongQuan(level: 1, exp: 0, totalExp: 0)
     @Published var buoiHoc: [BuoiHoc] = []
+    @Published var diemDanh: [DiemDanh] = []
+    @Published var hocKy: [HocKy] = []
+    @Published var lichThi: [BuoiThi] = []
+    /// Thứ Hai của tuần đang xem. Đổi tuần thì nạp lại điểm danh + lịch thi
+    /// của đúng tuần đó, không tải cả kỳ.
+    @Published var tuanDangXem: Date = TongQuanVM.thuHai(Date())
     @Published var pham: PhamViViec = .today
     @Published var dangTai = false
     @Published var dangTaiLich = false
@@ -179,6 +188,93 @@ final class TongQuanVM: ObservableObject {
             buoiHoc = luu
             loi = error.localizedDescription
         }
+    }
+
+    // MARK: Tuần / điểm danh / kỳ học / lịch thi
+
+    /// Thứ Hai của tuần chứa `d`, theo GIỜ MÁY.
+    static func thuHai(_ d: Date) -> Date {
+        var l = Calendar(identifier: .gregorian)
+        l.firstWeekday = 2
+        l.timeZone = .current
+        return l.dateInterval(of: .weekOfYear, for: d)?.start ?? d
+    }
+
+    /// Bảy ngày của tuần đang xem, thứ Hai → Chủ nhật.
+    var ngayTrongTuan: [Date] {
+        (0..<7).compactMap { Calendar.current.date(byAdding: .day, value: $0, to: tuanDangXem) }
+    }
+
+    var kyDangHoc: HocKy? { hocKy.first { $0.dangHoc } }
+
+    /// "Tuần 3/10" của tuần đang xem, nếu có kỳ.
+    var nhanTuan: String? {
+        guard let k = kyDangHoc, let t = k.tuan(tuanDangXem) else { return nil }
+        let phu = t == k.tuanThi ? T(" · TUẦN THI") : ""
+        return String(format: T("Tuần %d/%d"), t, k.soTuan) + phu
+    }
+
+    func doiTuan(_ buoc: Int) {
+        guard let d = Calendar.current.date(byAdding: .weekOfYear, value: buoc, to: tuanDangXem) else { return }
+        tuanDangXem = TongQuanVM.thuHai(d)
+        Task { await napTuan() }
+    }
+
+    /// Nạp điểm danh + lịch thi cho ĐÚNG tuần đang xem. Một kỳ 15 tuần × 20
+    /// buổi là 300 dòng cho một bảng chỉ hiện 7 cột.
+    func napTuan() async {
+        let f = PhamViViec.dinhDang
+        let tu = f.string(from: tuanDangXem)
+        let den = f.string(from: Calendar.current.date(byAdding: .day, value: 6, to: tuanDangXem) ?? tuanDangXem)
+        async let dd: DapAnDiemDanh? = try? APIClient.shared.request(.diemDanhTrongKhoang(tu: tu, den: den))
+        async let lt: DapAnLichThi? = try? APIClient.shared.request(.dsLichThi(tu: tu, den: den))
+        diemDanh = (await dd)?.items ?? []
+        lichThi = (await lt)?.items ?? []
+        await NhacHoc.datLaiThi(lichThi)
+    }
+
+    func napHocKy() async {
+        if let d: DapAnHocKy = try? await APIClient.shared.request(.dsHocKy) { hocKy = d.items }
+    }
+
+    func trangThai(_ b: BuoiHoc, _ ngay: Date) -> TrangThaiDiemDanh? {
+        let s = PhamViViec.dinhDang.string(from: ngay)
+        return diemDanh.first { $0.scheduleId == b.id && $0.ngay == s }?.trangThai
+    }
+
+    /// Chấm điểm danh. `nil` = gỡ chấm (bấm lại trạng thái đang chọn).
+    func cham(_ b: BuoiHoc, _ ngay: Date, _ tt: TrangThaiDiemDanh?) async {
+        let s = PhamViViec.dinhDang.string(from: ngay)
+        var p: [String: Any] = ["date": s]
+        p["status"] = tt?.rawValue ?? NSNull()
+        do {
+            try await APIClient.shared.send(.chamDiemDanh(id: b.id, p))
+            await napTuan()
+            Haptics.cham()
+        } catch { loi = error.localizedDescription }
+    }
+
+    /// Số buổi VẮNG (không phép) của một môn trong cả kỳ đang tải.
+    /// FAP cho nghỉ tối đa 4 buổi/môn — quá là trượt, nên con số này đáng cảnh báo.
+    func soVang(_ b: BuoiHoc) -> Int {
+        diemDanh.filter { $0.scheduleId == b.id && $0.status == "vang" }.count
+    }
+
+    func luuBuoiThi(_ t: BuoiThi?, _ p: [String: Any]) async -> Bool {
+        do {
+            if let t { try await APIClient.shared.send(.suaBuoiThi(id: t.id, p)) }
+            else { try await APIClient.shared.send(.themBuoiThi(p)) }
+            await napTuan()
+            Haptics.xong()
+            return true
+        } catch { loi = error.localizedDescription; return false }
+    }
+
+    func xoaBuoiThi(_ t: BuoiThi) async {
+        let luu = lichThi
+        lichThi.removeAll { $0.id == t.id }
+        do { try await APIClient.shared.send(.xoaBuoiThi(id: t.id)) }
+        catch { lichThi = luu; loi = error.localizedDescription }
     }
 
     // MARK: Buổi học HÔM NAY — thứ hiện lên trang chủ
