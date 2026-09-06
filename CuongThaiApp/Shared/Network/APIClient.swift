@@ -38,7 +38,21 @@ actor APIClient {
     /// `nonisolated static` chứ không phải thuộc tính của actor: đọc một hằng
     /// chuỗi thì không cần vào hàng đợi của actor, mà `await` ở đây lại buộc
     /// mọi nơi gọi phải bất đồng bộ theo.
-    nonisolated static let diaChiGoc = "https://cuongthai.com"
+    /// ⚠️ Bản DEBUG đọc được biến môi trường `CT_API` để trỏ sang máy chủ
+    /// khác. Có nó thì kiểm được tính năng mới TRƯỚC khi deploy; không có thì
+    /// mỗi lần muốn thử một API chưa lên production đều phải sửa hằng số này
+    /// rồi nhớ sửa lại — và cái "nhớ sửa lại" là thứ sớm muộn cũng quên, rồi
+    /// một bản gửi đi trỏ vào máy của người lập trình.
+    ///
+    /// Bản RELEASE không đọc biến nào: hằng số ghim cứng, không có đường nào
+    /// đổi được từ bên ngoài.
+    nonisolated static let diaChiGoc: String = {
+        #if DEBUG
+        let v = ProcessInfo.processInfo.environment["CT_API"] ?? ""
+        if v.hasPrefix("http") { return v }
+        #endif
+        return "https://cuongthai.com"
+    }()
     private let storage = StorageManager.shared
 
     private init() {}
@@ -60,6 +74,15 @@ actor APIClient {
             throw APIError.serverError(apiResponse.message ?? "Máy chủ không trả về dữ liệu")
         }
         return responseData
+    }
+
+    /// Trả về JSON THÔ, không giải mã.
+    ///
+    /// Dùng cho dữ liệu mà hình dạng thay đổi theo tài khoản — bản xuất dữ
+    /// liệu cá nhân chẳng hạn. Khai một struct Codable cho nó là tự chuốc lỗi
+    /// giải mã mỗi lần máy chủ thêm một mục, mà mục đích chỉ là ghi ra tệp.
+    func requestRaw(_ endpoint: APIEndpoint) async throws -> Data {
+        try await perform(endpoint)
     }
 
     // MARK: - Danh sách phân trang

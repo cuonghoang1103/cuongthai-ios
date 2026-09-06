@@ -1031,9 +1031,20 @@ struct SettingsView: View {
                     NavigationLink(T("Đổi mật khẩu")) { ChangePasswordView() }
                 }
 
+                // Thông báo — app có push từ lâu mà chưa có chỗ nào xem/đổi.
+                Section {
+                    NavigationLink(T("Thông báo & nhắc đi học")) { CaiDatThongBaoView() }
+                } header: {
+                    Text(T("Thông báo"))
+                }
+
                 // Safety & privacy — App Store Guideline 1.2 surfaces
                 Section {
                     NavigationLink(T("Danh sách chặn")) { BlockedUsersView() }
+                    // `GET /profile/export-data` chạy trên máy chủ từ lâu mà
+                    // app chưa bao giờ gọi — quyền chủ thể dữ liệu, Nghị định
+                    // 13/2023, và Apple cũng soi phần này.
+                    NavigationLink(T("Dữ liệu của tôi")) { TaiDuLieuView() }
                     NavigationLink(T("Quy tắc cộng đồng & Điều khoản")) { TermsView() }
                     NavigationLink(T("Chính sách bảo mật")) { PrivacyPolicyView() }
                 } header: {
@@ -1057,6 +1068,19 @@ struct SettingsView: View {
 
                 // About
                 Section(T("Giới thiệu")) {
+                    HStack {
+                        Text(T("Gói"))
+                        Spacer()
+                        if appState.currentUser?.isPro == true {
+                            HStack(spacing: 5) {
+                                Image(systemName: "crown.fill").font(.system(size: 11))
+                                Text("Pro").font(.system(size: 14, weight: .bold))
+                            }
+                            .foregroundColor(AppColors.accent)
+                        } else {
+                            Text(T("Miễn phí")).foregroundColor(AppColors.textSecondary)
+                        }
+                    }
                     HStack {
                         Text(T("Phiên bản"))
                         Spacer()

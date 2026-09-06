@@ -12,6 +12,26 @@ enum APIEndpoint {
 
     // Profile
     case getProfile
+
+    // ── Tổng quan (việc) + Thời khoá biểu ──────────────────────────────
+    /// `homNay` là ngày theo GIỜ MÁY. Máy chủ cần nó để sinh việc lặp đúng
+    /// kỳ — thiếu thì nó lùi về ngày UTC và ở UTC+7 sẽ lệch mất 7 tiếng đầu
+    /// ngày. Xem `PhamViViec.moc`.
+    case tongQuan(homNay: String)
+    case themViec([String: Any])
+    case suaViec(id: Int, [String: Any])
+    case xoaViec(id: Int)
+    /// Kết thúc ngày: máy chủ cộng EXP của mọi việc ĐÃ XONG hôm nay, một lần
+    /// mỗi ngày. Không gọi nó thì EXP và cấp độ đứng yên vĩnh viễn.
+    case ketThucNgay(homNay: String)
+    /// Tải toàn bộ dữ liệu cá nhân (quyền chủ thể dữ liệu, Nghị định 13/2023).
+    /// Máy chủ đã có từ lâu; app chưa bao giờ gọi.
+    case taiDuLieuCuaToi
+    case lichHoc(ngay: String?)
+    case themBuoiHoc([String: Any])
+    case suaBuoiHoc(id: Int, [String: Any])
+    case xoaBuoiHoc(id: Int)
+    case nhapLichHoc(items: [[String: Any]], thayThe: Bool)
     case updateProfile([String: Any])
     case getDeletionRequest
     case requestDeletion(reason: String?)
@@ -444,6 +464,19 @@ enum APIEndpoint {
         case .refreshToken: return "/api/v1/auth/refresh"
 
         case .getProfile: return "/api/v1/profile"
+
+        case .tongQuan(let hn): return "/api/v1/dashboard?homNay=\(hn)"
+        case .themViec: return "/api/v1/dashboard/tasks"
+        case .suaViec(let id, _): return "/api/v1/dashboard/tasks/\(id)"
+        case .xoaViec(let id): return "/api/v1/dashboard/tasks/\(id)"
+        case .ketThucNgay: return "/api/v1/dashboard/celebrate"
+        case .taiDuLieuCuaToi: return "/api/v1/profile/export-data"
+        case .lichHoc(let ngay):
+            return ngay.map { "/api/v1/class-schedule?ngay=\($0)" } ?? "/api/v1/class-schedule"
+        case .themBuoiHoc: return "/api/v1/class-schedule"
+        case .suaBuoiHoc(let id, _): return "/api/v1/class-schedule/\(id)"
+        case .xoaBuoiHoc(let id): return "/api/v1/class-schedule/\(id)"
+        case .nhapLichHoc: return "/api/v1/class-schedule/bulk"
         case .updateProfile: return "/api/v1/profile"
         case .getDeletionRequest: return "/api/v1/profile/deletion-request"
         case .requestDeletion: return "/api/v1/profile/deletion-request"
@@ -729,6 +762,12 @@ enum APIEndpoint {
              .suaBinhLuanCauHoi,
              .cvLuuHoSo, .cvSuaMuc, .cvSuaGach:
             return "PUT"
+        case .themViec, .themBuoiHoc, .nhapLichHoc, .ketThucNgay:
+            return "POST"
+        case .suaViec, .suaBuoiHoc:
+            return "PATCH"
+        case .xoaViec, .xoaBuoiHoc:
+            return "DELETE"
         case .updateNote, .markRead, .markNotificationsRead, .datTuyChonHoiThoai,
              .suaDongBang, .suaMon, .suaChuong, .suaTuVung, .suaBaiViet,
              .suaPhienChat, .chuyenThuMuc, .chuyenMucSoTay, .onMucSoTay:
@@ -854,6 +893,12 @@ enum APIEndpoint {
             return ["currentPassword": current, "newPassword": new, "confirmPassword": new]
         case .createPost(let d): return d
         case .updateProfile(let d): return d
+        case .themViec(let d): return d
+        case .ketThucNgay(let hn): return ["homNay": hn]
+        case .suaViec(_, let d): return d
+        case .themBuoiHoc(let d): return d
+        case .suaBuoiHoc(_, let d): return d
+        case .nhapLichHoc(let items, let thayThe): return ["items": items, "thayThe": thayThe]
         case .updateNote(_, let d): return d
         case .reactPost(_, let t): return ["type": t]
         // Backend `POST /users/follow` is a toggle keyed by `targetId`.

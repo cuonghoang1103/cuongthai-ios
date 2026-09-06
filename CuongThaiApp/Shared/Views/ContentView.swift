@@ -67,7 +67,11 @@ struct iOSTabView: View {
 
     var body: some View {
         TabView(selection: $appState.selectedTab) {
-            HomeView()
+            // Trang chủ = BẢNG ĐIỀU KHIỂN việc + lịch học, không còn là bảng
+            // tin. `HomeView` (bảng tin) vẫn sống, vào từ nút trên thanh tiêu
+            // đề của Tổng quan và một thẻ trong "Đi nhanh" — gỡ hẳn thì mọi
+            // màn liên quan (chi tiết bài, bình luận, cảm xúc) thành mã chết.
+            TongQuanView()
                 .tabItem {
                     Label(AppState.AppTab.home.title, systemImage: AppState.AppTab.home.icon)
                 }
@@ -150,7 +154,7 @@ struct macOSNavigationView: View {
     @ViewBuilder
     private func detailView(for tab: AppState.AppTab) -> some View {
         switch tab {
-        case .home: HomeView()
+        case .home: TongQuanView()
         case .learn: CoursesView()
         case .create: CreatePostView()
         case .messages:
