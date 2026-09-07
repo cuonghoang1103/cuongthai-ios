@@ -58,6 +58,8 @@ struct CaiDatThongBaoView: View {
                             .font(.system(size: 15, weight: .semibold).monospacedDigit())
                             .foregroundColor(AppColors.textSecondary)
                     }
+                    Toggle(T("Thêm việc làm bài tập"), isOn: Binding(
+                        get: { HocONha.lamBaiTap }, set: { HocONha.lamBaiTap = $0 }))
                 }
             } header: {
                 Text(T("Học ở nhà"))
@@ -65,7 +67,7 @@ struct CaiDatThongBaoView: View {
                 // Nói rõ CƠ CHẾ, vì hai điều dưới đây gây bất ngờ nhất:
                 // ngày trống không nhắc, và app phải mở ít nhất một lần sau
                 // khi đổi lịch thì lời nhắc mới khớp lịch mới.
-                Text(T("Mỗi ngày có lớp, app nhắc một lần vào giờ này và nói rõ hôm nay bạn học môn gì. Ngày không có lớp thì không nhắc. Việc “Ôn <môn> — 20 phút” được tự thêm vào Tổng quan sau khi buổi học kết thúc."))
+                Text(T("Mỗi ngày có lớp, app nhắc một lần vào giờ này và nói rõ hôm nay bạn học môn gì. Ngày không có lớp thì không nhắc.\n\nMỗi buổi học TAN thì Tổng quan tự thêm “Ôn <môn> — 20 phút” và “Làm bài tập <môn>”, cộng một việc ôn lại sau 3 ngày. Buổi chiều tan muộn thì việc của nó xuất hiện muộn — cứ mở app buổi tối là thấy đủ. Việc bạn xoá đi sẽ không mọc lại."))
             }
 
             Section {

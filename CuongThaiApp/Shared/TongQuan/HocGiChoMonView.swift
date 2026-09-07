@@ -125,7 +125,7 @@ struct HocGiChoMonView: View {
                         Section {
                             ForEach(baiHoc.prefix(12)) { b in
                                 NavigationLink {
-                                    GiaSuBaiHocView(lessonId: b.id, tenBai: b.title, tenMon: mon)
+                                    GiaSuBaiHocView(lessonId: b.id, tenBai: b.title.tachSongNgu(.viet), tenMon: mon)
                                 } label: {
                                     HStack(spacing: Spacing.sm) {
                                         Image(systemName: "sparkles")

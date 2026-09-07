@@ -90,10 +90,7 @@ struct NoiDungMarkdown: View {
     /// tự nuốt xuống dòng và gộp mọi thứ thành một khối, còn ở đây việc cắt
     /// khối đã do `KhoiMD.tach` lo rồi.
     private func inline(_ s: String) -> AttributedString {
-        (try? AttributedString(
-            markdown: s,
-            options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)
-        )) ?? AttributedString(s)
+        chuInline(s)
     }
 }
 
@@ -109,7 +106,11 @@ private struct BangMD: View {
         // Cột rộng theo ô DÀI NHẤT của chính nó, chặn hai đầu để một ô dài
         // bất thường không đẩy các cột khác biến mất.
         (0..<dau.count).map { c in
-            let dai = ([dau[c]] + hang.map { c < $0.count ? $0[c] : "" }).map(\.count).max() ?? 8
+            // Đo theo DÒNG dài nhất: một ô có "<br>" giờ xuống dòng thật, lấy
+            // tổng số ký tự thì cột rộng gấp đôi mức cần.
+            let dai = ([dau[c]] + hang.map { c < $0.count ? $0[c] : "" })
+                .flatMap { $0.boXuongDongHTML.split(separator: "\n", omittingEmptySubsequences: false) }
+                .map(\.count).max() ?? 8
             return min(max(CGFloat(dai) * 7.6 + 22, 86), 240)
         }
     }
@@ -139,9 +140,7 @@ private struct BangMD: View {
     }
 
     private func o0(_ chu: String, rong: CGFloat, dam: Bool) -> some View {
-        Text((try? AttributedString(markdown: chu,
-              options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)))
-             ?? AttributedString(chu))
+        Text(chuInline(chu))
             .font(.system(size: 13.5, weight: dam ? .semibold : .regular))
             .foregroundColor(dam ? AppColors.textPrimary : AppColors.textSecondary)
             .multilineTextAlignment(.leading)
@@ -274,5 +273,43 @@ enum KhoiMD {
             }
         }
         return nil
+    }
+}
+
+
+// ── Chữ trong dòng ──────────────────────────────────────────────
+
+/// Dựng markdown trong-dòng, sau khi đã dọn HTML mà model chèn vào.
+private func chuInline(_ s: String) -> AttributedString {
+    let c = s.boXuongDongHTML
+    return (try? AttributedString(
+        markdown: c,
+        options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)
+    )) ?? AttributedString(c)
+}
+
+extension String {
+    /// Đổi `<br>` / `<br/>` / `<br />` thành xuống dòng thật.
+    ///
+    /// Vì sao cần: markdown KHÔNG có cách xuống dòng trong một ô bảng, nên
+    /// model dùng `<br>` — đó là cách viết đúng của nó, không phải lỗi model.
+    /// Bộ dựng của ta không đọc HTML nên nó in nguyên chữ "<br>" ra màn hình:
+    /// người dùng thấy `3. Tính từ い/な<br>4. Mời rủ & đếm`.
+    ///
+    /// ⚠️ KHÔNG đụng phần trong dấu nháy ngược — bài học về HTML có quyền
+    /// nhắc tới `<br>` như một ví dụ, và đổi nó đi là làm sai nội dung bài.
+    var boXuongDongHTML: String {
+        guard range(of: "<br", options: .caseInsensitive) != nil,
+              let re = try? NSRegularExpression(pattern: "<br\\s*/?>", options: [.caseInsensitive])
+        else { return self }
+        return split(separator: "`", omittingEmptySubsequences: false)
+            .enumerated()
+            .map { i, phan -> String in
+                guard i % 2 == 0 else { return String(phan) }
+                let t = String(phan)
+                return re.stringByReplacingMatches(
+                    in: t, range: NSRange(t.startIndex..., in: t), withTemplate: "\n")
+            }
+            .joined(separator: "`")
     }
 }

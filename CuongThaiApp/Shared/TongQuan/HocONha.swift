@@ -19,7 +19,20 @@ enum HocONha {
 
     private static let K_BAT = "hoconha.bat"
     private static let K_GIO = "hoconha.gio"      // phút từ 00:00
-    private static let K_DA_SINH = "hoconha.dasinh"   // ngày đã sinh việc
+    /// Các mục ĐÃ TỪNG sinh, dạng "ngày|tên việc".
+    ///
+    /// ⛔⛔ Trước đây đây là MỘT chuỗi ngày ("hôm nay đã sinh rồi"), và nó đẻ ra
+    /// đúng lỗi người dùng gặp 07/09/2026: sáng mở app lúc 07:19 → chưa buổi
+    /// nào tan nên không có việc ôn, nhưng "Xem trước mai" thì sinh được → cờ
+    /// bật → chiều hai lớp tan (12:20 và 15:10), tối mở lại thì hàm thoát ngay
+    /// dòng đầu ⇒ "Ôn SWR302"/"Ôn LAB211" KHÔNG BAO GIỜ hiện ra. Người dùng
+    /// thấy đúng thế: "sao trong kế hoạch chỉ có hai môn của ngày mai?".
+    ///
+    /// Ghi theo TỪNG MỤC thì việc của buổi tan lúc 15:10 vẫn sinh được lúc
+    /// 20:00, mà thứ người dùng cố ý xoá vẫn không mọc lại — đó là lý do cái
+    /// cờ tồn tại ngay từ đầu.
+    private static let K_DA_SINH = "hoconha.dasinh.muc"
+    private static let K_BAI_TAP = "hoconha.baitap"
 
     static var bat: Bool {
         get { UserDefaults.standard.object(forKey: K_BAT) as? Bool ?? true }
@@ -32,6 +45,22 @@ enum HocONha {
     }
     static var gioNhacChu: String {
         String(format: "%02d:%02d", phutNhac / 60, phutNhac % 60)
+    }
+
+    /// Kèm việc "Làm bài tập <môn>" cho mỗi buổi đã tan.
+    ///
+    /// Ôn KHÁC làm bài. Ôn là đọc lại cho khỏi quên; bài tập là thứ BỊ TÍNH
+    /// ĐIỂM và là thứ dồn lại thành "không theo kịp". Tách hai dòng chứ không
+    /// gộp: gộp thì tick một cái là coi như xong cả hai, mà thực tế người ta
+    /// chỉ làm một.
+    static var lamBaiTap: Bool {
+        get { UserDefaults.standard.object(forKey: K_BAI_TAP) as? Bool ?? true }
+        set { UserDefaults.standard.set(newValue, forKey: K_BAI_TAP) }
+    }
+
+    private static var daSinh: Set<String> {
+        get { Set(UserDefaults.standard.stringArray(forKey: K_DA_SINH) ?? []) }
+        set { UserDefaults.standard.set(Array(newValue), forKey: K_DA_SINH) }
     }
 
     static let PHUT_ON = 20
@@ -63,72 +92,92 @@ enum HocONha {
     /// Trả về số việc đã tạo. Gọi mỗi lần mở Tổng quan; chỉ chạy MỘT LẦN mỗi
     /// ngày nhờ cờ trong máy — không có cờ thì việc người dùng cố ý xoá sẽ
     /// mọc lại ở lần mở app kế tiếp, và đó là kiểu app mà người ta gỡ.
+    /// Sinh việc cho hôm nay: ôn + làm bài của các buổi ĐÃ TAN, việc ôn lại
+    /// ngắt quãng, và một việc xem trước cho ngày mai.
+    ///
+    /// Trả về số việc đã tạo. Gọi mỗi lần mở Tổng quan — chạy được NHIỀU LẦN
+    /// trong ngày, vì các buổi tan vào những giờ khác nhau. Chống mọc lại
+    /// bằng danh sách mục đã sinh, xem `K_DA_SINH`.
     @MainActor
     static func sinhViecHomNay(_ buoi: [BuoiHoc], daCo: [ViecTongQuan]) async -> Int {
         guard bat else { return 0 }
         let homNay = PhamViViec.today.moc()
-        if UserDefaults.standard.string(forKey: K_DA_SINH) == homNay { return 0 }
-
         let l = Calendar.current
         let bayGio = l.component(.hour, from: Date()) * 60 + l.component(.minute, from: Date())
         let thu = BuoiHoc.thuViet(tuLich: l.component(.weekday, from: Date()))
-
-        // Chỉ buổi ĐÃ KẾT THÚC. Sinh việc ôn cho buổi chiều lúc 8 giờ sáng là
-        // bảo người ta ôn thứ chưa học.
-        let xong = buoi.filter { b in
-            b.weekday == thu && conTrongKy(b) && phut(b.endTime) <= bayGio
-        }
-        guard !xong.isEmpty else { return 0 }
-
-        // Không tạo trùng: người dùng có thể đã tự thêm việc tên y hệt.
-        let tenDaCo = Set(daCo.filter { $0.date == homNay }.map { $0.title })
-        var soTao = 0
-        for b in xong {
-            let ten = String(format: T("Ôn %@ — %d phút"), b.subject, PHUT_ON)
-            if tenDaCo.contains(ten) { continue }
-            do {
-                try await APIClient.shared.send(.themViec([
-                    "scope": "today", "date": homNay, "title": ten, "exp": 25,
-                ]))
-                soTao += 1
-            } catch { /* mạng hỏng thì thôi, mai mở lại sinh tiếp */ }
-        }
-
-        // Ôn lặp: đặt sẵn việc ôn lại vào NGÀY TƯƠNG LAI. Đặt trước chứ không
-        // đợi tới hôm đó mới sinh — app có thể không được mở hôm đó, mà việc
-        // đã nằm sẵn trên máy chủ thì nó vẫn hiện.
         let f = PhamViViec.dinhDang
-        let tenMoiNoi = Set(daCo.map { "\($0.date)|\($0.title)" })
-        for b in xong {
-            for cach in MOC_ON_LAI {
-                guard let d = Calendar.current.date(byAdding: .day, value: cach, to: Date()) else { continue }
-                let ngay = f.string(from: d)
-                let ten = String(format: T("Ôn lại %@ (%d ngày) — %d phút"), b.subject, cach, PHUT_ON_LAI)
-                if tenMoiNoi.contains("\(ngay)|\(ten)") { continue }
-                try? await APIClient.shared.send(.themViec([
-                    "scope": "today", "date": ngay, "title": ten, "exp": 15,
-                ]))
+
+        // Việc đã có trên máy chủ — người dùng có thể tự thêm trùng tên.
+        let daCoTen = Set(daCo.map { "\($0.date)|\($0.title)" })
+        var da = daSinh
+        var soTao = 0
+
+        func tao(_ ngay: String, _ ten: String, exp: Int, ghiChu: String? = nil) async {
+            let khoa = "\(ngay)|\(ten)"
+            if da.contains(khoa) || daCoTen.contains(khoa) { return }
+            var p: [String: Any] = ["scope": "today", "date": ngay, "title": ten, "exp": exp]
+            if let g = ghiChu, !g.isEmpty { p["note"] = g }
+            do {
+                try await APIClient.shared.send(.themViec(p))
+                da.insert(khoa)
                 soTao += 1
+            } catch { /* mạng hỏng thì lần mở sau sinh tiếp */ }
+        }
+
+        // ── A. Buổi ĐÃ TAN hôm nay ──
+        // Chỉ buổi đã kết thúc: sinh việc ôn cho buổi chiều lúc 8 giờ sáng là
+        // bảo người ta ôn thứ chưa học.
+        let xong = buoi
+            .filter { $0.weekday == thu && conTrongKy($0) && phut($0.endTime) <= bayGio }
+            .sorted { $0.phutBatDau < $1.phutBatDau }
+        for b in xong {
+            await tao(homNay, String(format: T("Ôn %@ — %d phút"), b.subject, PHUT_ON), exp: 25)
+            if lamBaiTap {
+                await tao(homNay, String(format: T("Làm bài tập %@"), b.subject),
+                          exp: 25, ghiChu: ghiChuBaiTap(b))
+            }
+            // Ôn lặp: đặt SẴN vào ngày tương lai, không đợi tới hôm đó mới
+            // sinh — app có thể không được mở hôm đó.
+            for cach in MOC_ON_LAI {
+                guard let d = l.date(byAdding: .day, value: cach, to: Date()) else { continue }
+                await tao(f.string(from: d),
+                          String(format: T("Ôn lại %@ (%d ngày) — %d phút"), b.subject, cach, PHUT_ON_LAI),
+                          exp: 15)
             }
         }
 
-        // Một việc xem trước cho ngày mai, nếu mai có lớp.
+        // ── B. Xem trước ngày mai ──
+        // ĐỘC LẬP với A. Trước đây khối này nằm sau `guard !xong.isEmpty`, nên
+        // ngày nào mở app trước giờ tan lớp thì cũng không có gì được sinh.
         let thuMai = thu == BuoiHoc.thuLon ? BuoiHoc.thuNho : thu + 1
         let mai = buoi.filter { $0.weekday == thuMai && conTrongKy($0) }
-            .sorted { $0.phutBatDau < $1.phutBatDau }
         if !mai.isEmpty {
             let ds = Array(Set(mai.map(\.subject))).sorted().joined(separator: ", ")
-            let ten = String(format: T("Xem trước mai: %@"), ds)
-            if !tenDaCo.contains(ten) {
-                try? await APIClient.shared.send(.themViec([
-                    "scope": "today", "date": homNay, "title": ten, "exp": 25,
-                ]))
-                soTao += 1
-            }
+            await tao(homNay, String(format: T("Xem trước mai: %@"), ds), exp: 25)
         }
 
-        if soTao > 0 { UserDefaults.standard.set(homNay, forKey: K_DA_SINH) }
+        if soTao > 0 { daSinh = donCu(da, homNay: homNay) }
         return soTao
+    }
+
+    /// Ghi chú cho việc làm bài tập: chỗ lấy đề. Không có thì để trống — một
+    /// ghi chú rỗng tốt hơn một câu chung chung ("nhớ làm bài nhé").
+    private static func ghiChuBaiTap(_ b: BuoiHoc) -> String? {
+        var d: [String] = []
+        if let m = b.materialsUrl, !m.isEmpty { d.append(m) }
+        if let n = b.note, !n.isEmpty { d.append(n) }
+        return d.isEmpty ? nil : d.joined(separator: "\n")
+    }
+
+    /// Bỏ mục cũ hơn 45 ngày — danh sách này chỉ để chống mọc lại, giữ mãi thì
+    /// nó phình vô hạn trong `UserDefaults`.
+    private static func donCu(_ tap: Set<String>, homNay: String) -> Set<String> {
+        let f = PhamViViec.dinhDang
+        guard let m = f.date(from: homNay),
+              let cat = Calendar.current.date(byAdding: .day, value: -45, to: m)
+        else { return tap }
+        let moc = f.string(from: cat)
+        return tap.filter { ($0.split(separator: "|").first.map(String.init) ?? "") >= moc }
     }
 
     // MARK: B — lời nhắc buổi tối
