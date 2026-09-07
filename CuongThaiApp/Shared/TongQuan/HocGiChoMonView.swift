@@ -130,7 +130,7 @@ struct HocGiChoMonView: View {
                                     HStack(spacing: Spacing.sm) {
                                         Image(systemName: "sparkles")
                                             .font(.system(size: 12)).foregroundColor(AppColors.primary)
-                                        Text(b.title).font(.system(size: 14)).lineLimit(2)
+                                        Text(b.title.tachSongNgu(.viet)).font(.system(size: 14)).lineLimit(2)
                                             .foregroundColor(AppColors.textPrimary)
                                     }
                                 }
@@ -187,12 +187,30 @@ struct HocGiChoMonView: View {
         .padding(.vertical, 2)
     }
 
-    private func nap() async {
-        dangTai = true
-        defer { dangTai = false }
-        let ma = mon.uppercased()
-        // Hai lời gọi song song: chờ tuần tự thì màn đứng im gấp đôi thời gian.
-        async let dsDe: [DeThi]? = try? await APIClient.shared.request(.dsDeThi)
+    /// Hai lời gọi song song — và **đóng scope ngay** khi có kết quả.
+    ///
+    /// ⛔⛔ Vì sao phải tách hẳn thành một hàm chứ không để `async let` nằm
+    /// trong `nap()`: máy thật SẬP THẲNG, bốn lần liên tiếp lúc 07:19–07:21
+    /// ngày 07/09/2026. Log lấy từ chính máy
+    /// (`devicectl … --domain-type systemCrashLogs`) chỉ đúng một chỗ:
+    ///
+    ///     swift_Concurrency_fatalError
+    ///     ← _swift_task_dealloc_specific
+    ///     ← asyncLet_finish_after_task_completion
+    ///     ← closure #3 in closure #1 in HocGiChoMonView.body.getter   (.task)
+    ///
+    /// Ba chỗ khác trong app cũng `async let` + `try?` mà không sao
+    /// (`TongQuanVM.napTuan`, `DaLuuView.tai`, `KhoSachCucBo.nap`). Khác biệt
+    /// DUY NHẤT: cả ba **kết thúc scope ngay sau khi await**, còn `nap()` còn
+    /// một `await` nữa đứng sau trong CÙNG scope (lấy giáo trình). Bộ cấp phát
+    /// theo-tác-vụ của Swift là một NGĂN XẾP; hai bản ghi `async let` chỉ được
+    /// dọn lúc thoát scope, và cái `await` chen vào giữa làm thứ tự dọn lệch.
+    ///
+    /// ⚠️ Máy ảo KHÔNG tái hiện được — tôi mở đúng màn này, đúng môn JPD123,
+    /// nó chạy ngon. Lỗi phụ thuộc thời điểm. Nên "thử một lượt không sao"
+    /// không phải bằng chứng ở đây; bằng chứng là cái log trên.
+    private func haiLoiGoiSongSong(_ ma: String) async -> ([DeThi], [Course]) {
+        async let dsDe: [DeThi]? = try? APIClient.shared.request(.dsDeThi)
         // HAI cái bẫy chồng nhau, cùng cho ra một màn hình trống trông rất
         // thuyết phục:
         //
@@ -209,19 +227,26 @@ struct HocGiChoMonView: View {
         // ⚠️ Giải mã thẳng thành MẢNG. `/courses` trả `data` là mảng khoá
         // học, KHÔNG phải `{ items: [...] }` — khai một vỏ có `items` thì
         // JSONDecoder ném, `try?` nuốt, và ta lại được một màn hình trống.
-        async let dsKhoa: [Course]? = try? await APIClient.shared.request(
+        async let dsKhoa: [Course]? = try? APIClient.shared.request(
             .getCoursesAcademy(page: 1, size: 50, keyword: ma))
+        return ((await dsDe) ?? [], (await dsKhoa) ?? [])
+    }
+
+    private func nap() async {
+        dangTai = true
+        defer { dangTai = false }
+        let ma = mon.uppercased()
+        let (dsDe, dsKhoa) = await haiLoiGoiSongSong(ma)
         // Mới nhất trước: 50 đề trải nhiều kỳ, đề của kỳ gần đây sát chương
         // trình đang học hơn đề từ 2023.
-        de = ((await dsDe) ?? [])
+        de = dsDe
             .filter { $0.course?.courseCode?.uppercased() == ma }
             .sorted { $0.id > $1.id }
         // Máy chủ đã lọc theo từ khoá (khớp title/mô tả/mã). Ưu tiên khớp
         // ĐÚNG mã; không có thì nhận cả kết quả máy chủ trả về — thà thừa một
         // khoá gần đúng còn hơn màn hình trống.
-        let ds = (await dsKhoa) ?? []
-        let dungMa = ds.filter { $0.courseCode?.uppercased() == ma }
-        khoa = dungMa.isEmpty ? ds : dungMa
+        let dungMa = dsKhoa.filter { $0.courseCode?.uppercased() == ma }
+        khoa = dungMa.isEmpty ? dsKhoa : dungMa
         // Giáo trình của khoá khớp đầu tiên. Cần nó để hỏi AI ĐÚNG BÀI.
         // `requestList` trả bộ ba (items, nextCursor, hasMore) chứ không trả
         // thẳng mảng — lấy đúng phần `items`.
@@ -236,4 +261,3 @@ struct HocGiChoMonView: View {
         }
     }
 }
-
