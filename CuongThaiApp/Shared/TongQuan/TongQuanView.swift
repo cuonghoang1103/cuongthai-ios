@@ -56,7 +56,7 @@ struct TongQuanView: View {
             .sheet(item: Binding(
                 get: { monDangMo.map(MonMo.init) },
                 set: { monDangMo = $0?.ma })) { m in
-                HocGiChoMonView(mon: m.ma, vm: vm)
+                HocGiChoMonView(dsMon: m.ma.components(separatedBy: ","), vm: vm)
             }
             .alert(T("Đã kết thúc ngày"), isPresented: Binding(
                 get: { vm.vuaCong != nil }, set: { if !$0 { vm.vuaCong = nil } })) {
@@ -439,7 +439,7 @@ struct TongQuanView: View {
     }
 }
 
-/// Bọc chuỗi mã môn để dùng được với `.sheet(item:)`.
+/// Bọc danh sách mã môn (nối bằng dấu phẩy) để dùng được với `.sheet(item:)`.
 private struct MonMo: Identifiable { let ma: String; var id: String { ma } }
 
 // MARK: - Một hàng việc
@@ -466,8 +466,9 @@ private struct HangViec: View {
                     // Bấm tiêu đề → "Học gì cho môn này". Chỉ mở khi tiêu đề
                     // CÓ mã môn: bấm vào "2 bài Lab" mà hiện màn tra cứu môn
                     // rỗng thì tệ hơn là không làm gì.
-                    if let ma = HocGiChoMonView.maMon(tu: viec.title) {
-                        Button { moMon(ma) } label: {
+                    let dsMa = HocGiChoMonView.maMon(tu: viec.title)
+                    if !dsMa.isEmpty {
+                        Button { moMon(dsMa.joined(separator: ",")) } label: {
                             HStack(spacing: 5) {
                                 Text(viec.title)
                                     .font(.system(size: 15))

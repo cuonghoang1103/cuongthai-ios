@@ -11,9 +11,24 @@ import SwiftUI
 /// còn việc ghi "SWT301" — so tên thì không bao giờ khớp. Mã môn có ở cả hai
 /// phía (`DeThi.course.courseCode`, `Course.courseCode`).
 struct HocGiChoMonView: View {
-    let mon: String
+    /// MỌI mã môn rút được từ tiêu đề việc, theo thứ tự xuất hiện.
+    ///
+    /// ⛔ Việc "Xem trước mai: JPD123, SWT301" có HAI môn. Trước đây màn này
+    /// nhận đúng một chuỗi, lấy bằng `firstMatch`, nên bấm vào chỉ mở JPD123
+    /// và **SWT301 không có đường nào tới** — người dùng chỉ ra ngay.
+    let dsMon: [String]
     @ObservedObject var vm: TongQuanVM
     @Environment(\.dismiss) private var dismiss
+
+    /// Môn đang xem. Nhiều môn thì đổi bằng thanh chọn ở đầu màn, không phải
+    /// đóng ra bấm lại.
+    @State private var mon: String
+
+    init(dsMon: [String], vm: TongQuanVM) {
+        self.dsMon = dsMon
+        self.vm = vm
+        _mon = State(initialValue: dsMon.first ?? "")
+    }
 
     @State private var de: [DeThi] = []
     @State private var khoa: [Course] = []
@@ -30,12 +45,16 @@ struct HocGiChoMonView: View {
     /// Mã môn FPT là 3 chữ + 3 số, có khi thêm một chữ cuối (ITE302c). Bắt
     /// bằng biểu thức thay vì cắt chuỗi: tiêu đề còn có "Ôn lại", số phút,
     /// dấu gạch — cắt theo vị trí là hỏng ngay khi đổi câu chữ.
-    static func maMon(tu tieuDe: String) -> String? {
-        let r = try? NSRegularExpression(pattern: #"\b([A-Z]{2,4}\d{3}[a-z]?)\b"#)
+    static func maMon(tu tieuDe: String) -> [String] {
+        guard let r = try? NSRegularExpression(pattern: #"\b([A-Z]{2,4}\d{3}[a-z]?)\b"#)
+        else { return [] }
         let ns = tieuDe as NSString
-        guard let m = r?.firstMatch(in: tieuDe, range: NSRange(location: 0, length: ns.length))
-        else { return nil }
-        return ns.substring(with: m.range(at: 1))
+        var ra: [String] = []
+        for m in r.matches(in: tieuDe, range: NSRange(location: 0, length: ns.length)) {
+            let ma = ns.substring(with: m.range(at: 1))
+            if !ra.contains(ma) { ra.append(ma) }   // giữ THỨ TỰ, bỏ trùng
+        }
+        return ra
     }
 
     /// Mọi bài học của khoá, phẳng theo đúng thứ tự chương → bài.
@@ -47,6 +66,15 @@ struct HocGiChoMonView: View {
     var body: some View {
         NavigationStack {
             List {
+                if dsMon.count > 1 {
+                    Section {
+                        Picker(T("Môn"), selection: $mon) {
+                            ForEach(dsMon, id: \.self) { Text($0).tag($0) }
+                        }
+                        .pickerStyle(.segmented)
+                        .listRowInsets(EdgeInsets(top: 6, leading: 12, bottom: 6, trailing: 12))
+                    }
+                }
                 if dangTai {
                     HStack { Spacer(); ProgressView(); Spacer() }
                 } else {
@@ -158,7 +186,7 @@ struct HocGiChoMonView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button(T("Đóng")) { dismiss() } }
             }
-            .task { await nap() }
+            .task(id: mon) { await nap() }
         }
     }
 
@@ -235,6 +263,9 @@ struct HocGiChoMonView: View {
     private func nap() async {
         dangTai = true
         defer { dangTai = false }
+        // Xoá sạch trước: đổi môn mà giữ lại `chuong`/`loiNap` của môn cũ thì
+        // màn mới hiện giáo trình của môn trước đó — sai mà rất khó nhận ra.
+        de = []; khoa = []; chuong = []; loiNap = nil
         let ma = mon.uppercased()
         let (dsDe, dsKhoa) = await haiLoiGoiSongSong(ma)
         // Mới nhất trước: 50 đề trải nhiều kỳ, đề của kỳ gần đây sát chương
