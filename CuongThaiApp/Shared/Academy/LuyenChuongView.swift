@@ -58,6 +58,7 @@ struct LuyenChuongView: View {
                 LazyVStack(alignment: .leading, spacing: Spacing.md) {
                     if cau.isEmpty { moDau } else { phanLamBai }
                     phanThucHanh
+                    duongSangPhongThi
                 }
                 .padding(.horizontal, Spacing.md)
                 .padding(.bottom, Spacing.xxl)
@@ -366,6 +367,50 @@ struct LuyenChuongView: View {
         .padding(Spacing.md)
         .background(AppColors.backgroundTertiary.opacity(0.55))
         .cornerRadius(CornerRadius.medium)
+    }
+
+    // MARK: Sang Phòng Thi
+
+    /// Mở Phòng Thi lọc sẵn theo MÔN.
+    ///
+    /// ⚠️ Nói đúng phạm vi. Web ghi "Mở đề CHƯƠNG NÀY trên Phòng Thi" và trỏ
+    /// tới `/exam?course=…&section=…`, nhưng `ExamPortalClient` chỉ đọc
+    /// `?course=` và `?kind=` — **`section` bị bỏ qua hoàn toàn**. Tức nút đó
+    /// vẫn mở đề của cả môn. Ở đây gọi đúng tên: lọc theo môn, và nói thẳng
+    /// phần luyện theo chương nằm ngay bên trên.
+    @ViewBuilder
+    private var duongSangPhongThi: some View {
+        if let ma = tenMon, !ma.isEmpty {
+            VStack(alignment: .leading, spacing: 6) {
+                Divider().background(AppColors.divider).padding(.vertical, Spacing.sm)
+                NavigationLink {
+                    PhongThiView(tuKhoaBanDau: ma)
+                        .navigationTitle(String(format: T("Đề thi %@"), ma))
+                        .navigationBarTitleDisplayMode(.inline)
+                } label: {
+                    HStack(spacing: Spacing.sm) {
+                        Image(systemName: "doc.text.magnifyingglass")
+                            .font(.system(size: 15)).foregroundColor(AppColors.primary)
+                        Text(String(format: T("Mở đề thi môn %@ trong Phòng Thi"), ma))
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(AppColors.textPrimary)
+                        Spacer(minLength: 0)
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(AppColors.textTertiary)
+                    }
+                    .padding(Spacing.md)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(AppColors.backgroundTertiary)
+                    .cornerRadius(CornerRadius.medium)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                Text(T("Đề ĐẦY ĐỦ của cả môn, có bấm giờ và lưu kết quả. Luyện riêng chương này thì dùng phần ở trên."))
+                    .font(.system(size: 11.5)).foregroundColor(AppColors.textTertiary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
     }
 
     // MARK: Mạng

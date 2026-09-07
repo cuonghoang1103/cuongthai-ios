@@ -22,12 +22,18 @@ struct PhongThiView: View {
     @State private var de: [DeThi] = []
     @State private var dangTai = true
     @State private var loi: String?
-    @State private var tuKhoa = ""
+    @State private var tuKhoa: String
     @State private var loaiChon: LoaiDe?
     @State private var kyMo: Set<Int> = []
     @State private var monMo: Set<String> = []
     /// ⚠️ Mặc định TIẾNG ANH, khớp `ExamPortalClient` của web.
     @State private var ngonNgu: NgonNguDe = .anh
+
+    /// Mở sẵn với một từ khoá — dùng khi vào từ Academy ("mở đề môn SWR302").
+    /// Ô tìm quét cả `maMon`, nên truyền mã môn là lọc đúng môn đó.
+    init(tuKhoaBanDau: String = "") {
+        _tuKhoa = State(initialValue: tuKhoaBanDau)
+    }
 
     // ── Lọc ─────────────────────────────────────────────────────
     private var hienThi: [DeThi] {

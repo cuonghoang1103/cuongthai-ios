@@ -476,7 +476,11 @@ struct LessonPlayerView: View {
                     // Gia sư gắn theo BÀI, nên lấy bài đầu chương làm ngữ cảnh
                     // — đúng cách web làm (`lessonId={lessons[0]?.id}`).
                     lessonId: (ch.lessons ?? []).sorted { ($0.sortOrder ?? 0) < ($1.sortOrder ?? 0) }.first?.id,
-                    tenMon: course.courseCode)
+                    // ⚠️ `courseCode` CÓ THỂ RỖNG (đo thật: SWR302 trong
+                    // `/curriculum` không kèm mã). Lùi về tên khoá — ô tìm của
+                    // Phòng Thi quét cả `tenKhoa`, nên vẫn lọc đúng. Không lùi
+                    // thì hàng "mở Phòng Thi" bị ẩn IM LẶNG.
+                    tenMon: (course.courseCode?.isEmpty == false ? course.courseCode : nil) ?? course.title)
             }
         }
     }
