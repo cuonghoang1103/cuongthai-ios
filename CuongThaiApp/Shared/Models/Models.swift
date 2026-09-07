@@ -793,6 +793,66 @@ struct QuizCauHoi: Codable, Hashable, Identifiable {
     }
 }
 
+// ── Luyện cuối chương (câu từ ĐỀ THI THẬT gán về chương) ─────────
+
+/// Lựa chọn của câu hỏi đề thi.
+///
+/// ⚠️ Máy chủ trả `options` là JSON THÔ, và dữ liệu có CẢ HAI dạng:
+/// `["a","b"]` (mảng chuỗi) lẫn `[{"text":"a"}]` (mảng đối tượng) — web phải
+/// có hàm `normOpts` riêng để chịu cả hai. Khai cứng một dạng thì `JSONDecoder`
+/// ném, `try?` nuốt, và ta được một màn hình trống rất thuyết phục.
+struct LuaChonLinhHoat: Codable, Hashable {
+    let text: String
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.singleValueContainer()
+        if let s = try? c.decode(String.self) { text = s; return }
+        struct Vo: Codable { let text: String? }
+        text = ((try? c.decode(Vo.self))?.text) ?? ""
+    }
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.singleValueContainer()
+        try c.encode(text)
+    }
+}
+
+/// Câu trắc nghiệm luyện tập của một chương.
+/// `GET /api/v1/exams/practice/by-section/:sectionId`
+struct CauLuyen: Codable, Identifiable, Hashable {
+    let id: Int
+    let points: Double?
+    let prompt: String
+    let imageUrl: String?
+    let options: [LuaChonLinhHoat]?
+    let correctIndexes: [Int]?
+    let explanation: String?
+    /// FE | PE | PT — cho biết câu này lấy từ loại đề nào.
+    let examKind: String?
+
+    var luaChon: [String] { (options ?? []).map(\.text) }
+    var dapAnDung: Set<Int> { Set(correctIndexes ?? []) }
+    var diem: Double { points ?? 0 }
+}
+
+/// Câu THỰC HÀNH (PE) của chương — không tự chấm được.
+/// `GET /api/v1/exams/practice/by-section/:sectionId/practical`
+struct CauThucHanh: Codable, Identifiable, Hashable {
+    let id: Int
+    /// WRITE | CODE
+    let kind: String?
+    let points: Double?
+    let prompt: String
+    let imageUrl: String?
+    let language: String?
+    let starterCode: String?
+    let sampleSolution: String?
+    let expectedOutput: String?
+    let explanation: String?
+    let examKind: String?
+    let examCode: String?
+    let examTitle: String?
+}
+
 struct CourseSection: Codable, Identifiable, Hashable {
     let id: Int
     let courseId: Int?

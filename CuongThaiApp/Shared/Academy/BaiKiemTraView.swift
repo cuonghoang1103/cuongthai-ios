@@ -368,47 +368,74 @@ struct BaiKiemTraView: View {
 
 // ── Câu muốn hỏi AI ─────────────────────────────────────────────
 
-/// Gói một câu quiz thành ngữ cảnh cho gia sư.
+/// Gói MỘT câu (quiz trong bài, hoặc câu luyện cuối chương) thành ngữ cảnh cho
+/// gia sư.
 ///
-/// Máy chủ nhận `quizContext: [{n, prompt, options, correct, explanation}]`
-/// (xem `courseTutor.service.ts`), nên gửi ĐÚNG hình dạng đó thay vì nhét cả
-/// đề vào câu hỏi — nhét vào câu hỏi thì phần đó bị tính là chữ người dùng gõ
-/// và làm hỏng cache theo `cacheKey`.
+/// Giữ TRƯỜNG THUẦN chứ không giữ nguyên kiểu câu hỏi, để hai nguồn khác nhau
+/// (`QuizCauHoi` của bài kiểm tra, `CauLuyen` của đề luyện chương) dùng chung
+/// đúng một đường sang AI.
 struct HoiVeCau: Identifiable {
-    let cau: QuizCauHoi
+    let id: String
     let thuTu: Int
-    let daChon: Set<Int>
-    var id: String { cau.id }
+    let deBai: String
+    let luaChon: [String]
+    let dapAnDung: [Int]
+    let giaiThich: String?
+    let daChon: [Int]
+    let laTuLuan: Bool
 
-    var boiCanh: [[String: Any]] {
-        // ⚠️ Tên trường phải KHỚP `TutorAskOpts.quizContext` ở
-        // `courseTutor.service.ts:239`: {n, prompt, options, correctIndexes,
-        // explanation}. Gửi "correct" thay vì "correctIndexes" thì máy chủ im
-        // lặng bỏ qua, AI mất phần đáp án và trả lời đoán mò — hỏng kiểu
-        // không có lỗi nào hiện ra.
-        var m: [String: Any] = ["n": thuTu, "prompt": cau.question]
-        m["options"] = cau.luaChon
-        m["correctIndexes"] = cau.dapAnDung.sorted()
+    init(cau: QuizCauHoi, thuTu: Int, daChon: Set<Int>) {
         // Máy chủ KHÔNG đọc `sampleAnswer`. Gộp vào `explanation` để câu tự
         // luận vẫn có gì đó cho AI đối chiếu.
         var g = cau.explanation ?? ""
         if let s = cau.sampleAnswer, !s.isEmpty {
             g = g.isEmpty ? T("Đáp án mẫu: ") + s : g + "\n" + T("Đáp án mẫu: ") + s
         }
-        if !g.isEmpty { m["explanation"] = g }
+        self.id = cau.id
+        self.thuTu = thuTu
+        self.deBai = cau.question
+        self.luaChon = cau.luaChon
+        self.dapAnDung = cau.dapAnDung.sorted()
+        self.giaiThich = g.isEmpty ? nil : g
+        self.daChon = daChon.sorted()
+        self.laTuLuan = cau.laTuLuan
+    }
+
+    init(cau: CauLuyen, thuTu: Int, daChon: Set<Int>) {
+        self.id = "luyen-\(cau.id)"
+        self.thuTu = thuTu
+        self.deBai = cau.prompt
+        self.luaChon = cau.luaChon
+        self.dapAnDung = cau.dapAnDung.sorted()
+        self.giaiThich = cau.explanation
+        self.daChon = daChon.sorted()
+        self.laTuLuan = false
+    }
+
+    /// ⚠️ Tên trường phải KHỚP `TutorAskOpts.quizContext` ở
+    /// `courseTutor.service.ts:239`: {n, prompt, options, correctIndexes,
+    /// explanation}. Gửi "correct" thay vì "correctIndexes" thì máy chủ im
+    /// lặng bỏ qua, AI mất phần đáp án và trả lời đoán mò — hỏng kiểu không có
+    /// lỗi nào hiện ra.
+    var boiCanh: [[String: Any]] {
+        var m: [String: Any] = ["n": thuTu, "prompt": deBai]
+        m["options"] = luaChon
+        m["correctIndexes"] = dapAnDung
+        if let g = giaiThich, !g.isEmpty { m["explanation"] = g }
         return [m]
     }
 
     var cauMoDau: String {
-        if cau.laTuLuan {
+        if laTuLuan {
             return String(format: T("Chấm giúp tôi câu %d: tôi trả lời còn thiếu gì so với đáp án mẫu?"), thuTu)
         }
-        let toi = daChon.sorted().map { String(UnicodeScalar(65 + $0)!) }.joined(separator: ", ")
+        let toi = daChon.map { String(UnicodeScalar(65 + $0)!) }.joined(separator: ", ")
         return toi.isEmpty
             ? String(format: T("Câu %d tôi bỏ trống. Giải thích giúp tôi đáp án đúng và cách suy ra nó."), thuTu)
             : String(format: T("Câu %d tôi chọn %@ và sai. Sai ở đâu, và vì sao đáp án kia đúng?"), thuTu, toi)
     }
 }
+
 
 extension String {
     /// Nội dung quiz cũ lưu "\\n" dạng hai ký tự — hiện ra là xuống dòng thật.

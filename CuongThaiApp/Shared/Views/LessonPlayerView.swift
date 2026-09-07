@@ -117,6 +117,7 @@ struct LessonPlayerView: View {
     @State private var hienGiaSu = false
     /// Câu quiz đang nhờ AI giải thích. `nil` = hỏi chung về bài (nút nổi).
     @State private var quizHoi: HoiVeCau?
+    @State private var moLuyenChuong = false
     @State private var luongDangChon: String?
 
     init(course: Course, sections: [CourseSection], lessonId: Int) {
@@ -170,6 +171,7 @@ struct LessonPlayerView: View {
                     dongGhiCong(credit)
                 }
                 noiDung
+                khoiLuyenChuong
                 nutHoanThanh
                 dieuHuongBai
             }
@@ -426,6 +428,59 @@ struct LessonPlayerView: View {
         .foregroundColor(AppColors.textTertiary)
     }
 
+    /// Chương chứa bài đang mở — cần cả `id` (gọi API) lẫn tên (hiện ra).
+    private var chuongCuaBai: CourseSection? {
+        sections.first { ($0.lessons ?? []).contains { $0.id == lessonId } }
+    }
+
+    /// Đề luyện cuối chương. Câu hỏi THẬT từ đề FE/PE/PT đã gán về chương này —
+    /// đúng thứ để làm sau khi học xong chương.
+    ///
+    /// Chỉ hiện khi chương đó THẬT SỰ có câu (`soCauLuyen`), vì phần lớn chương
+    /// của khoá tự soạn thì chưa gán câu nào, và một nút bấm vào ra "chưa có
+    /// gì" thì tệ hơn là không có nút.
+    @ViewBuilder
+    private var khoiLuyenChuong: some View {
+        if let ch = chuongCuaBai, let n = vm.soCauLuyen[ch.id], n > 0 {
+            Button { moLuyenChuong = true } label: {
+                HStack(alignment: .top, spacing: Spacing.sm) {
+                    Image(systemName: "questionmark.circle.fill")
+                        .font(.system(size: 20)).foregroundColor(AppColors.primary)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(String(format: "Đề luyện cuối chương — %d câu", n))
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundColor(AppColors.textPrimary)
+                        Text("Câu hỏi thật từ đề FE/PE/PT của chương này. Chấm ngay, có giải thích, hỏi được gia sư.")
+                            .font(.system(size: 12.5)).foregroundColor(AppColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Spacer(minLength: 0)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(AppColors.textTertiary)
+                }
+                .padding(Spacing.md)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(AppColors.primary.opacity(0.08))
+                .overlay(RoundedRectangle(cornerRadius: CornerRadius.medium)
+                    .stroke(AppColors.primary.opacity(0.35), lineWidth: 1))
+                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .sheet(isPresented: $moLuyenChuong) {
+                LuyenChuongView(
+                    sectionId: ch.id,
+                    tenChuong: ch.title,
+                    soCau: n,
+                    // Gia sư gắn theo BÀI, nên lấy bài đầu chương làm ngữ cảnh
+                    // — đúng cách web làm (`lessonId={lessons[0]?.id}`).
+                    lessonId: (ch.lessons ?? []).sorted { ($0.sortOrder ?? 0) < ($1.sortOrder ?? 0) }.first?.id,
+                    tenMon: course.courseCode)
+            }
+        }
+    }
+
     @ViewBuilder
     private var noiDung: some View {
         let chu = vm.baiDayDu?.content ?? baiHienTai?.description
@@ -594,6 +649,9 @@ final class LessonPlayerViewModel: ObservableObject {
     /// mạng trông y hệt "bài này chưa có câu hỏi" — một câu SAI mà người dùng
     /// sẽ tin. Xem [[feedback_fallback_path_is_where_bugs_hide]].
     @Published var loiTaiBai: String?
+    /// `{sectionId: số câu luyện}` của khoá. Rỗng = chưa tải xong hoặc khoá
+    /// chưa gán câu nào.
+    @Published var soCauLuyen: [Int: Int] = [:]
     @Published var dangLuu = false
     @Published var loi: String?
     /// Vị trí đã lưu của bài đang mở, tính bằng giây.
@@ -609,6 +667,7 @@ final class LessonPlayerViewModel: ObservableObject {
         if !daTaiTienDo {
             daTaiTienDo = true
             await taiTienDo(courseId: courseId)
+            await taiSoCauLuyen(courseId: courseId)
         }
         viTriDaLuu = 0   // sẽ đặt lại bên dưới nếu có bản ghi
 
@@ -619,6 +678,23 @@ final class LessonPlayerViewModel: ObservableObject {
         } catch {
             baiDayDu = nil
             loiTaiBai = error.localizedDescription
+        }
+    }
+
+    /// ⚠️ Máy chủ trả đối tượng JSON có KHOÁ LÀ CHUỖI (`{"12": 193}`) — JSON
+    /// không có khoá số. Giải mã thẳng vào `[Int: Int]` thì `JSONDecoder` chờ
+    /// một MẢNG xen kẽ [khoá, giá trị] và ném; phải qua `[String: Int]` rồi tự
+    /// đổi.
+    private func taiSoCauLuyen(courseId: Int) async {
+        do {
+            let m: [String: Int] = try await APIClient.shared.request(
+                .soCauLuyenTheoChuong(courseId: courseId))
+            soCauLuyen = Dictionary(uniqueKeysWithValues: m.compactMap { k, v in
+                Int(k).map { ($0, v) }
+            })
+        } catch {
+            // Không có số thì chỉ mất cái nút luyện chương, không hỏng bài học.
+            soCauLuyen = [:]
         }
     }
 

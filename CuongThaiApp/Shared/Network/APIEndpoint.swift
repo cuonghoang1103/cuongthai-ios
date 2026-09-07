@@ -323,6 +323,13 @@ enum APIEndpoint {
     // ── Phòng thi ───────────────────────────────────────────────
     /// ⚠️ SỐ NHIỀU: `/api/v1/exams`. `/exam` trả 404.
     case dsDeThi
+    /// Câu trắc nghiệm luyện tập của MỘT chương, gộp từ đề thi thật đã gán.
+    case luyenChuong(sectionId: Int, ngauNhien: Bool, gioiHan: Int)
+    /// Câu thực hành (PE) của chương đó.
+    case luyenChuongThucHanh(sectionId: Int)
+    /// Số câu luyện của TỪNG chương trong một khoá — `{sectionId: số câu}`.
+    /// Công khai (không cần đăng nhập), máy chủ có cache 120s.
+    case soCauLuyenTheoChuong(courseId: Int)
     case deDangLam(examId: Int)
     /// `coAI = true` → "Bắt đầu thi với CuongMini": máy chủ tạo lượt
     /// `aiAssisted`, **không tính giờ** (`expiresAt = null`) và tách hẳn khỏi
@@ -682,6 +689,9 @@ enum APIEndpoint {
         case .aiKiemNguPhap: return "/api/v1/my-language/ai/grammar-check"
         case .aiNoiChuyen: return "/api/v1/my-language/ai/roleplay"
         case .dsDeThi: return "/api/v1/exams"
+        case .luyenChuong(let id, _, _): return "/api/v1/exams/practice/by-section/\(id)"
+        case .luyenChuongThucHanh(let id): return "/api/v1/exams/practice/by-section/\(id)/practical"
+        case .soCauLuyenTheoChuong(let id): return "/api/v1/exams/practice/section-counts/\(id)"
         case .deDangLam(let e): return "/api/v1/exams/\(e)/take"
         case .batDauLuotThi(let e, _): return "/api/v1/exams/\(e)/attempts"
         case .hienDapAn(let a, _): return "/api/v1/exams/attempts/\(a)/ai/reveal"
@@ -1061,6 +1071,11 @@ enum APIEndpoint {
         // được, và tìm/lọc ghi chú cũng hỏng câm y hệt.
         case .searchGifs(let q):
             return q.isEmpty ? nil : ["q": q]
+        case .luyenChuong(_, let ngauNhien, let gioiHan):
+            var m: [String: Any] = [:]
+            if ngauNhien { m["random"] = 1 }
+            if gioiHan > 0 { m["limit"] = gioiHan }
+            return m.isEmpty ? nil : m
         case .tienDoCodeLab(let id):
             return ["trackId": id]
         case .dsDuAn(let dm, let tim, let trang):
