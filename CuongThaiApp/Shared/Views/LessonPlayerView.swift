@@ -115,6 +115,8 @@ struct LessonPlayerView: View {
     @StateObject private var vm = LessonPlayerViewModel()
     @State private var hienMucLuc = false
     @State private var hienGiaSu = false
+    /// Câu quiz đang nhờ AI giải thích. `nil` = hỏi chung về bài (nút nổi).
+    @State private var quizHoi: HoiVeCau?
     @State private var luongDangChon: String?
 
     init(course: Course, sections: [CourseSection], lessonId: Int) {
@@ -181,6 +183,33 @@ struct LessonPlayerView: View {
         // trang như web: trên điện thoại, khối chat nằm lọt giữa bài giảng thì
         // hoặc phải cuộn qua nó mỗi lần, hoặc phải cuộn đi tìm nó mỗi lần hỏi.
         nutGiaSu
+        // ⛔⛔ Sheet gia sư phải gắn Ở ĐÂY, không gắn cạnh sheet mục lục.
+        //
+        // SwiftUI chỉ tôn trọng MỘT `.sheet` trên mỗi view. Trước 07/09/2026
+        // cả hai (`hienGiaSu`, `hienMucLuc`) cùng gắn lên `ZStack`, và cái sau
+        // nuốt cái trước: **nút nổi "Hỏi AI" trong bài học chưa từng mở được
+        // gì**, im lặng, không lỗi. Mục lục chạy nên không ai ngờ.
+        // Đo ra khi làm nút "Hỏi AI vì sao sai" của bài kiểm tra: bấm không ra
+        // gì, và hoá ra không phải nút mới hỏng.
+        .sheet(isPresented: $hienGiaSu) {
+            if let bai = baiHienTai {
+                GiaSuBaiHocView(lessonId: bai.id,
+                                tenBai: bai.title.tachSongNgu(.viet),
+                                tenMon: course.courseCode,
+                                quizContext: quizHoi?.boiCanh ?? [],
+                                cauHoiSan: quizHoi?.cauMoDau)
+                    // ⚠️ `id` phải đổi theo BÀI: `sheet` giữ nguyên view khi
+                    // nội dung bên dưới đổi, nên không có dòng này thì mở gia
+                    // sư ở bài 5 vẫn thấy cuộc hỏi của bài 4 — đúng cái web né
+                    // bằng `useEffect(..., [lessonId])`.
+                    // Kèm cả câu quiz vào `id`: hỏi câu 3 rồi đóng, mở
+                    // câu 5 mà `id` không đổi thì sheet giữ nguyên cuộc hỏi cũ
+                    // và câu mở đầu mới không bao giờ chạy.
+                    .id("\(bai.id)-\(quizHoi?.id ?? "chung")")
+                    .presentationDetents([.fraction(0.68), .large])
+                    .presentationDragIndicator(.visible)
+            }
+        }
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -190,20 +219,6 @@ struct LessonPlayerView: View {
                 } label: {
                     Image(systemName: "list.bullet")
                 }
-            }
-        }
-        .sheet(isPresented: $hienGiaSu) {
-            if let bai = baiHienTai {
-                GiaSuBaiHocView(lessonId: bai.id,
-                                tenBai: bai.title.tachSongNgu(.viet),
-                                tenMon: course.courseCode)
-                    // ⚠️ `id` phải đổi theo BÀI: `sheet` giữ nguyên view khi
-                    // nội dung bên dưới đổi, nên không có dòng này thì mở gia
-                    // sư ở bài 5 vẫn thấy cuộc hỏi của bài 4 — đúng cái web né
-                    // bằng `useEffect(..., [lessonId])`.
-                    .id(bai.id)
-                    .presentationDetents([.fraction(0.68), .large])
-                    .presentationDragIndicator(.visible)
             }
         }
         .sheet(isPresented: $hienMucLuc) {
@@ -226,6 +241,7 @@ struct LessonPlayerView: View {
 
     private var nutGiaSu: some View {
         Button {
+            quizHoi = nil          // nút nổi = hỏi chung, không kèm câu quiz
             hienGiaSu = true
             Haptics.cham()
         } label: {
@@ -273,10 +289,41 @@ struct LessonPlayerView: View {
         }
     }
 
-    /// Bài QUIZ: backend chưa có đường trả nội dung quiz (soi `course.routes.ts`
-    /// 19/08/2026 không thấy). Nói thẳng và đưa người dùng sang web, thay vì
-    /// để một màn trống không giải thích gì.
+    /// Bài QUIZ — làm NGAY TRONG APP.
+    ///
+    /// ⛔ Bản trước ghi ở đây: "backend chưa có đường trả nội dung quiz (soi
+    /// `course.routes.ts` 19/08/2026 không thấy)" rồi đẩy người dùng sang
+    /// Safari. Câu đó SAI. `GET /courses/:id/lessons/:id` trả `quizData` từ
+    /// 11/07/2026 (commit e1a79f7e) — grep sót một lần đã khoá tính năng gần
+    /// hai tháng, và cái chú thích tự tin kia làm không ai đi kiểm lại.
+    /// Xem [[feedback_grep_khong_thay_khong_nghia_la_khong_co]].
+    ///
+    /// Vẫn giữ đường sang web, nhưng chỉ khi bài thật sự KHÔNG có `quizData`
+    /// (bài cũ chưa soạn), và nói đúng lý do.
+    @ViewBuilder
     private var khungQuiz: some View {
+        if let q = vm.baiDayDu?.quizData, !q.cauHoi.isEmpty {
+            BaiKiemTraView(
+                de: q,
+                lessonId: lessonId,
+                tenBai: (baiHienTai?.title ?? "").tachSongNgu(.viet),
+                tenMon: course.courseCode,
+                khiHoiAI: { q in quizHoi = q; hienGiaSu = true },
+                khiNop: {
+                    // Web đánh dấu hoàn thành ngay khi nộp. Chỉ gọi khi CHƯA
+                    // xong, không thì bấm "làm lại rồi nộp" sẽ bỏ đánh dấu.
+                    if !vm.daXong.contains(lessonId) {
+                        Task { await vm.doiHoanThanh(courseId: course.id, lessonId: lessonId) }
+                    }
+                })
+        } else if vm.dangTaiBai {
+            HStack { Spacer(); ProgressView(); Spacer() }.padding(.vertical, Spacing.xl)
+        } else {
+            khungQuizTrong
+        }
+    }
+
+    private var khungQuizTrong: some View {
         VStack(spacing: Spacing.md) {
             Image(systemName: "square.and.pencil")
                 .font(.system(size: 40))
@@ -284,7 +331,8 @@ struct LessonPlayerView: View {
             Text("Bài kiểm tra")
                 .font(.titleMedium)
                 .foregroundColor(AppColors.textPrimary)
-            Text("Phần kiểm tra hiện làm trên website. Tiến độ vẫn được tính chung.")
+            Text(vm.loiTaiBai.map { String(format: "Không tải được bài: %@", $0) }
+                 ?? "Bài này chưa có bộ câu hỏi trong hệ thống. Bản trên website có thể đã được soạn thêm.")
                 .font(.bodySmall)
                 .foregroundColor(AppColors.textSecondary)
                 .multilineTextAlignment(.center)
@@ -541,6 +589,11 @@ struct MucLucView: View {
 final class LessonPlayerViewModel: ObservableObject {
     @Published var daXong: Set<Int> = []
     @Published var baiDayDu: CourseLesson?
+    @Published var dangTaiBai = false
+    /// Hỏng khi tải bài. Phải HIỆN RA: với bài QUIZ, `baiDayDu == nil` vì mất
+    /// mạng trông y hệt "bài này chưa có câu hỏi" — một câu SAI mà người dùng
+    /// sẽ tin. Xem [[feedback_fallback_path_is_where_bugs_hide]].
+    @Published var loiTaiBai: String?
     @Published var dangLuu = false
     @Published var loi: String?
     /// Vị trí đã lưu của bài đang mở, tính bằng giây.
@@ -550,6 +603,9 @@ final class LessonPlayerViewModel: ObservableObject {
 
     func tai(courseId: Int, lessonId: Int) async {
         baiDayDu = nil
+        loiTaiBai = nil
+        dangTaiBai = true
+        defer { dangTaiBai = false }
         if !daTaiTienDo {
             daTaiTienDo = true
             await taiTienDo(courseId: courseId)
@@ -562,6 +618,7 @@ final class LessonPlayerViewModel: ObservableObject {
             baiDayDu = try await APIClient.shared.request(.getLesson(courseId: courseId, lessonId: lessonId))
         } catch {
             baiDayDu = nil
+            loiTaiBai = error.localizedDescription
         }
     }
 

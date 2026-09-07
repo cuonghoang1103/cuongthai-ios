@@ -288,13 +288,27 @@ struct RichContentView: UIViewRepresentable {
               box.appendChild(t);
             });
 
+            // ⛔ ĐO THEO `body`, KHÔNG theo `documentElement`.
+            //
+            // `documentElement.scrollHeight` không bao giờ NHỎ HƠN khung nhìn,
+            // mà khung nhìn ở đây chính là cái khung SwiftUI vừa đặt theo số
+            // ta báo về. Thành ra: báo cao → khung cao → lần đo sau vẫn thấy
+            // "cao" (vì bằng khung) → chiều cao chỉ có TĂNG, không bao giờ co
+            // lại. Đo thật 07/09/2026 ở bài QUIZ của SWR302: mô tả bài dài
+            // một dòng mà chiếm gần hai màn hình trống. Trang ngắn thì không
+            // ai thấy, trang dài mới lộ.
+            //
+            // `body` không kéo giãn theo khung nhìn (CSS ở trên không đặt
+            // height cho html/body), nên `body.scrollHeight` là chiều cao
+            // THẬT của nội dung.
             function bao() {
-              var h = document.documentElement.scrollHeight;
-              window.webkit.messageHandlers.chieuCao.postMessage(h);
+              var b = document.body;
+              var h = Math.ceil(Math.max(b.scrollHeight, b.getBoundingClientRect().height));
+              if (h > 0) window.webkit.messageHandlers.chieuCao.postMessage(h);
             }
             // Báo lại mỗi lần bố cục đổi: ảnh tải xong, phông tải xong, xoay máy.
             // Đo một lần lúc load xong là thiếu — chiều cao lúc đó chưa đúng.
-            new ResizeObserver(bao).observe(document.documentElement);
+            new ResizeObserver(bao).observe(document.body);
             window.addEventListener('load', bao);
             bao();
           </script>

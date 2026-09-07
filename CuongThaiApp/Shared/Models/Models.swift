@@ -757,6 +757,42 @@ struct CourseDetail: Codable, Identifiable {
 // `GET /courses/:id/curriculum` trả `{ success, data: [chương] }` — MẢNG chương
 // ở tầng gốc, mỗi chương ôm mảng bài. Đo thật trên khoá PostgreSQL: 11 chương,
 // 54 bài (44 VIDEO + 10 QUIZ), tất cả `videoPlatform: EMBED`.
+// ── Bài kiểm tra tự soạn trong bài học ──────────────────────────
+
+/// Khớp `QuizData` của web (`LessonQuizPlayer.tsx`).
+struct QuizBai: Codable, Hashable {
+    let timeLimitSeconds: Int?
+    let questions: [QuizCauHoi]?
+
+    var cauHoi: [QuizCauHoi] { questions ?? [] }
+    var giay: Int { max(0, timeLimitSeconds ?? 0) }
+}
+
+struct QuizCauHoi: Codable, Hashable, Identifiable {
+    let id: String
+    /// "MC" (mặc định) | "ESSAY"
+    let type: String?
+    let question: String
+    let code: String?
+    let codeLang: String?
+    let options: [String]?
+    /// Bản CŨ ghi một đáp án; bản mới ghi mảng. Phải đọc được cả hai.
+    let correctIndex: Int?
+    let correctIndexes: [Int]?
+    let sampleAnswer: String?
+    let explanation: String?
+    let points: Double?
+
+    var laTuLuan: Bool { type == "ESSAY" }
+    var luaChon: [String] { options ?? [] }
+    var diem: Double { points ?? 0 }
+    var dapAnDung: Set<Int> {
+        if let m = correctIndexes, !m.isEmpty { return Set(m) }
+        if let i = correctIndex { return [i] }
+        return []
+    }
+}
+
 struct CourseSection: Codable, Identifiable, Hashable {
     let id: Int
     let courseId: Int?
@@ -791,6 +827,14 @@ struct CourseLesson: Codable, Identifiable, Hashable {
     let teachingNotes: String?
     /// KHÔNG có trong `/curriculum` — chỉ có ở `/courses/:id/lessons/:id`.
     let content: String?
+    /// Nội dung bài kiểm tra tự soạn của bài QUIZ.
+    ///
+    /// ⚠️ Cũng CHỈ có ở `/courses/:id/lessons/:id`, và chỉ khi người dùng có
+    /// quyền xem bài (`showFull`). Trước 07/09/2026 app ghi trong mã rằng
+    /// "backend chưa có đường trả nội dung quiz" và đẩy người dùng sang web —
+    /// sai: `course.routes.ts` trả trường này từ 11/07/2026, một lần grep sót
+    /// khoá luôn tính năng suốt gần hai tháng.
+    let quizData: QuizBai?
 
     func hash(into hasher: inout Hasher) { hasher.combine(id) }
     static func == (l: CourseLesson, r: CourseLesson) -> Bool { l.id == r.id }

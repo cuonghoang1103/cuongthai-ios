@@ -91,9 +91,16 @@ final class GiaSuBaiVM: ObservableObject {
     @Published var loi: String?
 
     let lessonId: Int
+    /// Các câu quiz học viên đang làm — gửi kèm mỗi lượt hỏi để "câu 3" tra ra
+    /// đúng câu. Hình dạng phải khớp `TutorAskOpts.quizContext` của
+    /// `courseTutor.service.ts`: {n, prompt, options, correctIndexes, explanation}.
+    var quizContext: [[String: Any]] = []
     private var viec: Task<Void, Never>?
 
-    init(lessonId: Int) { self.lessonId = lessonId }
+    init(lessonId: Int, quizContext: [[String: Any]] = []) {
+        self.lessonId = lessonId
+        self.quizContext = quizContext
+    }
 
     /// - Parameters:
     ///   - hienCauHoi: `false` khi bấm "Bản tiếng Anh"/"Hỏi lại mới" — hỏi lại
@@ -132,7 +139,8 @@ final class GiaSuBaiVM: ObservableObject {
             var coChu = false
             for await sk in LuongGiaSuBai.hoi(lessonId: lessonId, cauHoi: q,
                                               lichSu: lichSu, tiengAnh: tiengAnh,
-                                              khoaCache: khoaCache, lamMoi: lamMoi) {
+                                              khoaCache: khoaCache, lamMoi: lamMoi,
+                                              quizContext: quizContext) {
                 if Task.isCancelled { break }
                 switch sk {
                 case .mau(let t):
@@ -174,6 +182,7 @@ final class GiaSuBaiVM: ObservableObject {
         if tiengAnh { than["english"] = true }
         if let khoaCache { than["cacheKey"] = khoaCache }
         if lamMoi { than["refresh"] = true }
+        if !quizContext.isEmpty { than["quizContext"] = quizContext }
         do {
             let r: TraLoiGiaSu = try await APIClient.shared.request(
                 .hoiGiaSuBai(lessonId: lessonId, than: than))
@@ -250,10 +259,20 @@ struct GiaSuBaiHocView: View {
     @State private var chu = ""
     @FocusState private var dangGo: Bool
 
-    init(lessonId: Int, tenBai: String, tenMon: String?) {
+    /// Câu hỏi bắn đi NGAY khi mở, dùng khi vào từ một câu quiz sai. Người
+    /// dùng bấm "Hỏi AI vì sao sai" là muốn câu trả lời, không phải muốn một ô
+    /// trống để tự gõ lại đề.
+    private let cauHoiSan: String?
+
+    init(lessonId: Int,
+         tenBai: String,
+         tenMon: String?,
+         quizContext: [[String: Any]] = [],
+         cauHoiSan: String? = nil) {
         self.tenBai = tenBai
         self.tenMon = tenMon
-        _vm = StateObject(wrappedValue: GiaSuBaiVM(lessonId: lessonId))
+        self.cauHoiSan = cauHoiSan
+        _vm = StateObject(wrappedValue: GiaSuBaiVM(lessonId: lessonId, quizContext: quizContext))
     }
 
     var body: some View {
@@ -264,6 +283,12 @@ struct GiaSuBaiHocView: View {
                 khungGo
             }
             .background(AppColors.backgroundPrimary)
+            // Vào từ một câu quiz sai thì HỎI LUÔN. `.task` chứ không
+            // `.onAppear`: onAppear chạy lại mỗi lần màn quay lại tiền cảnh,
+            // và sẽ hỏi lại câu cũ thêm một lượt nữa (tính tiền thêm một lượt).
+            .task {
+                if let c = cauHoiSan, vm.luot.isEmpty { vm.hoi(c) }
+            }
             .navigationTitle(tenMon.map { "Hỏi AI · \($0)" } ?? "Hỏi AI")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -499,7 +524,8 @@ enum LuongGiaSuBai {
                     lichSu: [[String: String]],
                     tiengAnh: Bool,
                     khoaCache: String?,
-                    lamMoi: Bool) -> AsyncStream<SuKienHoiDap> {
+                    lamMoi: Bool,
+                    quizContext: [[String: Any]] = []) -> AsyncStream<SuKienHoiDap> {
         // ⚠️ KHÔNG tự chèn lệnh ép tiếng Anh vào câu hỏi nữa. Bản đầu của app
         // phải tự nhắc vì máy chủ chỉ ghi lệnh đó ở CUỐI system prompt và model
         // bỏ qua (lượt mồi của trợ lý bằng tiếng Việt lấn át — xem
@@ -511,6 +537,7 @@ enum LuongGiaSuBai {
         if tiengAnh { than["english"] = true }
         if let khoaCache { than["cacheKey"] = khoaCache }
         if lamMoi { than["refresh"] = true }
+        if !quizContext.isEmpty { than["quizContext"] = quizContext }
 
         return LuongHoiDap.doc(
             duong: "/api/v1/courses/lessons/\(lessonId)/ai/ask-stream",
