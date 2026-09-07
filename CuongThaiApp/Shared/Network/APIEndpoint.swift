@@ -222,6 +222,14 @@ enum APIEndpoint {
 
     // Learning
     case getCourses(page: Int, size: Int, keyword: String?)
+    /// Khoá của **Academy FPT** (môn theo học kỳ).
+    ///
+    /// ⚠️ PHẢI là endpoint riêng, không dùng `getCourses`. Máy chủ đặt
+    /// `where.semesterId = academy ? { not: null } : null` — tức KHÔNG truyền
+    /// cờ `academy` thì nó trả về ĐÚNG những khoá KHÔNG thuộc Academy. Tìm
+    /// "SWR302" bằng `getCourses` thì vĩnh viễn không ra gì, dù môn đó có đủ
+    /// bài trên web.
+    case getCoursesAcademy(page: Int, size: Int, keyword: String?)
     case getCourseDetail(slug: String)
     case enrollCourse(id: Int)
     /// Mục lục khoá — trả MẢNG chương ở tầng gốc, đi qua `requestList`.
@@ -617,7 +625,7 @@ enum APIEndpoint {
         case .suaDongBang(let id, _): return "/api/v1/notes-databases/rows/\(id)"
         case .xoaDongBang(let id): return "/api/v1/notes-databases/rows/\(id)"
 
-        case .getCourses: return "/api/v1/courses"
+        case .getCourses, .getCoursesAcademy: return "/api/v1/courses"
         case .getCourseDetail(let slug): return "/api/v1/courses/\(slug)"
         case .enrollCourse(let id): return "/api/v1/courses/\(id)/enroll"
         case .getCurriculum(let id): return "/api/v1/courses/\(id)/curriculum"
@@ -1126,6 +1134,11 @@ enum APIEndpoint {
             return m
         case .getCourses(let p, let s, let k):
             var m: [String: Any] = ["page": p, "size": s]
+            if let keyword = k { m["keyword"] = keyword }
+            return m
+        case .getCoursesAcademy(let p, let s, let k):
+            // `academy=1` là thứ DUY NHẤT phân biệt hai rổ khoá học.
+            var m: [String: Any] = ["page": p, "size": s, "academy": 1]
             if let keyword = k { m["keyword"] = keyword }
             return m
         case .getNotifications(let c, let l):

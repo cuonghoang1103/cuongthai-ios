@@ -56,7 +56,7 @@ struct TongQuanView: View {
             .sheet(item: Binding(
                 get: { monDangMo.map(MonMo.init) },
                 set: { monDangMo = $0?.ma })) { m in
-                HocGiChoMonView(mon: m.ma)
+                HocGiChoMonView(mon: m.ma, vm: vm)
             }
             .alert(T("Đã kết thúc ngày"), isPresented: Binding(
                 get: { vm.vuaCong != nil }, set: { if !$0 { vm.vuaCong = nil } })) {
