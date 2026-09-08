@@ -76,6 +76,7 @@ private struct TheNgonNgu: View {
 // ── Trang chủ một ngôn ngữ ──────────────────────────────────────
 
 struct NgonNguHomeView: View {
+    @State private var moChonGiong = false
     let ngonNgu: NgonNgu
     @StateObject private var vm = ChuDeVM()
     /// Khối "chủ đề ít từ" mặc định GẤP. Mở sẵn thì đúng bằng cũ.
@@ -156,6 +157,20 @@ struct NgonNguHomeView: View {
         .background(AppColors.backgroundPrimary)
         .navigationTitle("\(ngonNgu.co) \(ngonNgu.name)")
         .navigationBarTitleDisplayMode(.inline)
+        // Lối vào chọn giọng đặt ngay đây chứ không giấu trong Cài đặt chung:
+        // giọng là thứ người ta muốn đổi ĐÚNG LÚC đang nghe thấy nó khó chịu,
+        // và lúc đó họ đang ở màn này.
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { moChonGiong = true } label: {
+                    Image(systemName: "speaker.wave.2.circle")
+                }
+                .accessibilityLabel(T("Giọng đọc"))
+            }
+        }
+        .sheet(isPresented: $moChonGiong) {
+            ChonGiongView(code: ngonNgu.code, tenNgonNgu: ngonNgu.name)
+        }
         .task { if vm.tatCa.isEmpty { await vm.tai(ngonNgu.code) } }
     }
 

@@ -18,6 +18,12 @@ final class DocTu: NSObject, ObservableObject {
     static let shared = DocTu()
     private let may = AVSpeechSynthesizer()
     @Published private(set) var dangDoc: Int?
+    /// Đang CHỜ máy nhà đọc — chỉ đúng với giọng máy nhà, giọng trong máy
+    /// phát ra tức thì.
+    @Published private(set) var dangCho = false
+    @Published var loi: String?
+    private var phatNha: AVAudioPlayer?
+    private var viecNha: Task<Void, Never>?
 
     private override init() {
         super.init()
@@ -48,10 +54,29 @@ final class DocTu: NSObject, ObservableObject {
 
     func doc(_ chu: String, code: String, id: Int? = nil, chamHon: Bool = false) {
         let sach = chu.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !sach.isEmpty, let ma = Self.maGiong(code),
-              let giong = AVSpeechSynthesisVoice(language: ma) else { return }
+        guard !sach.isEmpty, let ma = Self.maGiong(code) else { return }
 
-        if may.isSpeaking { may.stopSpeaking(at: .immediate) }
+        // Người dùng chọn giọng máy nhà (vd robot tiếng Anh) thì đi đường
+        // mạng, không dùng bộ đọc trong máy.
+        if case .mayNha(let maGiongNha)? = CaiDatGiong.shared.luaChon(code)?.nguon {
+            docQuaMayNha(sach, giong: maGiongNha, id: id)
+            return
+        }
+
+        // Giọng người dùng đã chọn; không chọn thì lấy mặc định của hệ thống.
+        // `AVSpeechSynthesisVoice(identifier:)` trả nil khi người dùng ĐÃ GỠ
+        // gói giọng đó trong Cài đặt — rơi về mặc định thay vì im lặng.
+        let giong: AVSpeechSynthesisVoice
+        if case .trongMay(let idGiong)? = CaiDatGiong.shared.luaChon(code)?.nguon,
+           let g = AVSpeechSynthesisVoice(identifier: idGiong) {
+            giong = g
+        } else if let g = AVSpeechSynthesisVoice(language: ma) {
+            giong = g
+        } else {
+            return
+        }
+
+        dungTatCa()
 
         // `.ambient` + `.mixWithOthers`: tôn trọng công tắc im lặng và không
         // ngắt nhạc người dùng đang nghe. Cùng lý lẽ với tiếng tin nhắn.
@@ -63,16 +88,89 @@ final class DocTu: NSObject, ObservableObject {
         cau.voice = giong
         // Tốc độ mặc định của Apple đọc tiếng Nhật/Trung nhanh hơn mức người
         // mới học bắt kịp. 0,42 nghe rõ từng âm mà chưa tới mức lè nhè.
-        cau.rate = chamHon ? 0.32 : 0.42
+        // Tốc độ do người dùng đặt (mặc định 0,45). "Chậm hơn" trừ đi 0,10.
+        let td = CaiDatGiong.shared.tocDo
+        cau.rate = Float(max(0.25, chamHon ? td - 0.10 : td))
         cau.pitchMultiplier = 1.0
         cau.postUtteranceDelay = 0
         dangDoc = id
         may.speak(cau)
     }
 
-    func dung() {
-        may.stopSpeaking(at: .immediate)
+    func dung() { dungTatCa() }
+
+    private func dungTatCa() {
+        if may.isSpeaking { may.stopSpeaking(at: .immediate) }
+        phatNha?.stop(); phatNha = nil
+        viecNha?.cancel(); viecNha = nil
         dangDoc = nil
+    }
+
+    // ── Giọng chạy ở máy nhà ─────────────────────────────────────
+    //
+    // Đường này KHÁC hẳn bộ đọc trong máy: nó cần mạng, mất vài giây, và là
+    // việc BẤT ĐỒNG BỘ (đặt việc → hỏi lại tới khi có tiếng). Vì thế có
+    // `dangCho` riêng để giao diện hiện vòng xoay — không thì người dùng bấm
+    // loa rồi tưởng hỏng vì mấy giây đầu chẳng có gì.
+    private func docQuaMayNha(_ chu: String, giong: String, id: Int?) {
+        dungTatCa()
+        dangDoc = id
+        dangCho = true
+        viecNha = Task {
+            defer { Task { @MainActor in self.dangCho = false } }
+            do {
+                let wav = try await Self.layTiengNha(String(chu.prefix(600)), giong: giong)
+                try Task.checkCancellation()
+                try await MainActor.run {
+                    // `.playback`: người dùng chủ động bấm loa thì họ muốn
+                    // nghe, kể cả khi đang gạt nút im lặng.
+                    try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio)
+                    try? AVAudioSession.sharedInstance().setActive(true)
+                    let m = try AVAudioPlayer(data: wav)
+                    m.delegate = self
+                    m.prepareToPlay(); m.play()
+                    self.phatNha = m
+                }
+            } catch {
+                await MainActor.run {
+                    self.dangDoc = nil
+                    if !(error is CancellationError) { self.loi = T("Máy nhà không đọc được") }
+                }
+            }
+        }
+    }
+
+    /// Đặt việc rồi hỏi lại tới khi có tiếng. Hỏi thưa dần — hỏi dồn dập chỉ
+    /// tốn pin và làm nặng máy nhà chứ không nhanh hơn.
+    private static func layTiengNha(_ chu: String, giong: String) async throws -> Data {
+        struct Dat: Decodable { let jobId: String }
+        let dat: Dat = try await APIClient.shared.request(.datViecDoc(text: chu, voice: giong))
+        var cho: UInt64 = 600_000_000
+        for _ in 0..<25 {
+            try Task.checkCancellation()
+            try await Task.sleep(nanoseconds: cho)
+            cho = min(cho + 200_000_000, 2_000_000_000)
+            guard let url = URL(string: APIClient.diaChiGoc + "/api/v1/voice-mini/tts/\(dat.jobId)")
+            else { throw APIError.invalidURL }
+            var req = URLRequest(url: url)
+            if let t = StorageManager.shared.getAuthToken() {
+                req.setValue("Bearer \(t)", forHTTPHeaderField: "Authorization")
+            }
+            let (d, resp) = try await URLSession.shared.data(for: req)
+            guard let http = resp as? HTTPURLResponse else { continue }
+            if http.statusCode == 202 { continue }          // còn đang chạy
+            guard http.statusCode == 200, d.count > 1024 else {
+                throw APIError.serverError("Máy đọc trả lỗi \(http.statusCode)")
+            }
+            return d
+        }
+        throw APIError.serverError("Máy đọc lâu quá")
+    }
+}
+
+extension DocTu: AVAudioPlayerDelegate {
+    nonisolated func audioPlayerDidFinishPlaying(_ p: AVAudioPlayer, successfully f: Bool) {
+        Task { @MainActor in self.dangDoc = nil; self.phatNha = nil }
     }
 }
 

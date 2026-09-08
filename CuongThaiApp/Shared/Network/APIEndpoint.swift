@@ -194,7 +194,7 @@ enum APIEndpoint {
     /// Cắt bỏ từ một lượt trở đi — dùng khi sửa câu hỏi rồi hỏi lại.
     case catPhien(id: String, tuChiSo: Int)
     /// Đặt việc đọc — trả `{ jobId }`, KHÔNG trả tiếng ngay. Xem `MayDoc`.
-    case datViecDoc(text: String)
+    case datViecDoc(text: String, voice: String? = nil)
     /// Xoá hội thoại CHO RIÊNG MÌNH — máy chủ đặt `deletedAt` theo người xem,
     /// người kia vẫn thấy nguyên. Khôi phục ở tab "Đã xoá".
     case xoaHoiThoai(threadId: Int)
@@ -1005,7 +1005,10 @@ enum APIEndpoint {
         case .chuyenThuMuc(_, let fid):
             // `null` là BỎ khỏi thư mục — khác hẳn không gửi trường.
             return ["folderId": fid as Any]
-        case .datViecDoc(let t): return ["text": t]
+        case .datViecDoc(let t, let v):
+            var m: [String: Any] = ["text": t]
+            if let v { m["voice"] = v }
+            return m
         case .tachNhanhPhien(_, let i): return ["denChiSo": i]
         case .catPhien(_, let i): return ["tuChiSo": i]
         case .baoCaoTraLoiAI(let mid):
