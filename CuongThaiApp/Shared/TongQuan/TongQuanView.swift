@@ -882,19 +882,20 @@ struct HangBuoiHoc: View {
     private func dongDem(_ tt: TrangThaiBuoi) -> some View {
         switch tt {
         case .chuaToi(let phut):
-            // Quá xa thì không hiện — "còn 9 giờ 40" chẳng giúp gì, chỉ chật chỗ.
-            if phut <= 180 {
-                HStack(spacing: 5) {
-                    Image(systemName: "hourglass")
-                        .font(.system(size: 10, weight: .semibold))
-                    Text(String(format: T("Vào học sau %@"), TrangThaiBuoi.doDai(phut)))
-                        .font(.system(size: 12, weight: .semibold))
-                    Spacer(minLength: 0)
-                }
-                // Dưới 15 phút thì đổi sang màu cảnh báo: đây là lúc phải
-                // đứng dậy đi, không phải lúc đọc cho biết.
-                .foregroundColor(phut <= 15 ? AppColors.warning : AppColors.primary)
+            // ⚠️ Bản đầu giấu đếm ngược khi còn hơn 3 tiếng, vì tôi cho rằng
+            // "còn 5 giờ 49" là thừa. Sai: người dùng xem lịch lúc 1–2 giờ
+            // sáng để biết mai mấy giờ phải dậy, và đó CHÍNH LÀ lúc con số
+            // xa nhất lại có ích nhất. Nay luôn hiện.
+            HStack(spacing: 5) {
+                Image(systemName: phut <= 15 ? "figure.walk" : "hourglass")
+                    .font(.system(size: 10, weight: .semibold))
+                Text(String(format: T("Vào học sau %@"), TrangThaiBuoi.doDai(phut)))
+                    .font(.system(size: 12, weight: .semibold))
+                Spacer(minLength: 0)
             }
+            // Dưới 15 phút thì đổi sang màu cảnh báo: đây là lúc phải
+            // đứng dậy đi, không phải lúc đọc cho biết.
+            .foregroundColor(phut <= 15 ? AppColors.warning : AppColors.primary)
 
         case .dangHoc(let conLai, let tiLe):
             VStack(spacing: 5) {
