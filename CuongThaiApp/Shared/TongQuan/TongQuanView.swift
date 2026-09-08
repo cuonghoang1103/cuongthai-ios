@@ -20,6 +20,10 @@ struct TongQuanView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: Spacing.lg) {
                     dauTrang
+                    // Robot chào mừng — bản iOS của con robot trên web, vẽ
+                    // thẳng bằng SwiftUI Shape nên không cần tài nguyên ảnh.
+                    RobotChaoMung(ten: appState.currentUser?.displayName
+                                  ?? appState.currentUser?.username)
                     theSo
                     if vm.buoiKeTiep != nil || !vm.hocHomNay.isEmpty { khoiHocHomNay }
                     khoiViec
