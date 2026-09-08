@@ -82,6 +82,26 @@ struct LuotGiaSu: Identifiable, Equatable {
     var goiTin: [String: String] { ["role": cuaToi ? "user" : "assistant", "content": noiDung] }
 }
 
+// MARK: - Câu hỏi thường gặp (đã lưu trên máy chủ)
+
+/// Một lượt hỏi–đáp đã được lưu cho bài này, của bất kỳ ai.
+///
+/// ⚠️ `answer` là NGUYÊN VĂN, không cắt — máy chủ cố ý trả đủ. Cắt ở client
+/// thì mục này mất hẳn ý nghĩa: người đọc lại vẫn phải hỏi AI một lượt nữa
+/// để có phần đuôi, tức là vẫn tốn tiền đúng như chưa có mục này.
+struct CauHoiLuu: Codable, Identifiable, Equatable {
+    let id: Int
+    let question: String
+    let answer: String
+    let lang: String?
+    let nguoiHoi: String?
+    let cuaToi: Bool?
+
+    var laTiengAnh: Bool { (lang ?? "vi").lowercased().hasPrefix("en") }
+}
+
+private struct GoiCauHoiLuu: Codable { let items: [CauHoiLuu] }
+
 // MARK: - ViewModel
 
 @MainActor
@@ -89,6 +109,12 @@ final class GiaSuBaiVM: ObservableObject {
     @Published var luot: [LuotGiaSu] = []
     @Published var dangHoi = false
     @Published var loi: String?
+
+    /// Câu hỏi thường gặp của bài — của mọi người, không riêng mình.
+    @Published var thuongGap: [CauHoiLuu] = []
+    @Published var dangTaiThuongGap = false
+    /// Lượt nào đang mở xem đầy đủ.
+    @Published var dangMo: Set<Int> = []
 
     let lessonId: Int
     /// Các câu quiz học viên đang làm — gửi kèm mỗi lượt hỏi để "câu 3" tra ra
@@ -246,6 +272,43 @@ final class GiaSuBaiVM: ObservableObject {
     }
 
     func dung() { viec?.cancel(); viec = nil; dangHoi = false }
+
+    /// Nạp "câu hỏi thường gặp". Im lặng khi hỏng: đây là phần THÊM, hỏng nó
+    /// không được làm hỏng màn hỏi đáp — người dùng vẫn hỏi được như thường.
+    func taiThuongGap() async {
+        guard !dangTaiThuongGap else { return }
+        dangTaiThuongGap = true
+        defer { dangTaiThuongGap = false }
+        do {
+            let goi: GoiCauHoiLuu = try await APIClient.shared.request(.cauHoiThuongGap(lessonId: lessonId))
+            thuongGap = goi.items
+        } catch {
+            // Không đặt `loi`: bảng lỗi đó nói về việc HỎI, không phải về mục này.
+        }
+    }
+
+    /// Xoá một lượt đã lưu. Máy chủ mới là nơi quyết định quyền (người hỏi
+    /// hoặc admin); ở đây chỉ gỡ khỏi danh sách khi máy chủ đã đồng ý.
+    func xoaThuongGap(_ id: Int) async {
+        do {
+            let _: EmptyResponse = try await APIClient.shared.request(
+                .xoaCauHoiThuongGap(lessonId: lessonId, askId: id))
+            thuongGap.removeAll { $0.id == id }
+            dangMo.remove(id)
+        } catch {
+            loi = "Không xoá được câu hỏi này."
+        }
+    }
+
+    /// Hỏi lại đúng một câu đã lưu — nhưng KHÔNG gọi AI: nhét thẳng câu trả
+    /// lời cũ vào hội thoại. Đó là toàn bộ lý do mục này tồn tại.
+    func dungLaiCauTraLoi(_ c: CauHoiLuu) {
+        luot.append(LuotGiaSu(cuaToi: true, noiDung: c.question))
+        var l = LuotGiaSu(cuaToi: false, noiDung: c.answer)
+        l.coSan = true
+        l.laTiengAnh = c.laTiengAnh
+        luot.append(l)
+    }
 }
 
 // MARK: - Màn hình
@@ -288,6 +351,12 @@ struct GiaSuBaiHocView: View {
             // và sẽ hỏi lại câu cũ thêm một lượt nữa (tính tiền thêm một lượt).
             .task {
                 if let c = cauHoiSan, vm.luot.isEmpty { vm.hoi(c) }
+                await vm.taiThuongGap()
+            }
+            // Hỏi xong thì lượt vừa rồi đã được máy chủ lưu — nạp lại để nó
+            // xuất hiện ngay trong mục dưới, không phải đóng mở lại màn hình.
+            .onChange(of: vm.dangHoi) { cu, moi in
+                if cu && !moi { Task { await vm.taiThuongGap() } }
             }
             .navigationTitle(tenMon.map { "Hỏi AI · \($0)" } ?? "Hỏi AI")
             .navigationBarTitleDisplayMode(.inline)
@@ -314,6 +383,7 @@ struct GiaSuBaiHocView: View {
                     ForEach(Array(vm.luot.enumerated()), id: \.element.id) { i, l in
                         bongBong(l, i)
                     }
+                    if !vm.thuongGap.isEmpty { mucThuongGap }
                     Color.clear.frame(height: 1).id("cuoi")
                 }
                 .padding(Spacing.md)
@@ -410,6 +480,115 @@ struct GiaSuBaiHocView: View {
                 }
                 Spacer(minLength: 0)
             }
+        }
+    }
+
+    // ── Câu hỏi thường gặp ──────────────────────────────────────
+    //
+    // Vì sao có mục này: mỗi lượt hỏi AI là một lần tính tiền, mà phần lớn
+    // câu hỏi trên một bài học là TRÙNG NHAU. Người thứ hai gặp đúng chỗ khó
+    // ấy chỉ cần mở ra đọc — nguyên văn câu trả lời cũ, tức thì, không tốn
+    // thêm lượt nào. Web đã có; đây là bản iOS của đúng mục đó.
+    private var mucThuongGap: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            HStack(spacing: 6) {
+                Image(systemName: "bookmark.fill")
+                    .font(.system(size: 12)).foregroundColor(AppColors.primary)
+                Text("Câu hỏi thường gặp")
+                    .font(.system(size: 13.5, weight: .semibold))
+                    .foregroundColor(AppColors.textPrimary)
+                Text("\(vm.thuongGap.count)")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(AppColors.primary)
+                    .padding(.horizontal, 6).padding(.vertical, 2)
+                    .background(Capsule().fill(AppColors.primary.opacity(0.14)))
+                Spacer(minLength: 0)
+            }
+            Text("Người học khác đã hỏi ở bài này. Mở ra đọc là xong — không tốn thêm lượt hỏi AI nào.")
+                .font(.system(size: 11.5))
+                .foregroundColor(AppColors.textTertiary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            ForEach(vm.thuongGap) { c in dongThuongGap(c) }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(Spacing.md)
+        .background(RoundedRectangle(cornerRadius: CornerRadius.medium)
+            .fill(AppColors.backgroundCard))
+        .padding(.top, Spacing.sm)
+    }
+
+    @ViewBuilder
+    private func dongThuongGap(_ c: CauHoiLuu) -> some View {
+        let mo = vm.dangMo.contains(c.id)
+        VStack(alignment: .leading, spacing: 8) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.18)) {
+                    if mo { vm.dangMo.remove(c.id) } else { vm.dangMo.insert(c.id) }
+                }
+            } label: {
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: mo ? "chevron.down" : "chevron.right")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(AppColors.textTertiary)
+                        .padding(.top, 2)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(c.question)
+                            .font(.system(size: 13.5, weight: .medium))
+                            .foregroundColor(AppColors.textPrimary)
+                            .multilineTextAlignment(.leading)
+                            .lineLimit(mo ? nil : 2)
+                            .fixedSize(horizontal: false, vertical: mo)
+                        HStack(spacing: 6) {
+                            if let n = c.nguoiHoi {
+                                Text(n).font(.system(size: 10.5))
+                                    .foregroundColor(AppColors.textTertiary)
+                            }
+                            if c.laTiengAnh {
+                                Text("EN").font(.system(size: 9, weight: .bold))
+                                    .foregroundColor(AppColors.textTertiary)
+                                    .padding(.horizontal, 4).padding(.vertical, 1)
+                                    .background(Capsule().fill(AppColors.backgroundTertiary))
+                            }
+                        }
+                    }
+                    Spacer(minLength: 0)
+                }
+                // Nút chỉ có chữ thì vùng bấm bám sát từng chữ — bấm vào
+                // khoảng trống bên phải không ăn. `.contentShape` mở vùng
+                // bấm ra cả hàng.
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            if mo {
+                // Đúng bộ dựng của bong bóng trả lời, để hai chỗ không hiện
+                // khác nhau. `xong: true` — câu này đã lưu, không còn chảy.
+                TraLoiAI(chu: c.answer, xong: true)
+                HStack(spacing: Spacing.md) {
+                    Button { vm.dungLaiCauTraLoi(c) } label: {
+                        Label("Đưa vào hội thoại", systemImage: "arrow.down.message")
+                            .font(.system(size: 11.5, weight: .medium))
+                            .foregroundColor(AppColors.primary)
+                    }
+                    .buttonStyle(.plain)
+                    if c.cuaToi == true {
+                        Button(role: .destructive) {
+                            Task { await vm.xoaThuongGap(c.id) }
+                        } label: {
+                            Label("Xoá", systemImage: "trash")
+                                .font(.system(size: 11.5, weight: .medium))
+                                .foregroundColor(AppColors.textTertiary)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    Spacer(minLength: 0)
+                }
+            }
+        }
+        .padding(.vertical, 8)
+        .overlay(alignment: .top) {
+            Rectangle().fill(AppColors.border).frame(height: 0.5)
         }
     }
 

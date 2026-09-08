@@ -256,6 +256,16 @@ enum APIEndpoint {
     /// không gửi nội dung bài — gửi kèm chỉ tốn token mà máy chủ vẫn tự đọc lại.
     case hoiGiaSuBai(lessonId: Int, than: [String: Any])
 
+    /// "Câu hỏi thường gặp" của một bài — mọi người đã hỏi gì, AI trả lời sao.
+    ///
+    /// CHUNG cho mọi người học, không riêng tư. Đó là toàn bộ giá trị: người
+    /// thứ hai gặp đúng chỗ khó ấy đọc lại được NGUYÊN VĂN câu trả lời cũ,
+    /// tức thì và KHÔNG tốn thêm một lượt gọi model nào. Máy chủ trả tối đa
+    /// 40 lượt, mới nhất trước.
+    case cauHoiThuongGap(lessonId: Int)
+    /// Xoá một lượt trong mục trên. Máy chủ chỉ cho người hỏi hoặc admin.
+    case xoaCauHoiThuongGap(lessonId: Int, askId: Int)
+
     // Notifications
     case getUnreadNotificationCount
     case getNotifications(cursor: Int?, limit: Int)
@@ -642,6 +652,8 @@ enum APIEndpoint {
         case .getCoursesBySemester(let id): return "/api/v1/courses/semester/\(id)"
         case .getLesson(let c, let l): return "/api/v1/courses/\(c)/lessons/\(l)"
         case .hoiGiaSuBai(let l, _): return "/api/v1/courses/lessons/\(l)/ai/ask"
+        case .cauHoiThuongGap(let l): return "/api/v1/courses/lessons/\(l)/ai/asks"
+        case .xoaCauHoiThuongGap(let l, let a): return "/api/v1/courses/lessons/\(l)/ai/asks/\(a)"
         case .getCourseProgress(let id): return "/api/v1/courses/\(id)/progress"
         case .saveLessonProgress(let id, _, _, _, _): return "/api/v1/courses/\(id)/progress"
 
@@ -820,7 +832,8 @@ enum APIEndpoint {
              .xoaMon, .xoaChuong, .xoaVinhVien, .goThietBi, .xoaTuVung, .xoaBaiViet,
              .xoaPhienChat, .xoaThuMucChat, .xoaHoiThoai, .xoaThuMucSoTay, .xoaMucSoTay,
              .cvXoaMuc, .cvXoaGach, .cvXoaKyNang, .cvXoaChungChi,
-             .cvXoaNgonNgu, .cvXoaTaiLieu, .cvXoaViecLam:
+             .cvXoaNgonNgu, .cvXoaTaiLieu, .cvXoaViecLam,
+             .xoaCauHoiThuongGap:
             return "DELETE"
         default:
             return "GET"
