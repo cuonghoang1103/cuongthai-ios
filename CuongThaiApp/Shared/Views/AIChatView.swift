@@ -208,17 +208,11 @@ struct AIChatView: View {
                                         ? { chuSua = t.noiDung; suaTin = t } : nil)
                             .id(t.id)
                     }
-                    if coChu || !dinhKem.isEmpty {
-                    EmptyView()
-                } else if !vm.dangTraLoi {
-                    // Micro chỉ hiện khi CHƯA gõ gì — có chữ rồi thì chỗ đó là
-                    // nút gửi, đổi qua đổi lại dưới ngón tay là bấm nhầm.
-                    HStack(spacing: Spacing.lg) {
-                        nutMicro
-                        nutNoiChuyen
-                    }
-                }
-                if vm.dangTraLoi {
+                    // ⚠️ MICRO TỪNG NẰM Ở ĐÂY, TRONG DANH SÁCH TIN — và chat
+                    // trống thì cả khung này không dựng (xem nhánh
+                    // `vm.tin.isEmpty` ở đầu file), nên KHÔNG đọc chính tả
+                    // được câu hỏi ĐẦU TIÊN. Nay nó nằm ở ô nhập, luôn thấy.
+                    if vm.dangTraLoi {
                         dangLam
                             .id("dang-lam")
                     }
@@ -296,14 +290,22 @@ struct AIChatView: View {
                             .foregroundColor(AppColors.error)
                     }
                     .buttonStyle(.plain)
-                } else {
+                } else if guiDuoc {
                     Button { gui() } label: {
                         Image(systemName: "arrow.up.circle.fill")
                             .font(.system(size: 30))
-                            .foregroundColor(guiDuoc ? AppColors.primary : AppColors.textTertiary)
+                            .foregroundColor(AppColors.primary)
                     }
                     .buttonStyle(.plain)
-                    .disabled(!guiDuoc)
+                } else {
+                    // Chưa gõ gì thì chỗ này là mũi tên gửi BỊ MỜ, bấm không
+                    // ăn — đổi thành hai nút giọng nói thì không tốn thêm bề
+                    // ngang mà lại luôn nhìn thấy.
+                    HStack(spacing: Spacing.md) {
+                        nutMicro
+                        nutNoiChuyen
+                    }
+                    .padding(.bottom, 4)
                 }
             }
             .padding(.horizontal, Spacing.md)

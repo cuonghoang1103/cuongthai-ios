@@ -38,6 +38,9 @@ struct ManXemThu: View {
             // Chế độ nói chuyện với AI. Không có cửa này thì không soi được:
             // AI Chat nằm sau đăng nhập, mà Claude không gõ mật khẩu.
             case "chedonoi": ThuCheDoNoi()
+            // Cả màn AI Chat — để soi Ô NHẬP. Không gọi được AI vì chưa đăng
+            // nhập, nhưng bố cục thanh dưới thì thấy đủ.
+            case "aichat": AIChatView()
 
             // Ba trạng thái của màn Hồ sơ khi CHƯA có dữ liệu. Không có cửa
             // này thì không cách nào nhìn thấy chúng: muốn tái hiện phải làm
