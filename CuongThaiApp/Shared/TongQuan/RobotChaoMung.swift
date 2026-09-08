@@ -1,4 +1,64 @@
 import SwiftUI
+import CoreMotion
+
+// ── Con quay hồi chuyển ──────────────────────────────────────────
+//
+// Nghiêng máy thì robot nghiêng theo — đây là thứ khiến khối vẽ phẳng có cảm
+// giác NẰM TRONG màn hình chứ không dán lên trên.
+//
+// ⚠️ Một `CMMotionManager` cho mỗi view là sai: mỗi cái mở một phiên cảm biến
+// riêng và chúng KHÔNG dùng chung, nên hai màn cùng đọc là tốn pin gấp đôi.
+// Dùng chung một bộ, và TỰ TẮT khi không còn ai nghe.
+//
+// Không cần khai gì trong Info.plist: `deviceMotion` (thế nằm của máy) khác
+// với Motion & Fitness (đếm bước) — cái sau mới đòi quyền.
+@MainActor
+final class ConQuay: ObservableObject {
+    static let chung = ConQuay()
+
+    /// Độ nghiêng đã CHUẨN HOÁ về -1…1, không phải radian thô.
+    @Published var nghiengNgang: Double = 0
+    @Published var nghiengDoc: Double = 0
+
+    private let may = CMMotionManager()
+    private var soNguoiNghe = 0
+
+    private init() {}
+
+    func batDau() {
+        soNguoiNghe += 1
+        guard soNguoiNghe == 1, may.isDeviceMotionAvailable else { return }
+        // 1/30 giây: mắt không thấy mượt hơn ở mức cao hơn, mà pin thì thấy.
+        may.deviceMotionUpdateInterval = 1.0 / 30.0
+        may.startDeviceMotionUpdates(to: .main) { [weak self] d, _ in
+            guard let self, let d else { return }
+            // Kẹp ±0.6 radian (~34°): quá ngưỡng đó thì người dùng đang lật
+            // máy chứ không phải nghiêng để xem, và robot xoay tít trông hỏng.
+            let ng = max(-0.6, min(0.6, d.attitude.roll)) / 0.6
+            let dc = max(-0.6, min(0.6, d.attitude.pitch + 0.6)) / 0.6
+            // Lọc trung bình động: số thô rung liên tục, robot sẽ giật.
+            self.nghiengNgang += (ng - self.nghiengNgang) * 0.12
+            self.nghiengDoc   += (dc - self.nghiengDoc) * 0.12
+        }
+    }
+
+    func dungLai() {
+        soNguoiNghe = max(0, soNguoiNghe - 1)
+        if soNguoiNghe == 0 { may.stopDeviceMotionUpdates() }
+    }
+}
+
+/// Robot đang "cảm thấy" gì — quyết định biểu cảm.
+enum TamTrangRobot {
+    /// Bình thường.
+    case binhThuong
+    /// Sắp tới giờ học: liếc về phía đồng hồ và nhíu lại một chút.
+    case sapVaoHoc(phut: Int)
+    /// Đang trong giờ học.
+    case dangHoc
+    /// Xong hết việc hôm nay: nháy mắt ăn mừng.
+    case xongViec
+}
 
 // ════════════════════════════════════════════════════════════════
 // ROBOT CHÀO MỪNG — hero của trang chủ
@@ -31,6 +91,10 @@ private let KICH_BAN: [DongCode] = [
 struct RobotChaoMung: View {
     /// Tên hiện dưới lời chào. Rỗng thì chỉ chào chung.
     var ten: String?
+    /// Ngữ cảnh để robot đổi biểu cảm. Mặc định bình thường.
+    var tamTrang: TamTrangRobot = .binhThuong
+
+    @StateObject private var conQuay = ConQuay.chung
 
     @Environment(\.accessibilityReduceMotion) private var giamChuyenDong
 
@@ -42,6 +106,7 @@ struct RobotChaoMung: View {
     @State private var sangAngten = false
     @State private var daXong = false
     @State private var dangTho = false
+    @State private var nhayAnMung = false
 
     var body: some View {
         HStack(alignment: .top, spacing: Spacing.md) {
@@ -56,6 +121,8 @@ struct RobotChaoMung: View {
                 .strokeBorder(AppColors.primary.opacity(0.22), lineWidth: 1)
         )
         .task { await chay() }
+        .onAppear { if !giamChuyenDong { conQuay.batDau() } }
+        .onDisappear { if !giamChuyenDong { conQuay.dungLai() } }
         // Người dùng đọc bằng VoiceOver không cần nghe từng dòng code phụ hoạ.
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text("Welcome to CuongThai"))
@@ -92,6 +159,14 @@ struct RobotChaoMung: View {
         // Thở nhẹ lên xuống — biên độ 3pt, đủ để thấy là "đang sống" mà
         // không kéo mắt khỏi phần chữ bên cạnh.
         .offset(y: dangTho ? -3 : 0)
+        // Nghiêng theo máy. Xoay 3D quanh trục Y (trái/phải) và X (trước/sau),
+        // biên độ nhỏ — quá tay thì thành đồ chơi, không còn "chuyên nghiệp".
+        .rotation3DEffect(.degrees(conQuay.nghiengNgang * 13), axis: (x: 0, y: 1, z: 0),
+                          perspective: 0.6)
+        .rotation3DEffect(.degrees(-conQuay.nghiengDoc * 7), axis: (x: 1, y: 0, z: 0),
+                          perspective: 0.6)
+        // Trượt nhẹ ngược chiều nghiêng: mắt đọc ra chiều sâu từ chỗ này.
+        .offset(x: conQuay.nghiengNgang * 3)
     }
 
     private var angTen: some View {
@@ -145,7 +220,10 @@ struct RobotChaoMung: View {
                                          startPoint: .top, endPoint: .bottom))
                     .frame(width: 48, height: 32)
 
-                HStack(spacing: 12) { mat; mat }
+                // Liếc: khi sắp tới giờ học thì hai mắt dồn sang phải, phía
+                // cột giờ của thẻ "Học hôm nay" nằm bên đó.
+                HStack(spacing: 12) { mat(trai: true); mat(trai: false) }
+                    .offset(x: lechMat)
 
                 // Vệt loá trên mặt kính — nửa trên, xiên. Chi tiết nhỏ này
                 // làm phẳng thành cong.
@@ -212,13 +290,36 @@ struct RobotChaoMung: View {
     }
 
     /// Một con mắt. Nháy = co chiều cao xuống gần 0 trong chốc lát.
-    private var mat: some View {
-        Capsule()
-            .fill(LinearGradient(colors: [Color.white, AppColors.primary],
+    ///
+    /// `trai` để nháy MỘT bên khi ăn mừng — nháy cả hai chỉ là chớp mắt bình
+    /// thường, không ai đọc ra là đang vui.
+    private func mat(trai: Bool) -> some View {
+        let nhamRieng: Bool = {
+            if case .xongViec = tamTrang { return trai && nhayAnMung }
+            return false
+        }()
+        return Capsule()
+            .fill(LinearGradient(colors: [Color.white, mauMat],
                                  startPoint: .top, endPoint: .bottom))
-            .frame(width: 9, height: nhayMat ? 1.5 : 13)
-            .shadow(color: AppColors.primary.opacity(0.95), radius: 5)
-            .shadow(color: AppColors.primary.opacity(0.55), radius: 10)
+            .frame(width: 9, height: (nhayMat || nhamRieng) ? 1.5 : 13)
+            .shadow(color: mauMat.opacity(0.95), radius: 5)
+            .shadow(color: mauMat.opacity(0.55), radius: 10)
+    }
+
+    /// Mắt đổi màu theo ngữ cảnh — đọc được từ xa hơn cả chữ.
+    private var mauMat: Color {
+        switch tamTrang {
+        case .sapVaoHoc(let p) where p <= 15: return AppColors.warning
+        case .dangHoc:                        return AppColors.success
+        case .xongViec:                       return AppColors.success
+        default:                              return AppColors.primary
+        }
+    }
+
+    /// Độ lệch của cặp mắt. Sắp vào học thì liếc sang phải.
+    private var lechMat: CGFloat {
+        if case .sapVaoHoc = tamTrang { return 3.5 }
+        return 0
     }
 
     // ── "Màn hình" chữ ───────────────────────────────────────────
@@ -299,6 +400,7 @@ struct RobotChaoMung: View {
             dangTho = true
         }
         Task { await nhay() }
+        Task { await anMung() }
         Task { await nhapNhayConTro() }
 
         for (i, d) in KICH_BAN.enumerated() {
@@ -327,6 +429,18 @@ struct RobotChaoMung: View {
             withAnimation(.easeInOut(duration: 0.07)) { nhayMat = true }
             try? await Task.sleep(nanoseconds: 90_000_000)
             withAnimation(.easeInOut(duration: 0.09)) { nhayMat = false }
+        }
+    }
+
+    /// Nháy một mắt mỗi vài giây khi đã xong hết việc trong ngày.
+    private func anMung() async {
+        guard case .xongViec = tamTrang else { return }
+        while !Task.isCancelled {
+            try? await Task.sleep(nanoseconds: 3_000_000_000)
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeInOut(duration: 0.10)) { nhayAnMung = true }
+            try? await Task.sleep(nanoseconds: 160_000_000)
+            withAnimation(.easeInOut(duration: 0.12)) { nhayAnMung = false }
         }
     }
 

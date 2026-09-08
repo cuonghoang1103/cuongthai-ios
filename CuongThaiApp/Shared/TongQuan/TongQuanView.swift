@@ -28,7 +28,8 @@ struct TongQuanView: View {
                     // Robot chào mừng — bản iOS của con robot trên web, vẽ
                     // thẳng bằng SwiftUI Shape nên không cần tài nguyên ảnh.
                     RobotChaoMung(ten: appState.currentUser?.displayName
-                                  ?? appState.currentUser?.username)
+                                  ?? appState.currentUser?.username,
+                                  tamTrang: tamTrangRobot)
                     khoiChatNhanh
                     theSo
                     if vm.buoiKeTiep != nil || !vm.hocHomNay.isEmpty { khoiHocHomNay }
@@ -187,6 +188,31 @@ struct TongQuanView: View {
                     .font(.system(size: 10)).foregroundColor(AppColors.textTertiary)
             }
         }
+    }
+
+    /// Robot "biết" đang là lúc nào trong ngày để đổi biểu cảm.
+    ///
+    /// Thứ tự ưu tiên có chủ đích: ĐANG HỌC đè lên mọi thứ khác — lúc đang
+    /// ngồi trong lớp thì việc vặt đã xong hay chưa không còn là tin đáng
+    /// nhìn nhất trên màn hình.
+    private var tamTrangRobot: TamTrangRobot {
+        let bayGio = TrangThaiBuoi.phutTrongNgay(Date())
+        var somNhat: Int?
+        for b in vm.hocHomNay {
+            switch TrangThaiBuoi.tinh(batDau: b.startTime, ketThuc: b.endTime, bayGio: bayGio) {
+            case .dangHoc:
+                return .dangHoc
+            case .chuaToi(let p):
+                if p <= 60 { somNhat = min(somNhat ?? p, p) }
+            case .daXong:
+                break
+            }
+        }
+        if let p = somNhat { return .sapVaoHoc(phut: p) }
+        // Chỉ ăn mừng khi THẬT SỰ có việc và làm xong hết. `0/0` là ngày
+        // chưa ghi việc nào, không phải thành tích.
+        if vm.soTong > 0 && vm.soXong >= vm.soTong { return .xongViec }
+        return .binhThuong
     }
 
     // MARK: Chat nhanh với CuongMini Pro
@@ -725,48 +751,206 @@ private struct HangViec: View {
 
 // MARK: - Một hàng buổi học
 
+// MARK: - Trạng thái một buổi học theo đồng hồ
+
+/// Buổi học đang ở đâu so với BÂY GIỜ.
+///
+/// Tách riêng khỏi View để tính được bằng phép kiểm — giờ giấc là thứ dễ sai
+/// lệch-một (phút thứ 0, phút cuối, qua nửa đêm) mà nhìn mắt thường không ra.
+enum TrangThaiBuoi: Equatable {
+    /// Chưa tới giờ. `phut` = còn bao nhiêu phút nữa thì vào học.
+    case chuaToi(phut: Int)
+    /// Đang trong giờ. `conLai` = còn bao nhiêu phút thì hết;
+    /// `tiLe` = đã trôi qua bao nhiêu phần (0…1) để vẽ thanh tiến độ.
+    case dangHoc(conLai: Int, tiLe: Double)
+    case daXong
+
+    /// - Parameter bayGio: số phút tính từ 00:00 của hôm nay.
+    static func tinh(batDau: String, ketThuc: String, bayGio: Int) -> TrangThaiBuoi {
+        guard let bd = TrangThaiBuoi.phut(batDau), let kt = TrangThaiBuoi.phut(ketThuc),
+              kt > bd else { return .daXong }
+        if bayGio < bd { return .chuaToi(phut: bd - bayGio) }
+        if bayGio >= kt { return .daXong }
+        // `bayGio == bd` là phút ĐẦU của giờ học, phải tính là ĐANG HỌC —
+        // để nó rơi vào `chuaToi(0)` thì thẻ hiện "còn 0 phút" suốt một phút.
+        return .dangHoc(conLai: kt - bayGio,
+                        tiLe: Double(bayGio - bd) / Double(kt - bd))
+    }
+
+    /// Số phút từ 00:00 của MỘT thời điểm, theo lịch/múi giờ của máy.
+    static func phutTrongNgay(_ d: Date) -> Int {
+        let c = Calendar.current.dateComponents([.hour, .minute], from: d)
+        return (c.hour ?? 0) * 60 + (c.minute ?? 0)
+    }
+
+    /// "HH:mm" → số phút từ 00:00. Trả `nil` nếu chuỗi không đúng dạng.
+    static func phut(_ hhmm: String) -> Int? {
+        let p = hhmm.split(separator: ":")
+        guard p.count == 2, let h = Int(p[0]), let m = Int(p[1]),
+              (0...23).contains(h), (0...59).contains(m) else { return nil }
+        return h * 60 + m
+    }
+
+    /// "45 phút" · "1 giờ 05" — bỏ phần giờ khi dưới 60 để đỡ rườm.
+    static func doDai(_ phut: Int) -> String {
+        if phut < 60 { return String(format: T("%d phút"), phut) }
+        let g = phut / 60, p = phut % 60
+        return p == 0 ? String(format: T("%d giờ"), g)
+                      : String(format: T("%d giờ %02d"), g, p)
+    }
+}
+
 struct HangBuoiHoc: View {
     let buoi: BuoiHoc
     var keTiep = false
 
     var body: some View {
-        HStack(spacing: Spacing.md) {
-            RoundedRectangle(cornerRadius: 2)
-                .fill(mau).frame(width: 3.5, height: 40)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(buoi.subject)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundColor(AppColors.textPrimary)
-                    .lineLimit(1)
-                Text([buoi.room, buoi.teacher].compactMap { $0?.isEmpty == false ? $0 : nil }
-                        .joined(separator: " · "))
-                    .font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
-                    .lineLimit(1)
+        // Đồng hồ nhịp 20 giây: đủ để con số phút không bao giờ lệch quá lâu,
+        // mà không dựng lại view mỗi giây (tốn pin cho thứ chỉ đổi mỗi phút).
+        TimelineView(.periodic(from: .now, by: 20)) { moc in
+            than(TrangThaiBuoi.tinh(batDau: buoi.startTime, ketThuc: buoi.endTime,
+                                    bayGio: TrangThaiBuoi.phutTrongNgay(moc.date)))
+        }
+    }
+
+    @ViewBuilder
+    private func than(_ tt: TrangThaiBuoi) -> some View {
+        let dangHoc: Bool = { if case .dangHoc = tt { return true }; return false }()
+        let daXong: Bool  = { if case .daXong  = tt { return true }; return false }()
+
+        VStack(spacing: 8) {
+            HStack(spacing: Spacing.md) {
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(mau).frame(width: dangHoc ? 5 : 3.5, height: 40)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 6) {
+                        Text(buoi.subject)
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundColor(AppColors.textPrimary)
+                            .lineLimit(1)
+                        if dangHoc { chamDangHoc }
+                    }
+                    Text([buoi.room, buoi.teacher].compactMap { $0?.isEmpty == false ? $0 : nil }
+                            .joined(separator: " · "))
+                        .font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
+                        .lineLimit(1)
+                }
+                Spacer(minLength: 0)
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text(buoi.startTime)
+                        .font(.system(size: 14, weight: .semibold).monospacedDigit())
+                        .foregroundColor(AppColors.textPrimary)
+                    Text(buoi.endTime)
+                        .font(.system(size: 11).monospacedDigit())
+                        .foregroundColor(AppColors.textTertiary)
+                }
+                if keTiep && !dangHoc && !daXong {
+                    Text(T("Kế tiếp"))
+                        .font(.system(size: 9, weight: .heavy))
+                        .foregroundColor(AppColors.onPrimary)
+                        .padding(.horizontal, 6).padding(.vertical, 3)
+                        .background(Capsule().fill(AppColors.primary))
+                }
             }
-            Spacer(minLength: 0)
-            VStack(alignment: .trailing, spacing: 2) {
-                Text(buoi.startTime)
-                    .font(.system(size: 14, weight: .semibold).monospacedDigit())
-                    .foregroundColor(AppColors.textPrimary)
-                Text(buoi.endTime)
-                    .font(.system(size: 11).monospacedDigit())
-                    .foregroundColor(AppColors.textTertiary)
-            }
-            if keTiep {
-                Text(T("Kế tiếp"))
-                    .font(.system(size: 9, weight: .heavy))
-                    .foregroundColor(AppColors.onPrimary)
-                    .padding(.horizontal, 6).padding(.vertical, 3)
-                    .background(Capsule().fill(AppColors.primary))
-            }
+
+            dongDem(tt)
         }
         .padding(Spacing.md)
-        .background(
-            RoundedRectangle(cornerRadius: CornerRadius.large)
-                .fill(AppColors.backgroundCard)
-                .overlay(RoundedRectangle(cornerRadius: CornerRadius.large)
-                    .stroke(keTiep ? AppColors.primary.opacity(0.5) : .clear, lineWidth: 1.5))
-        )
+        .background(nen(dangHoc: dangHoc))
+        // Buổi đã qua thì mờ đi — mắt không phải lọc thủ công xem cái nào
+        // còn phải đi học.
+        .opacity(daXong ? 0.5 : 1)
+    }
+
+    /// Chấm xanh nhấp nháy — dấu hiệu "đang diễn ra" quen thuộc.
+    private var chamDangHoc: some View {
+        TimelineView(.periodic(from: .now, by: 1)) { m in
+            let sang = Int(m.date.timeIntervalSince1970) % 2 == 0
+            Circle()
+                .fill(AppColors.success)
+                .frame(width: 7, height: 7)
+                .shadow(color: AppColors.success.opacity(sang ? 0.9 : 0.2),
+                        radius: sang ? 5 : 1)
+                .opacity(sang ? 1 : 0.55)
+                .animation(.easeInOut(duration: 0.9), value: sang)
+        }
+    }
+
+    /// Hàng dưới: đếm ngược tới giờ vào, hoặc đếm ngược tới giờ tan + tiến độ.
+    @ViewBuilder
+    private func dongDem(_ tt: TrangThaiBuoi) -> some View {
+        switch tt {
+        case .chuaToi(let phut):
+            // Quá xa thì không hiện — "còn 9 giờ 40" chẳng giúp gì, chỉ chật chỗ.
+            if phut <= 180 {
+                HStack(spacing: 5) {
+                    Image(systemName: "hourglass")
+                        .font(.system(size: 10, weight: .semibold))
+                    Text(String(format: T("Vào học sau %@"), TrangThaiBuoi.doDai(phut)))
+                        .font(.system(size: 12, weight: .semibold))
+                    Spacer(minLength: 0)
+                }
+                // Dưới 15 phút thì đổi sang màu cảnh báo: đây là lúc phải
+                // đứng dậy đi, không phải lúc đọc cho biết.
+                .foregroundColor(phut <= 15 ? AppColors.warning : AppColors.primary)
+            }
+
+        case .dangHoc(let conLai, let tiLe):
+            VStack(spacing: 5) {
+                HStack(spacing: 5) {
+                    Image(systemName: "play.circle.fill")
+                        .font(.system(size: 11, weight: .semibold))
+                    Text(T("ĐANG HỌC"))
+                        .font(.system(size: 10, weight: .heavy)).tracking(0.5)
+                    Spacer(minLength: 0)
+                    Text(String(format: T("còn %@"), TrangThaiBuoi.doDai(conLai)))
+                        .font(.system(size: 12, weight: .bold).monospacedDigit())
+                }
+                .foregroundColor(AppColors.success)
+
+                // Thanh tiến độ: nhìn một cái biết đang ở đầu hay cuối buổi.
+                GeometryReader { g in
+                    ZStack(alignment: .leading) {
+                        Capsule().fill(AppColors.success.opacity(0.18))
+                        Capsule().fill(AppColors.success)
+                            .frame(width: max(3, g.size.width * tiLe))
+                    }
+                }
+                .frame(height: 4)
+            }
+
+        case .daXong:
+            HStack(spacing: 5) {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 10))
+                Text(T("Đã tan"))
+                    .font(.system(size: 11, weight: .medium))
+                Spacer(minLength: 0)
+            }
+            .foregroundColor(AppColors.textTertiary)
+        }
+    }
+
+    /// Khung riêng khi đang học: nền pha màu thành công + viền dày hơn, để
+    /// liếc một cái là biết "giờ này mình đang trong lớp".
+    @ViewBuilder
+    private func nen(dangHoc: Bool) -> some View {
+        RoundedRectangle(cornerRadius: CornerRadius.large)
+            .fill(dangHoc
+                  ? AnyShapeStyle(LinearGradient(
+                        colors: [AppColors.success.opacity(0.16),
+                                 AppColors.backgroundCard],
+                        startPoint: .topLeading, endPoint: .bottomTrailing))
+                  : AnyShapeStyle(AppColors.backgroundCard))
+            .overlay(
+                RoundedRectangle(cornerRadius: CornerRadius.large)
+                    .stroke(dangHoc ? AppColors.success.opacity(0.75)
+                            : (keTiep ? AppColors.primary.opacity(0.5) : .clear),
+                            lineWidth: dangHoc ? 2 : 1.5)
+            )
+            .shadow(color: dangHoc ? AppColors.success.opacity(0.22) : .clear,
+                    radius: 10, y: 3)
     }
 
     private var mau: Color {
