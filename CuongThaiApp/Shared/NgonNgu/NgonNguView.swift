@@ -692,7 +692,7 @@ struct PhongThiEntryCard: View {
                     // tay ở màn giới thiệu thì chỉ có cũ dần.
                     // Số THẬT hiện ngay trong Phòng thi ("844 đề · 25 môn ·
                     // 5 kỳ"), tính từ chính dữ liệu vừa tải.
-                    Text("Đề thi thật FPTU · xếp theo kỳ và môn · bấm giờ như thi thật")
+                    Text("Đề thi thật · xếp theo kỳ và môn · bấm giờ như thi thật")
                         .font(.caption)
                         .foregroundColor(AppColors.textSecondary)
                         .lineLimit(1)

@@ -74,14 +74,14 @@ struct AcademyView: View {
             .padding(.vertical, Spacing.md)
         }
         .background(AppColors.backgroundPrimary)
-        .navigationTitle("Academy FPT")
+        .navigationTitle("Academy")
         .navigationBarTitleDisplayMode(.inline)
         .task { await vm.taiHocKy() }
     }
 
     private var gioiThieu: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Chương trình đại học FPT")
+            Text("Chương trình đại học")
                 .font(.titleMedium)
                 .foregroundColor(AppColors.textPrimary)
             Text("\(vm.hocKy.count) học kỳ · môn học theo đúng lộ trình của trường. Chạm một kỳ để xem các môn.")
@@ -227,7 +227,7 @@ struct AcademyEntryCard: View {
                     .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Academy FPT")
+                    Text("Academy")
                         .font(.titleSmall)
                         .foregroundColor(AppColors.textPrimary)
                     Text("Chương trình đại học theo học kỳ")
