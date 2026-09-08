@@ -27,6 +27,7 @@ struct AIChatView: View {
     @State private var hienLichSu = false
     @StateObject private var ghiAm = GhiAmThoai()
     @StateObject private var mayDoc = MayDoc()
+    @State private var hienNoiChuyen = false
     @State private var dangNhanDang = false
     @State private var hienMayAnh = false
     @State private var suaTin: TinAI?
@@ -98,6 +99,17 @@ struct AIChatView: View {
             .alert("AI", isPresented: .constant(vm.loi != nil)) {
                 Button("OK") { vm.loi = nil }
             } message: { Text(vm.loi ?? "") }
+            // ⚠️ Máy đọc vốn nuốt lỗi: `MayDoc.loi` được gán nhưng KHÔNG chỗ
+            // nào hiện nó, nên 429 "đang có 2 bản đọc chạy dở" trông y hệt
+            // "bấm không ăn gì". Dồn vào đúng hộp báo lỗi đã có sẵn.
+            .fullScreenCover(isPresented: $hienNoiChuyen) {
+                CheDoNoiView(vm: vm, mayDoc: mayDoc)
+            }
+            .onChange(of: mayDoc.loi) { _, moi in
+                guard let moi, !moi.isEmpty else { return }
+                vm.loi = moi
+                mayDoc.loi = nil
+            }
             .onChange(of: anhChon) { _, moi in
                 guard !moi.isEmpty else { return }
                 Task { await napAnh(moi) }
@@ -201,7 +213,10 @@ struct AIChatView: View {
                 } else if !vm.dangTraLoi {
                     // Micro chỉ hiện khi CHƯA gõ gì — có chữ rồi thì chỗ đó là
                     // nút gửi, đổi qua đổi lại dưới ngón tay là bấm nhầm.
-                    nutMicro
+                    HStack(spacing: Spacing.lg) {
+                        nutMicro
+                        nutNoiChuyen
+                    }
                 }
                 if vm.dangTraLoi {
                         dangLam
@@ -302,6 +317,24 @@ struct AIChatView: View {
     // MARK: Đính kèm
 
     private var guiDuoc: Bool { coChu || !dinhKem.isEmpty }
+
+    /// Mở chế độ nói chuyện rảnh tay.
+    ///
+    /// Khác `nutMicro` ở chỗ căn bản: micro chỉ ĐỌC CHÍNH TẢ vào ô nhập, còn
+    /// đây là hội thoại — AI trả lời xong tự đọc lên rồi chờ lượt sau.
+    private var nutNoiChuyen: some View {
+        Button {
+            Haptics.cham()
+            hienNoiChuyen = true
+        } label: {
+            Image(systemName: "waveform.circle")
+                .font(.system(size: 26))
+                .foregroundColor(AppColors.textSecondary)
+                .frame(width: 34, height: 34)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Nói chuyện với CuongMini")
+    }
 
     /// Giữ để nói, thả để gửi đi nhận dạng.
     private var nutMicro: some View {
@@ -485,6 +518,18 @@ struct BongBongAI: View {
     @State private var hienBaoCao = false
 
     private var dangDocTin: Bool { mayDoc.dangDoc == tin.id && !mayDoc.dangCho }
+    /// Máy đọc đang bận vì TIN NÀY — kể cả lúc còn đang nạp tiếng.
+    private var mayBanVoiTinNay: Bool { mayDoc.dangDoc == tin.id }
+
+    /// Chữ trên nút. Phải nói ra là đang chạy: bản cũ chỉ đổi cái biểu tượng
+    /// nhỏ sang đồng hồ cát mà chữ vẫn là "Nghe", nên người dùng tưởng bấm
+    /// hụt và bấm lại — mà bấm lại thì HUỶ mất lượt đang chạy.
+    private var chuNutNghe: String {
+        guard mayBanVoiTinNay else { return "Nghe" }
+        if mayDoc.dangCho { return "Đang tạo…" }
+        if mayDoc.tongMau > 1 { return "Dừng \(mayDoc.mau)/\(mayDoc.tongMau)" }
+        return "Dừng"
+    }
 
     /// Nguồn model đã đọc — bấm mở được, vì "theo một bài trên VnExpress" mà
     /// không kèm đường dẫn thì người đọc không kiểm chứng được gì.
@@ -562,12 +607,12 @@ struct BongBongAI: View {
                         Button {
                             mayDoc.batTat(tin.id, chu: tin.noiDung)
                         } label: {
-                            Label(dangDocTin ? "Dừng" : "Nghe",
-                                  systemImage: mayDoc.dangCho && mayDoc.dangDoc == tin.id
+                            Label(chuNutNghe,
+                                  systemImage: mayDoc.dangCho && mayBanVoiTinNay
                                     ? "hourglass"
                                     : (dangDocTin ? "stop.circle" : "speaker.wave.2"))
                         }
-                        .foregroundColor(dangDocTin ? AppColors.primary : AppColors.textSecondary)
+                        .foregroundColor(mayBanVoiTinNay ? AppColors.primary : AppColors.textSecondary)
                         if let taoLai {
                             Button(action: taoLai) {
                                 Label("Tạo lại", systemImage: "arrow.clockwise")

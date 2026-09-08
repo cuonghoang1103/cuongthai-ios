@@ -54,6 +54,9 @@ final class NgheLienTuc: ObservableObject {
 
     static func maNhan(_ code: String) -> String? {
         switch code {
+        // Tiếng Việt KHÔNG phải ngôn ngữ học ở mục Ngoại ngữ — nó ở đây cho
+        // chế độ nói chuyện với AI Chat. Thêm một nhánh không đổi hành vi cũ.
+        case "vi": return "vi-VN"
         case "ja": return "ja-JP"
         case "zh": return "zh-CN"
         case "en": return "en-US"

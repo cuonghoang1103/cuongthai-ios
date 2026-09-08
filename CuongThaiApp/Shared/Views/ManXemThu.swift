@@ -35,6 +35,9 @@ struct ManXemThu: View {
             case "phongthi": PhongThiView()
             case "noidungthi": ThuNoiDungThi()
             case "logo": ThuLogo()
+            // Chế độ nói chuyện với AI. Không có cửa này thì không soi được:
+            // AI Chat nằm sau đăng nhập, mà Claude không gõ mật khẩu.
+            case "chedonoi": ThuCheDoNoi()
 
             // Ba trạng thái của màn Hồ sơ khi CHƯA có dữ liệu. Không có cửa
             // này thì không cách nào nhìn thấy chúng: muốn tái hiện phải làm
@@ -186,4 +189,21 @@ struct ThuNoiDungThi: View {
         .environment(\.ngonNguDe, ngonNgu)
     }
 }
+
+/// Dựng `CheDoNoiView` với một cuộc chat giả — đủ để soi bố cục, các trạng
+/// thái và cử chỉ giữ-mic mà không cần phiên đăng nhập.
+private struct ThuCheDoNoi: View {
+    @StateObject private var vm = AIChatViewModel()
+    @StateObject private var mayDoc = MayDoc()
+    var body: some View {
+        CheDoNoiView(vm: vm, mayDoc: mayDoc)
+            .onAppear {
+                vm.tin = [
+                    TinAI(cuaNguoi: true, noiDung: "Con trỏ trong C là gì?"),
+                    TinAI(cuaNguoi: false, noiDung: "Con trỏ là biến lưu địa chỉ của một biến khác."),
+                ]
+            }
+    }
+}
+
 #endif
