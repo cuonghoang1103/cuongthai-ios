@@ -81,9 +81,16 @@ struct CheDoNoiView: View {
             // lượt nói đầu tiên mất trắng.
             daXinQuyen = await NgheLienTuc.xinQuyen()
             thieuQuyen = !daXinQuyen
+            guard daXinQuyen else { return }
+            // Và mở sẵn phiên âm thanh. Đây là phần tốn thời gian thật —
+            // làm ở đây thì lúc bấm mic chỉ còn gắn tap, gần như tức thì.
+            // Máy đọc dùng chung phiên này, không được đổi qua `.playback`.
+            mayDoc.nguoiKhacGiuPhien = true
+            NgheLienTuc.moPhienTruoc()
+            nghe.moSanMay(code: "vi")
         }
         .onAppear { noiDay() }
-        .onDisappear { nghe.dung(); mayDoc.dung() }
+        .onDisappear { nghe.dung(); mayDoc.dung(); mayDoc.nguoiKhacGiuPhien = false }
         // Trả lời xong thì đọc lên — đây là mắt xích biến chat chữ thành hội thoại.
         .onChange(of: vm.dangTraLoi) { _, con in
             guard !con, let t = tinCuoiCuaAI, !daDoc.contains(t.id) else { return }
@@ -222,7 +229,7 @@ struct CheDoNoiView: View {
                         // Cắt tiếng AI nếu người dùng muốn chen ngang — đúng
                         // như nói chuyện với người.
                         mayDoc.dung()
-                        nghe.batDau(code: "vi")
+                        nghe.batDau(code: "vi", daMoPhien: true)
                     }
                     .onEnded { _ in
                         guard dangGiu else { return }
@@ -247,12 +254,28 @@ struct CheDoNoiView: View {
 
     // MARK: - Nối dây
 
+    /// ⚠️ ĐÂY LÀ THỨ QUYẾT ĐỊNH "TRẢ LỜI NHANH HAY CHẬM".
+    ///
+    /// Màn này chờ AI viết XONG cả câu trả lời rồi mới đọc. Mà chat chữ thì
+    /// model hay trả về nguyên một bài có tiêu đề, khối mã và bảng — viết mất
+    /// hàng chục giây, đọc lên mất vài phút, và chẳng ai muốn NGHE một cái
+    /// bảng. Bảo nó nói ngắn là cắt được phần lớn thời gian chờ.
+    ///
+    /// Gửi kèm chứ không hiện ra: người dùng không phải thấy dòng này lặp
+    /// lại ở mọi lượt trong khung chat chữ.
+    private static let CHI_DAN_NOI = """
+    (Người dùng đang NÓI CHUYỆN bằng giọng nói, câu trả lời sẽ được đọc lên \
+    thành tiếng. Hãy trả lời NGẮN GỌN trong 1-3 câu, bằng văn nói tự nhiên. \
+    Không dùng tiêu đề, danh sách gạch đầu dòng, bảng hay khối mã. Nếu câu \
+    hỏi cần trình bày dài, hãy trả lời ý chính rồi mời họ hỏi tiếp.)
+    """
+
     private func noiDay() {
         nghe.khiXongCau = { chu in
             Task { @MainActor in
                 let sach = chu.trimmingCharacters(in: .whitespacesAndNewlines)
                 guard !sach.isEmpty else { return }
-                vm.gui(sach)
+                vm.gui(sach, guiKem: Self.CHI_DAN_NOI)
             }
         }
         nghe.khiRong = {

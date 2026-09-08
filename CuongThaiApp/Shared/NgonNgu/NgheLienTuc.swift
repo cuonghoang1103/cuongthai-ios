@@ -36,6 +36,9 @@ final class NgheLienTuc: ObservableObject {
     /// nhau: micro không thu được gì (số này = 0) hay micro thu tốt mà bộ
     /// nhận không ra chữ (số này lớn mà chữ vẫn rỗng).
     private var soKhoi = 0
+    /// Bộ nhận đã trả kết quả CUỐI chưa. Thả nút xong phải đợi cờ này, không
+    /// thì mất từ cuối — xem `chotCau()`.
+    private var daCoKetQuaCuoi = false
 
     // ⚠️ ĐÃ BỎ đồng hồ tự cắt theo im lặng (21/08).
     //
@@ -51,6 +54,19 @@ final class NgheLienTuc: ObservableObject {
     /// Bật khi bản nhận trên máy tỏ ra câm. Giữ ở mức kiểu để cả phiên dùng
     /// chung — dò lại mỗi lượt là mỗi lượt mất một lần thử.
     private static var epNhanQuaMang = false
+
+    /// `supportsOnDeviceRecognition` phải hỏi hệ thống xem gói tiếng đã tải
+    /// chưa — đo 09/09/2026 đó là phần lớn 274ms còn sót lại giữa "phiên sẵn
+    /// sàng" và "định dạng micro". Trả lời không đổi trong một phiên chạy,
+    /// nên hỏi một lần rồi nhớ.
+    private static var nhoTrenMay: [String: Bool] = [:]
+
+    private static func chayTrenMay(_ bn: SFSpeechRecognizer, ma: String) -> Bool {
+        if let d = nhoTrenMay[ma] { return d }
+        let d = bn.supportsOnDeviceRecognition
+        nhoTrenMay[ma] = d
+        return d
+    }
 
     static func maNhan(_ code: String) -> String? {
         switch code {
@@ -80,10 +96,67 @@ final class NgheLienTuc: ObservableObject {
         return await AVAudioApplication.requestRecordPermission()
     }
 
-    func batDau(code: String) {
+    /// Cấu hình phiên âm thanh TRƯỚC, khi màn hình vừa mở.
+    ///
+    /// ⚠️ Đây là chỗ tốn thời gian thật. `setCategory(.playAndRecord)` +
+    /// `setActive(true)` bắt hệ thống đổi tuyến âm thanh và đánh thức phần
+    /// cứng micro — trên máy thật mất hàng trăm mili giây tới hơn một giây,
+    /// và nó xảy ra NGAY LÚC NGÓN TAY VỪA CHẠM. Đo trên iPhone 16 Pro Max
+    /// 09/09/2026: một lượt giữ chỉ thu được 21ms tiếng vì phần lớn thời
+    /// gian giữ đã tiêu vào đây.
+    ///
+    /// Mở sẵn lúc vào màn thì lúc bấm chỉ còn gắn tap và chạy bộ nhận.
+    ///
+    /// Dùng `.default` chứ KHÔNG `.measurement`: chế độ đo tắt hết xử lý
+    /// tiếng của hệ thống, mà màn nói chuyện còn phải PHÁT tiếng AI qua cùng
+    /// một phiên. Đổi qua đổi lại giữa hai chế độ mỗi lượt là mỗi lượt thêm
+    /// một lần đổi tuyến.
+    static func moPhienTruoc() {
+        let phien = AVAudioSession.sharedInstance()
+        do {
+            try phien.setCategory(.playAndRecord, mode: .default,
+                                  options: [.defaultToSpeaker, .allowBluetooth,
+                                            .allowBluetoothA2DP])
+            try phien.setActive(true, options: .notifyOthersOnDeactivation)
+            NhatKy.noi.info("phiên âm thanh MỞ SẴN xong")
+        } catch {
+            NhatKy.noi.error("mở sẵn phiên âm thanh HỎNG: \(error)")
+        }
+    }
+
+    /// Đánh thức nốt bộ máy thu và bộ nhận.
+    ///
+    /// ⚠️ Vá phiên âm thanh xong vẫn còn **405ms** nữa, đo trên máy ảo
+    /// 09/09/2026 — nó nằm LỌT GIỮA hai dòng nhật ký nên lần đầu không thấy:
+    ///
+    ///     41.314  phiên âm thanh sẵn sàng sau 2ms (đã mở sẵn)
+    ///     41.719  định dạng micro: 48000.0Hz 1 kênh      ← 405ms ở đây
+    ///
+    /// Thủ phạm là lần ĐẦU chạm vào `mayThu.inputNode`: đó là lúc hệ thống
+    /// dựng audio unit cho micro. Chạm sẵn ở đây thì lúc bấm nó đã có.
+    func moSanMay(code: String) {
+        _ = mayThu.inputNode.inputFormat(forBus: 0)
+        mayThu.prepare()
+        if let ma = Self.maNhan(code) {
+            let bn = SFSpeechRecognizer(locale: Locale(identifier: ma))
+            boNhan = bn
+            if let bn { _ = Self.chayTrenMay(bn, ma: ma) }
+        }
+        NhatKy.noi.info("bộ máy thu đã đánh thức")
+    }
+
+    /// `daMoPhien` = phiên âm thanh đã được `moPhienTruoc()` bật rồi, đừng
+    /// đụng lại. Mục Ngoại ngữ không truyền gì nên giữ nguyên hành vi cũ.
+    func batDau(code: String, daMoPhien: Bool = false) {
+        let batDauLuc = Date()
         guard !dangNghe else { return }
+        // ⚠️ Dùng lại bộ nhận đã dựng sẵn CHỈ KHI nó đúng ngôn ngữ đang cần.
+        // Mục Ngoại ngữ đổi qua lại ja → en → zh trong cùng một phiên chạy;
+        // dùng lại mù thì bộ nhận tiếng Nhật đi nghe tiếng Anh.
         guard let ma = Self.maNhan(code),
-              let bn = SFSpeechRecognizer(locale: Locale(identifier: ma)), bn.isAvailable else {
+              let bn = (boNhan?.locale.identifier == ma ? boNhan : nil)
+                       ?? SFSpeechRecognizer(locale: Locale(identifier: ma)),
+              bn.isAvailable else {
             NhatKy.noi.error("KHÔNG có bộ nhận cho \(code)")
             loi = "Máy chưa hỗ trợ nhận giọng nói cho ngôn ngữ này."
             return
@@ -92,17 +165,22 @@ final class NgheLienTuc: ObservableObject {
         chuTamThoi = ""
         chuCuoi = ""
         soKhoi = 0
+        daCoKetQuaCuoi = false
 
-        let phien = AVAudioSession.sharedInstance()
-        do {
-            try phien.setCategory(.playAndRecord, mode: .measurement,
-                                  options: [.duckOthers, .defaultToSpeaker])
-            try phien.setActive(true, options: .notifyOthersOnDeactivation)
-        } catch {
-            NhatKy.noi.error("phiên âm thanh HỎNG: \(error)")
-            loi = "Không mở được micro."
-            return
+        if !daMoPhien {
+            let phien = AVAudioSession.sharedInstance()
+            do {
+                try phien.setCategory(.playAndRecord, mode: .measurement,
+                                      options: [.duckOthers, .defaultToSpeaker])
+                try phien.setActive(true, options: .notifyOthersOnDeactivation)
+            } catch {
+                NhatKy.noi.error("phiên âm thanh HỎNG: \(error)")
+                loi = "Không mở được micro."
+                return
+            }
         }
+        NhatKy.noi.info("phiên âm thanh sẵn sàng sau \(Int(Date().timeIntervalSince(batDauLuc) * 1000))ms"
+                        + (daMoPhien ? " (đã mở sẵn)" : " (mở TẠI CHỖ)"))
 
         let yc = SFSpeechAudioBufferRecognitionRequest()
         yc.shouldReportPartialResults = true
@@ -112,7 +190,7 @@ final class NgheLienTuc: ObservableObject {
         // chỉ nói "máy này làm được", không nói "gói tiếng đã tải về chưa".
         // Chưa tải thì nó chạy và KHÔNG ra chữ nào, không lỗi rõ ràng.
         // `epNhanQuaMang` là đường lùi sau lần đầu câm.
-        if bn.supportsOnDeviceRecognition && !Self.epNhanQuaMang {
+        if Self.chayTrenMay(bn, ma: ma) && !Self.epNhanQuaMang {
             yc.requiresOnDeviceRecognition = true
         }
         yeuCau = yc
@@ -156,20 +234,53 @@ final class NgheLienTuc: ObservableObject {
                 if let err {
                     NhatKy.noi.error("bộ nhận: \(err.localizedDescription)")
                 }
+                if let err { self.daCoKetQuaCuoi = true; _ = err }
                 if let kq {
                     let chu = kq.bestTranscription.formattedString
                     if chu != self.chuCuoi {
                         self.chuCuoi = chu
                         self.chuTamThoi = chu
                     }
+                    // Kết quả CUỐI mới có từ vừa nói xong. Bản trước không
+                    // đọc cờ này nên cắt ngay ở kết quả TẠM.
+                    if kq.isFinal { self.daCoKetQuaCuoi = true }
                 }
             }
         }
     }
 
-    private func chotCau() {
-        let chu = chuTamThoi.trimmingCharacters(in: .whitespacesAndNewlines)
-        NhatKy.noi.info("thả nút → chốt: '\(chu)' · \(soKhoi) khối tiếng")
+    /// Chốt câu SAU KHI đợi bộ nhận trả kết quả cuối.
+    ///
+    /// ⚠️ BẢN CŨ CẮT NGAY LÚC THẢ TAY và mất đúng từ cuối cùng. Đo thật trên
+    /// iPhone của người dùng 09/09/2026: nói "Hôm nay là thứ mấy?", giữ
+    /// 1.445ms, thu 14 khối tiếng, mà chữ chốt được chỉ là "Hôm nay là thứ".
+    /// 118ms sau đó bộ nhận báo lỗi vì đã bị huỷ giữa chừng.
+    ///
+    /// Lý do: `chuTamThoi` là kết quả TẠM. Từ vừa dứt còn đang được xử lý,
+    /// và `dung()` gọi `viec?.cancel()` là vứt luôn phần đó. Nay: ngừng ĐẨY
+    /// tiếng vào (`endAudio`) nhưng GIỮ bộ nhận sống thêm tối đa 900ms để nó
+    /// trả nốt.
+    private func chotCau() async {
+        let choTu = Date()
+        // Ngừng đẩy tiếng mới vào, nhưng KHÔNG huỷ bộ nhận.
+        if mayThu.isRunning {
+            mayThu.stop()
+            mayThu.inputNode.removeTap(onBus: 0)
+        }
+        yeuCau?.endAudio()
+
+        // 18 × 50ms = 900ms. Đủ cho một từ, mà vẫn không thành khoảng lặng
+        // người dùng cảm thấy được.
+        for _ in 0..<18 {
+            if daCoKetQuaCuoi { break }
+            try? await Task.sleep(nanoseconds: 50_000_000)
+        }
+        let doiMs = Int(Date().timeIntervalSince(choTu) * 1000)
+
+        let chu = chuCuoi.trimmingCharacters(in: .whitespacesAndNewlines)
+        NhatKy.noi.info("thả nút → chốt: '\(chu)' · \(soKhoi) khối tiếng"
+                        + " · đợi kết quả cuối \(doiMs)ms"
+                        + (daCoKetQuaCuoi ? "" : " (HẾT GIỜ, lấy bản tạm)"))
         dung()
         // Im lặng suốt mà không ra chữ nào thì không gửi gì cả — gửi chuỗi
         // rỗng lên AI là nó trả lời vu vơ và tự kéo cuộc nói chuyện đi.
@@ -200,8 +311,12 @@ final class NgheLienTuc: ObservableObject {
     }
 
     /// Thả nút — gửi câu vừa nói.
+    ///
+    /// Tắt đèn "đang nghe" NGAY để giao diện phản hồi tức thì, còn việc đợi
+    /// bộ nhận trả nốt thì làm ở nền.
     func chotNgay() {
         guard dangNghe else { return }
-        chotCau()
+        dangNghe = false
+        Task { @MainActor [weak self] in await self?.chotCau() }
     }
 }

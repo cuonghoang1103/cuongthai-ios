@@ -86,6 +86,11 @@ final class MayDoc: NSObject, ObservableObject {
     /// Mã việc đã đặt mà chưa lấy xong. Bấm Dừng thì phải TRẢ LẠI, không thì
     /// ô ở backend nằm treo — đúng lỗi vừa vá bên đó.
     private var jobTreo = Set<String>()
+    /// Màn "Nói chuyện" tự giữ phiên âm thanh ở `.playAndRecord` cho cả nghe
+    /// lẫn nói. Đặt cờ này để máy đọc ĐỪNG đổi sang `.playback` — mỗi lần đổi
+    /// là một lần hệ thống đổi tuyến âm thanh, và lượt bấm mic ngay sau đó
+    /// phải trả giá bằng nửa giây chờ.
+    var nguoiKhacGiuPhien = false
 
     func batTat(_ id: UUID, chu: String) {
         if dangDoc == id { dung(); return }
@@ -154,10 +159,12 @@ final class MayDoc: NSObject, ObservableObject {
 
     private func phatVaCho(_ wav: Data) async throws {
         #if os(iOS)
-        // `.playback` để tiếng vẫn ra khi máy đang gạt nút im lặng — người
-        // dùng chủ động bấm nghe thì họ muốn nghe.
-        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio)
-        try? AVAudioSession.sharedInstance().setActive(true)
+        if !nguoiKhacGiuPhien {
+            // `.playback` để tiếng vẫn ra khi máy đang gạt nút im lặng —
+            // người dùng chủ động bấm nghe thì họ muốn nghe.
+            try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio)
+            try? AVAudioSession.sharedInstance().setActive(true)
+        }
         #endif
         let m = try AVAudioPlayer(data: wav)
         m.delegate = self

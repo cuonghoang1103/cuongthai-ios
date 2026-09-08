@@ -191,7 +191,12 @@ final class AIChatViewModel: ObservableObject {
             .anh.prefix(2).map { $0 } ?? []
     }
 
-    func gui(_ cauHoi: String, anh: [String] = [], tep: [String] = [], tenTep: [String] = []) {
+    /// `guiKem` được nối vào câu GỬI LÊN nhưng KHÔNG hiện trong bong bóng và
+    /// KHÔNG vào lịch sử (lịch sử dựng từ `tin`, tức phần hiển thị). Dùng cho
+    /// chế độ nói chuyện: câu trả lời đọc lên phải NGẮN, mà người dùng thì
+    /// không nên thấy dòng chỉ dẫn đó lặp lại ở mọi lượt.
+    func gui(_ cauHoi: String, anh: [String] = [], tep: [String] = [],
+             tenTep: [String] = [], guiKem: String? = nil) {
         guard !dangTraLoi else { return }
         // Ngữ cảnh phải chộp TRƯỚC khi thêm lượt mới, không thì câu vừa gõ
         // lọt vào lịch sử và model đọc nó hai lần.
@@ -205,7 +210,8 @@ final class AIChatViewModel: ObservableObject {
 
         viec = Task { [weak self] in
             guard let self else { return }
-            let luong = LuongChat.gui(cauHoi: cauHoi, sessionId: sessionId,
+            let luong = LuongChat.gui(cauHoi: cauHoi + (guiKem.map { "\n\n" + $0 } ?? ""),
+                                      sessionId: sessionId,
                                       model: bac.maModel,
                                       lichSu: lichSu,
                                       anh: anhGui,
