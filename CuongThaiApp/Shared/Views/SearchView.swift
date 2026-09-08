@@ -21,7 +21,9 @@ enum LoaiTimKiem: String, CaseIterable, Identifiable {
     case nguoi   = "nguoi"
     case baiViet = "bai-viet"
     case khoaHoc = "khoa-hoc"
-    case nhac    = "nhac"
+    // ⚠️ KHÔNG có tab Nhạc. Bỏ 09/09/2026: kho nhạc phát nội dung không có
+    // quyền phân phối, đưa vào app iOS là rủi ro bị App Store từ chối
+    // (Guideline 5.2 — Intellectual Property). Web giữ nguyên.
 
     var id: String { rawValue }
 
@@ -31,7 +33,6 @@ enum LoaiTimKiem: String, CaseIterable, Identifiable {
         case .nguoi:   return T("Mọi người")
         case .baiViet: return T("Bài viết")
         case .khoaHoc: return T("Khoá học")
-        case .nhac:    return T("Nhạc")
         }
     }
 
@@ -41,7 +42,6 @@ enum LoaiTimKiem: String, CaseIterable, Identifiable {
         case .nguoi:   return "person.2"
         case .baiViet: return "doc.text"
         case .khoaHoc: return "graduationcap"
-        case .nhac:    return "music.note"
         }
     }
 }
@@ -58,12 +58,15 @@ struct NguoiTK: Codable, Identifiable {
     var ten: String { displayName ?? fullName ?? username ?? "—" }
 }
 
+/// Bài viết = `TechTrendArticle` phía máy chủ (bảng `Post` cũ chỉ còn 3 dòng
+/// tàn dư sau cuộc gộp blog 05/08 — xem chú thích ở `timKiem.routes.ts`).
 struct BaiVietTK: Codable, Identifiable {
     let id: Int
     let title: String
     let slug: String
-    let excerpt: String?
-    let thumbnailUrl: String?
+    let summary: String?
+    let coverEmoji: String?
+    let category: String?
     let viewCount: Int?
 }
 
@@ -77,19 +80,10 @@ struct KhoaHocTK: Codable, Identifiable {
     let level: String?
 }
 
-struct NhacTK: Codable, Identifiable {
-    let id: Int
-    let title: String
-    let artist: String
-    let coverImage: String?
-    let durationSeconds: Int?
-}
-
 struct KetQuaTimKiem: Codable {
     var nguoi: [NguoiTK] = []
     var baiViet: [BaiVietTK] = []
     var khoaHoc: [KhoaHocTK] = []
-    var nhac: [NhacTK] = []
     var tong: Int = 0
 }
 
@@ -283,7 +277,6 @@ struct SearchView: View {
         case .nguoi:   return vm.ketQua.nguoi.count
         case .baiViet: return vm.ketQua.baiViet.count
         case .khoaHoc: return vm.ketQua.khoaHoc.count
-        case .nhac:    return vm.ketQua.nhac.count
         }
     }
 
@@ -321,10 +314,6 @@ struct SearchView: View {
                 if !vm.ketQua.khoaHoc.isEmpty {
                     tieuDeNhom(T("Khoá học"), vm.ketQua.khoaHoc.count)
                     ForEach(vm.ketQua.khoaHoc) { k in HangKhoaHoc(k: k) }
-                }
-                if !vm.ketQua.nhac.isEmpty {
-                    tieuDeNhom(T("Nhạc"), vm.ketQua.nhac.count)
-                    ForEach(vm.ketQua.nhac) { m in HangNhac(m: m) }
                 }
                 Color.clear.frame(height: 80)
             }
@@ -484,8 +473,9 @@ private struct HangBaiViet: View {
     let b: BaiVietTK
     var body: some View {
         HangKetQua(bieuTuong: "doc.text", mau: AppColors.secondary,
-                   tieuDe: b.title, phu: b.excerpt,
-                   duoi: b.viewCount.map { String(format: T("%d lượt xem"), $0) })
+                   tieuDe: b.title, phu: b.summary,
+                   duoi: [b.category, b.viewCount.map { String(format: T("%d lượt xem"), $0) }]
+                            .compactMap { $0 }.joined(separator: " · "))
     }
 }
 
@@ -497,15 +487,6 @@ private struct HangKhoaHoc: View {
                    tieuDe: k.title.songNguTheoMay,
                    phu: k.shortDescription?.songNguTheoMay,
                    duoi: [k.courseCode, k.level].compactMap { $0 }.joined(separator: " · "))
-    }
-}
-
-private struct HangNhac: View {
-    let m: NhacTK
-    var body: some View {
-        HangKetQua(bieuTuong: "music.note", mau: AppColors.accent,
-                   tieuDe: m.title, phu: m.artist,
-                   duoi: m.durationSeconds.map { String(format: "%d:%02d", $0 / 60, $0 % 60) })
     }
 }
 
