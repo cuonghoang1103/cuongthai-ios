@@ -13,6 +13,11 @@ struct TongQuanView: View {
     @State private var moFeed = false
     @State private var moCon: Set<Int> = []
     @State private var monDangMo: String?
+    /// `.sheet(item:)` chứ không `isPresented` + biến rời: hai state đổi
+    /// trong cùng một hành động thì sheet có thể dựng nội dung bằng giá trị
+    /// CŨ. Gói câu hỏi vào chính item là hết cửa lệch.
+    @State private var moChat: MoChatAI?
+    @State private var oChat = ""
     @FocusState private var dangGo: Bool
 
     var body: some View {
@@ -24,6 +29,7 @@ struct TongQuanView: View {
                     // thẳng bằng SwiftUI Shape nên không cần tài nguyên ảnh.
                     RobotChaoMung(ten: appState.currentUser?.displayName
                                   ?? appState.currentUser?.username)
+                    khoiChatNhanh
                     theSo
                     if vm.buoiKeTiep != nil || !vm.hocHomNay.isEmpty { khoiHocHomNay }
                     khoiViec
@@ -85,9 +91,27 @@ struct TongQuanView: View {
                     .foregroundColor(AppColors.textPrimary)
                     .lineLimit(2)
                     .minimumScaleFactor(0.8)
-                Text(ngayGio)
-                    .font(.system(size: 13))
-                    .foregroundColor(AppColors.textSecondary)
+                // Ngày + giờ là thứ người dùng liếc nhanh nhất ở màn này —
+                // trước đây nó xám 13pt, chìm nghỉm dưới lời chào 24pt đậm.
+                // Nay tách làm hai viên: NGÀY màu nhấn, GIỜ màu nhấn phụ, để
+                // mắt bắt được ngay cả khi chỉ liếc qua.
+                HStack(spacing: 6) {
+                    Label(ngayNgan, systemImage: "calendar")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(AppColors.primary)
+                        .padding(.horizontal, 9).padding(.vertical, 5)
+                        .background(Capsule().fill(AppColors.primary.opacity(0.14)))
+                        .overlay(Capsule().strokeBorder(AppColors.primary.opacity(0.30), lineWidth: 1))
+
+                    Label(gioNgan, systemImage: "clock")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(AppColors.secondary)
+                        .padding(.horizontal, 9).padding(.vertical, 5)
+                        .background(Capsule().fill(AppColors.secondary.opacity(0.14)))
+                        .overlay(Capsule().strokeBorder(AppColors.secondary.opacity(0.30), lineWidth: 1))
+                }
+                .labelStyle(.titleAndIcon)
+                .padding(.top, 2)
             }
             Spacer(minLength: Spacing.sm)
             vongCapDo
@@ -109,6 +133,20 @@ struct TongQuanView: View {
         default:      c = T("Chào buổi tối")
         }
         return ten.isEmpty ? c : "\(c), \(ten)"
+    }
+
+    /// Chỉ NGÀY: "Thứ Tư, 9/9/2026".
+    private var ngayNgan: String {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: QuanLyNgonNguApp.shared.ngonNgu == .anh ? "en_US" : "vi_VN")
+        f.setLocalizedDateFormatFromTemplate("EEEE d/M/yyyy")
+        return f.string(from: Date())
+    }
+
+    /// Chỉ GIỜ: "01:28".
+    private var gioNgan: String {
+        let g = DateFormatter(); g.dateFormat = "HH:mm"
+        return g.string(from: Date())
     }
 
     private var ngayGio: String {
@@ -149,6 +187,94 @@ struct TongQuanView: View {
                     .font(.system(size: 10)).foregroundColor(AppColors.textTertiary)
             }
         }
+    }
+
+    // MARK: Chat nhanh với CuongMini Pro
+
+    /// Vì sao ở trang chủ chứ không để người dùng tự sang tab AI: câu hỏi
+    /// hay đến lúc đang nhìn lịch học ("mai thi gì?", "giảng lại chỗ này"),
+    /// và bắt họ nhớ câu đó qua hai lần chạm là mất luôn câu hỏi.
+    private var khoiChatNhanh: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            // ⚠️ Vùng bấm chỉ đặt ở HÀNG TIÊU ĐỀ. Bản đầu đặt
+            // `.onTapGesture` lên cả thẻ, và nó GIÀNH mất cú bấm của các con
+            // chip bên dưới: chat vẫn mở, nhưng mở rỗng — nhìn như câu mồi
+            // hỏng, trong khi thật ra chip chưa bao giờ được bấm.
+            Button { moChat = MoChatAI(cau: nil) } label: {
+                HStack(spacing: 7) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(AppColors.secondary)
+                    Text(T("Chat nhanh với CuongMini Pro"))
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(AppColors.textPrimary)
+                    Spacer(minLength: 0)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(AppColors.textTertiary)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            // Ba câu mồi. Đủ ngắn để đọc hết trong một nhịp, và đều là thứ
+            // hỏi được NGAY mà không phải gõ gì thêm.
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 7) {
+                    ForEach(CAU_MOI, id: \.self) { c in
+                        Button { moChat = MoChatAI(cau: c) } label: {
+                            Text(c)
+                                .font(.system(size: 12.5, weight: .medium))
+                                .foregroundColor(AppColors.textSecondary)
+                                .lineLimit(1)
+                                .padding(.horizontal, 11).padding(.vertical, 7)
+                                .background(Capsule().fill(AppColors.backgroundTertiary))
+                                .overlay(Capsule().strokeBorder(AppColors.border, lineWidth: 1))
+                                .contentShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, 1)
+            }
+
+            HStack(spacing: Spacing.sm) {
+                TextField(T("Hỏi CuongMini Pro bất cứ điều gì…"), text: $oChat)
+                    .font(.system(size: 14))
+                    .textFieldStyle(.plain)
+                    .submitLabel(.send)
+                    .onSubmit { guiChat() }
+                Button(action: guiChat) {
+                    Image(systemName: "arrow.up.circle.fill")
+                        .font(.system(size: 26))
+                        .foregroundColor(oChat.trimmingCharacters(in: .whitespaces).isEmpty
+                                         ? AppColors.textTertiary : AppColors.secondary)
+                }
+                .buttonStyle(.plain)
+                .disabled(oChat.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+            .padding(.horizontal, 12).padding(.vertical, 9)
+            .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(AppColors.backgroundTertiary))
+            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(AppColors.border, lineWidth: 1))
+        }
+        .padding(Spacing.md)
+        .background(RoundedRectangle(cornerRadius: 16, style: .continuous)
+            .fill(AppColors.backgroundCard))
+        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
+            .strokeBorder(AppColors.secondary.opacity(0.22), lineWidth: 1))
+        .sheet(item: $moChat) { m in
+            AIChatView(cauMoDau: m.cau, bacBanDau: .pro)
+        }
+    }
+
+    private func guiChat() {
+        let c = oChat.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !c.isEmpty else { return }
+        oChat = ""
+        dangGo = false
+        moChat = MoChatAI(cau: c)
     }
 
     // MARK: Bốn thẻ số
@@ -445,6 +571,21 @@ struct TongQuanView: View {
 
 /// Bọc danh sách mã môn (nối bằng dấu phẩy) để dùng được với `.sheet(item:)`.
 private struct MonMo: Identifiable { let ma: String; var id: String { ma } }
+
+/// Bọc câu hỏi cho `.sheet(item:)`. `id` mới mỗi lần bấm nên bấm lại đúng một
+/// con chip vẫn mở lại được.
+private struct MoChatAI: Identifiable {
+    let id = UUID()
+    let cau: String?
+}
+
+/// Ba câu mồi cho thẻ chat nhanh. Chọn theo thứ hay hỏi lúc đang nhìn trang
+/// chủ, chứ không phải câu "hay" nói chung.
+private let CAU_MOI: [String] = [
+    "Hôm nay tôi nên học gì trước?",
+    "Giảng lại phần khó nhất của môn tôi đang học",
+    "Cho tôi 5 câu ôn nhanh",
+]
 
 // MARK: - Một hàng việc
 

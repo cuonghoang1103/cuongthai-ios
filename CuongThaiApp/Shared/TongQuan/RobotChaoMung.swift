@@ -23,7 +23,7 @@ private struct DongCode {
 
 private let KICH_BAN: [DongCode] = [
     .init(chu: "let hocVien = \"Cường\""),
-    .init(chu: "let mucTieu  = 750   // LOC"),
+    .init(chu: "func chaoMung(_ ai: String)"),
     .init(chu: "print(chaoMung(hocVien))"),
     .init(chu: "Welcome to CuongThai", laKet: true),
 ]
@@ -41,6 +41,7 @@ struct RobotChaoMung: View {
     @State private var nhayMat = false
     @State private var sangAngten = false
     @State private var daXong = false
+    @State private var dangTho = false
 
     var body: some View {
         HStack(alignment: .top, spacing: Spacing.md) {
@@ -70,64 +71,154 @@ struct RobotChaoMung: View {
     }
 
     // ── Con robot ────────────────────────────────────────────────
+    //
+    // Vẽ phẳng mà trông có KHỐI: không có mẹo nào ngoài việc xếp đúng thứ tự
+    // ba lớp ánh sáng thật — nguồn sáng chính trên-trái, viền sáng ôm mép
+    // trên, và bóng đổ xuống nền. Bỏ một lớp là nó lại thành hình dán.
     private var robot: some View {
         VStack(spacing: 0) {
-            // Ăng-ten: chấm sáng nhấp nháy như đèn báo nguồn.
-            Circle()
-                .fill(AppColors.success)
-                .frame(width: 6, height: 6)
-                .shadow(color: AppColors.success.opacity(sangAngten ? 0.9 : 0.2),
-                        radius: sangAngten ? 5 : 1)
-                .opacity(sangAngten ? 1 : 0.45)
-            Rectangle()
-                .fill(AppColors.textTertiary.opacity(0.55))
-                .frame(width: 1.5, height: 7)
-
-            // Đầu
-            ZStack {
-                RoundedRectangle(cornerRadius: 13, style: .continuous)
-                    .fill(
-                        LinearGradient(colors: [AppColors.primary.opacity(0.30),
-                                                AppColors.primary.opacity(0.14)],
-                                       startPoint: .top, endPoint: .bottom))
-                    .frame(width: 58, height: 46)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 13, style: .continuous)
-                            .strokeBorder(AppColors.primary.opacity(0.45), lineWidth: 1.2)
-                    )
-
-                HStack(spacing: 11) {
-                    mat
-                    mat
-                }
-                // Miệng: một gạch ngắn, dài ra khi gõ xong (như mỉm cười).
-                .overlay(alignment: .bottom) {
-                    Capsule()
-                        .fill(AppColors.primary.opacity(0.75))
-                        .frame(width: daXong ? 18 : 10, height: 2.5)
-                        .offset(y: 15)
-                }
-            }
-
-            // Thân: hai vai bo tròn, đủ gợi hình mà không rườm rà.
-            RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .fill(AppColors.primary.opacity(0.20))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .strokeBorder(AppColors.primary.opacity(0.35), lineWidth: 1)
-                )
-                .frame(width: 40, height: 16)
-                .offset(y: -2)
+            angTen
+            khoiDau
+            khoiThan
+            // Bóng đổ dưới chân: elip mờ, hẹp hơn thân. Đây là thứ khiến con
+            // robot "đứng trên" mặt phẳng thay vì lơ lửng như sticker.
+            Ellipse()
+                .fill(Color.black.opacity(0.28))
+                .frame(width: 46, height: 7)
+                .blur(radius: 5)
+                .offset(y: 1)
         }
-        .frame(width: 62)
+        .frame(width: 72)
+        // Thở nhẹ lên xuống — biên độ 3pt, đủ để thấy là "đang sống" mà
+        // không kéo mắt khỏi phần chữ bên cạnh.
+        .offset(y: dangTho ? -3 : 0)
+    }
+
+    private var angTen: some View {
+        VStack(spacing: 0) {
+            ZStack {
+                Circle()
+                    .fill(AppColors.success)
+                    .frame(width: 7, height: 7)
+                Circle()
+                    .fill(Color.white.opacity(0.85))
+                    .frame(width: 2.5, height: 2.5)
+                    .offset(x: -1.2, y: -1.2)
+            }
+            .shadow(color: AppColors.success.opacity(sangAngten ? 0.95 : 0.25),
+                    radius: sangAngten ? 7 : 2)
+            .scaleEffect(sangAngten ? 1.12 : 0.94)
+
+            Capsule()
+                .fill(LinearGradient(colors: [AppColors.textTertiary.opacity(0.75),
+                                              AppColors.textTertiary.opacity(0.30)],
+                                     startPoint: .top, endPoint: .bottom))
+                .frame(width: 2, height: 8)
+        }
+    }
+
+    private var khoiDau: some View {
+        ZStack {
+            // Vỏ đầu: dốc sáng từ trên-trái xuống dưới-phải.
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(LinearGradient(
+                    colors: [Color.white.opacity(0.26),
+                             AppColors.primary.opacity(0.42),
+                             AppColors.primary.opacity(0.20)],
+                    startPoint: .topLeading, endPoint: .bottomTrailing))
+                .frame(width: 64, height: 52)
+
+            // Viền sáng ôm mép trên-trái, tối dần xuống dưới-phải.
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(LinearGradient(
+                    colors: [Color.white.opacity(0.55),
+                             AppColors.primary.opacity(0.30),
+                             Color.black.opacity(0.22)],
+                    startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 1.3)
+                .frame(width: 64, height: 52)
+
+            // Kính che mặt: hõm tối, để mắt sáng nổi bật trên nền đen.
+            ZStack {
+                RoundedRectangle(cornerRadius: 11, style: .continuous)
+                    .fill(LinearGradient(colors: [Color.black.opacity(0.80),
+                                                  Color.black.opacity(0.55)],
+                                         startPoint: .top, endPoint: .bottom))
+                    .frame(width: 48, height: 32)
+
+                HStack(spacing: 12) { mat; mat }
+
+                // Vệt loá trên mặt kính — nửa trên, xiên. Chi tiết nhỏ này
+                // làm phẳng thành cong.
+                Ellipse()
+                    .fill(LinearGradient(colors: [Color.white.opacity(0.30), .clear],
+                                         startPoint: .topLeading, endPoint: .bottomTrailing))
+                    .frame(width: 42, height: 14)
+                    .offset(y: -9)
+                    .blur(radius: 1.5)
+                    .allowsHitTesting(false)
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 11, style: .continuous)
+                    .strokeBorder(Color.black.opacity(0.45), lineWidth: 1)
+                    .frame(width: 48, height: 32)
+            )
+
+            // Hai tai: khối nhỏ hai bên, gợi chiều sâu ngang.
+            HStack {
+                tai
+                Spacer(minLength: 0)
+                tai
+            }
+            .frame(width: 74)
+        }
+        .shadow(color: Color.black.opacity(0.30), radius: 7, y: 4)
+    }
+
+    private var tai: some View {
+        Capsule()
+            .fill(LinearGradient(colors: [AppColors.primary.opacity(0.55),
+                                          AppColors.primary.opacity(0.22)],
+                                 startPoint: .top, endPoint: .bottom))
+            .frame(width: 6, height: 16)
+            .overlay(Capsule().strokeBorder(Color.white.opacity(0.22), lineWidth: 0.8))
+    }
+
+    private var khoiThan: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                .fill(LinearGradient(
+                    colors: [Color.white.opacity(0.18),
+                             AppColors.primary.opacity(0.34),
+                             AppColors.primary.opacity(0.14)],
+                    startPoint: .topLeading, endPoint: .bottomTrailing))
+                .frame(width: 46, height: 20)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 9, style: .continuous)
+                        .strokeBorder(LinearGradient(
+                            colors: [Color.white.opacity(0.45), Color.black.opacity(0.20)],
+                            startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 1)
+                )
+
+            // Đèn ngực: sáng theo cùng nhịp với ăng-ten.
+            Circle()
+                .fill(AppColors.secondary)
+                .frame(width: 6, height: 6)
+                .shadow(color: AppColors.secondary.opacity(sangAngten ? 0.9 : 0.3),
+                        radius: sangAngten ? 5 : 1.5)
+        }
+        .offset(y: -3)
+        .shadow(color: Color.black.opacity(0.25), radius: 5, y: 3)
     }
 
     /// Một con mắt. Nháy = co chiều cao xuống gần 0 trong chốc lát.
     private var mat: some View {
         Capsule()
-            .fill(AppColors.primary)
-            .frame(width: 8, height: nhayMat ? 1.5 : 11)
-            .shadow(color: AppColors.primary.opacity(0.6), radius: 3)
+            .fill(LinearGradient(colors: [Color.white, AppColors.primary],
+                                 startPoint: .top, endPoint: .bottom))
+            .frame(width: 9, height: nhayMat ? 1.5 : 13)
+            .shadow(color: AppColors.primary.opacity(0.95), radius: 5)
+            .shadow(color: AppColors.primary.opacity(0.55), radius: 10)
     }
 
     // ── "Màn hình" chữ ───────────────────────────────────────────
@@ -203,6 +294,9 @@ struct RobotChaoMung: View {
 
         withAnimation(.easeInOut(duration: 1.1).repeatForever(autoreverses: true)) {
             sangAngten = true
+        }
+        withAnimation(.easeInOut(duration: 2.4).repeatForever(autoreverses: true)) {
+            dangTho = true
         }
         Task { await nhay() }
         Task { await nhapNhayConTro() }

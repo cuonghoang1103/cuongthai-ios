@@ -9,6 +9,12 @@ struct AIChatView: View {
     /// mình" và mất đúng phần có ích (tự trả lời).
     var cauMoDau: String? = nil
 
+    /// Bậc AI muốn mở sẵn. `nil` = giữ bậc người dùng chọn lần trước.
+    /// Dùng khi vào từ một lối đã hứa hẹn sẵn một bậc cụ thể — vd thẻ "Chat
+    /// nhanh với CuongMini Pro" ở trang chủ: mở ra mà đang ở bậc Mini thì
+    /// đúng là nói một đằng làm một nẻo.
+    var bacBanDau: BacAI? = nil
+
     @Environment(\.dismiss) private var dismiss
     @StateObject private var vm = AIChatViewModel()
     @State private var cauHoi = ""
@@ -42,6 +48,10 @@ struct AIChatView: View {
                 // Chỉ điền khi ô còn trống: người dùng quay lại màn này giữa
                 // chừng thì không được đè lên thứ họ đang gõ dở.
                 if cauHoi.isEmpty, let c = cauMoDau { cauHoi = c }
+                // Chỉ đặt khi hội thoại còn TRỐNG: quay lại màn giữa chừng mà
+                // bị nhảy bậc thì những lượt đã hỏi và lượt sắp hỏi trả lời
+                // bằng hai model khác nhau.
+                if vm.tin.isEmpty, let b = bacBanDau { vm.bac = b }
             }
             .navigationTitle(vm.bacHienTai.ten)
             .navigationBarTitleDisplayModeInline()
