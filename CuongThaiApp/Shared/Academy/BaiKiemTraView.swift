@@ -374,6 +374,52 @@ struct BaiKiemTraView: View {
 /// Giữ TRƯỜNG THUẦN chứ không giữ nguyên kiểu câu hỏi, để hai nguồn khác nhau
 /// (`QuizCauHoi` của bài kiểm tra, `CauLuyen` của đề luyện chương) dùng chung
 /// đúng một đường sang AI.
+/// Bảy việc học viên hay cần hỏi về MỘT câu.
+///
+/// Chép đúng bộ `QUICK` của CuongMini trong Phòng thi (và bộ `VIEC_HOI` bên
+/// web) — người học đã quen bộ này ở Phòng thi; hai chỗ hỏi cùng một loại câu
+/// mà nhãn khác nhau thì họ phải học lại giao diện, và câu trả lời cũng lệch
+/// nhau vì lời nhắc khác.
+///
+/// ⚠️ Câu gửi lên PHẢI mở đầu bằng "Câu N" — gia sư tra `quizContext` theo số
+/// thứ tự người dùng thấy. Bỏ số đi là nó không biết đang hỏi câu nào.
+enum ViecHoiAI: String, CaseIterable, Identifiable {
+    case vaoDe, viSaoSai, kienThuc, ghiNho, loiHayGap, viDu, quyTac
+
+    var id: String { rawValue }
+
+    var nhan: String {
+        switch self {
+        case .vaoDe:     return T("Câu này làm như nào?")
+        case .viSaoSai:  return T("Vì sao các đáp án khác sai?")
+        case .kienThuc:  return T("Kiến thức của câu này là gì?")
+        case .ghiNho:    return T("Nhớ như nào cho lâu?")
+        case .loiHayGap: return T("Lỗi hay gặp ở câu này?")
+        case .viDu:      return T("Cho ví dụ tương tự để luyện")
+        case .quyTac:    return T("Tóm tắt quy tắc liên quan")
+        }
+    }
+
+    func cauHoi(thuTu n: Int) -> String {
+        switch self {
+        case .vaoDe:
+            return String(format: T("Câu %d: hướng dẫn tôi cách làm câu này từng bước, đừng chỉ đưa đáp án."), n)
+        case .viSaoSai:
+            return String(format: T("Câu %d: vì sao đáp án đúng là đúng, và MỖI đáp án còn lại sai ở chỗ nào?"), n)
+        case .kienThuc:
+            return String(format: T("Câu %d: câu này kiểm tra kiến thức gì? Giảng lại phần lý thuyết đó cho tôi."), n)
+        case .ghiNho:
+            return String(format: T("Câu %d: cho tôi một cách ghi nhớ dễ thuộc cho phần kiến thức của câu này."), n)
+        case .loiHayGap:
+            return String(format: T("Câu %d: người học hay sai ở chỗ nào khi làm dạng câu này? Làm sao tránh?"), n)
+        case .viDu:
+            return String(format: T("Câu %d: cho tôi 2 câu tương tự để luyện thêm, kèm đáp án và giải thích."), n)
+        case .quyTac:
+            return String(format: T("Câu %d: tóm tắt công thức/quy tắc liên quan thành vài gạch đầu dòng dễ tra lại."), n)
+        }
+    }
+}
+
 struct HoiVeCau: Identifiable {
     let id: String
     let thuTu: Int
@@ -383,8 +429,12 @@ struct HoiVeCau: Identifiable {
     let giaiThich: String?
     let daChon: [Int]
     let laTuLuan: Bool
+    /// Người dùng bấm con chip nào. `nil` = mở thẳng (giữ hành vi cũ: câu sai
+    /// thì hỏi "sai ở đâu").
+    var viec: ViecHoiAI?
 
-    init(cau: QuizCauHoi, thuTu: Int, daChon: Set<Int>) {
+    init(cau: QuizCauHoi, thuTu: Int, daChon: Set<Int>, viec: ViecHoiAI? = nil) {
+        self.viec = viec
         // Máy chủ KHÔNG đọc `sampleAnswer`. Gộp vào `explanation` để câu tự
         // luận vẫn có gì đó cho AI đối chiếu.
         var g = cau.explanation ?? ""
@@ -401,7 +451,8 @@ struct HoiVeCau: Identifiable {
         self.laTuLuan = cau.laTuLuan
     }
 
-    init(cau: CauLuyen, thuTu: Int, daChon: Set<Int>) {
+    init(cau: CauLuyen, thuTu: Int, daChon: Set<Int>, viec: ViecHoiAI? = nil) {
+        self.viec = viec
         self.id = "luyen-\(cau.id)"
         self.thuTu = thuTu
         self.deBai = cau.prompt
@@ -426,6 +477,8 @@ struct HoiVeCau: Identifiable {
     }
 
     var cauMoDau: String {
+        // Bấm một con chip cụ thể thì hỏi đúng việc đó.
+        if let v = viec { return v.cauHoi(thuTu: thuTu) }
         if laTuLuan {
             return String(format: T("Chấm giúp tôi câu %d: tôi trả lời còn thiếu gì so với đáp án mẫu?"), thuTu)
         }

@@ -41,6 +41,8 @@ struct LuyenChuongView: View {
     @State private var moThucHanh = false
     @State private var ngonNgu: NgonNguDe = .viet
     @State private var hoiAI: HoiVeCau?
+    /// Câu nào đang mở danh sách "Hỏi AI".
+    @State private var moHoi: Set<Int> = []
 
     private var soDung: Int {
         cau.filter { (chon[$0.id] ?? []) == $0.dapAnDung && !$0.dapAnDung.isEmpty }.count
@@ -226,15 +228,27 @@ struct LuyenChuongView: View {
                         NoiDungThi(chu: g, coChu: 13.5, mauChu: AppColors.textSecondary)
                     }
                 }
-                if !dung, lessonId != nil {
+                // Hỏi gia sư về ĐÚNG câu này — bảy việc giống hệt CuongMini
+                // ở Phòng thi và bộ chip bên web.
+                //
+                // Trước 08/09/2026 chỗ này chỉ có MỘT nút, và chỉ hiện với câu
+                // SAI. Nay hiện với mọi câu đã nộp: câu đoán mò mà đúng cũng
+                // đáng hỏi, và phần giải thích trong đề thường rất ngắn.
+                //
+                // Gấp lại theo mặc định — bảy con chip mở sẵn dưới mỗi câu thì
+                // một đề 164 câu thành một bức tường nút.
+                if lessonId != nil {
                     Button {
-                        hoiAI = HoiVeCau(cau: c, thuTu: thuTu, daChon: chon[c.id] ?? [])
+                        withAnimation(.easeInOut(duration: 0.18)) {
+                            if moHoi.contains(c.id) { moHoi.remove(c.id) } else { moHoi.insert(c.id) }
+                        }
                     } label: {
                         HStack(spacing: 6) {
                             Image(systemName: "sparkles").font(.system(size: 12))
-                            Text(T("Hỏi AI vì sao sai")).font(.system(size: 12.5, weight: .semibold))
+                            Text(T("Hỏi AI về câu này")).font(.system(size: 12.5, weight: .semibold))
                             Spacer(minLength: 0)
-                            Image(systemName: "chevron.right").font(.system(size: 10, weight: .semibold))
+                            Image(systemName: moHoi.contains(c.id) ? "chevron.down" : "chevron.right")
+                                .font(.system(size: 10, weight: .semibold))
                         }
                         .foregroundColor(AppColors.primary)
                         .padding(.vertical, 9).padding(.horizontal, 10)
@@ -244,6 +258,36 @@ struct LuyenChuongView: View {
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+                    if moHoi.contains(c.id) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            ForEach(ViecHoiAI.allCases) { v in
+                                Button {
+                                    hoiAI = HoiVeCau(cau: c, thuTu: thuTu,
+                                                     daChon: chon[c.id] ?? [], viec: v)
+                                } label: {
+                                    HStack(spacing: 6) {
+                                        Text(v.nhan)
+                                            .font(.system(size: 12))
+                                            .foregroundColor(AppColors.textSecondary)
+                                            .multilineTextAlignment(.leading)
+                                        Spacer(minLength: 0)
+                                        Image(systemName: "chevron.right")
+                                            .font(.system(size: 9, weight: .semibold))
+                                            .foregroundColor(AppColors.textTertiary)
+                                    }
+                                    .padding(.vertical, 7).padding(.horizontal, 10)
+                                    .frame(maxWidth: .infinity)
+                                    .background(AppColors.backgroundTertiary)
+                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                                    // Nút chỉ có chữ thì vùng bấm bám sát từng
+                                    // chữ — mở ra cả hàng.
+                                    .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .padding(.top, 2)
+                    }
                 }
             }
         }
