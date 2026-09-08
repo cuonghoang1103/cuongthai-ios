@@ -1,446 +1,547 @@
 import SwiftUI
 
-// MARK: - Search View
+// ════════════════════════════════════════════════════════════════
+// TÌM KIẾM
+//
+// Bản viết lại 09/09/2026. Bản cũ KHÔNG chạy được gì cả:
+//   • chỉ gọi `/users/search` — vốn là API cho `@mention`: trần cứng 8 kết
+//     quả, LOẠI chính mình, và trả về MẢNG PHẲNG. App lại giải mã
+//     `{users: […]}` nên luôn ném lỗi, bắt xong nuốt ⇒ hỏng CÂM.
+//   • `posts = []` kèm chú thích "for now, just show empty" — ba tab Bài
+//     viết / Khoá học / Nhạc chưa từng có gì phía sau.
+//   • dùng `.searchable(…)`: iOS 26 đẩy ô tìm xuống ĐÁY màn, rời hẳn khỏi
+//     hàng chip lọc ở trên, nhìn như hai màn ghép lại.
+//
+// Nay: một lời gọi `/api/v1/tim-kiem` trả cả bốn loại, ô tìm nằm trên đầu
+// ngay dưới tiêu đề, và gõ tới đâu tìm tới đó.
+// ════════════════════════════════════════════════════════════════
+
+enum LoaiTimKiem: String, CaseIterable, Identifiable {
+    case tatCa   = "tat-ca"
+    case nguoi   = "nguoi"
+    case baiViet = "bai-viet"
+    case khoaHoc = "khoa-hoc"
+    case nhac    = "nhac"
+
+    var id: String { rawValue }
+
+    var nhan: String {
+        switch self {
+        case .tatCa:   return T("Tất cả")
+        case .nguoi:   return T("Mọi người")
+        case .baiViet: return T("Bài viết")
+        case .khoaHoc: return T("Khoá học")
+        case .nhac:    return T("Nhạc")
+        }
+    }
+
+    var bieuTuong: String {
+        switch self {
+        case .tatCa:   return "square.grid.2x2"
+        case .nguoi:   return "person.2"
+        case .baiViet: return "doc.text"
+        case .khoaHoc: return "graduationcap"
+        case .nhac:    return "music.note"
+        }
+    }
+}
+
+// MARK: - Mô hình kết quả
+
+struct NguoiTK: Codable, Identifiable {
+    let id: Int
+    let username: String?
+    let displayName: String?
+    let fullName: String?
+    let avatarUrl: String?
+    let bio: String?
+    var ten: String { displayName ?? fullName ?? username ?? "—" }
+}
+
+struct BaiVietTK: Codable, Identifiable {
+    let id: Int
+    let title: String
+    let slug: String
+    let excerpt: String?
+    let thumbnailUrl: String?
+    let viewCount: Int?
+}
+
+struct KhoaHocTK: Codable, Identifiable {
+    let id: Int
+    let title: String
+    let slug: String
+    let courseCode: String?
+    let shortDescription: String?
+    let thumbnailUrl: String?
+    let level: String?
+}
+
+struct NhacTK: Codable, Identifiable {
+    let id: Int
+    let title: String
+    let artist: String
+    let coverImage: String?
+    let durationSeconds: Int?
+}
+
+struct KetQuaTimKiem: Codable {
+    var nguoi: [NguoiTK] = []
+    var baiViet: [BaiVietTK] = []
+    var khoaHoc: [KhoaHocTK] = []
+    var nhac: [NhacTK] = []
+    var tong: Int = 0
+}
+
+// MARK: - ViewModel
+
+@MainActor
+final class SearchViewModel: ObservableObject {
+    @Published var tuKhoa = ""
+    @Published var loai: LoaiTimKiem = .tatCa
+    @Published var ketQua = KetQuaTimKiem()
+    @Published var dangTim = false
+    @Published var loi: String?
+    /// Đã tìm ít nhất một lần với từ khoá hiện tại — để phân biệt "chưa gõ gì"
+    /// với "gõ rồi mà không có kết quả".
+    @Published var daTim = false
+
+    @Published private(set) var ganDay: [String] = []
+
+    private let khoaGanDay = "tuKhoaGanDay"
+    private let toiDaGanDay = 10
+    private var viec: Task<Void, Never>?
+
+    init() { ganDay = UserDefaults.standard.stringArray(forKey: khoaGanDay) ?? [] }
+
+    /// Gõ tới đâu tìm tới đó, nhưng CHỜ người dùng ngừng gõ 350ms.
+    /// Không chờ thì mỗi ký tự là một lời gọi mạng — gõ "kotlin" là 6 lượt,
+    /// và các lượt về không đúng thứ tự sẽ ghi đè kết quả mới bằng kết quả cũ.
+    func goPhim() {
+        viec?.cancel()
+        let q = tuKhoa.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard q.count >= 2 else {
+            ketQua = KetQuaTimKiem(); daTim = false; dangTim = false; return
+        }
+        viec = Task {
+            try? await Task.sleep(nanoseconds: 350_000_000)
+            guard !Task.isCancelled else { return }
+            await tim(q, luu: false)
+        }
+    }
+
+    /// Bấm Enter hoặc chọn một từ khoá cũ — tìm NGAY, và ghi vào lịch sử.
+    func timNgay() {
+        viec?.cancel()
+        let q = tuKhoa.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard q.count >= 2 else { return }
+        viec = Task { await tim(q, luu: true) }
+    }
+
+    private func tim(_ q: String, luu: Bool) async {
+        dangTim = true
+        loi = nil
+        defer { dangTim = false }
+        do {
+            let r: KetQuaTimKiem = try await APIClient.shared.request(
+                .timKiem(q: q, loai: loai.rawValue))
+            guard !Task.isCancelled else { return }
+            ketQua = r
+            daTim = true
+            if luu { luuGanDay(q) }
+        } catch {
+            guard !Task.isCancelled else { return }
+            // ⚠️ HIỆN lỗi ra. Bản cũ bắt rồi để đó, nên khi hình dạng dữ liệu
+            // đổi thì màn chỉ im lặng trống trơn — không ai biết là hỏng.
+            loi = (error as NSError).localizedDescription
+            ketQua = KetQuaTimKiem()
+            daTim = true
+        }
+    }
+
+    func doiLoai(_ l: LoaiTimKiem) {
+        loai = l
+        if tuKhoa.trimmingCharacters(in: .whitespacesAndNewlines).count >= 2 { timNgay() }
+    }
+
+    func chonGanDay(_ q: String) { tuKhoa = q; timNgay() }
+
+    func xoaGanDay() {
+        UserDefaults.standard.removeObject(forKey: khoaGanDay)
+        ganDay = []
+    }
+
+    func xoaMot(_ q: String) {
+        ganDay.removeAll { $0 == q }
+        UserDefaults.standard.set(ganDay, forKey: khoaGanDay)
+    }
+
+    private func luuGanDay(_ q: String) {
+        var ds = ganDay
+        ds.removeAll { $0.lowercased() == q.lowercased() }
+        ds.insert(q, at: 0)
+        if ds.count > toiDaGanDay { ds = Array(ds.prefix(toiDaGanDay)) }
+        ganDay = ds
+        UserDefaults.standard.set(ds, forKey: khoaGanDay)
+    }
+}
+
+// MARK: - Màn hình
+
 struct SearchView: View {
     @EnvironmentObject var appState: AppState
-    @StateObject private var viewModel = SearchViewModel()
+    @StateObject private var vm = SearchViewModel()
+    @FocusState private var dangGo: Bool
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                searchHeader
-                filterTabs
-                searchResults
+                oTim
+                hangChip
+                Divider().overlay(AppColors.divider)
+                noiDung
             }
             .background(AppColors.backgroundPrimary)
-            .navigationTitle("Tìm kiếm")
-            .navigationBarTitleDisplayMode(.large)
-            .searchable(text: $viewModel.searchQuery, prompt: "Tìm kiếm người dùng, bài viết...")
-            .onSubmit(of: .search) {
-                Task {
-                    await viewModel.performSearch()
+            .navigationTitle(T("Tìm kiếm"))
+            .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+
+    // ── Ô tìm: nằm NGAY dưới tiêu đề ─────────────────────────────
+    private var oTim: some View {
+        HStack(spacing: Spacing.sm) {
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(AppColors.textTertiary)
+                TextField(T("Tìm người, bài viết, khoá học, nhạc…"), text: $vm.tuKhoa)
+                    .font(.system(size: 15))
+                    .textFieldStyle(.plain)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.never)
+                    .submitLabel(.search)
+                    .focused($dangGo)
+                    .onChange(of: vm.tuKhoa) { _, _ in vm.goPhim() }
+                    .onSubmit { dangGo = false; vm.timNgay() }
+                if !vm.tuKhoa.isEmpty {
+                    Button { vm.tuKhoa = ""; vm.goPhim() } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 15))
+                            .foregroundColor(AppColors.textTertiary)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
+            .padding(.horizontal, 12).padding(.vertical, 10)
+            .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(AppColors.backgroundTertiary))
+            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(dangGo ? AppColors.primary.opacity(0.55) : AppColors.border,
+                              lineWidth: 1))
         }
+        .padding(.horizontal, Spacing.md)
+        .padding(.vertical, Spacing.sm)
     }
 
-    private var searchHeader: some View {
-        VStack(spacing: Spacing.sm) {
-            if viewModel.isLoading && !viewModel.users.isEmpty {
-                ProgressView()
-                    .tint(AppColors.primary)
-            }
-        }
-        .frame(height: 30)
-    }
-
-    private var filterTabs: some View {
+    private var hangChip: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: Spacing.sm) {
-                ForEach(SearchFilter.allCases, id: \.self) { filter in
-                    SearchFilterChip(
-                        filter: filter,
-                        isSelected: viewModel.selectedFilter == filter
-                    ) {
-                        viewModel.selectedFilter = filter
-                        if !viewModel.searchQuery.isEmpty {
-                            Task {
-                                await viewModel.performSearch()
+            HStack(spacing: 7) {
+                ForEach(LoaiTimKiem.allCases) { l in
+                    let chon = vm.loai == l
+                    Button { vm.doiLoai(l) } label: {
+                        HStack(spacing: 5) {
+                            Image(systemName: l.bieuTuong).font(.system(size: 11, weight: .semibold))
+                            Text(l.nhan).font(.system(size: 13, weight: .semibold))
+                            if let n = soLuong(l), n > 0 {
+                                Text("\(n)")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .padding(.horizontal, 5).padding(.vertical, 1)
+                                    .background(Capsule().fill(chon ? Color.white.opacity(0.25)
+                                                                     : AppColors.primary.opacity(0.16)))
                             }
                         }
+                        .foregroundColor(chon ? AppColors.onPrimary : AppColors.textSecondary)
+                        .padding(.horizontal, 12).padding(.vertical, 8)
+                        .background(Capsule().fill(chon ? AppColors.primary : AppColors.backgroundTertiary))
+                        .overlay(Capsule().strokeBorder(chon ? .clear : AppColors.border, lineWidth: 1))
+                        .contentShape(Capsule())
                     }
+                    .buttonStyle(.plain)
                 }
             }
             .padding(.horizontal, Spacing.md)
-            .padding(.vertical, Spacing.sm)
         }
-        .background(AppColors.backgroundSecondary)
+        .padding(.bottom, Spacing.sm)
     }
 
-    private var searchResults: some View {
-        ScrollViewReader { cuon in
+    /// Số kết quả của mỗi loại — chỉ hiện khi đang xem "Tất cả", vì lúc lọc
+    /// riêng thì các loại khác không được tải nên con số sẽ là 0 gây hiểu nhầm.
+    private func soLuong(_ l: LoaiTimKiem) -> Int? {
+        guard vm.loai == .tatCa, vm.daTim else { return nil }
+        switch l {
+        case .tatCa:   return vm.ketQua.tong
+        case .nguoi:   return vm.ketQua.nguoi.count
+        case .baiViet: return vm.ketQua.baiViet.count
+        case .khoaHoc: return vm.ketQua.khoaHoc.count
+        case .nhac:    return vm.ketQua.nhac.count
+        }
+    }
+
+    // ── Nội dung ─────────────────────────────────────────────────
+    @ViewBuilder
+    private var noiDung: some View {
+        if let l = vm.loi {
+            bangLoi(l)
+        } else if vm.tuKhoa.trimmingCharacters(in: .whitespaces).count < 2 {
+            manGoiY
+        } else if vm.dangTim && vm.ketQua.tong == 0 {
+            VStack(spacing: Spacing.md) {
+                ProgressView().controlSize(.large)
+                Text(T("Đang tìm…")).font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if vm.daTim && vm.ketQua.tong == 0 {
+            khongCoGi
+        } else {
+            danhSach
+        }
+    }
+
+    private var danhSach: some View {
         ScrollView {
-            LazyVStack(spacing: Spacing.md) {
-                NeoDauTrang()
-                if viewModel.searchQuery.isEmpty {
-                    emptySearchState
-                } else if viewModel.isLoading && viewModel.users.isEmpty && viewModel.posts.isEmpty {
-                    loadingView
-                } else if viewModel.users.isEmpty && viewModel.posts.isEmpty {
-                    noResultsView
-                } else {
-                    switch viewModel.selectedFilter {
-                    case .all:
-                        allResultsView
-                    case .users:
-                        usersListView
-                    case .posts:
-                        postsListView
-                    case .courses, .music:
-                        EmptyView()
+            LazyVStack(alignment: .leading, spacing: Spacing.sm) {
+                if !vm.ketQua.nguoi.isEmpty {
+                    tieuDeNhom(T("Mọi người"), vm.ketQua.nguoi.count)
+                    ForEach(vm.ketQua.nguoi) { n in HangNguoi(n: n) }
+                }
+                if !vm.ketQua.baiViet.isEmpty {
+                    tieuDeNhom(T("Bài viết"), vm.ketQua.baiViet.count)
+                    ForEach(vm.ketQua.baiViet) { b in HangBaiViet(b: b) }
+                }
+                if !vm.ketQua.khoaHoc.isEmpty {
+                    tieuDeNhom(T("Khoá học"), vm.ketQua.khoaHoc.count)
+                    ForEach(vm.ketQua.khoaHoc) { k in HangKhoaHoc(k: k) }
+                }
+                if !vm.ketQua.nhac.isEmpty {
+                    tieuDeNhom(T("Nhạc"), vm.ketQua.nhac.count)
+                    ForEach(vm.ketQua.nhac) { m in HangNhac(m: m) }
+                }
+                Color.clear.frame(height: 80)
+            }
+            .padding(.horizontal, Spacing.md)
+            .padding(.top, Spacing.sm)
+        }
+        .scrollDismissesKeyboard(.immediately)
+    }
+
+    private func tieuDeNhom(_ t: String, _ n: Int) -> some View {
+        HStack(spacing: 6) {
+            Text(t.uppercased())
+                .font(.system(size: 11, weight: .heavy)).tracking(1)
+                .foregroundColor(AppColors.textTertiary)
+            Text("\(n)")
+                .font(.system(size: 10, weight: .bold))
+                .foregroundColor(AppColors.primary)
+            Spacer(minLength: 0)
+        }
+        .padding(.top, Spacing.sm)
+    }
+
+    // ── Màn khi chưa gõ gì ───────────────────────────────────────
+    private var manGoiY: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: Spacing.lg) {
+                if !vm.ganDay.isEmpty {
+                    HStack {
+                        Text(T("TÌM GẦN ĐÂY"))
+                            .font(.system(size: 11, weight: .heavy)).tracking(1)
+                            .foregroundColor(AppColors.textTertiary)
+                        Spacer()
+                        Button(T("Xoá hết")) { vm.xoaGanDay() }
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(AppColors.primary)
                     }
+                    VStack(spacing: 0) {
+                        ForEach(vm.ganDay, id: \.self) { q in
+                            Button { vm.chonGanDay(q) } label: {
+                                HStack(spacing: 10) {
+                                    Image(systemName: "clock.arrow.circlepath")
+                                        .font(.system(size: 13))
+                                        .foregroundColor(AppColors.textTertiary)
+                                    Text(q).font(.system(size: 14))
+                                        .foregroundColor(AppColors.textPrimary)
+                                    Spacer(minLength: 0)
+                                    Button { vm.xoaMot(q) } label: {
+                                        Image(systemName: "xmark")
+                                            .font(.system(size: 11, weight: .semibold))
+                                            .foregroundColor(AppColors.textTertiary)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                                .padding(.vertical, 11)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            Divider().overlay(AppColors.divider)
+                        }
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: Spacing.sm) {
+                    Text(T("TÌM ĐƯỢC GÌ Ở ĐÂY"))
+                        .font(.system(size: 11, weight: .heavy)).tracking(1)
+                        .foregroundColor(AppColors.textTertiary)
+                    ForEach(LoaiTimKiem.allCases.dropFirst()) { l in
+                        HStack(spacing: 10) {
+                            Image(systemName: l.bieuTuong)
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundColor(AppColors.primary)
+                                .frame(width: 22)
+                            Text(l.nhan).font(.system(size: 14))
+                                .foregroundColor(AppColors.textSecondary)
+                            Spacer(minLength: 0)
+                        }
+                        .padding(.vertical, 6)
+                    }
+                    Text(T("Gõ ít nhất 2 ký tự để bắt đầu."))
+                        .font(.system(size: 12))
+                        .foregroundColor(AppColors.textTertiary)
+                        .padding(.top, 2)
                 }
             }
             .padding(Spacing.md)
         }
-        // `filterTabs` GHIM trên vùng cuộn, và ô tìm cũng vậy. Đổi bộ lọc hay
-        // gõ từ khoá mới lúc đang cuộn sâu là kết quả mới mở ra ở giữa chừng.
-        .onChange(of: viewModel.selectedFilter) { _, _ in cuon.veDauTrang() }
-        .onChange(of: viewModel.searchQuery) { _, _ in cuon.veDauTrang() }
-        }
     }
 
-    private var emptySearchState: some View {
-        VStack(spacing: Spacing.lg) {
+    private var khongCoGi: some View {
+        VStack(spacing: Spacing.sm) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 60))
-                .foregroundColor(AppColors.textTertiary)
-
-            VStack(spacing: Spacing.sm) {
-                Text("Tìm kiếm")
-                    .font(.titleLarge)
-                    .foregroundColor(AppColors.textPrimary)
-
-                Text("Tìm kiếm người dùng, bài viết, khóa học và nhiều hơn nữa")
-                    .font(.bodyMedium)
-                    .foregroundColor(AppColors.textSecondary)
-                    .multilineTextAlignment(.center)
-            }
-
-            recentSearchesView
+                .font(.system(size: 34)).foregroundColor(AppColors.textTertiary)
+            Text(String(format: T("Không tìm thấy gì cho “%@”"), vm.tuKhoa))
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundColor(AppColors.textPrimary)
+                .multilineTextAlignment(.center)
+            Text(T("Thử từ khoá ngắn hơn, hoặc đổi sang tab khác."))
+                .font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
+                .multilineTextAlignment(.center)
         }
-        .padding(.top, Spacing.xxl)
+        .padding(Spacing.xl)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    private var recentSearchesView: some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            HStack {
-                Text("Tìm kiếm gần đây")
-                    .font(.titleSmall)
-                    .foregroundColor(AppColors.textPrimary)
-
-                Spacer()
-
-                Button("Xóa") {
-                    viewModel.clearRecentSearches()
-                }
-                .font(.caption)
+    private func bangLoi(_ l: String) -> some View {
+        VStack(spacing: Spacing.sm) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 30)).foregroundColor(AppColors.warning)
+            Text(T("Không tìm được")).font(.system(size: 15, weight: .semibold))
+                .foregroundColor(AppColors.textPrimary)
+            Text(l).font(.system(size: 12.5)).foregroundColor(AppColors.textSecondary)
+                .multilineTextAlignment(.center)
+            Button(T("Thử lại")) { vm.timNgay() }
+                .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(AppColors.primary)
-            }
-            .padding(.horizontal, Spacing.md)
-
-            ForEach(viewModel.recentSearches, id: \.self) { search in
-                HStack {
-                    Image(systemName: "clock.arrow.circlepath")
-                        .foregroundColor(AppColors.textTertiary)
-
-                    Text(search)
-                        .foregroundColor(AppColors.textSecondary)
-
-                    Spacer()
-
-                    Button {
-                        viewModel.searchQuery = search
-                        Task {
-                            await viewModel.performSearch()
-                        }
-                    } label: {
-                        Image(systemName: "arrow.up.left")
-                            .foregroundColor(AppColors.textTertiary)
-                    }
-                }
-                .padding(.horizontal, Spacing.md)
-                .padding(.vertical, Spacing.sm)
-            }
+                .padding(.top, 4)
         }
-        .padding(.top, Spacing.xl)
-    }
-
-    private var loadingView: some View {
-        VStack(spacing: Spacing.md) {
-            ProgressView()
-                .scaleEffect(1.5)
-            Text("Đang tìm kiếm...")
-                .font(.bodyMedium)
-                .foregroundColor(AppColors.textSecondary)
-        }
-        .padding(.top, Spacing.xxl)
-    }
-
-    private var noResultsView: some View {
-        VStack(spacing: Spacing.md) {
-            Image(systemName: "person.slash")
-                .font(.system(size: 50))
-                .foregroundColor(AppColors.textTertiary)
-
-            Text("Không tìm thấy kết quả")
-                .font(.titleMedium)
-                .foregroundColor(AppColors.textPrimary)
-
-            Text("Thử tìm kiếm với từ khóa khác")
-                .font(.bodyMedium)
-                .foregroundColor(AppColors.textSecondary)
-        }
-        .padding(.top, Spacing.xxl)
-    }
-
-    @ViewBuilder
-    private var allResultsView: some View {
-        if !viewModel.users.isEmpty {
-            VStack(alignment: .leading, spacing: Spacing.sm) {
-                sectionHeader("Mọi người")
-                ForEach(viewModel.users.prefix(5)) { user in
-                    NavigationLink(destination: UserProfileView(userId: user.id)) {
-                        UserSearchRow(user: user)
-                    }
-                }
-            }
-        }
-
-        if !viewModel.posts.isEmpty {
-            VStack(alignment: .leading, spacing: Spacing.sm) {
-                sectionHeader("Bài viết")
-                ForEach(viewModel.posts.prefix(5)) { post in
-                    NavigationLink(destination: PostDetailView(post: post)) {
-                        PostSearchRow(post: post)
-                    }
-                }
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var usersListView: some View {
-        ForEach(viewModel.users) { user in
-            NavigationLink(destination: UserProfileView(userId: user.id)) {
-                UserSearchRow(user: user)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var postsListView: some View {
-        ForEach(viewModel.posts) { post in
-            NavigationLink(destination: PostDetailView(post: post)) {
-                PostSearchRow(post: post)
-            }
-        }
-    }
-
-    private func sectionHeader(_ title: String) -> some View {
-        HStack {
-            Text(title)
-                .font(.titleSmall)
-                .foregroundColor(AppColors.textPrimary)
-
-            Spacer()
-
-            NavigationLink("Xem tất cả") {
-                // Full list view
-            }
-            .font(.caption)
-            .foregroundColor(AppColors.primary)
-        }
+        .padding(Spacing.xl)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
-// MARK: - Search Filter
-enum SearchFilter: String, CaseIterable {
-    case all = "Tất cả"
-    case users = "Mọi người"
-    case posts = "Bài viết"
-    case courses = "Khóa học"
-    case music = "Nhạc"
-}
+// MARK: - Các hàng kết quả
 
-// MARK: - Search Filter Chip
-struct SearchFilterChip: View {
-    let filter: SearchFilter
-    let isSelected: Bool
-    let action: () -> Void
-
+private struct HangNguoi: View {
+    let n: NguoiTK
     var body: some View {
-        Button(action: action) {
-            Text(filter.rawValue)
-                .font(.buttonSmall)
-                .foregroundColor(isSelected ? .white : AppColors.textSecondary)
-                .padding(.horizontal, Spacing.md)
-                .padding(.vertical, Spacing.sm)
-                .background(isSelected ? AppColors.primary : AppColors.backgroundTertiary)
-                .cornerRadius(CornerRadius.full)
+        NavigationLink(destination: ProfileView(userIdKhac: n.id)) {
+            HStack(spacing: Spacing.md) {
+                UserAvatarView(url: n.avatarUrl, size: 44)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(n.ten).font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(AppColors.textPrimary).lineLimit(1)
+                    if let u = n.username {
+                        Text("@\(u)").font(.system(size: 12))
+                            .foregroundColor(AppColors.textTertiary).lineLimit(1)
+                    }
+                    if let b = n.bio, !b.isEmpty {
+                        Text(b).font(.system(size: 12))
+                            .foregroundColor(AppColors.textSecondary).lineLimit(1)
+                    }
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(AppColors.textTertiary)
+            }
+            .padding(Spacing.md)
+            .background(RoundedRectangle(cornerRadius: CornerRadius.medium)
+                .fill(AppColors.backgroundCard))
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
     }
 }
 
-// MARK: - User Search Row
-struct UserSearchRow: View {
-    let user: User
+private struct HangBaiViet: View {
+    let b: BaiVietTK
+    var body: some View {
+        HangKetQua(bieuTuong: "doc.text", mau: AppColors.secondary,
+                   tieuDe: b.title, phu: b.excerpt,
+                   duoi: b.viewCount.map { String(format: T("%d lượt xem"), $0) })
+    }
+}
+
+private struct HangKhoaHoc: View {
+    let k: KhoaHocTK
+    var body: some View {
+        HangKetQua(bieuTuong: "graduationcap.fill", mau: AppColors.primary,
+                   // Tiêu đề khoá học là chuỗi song ngữ `EN|||VI`.
+                   tieuDe: k.title.songNguTheoMay,
+                   phu: k.shortDescription?.songNguTheoMay,
+                   duoi: [k.courseCode, k.level].compactMap { $0 }.joined(separator: " · "))
+    }
+}
+
+private struct HangNhac: View {
+    let m: NhacTK
+    var body: some View {
+        HangKetQua(bieuTuong: "music.note", mau: AppColors.accent,
+                   tieuDe: m.title, phu: m.artist,
+                   duoi: m.durationSeconds.map { String(format: "%d:%02d", $0 / 60, $0 % 60) })
+    }
+}
+
+/// Khuôn chung cho ba loại kết quả không phải người — cùng một bố cục, chỉ
+/// khác biểu tượng và màu. Ba bản sao chép tay là ba chỗ để lệch nhau.
+private struct HangKetQua: View {
+    let bieuTuong: String
+    let mau: Color
+    let tieuDe: String
+    var phu: String?
+    var duoi: String?
 
     var body: some View {
         HStack(spacing: Spacing.md) {
-            UserAvatarView(url: user.avatarUrl, size: 50)
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(user.name)
-                    .font(.titleSmall)
-                    .foregroundColor(AppColors.textPrimary)
-
-                Text("@\(user.username)")
-                    .font(.caption)
-                    .foregroundColor(AppColors.textSecondary)
-
-                if let bio = user.bio, !bio.isEmpty {
-                    Text(bio)
-                        .font(.caption)
-                        .foregroundColor(AppColors.textTertiary)
-                        .lineLimit(1)
+            Image(systemName: bieuTuong)
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(mau)
+                .frame(width: 44, height: 44)
+                .background(RoundedRectangle(cornerRadius: 11, style: .continuous)
+                    .fill(mau.opacity(0.14)))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(tieuDe).font(.system(size: 14.5, weight: .semibold))
+                    .foregroundColor(AppColors.textPrimary).lineLimit(2)
+                if let p = phu, !p.isEmpty {
+                    Text(p).font(.system(size: 12))
+                        .foregroundColor(AppColors.textSecondary).lineLimit(1)
                 }
-
-                if let followers = user.followersCount {
-                    Text("\(followers) người theo dõi")
-                        .font(.caption)
-                        .foregroundColor(AppColors.textTertiary)
+                if let d = duoi, !d.isEmpty {
+                    Text(d).font(.system(size: 11))
+                        .foregroundColor(AppColors.textTertiary).lineLimit(1)
                 }
             }
-
-            Spacer()
-
-            Image(systemName: "chevron.right")
-                .foregroundColor(AppColors.textTertiary)
+            Spacer(minLength: 0)
         }
         .padding(Spacing.md)
-        .background(AppColors.backgroundCard)
-        .cornerRadius(CornerRadius.medium)
+        .background(RoundedRectangle(cornerRadius: CornerRadius.medium)
+            .fill(AppColors.backgroundCard))
     }
-}
-
-// MARK: - Post Search Row
-struct PostSearchRow: View {
-    let post: SocialPost
-
-    var body: some View {
-        HStack(alignment: .top, spacing: Spacing.md) {
-            if let media = post.media, let firstMedia = media.first,
-               let thumbnailUrl = URL(string: firstMedia.thumbnail ?? firstMedia.url) {
-                AsyncImage(url: thumbnailUrl) { image in
-                    image
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                } placeholder: {
-                    RoundedRectangle(cornerRadius: CornerRadius.small)
-                        .fill(AppColors.backgroundTertiary)
-                }
-                .frame(width: 80, height: 80)
-                .cornerRadius(CornerRadius.small)
-            }
-
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: Spacing.sm) {
-                    UserAvatarView(url: post.author.avatarUrl, size: 24)
-
-                    Text(post.author.name)
-                        .font(.captionBold)
-                        .foregroundColor(AppColors.textPrimary)
-                }
-
-                Text(post.content)
-                    .font(.bodyMedium)
-                    .foregroundColor(AppColors.textSecondary)
-                    .lineLimit(2)
-
-                HStack(spacing: Spacing.md) {
-                    Label("\(post.likesCount)", systemImage: "heart")
-                    Label("\(post.commentsCount)", systemImage: "bubble.right")
-                    Label("\(post.sharesCount)", systemImage: "square.and.arrow.up")
-                }
-                .font(.caption)
-                .foregroundColor(AppColors.textTertiary)
-            }
-
-            Spacer()
-        }
-        .padding(Spacing.md)
-        .background(AppColors.backgroundCard)
-        .cornerRadius(CornerRadius.medium)
-    }
-}
-
-// MARK: - Search View Model
-@MainActor
-class SearchViewModel: ObservableObject {
-    @Published var searchQuery = ""
-    @Published var selectedFilter: SearchFilter = .all
-    @Published var users: [User] = []
-    @Published var posts: [SocialPost] = []
-    @Published var isLoading = false
-    @Published var error: String?
-
-    private let recentSearchesKey = "recentSearches"
-    private let maxRecentSearches = 10
-
-    var recentSearches: [String] {
-        UserDefaults.standard.stringArray(forKey: recentSearchesKey) ?? []
-    }
-
-    func performSearch() async {
-        guard !searchQuery.trimmingCharacters(in: .whitespaces).isEmpty else {
-            users = []
-            posts = []
-            return
-        }
-
-        isLoading = true
-        error = nil
-
-        // Save to recent searches
-        saveRecentSearch(searchQuery)
-
-        do {
-            // Search users
-            let usersResponse: UsersSearchResponse = try await APIClient.shared.request(
-                .searchUsers(q: searchQuery)
-            )
-            users = usersResponse.users
-
-            // Get trending/filtered posts (for now, just show empty)
-            posts = []
-
-        } catch {
-            self.error = error.localizedDescription
-        }
-
-        isLoading = false
-    }
-
-    func clearRecentSearches() {
-        UserDefaults.standard.removeObject(forKey: recentSearchesKey)
-        objectWillChange.send()
-    }
-
-    private func saveRecentSearch(_ query: String) {
-        var searches = recentSearches
-        searches.removeAll { $0.lowercased() == query.lowercased() }
-        searches.insert(query, at: 0)
-        if searches.count > maxRecentSearches {
-            searches = Array(searches.prefix(maxRecentSearches))
-        }
-        UserDefaults.standard.set(searches, forKey: recentSearchesKey)
-    }
-}
-
-// MARK: - Users Search Response
-struct UsersSearchResponse: Codable {
-    let users: [User]
-}
-
-// MARK: - String Extension for URL
-extension String {
-    var asURL: URL? {
-        URL(string: self)
-    }
-}
-
-#Preview {
-    SearchView()
-        .environmentObject(AppState.shared)
 }

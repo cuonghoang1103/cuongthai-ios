@@ -768,11 +768,11 @@ struct NewMessageView: View {
                                 UserAvatarView(url: user.avatarUrl, size: 44)
 
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(user.name)
+                                    Text(user.ten)
                                         .font(.titleSmall)
                                         .foregroundColor(AppColors.textPrimary)
 
-                                    Text("@\(user.username)")
+                                    Text("@\(user.username ?? "")")
                                         .font(.caption)
                                         .foregroundColor(AppColors.textSecondary)
                                 }
@@ -810,7 +810,7 @@ struct NewMessageView: View {
 
     /// `POST /messages/threads/user/:peerId` — máy chủ trả hội thoại đã có,
     /// hoặc tạo mới nếu hai người chưa từng nhắn. Không cần kiểm trước.
-    private func moHoiThoai(voi user: User) async {
+    private func moHoiThoai(voi user: NguoiTK) async {
         guard dangMo == nil else { return }
         dangMo = user.id
         defer { dangMo = nil }
@@ -831,7 +831,9 @@ class NewMessageViewModel: ObservableObject {
             searchUsers()
         }
     }
-    @Published var users: [User] = []
+    @Published var users: [NguoiTK] = []
+    /// Lỗi khi tìm người. Bản cũ nuốt im lặng nên hỏng mà không ai biết.
+    @Published var loiTim: String?
     @Published var isLoading = false
 
     private var searchTask: Task<Void, Never>?
@@ -851,12 +853,20 @@ class NewMessageViewModel: ObservableObject {
             isLoading = true
 
             do {
-                let response: UsersSearchResponse = try await APIClient.shared.request(
+                // ⚠️ `/users/search` trả về MẢNG PHẲNG (`MentionSuggestion[]`),
+                // KHÔNG phải `{users: […]}`. Bản cũ giải mã sai hình dạng nên
+                // luôn ném lỗi — và ngay bên dưới lại nuốt lỗi im lặng, nên ô
+                // tìm người để nhắn tin CHƯA TỪNG trả về ai, mà không có dấu
+                // hiệu gì. Sửa 09/09/2026 cùng lúc với màn Tìm kiếm.
+                let ds: [NguoiTK] = try await APIClient.shared.request(
                     .searchUsers(q: searchQuery)
                 )
-                users = response.users
+                guard !Task.isCancelled else { return }
+                users = ds
             } catch {
-                // Handle error silently
+                guard !Task.isCancelled else { return }
+                users = []
+                loiTim = (error as NSError).localizedDescription
             }
 
             isLoading = false

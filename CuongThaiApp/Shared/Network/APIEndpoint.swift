@@ -87,6 +87,15 @@ enum APIEndpoint {
     case unfollowUser(id: Int)
     case searchUsers(q: String)
 
+    /// Tìm kiếm HỢP NHẤT — một lượt gọi trả về cả người, bài viết, khoá học,
+    /// nhạc. Thay cho việc gọi bốn nơi rồi tự ghép.
+    ///
+    /// ⚠️ ĐỪNG quay lại dùng `.searchUsers` cho màn Tìm kiếm: đó là API cho
+    /// `@mention` — trần cứng 8 kết quả, LOẠI chính mình, và trả về MẢNG
+    /// PHẲNG chứ không phải `{users: […]}`. App từng giải mã sai hình dạng đó
+    /// nên màn Tìm kiếm chưa từng chạy, mà không báo lỗi gì.
+    case timKiem(q: String, loai: String)
+
     // Messaging
     case getThreads(cursor: Int?, limit: Int)
     case getMessages(threadId: Int, cursor: Int?, limit: Int)
@@ -553,6 +562,7 @@ enum APIEndpoint {
         case .followUser: return "/api/v1/users/follow"
         case .unfollowUser: return "/api/v1/users/follow"
         case .searchUsers: return "/api/v1/users/search"
+        case .timKiem: return "/api/v1/tim-kiem"
 
         case .getThreads: return "/api/v1/messages/threads"
         case .getMessages(let threadId, _, _): return "/api/v1/messages/threads/\(threadId)/messages"
@@ -1179,6 +1189,8 @@ enum APIEndpoint {
             return m
         case .searchUsers(let q):
             return ["q": q, "limit": 20]
+        case .timKiem(let q, let loai):
+            return ["q": q, "loai": loai, "gioiHan": 20]
         case .tuVung(_, let cat, let p, let l):
             var m: [String: Any] = ["page": p, "limit": l]
             // ⚠️ KHÔNG có `level` ở đây. Đo thật: `?level=N5` trên /vocab
