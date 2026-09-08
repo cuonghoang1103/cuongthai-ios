@@ -99,6 +99,33 @@ final class DocTu: NSObject, ObservableObject {
 
     func dung() { dungTatCa() }
 
+    /// Nghe thử MỘT giọng cụ thể, không phụ thuộc giọng đang chọn.
+    func docThu(_ chu: String, code: String, giong: LuaChonGiong?) {
+        guard let ma = Self.maGiong(code) else { return }
+        switch giong?.nguon {
+        case .mayNha(let m):
+            docQuaMayNha(chu, giong: m, id: -1)
+        case .trongMay(let idG):
+            noiTrongMay(chu, giong: AVSpeechSynthesisVoice(identifier: idG)
+                        ?? AVSpeechSynthesisVoice(language: ma), id: -1)
+        case nil:
+            noiTrongMay(chu, giong: AVSpeechSynthesisVoice(language: ma), id: -1)
+        }
+    }
+
+    private func noiTrongMay(_ chu: String, giong: AVSpeechSynthesisVoice?, id: Int?) {
+        guard let giong else { return }
+        dungTatCa()
+        let phien = AVAudioSession.sharedInstance()
+        try? phien.setCategory(.ambient, options: [.mixWithOthers])
+        try? phien.setActive(true)
+        let cau = AVSpeechUtterance(string: chu)
+        cau.voice = giong
+        cau.rate = Float(max(0.25, CaiDatGiong.shared.tocDo))
+        dangDoc = id
+        may.speak(cau)
+    }
+
     private func dungTatCa() {
         if may.isSpeaking { may.stopSpeaking(at: .immediate) }
         phatNha?.stop(); phatNha = nil
@@ -134,7 +161,14 @@ final class DocTu: NSObject, ObservableObject {
             } catch {
                 await MainActor.run {
                     self.dangDoc = nil
-                    if !(error is CancellationError) { self.loi = T("Máy nhà không đọc được") }
+                    if error is CancellationError { return }
+                    // Nói ĐÚNG lý do. 429 = máy nhà đang chạy đủ 3 việc, chờ
+                    // vài giây là được — khác hẳn "máy tắt", mà bản đầu gộp
+                    // cả hai thành một câu chung.
+                    let m = (error as NSError).localizedDescription
+                    self.loi = m.contains("429") || m.lowercased().contains("bận")
+                        ? T("Máy nhà đang đọc cho việc khác — chờ vài giây rồi bấm lại.")
+                        : T("Máy nhà không đọc được lúc này. Chọn tạm một giọng trong máy.")
                 }
             }
         }

@@ -39,6 +39,17 @@ struct ChonGiongView: View {
                     tocDo
                 } header: { Text(T("TỐC ĐỘ ĐỌC")) }
 
+                if let l = doc.loi {
+                    Section {
+                        HStack(spacing: 8) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundColor(AppColors.warning)
+                            Text(l).font(.system(size: 12.5))
+                                .foregroundColor(AppColors.textSecondary)
+                        }
+                    }
+                }
+
                 Section {
                     hangMacDinh
                     ForEach(danhSach) { g in hang(g) }
@@ -57,7 +68,7 @@ struct ChonGiongView: View {
                     Button(T("Xong")) { doc.dung(); dismiss() }
                 }
             }
-            .onDisappear { doc.dung() }
+            .onDisappear { doc.dung(); doc.loi = nil }
         }
     }
 
@@ -94,7 +105,7 @@ struct ChonGiongView: View {
 
     private func hang(_ g: LuaChonGiong) -> some View {
         let dangChon = caiDat.idDaChon(code) == g.id
-        return Button { caiDat.chon(g.id, cho: code); nghe(g) } label: {
+        return Button { caiDat.chon(g.id, cho: code) } label: {
             HStack(spacing: 10) {
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 6) {
@@ -116,9 +127,20 @@ struct ChonGiongView: View {
                 } else if dangChon {
                     Image(systemName: "checkmark").foregroundColor(AppColors.primary)
                 }
-                Image(systemName: "speaker.wave.2.fill")
-                    .font(.system(size: 13))
-                    .foregroundColor(AppColors.textTertiary)
+                // ⚠️ Nghe thử là NÚT RIÊNG, không tự phát khi chọn.
+                // Bản đầu phát ngay lúc bấm: bấm lướt qua 4 giọng máy nhà là
+                // 4 việc cùng lúc, mà máy nhà chỉ chạy được 3 — việc thứ tư
+                // nhận 429 rồi im. Người dùng thấy "chỉ 1 giọng nghe được",
+                // trong khi cả bốn đều tốt.
+                Button { nghe(g) } label: {
+                    Image(systemName: "speaker.wave.2.fill")
+                        .font(.system(size: 15))
+                        .foregroundColor(AppColors.primary)
+                        .frame(width: 34, height: 34)
+                        .background(Circle().fill(AppColors.primary.opacity(0.12)))
+                }
+                .buttonStyle(.plain)
+                .disabled(doc.dangCho)
             }
             .contentShape(Rectangle())
         }
@@ -137,7 +159,9 @@ struct ChonGiongView: View {
     /// Nghe thử NGAY khi chọn — không bắt bấm thêm một nút nữa. Chọn giọng mà
     /// không nghe được ngay thì phải thoát ra, thử, rồi vào lại để đổi.
     private func nghe(_ g: LuaChonGiong?) {
-        doc.doc(cauThu, code: code, id: -1)
+        // Nghe thử ĐÚNG giọng vừa bấm, không phải giọng đang chọn — người
+        // dùng thường muốn nghe trước rồi mới quyết định.
+        doc.docThu(cauThu, code: code, giong: g)
     }
 
     private var goiYTaiThem: some View {

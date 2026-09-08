@@ -109,6 +109,7 @@ final class CaiDatGiong: ObservableObject {
             // So theo GỐC ngôn ngữ chứ không so đủ "en-US": người dùng có thể
             // đã tải en-GB hoặc en-AU, và chúng đọc tiếng Anh hoàn toàn tốt.
             .filter { $0.language.hasPrefix(goc) }
+            .filter { !laGiongVuiNhon($0) }
             .map { g in
                 let cl: String
                 switch g.quality {
@@ -130,6 +131,33 @@ final class CaiDatGiong: ObservableObject {
             }
 
         return code == "en" ? GIONG_MAY_NHA_ANH + trongMay : trongMay
+    }
+
+    /// Giọng "vui nhộn" của Apple — Albert, Bad News, Bahh, Zarvox, Trinoids…
+    ///
+    /// ⚠️ Đây là thứ khiến bản đầu bị chê "nghe như người ngoài hành tinh".
+    /// `AVSpeechSynthesisVoice.speechVoices()` trả về CẢ chúng lẫn giọng thật,
+    /// không có cờ nào phân biệt — nên phải nhận bằng ĐỊNH DANH.
+    ///
+    /// Apple đặt tên định danh theo hai lối khác hẳn nhau:
+    ///   • giọng vui nhộn / kế thừa từ macOS đời cũ:
+    ///       com.apple.speech.synthesis.voice.Albert
+    ///   • giọng đọc thật:
+    ///       com.apple.voice.compact.en-US.Samantha
+    ///       com.apple.voice.enhanced.ja-JP.Kyoko
+    ///       com.apple.ttsbundle.siri_…
+    /// Nên chỉ cần loại đúng một tiền tố. Danh sách tên bên dưới là lớp thứ
+    /// hai phòng khi Apple đổi cách đặt định danh.
+    private static let TEN_VUI_NHON: Set<String> = [
+        "Albert", "Bad News", "Bahh", "Bells", "Boing", "Bubbles", "Cellos",
+        "Deranged", "Good News", "Hysterical", "Jester", "Organ", "Princess",
+        "Ralph", "Superstar", "Trinoids", "Whisper", "Wobble", "Zarvox",
+        "Bruce", "Fred", "Junior", "Kathy", "Victoria",
+    ]
+
+    static func laGiongVuiNhon(_ g: AVSpeechSynthesisVoice) -> Bool {
+        g.identifier.hasPrefix("com.apple.speech.synthesis.voice.")
+            || TEN_VUI_NHON.contains(g.name)
     }
 
     /// Máy đã có giọng chất lượng cao cho ngôn ngữ này chưa — để còn gợi ý tải.
