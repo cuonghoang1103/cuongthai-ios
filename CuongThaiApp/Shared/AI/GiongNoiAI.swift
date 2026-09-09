@@ -332,6 +332,8 @@ extension MayDoc {
             s = s.replacingOccurrences(of: "\u{E000}\(i)\u{E001}", with: m)
         }
 
+        s = chuanHoaChoGiongDoc(s)
+
         // Gộp khoảng trắng — nhiều dòng trống làm máy đọc ngắt vô cớ.
         s = s.replacingOccurrences(of: "[ \\t]+", with: " ", options: .regularExpression)
         // Bảng đã thành dấu phẩy: dọn chuỗi phẩy liền nhau và phẩy đầu/cuối
@@ -342,6 +344,68 @@ extension MayDoc {
         s = s.replacingOccurrences(of: "(?m)^\\s*$\\n", with: "", options: .regularExpression)
         s = s.replacingOccurrences(of: "\\n{2,}", with: "\n", options: .regularExpression)
         return s.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// Đổi ký hiệu thành LỜI NÓI.
+    ///
+    /// ⚠️ Gỡ Markdown là CHƯA ĐỦ. Câu trả lời được viết để đọc bằng MẮT, và
+    /// máy đọc vấp đúng những chỗ mắt lướt qua không nghĩ ngợi:
+    ///
+    ///     "07:30–09:50"     → đọc rời rạc, gạch ngang thành khoảng lặng
+    ///     "(phòng BE-201)"  → dấu ngoặc làm khựng, "BE-201" đọc thành "trừ"
+    ///     "buổi 2/20"       → "hai phần hai mươi"
+    ///     "SWT301"          → nuốt thành một từ vô nghĩa
+    ///
+    /// Người dùng báo đúng thế 10/09/2026: "đọc voice nó sai khi gặp dấu _ và
+    /// các ký tự đặc biệt".
+    static func chuanHoaChoGiongDoc(_ chu: String) -> String {
+        var s = chu
+        func thay(_ mau: String, _ voi: String) {
+            s = s.replacingOccurrences(of: mau, with: voi, options: .regularExpression)
+        }
+
+        // GIỜ phải chạy TRƯỚC luật gạch ngang, không thì "07:30–09:50" bị cắt
+        // nát rồi mới tới lượt nó.
+        thay(#"\b([01]?\d|2[0-3]):([0-5]\d)\s*[–—-]\s*([01]?\d|2[0-3]):([0-5]\d)"#,
+             "$1 giờ $2 đến $3 giờ $4")
+        thay(#"\b([01]?\d|2[0-3]):([0-5]\d)\b"#, "$1 giờ $2")
+        // "9 giờ 00" nghe cụt — người Việt nói "9 giờ".
+        thay(#"( giờ) 00\b"#, "$1")
+        // "07 giờ" máy đọc thành "không bảy giờ" — bỏ số 0 đứng đầu.
+        thay(#"\b0(\d giờ)"#, "$1")
+
+        thay(#"(\d)\s*/\s*(\d)"#, "$1 trên $2")     // 2/20 → 2 trên 20
+        thay(#"(\d)\s*%"#, "$1 phần trăm")
+
+        // Gạch ngang dài giữa hai khoảng trắng = ngắt câu, không phải "trừ".
+        thay(#"\s[–—]\s"#, ", ")
+        // Gạch nối trong mã phòng/mã đề ("BE-201", "SU26-B1") — bỏ, đừng đọc "trừ".
+        thay(#"([A-Za-z])-(\d)"#, "$1 $2")
+        thay(#"(\d)-([A-Za-z])"#, "$1 $2")
+        // Và gạch nối giữa HAI CHỮ: "DE-C203" vẫn lọt ở bản đầu.
+        thay(#"([A-Za-z])-([A-Za-z])"#, "$1 $2")
+
+        // Ngoặc → dấu phẩy: có nhịp nghỉ thay vì khựng.
+        thay(#"\s*\("#, ", ")
+        thay(#"\)"#, ",")
+
+        // ⚠️ "→" KHÔNG dịch thành chữ "thành". Trong bài giảng nó nghĩa là
+        // "biến thành", nhưng trong câu văn xuôi ("còn 2 việc → xong trước 8
+        // giờ") thì "thành" đọc lên vô nghĩa. Một nhịp nghỉ đúng cho cả hai.
+        for (k, v) in [("→", ", "), ("←", ", "), ("⇒", " suy ra "),
+                       ("≈", " xấp xỉ "), ("≠", " khác "), ("≤", " nhỏ hơn hoặc bằng "),
+                       ("≥", " lớn hơn hoặc bằng "), ("&", " và ")] {
+            s = s.replacingOccurrences(of: k, with: v)
+        }
+
+        // Mã môn/mã phòng: tách chữ khỏi số cho đọc rõ ("SWT301" → "SWT 301").
+        thay(#"\b([A-Z]{2,4})(\d{2,4})\b"#, "$1 $2")
+
+        // Dọn dấu câu thừa do các bước trên sinh ra.
+        thay(#"(,\s*){2,}"#, ", ")
+        thay(#"\s+,"#, ",")
+        thay(#",\s*\."#, ".")
+        return s
     }
 
     /// Cắt thành mẩu, ưu tiên ngắt ở cuối câu.
