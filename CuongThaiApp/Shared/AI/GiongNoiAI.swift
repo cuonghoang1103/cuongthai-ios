@@ -197,7 +197,8 @@ final class MayDoc: NSObject, ObservableObject {
     /// giây cho lần đầu nạp model (đo 18/08: 11,7s).
     private func layTieng(_ chu: String) async throws -> Data {
         struct Dat: Decodable { let jobId: String }
-        let dat: Dat = try await APIClient.shared.request(.datViecDoc(text: chu))
+        let dat: Dat = try await APIClient.shared.request(
+            .datViecDoc(text: chu, voice: GiongTroLy.shared.idDaChon))
         jobTreo.insert(dat.jobId)
         defer { jobTreo.remove(dat.jobId) }
 

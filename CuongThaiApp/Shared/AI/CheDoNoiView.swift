@@ -34,6 +34,7 @@ struct CheDoNoiView: View {
     @State private var dangGiu = false
     @State private var doiDoc: UUID?
     @State private var nhip = false
+    @State private var hienChonGiong = false
 
     /// Id các tin AI đã đọc rồi — không có nó thì mỗi lần khung vẽ lại là một
     /// lần đọc lại từ đầu.
@@ -98,6 +99,9 @@ struct CheDoNoiView: View {
             doiDoc = t.id
             mayDoc.batTat(t.id, chu: t.noiDung)
         }
+        .sheet(isPresented: $hienChonGiong) {
+            NavigationStack { ChonGiongTroLyView() }
+        }
         .onChange(of: nghe.loi) { _, moi in
             if let moi, !moi.isEmpty { vm.loi = moi; nghe.loi = nil }
         }
@@ -119,8 +123,19 @@ struct CheDoNoiView: View {
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundColor(AppColors.textPrimary)
             Spacer()
-            // Giữ chỗ cho cân đối với nút đóng bên trái.
-            Color.clear.frame(width: 36, height: 36)
+            // ⚠️ Nút này thay đúng chỗ của ô giữ-chỗ cũ, KHÔNG thêm gì vào cột
+            // giữa. Thêm một hàng chữ xuống dưới quả cầu làm vỡ bố cục: quả
+            // cầu bị đẩy ra ngoài màn hình (đo được x=-132 y=-195). Tôi chưa
+            // giải thích được cơ chế, nên tránh hẳn thay vì ship thứ mình
+            // không hiểu — tên giọng đang chọn hiện trong chính bảng chọn.
+            Button { hienChonGiong = true } label: {
+                Image(systemName: "waveform.circle")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(AppColors.textSecondary)
+                    .frame(width: 36, height: 36)
+                    .background(Circle().fill(AppColors.backgroundTertiary))
+            }
+            .accessibilityLabel(T("Chọn giọng trợ lý"))
         }
         .padding(.horizontal, Spacing.lg)
         .padding(.top, Spacing.md)
@@ -162,8 +177,31 @@ struct CheDoNoiView: View {
             itChuyenDong ? nil
                 : .easeInOut(duration: 1.7).repeatForever(autoreverses: true),
             value: nhip)
-        .animation(.easeInOut(duration: 0.3), value: mauTrangThai)
+        // ⛔⛔ KHÔNG khoá animation vào `mauTrangThai`.
+        //
+        // Đó là `Color` TÍNH LẠI mỗi lần dựng, mà `AppColors.primary` là màu
+        // ĐỘNG (`Color.theoCheDo(sáng:tối:)`) — nó không bảo đảm bằng chính nó
+        // qua các lần dựng. `.animation(value:)` vì thế bắn lại ở MỌI render,
+        // và vì nó bọc ngoài `.frame`, thứ bị animate là VỊ TRÍ BỐ CỤC: quả
+        // cầu trôi ra ngoài màn hình và không bao giờ về.
+        //
+        // Đo thật trên máy ảo 10/09/2026 bằng GeometryReader:
+        //     ĐO quả cầu: x=-132 y=-195 w=264 h=264
+        // Đúng kích thước, sai chỗ — tâm rơi ra ngoài góc trên trái.
+        //
+        // Chỉ lộ ra khi thêm một `@ObservedObject` nữa làm view dựng lại
+        // thường xuyên hơn. Trước đó nó vẫn sai, chỉ là chưa đủ render để thấy.
+        .animation(.easeInOut(duration: 0.3), value: khoaTrangThai)
         .onAppear { nhip = true }
+    }
+
+    /// Khoá trạng thái ỔN ĐỊNH làm mốc cho animation. So chuỗi thì chắc chắn
+    /// bằng nhau khi trạng thái không đổi — khác hẳn so `Color` động.
+    private var khoaTrangThai: String {
+        if nghe.dangNghe { return "nghe" }
+        if vm.dangTraLoi || mayDoc.dangCho { return "nghi" }
+        if mayDoc.dangDoc != nil { return "noi" }
+        return "ranh"
     }
 
     private var mauTrangThai: Color {
@@ -254,28 +292,16 @@ struct CheDoNoiView: View {
 
     // MARK: - Nối dây
 
-    /// ⚠️ ĐÂY LÀ THỨ QUYẾT ĐỊNH "TRẢ LỜI NHANH HAY CHẬM".
-    ///
-    /// Màn này chờ AI viết XONG cả câu trả lời rồi mới đọc. Mà chat chữ thì
-    /// model hay trả về nguyên một bài có tiêu đề, khối mã và bảng — viết mất
-    /// hàng chục giây, đọc lên mất vài phút, và chẳng ai muốn NGHE một cái
-    /// bảng. Bảo nó nói ngắn là cắt được phần lớn thời gian chờ.
-    ///
-    /// Gửi kèm chứ không hiện ra: người dùng không phải thấy dòng này lặp
-    /// lại ở mọi lượt trong khung chat chữ.
-    private static let CHI_DAN_NOI = """
-    (Người dùng đang NÓI CHUYỆN bằng giọng nói, câu trả lời sẽ được đọc lên \
-    thành tiếng. Hãy trả lời NGẮN GỌN trong 1-3 câu, bằng văn nói tự nhiên. \
-    Không dùng tiêu đề, danh sách gạch đầu dòng, bảng hay khối mã. Nếu câu \
-    hỏi cần trình bày dài, hãy trả lời ý chính rồi mời họ hỏi tiếp.)
-    """
+    // ⚠️ ĐÃ BỎ chỉ dẫn "trả lời ngắn" tự chế. Backend có sẵn `VOICE_RULES`
+    // viết kỹ hơn — chỉ cần gửi `voice: true`, và mỗi lượt cũng đỡ được một
+    // đoạn chỉ dẫn lặp lại.
 
     private func noiDay() {
         nghe.khiXongCau = { chu in
             Task { @MainActor in
                 let sach = chu.trimmingCharacters(in: .whitespacesAndNewlines)
                 guard !sach.isEmpty else { return }
-                vm.gui(sach, guiKem: Self.CHI_DAN_NOI)
+                vm.gui(sach, voice: true)
             }
         }
         nghe.khiRong = {

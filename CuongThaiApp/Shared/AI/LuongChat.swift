@@ -61,7 +61,8 @@ final class LuongChat {
                     anh: [String] = [],
                     taiLieu: [String] = [],
                     tenTaiLieu: [String] = [],
-                    timWeb: Bool = true) -> AsyncStream<SuKienChat> {
+                    timWeb: Bool = true,
+                    voice: Bool = false) -> AsyncStream<SuKienChat> {
         AsyncStream { tiep in
             Task {
                 guard let url = URL(string: APIClient.diaChiGoc + "/api/v1/ai/chat") else {
@@ -86,6 +87,23 @@ final class LuongChat {
                 // Mặc định của backend là BẬT. Bậc nhanh tắt đi để khỏi mất
                 // mấy giây tìm web cho câu hỏi thường ngày.
                 if !timWeb { than["choTimWeb"] = false }
+                if voice {
+                    // ⚠️ Backend đã có sẵn `VOICE_RULES` (2-4 câu, không
+                    // markdown, số viết thành chữ). Trước đây app tự nhét một
+                    // câu chỉ dẫn tương tự vào MỖI lượt — vừa thừa vừa tốn
+                    // token, mà lại kém hơn bản backend. Chỉ cần bật cờ.
+                    than["voice"] = true
+                }
+                // "Hôm nay" và "bây giờ" theo MÁY NÀY, không để máy chủ tự tính:
+                // container chạy UTC còn người dùng ở +07, nên từ 17:00 giờ VN
+                // trở đi máy chủ đã sang hôm sau và sẽ đọc lịch của ngày mai.
+                let lich = Calendar.current
+                let nay = Date()
+                let d = lich.dateComponents([.year, .month, .day, .hour, .minute], from: nay)
+                if let y = d.year, let m = d.month, let ng = d.day, let h = d.hour, let p = d.minute {
+                    than["homNay"] = String(format: "%04d-%02d-%02d", y, m, ng)
+                    than["gioPhut"] = String(format: "%02d:%02d", h, p)
+                }
                 req.httpBody = try? JSONSerialization.data(withJSONObject: than)
                 // Câu trả lời dài có thể mất hơn một phút; mặc định 60s sẽ cắt
                 // ngang giữa câu.

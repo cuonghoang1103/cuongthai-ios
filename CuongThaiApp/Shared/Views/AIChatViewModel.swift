@@ -196,7 +196,7 @@ final class AIChatViewModel: ObservableObject {
     /// chế độ nói chuyện: câu trả lời đọc lên phải NGẮN, mà người dùng thì
     /// không nên thấy dòng chỉ dẫn đó lặp lại ở mọi lượt.
     func gui(_ cauHoi: String, anh: [String] = [], tep: [String] = [],
-             tenTep: [String] = [], guiKem: String? = nil) {
+             tenTep: [String] = [], guiKem: String? = nil, voice: Bool = false) {
         guard !dangTraLoi else { return }
         // Ngữ cảnh phải chộp TRƯỚC khi thêm lượt mới, không thì câu vừa gõ
         // lọt vào lịch sử và model đọc nó hai lần.
@@ -217,7 +217,8 @@ final class AIChatViewModel: ObservableObject {
                                       anh: anhGui,
                                       taiLieu: bac.nhanTep ? tep : [],
                                       tenTaiLieu: bac.nhanTep ? tenTep : [],
-                                      timWeb: bac.timWeb)
+                                      timWeb: bac.timWeb,
+                                      voice: voice)
             for await su in luong {
                 if Task.isCancelled { break }
                 switch su {

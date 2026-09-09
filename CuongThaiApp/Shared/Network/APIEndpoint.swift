@@ -195,6 +195,8 @@ enum APIEndpoint {
     case catPhien(id: String, tuChiSo: Int)
     /// Đặt việc đọc — trả `{ jobId }`, KHÔNG trả tiếng ngay. Xem `MayDoc`.
     case datViecDoc(text: String, voice: String? = nil)
+    /// Danh sách giọng máy chủ — cho bộ chọn giọng của trợ lý.
+    case dsGiongMayChu
     /// Xoá hội thoại CHO RIÊNG MÌNH — máy chủ đặt `deletedAt` theo người xem,
     /// người kia vẫn thấy nguyên. Khôi phục ở tab "Đã xoá".
     case xoaHoiThoai(threadId: Int)
@@ -627,6 +629,7 @@ enum APIEndpoint {
         case .tachNhanhPhien(let id, _): return "/api/v1/ai/chat/sessions/\(id)/fork"
         case .catPhien(let id, _): return "/api/v1/ai/chat/sessions/\(id)/cat"
         case .datViecDoc: return "/api/v1/voice-mini/tts"
+        case .dsGiongMayChu: return "/api/v1/voice-mini/voices"
         case .xoaHoiThoai(let id): return "/api/v1/messages/threads/\(id)"
         case .xoaBaiViet(let id): return "/api/v1/social/posts/\(id)"
         case .suaBaiViet(let id, _): return "/api/v1/social/posts/\(id)"
