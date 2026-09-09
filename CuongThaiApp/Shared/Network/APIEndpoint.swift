@@ -659,7 +659,11 @@ enum APIEndpoint {
         case .getSavedPosts: return "/api/v1/social/saves"
         case .getMyCourses: return "/api/v1/courses/my"
         case .getSemesters: return "/api/v1/academy/semesters"
-        case .getCoursesBySemester(let id): return "/api/v1/courses/semester/\(id)"
+        // `gon=1` — màn Học viện chỉ hiện tên/mã/ảnh/mô tả ngắn/số bài, KHÔNG
+        // đọc `sections`. Không có tham số này thì mỗi lần mở một kỳ là kéo về
+        // cả cây chương→bài của mọi môn trong kỳ: đo thật 09/09/2026 là
+        // 136-391 KB mỗi kỳ và ~2 giây chờ, trong đó 93% là `sections`.
+        case .getCoursesBySemester(let id): return "/api/v1/courses/semester/\(id)?gon=1"
         case .getLesson(let c, let l): return "/api/v1/courses/\(c)/lessons/\(l)"
         case .hoiGiaSuBai(let l, _): return "/api/v1/courses/lessons/\(l)/ai/ask"
         case .cauHoiThuongGap(let l): return "/api/v1/courses/lessons/\(l)/ai/asks"
