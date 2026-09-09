@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 
 /// Nhập cả thời khoá biểu bằng MỘT khối chữ, thay vì mở biểu mẫu 10 lần.
 ///
@@ -24,6 +25,10 @@ struct NhapNhanhLichView: View {
     @State private var thayThe = false
     @State private var dangLuu = false
     @State private var loi: String?
+    // ── Quét ảnh ──
+    @State private var anhChon: PhotosPickerItem?
+    @State private var dangQuet = false
+    @State private var canhBaoQuet: [String] = []
 
     private let mocNhac = [0, 15, 30, 45, 60, 90, 120]
 
@@ -63,6 +68,37 @@ struct NhapNhanhLichView: View {
             }
     }
 
+    /// Đọc ảnh → điền vào ô chữ. CỘNG THÊM vào phần đang có chứ không đè:
+    /// người dùng có thể quét hai ảnh (lịch chia hai trang) hoặc đã gõ tay
+    /// vài dòng trước đó, đè lên là mất trắng.
+    private func quetAnh(_ muc: PhotosPickerItem) async {
+        dangQuet = true
+        canhBaoQuet = []
+        defer { dangQuet = false; anhChon = nil }
+        do {
+            guard let d = try await muc.loadTransferable(type: Data.self),
+                  let anh = UIImage(data: d) else {
+                loi = T("Không mở được ảnh vừa chọn.")
+                return
+            }
+            let kq = try await QuetAnhLich.quet(anh)
+            canhBaoQuet = kq.canhBao
+            let them = kq.thanhChu
+            guard !them.isEmpty else {
+                loi = kq.canhBao.first ?? T("Không thấy buổi học nào trong ảnh. Thử chụp rõ cả bảng nhé.")
+                return
+            }
+            let cu = chu.trimmingCharacters(in: .whitespacesAndNewlines)
+            chu = cu.isEmpty ? them : cu + "\n" + them
+            Haptics.cham()
+        } catch {
+            loi = (error as? APIError).map { e in
+                if case .serverError(let m) = e, !m.isEmpty { return m }
+                return T("Đọc ảnh không thành công.")
+            } ?? T("Đọc ảnh không thành công.")
+        }
+    }
+
     private var soHong: Int { cacDong.filter { $0.loi != nil }.count }
     private var hopLe: Bool { !cacDong.isEmpty && soHong == 0 }
 
@@ -72,6 +108,39 @@ struct NhapNhanhLichView: View {
 
     var body: some View {
         Form {
+            Section {
+                PhotosPicker(selection: $anhChon, matching: .images, photoLibrary: .shared()) {
+                    HStack(spacing: Spacing.sm) {
+                        if dangQuet {
+                            ProgressView().controlSize(.small)
+                        } else {
+                            Image(systemName: "text.viewfinder").font(.system(size: 17))
+                        }
+                        Text(dangQuet ? T("Đang đọc ảnh…") : T("Quét ảnh thời khoá biểu"))
+                            .font(.system(size: 15, weight: .semibold))
+                        Spacer()
+                    }
+                }
+                .disabled(dangQuet)
+
+                if !canhBaoQuet.isEmpty {
+                    // ⚠️ Cảnh báo của AI phải HIỆN RA. Nuốt nó đi thì người dùng
+                    // đinh ninh đã quét đủ lịch, tới hôm đó mới biết thiếu buổi.
+                    VStack(alignment: .leading, spacing: 4) {
+                        ForEach(canhBaoQuet, id: \.self) { c in
+                            HStack(alignment: .top, spacing: 6) {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .font(.system(size: 11)).foregroundColor(AppColors.warning)
+                                Text(c).font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                            }
+                        }
+                    }
+                }
+            } footer: {
+                Text(T("Chụp hoặc chọn ảnh bảng lịch của trường. AI đọc xong sẽ điền vào ô dưới — bạn xem lại rồi mới lưu."))
+                    .font(.system(size: 12))
+            }
+
             Section {
                 TextEditor(text: $chu)
                     .frame(minHeight: 150)
@@ -135,7 +204,13 @@ struct NhapNhanhLichView: View {
                 Toggle(T("Giới hạn theo kỳ"), isOn: $coKy.animation())
                 if coKy {
                     DatePicker(T("Tuần 1 bắt đầu"), selection: $tuNgay, displayedComponents: .date)
-                    Stepper(String(format: T("Số tuần: %d"), soTuan), value: $soTuan, in: 1...30)
+                    // Picker chứ không Stepper: chọn 15 tuần bằng Stepper là
+                    // bấm mười bốn lần.
+                    Picker(T("Số tuần"), selection: $soTuan) {
+                        ForEach(1...15, id: \.self) { n in
+                            Text(String(format: T("%d tuần"), n)).tag(n)
+                        }
+                    }
                     Text(String(format: T("Áp dụng tới %@"), ngayChu(denNgay)))
                         .font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
                 }
@@ -157,6 +232,10 @@ struct NhapNhanhLichView: View {
             if let loi {
                 Section { Text(loi).font(.system(size: 13)).foregroundColor(AppColors.error) }
             }
+        }
+        .onChange(of: anhChon) { _, muc in
+            guard let muc else { return }
+            Task { await quetAnh(muc) }
         }
         .navigationTitle(T("Nhập nhanh lịch"))
         .navigationBarTitleDisplayMode(.inline)
