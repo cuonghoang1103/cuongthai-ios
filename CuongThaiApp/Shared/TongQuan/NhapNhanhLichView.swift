@@ -15,6 +15,9 @@ import PhotosUI
 /// "thay thế" xoá sạch lịch cũ), nên người dùng phải THẤY thứ mình sắp ghi.
 struct NhapNhanhLichView: View {
     @ObservedObject var vm: TongQuanVM
+    /// Vào thẳng từ mục "Quét ảnh" thì bật luôn bộ chọn ảnh — người dùng đã
+    /// nói rõ ý định ở menu rồi, bắt bấm thêm một nút nữa là thừa.
+    var moBoChonAnhNgay = false
     @Environment(\.dismiss) private var dismiss
 
     @State private var chu = ""
@@ -29,6 +32,7 @@ struct NhapNhanhLichView: View {
     @State private var anhChon: PhotosPickerItem?
     @State private var dangQuet = false
     @State private var canhBaoQuet: [String] = []
+    @State private var hienChonAnh = false
 
     private let mocNhac = [0, 15, 30, 45, 60, 90, 120]
 
@@ -232,6 +236,15 @@ struct NhapNhanhLichView: View {
             if let loi {
                 Section { Text(loi).font(.system(size: 13)).foregroundColor(AppColors.error) }
             }
+        }
+        // ⚠️ `PhotosPicker(isPresented:)` KHÔNG có dạng kèm nhãn — bản đó là
+        // MODIFIER riêng. Nút bấm ở trên dùng dạng có nhãn; đường tự-mở dùng
+        // modifier này.
+        .photosPicker(isPresented: $hienChonAnh, selection: $anhChon,
+                      matching: .images, photoLibrary: .shared())
+        .task {
+            guard moBoChonAnhNgay, !hienChonAnh else { return }
+            hienChonAnh = true
         }
         .onChange(of: anhChon) { _, muc in
             guard let muc else { return }

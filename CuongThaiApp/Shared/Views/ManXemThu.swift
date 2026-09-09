@@ -41,6 +41,8 @@ struct ManXemThu: View {
             // Cả màn AI Chat — để soi Ô NHẬP. Không gọi được AI vì chưa đăng
             // nhập, nhưng bố cục thanh dưới thì thấy đủ.
             case "aichat": AIChatView()
+            // Màn Thời khoá biểu — để soi menu "+" mà không cần phiên đăng nhập.
+            case "lichtuan": ThuLichTuan()
 
             // Ba trạng thái của màn Hồ sơ khi CHƯA có dữ liệu. Không có cửa
             // này thì không cách nào nhìn thấy chúng: muốn tái hiện phải làm
@@ -207,6 +209,12 @@ private struct ThuCheDoNoi: View {
                 ]
             }
     }
+}
+
+
+private struct ThuLichTuan: View {
+    @StateObject private var vm = TongQuanVM()
+    var body: some View { LichTuanView(vm: vm) }
 }
 
 #endif
