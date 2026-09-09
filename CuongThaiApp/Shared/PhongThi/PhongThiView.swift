@@ -26,6 +26,20 @@ struct PhongThiView: View {
     @State private var loaiChon: LoaiDe?
     @State private var kyMo: Set<Int> = []
     @State private var monMo: Set<String> = []
+    /// Cây kỳ → môn → đề, nhóm SẴN.
+    ///
+    /// ⚠️ TRƯỚC ĐÂY LÀ `private var cay: [Ky] { ... }` — computed property,
+    /// nên nó nhóm lại 1.300 đề MỖI LẦN body dựng lại, kể cả khi chỉ mở/đóng
+    /// một kỳ. Đo thật trên máy ảo 10/09/2026, bấm mở "Kỳ 2":
+    ///
+    ///     computed  →  947 · 953 · 994 ms
+    ///     @State    →   40 ·  46 ·  71 ms      (nhanh ~20 lần)
+    ///
+    /// Đáng chú ý: đóng cũng tốn đúng ngần ấy, tức chi phí KHÔNG nằm ở nội
+    /// dung mới hiện ra mà ở việc dựng lại cả cây rồi bắt SwiftUI so lại.
+    /// Một phép đo mô phỏng riêng chỉ ra 3,2ms — nó mô hình hoá dữ liệu quá
+    /// đơn giản và đã dẫn tôi đi sai hướng; con số thật phải đo TRONG app.
+    @State private var cay: [Ky] = []
     /// ⚠️ Mặc định TIẾNG ANH, khớp `ExamPortalClient` của web.
     @State private var ngonNgu: NgonNguDe = .anh
 
@@ -89,7 +103,7 @@ struct PhongThiView: View {
         }
     }
 
-    private var cay: [Ky] {
+    private func dungCay() -> [Ky] {
         Dictionary(grouping: hienThi, by: \.soKyHoc)
             .map { soKy, dsKy in
                 let mon = Dictionary(grouping: dsKy, by: \.maMon)
@@ -164,6 +178,9 @@ struct PhongThiView: View {
         .environment(\.ngonNguDe, ngonNgu)
         .navigationBarTitleDisplayMode(.inline)
         .task { if de.isEmpty { await tai() } }
+        .onChange(of: de.count) { _, _ in cay = dungCay() }
+        .onChange(of: tuKhoa) { _, _ in cay = dungCay() }
+        .onChange(of: loaiChon) { _, _ in cay = dungCay() }
         .refreshable { await tai() }
     }
 
@@ -318,6 +335,7 @@ struct PhongThiView: View {
             if mo {
                 // Dòng ngăn theo KỲ THI, chỉ hiện khi sang kỳ mới — nhìn là
                 // thấy ngay "đây là chỗ đề Spring 2026 kết thúc".
+                LazyVStack(spacing: 0) {
                 ForEach(Array(m.de.enumerated()), id: \.element.id) { i, d in
                     let truoc = i > 0 ? m.de[i - 1].mocKy : Int.min
                     if d.mocKy != truoc { VachKyThi(ky: d.kyThi) }
@@ -325,6 +343,7 @@ struct PhongThiView: View {
                         HangDeThi(de: d, ngonNgu: ngonNgu)
                     }
                     .buttonStyle(.plain)
+                }
                 }
             }
         }
