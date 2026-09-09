@@ -28,6 +28,7 @@ struct AIChatView: View {
     @StateObject private var ghiAm = GhiAmThoai()
     @StateObject private var mayDoc = MayDoc()
     @State private var hienNoiChuyen = false
+    @State private var hienChonGiong = false
     /// Trợ lý cần nó để đánh dấu xong / thêm việc khi người dùng xác nhận.
     @StateObject private var tongQuan = TongQuanVM()
     @State private var dangNhanDang = false
@@ -78,6 +79,12 @@ struct AIChatView: View {
                         Button {
                             vm.hoiMoi()
                         } label: { Label("Cuộc trò chuyện mới", systemImage: "square.and.pencil") }
+                        // Giọng đã chọn dùng cho CẢ nút "Nghe" ở chat chữ, nên
+                        // nó phải với tới được mà không cần vào chế độ nói
+                        // chuyện. Người dùng hỏi đúng câu này ngay hôm ship.
+                        Button { hienChonGiong = true } label: {
+                            Label(T("Giọng trợ lý"), systemImage: "speaker.wave.2.circle")
+                        }
                         if !vm.tin.isEmpty {
                             ShareLink(item: vm.xuatMarkdown()) {
                                 Label("Chia sẻ cuộc này", systemImage: "square.and.arrow.up")
@@ -104,6 +111,9 @@ struct AIChatView: View {
             // ⚠️ Máy đọc vốn nuốt lỗi: `MayDoc.loi` được gán nhưng KHÔNG chỗ
             // nào hiện nó, nên 429 "đang có 2 bản đọc chạy dở" trông y hệt
             // "bấm không ăn gì". Dồn vào đúng hộp báo lỗi đã có sẵn.
+            .sheet(isPresented: $hienChonGiong) {
+                NavigationStack { ChonGiongTroLyView() }
+            }
             .fullScreenCover(isPresented: $hienNoiChuyen) {
                 CheDoNoiView(vm: vm, mayDoc: mayDoc, tongQuan: tongQuan)
             }

@@ -134,8 +134,11 @@ struct CheDoNoiView: View {
             // cầu bị đẩy ra ngoài màn hình (đo được x=-132 y=-195). Tôi chưa
             // giải thích được cơ chế, nên tránh hẳn thay vì ship thứ mình
             // không hiểu — tên giọng đang chọn hiện trong chính bảng chọn.
+            // ⚠️ KHÔNG dùng `waveform.circle` ở đây — đó đúng là icon của nút
+            // MỞ chế độ nói chuyện ở ô nhập. Hai việc khác hẳn nhau mà cùng
+            // một hình thì người dùng không đoán được cái nào làm gì.
             Button { hienChonGiong = true } label: {
-                Image(systemName: "waveform.circle")
+                Image(systemName: "speaker.wave.2.circle")
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundColor(AppColors.textSecondary)
                     .frame(width: 36, height: 36)
