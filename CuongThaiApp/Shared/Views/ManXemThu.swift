@@ -200,8 +200,9 @@ struct ThuNoiDungThi: View {
 private struct ThuCheDoNoi: View {
     @StateObject private var vm = AIChatViewModel()
     @StateObject private var mayDoc = MayDoc()
+    @StateObject private var tongQuan = TongQuanVM()
     var body: some View {
-        CheDoNoiView(vm: vm, mayDoc: mayDoc)
+        CheDoNoiView(vm: vm, mayDoc: mayDoc, tongQuan: tongQuan)
             .onAppear {
                 vm.tin = [
                     TinAI(cuaNguoi: true, noiDung: "Con trỏ trong C là gì?"),

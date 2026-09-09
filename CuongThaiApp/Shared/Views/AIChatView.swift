@@ -28,6 +28,8 @@ struct AIChatView: View {
     @StateObject private var ghiAm = GhiAmThoai()
     @StateObject private var mayDoc = MayDoc()
     @State private var hienNoiChuyen = false
+    /// Trợ lý cần nó để đánh dấu xong / thêm việc khi người dùng xác nhận.
+    @StateObject private var tongQuan = TongQuanVM()
     @State private var dangNhanDang = false
     @State private var hienMayAnh = false
     @State private var suaTin: TinAI?
@@ -103,7 +105,7 @@ struct AIChatView: View {
             // nào hiện nó, nên 429 "đang có 2 bản đọc chạy dở" trông y hệt
             // "bấm không ăn gì". Dồn vào đúng hộp báo lỗi đã có sẵn.
             .fullScreenCover(isPresented: $hienNoiChuyen) {
-                CheDoNoiView(vm: vm, mayDoc: mayDoc)
+                CheDoNoiView(vm: vm, mayDoc: mayDoc, tongQuan: tongQuan)
             }
             .onChange(of: mayDoc.loi) { _, moi in
                 guard let moi, !moi.isEmpty else { return }

@@ -75,6 +75,8 @@ final class AIChatViewModel: ObservableObject {
     @Published var buocHienTai: String?
     @Published var loi: String?
     @Published var bac: BacAI = .mini
+    /// Việc trợ lý ĐỀ NGHỊ làm, chờ người dùng xác nhận. Không bao giờ tự chạy.
+    @Published var deNghi: [HanhDongDeNghi] = []
 
     /// `sessionId` để trống nghĩa là cuộc MỚI — backend tự tạo ở lượt đầu và
     /// trả lại qua khung `connected`.
@@ -139,6 +141,28 @@ final class AIChatViewModel: ObservableObject {
         tin.filter { !$0.noiDung.isEmpty }
            .map { ($0.cuaNguoi ? "## 🧑 Tôi\n\n" : "## 🤖 CuongMini\n\n") + $0.noiDung }
            .joined(separator: "\n\n---\n\n")
+    }
+
+    /// Làm một việc trợ lý đề nghị. Gọi từ nút XÁC NHẬN, không tự chạy.
+    ///
+    /// ⚠️ "Đánh dấu xong" khớp theo TÊN, nên phải khớp chắc: không tìm thấy
+    /// thì nói ra chứ đừng im lặng — người dùng vừa nghe "mình đánh dấu xong
+    /// nhé" mà việc vẫn còn đó thì họ tin là đã xong.
+    func lamDeNghi(_ hd: HanhDongDeNghi, tongQuan: TongQuanVM) async -> String? {
+        deNghi.removeAll { $0.id == hd.id }
+        switch hd.loai {
+        case .them:
+            await tongQuan.themViec(hd.noiDung)
+            return nil
+        case .xong:
+            let ten = hd.noiDung.lowercased()
+            let tim = tongQuan.viec.first {
+                !$0.done && ($0.title.lowercased() == ten || $0.title.lowercased().contains(ten))
+            }
+            guard let v = tim else { return "Không thấy việc “\(hd.noiDung)” trong danh sách." }
+            await tongQuan.doiXong(v)
+            return nil
+        }
     }
 
     func hoiMoi() {
@@ -208,6 +232,8 @@ final class AIChatViewModel: ObservableObject {
         dangTraLoi = true
         buocHienTai = nil
 
+        deNghi = []
+        let loc = LocHanhDong()
         viec = Task { [weak self] in
             guard let self else { return }
             let luong = LuongChat.gui(cauHoi: cauHoi + (guiKem.map { "\n\n" + $0 } ?? ""),
@@ -239,8 +265,16 @@ final class AIChatViewModel: ObservableObject {
                     if let i = chiSoDangChay(), !ns.isEmpty { tin[i].nguon = ns }
                 case .mau(let m):
                     buocHienTai = nil
-                    if let i = chiSoDangChay() { tin[i].noiDung += m }
+                    // ⚠️ Lọc TRƯỚC khi ghi vào bong bóng. Dấu lệnh có thể bị
+                    // cắt đôi giữa hai mẩu, nên bộ lọc giữ lại phần đuôi ngờ
+                    // ngợ — ghi thẳng vào đây là "<<VIEC" loé lên màn hình rồi
+                    // bị máy đọc đọc lên thành tiếng.
+                    let sach = loc.nap(m)
+                    if !sach.isEmpty, let i = chiSoDangChay() { tin[i].noiDung += sach }
                 case .xong(let mid, let model, _):
+                    let con = loc.xong()
+                    if !con.isEmpty, let i = chiSoDangChay() { tin[i].noiDung += con }
+                    deNghi = loc.hanhDong
                     if let i = chiSoDangChay() {
                         tin[i].dangChay = false
                         tin[i].messageId = mid

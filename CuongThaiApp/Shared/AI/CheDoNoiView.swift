@@ -25,6 +25,8 @@ import SwiftUI
 struct CheDoNoiView: View {
     @ObservedObject var vm: AIChatViewModel
     @ObservedObject var mayDoc: MayDoc
+    /// Cần để thực hiện việc trợ lý đề nghị (đánh dấu xong / thêm việc).
+    @ObservedObject var tongQuan: TongQuanVM
     @Environment(\.dismiss) private var dong
     @Environment(\.accessibilityReduceMotion) private var itChuyenDong
 
@@ -71,7 +73,11 @@ struct CheDoNoiView: View {
                 Text(trangThai)
                     .font(.system(size: 14, weight: .medium))
                     .foregroundColor(AppColors.textSecondary)
-                    .padding(.bottom, Spacing.lg)
+                    .padding(.bottom, vm.deNghi.isEmpty ? Spacing.lg : Spacing.sm)
+                // ⚠️ Trợ lý KHÔNG tự làm gì. Nó chỉ đề nghị, và đây là chỗ
+                // người dùng đồng ý. Nghe nhầm một câu mà tự đánh dấu xong thì
+                // tệ hơn hẳn để họ tự bấm.
+                if !vm.deNghi.isEmpty { thanhXacNhan }
                 nutMic
                     .padding(.bottom, Spacing.xl)
             }
@@ -241,6 +247,44 @@ struct CheDoNoiView: View {
         .frame(minHeight: 84)
         .padding(.horizontal, Spacing.xl)
         .animation(.easeInOut(duration: 0.2), value: nghe.chuTamThoi)
+    }
+
+    private var thanhXacNhan: some View {
+        VStack(spacing: Spacing.xs) {
+            ForEach(vm.deNghi) { hd in
+                HStack(spacing: Spacing.sm) {
+                    Text(hd.moTa)
+                        .font(.system(size: 13))
+                        .foregroundColor(AppColors.textPrimary)
+                        .lineLimit(2)
+                    Spacer(minLength: 0)
+                    Button {
+                        Haptics.cham()
+                        Task {
+                            if let e = await vm.lamDeNghi(hd, tongQuan: tongQuan) { vm.loi = e }
+                        }
+                    } label: {
+                        Text(T("Làm")).font(.system(size: 13, weight: .semibold))
+                            .padding(.horizontal, 14).padding(.vertical, 6)
+                            .background(Capsule().fill(AppColors.primary))
+                            .foregroundColor(AppColors.onPrimary)
+                    }
+                    .buttonStyle(.plain)
+                    Button {
+                        vm.deNghi.removeAll { $0.id == hd.id }
+                    } label: {
+                        Image(systemName: "xmark").font(.system(size: 12, weight: .bold))
+                            .foregroundColor(AppColors.textTertiary).frame(width: 26, height: 26)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, Spacing.md).padding(.vertical, Spacing.sm)
+                .background(RoundedRectangle(cornerRadius: CornerRadius.medium)
+                    .fill(AppColors.backgroundSecondary))
+            }
+        }
+        .padding(.horizontal, Spacing.lg)
+        .padding(.bottom, Spacing.md)
     }
 
     private var nutMic: some View {

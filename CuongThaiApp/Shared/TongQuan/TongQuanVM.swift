@@ -24,7 +24,17 @@ struct DapAnMotViec: Codable { var task: ViecTongQuan? }
 
 @MainActor
 final class TongQuanVM: ObservableObject {
-    @Published var viec: [ViecTongQuan] = []
+    /// ⚠️ `didSet` chứ KHÔNG gọi tay ở từng chỗ sửa việc. Có bốn đường đổi
+    /// danh sách (thêm/đổi xong/xoá/sửa) và mỗi lần thêm đường mới mà quên gọi
+    /// là một lời nhắc ma còn kêu sau khi việc đã xong — đúng kiểu lỗi âm thầm
+    /// không ai báo. Đặt lại lời nhắc rẻ: nó chỉ đụng những việc CHƯA xong và
+    /// CÒN hạn.
+    @Published var viec: [ViecTongQuan] = [] {
+        didSet {
+            guard viec != oldValue else { return }
+            Task { await NhacViec.datLai(viec) }
+        }
+    }
     @Published var trangThai = TrangThaiTongQuan(level: 1, exp: 0, totalExp: 0)
     @Published var buoiHoc: [BuoiHoc] = []
     @Published var diemDanh: [DiemDanh] = []
