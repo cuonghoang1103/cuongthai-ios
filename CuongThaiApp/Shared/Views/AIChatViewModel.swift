@@ -65,7 +65,16 @@ enum BacAI: String, CaseIterable, Identifiable {
 
     /// Bậc nhanh tắt tìm web: mỗi lượt tìm mất mấy giây, mà câu hỏi thường
     /// ngày thì không cần.
-    var timWeb: Bool { self != .mini }
+    /// ⚠️ TRƯỚC ĐÂY BẬC MINI BỊ TẮT HẲN TÌM WEB, nên nó KHÔNG BAO GIỜ trả lời
+    /// được câu hỏi về tin tức — chỉ nói "mình không truy cập được internet".
+    /// Người dùng gặp đúng thế 10/09/2026.
+    ///
+    /// Lý do tắt là sợ chậm, nhưng nó thừa: backend đã có `canTimWeb()` chặn
+    /// sẵn, và nó nói KHÔNG với hầu hết câu thường ngày (hỏi code, giải thích,
+    /// dịch). Phép chặn đó chỉ là so chuỗi — vài micro giây. Chỉ khi câu hỏi
+    /// THỰC SỰ cần tra cứu thì mới tốn thời gian đi tìm, và lúc đó người dùng
+    /// muốn nó đi tìm.
+    var timWeb: Bool { true }
 }
 
 @MainActor
