@@ -123,14 +123,7 @@ struct BaiHocView: View {
 
         case .anh:
             VStack(alignment: .leading, spacing: Spacing.xs) {
-                if let u = k.url, let url = URL(string: u) {
-                    AsyncImage(url: url) { anh in
-                        anh.resizable().scaledToFit()
-                    } placeholder: {
-                        ProgressView().frame(height: 120).frame(maxWidth: .infinity)
-                    }
-                    .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
-                }
+                if let u = k.url { AnhBaiHoc(duong: u) }
                 if let c = k.chuThich(ngonNgu) {
                     Text(c).font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
                 }

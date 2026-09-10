@@ -45,6 +45,7 @@ struct ManXemThu: View {
             case "lichtuan": ThuLichTuan()
             // Bộ dựng câu trả lời AI — soi SVG, bảng, màu mã.
             case "traloi": ThuTraLoi()
+            case "anhbai": ThuAnhBaiHoc()
 
             // Ba trạng thái của màn Hồ sơ khi CHƯA có dữ liệu. Không có cửa
             // này thì không cách nào nhìn thấy chúng: muốn tái hiện phải làm
@@ -262,6 +263,26 @@ private struct ThuTraLoi: View {
         ScrollView {
             TraLoiAI(chu: mau, xong: true)
                 .padding()
+        }
+        .background(AppColors.backgroundPrimary)
+    }
+}
+
+
+/// Soi ẢNH BÀI HỌC ở cả hai trạng thái: tải được, và tải HỎNG.
+private struct ThuAnhBaiHoc: View {
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: Spacing.lg) {
+                Text("1 · Ảnh THẬT (slide LAB211)")
+                    .font(.system(size: 13, weight: .bold)).foregroundColor(AppColors.textSecondary)
+                AnhBaiHoc(duong: "https://media.cuongthai.com/code-lab/lab211/hdc/hd-02.png")
+
+                Text("2 · Ảnh HỎNG — phải hiện nút thử lại, KHÔNG xoay mãi")
+                    .font(.system(size: 13, weight: .bold)).foregroundColor(AppColors.textSecondary)
+                AnhBaiHoc(duong: "https://media.cuongthai.com/khong-he-ton-tai-9x8y7z.png")
+            }
+            .padding()
         }
         .background(AppColors.backgroundPrimary)
     }
