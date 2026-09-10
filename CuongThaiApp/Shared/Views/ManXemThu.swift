@@ -43,6 +43,8 @@ struct ManXemThu: View {
             case "aichat": AIChatView()
             // Màn Thời khoá biểu — để soi menu "+" mà không cần phiên đăng nhập.
             case "lichtuan": ThuLichTuan()
+            // Bộ dựng câu trả lời AI — soi SVG, bảng, màu mã.
+            case "traloi": ThuTraLoi()
 
             // Ba trạng thái của màn Hồ sơ khi CHƯA có dữ liệu. Không có cửa
             // này thì không cách nào nhìn thấy chúng: muốn tái hiện phải làm
@@ -216,6 +218,53 @@ private struct ThuCheDoNoi: View {
 private struct ThuLichTuan: View {
     @StateObject private var vm = TongQuanVM()
     var body: some View { LichTuanView(vm: vm) }
+}
+
+
+/// Soi bộ dựng câu trả lời với ĐÚNG ba thứ người dùng báo hỏng:
+/// SVG trong khối ```svg · bảng · khối mã cần tô màu.
+private struct ThuTraLoi: View {
+    private let mau = """
+    Quy trình phân tích yêu cầu gồm bốn bước:
+
+    ```svg
+    <svg viewBox="0 0 420 90" xmlns="http://www.w3.org/2000/svg">
+      <rect x="10" y="20" width="110" height="46" rx="6" fill="#e0e7ff" stroke="#4338ca"/>
+      <text x="65" y="48" text-anchor="middle" font-size="14" fill="#1e1b4b">Elicitation</text>
+      <path d="M 128 43 L 168 43" stroke="#334155" stroke-width="2"/>
+      <rect x="175" y="20" width="110" height="46" rx="6" fill="#dcfce7" stroke="#15803d"/>
+      <text x="230" y="48" text-anchor="middle" font-size="14" fill="#052e16">Analysis</text>
+      <path d="M 293 43 L 333 43" stroke="#334155" stroke-width="2"/>
+      <rect x="340" y="20" width="70" height="46" rx="6" fill="#fee2e2" stroke="#b91c1c"/>
+      <text x="375" y="48" text-anchor="middle" font-size="13" fill="#450a0a">Spec</text>
+    </svg>
+    ```
+
+    | Bước | Đầu ra | Ai làm |
+    |---|---|---|
+    | Elicitation | Danh sách yêu cầu thô | BA |
+    | Analysis | Mô hình use-case | BA + Dev |
+    | Validation | Biên bản duyệt | Khách hàng |
+
+    Ví dụ mã Java:
+
+    ```java
+    public class Account {
+        private double balance;   // số dư
+        public void deposit(double amount) {
+            if (amount <= 0) throw new IllegalArgumentException("amount must be > 0");
+            this.balance += amount;
+        }
+    }
+    ```
+    """
+    var body: some View {
+        ScrollView {
+            TraLoiAI(chu: mau, xong: true)
+                .padding()
+        }
+        .background(AppColors.backgroundPrimary)
+    }
 }
 
 #endif

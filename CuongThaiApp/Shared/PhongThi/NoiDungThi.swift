@@ -328,6 +328,51 @@ struct NoiDungThiWeb: UIViewRepresentable {
                 }
               }
             } catch (e) {}
+            try {
+              // ── SVG viết trong khối ```svg ────────────────────────────
+              // ⚠️ Backend dặn model "vẽ bằng khối ```svg" (xem luật vẽ hình
+              // trong ai.service.ts). Khối ba backtick qua marked thành
+              // <pre><code>, nên hình VẼ ĐƯỢC mà lại HIỆN RA DẠNG MÃ NGUỒN —
+              // đúng thứ người dùng chụp lại 10/09/2026. Bung ra như cách
+              // Mermaid đang được xử lý ngay trên.
+              for (const c of el.querySelectorAll('pre code')) {
+                const t = (c.textContent || '').trim();
+                if (!t.startsWith('<svg')) continue;
+                const w = document.createElement('div');
+                w.className = 'so-do';
+                w.innerHTML = t;
+                (c.closest('pre') || c).replaceWith(w);
+              }
+            } catch (e) {}
+            try {
+              // ── Tô màu mã ─────────────────────────────────────────────
+              // ⚠️ Bảng màu .hljs-* kiểu VS Code ĐÃ CÓ SẴN trong <style> ở
+              // trên, nhưng highlight.js CHƯA BAO GIỜ ĐƯỢC NẠP — có sẵn áo mà
+              // không ai mặc. Người dùng báo "code chưa có màu" 10/09/2026.
+              //
+              // ⚠️ PHẢI DÙNG `@highlightjs/cdn-assets`, KHÔNG dùng
+              // `highlight.js@11/es/core.js`. Bản sau tái xuất bằng `export *`
+              // và WebKit ném:
+              //     SyntaxError: Indirectly exported binding name 'default'
+              //     cannot be resolved by star export entries.
+              // Lỗi đó bị `catch` nuốt nên nhìn ngoài chỉ thấy "mã không màu".
+              //
+              // KHÔNG nạp theme CSS của hljs: màu đã định ở trên phải thắng.
+              const ma = el.querySelectorAll('pre code');
+              if (ma.length) {
+                const G = 'https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11/es/';
+                const hl = (await import(G + 'core.min.js')).default;
+                const ten = ['java','javascript','typescript','python','sql','xml',
+                             'css','json','bash','cpp','csharp'];
+                // Nạp SONG SONG: 11 lượt nối đuôi nhau là 11 lượt chờ mạng.
+                const goi = await Promise.all(ten.map(async (g) => {
+                  try { return [g, (await import(G + 'languages/' + g + '.min.js')).default]; }
+                  catch (e) { return null; }
+                }));
+                for (const p of goi) { if (p) { try { hl.registerLanguage(p[0], p[1]); } catch (e) {} } }
+                for (const c of ma) { try { hl.highlightElement(c); } catch (e) {} }
+              }
+            } catch (e) {}
             requestAnimationFrame(bao);
             // Ảnh tải xong thì chiều cao đổi — đo lại, không thì phần dưới bị
             // cắt đúng bằng chiều cao ảnh.

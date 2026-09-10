@@ -383,15 +383,32 @@ struct GiaSuBaiHocView: View {
                     ForEach(Array(vm.luot.enumerated()), id: \.element.id) { i, l in
                         bongBong(l, i)
                     }
+                    // Mốc NGAY SAU tin cuối, TRƯỚC khối "Câu hỏi thường gặp".
+                    Color.clear.frame(height: 1).id("sauTinCuoi")
                     if !vm.thuongGap.isEmpty { mucThuongGap }
                     Color.clear.frame(height: 1).id("cuoi")
                 }
                 .padding(Spacing.md)
             }
+            // ⚠️ CUỘN TỚI SAU TIN CUỐI, KHÔNG PHẢI TỚI ĐÁY TRANG.
+            //
+            // Bản cũ cuộn tới mốc "cuoi", mà mốc đó nằm DƯỚI CẢ khối "Câu hỏi
+            // thường gặp". Nên gửi câu mới xong là màn hình nhảy xuống dưới
+            // khối FAQ, đẩy chính câu vừa hỏi LÊN TRÊN khỏi màn hình — người
+            // dùng phải tự lướt ngược lên mò trong đống câu cũ. Báo lại
+            // 10/09/2026: "nó nhảy thẳng lên đầu", "có khi nằm ở giữa".
             .onChange(of: vm.luot.count) { _, _ in
-                withAnimation { cuon.scrollTo("cuoi", anchor: .bottom) }
+                withAnimation { cuon.scrollTo("sauTinCuoi", anchor: .bottom) }
+            }
+            // Và bám theo trong lúc chữ còn chảy: `count` không đổi khi câu
+            // trả lời dài ra, nên chỉ nghe `count` là đứng im giữa chừng.
+            .onChange(of: vm.luot.last?.noiDung) { _, _ in
+                withAnimation(.easeOut(duration: 0.15)) {
+                    cuon.scrollTo("sauTinCuoi", anchor: .bottom)
+                }
             }
         }
+
     }
 
     private var loiChao: some View {
