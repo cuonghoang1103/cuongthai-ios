@@ -6,8 +6,26 @@ import SwiftUI
 /// trong "Đi nhanh". Xoá hẳn thì mọi màn liên quan (chi tiết bài, bình luận,
 /// thả cảm xúc) thành mã chết mà vẫn phải biên dịch.
 struct TongQuanView: View {
-    @StateObject private var vm = TongQuanVM()
+    @StateObject private var vm: TongQuanVM
+    /// Bản thử dùng dữ liệu giả nên KHÔNG được gọi mạng: `nap()` sẽ hỏng vì
+    /// chưa đăng nhập rồi xoá sạch dữ liệu vừa nhồi vào, và bàn thử thành
+    /// trang trắng. Xem `ThuTongQuan` trong `ManXemThu`.
+    private let banThu: Bool
     @EnvironmentObject private var appState: AppState
+
+    init() {
+        _vm = StateObject(wrappedValue: TongQuanVM())
+        banThu = false
+    }
+
+    #if DEBUG
+    /// Chỉ dành cho cửa xem màn hình. Không có đường nào tới đây từ bản
+    /// Release — cả `init` này lẫn nơi gọi đều nằm trong `#if DEBUG`.
+    init(banThu vm: TongQuanVM) {
+        _vm = StateObject(wrappedValue: vm)
+        banThu = true
+    }
+    #endif
     @State private var oViecMoi = ""
     @State private var moLich = false
     @State private var moFeed = false
@@ -17,32 +35,50 @@ struct TongQuanView: View {
     /// trong cùng một hành động thì sheet có thể dựng nội dung bằng giá trị
     /// CŨ. Gói câu hỏi vào chính item là hết cửa lệch.
     @State private var moChat: MoChatAI?
-    @State private var oChat = ""
+    /// Buổi học đang mở chi tiết, mở từ thẻ điểm nhấn.
+    @State private var buoiDangSua: BuoiHoc?
+    @State private var moThongBao = false
+    /// Ngày đang mở hết việc trong khối "Sắp tới".
+    @State private var ngayMoRong: Set<String> = []
     @FocusState private var dangGo: Bool
+    /// Cỡ lời chào. `@ScaledMetric` để nó lớn lên theo cỡ chữ hệ thống —
+    /// `.font(.system(size:))` trần thì Dynamic Type không đụng tới được.
+    @ScaledMetric(relativeTo: .title) private var coLoiChao: CGFloat = 27
+    @ScaledMetric(relativeTo: .title3) private var coTieuDeMuc: CGFloat = 19
+    @Environment(\.accessibilityReduceMotion) private var giamChuyenDong
 
     var body: some View {
         NavigationStack {
             ScrollView {
+                // Thứ tự này trả lời lần lượt bốn câu hỏi của một ngày đi
+                // học: sắp tới học gì → hôm nay phải làm gì → nhờ được ai →
+                // mấy hôm tới có gì. Bản cũ để lời chào, robot, ô chat và bốn
+                // thẻ số lên trước, nên buổi học kế tiếp nằm dưới màn hình.
                 VStack(alignment: .leading, spacing: Spacing.lg) {
                     dauTrang
-                    // Robot chào mừng — bản iOS của con robot trên web, vẽ
-                    // thẳng bằng SwiftUI Shape nên không cần tài nguyên ảnh.
-                    RobotChaoMung(ten: appState.currentUser?.displayName
-                                  ?? appState.currentUser?.username,
-                                  tamTrang: tamTrangRobot)
-                    khoiChatNhanh
-                    theSo
-                    if vm.buoiKeTiep != nil || !vm.hocHomNay.isEmpty { khoiHocHomNay }
+                    theKeTiep
+                    // Thẻ trên đã nói buổi gần nhất rồi — in lại nguyên dòng
+                    // đó ngay dưới là nói hai lần trong một màn hình.
+                    if !hocHomNayConLai.isEmpty { khoiHocHomNay }
                     khoiViec
+                    theCuongMini
                     if !vm.viecSapToi.isEmpty { khoiSapToi }
+                    thanhTienDo
                     khoiDiNhanh
-                    Color.clear.frame(height: 90)
                 }
                 .padding(.horizontal, Spacing.md)
                 .padding(.top, Spacing.sm)
+                // ⚠️ Bản cũ chèn `Color.clear.frame(height: 90)` để chừa chỗ
+                // cho thanh tab. Thừa: `TabView` gốc đã cộng sẵn vùng an toàn
+                // của thanh tab vào `ScrollView`, nên 90pt đó là một khoảng
+                // trống chết cuối trang, cuộn mãi mới hết.
+                .padding(.bottom, Spacing.lg)
             }
             .background(AppColors.backgroundPrimary)
-            .refreshable { await vm.nap(); await vm.napLich() }
+            .refreshable {
+                guard !banThu else { return }
+                await vm.nap(); await vm.napLich()
+            }
             .navigationTitle(T("Tổng quan"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -64,6 +100,16 @@ struct TongQuanView: View {
             }
             .navigationDestination(isPresented: $moLich) { LichTuanView(vm: vm) }
             .navigationDestination(isPresented: $moFeed) { HomeView() }
+            // Sheet chứ không đẩy màn: `NotificationsView` tự mang nút "Đóng"
+            // (nó vốn được `HomeView` mở dạng sheet), nên đẩy vào stack thì
+            // trên cùng có HAI đường quay lại — mũi tên và "Đóng".
+            .sheet(isPresented: $moThongBao) { NotificationsView() }
+            .sheet(item: $buoiDangSua) { b in
+                NavigationStack { SuaBuoiHocView(vm: vm, buoi: b) }
+            }
+            .sheet(item: $moChat) { m in
+                AIChatView(cauMoDau: m.cau, bacBanDau: .pro)
+            }
             .sheet(item: Binding(
                 get: { monDangMo.map(MonMo.init) },
                 set: { monDangMo = $0?.ma })) { m in
@@ -76,6 +122,7 @@ struct TongQuanView: View {
                 Text(String(format: T("Bạn nhận được %d EXP."), vm.vuaCong ?? 0))
             }
             .task {
+                guard !banThu else { return }
                 await vm.nap()
                 await vm.napLich()
             }
@@ -85,42 +132,60 @@ struct TongQuanView: View {
     // MARK: Đầu trang
 
     private var dauTrang: some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 4) {
+        HStack(alignment: .top, spacing: Spacing.sm) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(loiChao)
-                    .font(.system(size: 24, weight: .bold))
+                    .font(.system(size: coLoiChao, weight: .bold))
                     .foregroundColor(AppColors.textPrimary)
                     .lineLimit(2)
-                    .minimumScaleFactor(0.8)
-                // Ngày + giờ là thứ người dùng liếc nhanh nhất ở màn này —
-                // trước đây nó xám 13pt, chìm nghỉm dưới lời chào 24pt đậm.
-                // Nay tách làm hai viên: NGÀY màu nhấn, GIỜ màu nhấn phụ, để
-                // mắt bắt được ngay cả khi chỉ liếc qua.
-                HStack(spacing: 6) {
-                    Label(ngayNgan, systemImage: "calendar")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(AppColors.primary)
-                        .padding(.horizontal, 9).padding(.vertical, 5)
-                        .background(Capsule().fill(AppColors.primary.opacity(0.14)))
-                        .overlay(Capsule().strokeBorder(AppColors.primary.opacity(0.30), lineWidth: 1))
-
-                    Label(gioNgan, systemImage: "clock")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(AppColors.secondary)
-                        .padding(.horizontal, 9).padding(.vertical, 5)
-                        .background(Capsule().fill(AppColors.secondary.opacity(0.14)))
-                        .overlay(Capsule().strokeBorder(AppColors.secondary.opacity(0.30), lineWidth: 1))
-                }
-                .labelStyle(.titleAndIcon)
-                .padding(.top, 2)
+                    .fixedSize(horizontal: false, vertical: true)
+                // ⚠️ Đồng hồ trong nội dung đã BỎ. Giờ hiện tại luôn nằm sẵn
+                // trên thanh trạng thái của iOS, cách đây 8pt — in lại nó là
+                // chiếm chỗ để nói một thứ người dùng đang nhìn thấy. Cái
+                // ĐÁNG nói là còn bao lâu nữa vào học, và nó nằm ở thẻ dưới.
+                Text(ngayNgan)
+                    .font(.system(size: 14))
+                    .foregroundColor(AppColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            Spacer(minLength: Spacing.sm)
-            vongCapDo
+            Spacer(minLength: 0)
+            nutThongBao
         }
     }
 
+    /// Chuông + số chưa đọc. Đây là chỗ con số "thông báo mới" chuyển về sau
+    /// khi bỏ lưới bốn thẻ số — một huy hiệu trên đúng cái nút mở nó, thay vì
+    /// một thẻ to bằng nắm tay nằm cách nút đó nửa màn hình.
+    private var nutThongBao: some View {
+        Button { moThongBao = true } label: {
+            ZStack(alignment: .topTrailing) {
+                Image(systemName: "bell")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundColor(AppColors.textPrimary)
+                    .frame(width: 44, height: 44)
+                    .background(Circle().fill(AppColors.backgroundCard))
+                    .overlay(Circle().strokeBorder(AppColors.border, lineWidth: 1))
+
+                if appState.unreadNotifications > 0 {
+                    Text(appState.unreadNotifications > 99 ? "99+"
+                         : "\(appState.unreadNotifications)")
+                        .font(.system(size: 10, weight: .bold).monospacedDigit())
+                        .foregroundColor(AppColors.onPrimary)
+                        .padding(.horizontal, 5).padding(.vertical, 2)
+                        .background(Capsule().fill(AppColors.error))
+                        .offset(x: 3, y: -1)
+                }
+            }
+            .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(appState.unreadNotifications > 0
+            ? String(format: T("Thông báo · %d chưa đọc"), appState.unreadNotifications)
+            : T("Thông báo"))
+    }
+
     /// Lời chào theo GIỜ MÁY. Bản desktop chào "Khuya rồi" lúc 3 giờ sáng —
-    /// giữ đúng giọng đó.
+    /// giữ đúng giọng đó. Tên lấy từ hồ sơ đang đăng nhập, không gõ cứng.
     private var loiChao: String {
         let h = Calendar.current.component(.hour, from: Date())
         let ten = appState.currentUser?.displayName
@@ -136,7 +201,7 @@ struct TongQuanView: View {
         return ten.isEmpty ? c : "\(c), \(ten)"
     }
 
-    /// Chỉ NGÀY: "Thứ Tư, 9/9/2026".
+    /// "Thứ Tư, 9/9/2026".
     private var ngayNgan: String {
         let f = DateFormatter()
         f.locale = Locale(identifier: QuanLyNgonNguApp.shared.ngonNgu == .anh ? "en_US" : "vi_VN")
@@ -144,50 +209,53 @@ struct TongQuanView: View {
         return f.string(from: Date())
     }
 
-    /// Chỉ GIỜ: "01:28".
-    private var gioNgan: String {
-        let g = DateFormatter(); g.dateFormat = "HH:mm"
-        return g.string(from: Date())
-    }
+    // MARK: Buổi học kế tiếp — thẻ điểm nhấn
 
-    private var ngayGio: String {
-        let f = DateFormatter()
-        f.locale = Locale(identifier: QuanLyNgonNguApp.shared.ngonNgu == .anh ? "en_US" : "vi_VN")
-        f.setLocalizedDateFormatFromTemplate("EEEE d/M/yyyy")
-        let g = DateFormatter(); g.dateFormat = "HH:mm"
-        return "\(f.string(from: Date())) · \(g.string(from: Date()))"
-    }
-
-    private var vongCapDo: some View {
-        HStack(spacing: Spacing.sm) {
-            ZStack {
-                Circle().stroke(AppColors.backgroundTertiary, lineWidth: 5)
-                Circle()
-                    .trim(from: 0, to: vm.trangThai.phanTram)
-                    .stroke(LinearGradient(colors: [AppColors.primary, AppColors.primaryLight],
-                                           startPoint: .top, endPoint: .bottom),
-                            style: StrokeStyle(lineWidth: 5, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
-                    .animation(.easeOut(duration: 0.5), value: vm.trangThai.phanTram)
-                VStack(spacing: -2) {
-                    Text("\(vm.trangThai.level)")
-                        .font(.system(size: 17, weight: .bold).monospacedDigit())
-                        .foregroundColor(AppColors.textPrimary)
-                    Text(T("cấp")).font(.system(size: 9)).foregroundColor(AppColors.textTertiary)
-                }
-            }
-            .frame(width: 54, height: 54)
-
-            VStack(alignment: .leading, spacing: 1) {
-                Text("\(vm.trangThai.exp)")
-                    .font(.system(size: 15, weight: .bold).monospacedDigit())
-                    .foregroundColor(AppColors.textPrimary)
-                Text("/\(TrangThaiTongQuan.expMoiCap) EXP")
-                    .font(.system(size: 11)).foregroundColor(AppColors.textSecondary)
-                Text(String(format: T("tới cấp %d"), vm.trangThai.level + 1))
-                    .font(.system(size: 10)).foregroundColor(AppColors.textTertiary)
-            }
+    /// Nhịp 20 giây: đủ để con số phút không lệch quá lâu, mà không dựng lại
+    /// view mỗi giây (tốn pin cho thứ chỉ đổi mỗi phút).
+    private var theKeTiep: some View {
+        TimelineView(.periodic(from: .now, by: 20)) { moc in
+            let phut = TrangThaiBuoi.phutTrongNgay(moc.date)
+            let thu = BuoiHoc.thuViet(
+                tuLich: Calendar.current.component(.weekday, from: moc.date))
+            TheBuoiKeTiep(
+                ketQua: TimBuoiKeTiep.tim(vm.buoiHoc, thuHomNay: thu, phutBayGio: phut),
+                coLich: !vm.buoiHoc.isEmpty,
+                hetGioHomNay: !vm.hocHomNay.isEmpty
+                    && vm.hocHomNay.allSatisfy { $0.phutKetThuc <= phut },
+                phutBayGio: phut,
+                moChiTiet: { buoiDangSua = $0 },
+                moBaiHoc: { monDangMo = $0.joined(separator: ",") },
+                moLich: { moLich = true })
         }
+    }
+
+    /// Buổi đang nằm trên thẻ điểm nhấn, nếu nó thuộc HÔM NAY.
+    ///
+    /// Tính lại bằng `Date()` chứ không dùng mốc của `TimelineView`: lệch
+    /// nhau nhiều nhất là một nhịp 20 giây, và cái giá của việc luồn mốc đó
+    /// ra ngoài là phải bọc cả trang trong `TimelineView`.
+    private var buoiTrenThe: BuoiHoc? {
+        let phut = TrangThaiBuoi.phutTrongNgay(Date())
+        let thu = BuoiHoc.thuViet(tuLich: Calendar.current.component(.weekday, from: Date()))
+        guard let kq = TimBuoiKeTiep.tim(vm.buoiHoc, thuHomNay: thu, phutBayGio: phut),
+              kq.soNgayNua == 0 else { return nil }
+        return kq.buoi
+    }
+
+    /// Buổi học hôm nay TRỪ buổi đã nằm trên thẻ điểm nhấn.
+    private var hocHomNayConLai: [BuoiHoc] {
+        vm.hocHomNay.filter { $0.id != buoiTrenThe?.id }
+    }
+
+    // MARK: Tiến độ — cấp độ, EXP, chuỗi ngày
+
+    private var thanhTienDo: some View {
+        DaiCapDo(capDo: vm.trangThai.level,
+                    exp: vm.trangThai.exp,
+                    expMoiCap: TrangThaiTongQuan.expMoiCap,
+                    phanTram: vm.trangThai.phanTram,
+                    chuoiNgay: vm.chuoiNgay)
     }
 
     /// Robot "biết" đang là lúc nào trong ngày để đổi biểu cảm.
@@ -215,159 +283,76 @@ struct TongQuanView: View {
         return .binhThuong
     }
 
-    // MARK: Chat nhanh với CuongMini Pro
+    // MARK: CuongMini
 
-    /// Vì sao ở trang chủ chứ không để người dùng tự sang tab AI: câu hỏi
-    /// hay đến lúc đang nhìn lịch học ("mai thi gì?", "giảng lại chỗ này"),
-    /// và bắt họ nhớ câu đó qua hai lần chạm là mất luôn câu hỏi.
-    private var khoiChatNhanh: some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            // ⚠️ Vùng bấm chỉ đặt ở HÀNG TIÊU ĐỀ. Bản đầu đặt
-            // `.onTapGesture` lên cả thẻ, và nó GIÀNH mất cú bấm của các con
-            // chip bên dưới: chat vẫn mở, nhưng mở rỗng — nhìn như câu mồi
-            // hỏng, trong khi thật ra chip chưa bao giờ được bấm.
-            Button { moChat = MoChatAI(cau: nil) } label: {
-                HStack(spacing: 7) {
-                    Image(systemName: "sparkles")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(AppColors.secondary)
-                    Text(T("Chat nhanh với CuongMini Pro"))
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(AppColors.textPrimary)
-                    Spacer(minLength: 0)
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundColor(AppColors.textTertiary)
-                }
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-
-            // Ba câu mồi. Đủ ngắn để đọc hết trong một nhịp, và đều là thứ
-            // hỏi được NGAY mà không phải gõ gì thêm.
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 7) {
-                    ForEach(CAU_MOI, id: \.self) { c in
-                        Button { moChat = MoChatAI(cau: c) } label: {
-                            Text(c)
-                                .font(.system(size: 12.5, weight: .medium))
-                                .foregroundColor(AppColors.textSecondary)
-                                .lineLimit(1)
-                                .padding(.horizontal, 11).padding(.vertical, 7)
-                                .background(Capsule().fill(AppColors.backgroundTertiary))
-                                .overlay(Capsule().strokeBorder(AppColors.border, lineWidth: 1))
-                                .contentShape(Capsule())
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding(.horizontal, 1)
-            }
-
-            HStack(spacing: Spacing.sm) {
-                TextField(T("Hỏi CuongMini Pro bất cứ điều gì…"), text: $oChat)
-                    .font(.system(size: 14))
-                    .textFieldStyle(.plain)
-                    .submitLabel(.send)
-                    .onSubmit { guiChat() }
-                Button(action: guiChat) {
-                    Image(systemName: "arrow.up.circle.fill")
-                        .font(.system(size: 26))
-                        .foregroundColor(oChat.trimmingCharacters(in: .whitespaces).isEmpty
-                                         ? AppColors.textTertiary : AppColors.secondary)
-                }
-                .buttonStyle(.plain)
-                .disabled(oChat.trimmingCharacters(in: .whitespaces).isEmpty)
-            }
-            .padding(.horizontal, 12).padding(.vertical, 9)
-            .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(AppColors.backgroundTertiary))
-            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(AppColors.border, lineWidth: 1))
-        }
-        .padding(Spacing.md)
-        .background(RoundedRectangle(cornerRadius: 16, style: .continuous)
-            .fill(AppColors.backgroundCard))
-        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
-            .strokeBorder(AppColors.secondary.opacity(0.22), lineWidth: 1))
-        .sheet(item: $moChat) { m in
-            AIChatView(cauMoDau: m.cau, bacBanDau: .pro)
-        }
+    /// Vì sao trợ lý ở trang chủ chứ không bắt sang tab AI: câu hỏi hay đến
+    /// đúng lúc đang nhìn lịch học ("mai thi gì?", "giảng lại chỗ này"), và
+    /// bắt nhớ câu đó qua hai lần chạm là mất luôn câu hỏi.
+    private var theCuongMini: some View {
+        TheCuongMini(goiY: goiYCuongMini,
+                     cauMoi: cauMoiCuongMini,
+                     tamTrang: tamTrangRobot,
+                     moChat: { moChat = MoChatAI(cau: $0) })
     }
 
-    private func guiChat() {
-        let c = oChat.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !c.isEmpty else { return }
-        oChat = ""
-        dangGo = false
-        moChat = MoChatAI(cau: c)
+    /// Một câu gợi ý suy TỪ DỮ LIỆU ĐÃ CÓ trên màn này — không gọi LLM nào.
+    ///
+    /// ⚠️ Chỗ này rất dễ trượt thành "để AI tự nghĩ một câu chào cho thân
+    /// thiện". Đừng: mỗi lần mở trang chủ là một lượt gọi model có tính tiền,
+    /// người dùng không hỏi gì, và câu trả về thì không kiểm được. Suy được
+    /// thì nói, không suy được thì mời chung chung.
+    private var goiYCuongMini: String {
+        let conLai = vm.viecHienTai.filter { !$0.done }.count
+        if let ma = maMonKeTiep {
+            return String(format: T("Sắp học %@ — hỏi trước cho chắc."), ma)
+        }
+        if conLai > 0 {
+            return String(format: T("Còn %d việc chưa xong. Hỏi nên làm gì trước?"), conLai)
+        }
+        return T("Hỏi bài, xin dàn ý ôn tập, hay nhờ sắp lịch học.")
     }
 
-    // MARK: Bốn thẻ số
-
-    private var theSo: some View {
-        // Lưới 2×2 thay vì một hàng 4 cột: trên máy hẹp bốn thẻ ngang thì chữ
-        // "tin nhắn chưa đọc" bị bóp còn hai dòng rưỡi.
-        LazyVGrid(columns: [GridItem(.flexible(), spacing: Spacing.sm),
-                            GridItem(.flexible(), spacing: Spacing.sm)], spacing: Spacing.sm) {
-            the("\(vm.soXong)/\(vm.soTong)", T("việc hôm nay"), "checklist", AppColors.primary)
-            the("\(appState.unreadMessages)", T("tin nhắn chưa đọc"), "message", AppColors.secondary)
-            the("\(appState.unreadNotifications)", T("thông báo mới"), "bell", AppColors.warning)
-            // Chuỗi ngày THAY thẻ "tổng EXP": EXP và cấp đã nằm trong vòng
-            // tròn ở đầu trang, để lại một thẻ nữa là nói cùng một chuyện hai
-            // lần. Chuỗi là con số duy nhất nói về THÓI QUEN chứ không về
-            // điểm — đúng thứ người dùng đang thiếu.
-            the(vm.chuoiNgay > 0 ? "\(vm.chuoiNgay)" : "—",
-                vm.chuoiNgay > 0 ? T("ngày liên tiếp") : T("chưa có chuỗi"),
-                "flame", vm.chuoiNgay > 0 ? AppColors.error : AppColors.textTertiary)
-        }
+    /// Mã môn của buổi kế tiếp, nếu rút được. Dùng cho cả gợi ý lẫn câu mồi.
+    private var maMonKeTiep: String? {
+        let phut = TrangThaiBuoi.phutTrongNgay(Date())
+        let thu = BuoiHoc.thuViet(tuLich: Calendar.current.component(.weekday, from: Date()))
+        // Cố ý KHÔNG dùng `buoiTrenThe`: gợi ý vẫn có nghĩa khi buổi kế tiếp
+        // rơi sang ngày mai ("Sắp học SWT301 — hỏi trước cho chắc").
+        guard let kq = TimBuoiKeTiep.tim(vm.buoiHoc, thuHomNay: thu, phutBayGio: phut)
+        else { return nil }
+        return HocGiChoMonView.maMon(tu: "\(kq.buoi.subject) \(kq.buoi.classCode ?? "")").first
     }
 
-    private func the(_ so: String, _ nhan: String, _ bt: String, _ mau: Color) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Image(systemName: bt).font(.system(size: 14)).foregroundColor(mau)
-            Text(so)
-                .font(.system(size: 26, weight: .bold).monospacedDigit())
-                .foregroundColor(AppColors.textPrimary)
-                .lineLimit(1).minimumScaleFactor(0.6)
-            Text(nhan)
-                .font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
-                .lineLimit(2).fixedSize(horizontal: false, vertical: true)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(Spacing.md)
-        .background(
-            RoundedRectangle(cornerRadius: CornerRadius.large)
-                .fill(AppColors.backgroundCard)
-                .overlay(RoundedRectangle(cornerRadius: CornerRadius.large)
-                    .stroke(mau.opacity(0.22), lineWidth: 1))
-        )
+    /// Câu mồi. Câu đầu gọi ĐÚNG TÊN môn sắp học khi rút được mã — câu chung
+    /// chung thì ai cũng bấm một lần rồi thôi.
+    private var cauMoiCuongMini: [String] {
+        guard let ma = maMonKeTiep else { return CAU_MOI }
+        return [String(format: T("Ôn nhanh %@"), ma)] + CAU_MOI
     }
 
     // MARK: Học hôm nay
 
     private var khoiHocHomNay: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            HStack {
-                Text(T("HỌC HÔM NAY"))
-                    .font(.system(size: 11, weight: .heavy)).tracking(1)
-                    .foregroundColor(AppColors.textTertiary)
-                Spacer()
+            HStack(alignment: .firstTextBaseline) {
+                Text(T("Lịch hôm nay"))
+                    .font(.system(size: coTieuDeMuc, weight: .bold))
+                    .foregroundColor(AppColors.textPrimary)
+                Text("\(hocHomNayConLai.count)")
+                    .font(.system(size: 14, weight: .semibold).monospacedDigit())
+                    .foregroundColor(AppColors.textSecondary)
+                Spacer(minLength: 0)
                 Button(T("Cả tuần")) { moLich = true }
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(AppColors.primary)
+                    .frame(minHeight: 44)
             }
 
-            if vm.hocHomNay.isEmpty {
-                Text(T("Hôm nay không có buổi học nào."))
-                    .font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(Spacing.md)
-                    .background(RoundedRectangle(cornerRadius: CornerRadius.large).fill(AppColors.backgroundCard))
-            } else {
-                ForEach(vm.hocHomNay) { b in
-                    HangBuoiHoc(buoi: b, keTiep: b.id == vm.buoiKeTiep?.id)
-                }
+            // Khối này chỉ dựng khi còn buổi nào KHÁC buổi trên thẻ, nên
+            // không còn nhánh "hôm nay không có buổi nào" — câu đó đã do thẻ
+            // điểm nhấn nói, và nói kỹ hơn (buổi kế tiếp rơi vào hôm nào).
+            ForEach(hocHomNayConLai) { b in
+                HangBuoiHoc(buoi: b, keTiep: b.id == vm.buoiKeTiep?.id)
             }
         }
     }
@@ -376,72 +361,107 @@ struct TongQuanView: View {
 
     private var khoiViec: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
+            // Tiêu đề + tiến độ trên CÙNG một hàng. Con số "0/2" trước đây là
+            // một trong bốn thẻ số to đùng ở trên; nó chỉ có nghĩa khi đứng
+            // ngay cạnh danh sách mà nó đang đếm.
+            HStack(alignment: .firstTextBaseline, spacing: Spacing.sm) {
+                Text(tieuDeViec)
+                    .font(.system(size: coTieuDeMuc, weight: .bold))
+                    .foregroundColor(AppColors.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+                if vm.soTong > 0 {
+                    Text("\(vm.soXong)/\(vm.soTong)")
+                        .font(.system(size: 15, weight: .semibold).monospacedDigit())
+                        .foregroundColor(vm.soXong >= vm.soTong
+                                         ? AppColors.success : AppColors.textSecondary)
+                }
+                Spacer(minLength: 0)
+            }
+
+            if vm.soTong > 0 {
+                GeometryReader { g in
+                    ZStack(alignment: .leading) {
+                        Capsule().fill(AppColors.backgroundTertiary)
+                        Capsule().fill(LinearGradient(colors: [AppColors.primary, AppColors.primaryLight],
+                                                      startPoint: .leading, endPoint: .trailing))
+                            .frame(width: g.size.width * CGFloat(vm.soXong) / CGFloat(max(1, vm.soTong)))
+                            .animation(giamChuyenDong ? nil : .easeOut(duration: 0.3), value: vm.soXong)
+                    }
+                }
+                .frame(height: 5)
+                .accessibilityHidden(true)
+            }
+
             // Thanh phạm vi cuộn ngang: 5 mục tiếng Việt không vừa màn hẹp.
+            // "Hôm nay" và "Tuần này" đứng đầu vì đó là hai phạm vi dùng hằng
+            // ngày; tháng/quý/năm vẫn ở đây, chỉ là phải kéo thêm một đoạn.
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 6) {
                     ForEach(PhamViViec.allCases) { p in
                         Button {
-                            withAnimation(.easeInOut(duration: 0.15)) { vm.pham = p }
+                            withAnimation(giamChuyenDong ? nil : .easeInOut(duration: 0.15)) {
+                                vm.pham = p
+                            }
                             Haptics.cham()
                         } label: {
                             Text(p.ten)
                                 .font(.system(size: 13.5, weight: vm.pham == p ? .semibold : .regular))
                                 .foregroundColor(vm.pham == p ? AppColors.onPrimary : AppColors.textSecondary)
-                                .padding(.horizontal, 14).padding(.vertical, 8)
+                                .padding(.horizontal, 14)
+                                .frame(minHeight: 34)
                                 .background(
                                     Capsule().fill(vm.pham == p ? AppColors.primary : AppColors.backgroundTertiary)
                                 )
+                                .contentShape(Capsule())
                         }
                         .buttonStyle(.plain)
+                        .accessibilityAddTraits(vm.pham == p ? [.isSelected] : [])
                     }
                 }
                 .padding(.vertical, 2)
             }
 
-            if vm.soTong > 0 {
-                HStack(spacing: Spacing.sm) {
-                    GeometryReader { g in
-                        ZStack(alignment: .leading) {
-                            Capsule().fill(AppColors.backgroundTertiary)
-                            Capsule().fill(LinearGradient(colors: [AppColors.primary, AppColors.primaryLight],
-                                                          startPoint: .leading, endPoint: .trailing))
-                                .frame(width: g.size.width * CGFloat(vm.soXong) / CGFloat(max(1, vm.soTong)))
-                                .animation(.easeOut(duration: 0.3), value: vm.soXong)
-                        }
-                    }
-                    .frame(height: 6)
-                    Text("\(vm.soXong)/\(vm.soTong)")
-                        .font(.system(size: 11, weight: .semibold).monospacedDigit())
-                        .foregroundColor(AppColors.textTertiary)
-                }
-            }
-
-            HStack(spacing: Spacing.sm) {
-                TextField(String(format: T("Thêm việc cho %@…"), vm.pham.ten.lowercased()), text: $oViecMoi)
+            // Ô thêm việc gọn lại: một khung duy nhất, nút "+" nằm TRONG khung
+            // thay vì một khối vuông tím rời 44×42 bên cạnh. Vẫn thêm được
+            // bằng đúng một lần chạm — giấu ô nhập sau một nút thì mỗi việc
+            // ghi thêm mất hai lần chạm, đắt cho thứ dùng hằng ngày.
+            HStack(spacing: 4) {
+                TextField(String(format: T("Thêm việc cho %@…"), vm.pham.ten.lowercased()),
+                          text: $oViecMoi)
                     .font(.system(size: 15))
+                    .textFieldStyle(.plain)
                     .focused($dangGo)
                     .submitLabel(.done)
                     .onSubmit { them() }
-                    .padding(.horizontal, Spacing.md).padding(.vertical, 11)
-                    .background(RoundedRectangle(cornerRadius: CornerRadius.medium).fill(AppColors.backgroundCard))
-
                 Button(action: them) {
-                    Image(systemName: "plus")
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundColor(AppColors.onPrimary)
-                        .frame(width: 44, height: 42)
-                        .background(RoundedRectangle(cornerRadius: CornerRadius.medium)
-                            .fill(oViecMoi.trimmingCharacters(in: .whitespaces).isEmpty
-                                  ? AppColors.primary.opacity(0.4) : AppColors.primary))
+                    Image(systemName: "plus.circle.fill")
+                        .font(.system(size: 24))
+                        .foregroundColor(oViecMoi.trimmingCharacters(in: .whitespaces).isEmpty
+                                         ? AppColors.textTertiary : AppColors.primary)
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
                 }
+                .buttonStyle(.plain)
                 .disabled(oViecMoi.trimmingCharacters(in: .whitespaces).isEmpty)
+                .accessibilityLabel(T("Thêm việc"))
             }
+            .padding(.leading, 12)
+            .padding(.trailing, 2)
+            .padding(.vertical, 2)
+            .background(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
+                .fill(AppColors.backgroundTertiary))
+            .overlay(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
+                .strokeBorder(AppColors.border, lineWidth: 1))
 
             if vm.dangTai && vm.viec.isEmpty {
                 ProgressView().frame(maxWidth: .infinity).padding(.vertical, Spacing.lg)
+            } else if let loi = vm.loi, vm.viec.isEmpty {
+                // Lỗi nạp trước đây KHÔNG hiện ở đâu cả: danh sách rỗng trông
+                // y hệt "chưa có việc nào", nên mất mạng nhìn như ngày rảnh.
+                khoiLoi(loi)
             } else if vm.viecHienTai.isEmpty {
                 Text(vm.pham.loiMoi)
-                    .font(.system(size: 13)).foregroundColor(AppColors.textTertiary)
+                    .font(.system(size: 14)).foregroundColor(AppColors.textTertiary)
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.vertical, Spacing.lg)
             } else {
@@ -463,10 +483,10 @@ struct TongQuanView: View {
                 Button { Task { await vm.ketThucNgay() } } label: {
                     HStack(spacing: 7) {
                         Image(systemName: "moon.stars.fill").font(.system(size: 13))
-                        Text(T("Kết thúc ngày · nhận EXP")).font(.system(size: 14, weight: .semibold))
+                        Text(T("Kết thúc ngày · nhận EXP")).font(.system(size: 15, weight: .semibold))
                     }
                     .foregroundColor(AppColors.onPrimary)
-                    .frame(maxWidth: .infinity).padding(.vertical, 11)
+                    .frame(maxWidth: .infinity, minHeight: 44)
                     .background(LinearGradient(colors: [AppColors.primary, AppColors.primaryDark],
                                                startPoint: .leading, endPoint: .trailing))
                     .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
@@ -475,14 +495,42 @@ struct TongQuanView: View {
             } else if vm.pham == .today && vm.daKetThucNgay {
                 HStack(spacing: 6) {
                     Image(systemName: "checkmark.seal.fill").font(.system(size: 12))
-                    Text(T("Đã kết thúc ngày hôm nay")).font(.system(size: 12.5))
+                    Text(T("Đã kết thúc ngày hôm nay")).font(.system(size: 13))
                 }
                 .foregroundColor(AppColors.success)
                 .frame(maxWidth: .infinity).padding(.top, 4)
             }
         }
         .padding(Spacing.md)
-        .background(RoundedRectangle(cornerRadius: CornerRadius.large).fill(AppColors.backgroundCard))
+        .background(RoundedRectangle(cornerRadius: 22, style: .continuous)
+            .fill(AppColors.backgroundCard))
+    }
+
+    /// Tiêu đề khối việc — đổi theo phạm vi đang chọn, để đổi tab xong không
+    /// tưởng là danh sách bị mất việc.
+    private var tieuDeViec: String {
+        vm.pham == .today ? T("Việc hôm nay")
+                          : String(format: T("Việc · %@"), vm.pham.ten.lowercased())
+    }
+
+    private func khoiLoi(_ loi: String) -> some View {
+        VStack(spacing: Spacing.sm) {
+            Image(systemName: "wifi.exclamationmark")
+                .font(.system(size: 22)).foregroundColor(AppColors.warning)
+            Text(T("Chưa nạp được danh sách việc"))
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(AppColors.textPrimary)
+            Text(loi)
+                .font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
+                .multilineTextAlignment(.center)
+                .lineLimit(3)
+            Button(T("Thử lại")) { Task { await vm.nap() } }
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(AppColors.primary)
+                .frame(minHeight: 44)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, Spacing.md)
     }
 
     private func them() {
@@ -497,56 +545,100 @@ struct TongQuanView: View {
     /// Việc đã đặt cho những ngày tới — chủ yếu là việc ôn lặp.
     private var khoiSapToi: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            HStack(spacing: 6) {
-                Text(T("SẮP TỚI"))
-                    .font(.system(size: 11, weight: .heavy)).tracking(1)
-                    .foregroundColor(AppColors.textTertiary)
-                Text(T("giữ để xoá"))
-                    .font(.system(size: 10))
-                    .foregroundColor(AppColors.textTertiary.opacity(0.7))
+            HStack(alignment: .firstTextBaseline) {
+                Text(T("Sắp tới"))
+                    .font(.system(size: coTieuDeMuc, weight: .bold))
+                    .foregroundColor(AppColors.textPrimary)
+                Spacer(minLength: 0)
+                // Xem đủ việc của những ngày tới = đổi phạm vi sang "Tháng
+                // này". Đó là màn CÓ THẬT trong app, không phải một nút dẫn
+                // tới thứ chưa làm.
+                Button(T("Xem tất cả")) {
+                    withAnimation(giamChuyenDong ? nil : .easeInOut(duration: 0.15)) {
+                        vm.pham = .month
+                    }
+                    Haptics.cham()
+                }
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(AppColors.primary)
+                .frame(minHeight: 44)
             }
+            // ⚠️ Dòng "giữ để xoá" treo vĩnh viễn cạnh tiêu đề đã BỎ. Nó là
+            // một lời mách nước phải đọc mỗi lần mở app, cho một thao tác
+            // dùng vài tháng một lần. Thao tác thì GIỮ NGUYÊN: giữ vào một
+            // việc vẫn ra menu Xoá — đó cũng là cử chỉ chuẩn của iOS, và là
+            // đường DUY NHẤT xoá được việc đặt cho ngày mai (danh sách chính
+            // lọc theo đúng ngày hôm nay).
             VStack(spacing: 0) {
                 ForEach(Array(vm.viecSapToi.enumerated()), id: \.offset) { _, nhom in
-                    HStack(alignment: .top, spacing: Spacing.md) {
-                        VStack(spacing: 1) {
-                            Text(ngayNgan(nhom.ngay))
-                                .font(.system(size: 12, weight: .bold).monospacedDigit())
-                                .foregroundColor(AppColors.primary)
-                            Text(thuNgan(nhom.ngay))
-                                .font(.system(size: 9.5))
-                                .foregroundColor(AppColors.textTertiary)
-                        }
-                        .frame(width: 46)
-                        VStack(alignment: .leading, spacing: 3) {
-                            ForEach(nhom.viec) { v in
-                                // Giữ để XOÁ. Không có nó thì việc đặt cho
-                                // ngày tương lai KHÔNG xoá được từ bất cứ đâu:
-                                // danh sách "Hôm nay" lọc theo đúng ngày hôm
-                                // nay, nên phải đợi tới đúng hôm đó mới đụng
-                                // được vào. Đo thật khi tự dùng.
-                                Text(v.title)
-                                    .font(.system(size: 13))
-                                    .foregroundColor(AppColors.textSecondary)
-                                    .lineLimit(1)
-                                    .contentShape(Rectangle())
-                                    .contextMenu {
-                                        Button(role: .destructive) {
-                                            Task { await vm.xoaViec(v) }
-                                        } label: {
-                                            Label(T("Xoá việc"), systemImage: "trash")
-                                        }
-                                    }
-                            }
-                        }
-                        Spacer(minLength: 0)
-                    }
-                    .padding(.vertical, 8)
+                    hangNgaySapToi(nhom)
                     if nhom.ngay != vm.viecSapToi.last?.ngay { Divider().opacity(0.3) }
                 }
             }
             .padding(Spacing.md)
-            .background(RoundedRectangle(cornerRadius: CornerRadius.large).fill(AppColors.backgroundCard))
+            .background(RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .fill(AppColors.backgroundCard))
         }
+    }
+
+    /// Một ngày trong khối "Sắp tới". Mặc định chỉ hiện HAI việc — ngày ôn
+    /// tập dày có thể có bảy tám việc, và bảy tám dòng xám nhạt xếp chồng thì
+    /// không ai đọc, chỉ làm trang chủ dài thêm.
+    @ViewBuilder
+    private func hangNgaySapToi(_ nhom: (ngay: String, viec: [ViecTongQuan])) -> some View {
+        let moRong = ngayMoRong.contains(nhom.ngay)
+        let hien = moRong ? nhom.viec : Array(nhom.viec.prefix(2))
+        let con = nhom.viec.count - hien.count
+
+        HStack(alignment: .top, spacing: Spacing.md) {
+            VStack(spacing: 1) {
+                Text(ngayNgan(nhom.ngay))
+                    .font(.system(size: 12.5, weight: .bold).monospacedDigit())
+                    .foregroundColor(AppColors.primary)
+                Text(thuNgan(nhom.ngay))
+                    .font(.system(size: 10))
+                    .foregroundColor(AppColors.textTertiary)
+            }
+            .frame(width: 46)
+            .accessibilityElement(children: .combine)
+
+            VStack(alignment: .leading, spacing: 4) {
+                ForEach(hien) { v in
+                    Text(v.title)
+                        .font(.system(size: 14))
+                        .foregroundColor(AppColors.textSecondary)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
+                        .contextMenu {
+                            Button(role: .destructive) {
+                                Task { await vm.xoaViec(v) }
+                            } label: {
+                                Label(T("Xoá việc"), systemImage: "trash")
+                            }
+                        }
+                }
+                if con > 0 || moRong {
+                    Button {
+                        withAnimation(giamChuyenDong ? nil : .easeInOut(duration: 0.18)) {
+                            if moRong { ngayMoRong.remove(nhom.ngay) }
+                            else { ngayMoRong.insert(nhom.ngay) }
+                        }
+                    } label: {
+                        Text(moRong ? T("Thu gọn")
+                                    : String(format: T("Xem thêm %d việc"), con))
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(AppColors.primary)
+                            .frame(minHeight: 34, alignment: .leading)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, 8)
     }
 
     private func ngayNgan(_ iso: String) -> String {
@@ -564,13 +656,13 @@ struct TongQuanView: View {
 
     private var khoiDiNhanh: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            Text(T("ĐI NHANH"))
-                .font(.system(size: 11, weight: .heavy)).tracking(1)
-                .foregroundColor(AppColors.textTertiary)
+            Text(T("Đi nhanh"))
+                .font(.system(size: coTieuDeMuc, weight: .bold))
+                .foregroundColor(AppColors.textPrimary)
             LazyVGrid(columns: [GridItem(.flexible(), spacing: Spacing.sm),
                                 GridItem(.flexible(), spacing: Spacing.sm)], spacing: Spacing.sm) {
                 NavigationLink { LichTuanView(vm: vm) } label: {
-                    theNhanh(T("Thời khoá biểu"), T("Lịch tuần · nhắc đi học"), "calendar", AppColors.primary)
+                    theNhanh(T("Thời khoá biểu"), T("Lịch tuần"), "calendar", AppColors.primary)
                 }
                 NavigationLink { HomeView() } label: {
                     theNhanh(T("Bảng tin"), T("Bài viết, bình luận"), "square.stack", AppColors.secondary)
@@ -590,8 +682,14 @@ struct TongQuanView: View {
             Spacer(minLength: 0)
         }
         .padding(Spacing.md)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: CornerRadius.large).fill(AppColors.backgroundCard))
+        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(AppColors.backgroundCard)
+                .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .strokeBorder(AppColors.border, lineWidth: 1))
+        )
+        .contentShape(Rectangle())
     }
 }
 
@@ -661,6 +759,11 @@ private struct HangViec: View {
                     }
 
                     HStack(spacing: 6) {
+                        // Giờ đã đặt cho việc. Chỉ hiện khi máy chủ THẬT SỰ
+                        // trả về mốc — không có thì bỏ hẳn, không in "—".
+                        if let g = gioDat {
+                            nhan(g, mau: AppColors.secondary)
+                        }
                         if let u = viec.nhanUuTien {
                             nhan(u, mau: viec.priority == 3 ? AppColors.error
                                  : viec.priority == 2 ? AppColors.warning : AppColors.textTertiary)
@@ -696,9 +799,13 @@ private struct HangViec: View {
                     .buttonStyle(.plain)
                     .accessibilityLabel(T("Xoá việc"))
                 } else {
-                    Text("+\(viec.exp)")
+                    // ⚠️ Trước đây chỉ có "+15", không đơn vị. Người mới cài
+                    // app không có cách nào biết 15 đó là EXP hay phút.
+                    Text(String(format: T("+%d EXP"), viec.exp))
                         .font(.system(size: 11, weight: .semibold).monospacedDigit())
                         .foregroundColor(AppColors.primary)
+                        .lineLimit(1)
+                        .fixedSize()
                 }
             }
             .padding(.vertical, 9)
@@ -738,6 +845,15 @@ private struct HangViec: View {
             }
         }
         Divider().opacity(0.35)
+    }
+
+    /// "19:00" của `remindAt`, hoặc `dueAt` nếu không có. `nil` khi không đọc
+    /// được — dùng đúng bộ đọc ISO mà `NhacViec` dùng, vì tự cắt chuỗi là mời
+    /// một lỗi lệch 7 tiếng vào chỗ khó thấy nhất.
+    private var gioDat: String? {
+        guard let s = viec.remindAt ?? viec.dueAt, let d = NhacViec.moc(s) else { return nil }
+        let f = DateFormatter(); f.dateFormat = "HH:mm"
+        return f.string(from: d)
     }
 
     private func nhan(_ t: String, mau: Color) -> some View {

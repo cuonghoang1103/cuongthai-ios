@@ -82,9 +82,9 @@ private struct DongCode {
 }
 
 private let KICH_BAN: [DongCode] = [
-    .init(chu: "let hocVien = \"Cường\""),
-    .init(chu: "func chaoMung(_ ai: String)"),
-    .init(chu: "print(chaoMung(hocVien))"),
+    .init(chu: "import CuongThai"),
+    .init(chu: "let mini = CuongMini()"),
+    .init(chu: "mini.sanSang()"),
     .init(chu: "Welcome to CuongThai", laKet: true),
 ]
 
@@ -93,6 +93,10 @@ struct RobotChaoMung: View {
     var ten: String?
     /// Ngữ cảnh để robot đổi biểu cảm. Mặc định bình thường.
     var tamTrang: TamTrangRobot = .binhThuong
+    /// Chế độ gọn: CHỈ con robot, thu nhỏ, không khung nền và không màn hình
+    /// chữ. Dùng khi robot đứng cạnh nội dung khác (thẻ CuongMini ở trang chủ)
+    /// — ở đó nó là hình minh hoạ, không còn là hero chiếm nửa màn hình.
+    var gon = false
 
     @StateObject private var conQuay = ConQuay.chung
 
@@ -109,6 +113,24 @@ struct RobotChaoMung: View {
     @State private var nhayAnMung = false
 
     var body: some View {
+        if gon { thanGon } else { thanDay }
+    }
+
+    /// Robot đứng một mình. Khung 56×70 đã tính sẵn cho tỉ lệ 0,74 bên dưới,
+    /// nên nó không đội chỗ của chữ bên cạnh.
+    private var thanGon: some View {
+        robot
+            .scaleEffect(0.74)
+            .frame(width: 56, height: 70)
+            .task { await chay() }
+            .onAppear { if !giamChuyenDong { conQuay.batDau() } }
+            .onDisappear { if !giamChuyenDong { conQuay.dungLai() } }
+            // Trang trí thuần: chữ bên cạnh đã nói đủ, VoiceOver không cần
+            // dừng lại ở một hình vẽ không mang thông tin nào.
+            .accessibilityHidden(true)
+    }
+
+    private var thanDay: some View {
         HStack(alignment: .top, spacing: Spacing.md) {
             robot
             manHinh
@@ -401,6 +423,10 @@ struct RobotChaoMung: View {
         }
         Task { await nhay() }
         Task { await anMung() }
+
+        // Chế độ gọn không hiện màn hình chữ, nên không gõ gì cả — nhưng vẫn
+        // giữ thở/nháy mắt ở trên, đó mới là thứ khiến nó trông "đang sống".
+        guard !gon else { return }
         Task { await nhapNhayConTro() }
 
         for (i, d) in KICH_BAN.enumerated() {

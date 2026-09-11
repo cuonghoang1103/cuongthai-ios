@@ -46,6 +46,18 @@ struct ManXemThu: View {
             // Bộ dựng câu trả lời AI — soi SVG, bảng, màu mã.
             case "traloi": ThuTraLoi()
             case "anhbai": ThuAnhBaiHoc()
+            // Trang chủ với dữ liệu GIẢ. Trang chủ nằm sau đăng nhập, nên
+            // không có cửa này thì mọi trạng thái của nó (rỗng, lỗi, tên môn
+            // dài, một ngày mười việc) chỉ đoán được chứ không nhìn được.
+            case "tongquan":      ThuTongQuan(kieu: .day)
+            case "tongquan-rong": ThuTongQuan(kieu: .rong)
+            case "tongquan-dai":  ThuTongQuan(kieu: .dai)
+            case "tongquan-tai":  ThuTongQuan(kieu: .tai)
+            case "tongquan-loi":  ThuTongQuan(kieu: .loi)
+            // Trang chủ ĐẶT TRONG thanh tab thật — để kiểm hai thứ chỉ hỏng
+            // khi có thanh tab: cuộn tới đáy có bị thanh tab che không, và
+            // bàn phím bật lên có phá bố cục không.
+            case "tongquan-tab":  ThuTongQuanTab()
 
             // Ba trạng thái của màn Hồ sơ khi CHƯA có dữ liệu. Không có cửa
             // này thì không cách nào nhìn thấy chúng: muốn tái hiện phải làm
@@ -91,7 +103,7 @@ struct ManXemThu: View {
                 VStack(spacing: Spacing.sm) {
                     Text("Không có màn tên “\(ten)”")
                         .font(.system(size: 15, weight: .semibold))
-                    Text("Không cần đăng nhập:\ncodelab · snippets · tudien · lotrinh · phongthi · noidungthi · logo")
+                    Text("Không cần đăng nhập:\ncodelab · snippets · tudien · lotrinh · phongthi · noidungthi · logo\ntongquan · tongquan-rong · tongquan-dai · tongquan-tai · tongquan-loi · tongquan-tab")
                         .font(.system(size: 12))
                         .foregroundColor(AppColors.textSecondary)
                         .multilineTextAlignment(.center)
@@ -285,6 +297,156 @@ private struct ThuAnhBaiHoc: View {
             .padding()
         }
         .background(AppColors.backgroundPrimary)
+    }
+}
+
+
+
+// ════════════════════════════════════════════════════════════════
+// BÀN THỬ TRANG CHỦ
+//
+// Trang chủ đòi đăng nhập, và Claude không gõ mật khẩu. Bàn này nhồi dữ liệu
+// giả thẳng vào `TongQuanVM` rồi dựng ĐÚNG `TongQuanView` thật — không phải
+// một bản chép lại, nên bố cục nhìn ở đây chính là bố cục người dùng thấy.
+//
+// ⚠️ `dueAt` chứ không `remindAt`: `NhacViec.datLai` chỉ xin quyền thông báo
+// khi có `remindAt` còn hạn, và hộp thoại xin quyền sẽ che mất màn hình đang
+// cần soi.
+// ════════════════════════════════════════════════════════════════
+
+struct ThuTongQuan: View {
+    enum Kieu { case day, rong, dai, tai, loi }
+    let kieu: Kieu
+
+    var body: some View {
+        TongQuanView(banThu: dungVM())
+    }
+
+    private func dungVM() -> TongQuanVM {
+        let vm = TongQuanVM()
+        let homNay = PhamViViec.today.moc()
+
+        switch kieu {
+        case .tai:
+            vm.dangTai = true
+            return vm
+
+        case .loi:
+            vm.loi = "The Internet connection appears to be offline."
+            return vm
+
+        case .rong:
+            // Tài khoản mới tinh: chưa lịch, chưa việc, chưa EXP nào.
+            return vm
+
+        case .day:
+            vm.trangThai = TrangThaiTongQuan(level: 7, exp: 64, totalExp: 664)
+            vm.chuoiNgay = 5
+            vm.buoiHoc = lich
+            vm.viec = [
+                viec(1, homNay, "Làm 3 bài Lab của LAB211", exp: 15, uu: 3,
+                     gio: "\(ngayISO(0))T19:00:00+07:00"),
+                viec(2, homNay, "Đọc slide chương 4 SWT301", exp: 10, xong: true),
+                viec(3, homNay, "Ôn 20 từ vựng JPD123", exp: 10, lap: "daily"),
+            ] + viecNgayToi()
+            return vm
+
+        case .dai:
+            vm.trangThai = TrangThaiTongQuan(level: 12, exp: 95, totalExp: 1295)
+            vm.chuoiNgay = 41
+            vm.buoiHoc = [
+                BuoiHoc(id: 90, subject: "PRN232 – Building Cross-Platform Back-End Application With .NET",
+                        classCode: "SE1815-NJ", teacher: "Nguyễn Thị Minh Phương Thảo",
+                        room: "Beta Building – Phòng thực hành số 214",
+                        weekday: thuHomNay, startTime: "07:30", endTime: "09:50",
+                        color: nil, note: nil, remindMinutes: 15,
+                        startDate: nil, endDate: nil, slot: 1, meetUrl: nil, materialsUrl: nil),
+            ]
+            vm.viec = (0..<9).map { i in
+                viec(100 + i, homNay,
+                     "Hoàn thành toàn bộ phần bài tập chương \(i + 1) của môn PRN232 và nộp lên hệ thống trước hạn",
+                     exp: 15, uu: i == 0 ? 3 : 0, xong: i > 6)
+            }
+            return vm
+        }
+    }
+
+    // ── Dữ liệu giả ──────────────────────────────────────────────
+
+    private var thuHomNay: Int {
+        BuoiHoc.thuViet(tuLich: Calendar.current.component(.weekday, from: Date()))
+    }
+
+    private var lich: [BuoiHoc] {
+        [
+            BuoiHoc(id: 1, subject: "SWT301 – Software Testing", classCode: "SE1815",
+                    teacher: "Trần Văn Nam", room: "AL-306", weekday: thuHomNay,
+                    startTime: "07:30", endTime: "09:50", color: nil, note: nil,
+                    remindMinutes: 15, startDate: nil, endDate: nil, slot: 1,
+                    meetUrl: nil, materialsUrl: nil),
+            BuoiHoc(id: 2, subject: "LAB211 – OOP with Java Lab", classCode: "SE1815",
+                    teacher: "Lê Thu Hà", room: "BE-201", weekday: thuHomNay,
+                    startTime: "12:50", endTime: "15:10", color: nil, note: nil,
+                    remindMinutes: 15, startDate: nil, endDate: nil, slot: 3,
+                    meetUrl: nil, materialsUrl: nil),
+            BuoiHoc(id: 3, subject: "JPD123 – Elementary Japanese 2.1", classCode: "SE1815",
+                    teacher: "Phạm Minh", room: "AL-112",
+                    weekday: (thuHomNay == BuoiHoc.thuLon ? BuoiHoc.thuNho : thuHomNay + 1),
+                    startTime: "10:00", endTime: "12:20", color: nil, note: nil,
+                    remindMinutes: 15, startDate: nil, endDate: nil, slot: 2,
+                    meetUrl: nil, materialsUrl: nil),
+        ]
+    }
+
+    private func viecNgayToi() -> [ViecTongQuan] {
+        var ra: [ViecTongQuan] = []
+        var id = 200
+        for n in [1, 2] {
+            let ngay = ngayISO(n)
+            let soViec = n == 1 ? 4 : 1
+            for k in 0..<soViec {
+                ra.append(viec(id, ngay, "Ôn tập buổi \(k + 1) cho ngày mai", exp: 10))
+                id += 1
+            }
+        }
+        return ra
+    }
+
+    private func ngayISO(_ sauNgay: Int) -> String {
+        let d = Calendar.current.date(byAdding: .day, value: sauNgay, to: Date()) ?? Date()
+        return PhamViViec.today.moc(d)
+    }
+
+    private func viec(_ id: Int, _ ngay: String, _ ten: String, exp: Int,
+                      uu: Int = 0, xong: Bool = false, lap: String = "none",
+                      gio: String? = nil) -> ViecTongQuan {
+        ViecTongQuan(id: id, scope: PhamViViec.today.rawValue, date: ngay, title: ten,
+                     done: xong, exp: exp, note: nil, dueAt: gio, remindAt: nil,
+                     priority: uu, repeatMode: lap, parentId: nil, sortOrder: id)
+    }
+}
+
+/// Trang chủ giả, đặt trong đúng bộ tab của app.
+///
+/// Bốn tab kia để trống có chủ đích: thứ cần kiểm là CHIỀU CAO mà thanh tab
+/// chừa lại cho trang chủ, không phải nội dung của các tab khác.
+struct ThuTongQuanTab: View {
+    var body: some View {
+        TabView {
+            ThuTongQuan(kieu: .day)
+                .tabItem { Label(AppState.AppTab.home.title,
+                                 systemImage: AppState.AppTab.home.icon) }
+            trong(AppState.AppTab.learn)
+            trong(AppState.AppTab.create)
+            trong(AppState.AppTab.messages)
+            trong(AppState.AppTab.profile)
+        }
+        .tint(AppColors.primary)
+    }
+
+    private func trong(_ tab: AppState.AppTab) -> some View {
+        Color.clear
+            .tabItem { Label(tab.title, systemImage: tab.icon) }
     }
 }
 

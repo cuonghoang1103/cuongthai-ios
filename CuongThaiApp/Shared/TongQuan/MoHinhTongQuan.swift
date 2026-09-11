@@ -180,6 +180,13 @@ struct BuoiHoc: Codable, Identifiable, Equatable {
         let p = startTime.split(separator: ":").compactMap { Int($0) }
         return p.count == 2 ? p[0] * 60 + p[1] : 0
     }
+
+    /// Giờ tan, tính bằng phút từ 00:00. Dùng để biết một buổi đã qua chưa —
+    /// buổi đang học vẫn là buổi "kế tiếp" cho tới lúc tan.
+    var phutKetThuc: Int {
+        let p = endTime.split(separator: ":").compactMap { Int($0) }
+        return p.count == 2 ? p[0] * 60 + p[1] : phutBatDau
+    }
 }
 
 
