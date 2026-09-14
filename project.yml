@@ -169,6 +169,11 @@ schemes:
         CuongThaiApp: all
     run:
       config: Debug
+      # Cho phép chạy thử luồng mua Pro NGAY trên máy, không cần hợp đồng
+      # Paid Applications hay sản phẩm trên App Store Connect. StoreKit đọc
+      # bảng giá từ file này khi chạy bằng scheme Debug.
+      # ⚠️ CHỈ ảnh hưởng lúc chạy từ Xcode/scheme — bản archive không dùng nó.
+      storeKitConfiguration: CuongThaiApp/Pro.storekit
     test:
       config: Debug
     profile:

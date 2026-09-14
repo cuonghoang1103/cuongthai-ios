@@ -85,6 +85,26 @@ struct PrivacyPolicyView: View {
                 Text("Chỉ để vận hành dịch vụ: hiển thị nội dung cho đúng người, đồng bộ giữa thiết bị và website, chống lạm dụng. Chúng tôi KHÔNG bán dữ liệu cá nhân và KHÔNG dùng dữ liệu để theo dõi bạn trên ứng dụng của bên thứ ba.")
             }
 
+            // ⚠️ BẮT BUỘC theo App Store Review Guideline 5.1.2(i): "You must
+            // clearly disclose where personal data will be shared with third
+            // parties, INCLUDING WITH THIRD-PARTY AI, and obtain explicit
+            // permission before doing so."
+            //
+            // App này có AI ở bảy chỗ (chat, gia sư bài học, chấm mã, chấm CV,
+            // viết lại CV, luyện nói, hỏi bài trong phòng thi) và mọi nội dung
+            // đó ĐỀU rời khỏi máy chủ của chúng tôi để tới nhà cung cấp mô
+            // hình. Trước 14/09/2026 chính sách không nói một chữ nào về việc
+            // này — nói "lưu trên máy chủ tại Việt Nam" là chưa đủ và dễ bị
+            // đọc thành cam kết dữ liệu không đi đâu cả.
+            LegalSection("Tính năng AI và bên thứ ba") {
+                Text("Khi bạn dùng một tính năng AI, nội dung bạn gửi cho tính năng đó được chuyển tới nhà cung cấp mô hình AI bên ngoài để tạo câu trả lời. Đây là điều kiện để tính năng chạy được.")
+                LegalBullet("Nội dung được gửi đi: câu bạn hỏi, đoạn mã bạn nhờ chấm, nội dung CV bạn nhờ chấm hoặc viết lại, câu hỏi trong phòng thi bạn nhờ giảng, và bài bạn luyện nói (dạng CHỮ)")
+                LegalBullet("KHÔNG gửi đi: mật khẩu, tin nhắn riêng với người khác, ghi chú, và mọi thứ bạn không chủ động đưa vào tính năng AI")
+                LegalBullet("Nhà cung cấp AI xử lý nội dung để trả lời rồi thôi; chúng tôi không cho phép dùng nội dung của bạn để huấn luyện mô hình")
+                Text("Về luyện nói: giọng của bạn được chuyển thành chữ NGAY TRÊN MÁY khi máy hỗ trợ. Máy không hỗ trợ thì phần nhận dạng do dịch vụ của Apple xử lý — đây là dịch vụ hệ thống của Apple, không phải máy chủ của chúng tôi. Trong mọi trường hợp, file âm thanh KHÔNG được gửi lên máy chủ của chúng tôi; chỉ phần chữ nhận được mới đi tiếp tới AI.")
+                Text("Vì nội dung rời khỏi hệ thống của chúng tôi, đừng đưa thông tin nhạy cảm (số căn cước, số tài khoản ngân hàng, mật khẩu, hồ sơ y tế) vào các tính năng AI.")
+            }
+
             LegalSection("Đăng nhập bằng Apple") {
                 Text("Nếu bạn dùng Đăng nhập bằng Apple và chọn ẩn email, chúng tôi chỉ nhận được địa chỉ chuyển tiếp riêng tư của Apple. Chúng tôi lưu địa chỉ đó để nhận diện tài khoản, không dùng cho mục đích nào khác.")
             }
@@ -140,6 +160,7 @@ struct HelpView: View {
 struct TermsConsentView: View {
     let onAccept: () -> Void
     @State private var showTerms = false
+    @State private var showPrivacy = false
 
     var body: some View {
         VStack(spacing: Spacing.lg) {
@@ -157,15 +178,25 @@ struct TermsConsentView: View {
                 LegalBullet("Không đăng nội dung khiêu dâm, bạo lực hay vi phạm bản quyền")
                 LegalBullet("Nội dung vi phạm bị gỡ và tài khoản bị khoá vĩnh viễn")
                 LegalBullet("Mọi bài viết đều có nút Báo cáo; bạn có thể chặn bất kỳ ai")
+                // Guideline 5.1.2(i) đòi "explicit permission" TRƯỚC khi chia
+                // sẻ dữ liệu cá nhân với AI bên thứ ba. Nút "Tôi đồng ý" bên
+                // dưới là chỗ duy nhất trong app lấy được sự đồng ý đó, nên
+                // câu này phải nằm ở ĐÂY chứ không chỉ nằm trong trang chính
+                // sách mà phần lớn người dùng không mở.
+                LegalBullet("Nội dung bạn đưa vào các tính năng AI được gửi tới nhà cung cấp mô hình AI bên ngoài để tạo câu trả lời")
             }
             .padding(Spacing.lg)
             .background(AppColors.backgroundSecondary)
             .cornerRadius(CornerRadius.large)
             .padding(.horizontal, Spacing.lg)
 
-            Button("Đọc toàn bộ điều khoản") { showTerms = true }
-                .font(.footnote)
-                .foregroundColor(AppColors.primary)
+            HStack(spacing: Spacing.md) {
+                Button("Đọc toàn bộ điều khoản") { showTerms = true }
+                Text("·").foregroundColor(AppColors.textTertiary)
+                Button("Chính sách bảo mật") { showPrivacy = true }
+            }
+            .font(.footnote)
+            .foregroundColor(AppColors.primary)
 
             Spacer()
 
@@ -188,6 +219,9 @@ struct TermsConsentView: View {
         .background(AppColors.backgroundPrimary)
         .sheet(isPresented: $showTerms) {
             NavigationStack { TermsView(dismissible: true) }
+        }
+        .sheet(isPresented: $showPrivacy) {
+            NavigationStack { PrivacyPolicyView(dismissible: true) }
         }
     }
 }

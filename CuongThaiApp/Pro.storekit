@@ -1,0 +1,56 @@
+{
+  "identifier" : "CT-PRO-LOCAL",
+  "nonRenewingSubscriptions" : [
+    {
+      "displayPrice" : "50000",
+      "familyShareable" : false,
+      "internalID" : "A0000001",
+      "localizations" : [
+        { "description" : "Mở khoá toàn bộ tính năng AI trong 30 ngày", "displayName" : "Pro 1 tháng", "locale" : "vi_VN" }
+      ],
+      "productID" : "com.cuongthai.app.pro.1m",
+      "referenceName" : "Pro 1 thang",
+      "type" : "NonRenewingSubscription"
+    },
+    {
+      "displayPrice" : "100000",
+      "familyShareable" : false,
+      "internalID" : "A0000003",
+      "localizations" : [
+        { "description" : "Mở khoá toàn bộ tính năng AI trong 90 ngày", "displayName" : "Pro 3 tháng", "locale" : "vi_VN" }
+      ],
+      "productID" : "com.cuongthai.app.pro.3m",
+      "referenceName" : "Pro 3 thang",
+      "type" : "NonRenewingSubscription"
+    },
+    {
+      "displayPrice" : "150000",
+      "familyShareable" : false,
+      "internalID" : "A0000006",
+      "localizations" : [
+        { "description" : "Mở khoá toàn bộ tính năng AI trong 180 ngày", "displayName" : "Pro 6 tháng", "locale" : "vi_VN" }
+      ],
+      "productID" : "com.cuongthai.app.pro.6m",
+      "referenceName" : "Pro 6 thang",
+      "type" : "NonRenewingSubscription"
+    },
+    {
+      "displayPrice" : "250000",
+      "familyShareable" : false,
+      "internalID" : "A0000012",
+      "localizations" : [
+        { "description" : "Mở khoá toàn bộ tính năng AI trong 360 ngày", "displayName" : "Pro 12 tháng", "locale" : "vi_VN" }
+      ],
+      "productID" : "com.cuongthai.app.pro.12m",
+      "referenceName" : "Pro 12 thang",
+      "type" : "NonRenewingSubscription"
+    }
+  ],
+  "products" : [ ],
+  "settings" : {
+    "_storeKitErrors" : [ ],
+    "_storefront" : "VNM"
+  },
+  "subscriptionGroups" : [ ],
+  "version" : { "major" : 3, "minor" : 0 }
+}

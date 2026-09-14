@@ -69,6 +69,15 @@ struct User: Codable, Identifiable, Hashable {
     var socialLinks: [String: String]? = nil
     var allowMessagesFromStrangers: Bool? = nil
     var isPro: Bool? = nil
+    /// Hạn Pro, ISO-8601 có múi giờ. **String chứ không Date**: `APIClient`
+    /// dựng `JSONDecoder()` trần, tức chiến lược ngày là `deferredToDate`
+    /// (đợi một con số giây). Khai `Date` ở đây là cả lượt giải mã hồ sơ
+    /// hỏng — mà lỗi giải mã trong app này bị nuốt im lặng, nên nó hiện ra
+    /// dưới dạng "hồ sơ trống", không phải dưới dạng lỗi.
+    var proExpiresAt: String? = nil
+    /// Pro trọn đời thì `proExpiresAt` là null — hai trường này phải đọc
+    /// cùng nhau, thiếu cờ này thì trọn đời trông y hệt "không có hạn".
+    var proLifetime: Bool? = nil
     var emailVerified: Bool? = nil
     /// "local" | "google" | "apple" — tài khoản đăng nhập bằng nhà cung cấp
     /// ngoài thì không có mật khẩu để đổi.

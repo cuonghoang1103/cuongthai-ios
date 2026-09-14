@@ -48,7 +48,16 @@ struct CuongThaiApp: App {
     @StateObject private var ngonNgu = QuanLyNgonNguApp.shared
     @Environment(\.scenePhase) private var scenePhase
 
-    init() { NhatKy.xoaCu() }
+    init() {
+        NhatKy.xoaCu()
+        // ⚠️ Phải nghe `Transaction.updates` từ lúc app mở, KHÔNG đợi người
+        // dùng vào màn mua. Đó là đường Apple giao những giao dịch xảy ra
+        // ngoài app: mua lúc app đang tắt, "Hỏi để mua" được phụ huynh duyệt
+        // sau, gia hạn, và lượt mua lần trước chưa `finish()` vì mất mạng.
+        // Nghe muộn thì những giao dịch đó nằm lại hàng đợi — người dùng đã
+        // trả tiền mà không thấy Pro đâu.
+        KhoPro.shared.batDauNghe()
+    }
 
     var body: some Scene {
         WindowGroup {

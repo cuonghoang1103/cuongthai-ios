@@ -940,6 +940,84 @@ struct SettingsView: View {
     @EnvironmentObject var appState: AppState
     @Environment(\.dismiss) var dismiss
     @State private var showLogoutAlert = false
+    @State private var moMuaPro = false
+    #if os(iOS)
+    @StateObject private var khoPro = KhoPro.shared
+    private var coGoiDeBan: Bool { !khoPro.goi.isEmpty }
+    #else
+    private var coGoiDeBan: Bool { false }
+    #endif
+
+    /// Hàng "Gói". Mũi tên chỉ vẽ khi bấm vào THẬT SỰ đi đâu đó — mũi tên
+    /// trên một hàng không bấm được là lời hứa suông với người dùng.
+    @ViewBuilder
+    private func hangGoi(coMuiTen: Bool) -> some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(T("Gói")).foregroundColor(AppColors.textPrimary)
+            Spacer()
+            if appState.currentUser?.isPro == true {
+                VStack(alignment: .trailing, spacing: 2) {
+                    HStack(spacing: 5) {
+                        Image(systemName: "crown.fill").font(.system(size: 11))
+                        Text("Pro").font(.system(size: 14, weight: .bold))
+                    }
+                    .foregroundColor(AppColors.accent)
+                    // ⚠️ Máy chủ TRẢ `proExpiresAt` + `proLifetime` từ lâu mà
+                    // app chưa bao giờ hiện. Người dùng còn hai ngày hết hạn
+                    // không có chỗ nào trong app biết được điều đó.
+                    if let h = hanPro {
+                        Text(h)
+                            .font(.system(size: 12))
+                            .foregroundColor(sapHetHanPro ? AppColors.warning
+                                                          : AppColors.textSecondary)
+                    }
+                }
+            } else {
+                Text(T("Miễn phí")).foregroundColor(AppColors.textSecondary)
+            }
+            if coMuiTen {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(AppColors.textTertiary)
+            }
+        }
+        .contentShape(Rectangle())
+    }
+
+    // MARK: Hạn của gói Pro
+
+    /// Số ngày còn lại, `nil` khi trọn đời hoặc không đọc được mốc.
+    private var ngayConLaiPro: Int? {
+        guard appState.currentUser?.proLifetime != true,
+              let iso = appState.currentUser?.proExpiresAt,
+              let moc = NhacViec.moc(iso) else { return nil }
+        // Đếm theo NGÀY LỊCH, không phải chia 86400: hết hạn 23:00 hôm nay và
+        // 01:00 ngày mai là hai câu trả lời khác nhau với người dùng.
+        let l = Calendar.current
+        return l.dateComponents([.day], from: l.startOfDay(for: Date()),
+                                to: l.startOfDay(for: moc)).day
+    }
+
+    private var sapHetHanPro: Bool {
+        if let n = ngayConLaiPro { return n <= 7 }
+        return false
+    }
+
+    /// Dòng phụ dưới chữ "Pro". `nil` thì không vẽ gì.
+    private var hanPro: String? {
+        if appState.currentUser?.proLifetime == true { return T("Trọn đời") }
+        guard let iso = appState.currentUser?.proExpiresAt,
+              let moc = NhacViec.moc(iso) else { return nil }
+        let f = DateFormatter()
+        f.locale = Locale(identifier: QuanLyNgonNguApp.shared.ngonNgu == .anh ? "en_US" : "vi_VN")
+        f.setLocalizedDateFormatFromTemplate("d/M/yyyy")
+        let ngay = f.string(from: moc)
+        guard let n = ngayConLaiPro else { return String(format: T("Đến %@"), ngay) }
+        if n < 0 { return String(format: T("Đã hết hạn %@"), ngay) }
+        if n == 0 { return String(format: T("Hết hạn hôm nay (%@)"), ngay) }
+        if n <= 7 { return String(format: T("Còn %d ngày · đến %@"), n, ngay) }
+        return String(format: T("Đến %@"), ngay)
+    }
 
     var body: some View {
         NavigationStack {
@@ -1068,18 +1146,20 @@ struct SettingsView: View {
 
                 // About
                 Section(T("Giới thiệu")) {
-                    HStack {
-                        Text(T("Gói"))
-                        Spacer()
-                        if appState.currentUser?.isPro == true {
-                            HStack(spacing: 5) {
-                                Image(systemName: "crown.fill").font(.system(size: 11))
-                                Text("Pro").font(.system(size: 14, weight: .bold))
-                            }
-                            .foregroundColor(AppColors.accent)
-                        } else {
-                            Text(T("Miễn phí")).foregroundColor(AppColors.textSecondary)
-                        }
+                    // ⚠️ CHỈ mở được màn mua khi StoreKit THẬT SỰ trả về gói.
+                    //
+                    // Chưa có sản phẩm trên App Store Connect (đang chờ hợp
+                    // đồng Paid Applications) thì bấm vào chỉ ra một màn báo
+                    // "chưa tải được bảng giá" — với người duyệt đó là tính
+                    // năng hỏng nhìn thấy được, tức 2.1 App Completeness.
+                    //
+                    // Cách này còn một cái lợi: hôm nào sản phẩm IAP lên sóng
+                    // là lối vào TỰ hiện ra, không phải dựng bản mới.
+                    if coGoiDeBan {
+                        Button { moMuaPro = true } label: { hangGoi(coMuiTen: true) }
+                            .buttonStyle(.plain)
+                    } else {
+                        hangGoi(coMuiTen: false)
                     }
                     HStack {
                         Text(T("Phiên bản"))
@@ -1111,6 +1191,11 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle(T("Cài đặt"))
+            // Hỏi StoreKit xem có gói nào bán được không. Rẻ và có nhớ đệm;
+            // kết quả quyết định hàng "Gói" có bấm được hay không.
+            #if os(iOS)
+            .task { await khoPro.napGoi() }
+            #endif
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -1126,6 +1211,12 @@ struct SettingsView: View {
             } message: {
                 Text(T("Bạn có chắc muốn đăng xuất không?"))
             }
+            // Chỉ MỘT sheet trên view này — hai `.sheet(isPresented:)` cùng
+            // chỗ thì chỉ cái cuối chạy, cái kia bấm im lặng (xem ghi chú ở
+            // `ProfileView`).
+            #if os(iOS)
+            .sheet(isPresented: $moMuaPro) { MuaProView() }
+            #endif
         }
     }
 }

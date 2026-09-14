@@ -118,6 +118,17 @@ struct iOSTabView: View {
                 // App từ nền quay lại sau cú chạm thông báo.
                 ThongBaoDay.apDungDinhTuyen()
                 Task { await appState.fetchUnreadCounts() }
+                // ⚠️ Hồ sơ cũng phải nạp lại, không chỉ số chưa đọc. `isPro`
+                // và hạn Pro do MÁY CHỦ tính; trước đây chúng chỉ được lấy
+                // lúc mở app và sau khi đăng nhập. Ai để app chạy nền vài
+                // ngày thì vương miện Pro vẫn sáng sau khi gói đã hết hạn,
+                // cho tới lúc bấm trúng một tính năng và ăn 403 — người dùng
+                // đọc ra là "app hỏng", không phải "gói đã hết".
+                //
+                // Chiều ngược lại còn quan trọng hơn: vừa mua Pro trên web ở
+                // một tab khác, quay sang app là thấy ngay, không phải thoát
+                // ra đăng nhập lại.
+                Task { await appState.fetchProfile() }
             }
         }
     }

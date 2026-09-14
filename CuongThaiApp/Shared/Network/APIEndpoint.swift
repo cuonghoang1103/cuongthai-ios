@@ -490,6 +490,10 @@ enum APIEndpoint {
     case cvChamCV(than: [String: Any])
     case cvTrangThaiCham
 
+    /// Gửi giao dịch App Store lên máy chủ xác minh và cấp Pro.
+    /// `jws` là `Transaction.jsonRepresentation` của StoreKit 2.
+    case guiGiaoDichApple(jws: String)
+
     case dsDuAn(danhMuc: String?, tim: String, trang: Int)
     case duAn(slug: String)
     /// Ghi nhận một lượt chép. Không cần đăng nhập (máy chủ đếm theo IP).
@@ -791,6 +795,7 @@ enum APIEndpoint {
         case .cvTrangThaiThu: return "/api/v1/cv/cover-letter/status"
         case .cvChamCV: return "/api/v1/cv/critique"
         case .cvTrangThaiCham: return "/api/v1/cv/critique/status"
+        case .guiGiaoDichApple: return "/api/v1/pro/apple/transactions"
         case .dsDuAn: return "/api/v1/projects"
         case .duAn(let slug): return "/api/v1/projects/\(slug)"
         case .ghiNhanChep(let id): return "/api/v1/snippets/\(id)/copy"
@@ -834,6 +839,8 @@ enum APIEndpoint {
              .suaBinhLuanCauHoi,
              .cvLuuHoSo, .cvSuaMuc, .cvSuaGach:
             return "PUT"
+        case .guiGiaoDichApple:
+            return "POST"
         case .themViec, .themBuoiHoc, .nhapLichHoc, .ketThucNgay, .themHocKy, .themBuoiThi:
             return "POST"
         case .suaViec, .suaBuoiHoc, .suaHocKy, .suaBuoiThi:
@@ -967,6 +974,7 @@ enum APIEndpoint {
         case .createPost(let d): return d
         case .updateProfile(let d): return d
         case .themViec(let d): return d
+        case .guiGiaoDichApple(let jws): return ["jws": jws]
         case .ketThucNgay(let hn): return ["homNay": hn]
         case .suaViec(_, let d): return d
         case .themBuoiHoc(let d): return d
