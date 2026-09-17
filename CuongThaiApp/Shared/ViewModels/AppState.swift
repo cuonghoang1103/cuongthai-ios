@@ -40,6 +40,10 @@ final class AppState: ObservableObject {
     // reviewed on, not an extra.
     enum AppTab: Int, CaseIterable, Identifiable {
         case home = 0, learn = 1, create = 2, messages = 3, profile = 4
+        /// Vở viết tay. CHỈ hiện ở thanh bên của màn rộng (iPad/Mac) —
+        /// thanh tab của iPhone giữ đúng 5 mục, mục thứ sáu bị iOS dồn vào
+        /// tab "More" và chôn cuốn vở sau hai lần chạm.
+        case notebook = 5
         var id: Int { rawValue }
         var title: String {
             switch self {
@@ -48,6 +52,7 @@ final class AppState: ObservableObject {
             case .create: return T("Tạo")
             case .messages: return T("Tin nhắn")
             case .profile: return T("Cá nhân")
+            case .notebook: return T("Vở")
             }
         }
         var icon: String {
@@ -57,6 +62,7 @@ final class AppState: ObservableObject {
             case .create: return "plus.app.fill"
             case .messages: return "message.fill"
             case .profile: return "person.fill"
+            case .notebook: return "book.closed.fill"
             }
         }
     }

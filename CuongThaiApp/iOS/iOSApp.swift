@@ -64,6 +64,9 @@ struct CuongThaiApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(appState)
+                // Kho Vở (SwiftData). Gắn ở gốc để mọi màn con — kể cả màn
+                // viết mở bằng `fullScreenCover` — đều thấy cùng một kho.
+                .modelContainer(KhoSwiftData.chung)
                 // Cuộc gọi tới phải reo dù người dùng đang ở màn nào.
                 .lopPhuCuocGoi()
                 // `nil` = để iOS quyết định. Màu của app vốn đã thích ứng nên

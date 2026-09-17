@@ -411,8 +411,13 @@ struct MediaGridView: View {
     /// hình và cuộn bảng tin thành cuộn ảnh. Sàn 180pt: ảnh ngang rất bẹt thì
     /// nhỏ tới mức không nhìn ra gì.
     private func caoTheoAnh(_ m: SocialMedia) -> CGFloat {
+        // ⚠️ Trần 700pt: `UIScreen.main` cho bề ngang MÀN HÌNH, mà từ
+        // 16/09/2026 bảng tin có thể nằm trong cột phải của `BoCucCotDoi` trên
+        // iPad — hẹp hơn màn hình. Không chặn thì trên iPad 13" nằm ngang nó
+        // tính theo 1334pt: mọi ảnh dọc đều đụng trần 560pt và bị cắt, dù ô
+        // thật chỉ rộng chừng một nửa chỗ đó.
         #if os(iOS)
-        let rong = UIScreen.main.bounds.width - 32
+        let rong = min(UIScreen.main.bounds.width - 32, 700)
         #else
         let rong: CGFloat = 420
         #endif
@@ -423,8 +428,13 @@ struct MediaGridView: View {
     /// Ảnh có bị trần 560pt cắt mất phần nào không — để nói cho người dùng
     /// biết còn nội dung bên dưới, thay vì để họ tưởng ảnh chỉ có bấy nhiêu.
     private func biCat(_ m: SocialMedia) -> Bool {
+        // ⚠️ Trần 700pt: `UIScreen.main` cho bề ngang MÀN HÌNH, mà từ
+        // 16/09/2026 bảng tin có thể nằm trong cột phải của `BoCucCotDoi` trên
+        // iPad — hẹp hơn màn hình. Không chặn thì trên iPad 13" nằm ngang nó
+        // tính theo 1334pt: mọi ảnh dọc đều đụng trần 560pt và bị cắt, dù ô
+        // thật chỉ rộng chừng một nửa chỗ đó.
         #if os(iOS)
-        let rong = UIScreen.main.bounds.width - 32
+        let rong = min(UIScreen.main.bounds.width - 32, 700)
         #else
         let rong: CGFloat = 420
         #endif

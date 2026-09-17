@@ -93,6 +93,11 @@ struct ManXemThu: View {
             //
             // ⛔ `xcrun simctl erase` XOÁ Keychain ⇒ mất phiên, phải nhờ
             //    người dùng đăng nhập lại. Cần sạch thì dùng `uninstall`.
+            // Bố cục cột đôi của iPad/macOS. Các màn bên trong cần đăng nhập
+            // nên chúng hiện trạng thái rỗng — đủ để soi CẤU TRÚC hai cột,
+            // không phải để soi nội dung.
+            case "vo": VoView()
+            case "cotdoi": BoCucCotDoi()
             case "trangchu": HomeView()
             case "khoahoc": CoursesView()      // → vào khoá → bài → màn HỌC BÀI
             case "daluu": DaLuuView()

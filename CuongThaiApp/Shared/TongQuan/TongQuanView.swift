@@ -27,6 +27,7 @@ struct TongQuanView: View {
     }
     #endif
     @State private var oViecMoi = ""
+    @State private var moVo = false
     @State private var moLich = false
     @State private var moFeed = false
     @State private var moCon: Set<Int> = []
@@ -84,6 +85,14 @@ struct TongQuanView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     HStack(spacing: Spacing.md) {
+                        // Vở viết tay. Trên iPad nó đã có mục riêng ở thanh
+                        // bên; nút này là lối vào cho iPhone và cho iPad đang
+                        // ở cửa sổ hẹp.
+                        Button { moVo = true } label: {
+                            Image(systemName: "book.closed")
+                        }
+                        .accessibilityLabel(T("Vở"))
+
                         Button { moLich = true } label: {
                             Image(systemName: "calendar")
                         }
@@ -98,6 +107,7 @@ struct TongQuanView: View {
                     .foregroundColor(AppColors.textPrimary)
                 }
             }
+            .navigationDestination(isPresented: $moVo) { NoiDungVoView() }
             .navigationDestination(isPresented: $moLich) { LichTuanView(vm: vm) }
             .navigationDestination(isPresented: $moFeed) { HomeView() }
             // Sheet chứ không đẩy màn: `NotificationsView` tự mang nút "Đóng"

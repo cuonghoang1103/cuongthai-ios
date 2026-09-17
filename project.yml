@@ -88,15 +88,18 @@ targets:
         INFOPLIST_FILE: CuongThaiApp/iOS/Info.plist
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         GENERATE_INFOPLIST_FILE: NO
-        # CHỈ iPhone ("1"). Khai thêm iPad ("1,2") kéo theo hai hệ quả:
-        #  1. App Store bắt khai ĐỦ 4 hướng màn hình, kể cả lộn ngược — nếu
-        #     không, gói bị từ chối ngay ở bước kiểm (đã dính 20/08/2026).
-        #  2. Quan trọng hơn: reviewer sẽ MỞ APP TRÊN iPad. Giao diện này dựng
-        #     cho điện thoại (thanh 5 tab, bảng tin một cột), phóng lên iPad
-        #     nhìn rất trống — đúng thứ bị đánh theo 2.1/4.2.
-        # App vẫn chạy trên iPad ở chế độ tương thích. Muốn hỗ trợ iPad thật
-        # thì đổi lại "1,2" VÀ dựng bố cục riêng cho màn rộng.
-        TARGETED_DEVICE_FAMILY: "1"
+        # iPhone + iPad ("1,2") — mở 16/09/2026. Hai điều kiện đi KÈM, thiếu
+        # một cái là quay lại đúng hai lý do từng khiến nó bị khoá ở "1":
+        #  1. `Info.plist` phải có `UISupportedInterfaceOrientations~ipad` với
+        #     ĐỦ 4 hướng, kể cả lộn ngược. Thiếu ⇒ gói bị từ chối ngay ở bước
+        #     kiểm, không đợi tới reviewer (đã dính 20/08/2026).
+        #  2. Phải có bố cục riêng cho màn rộng, nếu không reviewer mở trên
+        #     iPad thấy thanh 5 tab phóng to và đánh theo 2.1/4.2. Bố cục đó
+        #     là `BoCucCotDoi` trong `ContentView.swift`, chọn theo
+        #     `horizontalSizeClass` chứ không theo hệ điều hành — nên iPad
+        #     ngang và macOS dùng CHUNG một đường, còn iPad trong Slide Over
+        #     hẹp tự rơi về thanh tab của iPhone.
+        TARGETED_DEVICE_FAMILY: "1,2"
         SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: YES
         ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES: YES
     dependencies:
@@ -130,6 +133,53 @@ targets:
         # Thiếu khoá này thì `registerForRemoteNotifications()` gọi xong im
         # lặng, không có thẻ nào về, và không có lỗi nào để thấy.
         aps-environment: development
+
+  # ─── App QUẢN TRỊ (nội bộ, chỉ iPad) ────────────────────────────────
+  #
+  # App RIÊNG (bundle khác, biểu tượng riêng trên máy) nhưng nằm CHUNG
+  # project để dùng lại tầng mạng: `Shared/Network` + `Shared/Models` +
+  # `Shared/Storage` + `Shared/Theme.swift` — 3.288 dòng, đo 16/09/2026 là
+  # KHÔNG file nào import SwiftUI nên tách sạch. Sửa `APIEndpoint` một lần,
+  # cả hai app cùng có.
+  #
+  # ⚠️ KHÔNG nộp App Store: nó cài thẳng bằng `devicectl`. Vì thế bỏ được
+  # Sign in with Apple, xoá tài khoản trong app, báo cáo/chặn, màn đồng ý
+  # quy tắc — toàn bộ khối tuân thủ mà app chính phải mang.
+  # ⚠️ Đổi lại: hồ sơ ký kiểu development hết hạn khoảng một năm, tới lúc đó
+  # app không mở được nữa cho tới khi cài lại. Dữ liệu không mất.
+  CuongThaiAdmin:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    # ⚠️ KHÔNG khai `group:` ở đây. Nhóm cha `CuongThaiApp` trong project đã
+    # mang `path = CuongThaiApp`; khai thêm group khiến xcodegen ghi đường dẫn
+    # đầy đủ vào nhóm con nữa và Xcode đi tìm `CuongThaiApp/CuongThaiApp/Admin`
+    # — lỗi "Build input files cannot be found", nghe như thiếu file.
+    sources:
+      - path: CuongThaiApp/Admin
+      - path: CuongThaiApp/Shared/Network
+      - path: CuongThaiApp/Shared/Models
+      - path: CuongThaiApp/Shared/Storage
+      - path: CuongThaiApp/Shared/Theme.swift
+      # `Models.swift` gọi `Date.tuChuoiISO` — extension nằm ở đây, chỉ
+      # `import Foundation` nên kéo theo không tốn gì.
+      - path: CuongThaiApp/Shared/Extensions/TimeFormatter.swift
+    settings:
+      configs:
+        Debug:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: $(inherited) DEBUG
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.cuongthai.admin
+        INFOPLIST_FILE: CuongThaiApp/Admin/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        # Biểu tượng RIÊNG (Admin/Assets.xcassets) — ba cột số liệu trên nền
+        # tím-đen. Không dùng chung `AppIcon` của app chính: hai app nằm cạnh
+        # nhau trên màn hình iPad, trùng biểu tượng là mở nhầm mỗi ngày.
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        # CHỈ iPad. App này sống trên bàn làm việc, không phải trong túi —
+        # bày số liệu và bảng đơn hàng trên màn 5 inch là vô nghĩa.
+        TARGETED_DEVICE_FAMILY: "2"
+        ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES: YES
 
   CuongThaiAppMac:
     type: application

@@ -31,6 +31,23 @@
         <string>UIInterfaceOrientationLandscapeLeft</string>
         <string>UIInterfaceOrientationLandscapeRight</string>
     </array>
+    <!-- ⚠️ BẮT BUỘC từ lúc `TARGETED_DEVICE_FAMILY` có "2". iPad phải khai ĐỦ
+         BỐN hướng, kể cả lộn ngược — thiếu một hướng là gói bị từ chối ngay ở
+         bước KIỂM TỰ ĐỘNG, trước khi có người nhìn (đã dính 20/08/2026). Lý
+         do của Apple: iPad không có "chiều đúng", người dùng dựng máy vào bàn
+         phím kiểu nào cũng được, và đa nhiệm (Split View / Stage Manager) chỉ
+         chạy khi app xoay được mọi chiều.
+
+         Khoá này KHÔNG áp cho iPhone: hậu tố `~ipad` khiến iOS chỉ đọc nó
+         trên iPad, còn iPhone vẫn dùng khối ba hướng ở trên (không lộn ngược
+         — trên điện thoại, chân sạc chổng lên trời là tư thế không ai muốn). -->
+    <key>UISupportedInterfaceOrientations~ipad</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationPortraitUpsideDown</string>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
     <key>NSCameraUsageDescription</key><string>CuongThai cần camera để bạn chụp ảnh hoặc quay video đăng lên bảng tin và đổi ảnh đại diện.</string>
     <!-- Nhận giọng nói CHẠY TRÊN MÁY cho phần luyện nói với AI. Không có
          khoá này thì `SFSpeechRecognizer` trả lỗi quyền và màn luyện nói

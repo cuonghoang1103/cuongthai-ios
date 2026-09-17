@@ -71,7 +71,11 @@ actor APIClient {
             throw APIError.decodingError(error)
         }
         guard apiResponse.success, let responseData = apiResponse.data else {
-            throw APIError.serverError(apiResponse.message ?? "Máy chủ không trả về dữ liệu")
+            let thongDiep = apiResponse.message ?? "Máy chủ không trả về dữ liệu"
+            if let ma = apiResponse.code, !ma.isEmpty {
+                throw APIError.coMa(ma: ma, thongDiep: thongDiep)
+            }
+            throw APIError.serverError(thongDiep)
         }
         return responseData
     }
@@ -341,6 +345,10 @@ enum APIError: LocalizedError {
     case invalidURL, noData, unauthorized, unknown
     case decodingError(Error)
     case serverError(String)
+    /// Lỗi máy chủ CÓ mã (`code` trong envelope). Tách khỏi `serverError` để
+    /// nơi gọi bắt đúng tình huống — `INK_CONFLICT` của Vở phải đi vào nhánh
+    /// hợp nhất chứ không phải nhánh "báo lỗi rồi thôi".
+    case coMa(ma: String, thongDiep: String)
     case networkError(Error)
 
     var errorDescription: String? {
@@ -353,6 +361,7 @@ enum APIError: LocalizedError {
         case .unknown: return "Có lỗi không xác định."
         case .decodingError: return "Dữ liệu trả về không đúng định dạng."
         case .serverError(let m): return m
+        case .coMa(_, let m): return m
         case .networkError: return "Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại."
         }
     }
@@ -363,6 +372,12 @@ struct APIResponse<T: Decodable>: Decodable {
     let success: Bool
     let data: T?
     let message: String?
+    /// Mã lỗi của backend (`AppError.code`), ví dụ `INK_CONFLICT`.
+    ///
+    /// Có nó thì nơi gọi phân nhánh được theo MÃ thay vì theo câu chữ — câu
+    /// chữ đổi mỗi lần sửa lời thông báo, và một nhánh xử lý dựa vào nó sẽ
+    /// chết lặng lẽ đúng lúc không ai ngờ.
+    let code: String?
 }
 
 /// The envelope without its payload — used for endpoints that answer
