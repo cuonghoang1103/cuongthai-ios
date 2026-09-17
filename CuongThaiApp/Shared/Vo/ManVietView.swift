@@ -26,6 +26,8 @@ struct ManVietView: View {
     @State private var baoBut: String?
     @ObservedObject private var tieng = GhiAmBuoiHoc.shared
     @State private var chamDeTua = false
+    /// Cùng một khoá với `TroLyTrang` — bật/tắt ở menu thì con robot biết.
+    @AppStorage(CaiDatTroLy.khoaHien) private var hienTroLy = true
 
     private enum CuaSoViet: String, Identifiable {
         case doiGiay, datTenChuong, quetTaiLieu, hoiNhapPdf
@@ -75,6 +77,9 @@ struct ManVietView: View {
             }
         }
         .animation(AppAnimations.quick, value: baoBut)
+        // Trợ lý nằm TRÊN cùng, ngoài `khungViet`, để nó không bị khung vẽ
+        // nuốt cử chỉ và không bị cuốn/phóng theo trang giấy.
+        .overlay { TroLyTrang(trang: trangHienTai, tenCuon: cuon.ten) }
         .ignoresSafeArea(.keyboard)
         .sheet(item: $cuaSo) { cua in
             switch cua {
@@ -210,6 +215,14 @@ struct ManVietView: View {
                 Button { hienCongCu.toggle() } label: {
                     Label(hienCongCu ? T("Ẩn bảng công cụ") : T("Hiện bảng công cụ"),
                           systemImage: "pencil.tip.crop.circle")
+                }
+                // Chỉ iPad mới có trợ lý nổi — trên iPhone khung hỏi che gần
+                // hết trang giấy. Ẩn luôn cả nút để không hứa thứ không có.
+                if CaiDatTroLy.chayDuoc {
+                    Button { hienTroLy.toggle() } label: {
+                        Label(hienTroLy ? T("Ẩn trợ lý trang") : T("Hiện trợ lý trang"),
+                              systemImage: hienTroLy ? "sparkles.slash" : "sparkles")
+                    }
                 }
                 Divider()
                 Button { themTrang() } label: {
