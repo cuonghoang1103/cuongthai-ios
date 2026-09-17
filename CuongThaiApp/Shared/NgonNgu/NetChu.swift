@@ -30,6 +30,28 @@ struct NetChu: Codable {
     var soNet: Int { strokes.count }
 
     /// Đường tim nét thứ `i`, đã đưa về khung vuông cạnh `canh`.
+    /// Dữ liệu nét có hai loại, và phải VẼ KHÁC NHAU:
+    ///
+    /// - **Đường viền** (hanzi-writer: mọi kanji, và kana bản cũ) — mỗi nét
+    ///   là một hình khép kín, có lệnh `Z`. Vẽ bằng `.fill`.
+    /// - **Đường tim** (KanjiVG: kana từ 18/09/2026) — mỗi nét là một đường
+    ///   hở chạy giữa nét bút, KHÔNG có `Z`. Vẽ bằng `.stroke`.
+    ///
+    /// ⚠️ Vẽ nhầm kiểu thì hỏng câm: `.fill` một đường hở khiến SwiftUI tự
+    /// khép nó lại và tô đầy ruột — nét vòng của あ phình thành một mảng đặc
+    /// như quả trứng, đúng thứ người dùng báo là "nét to nhỏ". Ngược lại
+    /// `.stroke` một đường viền thì ra nét đôi rỗng ruột.
+    ///
+    /// Đo 18/09/2026: kana mới 0/516 nét có `Z`; kanji 113/113 có.
+    var laDuongTim: Bool {
+        guard let dau = strokes.first else { return false }
+        return !dau.contains("Z") && !dau.contains("z")
+    }
+
+    /// Bề dày nét khi vẽ kiểu đường tim — theo tỉ lệ khung, không phải số
+    /// điểm ảnh cố định, để ô lớn ô nhỏ đều ra nét cân đối.
+    func beDayNet(canh: CGFloat) -> CGFloat { max(6, canh * 0.055) }
+
     func duongTim(_ i: Int, canh: CGFloat) -> [CGPoint] {
         guard i < medians.count else { return [] }
         return medians[i].compactMap { p in

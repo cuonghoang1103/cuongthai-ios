@@ -75,10 +75,20 @@ struct LuyenVietView: View {
 
             // Chữ mờ phía sau làm mẫu.
             ForEach(0..<n.soNet, id: \.self) { i in
-                DuongSVG.doi(n.strokes[i], canh: canh)
-                    .fill(i < netHienTai
-                          ? AppColors.primary                       // nét đã viết đúng
-                          : AppColors.textPrimary.opacity(0.09))    // nét chưa tới
+                // Vẽ theo ĐÚNG loại dữ liệu — xem `NetChu.laDuongTim`.
+                if n.laDuongTim {
+                    DuongSVG.doi(n.strokes[i], canh: canh)
+                        .stroke(i < netHienTai
+                                ? AppColors.primary
+                                : AppColors.textPrimary.opacity(0.09),
+                                style: StrokeStyle(lineWidth: n.beDayNet(canh: canh),
+                                                   lineCap: .round, lineJoin: .round))
+                } else {
+                    DuongSVG.doi(n.strokes[i], canh: canh)
+                        .fill(i < netHienTai
+                              ? AppColors.primary                       // nét đã viết đúng
+                              : AppColors.textPrimary.opacity(0.09))    // nét chưa tới
+                }
             }
 
             // Gợi ý đường đi của nét ĐANG viết — chỉ hiện khi người dùng xin,
