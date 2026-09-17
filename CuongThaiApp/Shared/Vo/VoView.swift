@@ -62,6 +62,7 @@ struct NoiDungVoView: View {
         var ten: String { self == .vo ? T("Vở của tôi") : T("Luyện viết") }
     }
     @State private var muc: Muc = .vo
+    @State private var dangTim = false
 
     var body: some View {
         Group {
@@ -114,6 +115,10 @@ struct NoiDungVoView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     HStack(spacing: Spacing.md) {
+                        Button { dangTim = true } label: {
+                            Image(systemName: "magnifyingglass")
+                        }
+                        .accessibilityLabel(T("Tìm trong vở"))
                         HuyHieuDongBo()
                         if muc == .vo {
                             Button { cuaSo = .taoMon } label: {
@@ -135,6 +140,7 @@ struct NoiDungVoView: View {
                 DongBoVo.shared.batDau(keoVeTruoc: true)
             }
             .refreshable { await DongBoVo.shared.dongBo(keoVeTruoc: true) }
+            .sheet(isPresented: $dangTim) { TimTrongVoView() }
             .sheet(item: $cuaSo) { cua in
                 switch cua {
                 case .taoMon:

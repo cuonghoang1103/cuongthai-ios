@@ -7,6 +7,8 @@ import SwiftUI
 /// app. Một cuốn vở mở ra thì cả màn hình là trang giấy.
 struct ManVietView: View {
     @Bindable var cuon: CuonVo
+    /// Mở thẳng vào một trang cụ thể (từ kết quả tìm kiếm).
+    var moTrang: UUID? = nil
 
     @Environment(\.dismiss) private var dong
     @Environment(\.modelContext) private var kho
@@ -105,8 +107,13 @@ struct ManVietView: View {
             }
         }
         .onAppear {
-            // Mở lại cuốn vở là về đúng trang đang viết dở, không phải trang 1.
-            chiSo = min(max(0, cuon.trangDangDoc), max(0, trangs.count - 1))
+            // Từ tìm kiếm thì vào thẳng trang đó; không thì về trang đang
+            // viết dở, không phải trang 1.
+            if let moTrang, let i = trangs.firstIndex(where: { $0.id == moTrang }) {
+                chiSo = i
+            } else {
+                chiSo = min(max(0, cuon.trangDangDoc), max(0, trangs.count - 1))
+            }
         }
         .onChange(of: chiSo) { _, moi in
             cuon.trangDangDoc = moi
