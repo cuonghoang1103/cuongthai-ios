@@ -25,6 +25,12 @@ struct BangVe: UIViewControllerRepresentable {
     var lanVuaKhung: Int = 0
     /// Gọi sau mỗi lần tự lưu, để màn ngoài cập nhật ảnh thu nhỏ + "đã lưu".
     var khiLuu: ((PKDrawing) -> Void)?
+    /// Số nét hiện tại sau mỗi lần vẽ thêm — để gắn mốc thời gian ghi âm.
+    var khiThemNet: ((Int) -> Void)?
+    /// Người dùng chạm vào nét thứ mấy (khi đang ở chế độ tua theo nét).
+    var khiChamNet: ((Int) -> Void)?
+    /// Bật chế độ chạm-để-tua: ngón tay chạm vào nét thay vì cuộn.
+    var chamDeTua: Bool = false
     /// Câu ngắn hiện thoáng qua khi bóp bút — bằng chứng nhìn thấy được.
     var khiBaoBut: ((String) -> Void)?
 
@@ -33,6 +39,9 @@ struct BangVe: UIViewControllerRepresentable {
         vc.datNen(pdfTen: nenPdfTen, trang: nenPdfTrang, anhTen: nenAnhTen)
         vc.khiLuu = khiLuu
         vc.khiBaoBut = khiBaoBut
+        vc.khiThemNet = khiThemNet
+        vc.khiChamNet = khiChamNet
+        vc.datChamDeTua(chamDeTua)
         return vc
     }
 
@@ -53,6 +62,9 @@ struct BangVe: UIViewControllerRepresentable {
         vc.xinVuaKhung(lanVuaKhung)
         vc.khiLuu = khiLuu
         vc.khiBaoBut = khiBaoBut
+        vc.khiThemNet = khiThemNet
+        vc.khiChamNet = khiChamNet
+        vc.datChamDeTua(chamDeTua)
     }
 }
 
@@ -70,6 +82,10 @@ final class BangVeVC: UIViewController {
     /// Báo một câu ngắn lên màn khi cú bóp bút ăn — không có phản hồi nhìn
     /// thấy được thì người dùng bóp lại mấy lần rồi kết luận "hỏng".
     var khiBaoBut: ((String) -> Void)?
+    var khiThemNet: ((Int) -> Void)?
+    var khiChamNet: ((Int) -> Void)?
+    /// Số nét ở lần đổi trước — để phân biệt "vẽ thêm" với "vừa tẩy".
+    fileprivate var soNetTruoc = 0
 
     let canvas = PKCanvasView()
     private let nen = GiayNenView()
@@ -358,6 +374,47 @@ final class BangVeVC: UIViewController {
 
     // MARK: Apple Pencil Pro
 
+    /// Chạm vào một nét để nhảy tới đoạn ghi âm lúc viết nét đó.
+    ///
+    /// ⚠️ Chỉ bật khi người dùng xin. Bật thường trực thì cú chạm để cuộn
+    /// trang cũng thành lệnh tua, và bản ghi nhảy lung tung mỗi lần lật vở.
+    func datChamDeTua(_ bat: Bool) {
+        guard bat != (chamTua != nil) else { return }
+        // ⚠️ Ở chế độ tua, NGÓN TAY không được vẽ nữa — nếu không thì mỗi cú
+        // chạm để nghe lại để lại một chấm mực trên trang. Đo thật trên máy
+        // mô phỏng 17/09/2026: chạm vào nét xong thấy một chấm đen mới.
+        // Bút vẫn viết được bình thường, nên đang nghe vẫn ghi chú thêm được.
+        canvas.drawingPolicy = bat ? .pencilOnly : .default
+        if bat {
+            let g = UITapGestureRecognizer(target: self, action: #selector(chamVaoNet(_:)))
+            canvas.addGestureRecognizer(g)
+            chamTua = g
+        } else if let g = chamTua {
+            canvas.removeGestureRecognizer(g)
+            chamTua = nil
+        }
+    }
+    private var chamTua: UITapGestureRecognizer?
+
+    @objc private func chamVaoNet(_ g: UITapGestureRecognizer) {
+        let diem = g.location(in: canvas)
+        // Quy về toạ độ TRANG: cú chạm đọc theo khung đang phóng, còn nét
+        // lưu theo toạ độ trang gốc.
+        let z = max(canvas.zoomScale, 0.01)
+        let tai = CGPoint(x: diem.x / z, y: diem.y / z)
+        var ganNhat: (chiSo: Int, kc: CGFloat)?
+        for (i, net) in canvas.drawing.strokes.enumerated() {
+            for d in net.path.interpolatedPoints(by: .distance(8)) {
+                let p = d.location.applying(net.transform)
+                let kc = hypot(p.x - tai.x, p.y - tai.y)
+                if ganNhat == nil || kc < ganNhat!.kc { ganNhat = (i, kc) }
+            }
+        }
+        // 44pt: nhỏ hơn thì chạm trượt hoài, lớn hơn thì chạm vào chỗ trống
+        // giữa trang cũng nhảy tới một nét ở tận đâu.
+        if let g = ganNhat, g.kc < 44 { khiChamNet?(g.chiSo) }
+    }
+
     private func ganTuongTacBut() {
         guard #available(iOS 17.5, *) else {
             NhatKy.vo.info("bút: iOS < 17.5, không có API bóp")
@@ -397,6 +454,11 @@ final class BangVeVC: UIViewController {
 extension BangVeVC: PKCanvasViewDelegate {
     func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
         henGioLuu()
+        let n = canvasView.drawing.strokes.count
+        // Chỉ báo khi nét TĂNG. Tẩy cũng gọi hàm này, và coi mọi thay đổi là
+        // "vừa viết thêm" thì mỗi lần xoá lại ghi thêm một mốc thời gian.
+        if n > soNetTruoc { khiThemNet?(n) }
+        soNetTruoc = n
     }
 
     func scrollViewDidZoom(_ scrollView: UIScrollView) {

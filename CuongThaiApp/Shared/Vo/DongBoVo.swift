@@ -33,6 +33,11 @@ final class DongBoVo: ObservableObject {
     private var dangChay = false
     /// Lượt đồng bộ đang chạy, giữ ở ĐÂY chứ không gắn vào view.
     private var viecDangChay: Task<Void, Never>?
+    /// Lượt đã hẹn nhưng chưa tới giờ.
+    private var viecDaHen: Task<Void, Never>?
+    private var lanChayCuoi: Date?
+    /// Số lần liên tiếp bị máy chủ từ chối vì gọi quá dày.
+    private var soLanBiChan = 0
 
     private init() {}
 
@@ -49,8 +54,41 @@ final class DongBoVo: ObservableObject {
     ///
     /// `Task {}` tạo ở đây là task KHÔNG cấu trúc: nó không bị huỷ theo task
     /// cha, nên lượt đẩy chạy tới cùng dù người dùng đã rời màn.
+    /// ⚠️⚠️ GOM các lời gọi lại, đừng đẩy ngay mỗi lần.
+    ///
+    /// Nhập một PDF 3 trang là ba lần thêm trang, cộng lưu nét, cộng ghi âm
+    /// — mỗi cái gọi `batDau()` một lần. Đo thật 17/09/2026 trên production:
+    /// chuỗi đó ăn **"Too many requests. Please try again later."** và huy
+    /// hiệu đỏ suốt, dù chẳng có gì hỏng. Máy chủ chặn đúng; lỗi ở nhịp gọi
+    /// của app.
+    ///
+    /// Nhịp: cách lượt trước ít nhất `nhipToiThieu`; bị chặn thì lùi gấp đôi
+    /// mỗi lần, tối đa 5 phút.
+    private var nhipToiThieu: TimeInterval {
+        soLanBiChan == 0 ? 6 : min(6 * pow(2, Double(soLanBiChan)), 300)
+    }
+
     func batDau(keoVeTruoc: Bool = false) {
         guard viecDangChay == nil else { return }
+        // Đã có lượt đang chờ thì thôi — nó sẽ gom cả thay đổi này.
+        guard viecDaHen == nil else { return }
+
+        let choThem = lanChayCuoi.map { nhipToiThieu - Date().timeIntervalSince($0) } ?? 0
+        guard choThem > 0 else {
+            chayNgay(keoVeTruoc: keoVeTruoc)
+            return
+        }
+        viecDaHen = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(choThem))
+            guard let self, !Task.isCancelled else { return }
+            viecDaHen = nil
+            chayNgay(keoVeTruoc: keoVeTruoc)
+        }
+    }
+
+    private func chayNgay(keoVeTruoc: Bool) {
+        guard viecDangChay == nil else { return }
+        lanChayCuoi = Date()
         viecDangChay = Task { [weak self] in
             await self?.dongBo(keoVeTruoc: keoVeTruoc)
             self?.viecDangChay = nil
@@ -80,7 +118,13 @@ final class DongBoVo: ObservableObject {
             try await daySoCay(kho: kho)
             try await dayCacTrangBan(kho: kho)
             trangThai = .xong(Date())
+            soLanBiChan = 0          // thông rồi thì trả nhịp về bình thường
             NhatKy.vo.info("đồng bộ xong")
+        } catch let e as APIError where laQuaDay(e) {
+            soLanBiChan += 1
+            trangThai = .nghi        // KHÔNG hiện đỏ: không có gì hỏng, chỉ là gọi dày quá
+            NhatKy.vo.info("máy chủ bảo gọi quá dày — lùi \(Int(nhipToiThieu))s rồi thử lại")
+            batDau()                 // tự hẹn lại theo nhịp mới
         } catch is CancellationError {
             // Người dùng đóng app giữa chừng — không phải lỗi, và cũng không
             // mất gì: mọi thứ chưa đẩy vẫn còn cờ `canDay` để lượt sau làm lại.
@@ -95,6 +139,16 @@ final class DongBoVo: ObservableObject {
 
     private func TaiKhoanDangNhap() -> Bool {
         AppState.shared.currentUser != nil
+    }
+
+    /// Máy chủ từ chối vì gọi quá dày. Nhận theo MÃ và theo câu chữ, vì
+    /// tầng chặn nhịp nằm ngoài `AppError` nên không phải lúc nào cũng có mã.
+    private func laQuaDay(_ e: APIError) -> Bool {
+        if case .coMa(let ma, _) = e, ma == "TOO_MANY_REQUESTS" || ma == "RATE_LIMITED" {
+            return true
+        }
+        let m = e.localizedDescription.lowercased()
+        return m.contains("too many requests") || m.contains("quá nhiều")
     }
 
     private func moTaLoi(_ e: Error) -> String {

@@ -153,6 +153,18 @@ final class TrangVo {
     /// Tên tệp ảnh nền (trang sách chụp/quét) trong cùng thư mục.
     var nenAnhTen: String?
 
+    // ─── Ghi âm buổi học ────────────────────────────────────────────────
+    /// Tên tệp ghi âm (m4a) trong `Documents/Vo/tieng/`, nếu trang này có.
+    var ghiAmTen: String?
+    var ghiAmDai: Double = 0
+    /// Mốc thời gian (giây tính từ đầu bản ghi) của TỪNG NÉT trên trang,
+    /// theo đúng thứ tự nét trong `PKDrawing`.
+    ///
+    /// Đây là thứ làm nên "chạm vào chữ → nhảy tới đoạn giảng lúc viết chữ
+    /// đó". Lưu mảng số thay vì bảng riêng: nó luôn đi cùng đúng một trang,
+    /// và số nét một trang hiếm khi quá vài trăm.
+    var mocNet: [Double] = []
+
     // ─── Đồng bộ ────────────────────────────────────────────────────────
     /// Phiên bản nét vẽ trên MÁY CHỦ mà bản cục bộ này đang dựa trên. Gửi
     /// kèm mỗi lượt đẩy; máy chủ so với bản nó giữ để biết có ai ghi chen

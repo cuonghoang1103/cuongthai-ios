@@ -22,6 +22,8 @@ struct ManVietView: View {
     @State private var lanVuaKhung = 0
     /// Câu ngắn hiện thoáng qua giữa màn khi bóp bút.
     @State private var baoBut: String?
+    @ObservedObject private var tieng = GhiAmBuoiHoc.shared
+    @State private var chamDeTua = false
 
     private enum CuaSoViet: String, Identifiable {
         case doiGiay, datTenChuong, quetTaiLieu, hoiNhapPdf
@@ -41,6 +43,9 @@ struct ManVietView: View {
     var body: some View {
         VStack(spacing: 0) {
             thanhTren
+            if tieng.dangGhi || tieng.dangPhat || trangHienTai?.ghiAmTen != nil {
+                thanhTieng
+            }
             Divider()
             HStack(spacing: 0) {
                 if hienDaiTrang {
@@ -169,6 +174,16 @@ struct ManVietView: View {
                     Label(trangHienTai?.danhDau == true ? T("Bỏ đánh dấu") : T("Đánh dấu trang"),
                           systemImage: trangHienTai?.danhDau == true ? "flag.slash" : "flag")
                 }
+                if tieng.dangGhi {
+                    Button { dungGhi() } label: {
+                        Label(T("Dừng ghi âm"), systemImage: "stop.circle")
+                    }
+                } else {
+                    Button { batGhi() } label: {
+                        Label(T("Ghi âm buổi học"), systemImage: "mic.circle")
+                    }
+                }
+                Divider()
                 Button { dangChonPdf = true } label: {
                     Label(T("Nhập PDF để viết đè"), systemImage: "doc.badge.plus")
                 }
@@ -216,6 +231,80 @@ struct ManVietView: View {
         .background(AppColors.backgroundSecondary)
     }
 
+    // MARK: Thanh ghi âm
+
+    @ViewBuilder
+    private var thanhTieng: some View {
+        HStack(spacing: Spacing.md) {
+            if tieng.dangGhi {
+                Circle().fill(AppColors.error).frame(width: 10, height: 10)
+                    .opacity(0.9)
+                Text("\(T("Đang ghi")) \(GhiAmBuoiHoc.doDaiChu(tieng.giay))")
+                    .font(Font.bodyMedium.monospacedDigit())
+                    .foregroundStyle(AppColors.error)
+                Spacer()
+                Button { dungGhi() } label: {
+                    Label(T("Dừng"), systemImage: "stop.circle.fill")
+                }
+                .fontWeight(.semibold)
+            } else if let t = trangHienTai, let _ = t.ghiAmTen {
+                Image(systemName: tieng.dangPhat ? "waveform" : "waveform.circle")
+                    .foregroundStyle(AppColors.primary)
+                Text(tieng.dangPhat
+                     ? GhiAmBuoiHoc.doDaiChu(tieng.giay)
+                     : "\(T("Bản ghi")) \(GhiAmBuoiHoc.doDaiChu(t.ghiAmDai))")
+                    .font(Font.bodyMedium.monospacedDigit())
+                    .foregroundStyle(AppColors.textSecondary)
+                Spacer()
+                Toggle(isOn: $chamDeTua) {
+                    Label(T("Chạm chữ để nghe"), systemImage: "hand.tap")
+                }
+                .toggleStyle(.button)
+                .font(Font.bodyMedium)
+                if tieng.dangPhat {
+                    Button { tieng.dungPhat() } label: {
+                        Image(systemName: "stop.circle")
+                    }
+                } else {
+                    Button { tieng.phat(ten: t.ghiAmTen!) } label: {
+                        Image(systemName: "play.circle")
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, Spacing.md)
+        .padding(.vertical, Spacing.xs)
+        .background(AppColors.backgroundSecondary)
+    }
+
+    private func batGhi() {
+        guard let t = trangHienTai else { return }
+        Task {
+            let (ten, loi) = await tieng.batDau(choTrang: t.id)
+            if let loi { bao(loi); return }
+            guard let ten else { return }
+            t.ghiAmTen = ten
+            // Nét đã có trước khi bấm ghi thì không có mốc — đánh dấu -1 để
+            // chạm vào chúng nói "viết lúc chưa ghi âm" thay vì tua về 0:00.
+            t.mocNet = Array(repeating: -1, count: soNetHienCo(t))
+            bao(T("Bắt đầu ghi âm buổi học"))
+        }
+    }
+
+    private func dungGhi() {
+        guard let ket = tieng.dung(), let t = trangHienTai else { return }
+        t.ghiAmTen = ket.ten
+        t.ghiAmDai = ket.dai
+        t.suaLuc = Date()
+        try? kho.save()
+        bao("\(T("Đã ghi")) \(GhiAmBuoiHoc.doDaiChu(ket.dai))")
+        DongBoVo.shared.batDau()
+    }
+
+    private func soNetHienCo(_ t: TrangVo) -> Int {
+        KhoVo.nap(t.id).strokes.count
+    }
+
     // MARK: Khung viết
 
     @ViewBuilder
@@ -240,6 +329,29 @@ struct ManVietView: View {
                        DongBoVo.danhDauBan(trang)
                        lanLuu += 1
                    },
+                   khiThemNet: { soNet in
+                       // Gắn mốc cho nét VỪA viết, chỉ khi đang ghi âm đúng
+                       // trang này. Mảng mốc đi song song với mảng nét nên
+                       // phải bù cho đủ dài khi có nét vẽ lúc chưa ghi âm.
+                       guard tieng.dangGhi, tieng.idTrangDangGhi == trang.id else { return }
+                       var m = trang.mocNet
+                       while m.count < soNet - 1 { m.append(-1) }
+                       m.append(tieng.giayHienTai)
+                       trang.mocNet = m
+                   },
+                   khiChamNet: { i in
+                       guard let ten = trang.ghiAmTen else { return }
+                       let moc = trang.mocNet.indices.contains(i) ? trang.mocNet[i] : -1
+                       guard moc >= 0 else {
+                           bao(T("Nét này viết lúc chưa ghi âm"))
+                           return
+                       }
+                       // Lùi 2 giây: câu giảng thường bắt đầu TRƯỚC lúc tay
+                       // bắt đầu viết, nhảy đúng mốc là vào giữa câu.
+                       tieng.phat(ten: ten, tuGiay: max(0, moc - 2))
+                       bao("▶︎ " + GhiAmBuoiHoc.doDaiChu(max(0, moc - 2)))
+                   },
+                   chamDeTua: chamDeTua,
                    khiBaoBut: { cau in
                        baoBut = cau
                        // Tự tắt sau 1,2 giây — lời xác nhận thoáng qua, không
