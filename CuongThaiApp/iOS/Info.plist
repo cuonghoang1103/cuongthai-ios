@@ -91,5 +91,14 @@
             </array>
         </dict>
     </array>
+	<!-- Cho thư mục Documents của app hiện trong Files › Trên iPad tôi.
+	     Lý do: 18/09/2026 người dùng cần đưa 12 PDF giáo trình vào vở, mà
+	     iCloud Drive của họ ĐẦY (`Quota exceeded`) nên đường mây tắc. Bật hai
+	     khoá này thì kéo thả tệp thẳng từ máy tính qua cáp, và cũng là đường
+	     lấy vở ra sao lưu khi cần. -->
+	<key>UIFileSharingEnabled</key>
+	<true/>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
 </dict>
 </plist>
