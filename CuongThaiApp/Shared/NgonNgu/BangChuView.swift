@@ -38,6 +38,7 @@ struct BangChuView: View {
                 .padding(.top, Spacing.xxl).padding(.horizontal, Spacing.lg)
             } else {
                 VStack(alignment: .leading, spacing: Spacing.md) {
+                    if coLuyenTap { nutLuyenTap }
                     thanhNhom
 
                     if let n = nhomHienThi {
@@ -69,6 +70,47 @@ struct BangChuView: View {
                           // (気 vs 氣), nên phải truyền đúng thứ tiếng.
                           lang: ngonNgu.code == "zh" ? "zh" : "ja")
         }
+    }
+
+    /// Luyện tập bảng chữ chỉ mở cho tiếng Nhật — xem ghi chú đầu
+    /// `LuyenBangChuView`: zh và en để VÍ DỤ trong ô `romanization`, không
+    /// phải phiên âm, nên bộ máy hỏi-đáp sẽ đòi gõ nguyên cụm "bā 八 (số 8)".
+    private var coLuyenTap: Bool { ngonNgu.code == "ja" }
+
+    private var nutLuyenTap: some View {
+        NavigationLink(destination: LuyenBangChuView(ngonNgu: ngonNgu)) {
+            HStack(spacing: Spacing.md) {
+                Image(systemName: "graduationcap.fill")
+                    .font(.system(size: 19, weight: .medium))
+                    .foregroundColor(AppColors.onPrimary)
+                    .frame(width: 42, height: 42)
+                    .background(Circle().fill(AppColors.primary))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Luyện tập bảng chữ cái")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(AppColors.textPrimary)
+                    Text("9 bài: trắc nghiệm · tìm cặp · gõ · nghe · viết tay")
+                        .font(.system(size: 12))
+                        .foregroundColor(AppColors.textSecondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.85)
+                }
+                Spacer(minLength: Spacing.sm)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(AppColors.textTertiary)
+            }
+            .padding(Spacing.md)
+            .background(RoundedRectangle(cornerRadius: CornerRadius.large)
+                .fill(AppColors.backgroundCard))
+            .overlay(
+                RoundedRectangle(cornerRadius: CornerRadius.large)
+                    .stroke(AppColors.primary.opacity(0.35), lineWidth: 1),
+            )
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
     private var thanhNhom: some View {
