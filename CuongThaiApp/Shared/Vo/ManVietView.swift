@@ -188,85 +188,108 @@ struct ManVietView: View {
                     .disabled(chiSo >= trangs.count - 1)
             }
 
+            // ⚠️ MỌI mục phải nằm trong `Section`. `Menu { }` là một
+            // ViewBuilder, mà ViewBuilder chỉ nhận TỐI ĐA 10 phần tử con trực
+            // tiếp — dư ra thì trình biên dịch KHÔNG báo gì và SwiftUI lặng lẽ
+            // vứt phần thừa lúc vẽ. Menu này từng có 19 con: nó dựng xanh,
+            // chạy được, và cụt ngay sau "Ẩn bảng công cụ" — mất trắng "Thêm
+            // trang", "Nhân bản trang", "Xoá trang" và cả hai mục trợ lý.
+            //
+            // Đây chính là thứ người dùng báo 18/09/2026 ("bóp bút không thấy
+            // gì" — vì không bật được) và, nhìn lại, cũng là một nửa của báo
+            // cáo cũ "các nút xoá trang không thấy hoạt động": nút không phải
+            // bấm-không-ăn, nút KHÔNG CÓ Ở ĐÓ.
+            //
+            // Mỗi `Section` là MỘT con, và còn tự kẻ vạch ngăn nên bỏ được
+            // đống `Divider()` thủ công. Thêm mục mới thì thêm vào một
+            // Section, đừng thêm thẳng vào `Menu`.
             Menu {
-                Button { cuaSo = .doiGiay } label: {
-                    Label(T("Đổi giấy trang này"), systemImage: "doc.plaintext")
-                }
-                Button { cuaSo = .datTenChuong } label: {
-                    Label(T("Đặt tên chương"), systemImage: "bookmark")
-                }
-                Button { danhDau() } label: {
-                    Label(trangHienTai?.danhDau == true ? T("Bỏ đánh dấu") : T("Đánh dấu trang"),
-                          systemImage: trangHienTai?.danhDau == true ? "flag.slash" : "flag")
-                }
-                if tieng.dangGhi {
-                    Button { dungGhi() } label: {
-                        Label(T("Dừng ghi âm"), systemImage: "stop.circle")
+                Section {
+                    Button { cuaSo = .doiGiay } label: {
+                        Label(T("Đổi giấy trang này"), systemImage: "doc.plaintext")
                     }
-                } else {
-                    Button { batGhi() } label: {
-                        Label(T("Ghi âm buổi học"), systemImage: "mic.circle")
+                    Button { cuaSo = .datTenChuong } label: {
+                        Label(T("Đặt tên chương"), systemImage: "bookmark")
                     }
-                }
-                Divider()
-                Button { cuaSo = .tomTat } label: {
-                    Label(T("Tóm tắt cuốn này thành đề cương"), systemImage: "list.bullet.rectangle")
-                }
-                Divider()
-                Button { dangChonPdf = true } label: {
-                    Label(T("Nhập PDF để viết đè"), systemImage: "doc.badge.plus")
-                }
-                Button { cuaSo = .quetTaiLieu } label: {
-                    Label(T("Quét trang sách bằng camera"), systemImage: "doc.viewfinder")
-                }
-                if trangHienTai?.nenPdfTen != nil || trangHienTai?.nenAnhTen != nil {
-                    Button(role: .destructive) { goNen() } label: {
-                        Label(T("Gỡ nền tài liệu của trang này"), systemImage: "rectangle.slash")
+                    Button { danhDau() } label: {
+                        Label(trangHienTai?.danhDau == true ? T("Bỏ đánh dấu") : T("Đánh dấu trang"),
+                              systemImage: trangHienTai?.danhDau == true ? "flag.slash" : "flag")
+                    }
+                    if tieng.dangGhi {
+                        Button { dungGhi() } label: {
+                            Label(T("Dừng ghi âm"), systemImage: "stop.circle")
+                        }
+                    } else {
+                        Button { batGhi() } label: {
+                            Label(T("Ghi âm buổi học"), systemImage: "mic.circle")
+                        }
                     }
                 }
-                Divider()
-                Button { lanVuaKhung += 1 } label: {
-                    Label(T("Trang vừa bề ngang"), systemImage: "arrow.left.and.right.square")
-                }
-                Divider()
-                Button { hienCongCu.toggle() } label: {
-                    Label(hienCongCu ? T("Ẩn bảng công cụ") : T("Hiện bảng công cụ"),
-                          systemImage: "pencil.tip.crop.circle")
-                }
-                // Chỉ iPad mới có trợ lý nổi — trên iPhone khung hỏi che gần
-                // hết trang giấy. Ẩn luôn cả nút để không hứa thứ không có.
-                if CaiDatTroLy.chayDuoc {
-                    Button { hienTroLy.toggle() } label: {
-                        Label(hienTroLy ? T("Ẩn trợ lý trang") : T("Hiện trợ lý trang"),
-                              systemImage: hienTroLy ? "sparkles.slash" : "sparkles")
+
+                Section {
+                    Button { cuaSo = .tomTat } label: {
+                        Label(T("Tóm tắt cuốn này thành đề cương"), systemImage: "list.bullet.rectangle")
                     }
-                    // Mặc định TẮT. Bóp bút vốn đang là Tẩy theo Cài đặt của
-                    // máy, cướp nó mà không hỏi là lấy mất một thao tác người
-                    // dùng đang dùng hằng ngày.
-                    Button { bopGoiTroLy.toggle() } label: {
-                        Label(bopGoiTroLy ? T("Bóp bút: trả về việc hệ thống")
-                                          : T("Bóp bút để gọi trợ lý"),
-                              systemImage: "hand.pinch")
+                    // Chỉ iPad mới có trợ lý nổi — trên iPhone khung hỏi che
+                    // gần hết trang giấy. Ẩn luôn nút để không hứa thứ không có.
+                    if CaiDatTroLy.chayDuoc {
+                        Button { hienTroLy.toggle() } label: {
+                            Label(hienTroLy ? T("Ẩn trợ lý trang") : T("Hiện trợ lý trang"),
+                                  systemImage: hienTroLy ? "sparkles.slash" : "sparkles")
+                        }
+                        // Mặc định TẮT. Bóp bút vốn đang là việc hệ thống gán
+                        // (bảng công cụ / tẩy), cướp nó mà không hỏi là lấy
+                        // mất một thao tác người dùng đang dùng hằng ngày.
+                        Button { bopGoiTroLy.toggle() } label: {
+                            Label(bopGoiTroLy ? T("Bóp bút: trả về việc hệ thống")
+                                              : T("Bóp bút để gọi trợ lý"),
+                                  systemImage: "hand.pinch")
+                        }
+                        .disabled(!hienTroLy)
                     }
-                    .disabled(!hienTroLy)
                 }
-                Divider()
-                Button { themTrang() } label: {
-                    Label(T("Thêm trang"), systemImage: "plus.rectangle.portrait")
+
+                Section {
+                    Button { dangChonPdf = true } label: {
+                        Label(T("Nhập PDF để viết đè"), systemImage: "doc.badge.plus")
+                    }
+                    Button { cuaSo = .quetTaiLieu } label: {
+                        Label(T("Quét trang sách bằng camera"), systemImage: "doc.viewfinder")
+                    }
+                    if trangHienTai?.nenPdfTen != nil || trangHienTai?.nenAnhTen != nil {
+                        Button(role: .destructive) { goNen() } label: {
+                            Label(T("Gỡ nền tài liệu của trang này"), systemImage: "rectangle.slash")
+                        }
+                    }
                 }
-                Button { nhanBanTrang() } label: {
-                    Label(T("Nhân bản trang"), systemImage: "doc.on.doc")
+
+                Section {
+                    Button { lanVuaKhung += 1 } label: {
+                        Label(T("Trang vừa bề ngang"), systemImage: "arrow.left.and.right.square")
+                    }
+                    Button { hienCongCu.toggle() } label: {
+                        Label(hienCongCu ? T("Ẩn bảng công cụ") : T("Hiện bảng công cụ"),
+                              systemImage: "pencil.tip.crop.circle")
+                    }
                 }
-                // ⚠️ `disabled` + nhãn nói LÝ DO. Bản trước chặn xoá trang
-                // cuối bằng một `guard ... else { return }` im lặng: người
-                // dùng bấm, không có gì xảy ra, không có lời giải thích —
-                // và họ báo là "nút không hoạt động". Chặn thì phải NÓI RA.
-                Button(role: .destructive) { xoaTrang(chiSo) } label: {
-                    Label(trangs.count > 1 ? T("Xoá trang")
-                                           : T("Xoá trang (vở phải còn ít nhất 1 trang)"),
-                          systemImage: "trash")
+
+                Section {
+                    Button { themTrang() } label: {
+                        Label(T("Thêm trang"), systemImage: "plus.rectangle.portrait")
+                    }
+                    Button { nhanBanTrang() } label: {
+                        Label(T("Nhân bản trang"), systemImage: "doc.on.doc")
+                    }
+                    // ⚠️ `disabled` + nhãn nói LÝ DO. Bản trước chặn xoá trang
+                    // cuối bằng một `guard ... else { return }` im lặng: người
+                    // dùng bấm, không có gì xảy ra, không có lời giải thích.
+                    Button(role: .destructive) { xoaTrang(chiSo) } label: {
+                        Label(trangs.count > 1 ? T("Xoá trang")
+                                               : T("Xoá trang (vở phải còn ít nhất 1 trang)"),
+                              systemImage: "trash")
+                    }
+                    .disabled(trangs.count <= 1)
                 }
-                .disabled(trangs.count <= 1)
             } label: {
                 Image(systemName: "ellipsis.circle")
             }
