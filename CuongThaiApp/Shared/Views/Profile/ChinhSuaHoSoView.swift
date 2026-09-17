@@ -29,6 +29,7 @@ struct ChinhSuaHoSoView: View {
     @State private var dienThoai = ""
     @State private var lienKet: [String: String] = [:]
     @State private var choNguoiLaNhanTin = true
+    @State private var hienTrangThaiHoatDong = true
 
     // ── Trạng thái ────────────────────────────────────────────────────────
     @State private var goc: [String: String] = [:]
@@ -265,10 +266,14 @@ struct ChinhSuaHoSoView: View {
     private var phanRiengTu: some View {
         Section {
             Toggle(T("Cho người lạ nhắn tin"), isOn: $choNguoiLaNhanTin)
+            Toggle(T("Hiện trạng thái hoạt động"), isOn: $hienTrangThaiHoatDong)
         } header: {
             Text(T("Riêng tư"))
         } footer: {
-            Text(T("Tắt thì chỉ người bạn từng nhắn mới mở được cuộc trò chuyện mới."))
+            // Nói rõ CẢ HAI CHIỀU. Messenger của Facebook cũng đánh đổi đúng
+            // như vậy, và người dùng cần biết trước khi tắt — không thì họ
+            // tắt xong lại tưởng app hỏng vì bạn bè bỗng "mất" chấm xanh.
+            Text(T("Cho người lạ nhắn tin: tắt thì chỉ người bạn từng nhắn mới mở được cuộc trò chuyện mới.\n\nHiện trạng thái hoạt động: tắt thì không ai thấy bạn đang hoạt động hay hoạt động lúc nào — và bạn cũng không thấy của họ."))
         }
     }
 
@@ -338,6 +343,7 @@ struct ChinhSuaHoSoView: View {
             "tenHienThi": tenHienThi, "hoTen": hoTen, "gioiThieu": gioiThieu,
             "email": email, "gioiTinh": gioiTinh ?? "", "namSinh": namSinh,
             "dienThoai": dienThoai, "dm": choNguoiLaNhanTin ? "1" : "0",
+            "tthd": hienTrangThaiHoatDong ? "1" : "0",
         ]
         for m in MANG { d["lk_" + m.khoa] = lienKet[m.khoa] ?? "" }
         return d
@@ -358,6 +364,10 @@ struct ChinhSuaHoSoView: View {
         dienThoai = u.phone ?? ""
         lienKet = u.socialLinks ?? [:]
         choNguoiLaNhanTin = u.allowMessagesFromStrangers ?? true
+        // `nil` = máy chủ bản cũ chưa trả trường này ⇒ coi như BẬT, đúng mặc
+        // định phía máy chủ. Mặc định `false` sẽ làm người dùng bản cũ bỗng
+        // thành ẩn mà không ai bấm gì.
+        hienTrangThaiHoatDong = u.showActiveStatus ?? true
         goc = anhChup
     }
 
@@ -402,6 +412,7 @@ struct ChinhSuaHoSoView: View {
             "gender": gioiTinh ?? NSNull(),
             "phone": chu(dienThoai),
             "allowMessagesFromStrangers": choNguoiLaNhanTin,
+            "showActiveStatus": hienTrangThaiHoatDong,
         ]
         p["email"] = email.trimmingCharacters(in: .whitespaces).lowercased()
         p["birthYear"] = namSinh.isEmpty ? NSNull() : (Int(namSinh) ?? NSNull())

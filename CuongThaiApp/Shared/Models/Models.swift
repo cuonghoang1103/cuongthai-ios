@@ -69,6 +69,9 @@ struct User: Codable, Identifiable, Hashable {
     var socialLinks: [String: String]? = nil
     var allowMessagesFromStrangers: Bool? = nil
     var isPro: Bool? = nil
+    /// Cho người khác thấy mình đang hoạt động. `nil` = máy chủ chưa trả về
+    /// (bản cũ) ⇒ coi như BẬT, đúng mặc định phía máy chủ.
+    var showActiveStatus: Bool? = nil
     /// Hạn Pro, ISO-8601 có múi giờ. **String chứ không Date**: `APIClient`
     /// dựng `JSONDecoder()` trần, tức chiến lược ngày là `deferredToDate`
     /// (đợi một con số giây). Khai `Date` ở đây là cả lượt giải mã hồ sơ
@@ -241,6 +244,12 @@ struct ThreadPeer: Codable, Hashable {
     let avatarUrl: String?
     /// Biệt danh thô, `nil` khi chưa đặt — cần cho ô sửa biệt danh.
     let alias: String?
+    /// Mốc hoạt động cuối, ISO-8601. `nil` khi người kia đã TẮT công tắc hiện
+    /// trạng thái — lúc đó KHÔNG được đoán, phải im.
+    ///
+    /// ⚠️ `String?` chứ không `Date?`: `APIClient` dựng `JSONDecoder()` trần
+    /// nên khai `Date` là hỏng cả lượt giải mã, mà lỗi đó bị nuốt im lặng.
+    var lastActiveAt: String? = nil
 }
 
 struct MessageThread: Codable, Identifiable, Hashable {

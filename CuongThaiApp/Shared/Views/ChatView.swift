@@ -337,20 +337,43 @@ struct ChatView: View {
         return tap.contains { $0 != AppState.shared.currentUser?.id }
     }
 
+    /// Trạng thái của người đối diện, gộp hai nguồn.
+    ///
+    /// ⚠️ Bản cũ CHỈ nhìn socket, nên vừa mở app là ai cũng "Ngoại tuyến":
+    /// `presence:update` chỉ phát khi người kia ĐỔI trạng thái, mà lúc mình
+    /// vừa nối thì không có ai vừa đổi cả. `lastActiveAt` lấp đúng khoảng đó.
+    private var ttHoatDong: TrangThaiHoatDong.KetQua {
+        let id = thread.peer?.id
+        return TrangThaiHoatDong.tinh(
+            mocHoatDong: TrangThaiHoatDong.docMoc(thread.peer?.lastActiveAt),
+            socketBaoOnline: id.map { realtime.truyenTuyen.contains($0) } ?? false)
+    }
+
     private var dongTrangThai: String {
         if doiPhuongDangGo { return "đang gõ…" }
-        if let id = thread.peer?.id, realtime.truyenTuyen.contains(id) {
-            return "Đang hoạt động"
+
+        // ⚠️ KHÔNG in `realtime.trangThai.moTa` ra đây.
+        //
+        // `TrangThai.chuaNoi.moTa` là chuỗi "Ngoại tuyến", nhưng nó nói về
+        // SOCKET CỦA MÌNH chứ không nói gì về người kia. Đặt nó ngay dưới tên
+        // một người là biến trạng thái mạng của mình thành lời khẳng định về
+        // họ — và đó là lời khẳng định mình không có cơ sở nào để đưa ra.
+        // Đo thật 17/09/2026: máy ảo chưa nối được socket, và mọi hội thoại
+        // đều hiện "Ngoại tuyến" kể cả với người vừa nhắn xong.
+        //
+        // Chưa nối được thì vẫn còn `lastActiveAt` từ API — dùng nó. Không có
+        // nốt thì im, chứ không đoán.
+        if realtime.trangThai == .dangNoi && ttHoatDong.chu.isEmpty {
+            return "Đang kết nối…"
         }
-        return realtime.trangThai == .daNoi ? "Ngoại tuyến" : realtime.trangThai.moTa
+        // Rỗng = người kia đã tắt công tắc hiện trạng thái, hoặc chưa có dữ
+        // liệu. Im lặng, không được suy ra "Ngoại tuyến".
+        return ttHoatDong.chu
     }
 
     private var mauTrangThai: Color {
         if doiPhuongDangGo { return AppColors.primary }
-        if let id = thread.peer?.id, realtime.truyenTuyen.contains(id) {
-            return AppColors.success
-        }
-        return AppColors.textTertiary
+        return ttHoatDong.trucTuyen ? AppColors.success : AppColors.textTertiary
     }
 
     /// Các nhóm tin sau khi lọc theo từ khoá. Lọc ngay trên máy vì backend
@@ -952,11 +975,31 @@ struct MessageBubble: View {
     private var mauChu: Color { isFromCurrentUser ? AppColors.onPrimary : AppColors.textPrimary }
     private var mauNen: Color { isFromCurrentUser ? AppColors.primary : AppColors.backgroundTertiary }
 
+    /// Cỡ chữ trong bong bóng.
+    ///
+    /// ⚠️ Trước 17/09/2026 dùng `.bodyMedium` = **14pt cố định**. Messenger
+    /// của Facebook dùng ~17pt, và 14pt là cỡ của chú thích chứ không phải
+    /// của câu người ta đang nói với nhau — đọc lâu mỏi mắt, và trên máy màn
+    /// lớn nhìn như chữ bị thu nhỏ.
+    ///
+    /// `@ScaledMetric` để nó lớn lên theo cỡ chữ hệ thống: `.font(.system(
+    /// size:))` trần thì Dynamic Type KHÔNG đụng tới được, và tin nhắn là thứ
+    /// người dùng chỉnh cỡ chữ nhiều nhất trong cả máy.
+    @ScaledMetric(relativeTo: .body) private var coChu: CGFloat = 17
+
     /// Bong bóng không được kéo hết bề ngang: Messenger chặn quanh 3/4 màn hình
     /// rồi mới xuống dòng, nhờ vậy mắt còn thấy được lề và biết ai đang nói.
+    ///
+    /// ⚠️ `UIScreen.main` là bề ngang MÀN HÌNH, không phải bề ngang chỗ bong
+    /// bóng thật sự nằm. Từ 16/09/2026 app chạy trên iPad: ở đó khung chat là
+    /// CỘT PHẢI của `BoCucCotDoi`, hẹp hơn màn hình nhiều, và trong Split View
+    /// thì cả cửa sổ cũng chỉ bằng nửa màn. Lấy 74% của 1366pt ra 1011pt —
+    /// rộng hơn cả cột chứa nó, nên "3/4" thành "tràn hết", đúng thứ quy tắc
+    /// này sinh ra để tránh. Trần 520pt giữ dòng chữ ở độ dài đọc được, đúng
+    /// cách iMessage làm trên iPad.
     private var tranNgang: CGFloat {
         #if os(iOS)
-        return UIScreen.main.bounds.width * 0.74
+        return min(UIScreen.main.bounds.width * 0.74, 520)
         #else
         return 420
         #endif
@@ -977,7 +1020,7 @@ struct MessageBubble: View {
             VStack(alignment: isFromCurrentUser ? .trailing : .leading, spacing: 2) {
                 if message.daXoaHoacThuHoi {
                     Text("Tin nhắn đã được thu hồi")
-                        .font(.bodyMedium)
+                        .font(.system(size: coChu))
                         .italic()
                         .foregroundColor(AppColors.textTertiary)
                         .padding(.horizontal, Spacing.md)
@@ -1009,10 +1052,13 @@ struct MessageBubble: View {
 
                     if !message.noiDung.isEmpty && message.viTri == nil {
                         Text(message.noiDung)
-                            .font(.bodyMedium)
+                            .font(.system(size: coChu))
+                            // Dòng thưa ra một chút: 17pt sát nhau đọc nặng,
+                            // và Messenger cũng để khoảng thở giữa các dòng.
+                            .lineSpacing(2)
                             .foregroundColor(mauChu)
-                            .padding(.horizontal, 13)
-                            .padding(.vertical, 8)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 9)
                             .background(mauNen)
                             .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
                             .frame(maxWidth: tranNgang,
@@ -1155,40 +1201,85 @@ struct MessageBubble: View {
 
     // MARK: Ảnh
 
+    /// Ảnh trong tin nhắn.
+    ///
+    /// ⚠️ Bản cũ ép MỌI ảnh vào ô VUÔNG cứng (220pt cho một ảnh, 108pt cho
+    /// nhiều) bằng `.fill` + `.clipped()`. Hậu quả: ảnh dọc bị xén đầu xén
+    /// chân, ảnh ngang bị cắt hai bên — và vì ô cứng không liên quan gì tới
+    /// `tranNgang` của bong bóng chữ, tin có ảnh và tin có chữ lệch mép nhau,
+    /// cả cột nhìn răng cưa. Đây đúng là chỗ người dùng nói "gửi ảnh là lệch
+    /// nhất".
+    ///
+    /// Nay theo đúng cách Messenger làm:
+    ///   · MỘT ảnh  → giữ TỈ LỆ GỐC, rộng bằng `tranNgang`
+    ///   · NHIỀU ảnh → lưới vuông (cắt là đúng ở đây, để lưới thẳng hàng),
+    ///                 nhưng cạnh ô tính TỪ `tranNgang` chứ không gõ cứng
     @ViewBuilder
     private func luoiAnh(_ ds: [String]) -> some View {
-        let rong: CGFloat = ds.count == 1 ? 220 : 108
-        LazyVGrid(columns: Array(repeating: GridItem(.fixed(rong), spacing: 4),
-                                 count: ds.count == 1 ? 1 : 2),
-                  spacing: 4) {
-            ForEach(Array(ds.enumerated()), id: \.offset) { _, duong in
-                anhMot(duong, canh: rong)
+        if ds.count == 1 {
+            anhDon(ds[0])
+        } else {
+            let cot = ds.count == 2 ? 2 : (ds.count == 4 ? 2 : 3)
+            let khe: CGFloat = 3
+            let canh = (tranNgang - khe * CGFloat(cot - 1)) / CGFloat(cot)
+            LazyVGrid(columns: Array(repeating: GridItem(.fixed(canh), spacing: khe),
+                                     count: cot),
+                      spacing: khe) {
+                ForEach(Array(ds.enumerated()), id: \.offset) { _, duong in
+                    anhMot(duong, canh: canh)
+                }
             }
+            .frame(width: tranNgang, alignment: isFromCurrentUser ? .trailing : .leading)
         }
     }
 
+    /// Một ảnh đứng riêng — giữ tỉ lệ gốc.
+    @ViewBuilder
+    private func anhDon(_ duong: String) -> some View {
+        if let url = URL(string: duong) {
+            KFImage(url)
+                .placeholder {
+                    // Giữ chỗ theo tỉ lệ 4:3 để hàng không NHẢY khi ảnh về.
+                    // Không giữ chỗ thì chiều cao là 0 rồi bật lên, và cả
+                    // danh sách giật một cái mỗi lần một ảnh tải xong.
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .fill(AppColors.backgroundTertiary)
+                        ProgressView().scaleEffect(0.8)
+                    }
+                    .frame(width: tranNgang, height: tranNgang * 0.75)
+                }
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                // Trần chiều cao: ảnh dọc rất dài chiếm trọn màn hình thì
+                // người dùng mất ngữ cảnh cuộc trò chuyện.
+                .frame(maxWidth: tranNgang, maxHeight: 340)
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        }
+    }
+
+    /// Một ô trong lưới nhiều ảnh. Ở đây cắt vuông là ĐÚNG — lưới phải thẳng
+    /// hàng thì mắt mới đọc được là "một chùm ảnh".
+    ///
+    /// ⚠️ Dùng `KFImage` chứ không `AsyncImage`: `AsyncImage` không có nhớ
+    /// đệm đĩa, nên cuộn lên rồi cuộn xuống là tải lại từ đầu — tốn dữ liệu
+    /// của người dùng và ảnh nhấp nháy mỗi lượt. Kingfisher đã là thư viện
+    /// sẵn có của dự án, không thêm phụ thuộc nào.
     @ViewBuilder
     private func anhMot(_ duong: String, canh: CGFloat) -> some View {
         if let url = URL(string: duong) {
-            AsyncImage(url: url) { pha in
-                switch pha {
-                case .success(let img):
-                    img.resizable().aspectRatio(contentMode: .fill)
-                case .failure:
-                    ZStack {
-                        AppColors.backgroundTertiary
-                        Image(systemName: "photo").foregroundColor(AppColors.textTertiary)
-                    }
-                default:
+            KFImage(url)
+                .placeholder {
                     ZStack {
                         AppColors.backgroundTertiary
                         ProgressView().scaleEffect(0.7)
                     }
                 }
-            }
-            .frame(width: canh, height: canh)
-            .clipped()
-            .cornerRadius(CornerRadius.medium)
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(width: canh, height: canh)
+                .clipped()
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
     }
 

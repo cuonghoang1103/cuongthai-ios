@@ -1,3 +1,4 @@
+import SwiftData
 import SwiftUI
 import UIKit
 
@@ -81,6 +82,13 @@ struct CuongThaiApp: App {
                     // Máy ngủ qua mốc 6h/18h thì `Timer` không chạy — tính lại
                     // khi quay lại, không thì mở app buổi tối vẫn thấy nền sáng.
                     if moi == .active { giaoDien.lamMoiKhiTroLai() }
+
+                    // Báo "tôi đang dùng app" cho máy chủ, và NGỪNG khi xuống
+                    // nền. Thiếu nửa đầu thì với mọi người khác mình luôn
+                    // ngoại tuyến; thiếu nửa sau thì mình hiện "đang hoạt
+                    // động" suốt đêm trong khi máy nằm trong túi.
+                    if moi == .active { BaoHoatDong.shared.batDau() }
+                    else { BaoHoatDong.shared.dungLai() }
                 }
                 // Google trả người dùng về app qua URL scheme riêng. Thiếu
                 // dòng này thì luồng đăng nhập mở ra được, người dùng chọn

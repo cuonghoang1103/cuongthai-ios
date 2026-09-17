@@ -2,6 +2,29 @@ import Foundation
 
 // MARK: - API Endpoint
 enum APIEndpoint {
+    /// Đường dẫn ghép tay — app **Admin** dùng.
+    ///
+    /// Khu quản trị có hơn 50 endpoint, nằm rải ở `admin.routes`,
+    /// `shop.routes`, `commerceAdmin.routes`… và chúng đổi theo backend. Khai
+    /// một `case` cho từng cái nghĩa là chép lại backend lần thứ hai rồi phải
+    /// nhớ đồng bộ tay mãi mãi. App admin chỉ mình chủ dùng nên đổi đường dẫn
+    /// một dòng rẻ hơn nhiều so với giữ hai bản khai.
+    ///
+    /// ⚠️ App CHÍNH đừng dùng case này: ở đó đường dẫn có `case` riêng là cố
+    /// ý — sai chính tả bị `tsc` của Swift bắt lúc dịch, còn chuỗi thì phải
+    /// chạy mới biết.
+    case tuyChinh(duong: String, phuongThuc: String, than: [String: Any]?)
+
+    // ─── Vở viết tay (iPad · PencilKit) ───
+    // Khai `case` riêng chứ KHÔNG dùng `.tuyChinh`: đây là app chính, và sai
+    // một ký tự trong đường dẫn thì phải chạy mới biết.
+    case voLayCay
+    case voDongBoCay(mons: [[String: Any]])
+    case voXinDuongDay(trangId: Int, coAnhXemTruoc: Bool)
+    case voXacNhanNet(trangId: Int, than: [String: Any])
+    case voXoaTrang(clientIds: [String])
+    case voXoaCuon(clientId: String)
+
     // Auth
     case login(username: String, password: String, captchaToken: String?)
     case register(username: String, email: String, password: String, fullName: String?, captchaToken: String?)
@@ -494,6 +517,10 @@ enum APIEndpoint {
     /// `jws` là `Transaction.jsonRepresentation` của StoreKit 2.
     case guiGiaoDichApple(jws: String)
 
+    /// Báo "tôi đang dùng app" để máy chủ làm mới `lastActiveAt`.
+    /// Không có lời gọi này thì với mọi người khác mình LUÔN ngoại tuyến.
+    case baoHoatDong
+
     case dsDuAn(danhMuc: String?, tim: String, trang: Int)
     case duAn(slug: String)
     /// Ghi nhận một lượt chép. Không cần đăng nhập (máy chủ đếm theo IP).
@@ -509,6 +536,13 @@ enum APIEndpoint {
 
     var path: String {
         switch self {
+        case .tuyChinh(let duong, _, _): return duong
+        case .voLayCay: return "/api/v1/vo"
+        case .voDongBoCay: return "/api/v1/vo/sync"
+        case .voXinDuongDay(let id, _): return "/api/v1/vo/trang/\(id)/duong-day"
+        case .voXacNhanNet(let id, _): return "/api/v1/vo/trang/\(id)/xac-nhan"
+        case .voXoaTrang: return "/api/v1/vo/trang/xoa"
+        case .voXoaCuon: return "/api/v1/vo/cuon/xoa"
         case .login: return "/api/v1/auth/login"
         case .register: return "/api/v1/auth/register"
         case .oauthToken: return "/api/v1/auth/oauth/token"
@@ -796,6 +830,7 @@ enum APIEndpoint {
         case .cvChamCV: return "/api/v1/cv/critique"
         case .cvTrangThaiCham: return "/api/v1/cv/critique/status"
         case .guiGiaoDichApple: return "/api/v1/pro/apple/transactions"
+        case .baoHoatDong: return "/api/v1/users/status"
         case .dsDuAn: return "/api/v1/projects"
         case .duAn(let slug): return "/api/v1/projects/\(slug)"
         case .ghiNhanChep(let id): return "/api/v1/snippets/\(id)/copy"
@@ -809,6 +844,9 @@ enum APIEndpoint {
 
     var method: String {
         switch self {
+        case .tuyChinh(_, let pt, _): return pt
+        case .voLayCay: return "GET"
+        case .voDongBoCay, .voXinDuongDay, .voXacNhanNet, .voXoaTrang, .voXoaCuon: return "POST"
         case .ghiTienDo, .ghiKetQuaQuiz, .doiYeuThich, .aiDich, .aiKiemNguPhap, .aiNoiChuyen,
              .aiChamBaiViet, .batDauLuotThi, .nopBaiTracNghiem,
              .hienDapAn, .baiHocLienQuan, .hoiCuongMini, .themBinhLuanCauHoi, .hoiGiaSuBai,
@@ -839,7 +877,7 @@ enum APIEndpoint {
              .suaBinhLuanCauHoi,
              .cvLuuHoSo, .cvSuaMuc, .cvSuaGach:
             return "PUT"
-        case .guiGiaoDichApple:
+        case .guiGiaoDichApple, .baoHoatDong:
             return "POST"
         case .themViec, .themBuoiHoc, .nhapLichHoc, .ketThucNgay, .themHocKy, .themBuoiThi:
             return "POST"
@@ -866,6 +904,13 @@ enum APIEndpoint {
 
     var body: [String: Any]? {
         switch self {
+        case .tuyChinh(_, _, let than): return than
+        case .voLayCay: return nil
+        case .voDongBoCay(let mons): return ["mons": mons]
+        case .voXinDuongDay(_, let coAnh): return ["coAnhXemTruoc": coAnh]
+        case .voXacNhanNet(_, let than): return than
+        case .voXoaTrang(let ids): return ["clientIds": ids]
+        case .voXoaCuon(let id): return ["clientId": id]
         case .cvLuuHoSo(let m), .cvThemMuc(let m), .cvThemGach(_, let m),
              .cvSuaMuc(_, let m), .cvSuaGach(_, let m), .cvVietLaiGach(_, let m),
              .cvThemKyNang(let m), .cvThemChungChi(let m), .cvThemNgonNgu(let m),

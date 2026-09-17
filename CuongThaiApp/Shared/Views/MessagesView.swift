@@ -363,7 +363,20 @@ struct MessageFilterChip: View {
 // MARK: - Thread Row
 struct ThreadRow: View {
     let thread: MessageThread
-    @State private var isOnline = false
+    /// ⚠️ Trước 17/09/2026 chỗ này là `@State private var isOnline = false` —
+    /// khai ra, đọc đúng một lần ở dưới, và KHÔNG CHỖ NÀO GÁN. Chấm xanh vì
+    /// thế chưa từng hiện một lần nào kể từ khi viết. Dữ liệu thật vẫn về đều
+    /// qua `RealtimeClient.truyenTuyen`, chỉ là không ai đọc.
+    @ObservedObject private var realtime = RealtimeClient.shared
+
+    /// Socket lo phần REALTIME, `lastActiveAt` lo phần VỪA MỞ APP — lúc đó
+    /// chưa có `presence:update` nào bay tới nên socket còn rỗng.
+    private var trangThai: TrangThaiHoatDong.KetQua {
+        let id = thread.peer?.id
+        return TrangThaiHoatDong.tinh(
+            mocHoatDong: TrangThaiHoatDong.docMoc(thread.peer?.lastActiveAt),
+            socketBaoOnline: id.map { realtime.truyenTuyen.contains($0) } ?? false)
+    }
 
     var body: some View {
         HStack(spacing: Spacing.md) {
@@ -371,7 +384,7 @@ struct ThreadRow: View {
             ZStack(alignment: .bottomTrailing) {
                 UserAvatarView(url: thread.avatarUrl, size: 56)
 
-                if thread.laNhanRieng && isOnline {
+                if thread.laNhanRieng && trangThai.trucTuyen {
                     Circle()
                         .fill(AppColors.success)
                         .frame(width: 14, height: 14)
