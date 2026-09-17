@@ -26,11 +26,16 @@ struct LuyenBangChuView: View {
     @State private var caiDat = CaiDatLuyenChu(nhomIds: [], changs: [], soCau: 20)
     @State private var dangChoi: PhienDangChoi?
 
-    /// Bọc bộ câu hỏi để `fullScreenCover(item:)` nhận diện được.
+    /// Bọc LỰA CHỌN để `fullScreenCover(item:)` nhận diện được.
+    ///
+    /// ⚠️ Cố ý mang lựa chọn chứ KHÔNG mang sẵn bộ câu hỏi: nút "Luyện tiếp"
+    /// ở màn kết quả phải dựng bộ MỚI, mà dựng ở đây thì phải đóng rồi mở lại
+    /// tấm phủ — xem ghi chú ở `PhienLuyenChuView.lamLai()`.
     private struct PhienDangChoi: Identifiable {
         let id = UUID()
-        let cauHoi: [CauHoiChu]
-        let bo: [ChuLuyen]
+        let nhom: [NhomLuyen]
+        let changs: [ChangLuyen]
+        let soCau: Int
     }
 
     private var nhomDaChon: [NhomLuyen] {
@@ -70,9 +75,8 @@ struct LuyenBangChuView: View {
             KhoCaiDatLuyenChu.ghi(moi, code: ngonNgu.code)
         }
         .fullScreenCover(item: $dangChoi) { p in
-            PhienLuyenChuView(cauHoi: p.cauHoi, bo: p.bo, maNgonNgu: ngonNgu.code) {
-                batDau()
-            }
+            PhienLuyenChuView(nhom: p.nhom, changs: p.changs, soCau: p.soCau,
+                              maNgonNgu: ngonNgu.code)
         }
     }
 
@@ -288,9 +292,12 @@ struct LuyenBangChuView: View {
     }
 
     private func batDau() {
-        let ds = BoCauHoi.dung(nhom: nhomDaChon, changs: caiDat.changs, soCau: caiDat.soCau)
-        guard !ds.isEmpty else { return }
-        dangChoi = PhienDangChoi(cauHoi: ds, bo: nhomDaChon.flatMap(\.chu))
+        // Dựng thử một bộ ngay ở đây: lựa chọn hợp lệ trên giấy vẫn có thể ra
+        // bộ RỖNG (vd chỉ chọn nhóm "Ký hiệu đặc biệt" với toàn bài gõ), và
+        // mở ra một phiên trống thì người dùng không hiểu chuyện gì xảy ra.
+        guard !BoCauHoi.dung(nhom: nhomDaChon, changs: caiDat.changs,
+                             soCau: caiDat.soCau).isEmpty else { return }
+        dangChoi = PhienDangChoi(nhom: nhomDaChon, changs: caiDat.changs, soCau: caiDat.soCau)
         Haptics.cham()
     }
 
@@ -311,17 +318,27 @@ struct LuyenBangChuView: View {
 // MARK: - Làm bài
 
 struct PhienLuyenChuView: View {
-    let cauHoi: [CauHoiChu]
-    let bo: [ChuLuyen]
+    let nhom: [NhomLuyen]
+    let changs: [ChangLuyen]
+    let soCau: Int
     let maNgonNgu: String
-    /// Làm lại: đóng phiên này rồi mở phiên mới với bộ câu hỏi khác.
-    let khiLamLai: () -> Void
 
     @Environment(\.dismiss) private var dismiss
+    @State private var cauHoi: [CauHoiChu]
     @State private var viTri = 0
     @State private var ketQua: [KetQuaCau] = []
     @State private var daChamCau = false
     @State private var hoiThoat = false
+
+    init(nhom: [NhomLuyen], changs: [ChangLuyen], soCau: Int, maNgonNgu: String) {
+        self.nhom = nhom
+        self.changs = changs
+        self.soCau = soCau
+        self.maNgonNgu = maNgonNgu
+        _cauHoi = State(initialValue: BoCauHoi.dung(nhom: nhom, changs: changs, soCau: soCau))
+    }
+
+    private var bo: [ChuLuyen] { nhom.flatMap(\.chu) }
 
     private var cau: CauHoiChu? { viTri < cauHoi.count ? cauHoi[viTri] : nil }
     private var diem: Int { ketQua.filter(\.dung).count }
@@ -334,7 +351,7 @@ struct PhienLuyenChuView: View {
             VStack(spacing: 0) {
                 if xong {
                     KetQuaLuyenChuView(ketQua: ketQua,
-                                       khiLamLai: { dismiss(); khiLamLai() },
+                                       khiLamLai: lamLai,
                                        khiDong: { dismiss() })
                 } else {
                     thanhDau
@@ -458,6 +475,26 @@ struct PhienLuyenChuView: View {
     private func tiep() {
         daChamCau = false
         withAnimation(.easeOut(duration: 0.2)) { viTri += 1 }
+    }
+
+    /// Luyện tiếp: dựng bộ câu hỏi MỚI ngay tại chỗ.
+    ///
+    /// ⚠️ Bản đầu làm kiểu `dismiss()` rồi bảo màn cha mở lại tấm phủ với bộ
+    /// mới. Nó KHÔNG chạy — bấm "Luyện tiếp" không có gì xảy ra. `dismiss()`
+    /// không tức thì: SwiftUI đặt `item` về nil khi tấm phủ đóng xong, nên
+    /// giá trị mới mà màn cha vừa gán bị xoá ngay sau đó. Đóng-rồi-mở-lại
+    /// một tấm phủ trong cùng một nhịp là không làm được; phiên phải tự dựng
+    /// lại chính nó. Lỗi này chỉ lộ ra khi MỞ APP RA BẤM, mã đọc thì xuôi.
+    private func lamLai() {
+        let moi = BoCauHoi.dung(nhom: nhom, changs: changs, soCau: soCau)
+        guard !moi.isEmpty else { dismiss(); return }
+        daChamCau = false
+        withAnimation(.easeOut(duration: 0.2)) {
+            cauHoi = moi
+            ketQua = []
+            viTri = 0
+        }
+        Haptics.cham()
     }
 }
 
