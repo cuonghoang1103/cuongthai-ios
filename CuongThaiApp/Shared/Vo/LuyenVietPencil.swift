@@ -121,17 +121,20 @@ struct LuyenVietPencil: View {
 
             // Chữ mẫu mờ — chỉ ở mức "Tô mờ".
             if mucDo == .toMo {
+                // ⚠️ `.fill`, KHÔNG phải `.stroke`. Path trong dữ liệu là
+                // ĐƯỜNG VIỀN của nét (outline), không phải đường tim — tô
+                // viền của một đường viền thì ra nét đôi rỗng ruột. Màn
+                // `LuyenVietView` cũ cũng `.fill`, và hai màn dùng CHUNG một
+                // nguồn dữ liệu nên phải vẽ giống nhau.
                 ChuMau(net: n, canh: canh, denNet: n.strokes.count)
-                    .stroke(AppColors.textPrimary.opacity(0.13),
-                            style: StrokeStyle(lineWidth: 14, lineCap: .round, lineJoin: .round))
+                    .fill(AppColors.textPrimary.opacity(0.13))
             }
 
             // Các nét ĐÃ viết đúng — vẽ lại bằng chữ mẫu để nét luôn đẹp,
             // thay vì giữ nguyên nét nguệch ngoạc của người học.
             if netHienTai > 0 {
                 ChuMau(net: n, canh: canh, denNet: netHienTai)
-                    .stroke(AppColors.textPrimary,
-                            style: StrokeStyle(lineWidth: 13, lineCap: .round, lineJoin: .round))
+                    .fill(AppColors.textPrimary)
             }
 
             // Gợi ý nét hiện tại: hiện khi xin, hoặc sau 2 lần sai.
