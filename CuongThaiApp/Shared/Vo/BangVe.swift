@@ -15,6 +15,10 @@ struct BangVe: UIViewControllerRepresentable {
     let idTrang: UUID
     let giay: LoaiGiay
     let khoTrang: CGSize
+    /// Nền PDF / ảnh quét nằm dưới lớp mực.
+    var nenPdfTen: String? = nil
+    var nenPdfTrang: Int = 0
+    var nenAnhTen: String? = nil
     /// Bật bảng công cụ của hệ thống (bút, tẩy, thước, lasso, màu).
     var hienCongCu: Bool = true
     /// Tăng lên là đưa trang về vừa bề ngang khung.
@@ -26,6 +30,7 @@ struct BangVe: UIViewControllerRepresentable {
 
     func makeUIViewController(context: Context) -> BangVeVC {
         let vc = BangVeVC(idTrang: idTrang, giay: giay, khoTrang: khoTrang)
+        vc.datNen(pdfTen: nenPdfTen, trang: nenPdfTrang, anhTen: nenAnhTen)
         vc.khiLuu = khiLuu
         vc.khiBaoBut = khiBaoBut
         return vc
@@ -43,6 +48,7 @@ struct BangVe: UIViewControllerRepresentable {
 
     func updateUIViewController(_ vc: BangVeVC, context: Context) {
         vc.capNhat(giay: giay, khoTrang: khoTrang)
+        vc.datNen(pdfTen: nenPdfTen, trang: nenPdfTrang, anhTen: nenAnhTen)
         vc.datHienCongCu(hienCongCu)
         vc.xinVuaKhung(lanVuaKhung)
         vc.khiLuu = khiLuu
@@ -67,6 +73,7 @@ final class BangVeVC: UIViewController {
 
     let canvas = PKCanvasView()
     private let nen = GiayNenView()
+    private let nenTaiLieu = NenTrangView()
     /// Giữ MẠNH: `PKToolPicker` này do chính màn hình tạo ra, không có ai
     /// khác giữ hộ. Khai `weak` là nó bị thu hồi ngay sau khi dựng xong và
     /// bảng công cụ biến mất — hoặc chớp lên rồi tắt.
@@ -161,7 +168,9 @@ final class BangVeVC: UIViewController {
         view.addSubview(canvas)
         // Nền là subview CỦA canvas ở lớp dưới cùng: nhờ vậy nó cuộn cùng
         // nội dung mà không phải đồng bộ `contentOffset` bằng tay.
+        // Thứ tự: giấy kẻ (dưới cùng) → trang tài liệu → mực.
         canvas.insertSubview(nen, at: 0)
+        canvas.insertSubview(nenTaiLieu, aboveSubview: nen)
 
         NSLayoutConstraint.activate([
             canvas.topAnchor.constraint(equalTo: view.topAnchor),
@@ -235,6 +244,8 @@ final class BangVeVC: UIViewController {
         let khoPhong = CGSize(width: khoTrang.width * z, height: khoTrang.height * z)
         nen.frame = CGRect(origin: .zero, size: khoPhong)
         nen.tyLe = z
+        nenTaiLieu.frame = CGRect(origin: .zero, size: khoPhong)
+        nenTaiLieu.dat(pdfTen: pdfTen, trang: pdfTrang, anhTen: anhTen, khoTrang: khoTrang)
         canvas.contentSize = khoPhong
 
         let duThua = max(0, (canvas.bounds.width - khoPhong.width) / 2)
@@ -276,6 +287,18 @@ final class BangVeVC: UIViewController {
         }
     }
     private var lanVuaKhungDaLam = 0
+
+    private var pdfTen: String?
+    private var pdfTrang = 0
+    private var anhTen: String?
+
+    func datNen(pdfTen: String?, trang: Int, anhTen: String?) {
+        guard pdfTen != self.pdfTen || trang != pdfTrang || anhTen != self.anhTen else { return }
+        self.pdfTen = pdfTen
+        self.pdfTrang = trang
+        self.anhTen = anhTen
+        nenTaiLieu.dat(pdfTen: pdfTen, trang: trang, anhTen: anhTen, khoTrang: khoTrang)
+    }
 
     func capNhat(giay moi: LoaiGiay, khoTrang khoMoi: CGSize) {
         var doi = false

@@ -36,6 +36,48 @@ enum KhoVo {
         thuMucAnhNho.appendingPathComponent("\(idTrang.uuidString).png")
     }
 
+    /// Thư mục chứa nền trang (PDF nhập vào, ảnh quét).
+    static var thuMucNen: URL {
+        let u = thuMucGoc.appendingPathComponent("nen", isDirectory: true)
+        taoNeuThieu(u)
+        return u
+    }
+
+    static func duongDanNen(_ ten: String) -> URL {
+        thuMucNen.appendingPathComponent(ten)
+    }
+
+    /// Chép một tệp người dùng chọn vào kho của app.
+    ///
+    /// ⚠️ PHẢI chép, không được giữ đường dẫn gốc: tệp người dùng chọn nằm
+    /// trong hộp cát của app khác (Files, iCloud Drive), quyền truy cập hết
+    /// hạn ngay khi đóng màn chọn. Giữ đường dẫn thì hôm sau mở vở ra là
+    /// trang trắng.
+    static func chepVaoKho(tu nguon: URL, duoi: String) -> String? {
+        let ten = "\(UUID().uuidString).\(duoi)"
+        let dich = duongDanNen(ten)
+        let can = nguon.startAccessingSecurityScopedResource()
+        defer { if can { nguon.stopAccessingSecurityScopedResource() } }
+        do {
+            try FileManager.default.copyItem(at: nguon, to: dich)
+            return ten
+        } catch {
+            NhatKy.vo.error("chép tệp nền hỏng: \(error.localizedDescription)")
+            return nil
+        }
+    }
+
+    static func luuAnhNen(_ data: Data, duoi: String = "jpg") -> String? {
+        let ten = "\(UUID().uuidString).\(duoi)"
+        do {
+            try data.write(to: duongDanNen(ten), options: .atomic)
+            return ten
+        } catch {
+            NhatKy.vo.error("lưu ảnh nền hỏng: \(error.localizedDescription)")
+            return nil
+        }
+    }
+
     private static func taoNeuThieu(_ url: URL) {
         guard !FileManager.default.fileExists(atPath: url.path) else { return }
         try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)

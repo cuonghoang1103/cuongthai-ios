@@ -24,9 +24,13 @@ struct ManVietView: View {
     @State private var baoBut: String?
 
     private enum CuaSoViet: String, Identifiable {
-        case doiGiay, datTenChuong
+        case doiGiay, datTenChuong, quetTaiLieu, hoiNhapPdf
         var id: String { rawValue }
     }
+    @State private var dangChonPdf = false
+    /// `ten` là tên tệp TRONG KHO (UUID), `tenHienThi` là tên gốc người dùng
+    /// nhìn thấy — hiện UUID lên màn thì không ai biết mình vừa chọn tệp nào.
+    @State private var pdfVuaChon: (ten: String, tenHienThi: String, soTrang: Int)?
 
     private var trangs: [TrangVo] { cuon.trangsTheoThuTu }
     private var trangHienTai: TrangVo? {
@@ -69,6 +73,30 @@ struct ManVietView: View {
             switch cua {
             case .doiGiay:      DoiGiayView(trang: trangHienTai, cuon: cuon)
             case .datTenChuong: DatTenChuongView(trang: trangHienTai)
+            case .quetTaiLieu:
+                MayQuetTaiLieu { anhs in themTrangTuAnh(anhs) }
+                    .ignoresSafeArea()
+            case .hoiNhapPdf:
+                if let p = pdfVuaChon {
+                    HoiNhapPdfView(tenTep: p.tenHienThi, soTrang: p.soTrang) { tu, den in
+                        themTrangTuPdf(ten: p.ten, tu: tu, den: den)
+                    }
+                }
+            }
+        }
+        .fileImporter(isPresented: $dangChonPdf, allowedContentTypes: [.pdf]) { ket in
+            switch ket {
+            case .success(let url):
+                guard let ten = KhoVo.chepVaoKho(tu: url, duoi: "pdf") else {
+                    bao(T("Không mở được tệp PDF này"))
+                    return
+                }
+                let n = NenTrangView.soTrangPdf(ten: ten)
+                guard n > 0 else { bao(T("Tệp PDF rỗng hoặc hỏng")); return }
+                pdfVuaChon = (ten, url.lastPathComponent, n)
+                cuaSo = .hoiNhapPdf
+            case .failure(let e):
+                bao(e.localizedDescription)
             }
         }
         .onAppear {
@@ -141,6 +169,18 @@ struct ManVietView: View {
                     Label(trangHienTai?.danhDau == true ? T("Bỏ đánh dấu") : T("Đánh dấu trang"),
                           systemImage: trangHienTai?.danhDau == true ? "flag.slash" : "flag")
                 }
+                Button { dangChonPdf = true } label: {
+                    Label(T("Nhập PDF để viết đè"), systemImage: "doc.badge.plus")
+                }
+                Button { cuaSo = .quetTaiLieu } label: {
+                    Label(T("Quét trang sách bằng camera"), systemImage: "doc.viewfinder")
+                }
+                if trangHienTai?.nenPdfTen != nil || trangHienTai?.nenAnhTen != nil {
+                    Button(role: .destructive) { goNen() } label: {
+                        Label(T("Gỡ nền tài liệu của trang này"), systemImage: "rectangle.slash")
+                    }
+                }
+                Divider()
                 Button { lanVuaKhung += 1 } label: {
                     Label(T("Trang vừa bề ngang"), systemImage: "arrow.left.and.right.square")
                 }
@@ -184,6 +224,9 @@ struct ManVietView: View {
             BangVe(idTrang: trang.id,
                    giay: trang.giay,
                    khoTrang: trang.khoTrang,
+                   nenPdfTen: trang.nenPdfTen,
+                   nenPdfTrang: trang.nenPdfTrang,
+                   nenAnhTen: trang.nenAnhTen,
                    hienCongCu: hienCongCu,
                    lanVuaKhung: lanVuaKhung,
                    khiLuu: { drawing in
@@ -272,6 +315,66 @@ struct ManVietView: View {
         // thể đóng app luôn, và hàng đợi tuy bền nhưng không có lý do gì để
         // trang đã xoá còn nằm trên máy chủ thêm một phiên nữa.
         DongBoVo.shared.batDau()
+    }
+
+    /// Mỗi trang PDF thành MỘT trang vở, chèn ngay sau trang hiện tại.
+    private func themTrangTuPdf(ten: String, tu: Int, den: Int) {
+        // Khổ trang lấy theo PDF gốc: ép slide 16:9 vào A4 dọc thì chữ bé
+        // tí và thừa hai mảng trắng hai bên.
+        // ⚠️ KHÔNG đặt tên biến này là `kho`: đã có `@Environment(\.modelContext)
+        // var kho`, và biến cục bộ che nó đi làm `kho.insert` gọi vào CGSize.
+        let khoGiay = NenTrangView.khoTrangPdf(ten: ten, trang: tu - 1)
+        let huong: HuongGiay = (khoGiay.map { $0.width > $0.height } ?? false) ? .ngang : .doc
+        var sau = (trangHienTai?.thuTu ?? -1) + 1
+        let daCo = trangs
+        for i in tu...den {
+            let t = TrangVo(cuon: cuon, thuTu: sau, giay: .trang, huong: huong)
+            t.nenPdfTen = ten
+            t.nenPdfTrang = i - 1
+            kho.insert(t)
+            for khac in daCo where khac.thuTu >= sau { khac.thuTu += 1 }
+            sau += 1
+        }
+        cuon.suaLuc = Date()
+        try? kho.save()
+        chiSo = min((trangHienTai?.thuTu ?? 0) + 1, cuon.trangsTheoThuTu.count - 1)
+        bao("\(T("Đã nhập")) \(den - tu + 1) \(T("trang"))")
+        DongBoVo.shared.batDau()
+    }
+
+    private func themTrangTuAnh(_ anhs: [Data]) {
+        guard !anhs.isEmpty else { return }
+        var sau = (trangHienTai?.thuTu ?? -1) + 1
+        let daCo = trangs
+        for d in anhs {
+            guard let ten = KhoVo.luuAnhNen(d) else { continue }
+            let t = TrangVo(cuon: cuon, thuTu: sau, giay: .trang, huong: .doc)
+            t.nenAnhTen = ten
+            kho.insert(t)
+            for khac in daCo where khac.thuTu >= sau { khac.thuTu += 1 }
+            sau += 1
+        }
+        cuon.suaLuc = Date()
+        try? kho.save()
+        chiSo = min((trangHienTai?.thuTu ?? 0) + 1, cuon.trangsTheoThuTu.count - 1)
+        bao("\(T("Đã thêm")) \(anhs.count) \(T("trang quét"))")
+        DongBoVo.shared.batDau()
+    }
+
+    /// Gỡ nền, GIỮ NGUYÊN nét đã viết — nét nằm ở lớp riêng.
+    private func goNen() {
+        trangHienTai?.nenPdfTen = nil
+        trangHienTai?.nenAnhTen = nil
+        trangHienTai?.suaLuc = Date()
+        bao(T("Đã gỡ nền — nét viết vẫn còn"))
+    }
+
+    private func bao(_ s: String) {
+        baoBut = s
+        Task {
+            try? await Task.sleep(for: .seconds(1.6))
+            if baoBut == s { baoBut = nil }
+        }
     }
 
     private func danhDau() {

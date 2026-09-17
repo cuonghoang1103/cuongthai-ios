@@ -138,9 +138,20 @@ final class TrangVo {
     /// trái hiện hàng chục trang một lúc, nạp hết là app khựng.
     var coNet: Bool = false
 
-    /// Văn bản mà máy đọc được từ nét viết tay (Đợt 3). Để sẵn cột ở đây để
-    /// tìm kiếm sau này không phải migrate.
+    /// Văn bản mà máy đọc được từ nét viết tay — nguồn của tìm kiếm.
     var chuNhanDang: String?
+    /// Lúc nhận dạng gần nhất, để biết chữ đã cũ so với nét hay chưa.
+    var nhanDangLuc: Date?
+
+    // ─── Nền trang: PDF hoặc ảnh quét ───────────────────────────────────
+    /// Tên tệp PDF trong `Documents/Vo/nen/`. Nền là TỆP RIÊNG chứ không
+    /// nhúng vào từng trang: một tệp slide 40 trang thì 40 trang vở dùng
+    /// chung một tệp, chép 40 bản là phí chỗ và chậm.
+    var nenPdfTen: String?
+    /// Trang thứ mấy trong tệp PDF đó (đếm từ 0).
+    var nenPdfTrang: Int = 0
+    /// Tên tệp ảnh nền (trang sách chụp/quét) trong cùng thư mục.
+    var nenAnhTen: String?
 
     // ─── Đồng bộ ────────────────────────────────────────────────────────
     /// Phiên bản nét vẽ trên MÁY CHỦ mà bản cục bộ này đang dựa trên. Gửi
