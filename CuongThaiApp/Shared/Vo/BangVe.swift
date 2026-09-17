@@ -17,12 +17,17 @@ struct BangVe: UIViewControllerRepresentable {
     let khoTrang: CGSize
     /// Bật bảng công cụ của hệ thống (bút, tẩy, thước, lasso, màu).
     var hienCongCu: Bool = true
+    /// Tăng lên là đưa trang về vừa bề ngang khung.
+    var lanVuaKhung: Int = 0
     /// Gọi sau mỗi lần tự lưu, để màn ngoài cập nhật ảnh thu nhỏ + "đã lưu".
     var khiLuu: ((PKDrawing) -> Void)?
+    /// Câu ngắn hiện thoáng qua khi bóp bút — bằng chứng nhìn thấy được.
+    var khiBaoBut: ((String) -> Void)?
 
     func makeUIViewController(context: Context) -> BangVeVC {
         let vc = BangVeVC(idTrang: idTrang, giay: giay, khoTrang: khoTrang)
         vc.khiLuu = khiLuu
+        vc.khiBaoBut = khiBaoBut
         return vc
     }
 
@@ -39,7 +44,9 @@ struct BangVe: UIViewControllerRepresentable {
     func updateUIViewController(_ vc: BangVeVC, context: Context) {
         vc.capNhat(giay: giay, khoTrang: khoTrang)
         vc.datHienCongCu(hienCongCu)
+        vc.xinVuaKhung(lanVuaKhung)
         vc.khiLuu = khiLuu
+        vc.khiBaoBut = khiBaoBut
     }
 }
 
@@ -54,6 +61,9 @@ final class BangVeVC: UIViewController {
     private var khoTrang: CGSize
 
     var khiLuu: ((PKDrawing) -> Void)?
+    /// Báo một câu ngắn lên màn khi cú bóp bút ăn — không có phản hồi nhìn
+    /// thấy được thì người dùng bóp lại mấy lần rồi kết luận "hỏng".
+    var khiBaoBut: ((String) -> Void)?
 
     let canvas = PKCanvasView()
     private let nen = GiayNenView()
@@ -247,6 +257,26 @@ final class BangVeVC: UIViewController {
         canvas.contentOffset = CGPoint(x: -canvas.contentInset.left, y: -canvas.contentInset.top)
     }
 
+    /// Đưa trang về đúng mức vừa bề ngang. Nhận một BỘ ĐẾM chứ không phải
+    /// cờ bật/tắt: người dùng có thể xin lại nhiều lần liên tiếp, mà một cờ
+    /// `true` thì lần thứ hai không có gì đổi để SwiftUI nhận ra.
+    func xinVuaKhung(_ lan: Int) {
+        guard lan != lanVuaKhungDaLam else { return }
+        lanVuaKhungDaLam = lan
+        guard canvas.bounds.width > 0, khoTrang.width > 0 else { return }
+        let vua = min(max((canvas.bounds.width - 32) / khoTrang.width,
+                          canvas.minimumZoomScale), canvas.maximumZoomScale)
+        UIView.animate(withDuration: 0.25) { [weak self] in
+            guard let self else { return }
+            canvas.zoomScale = vua
+            zoomVua = vua
+            capNhatNenVaLe()
+            canvas.contentOffset = CGPoint(x: -canvas.contentInset.left,
+                                           y: canvas.contentOffset.y)
+        }
+    }
+    private var lanVuaKhungDaLam = 0
+
     func capNhat(giay moi: LoaiGiay, khoTrang khoMoi: CGSize) {
         var doi = false
         if moi != giay { giay = moi; nen.giay = moi; doi = true }
@@ -306,11 +336,20 @@ final class BangVeVC: UIViewController {
     // MARK: Apple Pencil Pro
 
     private func ganTuongTacBut() {
-        if #available(iOS 17.5, *) {
-            let tuongTac = UIPencilInteraction()
-            tuongTac.delegate = self
-            view.addInteraction(tuongTac)
+        guard #available(iOS 17.5, *) else {
+            NhatKy.vo.info("bút: iOS < 17.5, không có API bóp")
+            return
         }
+        let tuongTac = UIPencilInteraction()
+        tuongTac.delegate = self
+        // ⚠️ Gắn vào CHÍNH khung vẽ, không phải view gốc.
+        //
+        // `UIPencilInteraction` chỉ bắn khi view mang nó đang hiển thị VÀ là
+        // nơi cây trách nhiệm đi qua. Gắn ở view gốc thì `PKCanvasView` nằm
+        // đè lên nhận trước và nuốt cú bóp — bóp bút không ra gì, không lỗi,
+        // không log. Đo trên iPad Pro M5 thật 17/09/2026.
+        canvas.addInteraction(tuongTac)
+        NhatKy.vo.info("bút: đã gắn tương tác · hành động bóp hệ thống đang đặt = \(UIPencilInteraction.preferredSqueezeAction.rawValue) · bóp-được-theo-máy = \(UIPencilInteraction.prefersHoverToolPreview)")
     }
 
     /// Đổi qua lại giữa bút đang dùng và tẩy.
@@ -350,20 +389,27 @@ extension BangVeVC: UIPencilInteractionDelegate {
                            didReceiveSqueeze squeeze: UIPencilInteraction.Squeeze) {
         // Chỉ xử lý lúc NHẢ. Pha `.began` bắn ngay khi ngón vừa chạm vào thân
         // bút, nên hành động gắn vào đó sẽ chạy cả những lần cầm lại bút.
+        NhatKy.vo.info("bút: NHẬN cú bóp, pha = \(squeeze.phase.rawValue)")
         guard squeeze.phase == .ended else { return }
 
         switch UIPencilInteraction.preferredSqueezeAction {
         case .showColorPalette, .showInkAttributes, .showContextualPalette:
             bangCongCu?.setVisible(true, forFirstResponder: canvas)
             canvas.becomeFirstResponder()
+            khiBaoBut?(T("Bảng công cụ"))
         case .switchEraser, .switchPrevious:
             daoButTay()
+            khiBaoBut?(canvas.tool is PKEraserTool ? T("Tẩy") : T("Bút"))
         case .ignore, .runSystemShortcut:
-            // `.ignore` là người dùng đã tắt tương tác bút trong Cài đặt —
-            // tôn trọng lựa chọn đó, đừng tự làm gì.
+            // `.ignore` = người dùng tắt tương tác bút trong Cài đặt. Trước
+            // đây tôi `return` im lặng, và người dùng bóp mãi không thấy gì
+            // mà cũng không biết vì sao — phải NÓI RA.
+            NhatKy.vo.info("bút: hệ thống đặt hành động bóp là 'không làm gì' — vào Cài đặt › Apple Pencil để đổi")
+            khiBaoBut?(T("Bóp bút đang tắt trong Cài đặt › Apple Pencil"))
             return
         @unknown default:
             daoButTay()
+            khiBaoBut?(canvas.tool is PKEraserTool ? T("Tẩy") : T("Bút"))
         }
 
         // Rung nhẹ để tay biết cú bóp đã ăn: Pencil Pro có mô-tơ rung riêng,

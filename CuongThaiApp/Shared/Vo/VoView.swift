@@ -52,9 +52,22 @@ struct NoiDungVoView: View {
 
     private var soCot: Int { beRong == .regular ? 3 : 2 }
 
+    /// Hai mục của Vở. Luyện viết nằm TRONG Vở chứ không phải một tab riêng
+    /// ở thanh bên: nó cũng là viết tay bằng Pencil, cùng một thói quen và
+    /// cùng một cây dữ liệu cục bộ — tách ra thành hai chỗ thì người dùng
+    /// phải nhớ "viết chữ Hán thì vào đâu".
+    private enum Muc: String, CaseIterable, Identifiable {
+        case vo, luyenViet
+        var id: String { rawValue }
+        var ten: String { self == .vo ? T("Vở của tôi") : T("Luyện viết") }
+    }
+    @State private var muc: Muc = .vo
+
     var body: some View {
         Group {
-                if mons.isEmpty {
+                if muc == .luyenViet {
+                    LuyenVietHubView()
+                } else if mons.isEmpty {
                     ManTrong()
                 } else {
                     ScrollView {
@@ -87,16 +100,27 @@ struct NoiDungVoView: View {
                 }
             }
             .background(AppColors.backgroundPrimary)
-            .navigationTitle(T("Vở của tôi"))
+            .safeAreaInset(edge: .top) {
+                Picker("", selection: $muc) {
+                    ForEach(Muc.allCases) { Text($0.ten).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal, Spacing.md)
+                .padding(.bottom, Spacing.sm)
+                .background(AppColors.backgroundPrimary)
+            }
+            .navigationTitle(muc.ten)
             .navigationDestination(for: MonVo.self) { MonVoView(mon: $0) }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     HStack(spacing: Spacing.md) {
                         HuyHieuDongBo()
-                        Button { cuaSo = .taoMon } label: {
-                            Image(systemName: "plus")
+                        if muc == .vo {
+                            Button { cuaSo = .taoMon } label: {
+                                Image(systemName: "plus")
+                            }
+                            .accessibilityLabel(T("Thêm môn"))
                         }
-                        .accessibilityLabel(T("Thêm môn"))
                     }
                 }
             }

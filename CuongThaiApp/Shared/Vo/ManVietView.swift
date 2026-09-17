@@ -18,6 +18,10 @@ struct ManVietView: View {
     @State private var cuaSo: CuaSoViet?
     /// Tăng mỗi lần lưu xong để dải trang vẽ lại ảnh thu nhỏ.
     @State private var lanLuu = 0
+    /// Tăng mỗi lần người dùng xin đưa trang về vừa bề ngang khung.
+    @State private var lanVuaKhung = 0
+    /// Câu ngắn hiện thoáng qua giữa màn khi bóp bút.
+    @State private var baoBut: String?
 
     private enum CuaSoViet: String, Identifiable {
         case doiGiay, datTenChuong
@@ -46,6 +50,20 @@ struct ManVietView: View {
             }
         }
         .background(AppColors.backgroundPrimary)
+        .overlay(alignment: .top) {
+            if let baoBut {
+                Text(baoBut)
+                    .font(Font.bodyMedium.weight(.semibold))
+                    .foregroundStyle(AppColors.onPrimary)
+                    .padding(.horizontal, Spacing.md)
+                    .padding(.vertical, Spacing.sm)
+                    .background(Capsule().fill(AppColors.primary.opacity(0.92)))
+                    .padding(.top, 60)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .allowsHitTesting(false)
+            }
+        }
+        .animation(AppAnimations.quick, value: baoBut)
         .ignoresSafeArea(.keyboard)
         .sheet(item: $cuaSo) { cua in
             switch cua {
@@ -123,6 +141,9 @@ struct ManVietView: View {
                     Label(trangHienTai?.danhDau == true ? T("Bỏ đánh dấu") : T("Đánh dấu trang"),
                           systemImage: trangHienTai?.danhDau == true ? "flag.slash" : "flag")
                 }
+                Button { lanVuaKhung += 1 } label: {
+                    Label(T("Trang vừa bề ngang"), systemImage: "arrow.left.and.right.square")
+                }
                 Divider()
                 Button { hienCongCu.toggle() } label: {
                     Label(hienCongCu ? T("Ẩn bảng công cụ") : T("Hiện bảng công cụ"),
@@ -135,9 +156,16 @@ struct ManVietView: View {
                 Button { nhanBanTrang() } label: {
                     Label(T("Nhân bản trang"), systemImage: "doc.on.doc")
                 }
+                // ⚠️ `disabled` + nhãn nói LÝ DO. Bản trước chặn xoá trang
+                // cuối bằng một `guard ... else { return }` im lặng: người
+                // dùng bấm, không có gì xảy ra, không có lời giải thích —
+                // và họ báo là "nút không hoạt động". Chặn thì phải NÓI RA.
                 Button(role: .destructive) { xoaTrang(chiSo) } label: {
-                    Label(T("Xoá trang"), systemImage: "trash")
+                    Label(trangs.count > 1 ? T("Xoá trang")
+                                           : T("Xoá trang (vở phải còn ít nhất 1 trang)"),
+                          systemImage: "trash")
                 }
+                .disabled(trangs.count <= 1)
             } label: {
                 Image(systemName: "ellipsis.circle")
             }
@@ -157,6 +185,7 @@ struct ManVietView: View {
                    giay: trang.giay,
                    khoTrang: trang.khoTrang,
                    hienCongCu: hienCongCu,
+                   lanVuaKhung: lanVuaKhung,
                    khiLuu: { drawing in
                        trang.coNet = !drawing.strokes.isEmpty
                        trang.suaLuc = Date()
@@ -167,6 +196,15 @@ struct ManVietView: View {
                        // Lượt đẩy thật chạy lúc rời vở và lúc app xuống nền.
                        DongBoVo.danhDauBan(trang)
                        lanLuu += 1
+                   },
+                   khiBaoBut: { cau in
+                       baoBut = cau
+                       // Tự tắt sau 1,2 giây — lời xác nhận thoáng qua, không
+                       // phải thông báo bắt người dùng bấm mới mất.
+                       Task {
+                           try? await Task.sleep(for: .seconds(1.2))
+                           if baoBut == cau { baoBut = nil }
+                       }
                    })
             // ⚠️ `.id` BẮT BUỘC. Thiếu nó thì SwiftUI dùng lại đúng một bộ
             // điều khiển cho mọi trang, và sang trang 2 vẫn thấy nét của

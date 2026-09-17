@@ -178,6 +178,35 @@ final class TrangVo {
     var khoTrang: CGSize { huong.khoA4 }
 }
 
+// MARK: - Tiến độ luyện viết
+
+/// Một chữ đã luyện viết bao nhiêu lần, đúng bao nhiêu.
+///
+/// Để ở kho CỤC BỘ chứ không đẩy lên máy chủ: tiến độ luyện nét là thứ đo
+/// từng ngày, ghi rất dày, và mất cũng không tiếc như mất một trang vở.
+/// Đẩy nó lên cùng đường đồng bộ của Vở chỉ tổ làm mỗi lượt đẩy nặng thêm.
+@Model
+final class TienDoChu {
+    var id: UUID = UUID()
+    /// Chính chữ đó, ví dụ "あ" hay "日".
+    var chu: String = ""
+    var lang: String = "ja"
+    var soLanDung: Int = 0
+    var soLanThu: Int = 0
+    var lanCuoi: Date?
+
+    /// Coi như đã thuộc sau 3 lượt viết đúng. Con số này là quy ước, không
+    /// phải đo đạc — nhưng có một mốc rõ ràng thì lưới chữ mới nói được
+    /// "còn bao nhiêu chữ nữa", và đó là thứ giữ người học đi tiếp.
+    var daThuoc: Bool { soLanDung >= 3 }
+
+    init(chu: String, lang: String) {
+        self.id = UUID()
+        self.chu = chu
+        self.lang = lang
+    }
+}
+
 // MARK: - Hàng đợi xoá
 
 /// Một lệnh xoá CHƯA báo được lên máy chủ.
