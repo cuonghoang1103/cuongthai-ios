@@ -33,6 +33,9 @@ struct BangVe: UIViewControllerRepresentable {
     var chamDeTua: Bool = false
     /// Câu ngắn hiện thoáng qua khi bóp bút — bằng chứng nhìn thấy được.
     var khiBaoBut: ((String) -> Void)?
+    /// Bóp bút để GỌI TRỢ LÝ thay vì làm việc hệ thống đã gán.
+    var bopGoiTroLy: Bool = false
+    var khiBopGoiTroLy: (() -> Void)?
 
     func makeUIViewController(context: Context) -> BangVeVC {
         let vc = BangVeVC(idTrang: idTrang, giay: giay, khoTrang: khoTrang)
@@ -41,6 +44,8 @@ struct BangVe: UIViewControllerRepresentable {
         vc.khiBaoBut = khiBaoBut
         vc.khiThemNet = khiThemNet
         vc.khiChamNet = khiChamNet
+        vc.bopGoiTroLy = bopGoiTroLy
+        vc.khiBopGoiTroLy = khiBopGoiTroLy
         vc.datChamDeTua(chamDeTua)
         return vc
     }
@@ -64,6 +69,8 @@ struct BangVe: UIViewControllerRepresentable {
         vc.khiBaoBut = khiBaoBut
         vc.khiThemNet = khiThemNet
         vc.khiChamNet = khiChamNet
+        vc.bopGoiTroLy = bopGoiTroLy
+        vc.khiBopGoiTroLy = khiBopGoiTroLy
         vc.datChamDeTua(chamDeTua)
     }
 }
@@ -84,6 +91,8 @@ final class BangVeVC: UIViewController {
     var khiBaoBut: ((String) -> Void)?
     var khiThemNet: ((Int) -> Void)?
     var khiChamNet: ((Int) -> Void)?
+    var bopGoiTroLy = false
+    var khiBopGoiTroLy: (() -> Void)?
     /// Số nét ở lần đổi trước — để phân biệt "vẽ thêm" với "vừa tẩy".
     fileprivate var soNetTruoc = 0
 
@@ -476,6 +485,17 @@ extension BangVeVC: UIPencilInteractionDelegate {
         // bút, nên hành động gắn vào đó sẽ chạy cả những lần cầm lại bút.
         NhatKy.vo.info("bút: NHẬN cú bóp, pha = \(squeeze.phase.rawValue)")
         guard squeeze.phase == .ended else { return }
+
+        // Người dùng chọn "bóp để gọi trợ lý" thì CHẶN TRƯỚC mọi việc hệ
+        // thống gán. Không cướp mặc định: mặc định vẫn là việc trong Cài đặt
+        // › Apple Pencil (thường là Tẩy), phải tự bật trong menu của vở.
+        if bopGoiTroLy {
+            khiBopGoiTroLy?()
+            khiBaoBut?(T("Trợ lý trang"))
+            rungPhanHoi(tai: squeeze.hoverPose?.location
+                        ?? CGPoint(x: canvas.bounds.midX, y: canvas.bounds.midY))
+            return
+        }
 
         switch UIPencilInteraction.preferredSqueezeAction {
         case .showColorPalette, .showInkAttributes, .showContextualPalette:

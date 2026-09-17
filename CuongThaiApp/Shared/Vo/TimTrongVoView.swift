@@ -12,10 +12,35 @@ struct TimTrongVoView: View {
     @State private var dangDoc = false
     @State private var tienDo: (Int, Int) = (0, 0)
     @State private var moTrang: TrangVo?
+    @State private var hoiAI = false
 
     var body: some View {
         NavigationStack {
             List {
+                // Hỏi AI đặt TRÊN CÙNG và luôn hiện: tìm theo từ khoá chỉ ra
+                // đúng trang có đúng chữ đó, còn "mình đã ghi gì về đạo hàm"
+                // thì từ khoá chịu — mà đó mới là câu người học hay hỏi.
+                Section {
+                    Button { hoiAI = true } label: {
+                        HStack(spacing: Spacing.sm) {
+                            Image(systemName: "sparkles")
+                                .foregroundStyle(AppColors.primary)
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(T("Hỏi AI về cả vở"))
+                                    .foregroundStyle(AppColors.textPrimary)
+                                Text(T("Hỏi bằng câu thường, AI dẫn số trang"))
+                                    .font(.caption)
+                                    .foregroundStyle(AppColors.textTertiary)
+                            }
+                            Spacer(minLength: 0)
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundStyle(AppColors.textTertiary)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+
                 if !chuaDocXong.isEmpty {
                     Section {
                         Button { docHet() } label: {
@@ -60,6 +85,11 @@ struct TimTrongVoView: View {
                 if let c = t.cuon {
                     ManVietView(cuon: c, moTrang: t.id)
                 }
+            }
+            .sheet(isPresented: $hoiAI) {
+                HoiVoAIView(tieuDe: T("Hỏi AI về vở"),
+                            trangs: tatCaTrang,
+                            moTaPhamVi: T("toàn bộ vở"))
             }
         }
     }

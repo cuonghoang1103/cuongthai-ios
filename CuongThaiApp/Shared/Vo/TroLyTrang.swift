@@ -32,6 +32,8 @@ enum CaiDatTroLy {
     /// chia đôi màn hình thì điểm ảnh cũ trỏ ra ngoài màn, còn tỉ lệ thì không.
     static let khoaX = "vo.troly.x"
     static let khoaY = "vo.troly.y"
+    /// Bóp Apple Pencil để gọi trợ lý thay vì làm việc hệ thống đã gán.
+    static let khoaBopBut = "vo.troly.bopbut"
 
     static var dangHien: Bool {
         UserDefaults.standard.object(forKey: khoaHien) as? Bool ?? true
@@ -44,6 +46,8 @@ enum CaiDatTroLy {
 struct TroLyTrang: View {
     let trang: TrangVo?
     let tenCuon: String
+    /// Tăng một nấc = xin mở khung hỏi từ bên ngoài (bóp bút gọi).
+    var xinMo: Int = 0
 
     @AppStorage(CaiDatTroLy.khoaHien) private var hien = true
     @AppStorage(CaiDatTroLy.khoaX) private var tiLeX = 0.93
@@ -78,6 +82,10 @@ struct TroLyTrang: View {
                 .animation(.spring(response: 0.3, dampingFraction: 0.82), value: moKhung)
             }
             .ignoresSafeArea(.keyboard)
+            .onChange(of: xinMo) { _, _ in
+                guard !moKhung else { return }
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.82)) { moKhung = true }
+            }
             .sheet(isPresented: $moChatDayDu) {
                 AIChatView(cauMoDau: cauMoDauChoChat, bacBanDau: .pro)
             }
@@ -234,6 +242,7 @@ struct KhungHoiTrang: View {
     @State private var anhChon: [PhotosPickerItem] = []
     @State private var dangDungAnhTrang = false
     @State private var dangNhanDang = false
+    @State private var anhDeKhoanh: AnhKhoanh?
     @FocusState private var dangGo: Bool
 
     /// Ba câu hỏi hay dùng nhất khi đang ngồi học — bấm một cái là gửi luôn
@@ -264,6 +273,15 @@ struct KhungHoiTrang: View {
         .onChange(of: anhChon) { _, moi in
             guard !moi.isEmpty else { return }
             Task { await napAnh(moi) }
+        }
+        .sheet(item: $anhDeKhoanh) { muc in
+            KhoanhVungView(anh: muc.anh) { cat in
+                namBacNeuCan()
+                dinhKem.removeAll { $0.ten.hasPrefix("vung-") }
+                dinhKem.append(DinhKemAI(ten: "vung-\(Int(Date().timeIntervalSince1970)).jpg",
+                                         mime: "image/jpeg", duLieu: cat))
+                Haptics.cham()
+            }
         }
     }
 
@@ -470,6 +488,15 @@ struct KhungHoiTrang: View {
             .disabled(trang == nil || dangDungAnhTrang)
             .accessibilityLabel(T("Đính ảnh trang này"))
 
+            Button {
+                Task { await moKhoanhVung() }
+            } label: {
+                Image(systemName: "crop")
+            }
+            .buttonStyle(.plain)
+            .disabled(trang == nil || dangDungAnhTrang)
+            .accessibilityLabel(T("Khoanh một vùng để hỏi"))
+
             PhotosPicker(selection: $anhChon, maxSelectionCount: HanMucDinhKem.soAnh,
                          matching: .images) {
                 Image(systemName: "photo")
@@ -542,6 +569,20 @@ struct KhungHoiTrang: View {
         namBacNeuCan()
         Haptics.cham()
         vm.gui(cau + ghiChuTrang(), anh: [anh.dataURL])
+    }
+
+    /// Mở khung khoanh vùng trên ẢNH đã dựng của trang.
+    ///
+    /// ⚠️ Cố ý KHÔNG cho kéo khung chọn ngay trên trang giấy. `PKCanvasView`
+    /// nằm dưới nuốt mất quãng giữa của cú kéo — đã trả giá cho chuyện này ở
+    /// con robot nổi. Khoanh trên một tấm ảnh trong cửa sổ riêng thì không có
+    /// gì tranh cử chỉ, và người dùng thấy đúng thứ sắp gửi đi.
+    private func moKhoanhVung() async {
+        guard let d = await anhTrangChoAI(), let anh = UIImage(data: d.duLieu) else {
+            vm.loi = "Chưa dựng được ảnh trang này."
+            return
+        }
+        anhDeKhoanh = AnhKhoanh(anh: anh)
     }
 
     private func themAnhTrang() async {
@@ -652,6 +693,125 @@ struct KhungHoiTrang: View {
 
         guard let duLieu else { return nil }
         return DinhKemAI(ten: "trang-\(soTrang).jpg", mime: "image/jpeg", duLieu: duLieu)
+    }
+}
+// MARK: - Khoanh một vùng để hỏi
+
+/// `UIImage` không `Identifiable`, mà `.sheet(item:)` thì cần.
+struct AnhKhoanh: Identifiable {
+    let id = UUID()
+    let anh: UIImage
+}
+
+/// Kéo một khung chữ nhật trên ảnh trang, cắt đúng phần đó gửi cho AI.
+///
+/// Vì sao chỉ gửi một vùng: model đọc cả trang thì hay trả lời về bài KHÁC
+/// trên cùng trang, và mỗi lượt cũng đắt hơn. Khoanh đúng bài đang vướng thì
+/// câu trả lời trúng hơn hẳn.
+struct KhoanhVungView: View {
+    let anh: UIImage
+    let xong: (Data) -> Void
+
+    @Environment(\.dismiss) private var dong
+    @State private var dau: CGPoint?
+    @State private var cuoi: CGPoint?
+    /// Bề rộng/cao thật của khung chứa. Ghi lại lúc vẽ vì `cat()` cần nó để
+    /// đổi toạ độ mà không với tới `GeometryReader` được.
+    @State private var khoKhung: CGSize = .zero
+
+    private var vung: CGRect? {
+        guard let a = dau, let b = cuoi else { return nil }
+        let r = CGRect(x: min(a.x, b.x), y: min(a.y, b.y),
+                       width: abs(a.x - b.x), height: abs(a.y - b.y))
+        // Khung bé quá thường là chạm nhầm, không phải ý định khoanh.
+        return (r.width > 24 && r.height > 24) ? r : nil
+    }
+
+    var body: some View {
+        NavigationStack {
+            GeometryReader { g in
+                let khung = khungAnh(trong: g.size)
+                ZStack(alignment: .topLeading) {
+                    Color.black.opacity(0.9).ignoresSafeArea()
+
+                    Image(uiImage: anh)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: khung.width, height: khung.height)
+                        .position(x: g.size.width / 2, y: g.size.height / 2)
+
+                    if let v = vung {
+                        Rectangle()
+                            .stroke(AppColors.primary, lineWidth: 2)
+                            .background(Rectangle().fill(AppColors.primary.opacity(0.18)))
+                            .frame(width: v.width, height: v.height)
+                            .position(x: v.midX, y: v.midY)
+                            .allowsHitTesting(false)
+                    }
+                }
+                .contentShape(Rectangle())
+                .gesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { t in
+                            if dau == nil { dau = t.startLocation }
+                            cuoi = t.location
+                        },
+                )
+                .onAppear { khoKhung = g.size }
+                .onChange(of: g.size) { _, moi in
+                    khoKhung = moi
+                    // Xoay máy là khung đổi, khung chọn cũ trỏ sai chỗ.
+                    dau = nil; cuoi = nil
+                }
+            }
+            .navigationTitle(T("Khoanh vùng để hỏi"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(T("Huỷ")) { dong() }
+                }
+                ToolbarItem(placement: .principal) {
+                    Text(vung == nil ? T("Kéo để khoanh vùng cần hỏi") : T("Khoanh vùng để hỏi"))
+                        .font(.caption)
+                        .foregroundStyle(AppColors.textSecondary)
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(T("Dùng vùng này")) { cat() }
+                        .fontWeight(.semibold)
+                        .disabled(vung == nil)
+                }
+            }
+        }
+    }
+
+    /// Kích thước ảnh sau khi vừa khung, để đổi toạ độ màn → toạ độ ảnh.
+    private func khungAnh(trong kho: CGSize) -> CGSize {
+        let ty = min(kho.width / max(anh.size.width, 1), kho.height / max(anh.size.height, 1))
+        return CGSize(width: anh.size.width * ty, height: anh.size.height * ty)
+    }
+
+    private func cat() {
+        guard let v = vung, khoKhung.width > 0 else { return }
+        // Đổi từ toạ độ MÀN sang toạ độ ẢNH GỐC. Ảnh vẽ vừa khung và CĂN
+        // GIỮA, nên phải trừ phần lề rồi mới nhân tỉ lệ — quên bước lề là
+        // cắt lệch đúng bằng nửa khoảng trống hai bên.
+        let khungAnhHT = khungAnh(trong: khoKhung)
+        let leX = (khoKhung.width - khungAnhHT.width) / 2
+        let leY = (khoKhung.height - khungAnhHT.height) / 2
+        let ty = anh.size.width / max(khungAnhHT.width, 1)
+
+        let x = max(0, (v.minX - leX) * ty)
+        let y = max(0, (v.minY - leY) * ty)
+        let r = CGRect(x: x, y: y,
+                       width: min(v.width * ty, anh.size.width - x),
+                       height: min(v.height * ty, anh.size.height - y))
+        guard r.width > 8, r.height > 8,
+              let cg = anh.cgImage?.cropping(to: r),
+              let d = UIImage(cgImage: cg, scale: anh.scale, orientation: anh.imageOrientation)
+                  .jpegData(compressionQuality: 0.85)
+        else { return }
+        xong(d)
+        dong()
     }
 }
 #endif

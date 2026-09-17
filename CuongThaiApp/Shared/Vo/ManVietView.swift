@@ -28,9 +28,17 @@ struct ManVietView: View {
     @State private var chamDeTua = false
     /// Cùng một khoá với `TroLyTrang` — bật/tắt ở menu thì con robot biết.
     @AppStorage(CaiDatTroLy.khoaHien) private var hienTroLy = true
+    @AppStorage(CaiDatTroLy.khoaBopBut) private var bopGoiTroLy = false
+    /// Tăng một nấc là xin con robot mở khung hỏi (bóp bút gọi).
+    @State private var xinMoTroLy = 0
 
+
+    /// ⚠️ MỘT `.sheet(item:)` cho mọi cửa sổ của màn này. Thêm cửa sổ mới thì
+    /// thêm một `case` vào đây, KHÔNG dán thêm `.sheet(isPresented:)` thứ hai
+    /// lên cùng một view — hai cái chồng nhau thì cái sau nuốt cái trước và
+    /// một trong hai không bao giờ mở được.
     private enum CuaSoViet: String, Identifiable {
-        case doiGiay, datTenChuong, quetTaiLieu, hoiNhapPdf
+        case doiGiay, datTenChuong, quetTaiLieu, hoiNhapPdf, tomTat
         var id: String { rawValue }
     }
     @State private var dangChonPdf = false
@@ -79,7 +87,7 @@ struct ManVietView: View {
         .animation(AppAnimations.quick, value: baoBut)
         // Trợ lý nằm TRÊN cùng, ngoài `khungViet`, để nó không bị khung vẽ
         // nuốt cử chỉ và không bị cuốn/phóng theo trang giấy.
-        .overlay { TroLyTrang(trang: trangHienTai, tenCuon: cuon.ten) }
+        .overlay { TroLyTrang(trang: trangHienTai, tenCuon: cuon.ten, xinMo: xinMoTroLy) }
         .ignoresSafeArea(.keyboard)
         .sheet(item: $cuaSo) { cua in
             switch cua {
@@ -94,6 +102,11 @@ struct ManVietView: View {
                         themTrangTuPdf(ten: p.ten, tu: tu, den: den)
                     }
                 }
+            case .tomTat:
+                HoiVoAIView(tieuDe: T("Đề cương ôn thi"),
+                            trangs: trangs,
+                            moTaPhamVi: "\(T("cuốn")) “\(cuon.ten)”",
+                            cauTuGui: T("Tóm tắt cuốn vở này thành một bản đề cương ôn thi: các chủ đề chính theo thứ tự, ý cốt lõi của từng chủ đề, công thức/định nghĩa cần thuộc, và cuối cùng 5 câu hỏi tự kiểm. Dẫn số trang cho từng mục."))
             }
         }
         .fileImporter(isPresented: $dangChonPdf, allowedContentTypes: [.pdf]) { ket in
@@ -196,6 +209,10 @@ struct ManVietView: View {
                     }
                 }
                 Divider()
+                Button { cuaSo = .tomTat } label: {
+                    Label(T("Tóm tắt cuốn này thành đề cương"), systemImage: "list.bullet.rectangle")
+                }
+                Divider()
                 Button { dangChonPdf = true } label: {
                     Label(T("Nhập PDF để viết đè"), systemImage: "doc.badge.plus")
                 }
@@ -223,6 +240,15 @@ struct ManVietView: View {
                         Label(hienTroLy ? T("Ẩn trợ lý trang") : T("Hiện trợ lý trang"),
                               systemImage: hienTroLy ? "sparkles.slash" : "sparkles")
                     }
+                    // Mặc định TẮT. Bóp bút vốn đang là Tẩy theo Cài đặt của
+                    // máy, cướp nó mà không hỏi là lấy mất một thao tác người
+                    // dùng đang dùng hằng ngày.
+                    Button { bopGoiTroLy.toggle() } label: {
+                        Label(bopGoiTroLy ? T("Bóp bút: trả về việc hệ thống")
+                                          : T("Bóp bút để gọi trợ lý"),
+                              systemImage: "hand.pinch")
+                    }
+                    .disabled(!hienTroLy)
                 }
                 Divider()
                 Button { themTrang() } label: {
@@ -380,7 +406,9 @@ struct ManVietView: View {
                            try? await Task.sleep(for: .seconds(1.2))
                            if baoBut == cau { baoBut = nil }
                        }
-                   })
+                   },
+                   bopGoiTroLy: hienTroLy && bopGoiTroLy,
+                   khiBopGoiTroLy: { xinMoTroLy += 1 })
             // ⚠️ `.id` BẮT BUỘC. Thiếu nó thì SwiftUI dùng lại đúng một bộ
             // điều khiển cho mọi trang, và sang trang 2 vẫn thấy nét của
             // trang 1 — cùng họ với lỗi TipTap không có `key` ở web.
