@@ -157,9 +157,19 @@ struct iOSTabView: View {
         // lỗi, không tab nào sáng, trông y như app chết. Kéo về Trang chủ.
         .onAppear { neuLacTab() }
         .onChange(of: appState.selectedTab) { _, _ in neuLacTab() }
+        .fullScreenCover(isPresented: $appState.moTienNong) { TienView(coNutDong: true) }
     }
 
     private func neuLacTab() {
+        // Hai tab KHÔNG có mặt trên thanh này. `.notebook` thì cố ý (Vở chỉ
+        // dành cho iPad màn rộng); `.finance` thì có mặt ở đây dưới dạng một
+        // TẤM PHỦ toàn màn, vì thanh tab đã đủ 5 mục và mục thứ sáu bị iOS
+        // dồn vào "More" — chôn cả một mảng xuống hai lần chạm.
+        if appState.selectedTab == .finance {
+            appState.selectedTab = .home
+            appState.moTienNong = true
+            return
+        }
         if appState.selectedTab == .notebook { appState.selectedTab = .home }
     }
 }
@@ -228,6 +238,7 @@ struct BoCucCotDoi: View {
             MessagesView()
         case .profile: ProfileView()
         case .notebook: VoView()
+        case .finance: TienView()
         }
     }
 }

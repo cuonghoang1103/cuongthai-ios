@@ -677,6 +677,9 @@ struct TongQuanView: View {
                 NavigationLink { HomeView() } label: {
                     theNhanh(T("Bảng tin"), T("Bài viết, bình luận"), "square.stack", AppColors.secondary)
                 }
+                NavigationLink { TienView() } label: {
+                    theNhanh(T("Tiền nong"), T("Chi tiêu, nợ, mục tiêu"), "creditcard", AppColors.accent)
+                }
             }
         }
     }

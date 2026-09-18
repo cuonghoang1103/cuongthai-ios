@@ -26,6 +26,55 @@ enum APIEndpoint {
     case voXoaTrang(clientIds: [String])
     case voXoaCuon(clientId: String)
 
+    // ─── Tiền nong (MoneyFlow) ───────────────────────────────────────
+    // Khai `case` riêng chứ không dùng `.tuyChinh`: 45 đường dẫn gõ tay ở
+    // nơi gọi thì một ký tự sai chỉ lộ ra lúc CHẠY, và lộ ra dưới dạng
+    // "không có dữ liệu" chứ không phải một lỗi.
+    case tienBang(thang: String?)
+    case tienDsVi
+    case tienThemVi([String: Any])
+    case tienSuaVi(id: Int, [String: Any])
+    case tienXoaVi(id: Int)
+    case tienChuyenVi([String: Any])
+    case tienDsNhomChi
+    case tienThemNhomChi([String: Any])
+    case tienSuaNhomChi(id: Int, [String: Any])
+    case tienXoaNhomChi(id: Int)
+    case tienDsChi(tu: String?, den: String?, nhomId: Int?, trang: Int)
+    case tienThemChi([String: Any])
+    case tienSuaChi(id: Int, [String: Any])
+    case tienXoaChi(id: Int)
+    case tienDsThu(thang: String?)
+    case tienThemThu([String: Any])
+    case tienSuaThu(id: Int, [String: Any])
+    case tienXoaThu(id: Int)
+    case tienDsNguonThu
+    case tienThemNguonThu([String: Any])
+    case tienDsNo(trangThai: String?)
+    case tienChiTietNo(id: Int)
+    case tienThemNo([String: Any])
+    case tienSuaNo(id: Int, [String: Any])
+    case tienXoaNo(id: Int)
+    case tienTraKy(noId: Int, kyId: Int, [String: Any])
+    case tienHuyTraKy(noId: Int, kyId: Int)
+    case tienChienLuocTraNo(themMoiThang: Double)
+    case tienDsTietKiem
+    case tienThemTietKiem([String: Any])
+    case tienRutTietKiem(id: Int, [String: Any])
+    case tienXoaTietKiem(id: Int)
+    case tienDsMucTieuTietKiem
+    case tienThemMucTieuTietKiem([String: Any])
+    case tienGopMucTieuTietKiem(id: Int, [String: Any])
+    case tienXoaMucTieuTietKiem(id: Int)
+    case tienDsDauTu(loai: String?)
+    case tienThemDauTu([String: Any])
+    case tienSuaDauTu(id: Int, [String: Any])
+    case tienXoaDauTu(id: Int)
+    case tienMucTieu
+    case tienDatMucTieu(ky: String, soTien: Double)
+    case tienAITomTat
+    case tienAIHoi(cauHoi: String)
+
     // Auth
     case login(username: String, password: String, captchaToken: String?)
     case register(username: String, email: String, password: String, fullName: String?, captchaToken: String?)
@@ -839,6 +888,44 @@ enum APIEndpoint {
         case .dsDeDaLuu: return "/api/v1/exams/bookmarks/exams"
         case .dsCauHoiDaLuu: return "/api/v1/exams/bookmarks/questions"
         case .ghiChuCauHoi(let id, _): return "/api/v1/exams/questions/\(id)/bookmark-note"
+        // ─── Tiền nong ───
+        case .tienBang(let t): return "/api/v1/finance/dashboard" + (t.map { "?month=\($0)" } ?? "")
+        case .tienDsVi, .tienThemVi: return "/api/v1/finance/wallets"
+        case .tienSuaVi(let id, _), .tienXoaVi(let id): return "/api/v1/finance/wallets/\(id)"
+        case .tienChuyenVi: return "/api/v1/finance/wallets/transfer"
+        case .tienDsNhomChi, .tienThemNhomChi: return "/api/v1/finance/expense-categories"
+        case .tienSuaNhomChi(let id, _), .tienXoaNhomChi(let id): return "/api/v1/finance/expense-categories/\(id)"
+        // `from`/`to`, KHÔNG phải `month` — xem `NgayTien.khungThang`.
+        case .tienDsChi(let tu, let den, let n, let tr):
+            var q = ["page=\(tr)", "limit=50"]
+            if let tu { q.append("from=\(tu)") }
+            if let den { q.append("to=\(den)") }
+            if let n { q.append("categoryId=\(n)") }
+            return "/api/v1/finance/expenses?" + q.joined(separator: "&")
+        case .tienThemChi: return "/api/v1/finance/expenses"
+        case .tienSuaChi(let id, _), .tienXoaChi(let id): return "/api/v1/finance/expenses/\(id)"
+        case .tienDsThu(let t): return "/api/v1/finance/income/entries" + (t.map { "?month=\($0)" } ?? "")
+        case .tienThemThu: return "/api/v1/finance/income/entries"
+        case .tienSuaThu(let id, _), .tienXoaThu(let id): return "/api/v1/finance/income/entries/\(id)"
+        case .tienDsNguonThu, .tienThemNguonThu: return "/api/v1/finance/income/sources"
+        case .tienDsNo(let tt): return "/api/v1/finance/debts" + (tt.map { "?status=\($0)" } ?? "")
+        case .tienThemNo: return "/api/v1/finance/debts"
+        case .tienChiTietNo(let id), .tienSuaNo(let id, _), .tienXoaNo(let id): return "/api/v1/finance/debts/\(id)"
+        case .tienTraKy(let n, let k, _): return "/api/v1/finance/debts/\(n)/schedule/\(k)/pay"
+        case .tienHuyTraKy(let n, let k): return "/api/v1/finance/debts/\(n)/schedule/\(k)/unpay"
+        case .tienChienLuocTraNo(let them): return "/api/v1/finance/debts/payoff-strategy?extraMonthly=\(Int(them))"
+        case .tienDsTietKiem, .tienThemTietKiem: return "/api/v1/finance/savings/accounts"
+        case .tienXoaTietKiem(let id): return "/api/v1/finance/savings/accounts/\(id)"
+        case .tienRutTietKiem(let id, _): return "/api/v1/finance/savings/accounts/\(id)/withdraw"
+        case .tienDsMucTieuTietKiem, .tienThemMucTieuTietKiem: return "/api/v1/finance/savings/goals"
+        case .tienXoaMucTieuTietKiem(let id): return "/api/v1/finance/savings/goals/\(id)"
+        case .tienGopMucTieuTietKiem(let id, _): return "/api/v1/finance/savings/goals/\(id)/contribute"
+        case .tienDsDauTu(let l): return "/api/v1/finance/investments" + (l.map { "?type=\($0)" } ?? "")
+        case .tienThemDauTu: return "/api/v1/finance/investments"
+        case .tienSuaDauTu(let id, _), .tienXoaDauTu(let id): return "/api/v1/finance/investments/\(id)"
+        case .tienMucTieu, .tienDatMucTieu: return "/api/v1/finance/goals"
+        case .tienAITomTat: return "/api/v1/finance/ai/tom-tat"
+        case .tienAIHoi: return "/api/v1/finance/ai/hoi"
         case .markNotificationsRead: return "/api/v1/social/notifications"
         case .getPost(let id): return "/api/v1/social/posts/\(id)"
         }
@@ -846,6 +933,18 @@ enum APIEndpoint {
 
     var method: String {
         switch self {
+        // ─── Tiền nong ───
+        case .tienThemVi, .tienChuyenVi, .tienThemNhomChi, .tienThemChi, .tienThemThu,
+             .tienThemNguonThu, .tienThemNo, .tienTraKy, .tienHuyTraKy,
+             .tienThemTietKiem, .tienRutTietKiem, .tienThemMucTieuTietKiem,
+             .tienGopMucTieuTietKiem, .tienThemDauTu, .tienAIHoi:
+            return "POST"
+        case .tienSuaVi, .tienSuaNhomChi, .tienSuaChi, .tienSuaThu, .tienSuaNo,
+             .tienSuaDauTu, .tienDatMucTieu:
+            return "PUT"
+        case .tienXoaVi, .tienXoaNhomChi, .tienXoaChi, .tienXoaThu, .tienXoaNo,
+             .tienXoaTietKiem, .tienXoaMucTieuTietKiem, .tienXoaDauTu:
+            return "DELETE"
         case .tuyChinh(_, let pt, _): return pt
         case .voLayCay: return "GET"
         case .voDongBoCay, .voXinDuongDay, .voXacNhanNet, .voXoaTrang, .voXoaCuon,
@@ -907,6 +1006,19 @@ enum APIEndpoint {
 
     var body: [String: Any]? {
         switch self {
+        // ─── Tiền nong ───
+        case .tienThemVi(let m), .tienSuaVi(_, let m), .tienChuyenVi(let m),
+             .tienThemNhomChi(let m), .tienSuaNhomChi(_, let m),
+             .tienThemChi(let m), .tienSuaChi(_, let m),
+             .tienThemThu(let m), .tienSuaThu(_, let m), .tienThemNguonThu(let m),
+             .tienThemNo(let m), .tienSuaNo(_, let m), .tienTraKy(_, _, let m),
+             .tienThemTietKiem(let m), .tienRutTietKiem(_, let m),
+             .tienThemMucTieuTietKiem(let m), .tienGopMucTieuTietKiem(_, let m),
+             .tienThemDauTu(let m), .tienSuaDauTu(_, let m):
+            return m
+        case .tienDatMucTieu(let ky, let soTien): return ["ky": ky, "soTien": soTien]
+        case .tienAIHoi(let c): return ["cauHoi": c]
+        case .tienHuyTraKy: return [:]
         case .tuyChinh(_, _, let than): return than
         case .voLayCay: return nil
         case .voDongBoCay(let mons): return ["mons": mons]

@@ -86,6 +86,16 @@ final class ThongBaoDay: NSObject, ObservableObject, UNUserNotificationCenterDel
         NhatKy.thongBao.info("cất định tuyến — mở chuông")
     }
 
+    /// Thông báo của mảng Tiền nong (nhắc nợ 8h/12h/19h, chốt chi tiêu 20h).
+    @MainActor private static var canMoTienNong = false
+    @MainActor private static var canGhiChiNgay = false
+
+    @MainActor static func catDinhTuyenTienNong(ghiChiNgay: Bool) {
+        canMoTienNong = true
+        canGhiChiNgay = ghiChiNgay
+        NhatKy.thongBao.info("cất định tuyến — Tiền nong (ghi chi ngay: \(ghiChiNgay))")
+    }
+
     /// Idempotent: áp xong tự xoá, ba móc có gọi chồng cũng chỉ áp một lần.
     @MainActor static func apDungDinhTuyen() {
         if canMoChuong {
@@ -93,6 +103,17 @@ final class ThongBaoDay: NSObject, ObservableObject, UNUserNotificationCenterDel
             NhatKy.thongBao.info("ÁP định tuyến — mở chuông")
             AppState.shared.selectedTab = .home
             AppState.shared.moChuongThongBao = true
+        }
+        if canMoTienNong {
+            canMoTienNong = false
+            let ghiNgay = canGhiChiNgay
+            canGhiChiNgay = false
+            NhatKy.thongBao.info("ÁP định tuyến — mở Tiền nong")
+            // Trên bố cục cột đôi (iPad rộng) `.finance` là một mục sidebar
+            // thật; trên iPhone `iOSTabView.neuLacTab()` bắt lấy nó và đổi
+            // sang tấm phủ. Một dòng này đúng cho cả hai.
+            AppState.shared.selectedTab = .finance
+            AppState.shared.ghiChiNgaySauKhiMoTien = ghiNgay
         }
         guard canVaoTabTinNhan else { return }
         canVaoTabTinNhan = false
@@ -226,7 +247,11 @@ final class ThongBaoDay: NSObject, ObservableObject, UNUserNotificationCenterDel
         DispatchQueue.main.async {
             MainActor.assumeIsolated {
                 NhatKy.thongBao.info("didReceive CHẠY — loai=\(loai ?? "(không có)") · threadId=\(tid.map(String.init) ?? "(không đọc được)")")
-                if loai == "xa-hoi" {
+                let man = info["man"] as? String
+                if man?.hasPrefix("finance") == true {
+                    Self.catDinhTuyenTienNong(ghiChiNgay: (info["hoiChiTieu"] as? Bool) == true
+                                              || (info["hoiChiTieu"] as? NSNumber)?.boolValue == true)
+                } else if loai == "xa-hoi" {
                     Self.catDinhTuyenChuong()
                 } else if loai == "tin-nhan" || tid != nil {
                     // CHỈ CẤT — đổi tab dời sang `apDungDinhTuyen`, chạy khi

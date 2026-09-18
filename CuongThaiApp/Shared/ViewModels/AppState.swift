@@ -44,6 +44,8 @@ final class AppState: ObservableObject {
         /// thanh tab của iPhone giữ đúng 5 mục, mục thứ sáu bị iOS dồn vào
         /// tab "More" và chôn cuốn vở sau hai lần chạm.
         case notebook = 5
+        /// Tiền nong (MoneyFlow).
+        case finance = 6
         var id: Int { rawValue }
         var title: String {
             switch self {
@@ -53,6 +55,7 @@ final class AppState: ObservableObject {
             case .messages: return T("Tin nhắn")
             case .profile: return T("Cá nhân")
             case .notebook: return T("Vở")
+            case .finance: return T("Tiền nong")
             }
         }
         var icon: String {
@@ -63,6 +66,7 @@ final class AppState: ObservableObject {
             case .messages: return "message.fill"
             case .profile: return "person.fill"
             case .notebook: return "book.closed.fill"
+            case .finance: return "creditcard.fill"
             }
         }
     }
@@ -127,6 +131,19 @@ final class AppState: ObservableObject {
     /// bằng `?? "User"` nên người dùng thấy một hồ sơ giả "User / @username /
     /// 0 / 0 / 0". Nhìn y như app hỏng, và App Store đánh trượt vì đúng là
     /// nội dung giữ chỗ (Guideline 2.1).
+    /// Mở Tiền nong dạng tấm phủ toàn màn (iPhone, và iPad ở cửa sổ hẹp).
+    ///
+    /// Thanh tab chỉ chứa 5 mục; mục thứ sáu bị iOS dồn vào "More". Nên trên
+    /// bố cục hẹp, `.finance` KHÔNG phải một tab mà là một tấm phủ — đặt cờ
+    /// này lên là mở. Bố cục cột đôi (iPad rộng) thì nó là một mục sidebar
+    /// bình thường và cờ này không dùng tới.
+    @Published var moTienNong = false
+
+    /// Chạm thông báo 20h ("Hôm nay bạn đã chi tiêu những gì?") thì mở thẳng
+    /// ô ghi khoản chi. Mở màn Tiền nong rồi bắt người dùng tự tìm nút cộng
+    /// là bỏ phí đúng cái khoảnh khắc họ đang định ghi.
+    @Published var ghiChiNgaySauKhiMoTien = false
+
     enum TrangThaiHoSo: Equatable { case chuaNap, dangNap, xong, loi(String) }
     @Published var trangThaiHoSo: TrangThaiHoSo = .chuaNap
 
