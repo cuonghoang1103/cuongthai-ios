@@ -31,6 +31,8 @@ struct BangVe: UIViewControllerRepresentable {
     var khiChamNet: ((Int) -> Void)?
     /// Bật chế độ chạm-để-tua: ngón tay chạm vào nét thay vì cuộn.
     var chamDeTua: Bool = false
+    /// Ngón tay để CUỘN/PHÓNG, chỉ bút mới viết.
+    var nganTayCuon: Bool = false
     /// Câu ngắn hiện thoáng qua khi bóp bút — bằng chứng nhìn thấy được.
     var khiBaoBut: ((String) -> Void)?
     /// Bóp bút để GỌI TRỢ LÝ thay vì làm việc hệ thống đã gán.
@@ -46,6 +48,7 @@ struct BangVe: UIViewControllerRepresentable {
         vc.khiChamNet = khiChamNet
         vc.bopGoiTroLy = bopGoiTroLy
         vc.khiBopGoiTroLy = khiBopGoiTroLy
+        vc.datNganTayCuon(nganTayCuon)
         vc.datChamDeTua(chamDeTua)
         return vc
     }
@@ -71,6 +74,7 @@ struct BangVe: UIViewControllerRepresentable {
         vc.khiChamNet = khiChamNet
         vc.bopGoiTroLy = bopGoiTroLy
         vc.khiBopGoiTroLy = khiBopGoiTroLy
+        vc.datNganTayCuon(nganTayCuon)
         vc.datChamDeTua(chamDeTua)
     }
 }
@@ -227,6 +231,7 @@ final class BangVeVC: UIViewController {
         } else {
             picker = PKToolPicker()
             picker.addObserver(canvas)
+            picker.addObserver(self)
             bangCongCu = picker
         }
         if hien { canvas.becomeFirstResponder() }
@@ -275,8 +280,22 @@ final class BangVeVC: UIViewController {
 
         let duThua = max(0, (canvas.bounds.width - khoPhong.width) / 2)
         let duThuaDoc = max(0, (canvas.bounds.height - khoPhong.height) / 2)
+        // ⚠️ Bảng công cụ NỔI LÊN TRÊN trang, không đẩy trang lên. Không chừa
+        // chỗ cho nó thì mấy dòng cuối mỗi trang nằm vĩnh viễn dưới gầm bảng
+        // — người dùng báo 18/09/2026 "bị che bên dưới rồi không thấy nội
+        // dung". `frameObscured(in:)` là số ĐO THẬT của phần bị che, không
+        // phải hằng số đoán bừa: bảng đổi cỡ theo máy và theo chỗ người dùng
+        // kéo nó tới.
         canvas.contentInset = UIEdgeInsets(top: duThuaDoc, left: duThua,
-                                           bottom: duThuaDoc, right: duThua)
+                                           bottom: max(duThuaDoc, cheDuoi()), right: duThua)
+    }
+
+    /// Phần đáy khung bị bảng công cụ che, tính theo số đo thật.
+    private func cheDuoi() -> CGFloat {
+        guard let bang = bangCongCu else { return 0 }
+        let che = bang.frameObscured(in: view)
+        guard !che.isNull, che.height > 0 else { return 0 }
+        return max(0, view.bounds.maxY - che.minY) + 12
     }
 
     private var daCanhGiua = false
@@ -387,20 +406,45 @@ final class BangVeVC: UIViewController {
     ///
     /// ⚠️ Chỉ bật khi người dùng xin. Bật thường trực thì cú chạm để cuộn
     /// trang cũng thành lệnh tua, và bản ghi nhảy lung tung mỗi lần lật vở.
+    private var nganTayCuon = false
+
+    /// Ngón tay để CUỘN thay vì vẽ.
+    ///
+    /// ⚠️ Đây là lỗi người dùng báo 18/09/2026: nhập PDF vào, trang dài hơn
+    /// màn hình, vuốt một ngón để đọc tiếp thì nó VẼ một vệt mực chứ không
+    /// cuộn — trang đứng im, người dùng tưởng app treo. `.default` của
+    /// PencilKit cho ngón tay vẽ cho tới khi nó thấy Apple Pencil, mà lúc
+    /// đang đọc thì bút nằm trên bàn.
+    ///
+    /// Hai ngón thì cuộn được ở cả hai chế độ — nhưng không ai đoán ra điều
+    /// đó, nên phải có một nút NHÌN THẤY ĐƯỢC ở thanh trên.
+    func datNganTayCuon(_ bat: Bool) {
+        guard bat != nganTayCuon else { return }
+        nganTayCuon = bat
+        capNhatChinhSachVe()
+    }
+
+    /// Một chỗ duy nhất quyết định ngón tay làm gì. Hai cờ cùng đòi đổi
+    /// `drawingPolicy` mà mỗi chỗ tự đặt thì cái sau xoá cái trước.
+    private func capNhatChinhSachVe() {
+        canvas.drawingPolicy = (nganTayCuon || chamTua != nil) ? .pencilOnly : .default
+    }
+
     func datChamDeTua(_ bat: Bool) {
         guard bat != (chamTua != nil) else { return }
         // ⚠️ Ở chế độ tua, NGÓN TAY không được vẽ nữa — nếu không thì mỗi cú
         // chạm để nghe lại để lại một chấm mực trên trang. Đo thật trên máy
         // mô phỏng 17/09/2026: chạm vào nét xong thấy một chấm đen mới.
         // Bút vẫn viết được bình thường, nên đang nghe vẫn ghi chú thêm được.
-        canvas.drawingPolicy = bat ? .pencilOnly : .default
         if bat {
             let g = UITapGestureRecognizer(target: self, action: #selector(chamVaoNet(_:)))
             canvas.addGestureRecognizer(g)
             chamTua = g
+            capNhatChinhSachVe()
         } else if let g = chamTua {
             canvas.removeGestureRecognizer(g)
             chamTua = nil
+            capNhatChinhSachVe()
         }
     }
     private var chamTua: UITapGestureRecognizer?
@@ -460,6 +504,14 @@ final class BangVeVC: UIViewController {
 
 // MARK: - Nét vẽ đổi
 
+// Bảng công cụ đổi chỗ (người dùng kéo nó, xoay máy, thu gọn) thì phần đáy
+// bị che cũng đổi — phải tính lại lề, không thì lại che mất dòng cuối.
+extension BangVeVC: PKToolPickerObserver {
+    func toolPickerFramesObscuredDidChange(_ toolPicker: PKToolPicker) {
+        capNhatNenVaLe()
+    }
+}
+
 extension BangVeVC: PKCanvasViewDelegate {
     func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
         henGioLuu()
@@ -489,7 +541,9 @@ extension BangVeVC: UIPencilInteractionDelegate {
         // Người dùng chọn "bóp để gọi trợ lý" thì CHẶN TRƯỚC mọi việc hệ
         // thống gán. Không cướp mặc định: mặc định vẫn là việc trong Cài đặt
         // › Apple Pencil (thường là Tẩy), phải tự bật trong menu của vở.
+        NhatKy.vo.info("bút: pha CUỐI · bopGoiTroLy = \(bopGoiTroLy)")
         if bopGoiTroLy {
+            NhatKy.vo.info("bút: → gọi TRỢ LÝ")
             khiBopGoiTroLy?()
             khiBaoBut?(T("Trợ lý trang"))
             rungPhanHoi(tai: squeeze.hoverPose?.location
@@ -499,6 +553,7 @@ extension BangVeVC: UIPencilInteractionDelegate {
 
         switch UIPencilInteraction.preferredSqueezeAction {
         case .showColorPalette, .showInkAttributes, .showContextualPalette:
+            NhatKy.vo.info("bút: → MỞ BẢNG CÔNG CỤ (việc hệ thống)")
             bangCongCu?.setVisible(true, forFirstResponder: canvas)
             canvas.becomeFirstResponder()
             khiBaoBut?(T("Bảng công cụ"))

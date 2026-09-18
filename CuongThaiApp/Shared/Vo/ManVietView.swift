@@ -26,6 +26,8 @@ struct ManVietView: View {
     @State private var baoBut: String?
     @ObservedObject private var tieng = GhiAmBuoiHoc.shared
     @State private var chamDeTua = false
+    /// Ngón tay để CUỘN thay vì vẽ. Nhớ giữa các lần mở vở.
+    @AppStorage("vo.ngontay.cuon") private var nganTayCuon = false
     /// Cùng một khoá với `TroLyTrang` — bật/tắt ở menu thì con robot biết.
     @AppStorage(CaiDatTroLy.khoaHien) private var hienTroLy = true
     @AppStorage(CaiDatTroLy.khoaBopBut) private var bopGoiTroLy = false
@@ -203,6 +205,25 @@ struct ManVietView: View {
             // Mỗi `Section` là MỘT con, và còn tự kẻ vạch ngăn nên bỏ được
             // đống `Divider()` thủ công. Thêm mục mới thì thêm vào một
             // Section, đừng thêm thẳng vào `Menu`.
+            // ⚠️ Nút này phải NẰM NGOÀI, không nhét vào menu ⋯.
+            //
+            // Người dùng 18/09/2026: nhập PDF vào, trang dài hơn màn hình,
+            // vuốt một ngón để đọc tiếp thì nó VẼ một vệt mực, trang đứng im
+            // — tưởng app treo. Hai ngón vẫn cuộn được ở mọi chế độ, nhưng
+            // không ai đoán ra. Một cái nút thấy ngay giải quyết cả hai:
+            // nói cho người dùng biết là CÓ hai chế độ, và đổi trong một chạm.
+            Button {
+                nganTayCuon.toggle()
+                bao(nganTayCuon ? T("Ngón tay: CUỘN trang — chỉ bút mới viết")
+                                : T("Ngón tay: VIẾT — hai ngón để cuộn"))
+                Haptics.cham()
+            } label: {
+                Image(systemName: nganTayCuon ? "hand.draw" : "pencil.and.scribble")
+                    .foregroundStyle(nganTayCuon ? AppColors.primary : AppColors.textPrimary)
+            }
+            .accessibilityLabel(nganTayCuon ? T("Ngón tay đang cuộn trang")
+                                            : T("Ngón tay đang viết"))
+
             Menu {
                 Section {
                     Button { cuaSo = .doiGiay } label: {
@@ -421,6 +442,7 @@ struct ManVietView: View {
                        bao("▶︎ " + GhiAmBuoiHoc.doDaiChu(max(0, moc - 2)))
                    },
                    chamDeTua: chamDeTua,
+                   nganTayCuon: nganTayCuon,
                    khiBaoBut: { cau in
                        baoBut = cau
                        // Tự tắt sau 1,2 giây — lời xác nhận thoáng qua, không
@@ -430,7 +452,10 @@ struct ManVietView: View {
                            if baoBut == cau { baoBut = nil }
                        }
                    },
-                   bopGoiTroLy: hienTroLy && bopGoiTroLy,
+                   bopGoiTroLy: {
+                       NhatKy.vo.info("vở: dựng BangVe · hienTroLy=\(hienTroLy) bopGoiTroLy=\(bopGoiTroLy)")
+                       return hienTroLy && bopGoiTroLy
+                   }(),
                    khiBopGoiTroLy: { xinMoTroLy += 1 })
             // ⚠️ `.id` BẮT BUỘC. Thiếu nó thì SwiftUI dùng lại đúng một bộ
             // điều khiển cho mọi trang, và sang trang 2 vẫn thấy nét của
