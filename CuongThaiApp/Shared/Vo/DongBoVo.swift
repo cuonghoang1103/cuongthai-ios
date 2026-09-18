@@ -236,12 +236,23 @@ final class DongBoVo: ObservableObject {
                         continue
                     }
 
+                    // ⚠️ Đọc tệp + băm sha256 phải ra NGOÀI luồng chính.
+                    //
+                    // `DongBoVo` là `@MainActor`, mà đây là 4,3MB giáo trình
+                    // đọc từ đĩa rồi băm — làm tại chỗ là đơ cả app mỗi lượt
+                    // đồng bộ, bấm nút không ăn. Người dùng báo đúng thế
+                    // 18/09/2026, và đồng bộ thì chạy ngầm theo chu kỳ nên nó
+                    // đơ đi đơ lại chứ không chỉ một lần.
                     let duong = KhoVo.duongDanNen(ten)
-                    guard let du = try? Data(contentsOf: duong) else {
+                    let doc: (Data, String)? = await Task.detached(priority: .utility) {
+                        guard let du = try? Data(contentsOf: duong) else { return nil }
+                        let h = SHA256.hash(data: du).map { String(format: "%02x", $0) }.joined()
+                        return (du, h)
+                    }.value
+                    guard let (du, sha) = doc else {
                         NhatKy.vo.info("nền: không đọc được \(ten), bỏ qua")
                         continue
                     }
-                    let sha = SHA256.hash(data: du).map { String(format: "%02x", $0) }.joined()
                     let duoi = (ten as NSString).pathExtension.lowercased()
                     let duoiGui = duoi == "pdf" ? "pdf" : (duoi == "png" ? "png" : "jpg")
 
