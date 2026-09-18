@@ -318,10 +318,24 @@ actor APIClient {
 
     /// Rút câu giải thích máy chủ gửi kèm. Câu đó luôn sát thực tế hơn bất cứ
     /// câu chung chung nào ta tự bịa ở client.
+    /// Dựng lỗi từ THÂN phản hồi của một mã HTTP lỗi.
+    ///
+    /// ⚠️ Phải mang theo `code`. Bản trước chỉ lấy `message` rồi trả
+    /// `.serverError`, nên mã ứng dụng bị vứt mất trên MỌI đường 4xx/5xx —
+    /// mà 4xx mới chính là chỗ máy chủ gửi mã về.
+    ///
+    /// Cái giá đo được 18/09/2026: máy chủ trả `409 INK_CONFLICT` để bảo app
+    /// hợp nhất nét vẽ, app nhận thành `.serverError` nên
+    /// `truongHopXungDot` luôn false. Bộ hợp nhất — có sẵn, viết đầy đủ,
+    /// đã kiểm — CHƯA TỪNG được gọi lấy một lần. Log máy thật: 20 lượt
+    /// đồng bộ hỏng, 0 lần hợp nhất, huy hiệu đỏ đứng mãi.
     private static func loiTuThan(_ data: Data) -> APIError? {
         guard let envelope = try? JSONDecoder().decode(EmptyEnvelope.self, from: data),
               let message = envelope.message, !message.isEmpty
         else { return nil }
+        if let ma = envelope.code, !ma.isEmpty {
+            return .coMa(ma: ma, thongDiep: message)
+        }
         return .serverError(message)
     }
 
@@ -385,6 +399,12 @@ struct APIResponse<T: Decodable>: Decodable {
 struct EmptyEnvelope: Decodable {
     let success: Bool
     let message: String?
+    /// Mã lỗi ứng dụng (`INK_CONFLICT`, `EMAIL_NOT_VERIFIED`, …).
+    ///
+    /// ⚠️ PHẢI có. Thiếu trường này thì mọi lỗi HTTP 4xx/5xx về tới nơi chỉ
+    /// còn một chuỗi tiếng Việt, và mọi chỗ cần PHÂN NHÁNH theo mã đều chết
+    /// câm — xem `loiTuThan`.
+    let code: String?
 }
 
 

@@ -97,7 +97,10 @@ struct NhapNhanhLichView: View {
             Haptics.cham()
         } catch {
             loi = (error as? APIError).map { e in
+                // `.coMa` cũng phải bắt: từ 18/09/2026 lỗi 4xx có mã đi
+                // qua nhánh đó, không còn rơi vào `.serverError`.
                 if case .serverError(let m) = e, !m.isEmpty { return m }
+                if case .coMa(_, let m) = e, !m.isEmpty { return m }
                 return T("Đọc ảnh không thành công.")
             } ?? T("Đọc ảnh không thành công.")
         }

@@ -262,6 +262,7 @@ final class MayDoc: NSObject, ObservableObject {
 
     private static func viLoi(_ e: Error) -> String {
         if let a = e as? APIError, case .serverError(let m) = a, !m.isEmpty { return m }
+        if let a = e as? APIError, case .coMa(_, let m) = a, !m.isEmpty { return m }
         return "Không đọc được đoạn này. Thử lại sau một lát giúp mình."
     }
 }
