@@ -30,9 +30,11 @@ struct ManVietView: View {
     @AppStorage("vo.ngontay.cuon") private var nganTayCuon = false
     /// Cùng một khoá với `TroLyTrang` — bật/tắt ở menu thì con robot biết.
     @AppStorage(CaiDatTroLy.khoaHien) private var hienTroLy = true
-    @AppStorage(CaiDatTroLy.khoaBopBut) private var bopGoiTroLy = false
+    @AppStorage(CaiDatTroLy.khoaBopBut) private var bopGoiTroLy = true
     /// Tăng một nấc là xin con robot mở khung hỏi (bóp bút gọi).
     @State private var xinMoTroLy = 0
+    /// Tăng một nấc = vào thẳng khoanh vùng hỏi AI.
+    @State private var xinKhoanh = 0
 
 
     /// ⚠️ MỘT `.sheet(item:)` cho mọi cửa sổ của màn này. Thêm cửa sổ mới thì
@@ -89,7 +91,10 @@ struct ManVietView: View {
         .animation(AppAnimations.quick, value: baoBut)
         // Trợ lý nằm TRÊN cùng, ngoài `khungViet`, để nó không bị khung vẽ
         // nuốt cử chỉ và không bị cuốn/phóng theo trang giấy.
-        .overlay { TroLyTrang(trang: trangHienTai, tenCuon: cuon.ten, xinMo: xinMoTroLy) }
+        .overlay {
+            TroLyTrang(trang: trangHienTai, tenCuon: cuon.ten,
+                       xinMo: xinMoTroLy, xinKhoanh: xinKhoanh)
+        }
         .ignoresSafeArea(.keyboard)
         .sheet(item: $cuaSo) { cua in
             switch cua {
@@ -223,6 +228,19 @@ struct ManVietView: View {
             }
             .accessibilityLabel(nganTayCuon ? T("Ngón tay đang cuộn trang")
                                             : T("Ngón tay đang viết"))
+
+            // Khoanh–hỏi phải nằm NGOÀI menu: đây là thao tác giữa giờ học,
+            // một chạm rồi khoanh luôn. Bóp Apple Pencil cũng vào đúng đây.
+            if CaiDatTroLy.chayDuoc && hienTroLy {
+                Button {
+                    xinKhoanh += 1
+                    Haptics.cham()
+                } label: {
+                    Image(systemName: "lasso.badge.sparkles")
+                        .foregroundStyle(AppColors.primary)
+                }
+                .accessibilityLabel(T("Khoanh một vùng để hỏi AI"))
+            }
 
             Menu {
                 Section {
@@ -456,7 +474,7 @@ struct ManVietView: View {
                        NhatKy.vo.info("vở: dựng BangVe · hienTroLy=\(hienTroLy) bopGoiTroLy=\(bopGoiTroLy)")
                        return hienTroLy && bopGoiTroLy
                    }(),
-                   khiBopGoiTroLy: { xinMoTroLy += 1 })
+                   khiBopGoiTroLy: { xinKhoanh += 1 })
             // ⚠️ `.id` BẮT BUỘC. Thiếu nó thì SwiftUI dùng lại đúng một bộ
             // điều khiển cho mọi trang, và sang trang 2 vẫn thấy nét của
             // trang 1 — cùng họ với lỗi TipTap không có `key` ở web.

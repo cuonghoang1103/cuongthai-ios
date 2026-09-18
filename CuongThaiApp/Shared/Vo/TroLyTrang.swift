@@ -32,8 +32,14 @@ enum CaiDatTroLy {
     /// chia đôi màn hình thì điểm ảnh cũ trỏ ra ngoài màn, còn tỉ lệ thì không.
     static let khoaX = "vo.troly.x"
     static let khoaY = "vo.troly.y"
-    /// Bóp Apple Pencil để gọi trợ lý thay vì làm việc hệ thống đã gán.
-    static let khoaBopBut = "vo.troly.bopbut"
+    /// Bóp Apple Pencil → khoanh vùng hỏi AI.
+    ///
+    /// ⚠️ Khoá ĐỔI TÊN (thêm `.v2`) và mặc định BẬT. Bản đầu mặc định tắt và
+    /// bắt tự tìm công tắc trong menu ⋯; người dùng bật rồi mà log vẫn đọc
+    /// `false` — cái bật không giữ được, và họ phải quay lại báo hai lần.
+    /// Đổi tên khoá là cách duy nhất để giá trị `false` cũ trên máy không đè
+    /// mất mặc định mới.
+    static let khoaBopBut = "vo.troly.bopbut.v2"
 
     static var dangHien: Bool {
         UserDefaults.standard.object(forKey: khoaHien) as? Bool ?? true
@@ -46,8 +52,10 @@ enum CaiDatTroLy {
 struct TroLyTrang: View {
     let trang: TrangVo?
     let tenCuon: String
-    /// Tăng một nấc = xin mở khung hỏi từ bên ngoài (bóp bút gọi).
+    /// Tăng một nấc = xin mở khung hỏi từ bên ngoài.
     var xinMo: Int = 0
+    /// Tăng một nấc = mở khung RỒI VÀO THẲNG khoanh vùng (bóp bút / nút thanh trên).
+    var xinKhoanh: Int = 0
 
     @AppStorage(CaiDatTroLy.khoaHien) private var hien = true
     @AppStorage(CaiDatTroLy.khoaX) private var tiLeX = 0.93
@@ -57,6 +65,7 @@ struct TroLyTrang: View {
     @State private var choChamDon: Task<Void, Never>?
     @State private var soCham = 0
     @State private var moChatDayDu = false
+    @State private var khoanhNgay = 0
 
     private let canhNut: CGFloat = 62
 
@@ -68,7 +77,8 @@ struct TroLyTrang: View {
                 ZStack(alignment: .topLeading) {
                     if moKhung {
                         KhungHoiTrang(trang: trang, tenCuon: tenCuon,
-                                      dong: { moKhung = false },
+                                      khoanhNgay: khoanhNgay,
+                                      dong: { moKhung = false; khoanhNgay = 0 },
                                       moDayDu: { moKhung = false; moChatDayDu = true })
                             .frame(width: rongKhung(g.size), height: caoKhung(g.size))
                             .position(viTriKhung(quanh: tam, trong: g.size))
@@ -82,7 +92,15 @@ struct TroLyTrang: View {
                 .animation(.spring(response: 0.3, dampingFraction: 0.82), value: moKhung)
             }
             .ignoresSafeArea(.keyboard)
-            .onChange(of: xinMo) { _, _ in
+            .onChange(of: xinKhoanh) { _, moi in
+                NhatKy.vo.info("trợ lý: xin KHOANH #\(moi)")
+                khoanhNgay = moi
+                if !moKhung {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.82)) { moKhung = true }
+                }
+            }
+            .onChange(of: xinMo) { _, moi in
+                NhatKy.vo.info("trợ lý: nhận xin mở #\(moi), moKhung = \(moKhung)")
                 guard !moKhung else { return }
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.82)) { moKhung = true }
             }
@@ -231,6 +249,8 @@ struct TroLyTrang: View {
 struct KhungHoiTrang: View {
     let trang: TrangVo?
     let tenCuon: String
+    /// Khác 0 = vào màn là mở khoanh vùng ngay.
+    var khoanhNgay: Int = 0
     let dong: () -> Void
     let moDayDu: () -> Void
 
@@ -243,6 +263,8 @@ struct KhungHoiTrang: View {
     @State private var dangDungAnhTrang = false
     @State private var dangNhanDang = false
     @State private var anhDeKhoanh: AnhKhoanh?
+    /// Vùng vừa cắt, đang chờ người dùng chọn hỏi gì.
+    @State private var vungChoHoi: DinhKemAI?
     @FocusState private var dangGo: Bool
 
     /// Ba câu hỏi hay dùng nhất khi đang ngồi học — bấm một cái là gửi luôn
@@ -270,18 +292,38 @@ struct KhungHoiTrang: View {
                 .stroke(AppColors.border, lineWidth: 1),
         )
         .shadow(color: .black.opacity(0.25), radius: 18, y: 8)
+        .task(id: khoanhNgay) {
+            guard khoanhNgay != 0, anhDeKhoanh == nil else { return }
+            await moKhoanhVung()
+        }
         .onChange(of: anhChon) { _, moi in
             guard !moi.isEmpty else { return }
             Task { await napAnh(moi) }
         }
         .sheet(item: $anhDeKhoanh) { muc in
             KhoanhVungView(anh: muc.anh) { cat in
-                namBacNeuCan()
-                dinhKem.removeAll { $0.ten.hasPrefix("vung-") }
-                dinhKem.append(DinhKemAI(ten: "vung-\(Int(Date().timeIntervalSince1970)).jpg",
-                                         mime: "image/jpeg", duLieu: cat))
+                vungChoHoi = DinhKemAI(ten: "vung-\(Int(Date().timeIntervalSince1970)).jpg",
+                                       mime: "image/jpeg", duLieu: cat)
                 Haptics.cham()
             }
+        }
+        // Khoanh xong là hỏi được NGAY bằng một chạm. Đính vào ô nhập rồi bắt
+        // gõ câu hỏi là bắt người đang cầm bút giữa giờ học đi gõ chữ.
+        .confirmationDialog(T("Hỏi gì về vùng này?"), isPresented: Binding(
+            get: { vungChoHoi != nil },
+            set: { if !$0 { vungChoHoi = nil } }), titleVisibility: .visible) {
+            ForEach(HoiVung.allCases) { h in
+                Button(h.nhan) { hoiVeVung(h) }
+            }
+            Button(T("Chỉ đính vào ô nhập")) {
+                if let v = vungChoHoi {
+                    namBacNeuCan()
+                    dinhKem.removeAll { $0.ten.hasPrefix("vung-") }
+                    dinhKem.append(v)
+                }
+                vungChoHoi = nil
+            }
+            Button(T("Huỷ"), role: .cancel) { vungChoHoi = nil }
         }
     }
 
@@ -585,6 +627,15 @@ struct KhungHoiTrang: View {
         anhDeKhoanh = AnhKhoanh(anh: anh)
     }
 
+    /// Gửi luôn vùng vừa khoanh kèm câu hỏi đã chọn.
+    private func hoiVeVung(_ h: HoiVung) {
+        guard let v = vungChoHoi else { return }
+        vungChoHoi = nil
+        namBacNeuCan()
+        Haptics.cham()
+        vm.gui(h.cauHoi + ghiChuTrang(), anh: [v.dataURL])
+    }
+
     private func themAnhTrang() async {
         guard let anh = await anhTrangChoAI() else {
             vm.loi = "Chưa dựng được ảnh trang này."
@@ -812,6 +863,58 @@ struct KhoanhVungView: View {
         else { return }
         xong(d)
         dong()
+    }
+}
+// MARK: - Hỏi gì về vùng vừa khoanh
+
+/// Các câu hỏi hay dùng nhất khi khoanh trúng một từ / một câu / một hình.
+///
+/// Vì sao là danh sách CỐ ĐỊNH chứ không bắt gõ: người dùng đang cầm bút
+/// giữa giờ học, gõ một câu hỏi là bỏ mất mạch bài. Một chạm phải ra câu
+/// trả lời.
+enum HoiVung: String, CaseIterable, Identifiable {
+    case nghia, doc, giang, laGi, dich, tuVung
+
+    var id: String { rawValue }
+
+    var nhan: String {
+        switch self {
+        case .nghia:  return T("Nghĩa là gì?")
+        case .doc:    return T("Đọc thế nào?")
+        case .giang:  return T("Giảng cho tôi phần này")
+        case .laGi:   return T("Đây là gì?")
+        case .dich:   return T("Dịch sang tiếng Việt")
+        case .tuVung: return T("Tách từ vựng + ví dụ")
+        }
+    }
+
+    var bieuTuong: String {
+        switch self {
+        case .nghia:  return "character.book.closed"
+        case .doc:    return "speaker.wave.2"
+        case .giang:  return "lightbulb"
+        case .laGi:   return "questionmark.circle"
+        case .dich:   return "character.bubble"
+        case .tuVung: return "list.bullet.rectangle"
+        }
+    }
+
+    /// Câu gửi lên model. Nói rõ "trong ảnh" vì model không biết bối cảnh.
+    var cauHoi: String {
+        switch self {
+        case .nghia:
+            return "Phần mình khoanh trong ảnh nghĩa là gì? Nếu là tiếng Nhật, cho cả cách đọc (hiragana + romaji) rồi mới tới nghĩa tiếng Việt. Ngắn gọn."
+        case .doc:
+            return "Phần mình khoanh trong ảnh đọc thế nào? Ghi hiragana, romaji, và tách từng âm tiết. Nếu có kanji thì nói rõ âm on/kun đang dùng."
+        case .giang:
+            return "Giảng cho mình phần được khoanh trong ảnh: ý chính, ngữ pháp dùng ở đây, và một ví dụ tương tự. Giảng như cho người mới học."
+        case .laGi:
+            return "Trong ảnh mình khoanh một vùng — đó là cái gì? Mô tả rồi giải thích ngắn gọn."
+        case .dich:
+            return "Dịch phần được khoanh trong ảnh sang tiếng Việt. Giữ nguyên bố cục dòng nếu có nhiều dòng."
+        case .tuVung:
+            return "Tách toàn bộ từ vựng trong vùng khoanh thành bảng: từ · cách đọc · nghĩa tiếng Việt. Mỗi từ thêm một câu ví dụ ngắn."
+        }
     }
 }
 #endif
