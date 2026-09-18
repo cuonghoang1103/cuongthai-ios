@@ -35,6 +35,11 @@ struct ManVietView: View {
     @State private var xinMoTroLy = 0
     /// Tăng một nấc = vào thẳng khoanh vùng hỏi AI.
     @State private var xinKhoanh = 0
+    /// Đang ở chế độ bút-hỏi-AI: lớp phủ khoanh đang phủ lên trang.
+    @State private var dangKhoanhTrang = false
+    /// Vùng vừa cắt từ màn hình, chờ trợ lý hỏi.
+    @State private var vungVuaCat: AnhVungCat?
+    @StateObject private var cauNoiVe = CauNoiBangVe()
 
 
     /// ⚠️ MỘT `.sheet(item:)` cho mọi cửa sổ của màn này. Thêm cửa sổ mới thì
@@ -72,6 +77,18 @@ struct ManVietView: View {
                     Divider()
                 }
                 khungViet
+                    // ⚠️ Lớp khoanh gắn vào ĐÚNG khung vẽ, không gắn ở gốc màn.
+                    // Ảnh chụp lấy từ `canvas.bounds`; lớp phủ ở gốc thì gốc
+                    // toạ độ của nó là đỉnh MÀN HÌNH, lệch đúng chiều cao
+                    // thanh trên — khoanh một chữ sẽ cắt trúng thứ nằm cao
+                    // hơn nó cả trăm điểm. Gắn đúng chỗ thì hai hệ toạ độ
+                    // trùng nhau, không phải bù trừ bằng hằng số đoán.
+                    .overlay {
+                        if dangKhoanhTrang {
+                            LopKhoanhTrenTrang(khiXong: { k in catVung(k) },
+                                               khiHuy: { dangKhoanhTrang = false })
+                        }
+                    }
             }
         }
         .background(AppColors.backgroundPrimary)
@@ -93,7 +110,16 @@ struct ManVietView: View {
         // nuốt cử chỉ và không bị cuốn/phóng theo trang giấy.
         .overlay {
             TroLyTrang(trang: trangHienTai, tenCuon: cuon.ten,
-                       xinMo: xinMoTroLy, xinKhoanh: xinKhoanh)
+                       xinMo: xinMoTroLy, xinKhoanh: xinKhoanh,
+                       vungNgoai: $vungVuaCat)
+        }
+        // Nút bút AI đứng cạnh bảng công cụ, đúng chỗ người dùng xin.
+        .overlay(alignment: .bottomTrailing) {
+            if CaiDatTroLy.chayDuoc && hienTroLy && !dangKhoanhTrang {
+                NutButAI(dangBat: dangKhoanhTrang) { batKhoanhTrang() }
+                    .padding(.trailing, Spacing.lg)
+                    .padding(.bottom, 108)
+            }
         }
         .ignoresSafeArea(.keyboard)
         .sheet(item: $cuaSo) { cua in
@@ -142,6 +168,56 @@ struct ManVietView: View {
         }
         .onChange(of: chiSo) { _, moi in
             cuon.trangDangDoc = moi
+        }
+    }
+
+    // MARK: Khoanh hỏi AI
+
+    private func batKhoanhTrang() {
+        guard !dangKhoanhTrang else { return }
+        dangKhoanhTrang = true
+        bao(T("Khoanh tròn chỗ cần hỏi"))
+        Haptics.cham()
+    }
+
+    /// Cắt đúng vùng vừa khoanh RA KHỎI ảnh màn hình đang hiển thị.
+    ///
+    /// ⚠️ Tắt lớp phủ TRƯỚC khi chụp. Chụp lúc lớp phủ còn trên màn thì vòng
+    /// khoanh và thanh nhắc lọt vào ảnh gửi cho AI.
+    private func catVung(_ khung: CGRect) {
+        dangKhoanhTrang = false
+        // Một vòng chạy màn hình để lớp phủ kịp biến mất khỏi cây hiển thị.
+        DispatchQueue.main.async {
+            guard let anh = cauNoiVe.anhDangNhin() else {
+                bao(T("Chưa chụp được vùng này"))
+                return
+            }
+            let ty = anh.scale
+            let r = CGRect(x: khung.minX * ty, y: khung.minY * ty,
+                           width: khung.width * ty, height: khung.height * ty)
+                .intersection(CGRect(origin: .zero, size: CGSize(
+                    width: anh.size.width * ty, height: anh.size.height * ty)))
+            guard r.width > 8, r.height > 8,
+                  let cg = anh.cgImage?.cropping(to: r),
+                  let d = UIImage(cgImage: cg, scale: ty, orientation: anh.imageOrientation)
+                      .jpegData(compressionQuality: 0.9)
+            else {
+                bao(T("Vùng khoanh nhỏ quá"))
+                return
+            }
+            #if DEBUG
+            // Bằng chứng nhìn được: vùng cắt ghi ra đĩa để đối chiếu với thứ
+            // người dùng khoanh. Chỉ bản gỡ lỗi.
+            if let thu = FileManager.default.urls(for: .documentDirectory,
+                                                  in: .userDomainMask).first?
+                .appendingPathComponent("vung-cat-moi-nhat.jpg") {
+                try? d.write(to: thu, options: .atomic)
+                NhatKy.vo.info("khoanh: cắt \(Int(r.width))×\(Int(r.height))px → \(thu.lastPathComponent)")
+            }
+            #endif
+            vungVuaCat = AnhVungCat(anh: DinhKemAI(
+                ten: "vung-\(Int(Date().timeIntervalSince1970)).jpg",
+                mime: "image/jpeg", duLieu: d))
         }
     }
 
@@ -233,8 +309,7 @@ struct ManVietView: View {
             // một chạm rồi khoanh luôn. Bóp Apple Pencil cũng vào đúng đây.
             if CaiDatTroLy.chayDuoc && hienTroLy {
                 Button {
-                    xinKhoanh += 1
-                    Haptics.cham()
+                    batKhoanhTrang()
                 } label: {
                     Image(systemName: "lasso.badge.sparkles")
                         .foregroundStyle(AppColors.primary)
@@ -474,7 +549,8 @@ struct ManVietView: View {
                        NhatKy.vo.info("vở: dựng BangVe · hienTroLy=\(hienTroLy) bopGoiTroLy=\(bopGoiTroLy)")
                        return hienTroLy && bopGoiTroLy
                    }(),
-                   khiBopGoiTroLy: { xinKhoanh += 1 })
+                   khiBopGoiTroLy: { batKhoanhTrang() },
+                   cauNoi: cauNoiVe)
             // ⚠️ `.id` BẮT BUỘC. Thiếu nó thì SwiftUI dùng lại đúng một bộ
             // điều khiển cho mọi trang, và sang trang 2 vẫn thấy nét của
             // trang 1 — cùng họ với lỗi TipTap không có `key` ở web.

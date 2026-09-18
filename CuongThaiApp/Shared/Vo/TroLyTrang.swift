@@ -54,8 +54,10 @@ struct TroLyTrang: View {
     let tenCuon: String
     /// Tăng một nấc = xin mở khung hỏi từ bên ngoài.
     var xinMo: Int = 0
-    /// Tăng một nấc = mở khung RỒI VÀO THẲNG khoanh vùng (bóp bút / nút thanh trên).
+    /// Tăng một nấc = mở khung RỒI VÀO THẲNG khoanh vùng trên ẢNH CẢ TRANG.
     var xinKhoanh: Int = 0
+    /// Vùng vừa khoanh THẲNG TRÊN TRANG, do màn viết cắt và đưa sang.
+    var vungNgoai: Binding<AnhVungCat?> = .constant(nil)
 
     @AppStorage(CaiDatTroLy.khoaHien) private var hien = true
     @AppStorage(CaiDatTroLy.khoaX) private var tiLeX = 0.93
@@ -78,6 +80,7 @@ struct TroLyTrang: View {
                     if moKhung {
                         KhungHoiTrang(trang: trang, tenCuon: tenCuon,
                                       khoanhNgay: khoanhNgay,
+                                      vungNgoai: vungNgoai,
                                       dong: { moKhung = false; khoanhNgay = 0 },
                                       moDayDu: { moKhung = false; moChatDayDu = true })
                             .frame(width: rongKhung(g.size), height: caoKhung(g.size))
@@ -92,6 +95,12 @@ struct TroLyTrang: View {
                 .animation(.spring(response: 0.3, dampingFraction: 0.82), value: moKhung)
             }
             .ignoresSafeArea(.keyboard)
+            .onChange(of: vungNgoai.wrappedValue?.id) { _, moi in
+                guard moi != nil else { return }
+                if !moKhung {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.82)) { moKhung = true }
+                }
+            }
             .onChange(of: xinKhoanh) { _, moi in
                 NhatKy.vo.info("trợ lý: xin KHOANH #\(moi)")
                 khoanhNgay = moi
@@ -251,6 +260,8 @@ struct KhungHoiTrang: View {
     let tenCuon: String
     /// Khác 0 = vào màn là mở khoanh vùng ngay.
     var khoanhNgay: Int = 0
+    /// Vùng khoanh thẳng trên trang do màn viết đưa sang.
+    var vungNgoai: Binding<AnhVungCat?> = .constant(nil)
     let dong: () -> Void
     let moDayDu: () -> Void
 
@@ -292,6 +303,16 @@ struct KhungHoiTrang: View {
                 .stroke(AppColors.border, lineWidth: 1),
         )
         .shadow(color: .black.opacity(0.25), radius: 18, y: 8)
+        // ⚠️ `.task(id:)` chứ KHÔNG phải `.onChange`. Khung hỏi chỉ được dựng
+        // SAU khi vùng đã cắt xong (cắt xong mới mở khung), nên `onChange`
+        // không bao giờ thấy "thay đổi" — nó ra đời khi giá trị đã nằm sẵn ở
+        // đó. Triệu chứng: khoanh xong khung mở ra nhưng bảng chọn câu hỏi
+        // không hiện. `.task(id:)` chạy cả lúc XUẤT HIỆN lẫn lúc đổi.
+        .task(id: vungNgoai.wrappedValue?.id) {
+            guard let v = vungNgoai.wrappedValue else { return }
+            vungChoHoi = v.anh
+            vungNgoai.wrappedValue = nil
+        }
         .task(id: khoanhNgay) {
             guard khoanhNgay != 0, anhDeKhoanh == nil else { return }
             await moKhoanhVung()
@@ -747,6 +768,12 @@ struct KhungHoiTrang: View {
     }
 }
 // MARK: - Khoanh một vùng để hỏi
+
+/// Vùng vừa cắt từ màn hình, chuyển từ màn viết sang trợ lý.
+struct AnhVungCat: Identifiable {
+    let id = UUID()
+    let anh: DinhKemAI
+}
 
 /// `UIImage` không `Identifiable`, mà `.sheet(item:)` thì cần.
 struct AnhKhoanh: Identifiable {

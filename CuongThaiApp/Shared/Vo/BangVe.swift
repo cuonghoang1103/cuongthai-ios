@@ -11,6 +11,18 @@ import UIKit
 // `DragGesture` + `Path` như `LuyenVietView` hiện nay trễ gấp nhiều lần và
 // không có nội suy lực nhấn.
 
+/// Cầu nối để màn SwiftUI xin được ẢNH ĐANG HIỂN THỊ của khung vẽ.
+///
+/// Khoanh–hỏi phải cắt từ đúng thứ người dùng đang NHÌN: họ đã phóng to tới
+/// mức đọc được chữ rồi mới khoanh. Cắt từ ảnh cả trang thu nhỏ thì một chữ
+/// chỉ còn vài điểm ảnh — đúng lỗi người dùng báo 18/09/2026 ("nó chỉ chụp
+/// full màn hình, chọn từng chữ chi tiết không được").
+@MainActor
+final class CauNoiBangVe: ObservableObject {
+    weak var vc: BangVeVC?
+    func anhDangNhin() -> UIImage? { vc?.anhDangNhin() }
+}
+
 struct BangVe: UIViewControllerRepresentable {
     let idTrang: UUID
     let giay: LoaiGiay
@@ -38,6 +50,7 @@ struct BangVe: UIViewControllerRepresentable {
     /// Bóp bút để GỌI TRỢ LÝ thay vì làm việc hệ thống đã gán.
     var bopGoiTroLy: Bool = false
     var khiBopGoiTroLy: (() -> Void)?
+    var cauNoi: CauNoiBangVe? = nil
 
     func makeUIViewController(context: Context) -> BangVeVC {
         let vc = BangVeVC(idTrang: idTrang, giay: giay, khoTrang: khoTrang)
@@ -50,6 +63,7 @@ struct BangVe: UIViewControllerRepresentable {
         vc.khiBopGoiTroLy = khiBopGoiTroLy
         vc.datNganTayCuon(nganTayCuon)
         vc.datChamDeTua(chamDeTua)
+        cauNoi?.vc = vc
         return vc
     }
 
@@ -76,6 +90,7 @@ struct BangVe: UIViewControllerRepresentable {
         vc.khiBopGoiTroLy = khiBopGoiTroLy
         vc.datNganTayCuon(nganTayCuon)
         vc.datChamDeTua(chamDeTua)
+        cauNoi?.vc = vc
     }
 }
 
@@ -466,6 +481,22 @@ final class BangVeVC: UIViewController {
         // 44pt: nhỏ hơn thì chạm trượt hoài, lớn hơn thì chạm vào chỗ trống
         // giữa trang cũng nhảy tới một nét ở tận đâu.
         if let g = ganNhat, g.kc < 44 { khiChamNet?(g.chiSo) }
+    }
+
+    /// Ảnh của đúng vùng đang hiển thị: nền tài liệu + giấy + nét bút, ở
+    /// mức phóng hiện tại.
+    ///
+    /// ⚠️ `afterScreenUpdates: false`. Đặt `true` thì UIKit chạy một vòng
+    /// cập nhật màn hình ngay giữa lúc lớp phủ khoanh đang hiện, và ảnh chụp
+    /// dính luôn cả lớp phủ đó vào — người dùng gửi cho AI một tấm ảnh có
+    /// vòng khoanh của chính mình đè lên chữ.
+    func anhDangNhin() -> UIImage? {
+        let khung = canvas.bounds
+        guard khung.width > 1, khung.height > 1 else { return nil }
+        let r = UIGraphicsImageRenderer(bounds: khung)
+        return r.image { _ in
+            canvas.drawHierarchy(in: khung, afterScreenUpdates: false)
+        }
     }
 
     private func ganTuongTacBut() {
