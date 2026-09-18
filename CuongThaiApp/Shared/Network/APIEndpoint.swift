@@ -21,6 +21,7 @@ enum APIEndpoint {
     case voLayCay
     case voDongBoCay(mons: [[String: Any]])
     case voXinDuongDay(trangId: Int, coAnhXemTruoc: Bool)
+    case voXinDuongNen(sha256: String, duoi: String, soByte: Int)
     case voXacNhanNet(trangId: Int, than: [String: Any])
     case voXoaTrang(clientIds: [String])
     case voXoaCuon(clientId: String)
@@ -539,6 +540,7 @@ enum APIEndpoint {
         case .tuyChinh(let duong, _, _): return duong
         case .voLayCay: return "/api/v1/vo"
         case .voDongBoCay: return "/api/v1/vo/sync"
+        case .voXinDuongNen: return "/api/v1/vo/nen/duong-day"
         case .voXinDuongDay(let id, _): return "/api/v1/vo/trang/\(id)/duong-day"
         case .voXacNhanNet(let id, _): return "/api/v1/vo/trang/\(id)/xac-nhan"
         case .voXoaTrang: return "/api/v1/vo/trang/xoa"
@@ -846,7 +848,8 @@ enum APIEndpoint {
         switch self {
         case .tuyChinh(_, let pt, _): return pt
         case .voLayCay: return "GET"
-        case .voDongBoCay, .voXinDuongDay, .voXacNhanNet, .voXoaTrang, .voXoaCuon: return "POST"
+        case .voDongBoCay, .voXinDuongDay, .voXacNhanNet, .voXoaTrang, .voXoaCuon,
+             .voXinDuongNen: return "POST"
         case .ghiTienDo, .ghiKetQuaQuiz, .doiYeuThich, .aiDich, .aiKiemNguPhap, .aiNoiChuyen,
              .aiChamBaiViet, .batDauLuotThi, .nopBaiTracNghiem,
              .hienDapAn, .baiHocLienQuan, .hoiCuongMini, .themBinhLuanCauHoi, .hoiGiaSuBai,
@@ -907,6 +910,8 @@ enum APIEndpoint {
         case .tuyChinh(_, _, let than): return than
         case .voLayCay: return nil
         case .voDongBoCay(let mons): return ["mons": mons]
+        case .voXinDuongNen(let sha, let duoi, let soByte):
+            return ["sha256": sha, "duoi": duoi, "soByte": soByte]
         case .voXinDuongDay(_, let coAnh): return ["coAnhXemTruoc": coAnh]
         case .voXacNhanNet(_, let than): return than
         case .voXoaTrang(let ids): return ["clientIds": ids]

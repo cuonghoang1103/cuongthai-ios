@@ -142,17 +142,27 @@ struct ManVietView: View {
                             cauTuGui: T("Tóm tắt cuốn vở này thành một bản đề cương ôn thi: các chủ đề chính theo thứ tự, ý cốt lõi của từng chủ đề, công thức/định nghĩa cần thuộc, và cuối cùng 5 câu hỏi tự kiểm. Dẫn số trang cho từng mục."))
             }
         }
-        .fileImporter(isPresented: $dangChonPdf, allowedContentTypes: [.pdf]) { ket in
+        // Cho chọn NHIỀU tệp: một môn học thường có cả thư mục PDF (13 tệp
+        // giáo trình JPD123 chẳng hạn). Nhập từng cái là lặp lại 3 thao tác
+        // mười ba lần.
+        .fileImporter(isPresented: $dangChonPdf, allowedContentTypes: [.pdf],
+                      allowsMultipleSelection: true) { ket in
             switch ket {
-            case .success(let url):
-                guard let ten = KhoVo.chepVaoKho(tu: url, duoi: "pdf") else {
-                    bao(T("Không mở được tệp PDF này"))
-                    return
+            case .success(let urls):
+                guard !urls.isEmpty else { return }
+                if urls.count == 1, let url = urls.first {
+                    // Một tệp thì vẫn hỏi khoảng trang như cũ — người dùng
+                    // hay chỉ cần vài trang giữa cuốn.
+                    guard let ten = KhoVo.chepVaoKho(tu: url, duoi: "pdf") else {
+                        bao(T("Không mở được tệp PDF này")); return
+                    }
+                    let n = NenTrangView.soTrangPdf(ten: ten)
+                    guard n > 0 else { bao(T("Tệp PDF rỗng hoặc hỏng")); return }
+                    pdfVuaChon = (ten, url.lastPathComponent, n)
+                    cuaSo = .hoiNhapPdf
+                } else {
+                    nhapNhieuPdf(urls)
                 }
-                let n = NenTrangView.soTrangPdf(ten: ten)
-                guard n > 0 else { bao(T("Tệp PDF rỗng hoặc hỏng")); return }
-                pdfVuaChon = (ten, url.lastPathComponent, n)
-                cuaSo = .hoiNhapPdf
             case .failure(let e):
                 bao(e.localizedDescription)
             }
@@ -168,6 +178,28 @@ struct ManVietView: View {
         }
         .onChange(of: chiSo) { _, moi in
             cuon.trangDangDoc = moi
+        }
+    }
+
+    /// Nhập cả một loạt PDF, mỗi tệp lấy TRỌN các trang.
+    ///
+    /// Không hỏi khoảng trang nữa: chọn nhiều tệp nghĩa là "đổ hết giáo
+    /// trình vào đây", hỏi từng tệp một lại thành mười ba hộp thoại.
+    private func nhapNhieuPdf(_ urls: [URL]) {
+        var soTep = 0, soTrang = 0
+        for url in urls {
+            guard let ten = KhoVo.chepVaoKho(tu: url, duoi: "pdf") else { continue }
+            let n = NenTrangView.soTrangPdf(ten: ten)
+            guard n > 0 else { continue }
+            themTrangTuPdf(ten: ten, tu: 0, den: n - 1)
+            soTep += 1
+            soTrang += n
+        }
+        if soTep == 0 {
+            bao(T("Không nhập được tệp nào"))
+        } else {
+            bao("\(T("Đã nhập")) \(soTep) \(T("tệp")) · \(soTrang) \(T("trang"))")
+            Haptics.xong()
         }
     }
 

@@ -392,12 +392,16 @@ final class BangVeVC: UIViewController {
         let drawing = canvas.drawing
         let kho = khoTrang
         let id = idTrang
+        // Chộp con trỏ nền TRÊN luồng chính rồi mới rời đi — `Task.detached`
+        // bên dưới không được đụng vào thuộc tính của bộ điều khiển.
+        let pdfT = pdfTen, pdfTr = pdfTrang, anhT = anhTen
         KhoVo.ghi(drawing, cho: id)
         khiLuu?(drawing)
         // Ảnh thu nhỏ dựng ở luồng nền: với trang viết dày nó mất vài chục
         // mili giây, đủ để nét bút khựng nếu làm ngay trên luồng chính.
         Task.detached(priority: .utility) {
-            KhoVo.dungAnhNho(drawing, kho: kho, cho: id)
+            KhoVo.dungAnhNho(drawing, kho: kho, cho: id,
+                             nenPdfTen: pdfT, nenPdfTrang: pdfTr, nenAnhTen: anhT)
         }
     }
 

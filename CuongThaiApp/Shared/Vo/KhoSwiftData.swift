@@ -16,7 +16,8 @@ enum KhoSwiftData {
     private(set) static var loiMoKho: String?
 
     static let chung: ModelContainer = {
-        let schema = Schema([MonVo.self, CuonVo.self, TrangVo.self, ViecXoaCho.self, TienDoChu.self])
+        let schema = Schema([MonVo.self, CuonVo.self, TrangVo.self, ViecXoaCho.self,
+                             TienDoChu.self, TheHoiAI.self])
         let cauHinh = ModelConfiguration("Vo", schema: schema, isStoredInMemoryOnly: false)
         do {
             return try ModelContainer(for: schema, configurations: [cauHinh])

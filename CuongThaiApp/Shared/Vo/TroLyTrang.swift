@@ -274,6 +274,9 @@ struct KhungHoiTrang: View {
     @State private var dangDungAnhTrang = false
     @State private var dangNhanDang = false
     @State private var anhDeKhoanh: AnhKhoanh?
+    @Environment(\.modelContext) private var khoVo
+    /// Câu hỏi + ảnh của lượt khoanh đang chờ câu trả lời, để lưu thành thẻ.
+    @State private var dangChoTraLoi: (cauHoi: String, anhTen: String?)?
     /// Vùng vừa cắt, đang chờ người dùng chọn hỏi gì.
     @State private var vungChoHoi: DinhKemAI?
     @FocusState private var dangGo: Bool
@@ -317,6 +320,7 @@ struct KhungHoiTrang: View {
             guard khoanhNgay != 0, anhDeKhoanh == nil else { return }
             await moKhoanhVung()
         }
+        .onChange(of: vm.tin.last?.dangChay) { _, _ in luuTheNeuXong() }
         .onChange(of: anhChon) { _, moi in
             guard !moi.isEmpty else { return }
             Task { await napAnh(moi) }
@@ -654,7 +658,32 @@ struct KhungHoiTrang: View {
         vungChoHoi = nil
         namBacNeuCan()
         Haptics.cham()
+        // Nhớ lại để lưu thành thẻ khi câu trả lời về.
+        dangChoTraLoi = (h.nhan, KhoVo.luuAnhHoi(v.duLieu))
         vm.gui(h.cauHoi + ghiChuTrang(), anh: [v.dataURL])
+    }
+
+    /// Lưu một lượt khoanh–hỏi thành thẻ ôn tập.
+    ///
+    /// ⚠️ Chỉ lưu khi câu trả lời đã XONG (`dangChay == false`) và không
+    /// rỗng. Lưu lúc đang chảy thì thẻ chỉ có mấy chữ đầu, mà người dùng
+    /// không có cách nào biết để sửa.
+    private func luuTheNeuXong() {
+        guard let cho = dangChoTraLoi,
+              let cuoi = vm.tin.last, !cuoi.cuaNguoi,
+              !cuoi.dangChay else { return }
+        let loi = cuoi.noiDung.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !loi.isEmpty else { return }
+        dangChoTraLoi = nil
+        let the = TheHoiAI(trangId: trang?.id,
+                           tenCuon: tenCuon,
+                           soTrang: (trang?.thuTu ?? 0) + 1,
+                           anhTen: cho.anhTen,
+                           cauHoi: cho.cauHoi,
+                           traLoi: loi)
+        khoVo.insert(the)
+        try? khoVo.save()
+        NhatKy.vo.info("thẻ hỏi: đã lưu “\(cho.cauHoi)” (\(loi.count) ký tự)")
     }
 
     private func themAnhTrang() async {

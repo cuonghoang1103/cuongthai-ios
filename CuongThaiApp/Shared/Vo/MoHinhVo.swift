@@ -153,6 +153,17 @@ final class TrangVo {
     /// Tên tệp ảnh nền (trang sách chụp/quét) trong cùng thư mục.
     var nenAnhTen: String?
 
+    /// Khoá R2 của tệp nền sau khi đã đẩy lên.
+    ///
+    /// ⚠️ Có giá trị nghĩa là nền ĐÃ lên mây và máy khác tải về được. Nil mà
+    /// `nenPdfTen`/`nenAnhTen` có giá trị nghĩa là nền mới chỉ nằm trên máy
+    /// này — đó chính là lỗ hổng trước 18/09/2026: người dùng chú thích cả
+    /// học kỳ lên giáo trình, mở máy khác ra thì nét bút trôi trên giấy
+    /// trắng vì tệp nền chưa từng rời khỏi iPad.
+    var nenKhoaR2: String?
+    /// "pdf" hoặc "img" — máy chủ cần biết để trả đúng loại về.
+    var nenLoaiR2: String?
+
     // ─── Ghi âm buổi học ────────────────────────────────────────────────
     /// Tên tệp ghi âm (m4a) trong `Documents/Vo/tieng/`, nếu trang này có.
     var ghiAmTen: String?
@@ -322,5 +333,51 @@ enum HuongGiay: String, Codable, CaseIterable, Identifiable {
     var khoA4: CGSize {
         self == .doc ? CGSize(width: 595, height: 842)
                      : CGSize(width: 842, height: 595)
+    }
+}
+
+// MARK: - Thẻ hỏi AI
+
+/// Một lần khoanh–hỏi đã lưu lại.
+///
+/// Hai việc trong một model, có chủ đích:
+///
+/// 1. **Câu trả lời không bay mất.** Trước đây hỏi xong đóng khung là hết —
+///    người dùng tra một chữ giữa giờ học, tối về không còn gì.
+/// 2. **Thành bộ ôn tập.** Khoanh 20 từ trong buổi học thì tối có sẵn 20
+///    thẻ để lật lại, đúng những chỗ mình đã vướng chứ không phải một danh
+///    sách từ vựng chung chung.
+///
+/// Ảnh vùng khoanh lưu thành TỆP (`Documents/Vo/hoi/`), không nhét `Data`
+/// vào đây — cùng lý do với nét vẽ: nhét ảnh vào kho là nó phình theo từng
+/// câu hỏi.
+@Model
+final class TheHoiAI {
+    var id: UUID = UUID()
+    /// Trang đã khoanh — để bấm vào thẻ là nhảy về đúng chỗ.
+    var trangId: UUID?
+    /// Chép lại tên cuốn và số trang: trang có thể bị xoá, mà thẻ thì nên
+    /// còn đọc được.
+    var tenCuon: String = ""
+    var soTrang: Int = 0
+    /// Tên tệp ảnh vùng khoanh trong `Documents/Vo/hoi/`.
+    var anhTen: String?
+    var cauHoi: String = ""
+    var traLoi: String = ""
+    var taoLuc: Date = Date()
+    /// Đã thuộc thì thôi không hiện trong lượt ôn nữa.
+    var daThuoc: Bool = false
+
+    init(trangId: UUID?, tenCuon: String, soTrang: Int,
+         anhTen: String?, cauHoi: String, traLoi: String) {
+        self.id = UUID()
+        self.trangId = trangId
+        self.tenCuon = tenCuon
+        self.soTrang = soTrang
+        self.anhTen = anhTen
+        self.cauHoi = cauHoi
+        self.traLoi = traLoi
+        self.taoLuc = Date()
+        self.daThuoc = false
     }
 }

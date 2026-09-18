@@ -1,4 +1,5 @@
 #if os(iOS)
+import CryptoKit
 import Foundation
 import PencilKit
 import SwiftData
@@ -208,11 +209,74 @@ final class DongBoVo: ObservableObject {
         kho.insert(ViecXoaCho(maDoiTuong: maDoiTuong, loai: loai))
     }
 
+    // MARK: - 0. Đẩy NỀN tài liệu
+
+    /// Đẩy mọi tệp nền chưa từng lên mây.
+    ///
+    /// Khoá đánh theo sha256 nội dung nên một PDF nhập thành 20 trang chỉ
+    /// tốn MỘT lượt tải lên — 19 trang sau nhận `daCo: true` và chỉ ghi con
+    /// trỏ. Nhập lại đúng tệp đó lần sau tốn KHÔNG lượt nào.
+    private func dayNenChuaLen(mons: [MonVo]) async {
+        var daXong: [String: String] = [:]   // tên tệp trên máy → khoá R2
+
+        for mon in mons {
+            for cuon in mon.cuonsTheoThuTu {
+                for trang in cuon.trangsTheoThuTu {
+                    guard trang.nenKhoaR2 == nil else { continue }
+                    let ten: String
+                    let loai: String
+                    if let t = trang.nenPdfTen { ten = t; loai = "pdf" }
+                    else if let t = trang.nenAnhTen { ten = t; loai = "img" }
+                    else { continue }
+
+                    // Trang cùng một tệp thì dùng lại kết quả, khỏi băm lại.
+                    if let khoa = daXong[ten] {
+                        trang.nenKhoaR2 = khoa
+                        trang.nenLoaiR2 = loai
+                        continue
+                    }
+
+                    let duong = KhoVo.duongDanNen(ten)
+                    guard let du = try? Data(contentsOf: duong) else {
+                        NhatKy.vo.info("nền: không đọc được \(ten), bỏ qua")
+                        continue
+                    }
+                    let sha = SHA256.hash(data: du).map { String(format: "%02x", $0) }.joined()
+                    let duoi = (ten as NSString).pathExtension.lowercased()
+                    let duoiGui = duoi == "pdf" ? "pdf" : (duoi == "png" ? "png" : "jpg")
+
+                    do {
+                        let d: DuongNen = try await APIClient.shared.request(
+                            .voXinDuongNen(sha256: sha, duoi: duoiGui, soByte: du.count))
+                        if !d.daCo, let url = d.url {
+                            let kieu = duoiGui == "pdf" ? "application/pdf"
+                                     : (duoiGui == "png" ? "image/png" : "image/jpeg")
+                            try await putR2(du, toi: url, kieu: kieu)
+                        }
+                        trang.nenKhoaR2 = d.khoa
+                        trang.nenLoaiR2 = loai
+                        daXong[ten] = d.khoa
+                        NhatKy.vo.info("nền: \(d.daCo ? "đã có sẵn" : "đã đẩy") \(ten)")
+                    } catch {
+                        // Nền hỏng KHÔNG được chặn cả lượt đồng bộ: nét vẽ
+                        // quan trọng hơn, và lượt sau sẽ thử lại.
+                        NhatKy.vo.info("nền: đẩy hỏng \(ten) — \(error.localizedDescription)")
+                    }
+                }
+            }
+        }
+    }
+
     // MARK: - 1. Đẩy cây
 
     private func daySoCay(kho: ModelContext) async throws {
         let mons = try kho.fetch(FetchDescriptor<MonVo>())
         guard !mons.isEmpty else { return }
+
+        // Nền phải lên TRƯỚC cây: payload cây mang con trỏ `nenKhoa`, mà con
+        // trỏ chỉ có sau khi tệp đã nằm trên R2. Làm ngược lại thì máy chủ
+        // nhận một khoá trỏ vào hư không.
+        await dayNenChuaLen(mons: mons)
 
         let payload: [[String: Any]] = mons.map { mon in
             [
@@ -238,6 +302,12 @@ final class DongBoVo: ObservableObject {
                                 "giay": trang.loaiGiay,
                                 "huong": trang.huongGiay,
                                 "phienBanNet": trang.phienBanNet,
+                                // Con trỏ nền. Chỉ gửi khi đã đẩy tệp lên —
+                                // `nenKhoa` rỗng nghĩa là GỠ nền, còn không
+                                // gửi gì cả thì máy chủ giữ nguyên bản cũ.
+                                "nenKhoa": trang.nenKhoaR2 as Any,
+                                "nenLoai": trang.nenLoaiR2 as Any,
+                                "nenTrang": trang.nenPdfTrang,
                             ] as [String: Any]
                         },
                     ] as [String: Any]
@@ -404,7 +474,9 @@ final class DongBoVo: ObservableObject {
             trang.soNetDaDay = gop.strokes.count
             trang.canDay = true          // đẩy lại bản đã gộp
             trang.vuongXungDot = false
-            KhoVo.dungAnhNho(gop, kho: trang.khoTrang, cho: trang.id)
+            KhoVo.dungAnhNho(gop, kho: trang.khoTrang, cho: trang.id,
+                             nenPdfTen: trang.nenPdfTen, nenPdfTrang: trang.nenPdfTrang,
+                             nenAnhTen: trang.nenAnhTen)
             NhatKy.vo.info("gộp được \(netThem.count) nét vào bản máy chủ")
             try await dayMotTrang(trang)
         } else {
@@ -423,7 +495,9 @@ final class DongBoVo: ObservableObject {
             trangMoi.canDay = true
 
             KhoVo.ghi(banMayChu, cho: trang.id)
-            KhoVo.dungAnhNho(banMayChu, kho: trang.khoTrang, cho: trang.id)
+            KhoVo.dungAnhNho(banMayChu, kho: trang.khoTrang, cho: trang.id,
+                             nenPdfTen: trang.nenPdfTen, nenPdfTrang: trang.nenPdfTrang,
+                             nenAnhTen: trang.nenAnhTen)
             trang.phienBanNet = tMayChu.inkVersion
             trang.soNetDaDay = banMayChu.strokes.count
             trang.canDay = false
@@ -489,6 +563,7 @@ final class DongBoVo: ObservableObject {
                         if !co.canDay && t.inkVersion > co.phienBanNet {
                             await keoNetVe(trang: co, tuUrl: t.inkUrl, phienBan: t.inkVersion)
                         }
+                        await keoNenVe(trang: co, t)
                         continue
                     }
                     let trang = TrangVo(cuon: cuon, thuTu: t.thuTu,
@@ -501,10 +576,41 @@ final class DongBoVo: ObservableObject {
                     kho.insert(trang)
                     trangTheoId[tuid] = trang
                     await keoNetVe(trang: trang, tuUrl: t.inkUrl, phienBan: t.inkVersion)
+                    await keoNenVe(trang: trang, t)
                 }
             }
         }
         try kho.save()
+    }
+
+    /// Tải NỀN tài liệu về máy này nếu chưa có.
+    ///
+    /// Tệp lưu theo tên = phần cuối của khoá R2 (đã mang sha256), nên hai
+    /// trang cùng nguồn dùng chung một tệp và tải một lần. Có tệp rồi thì
+    /// chỉ ghi lại con trỏ, không tải lại.
+    private func keoNenVe(trang: TrangVo, _ t: TrangTaiVe) async {
+        guard let url = t.nenUrl, let loai = t.nenLoai else { return }
+        // Tên tệp lấy từ URL: nó chính là `<sha256>.<đuôi>`.
+        guard let u = URL(string: url) else { return }
+        let ten = u.lastPathComponent
+        guard !ten.isEmpty else { return }
+
+        trang.nenPdfTrang = t.nenTrang ?? 0
+        trang.nenLoaiR2 = loai
+        trang.nenKhoaR2 = trang.nenKhoaR2 ?? "notes/bg/\(ten)"
+
+        let dich = KhoVo.duongDanNen(ten)
+        if !FileManager.default.fileExists(atPath: dich.path) {
+            do {
+                let (du, _) = try await URLSession.shared.data(from: u)
+                try du.write(to: dich, options: .atomic)
+                NhatKy.vo.info("nền: đã tải về \(ten) (\(du.count) byte)")
+            } catch {
+                NhatKy.vo.info("nền: tải về hỏng \(ten) — \(error.localizedDescription)")
+                return
+            }
+        }
+        if loai == "pdf" { trang.nenPdfTen = ten } else { trang.nenAnhTen = ten }
     }
 
     /// Nhận URL + phiên bản rời rạc chứ không nhận một struct cụ thể: hai
@@ -514,7 +620,9 @@ final class DongBoVo: ObservableObject {
     private func keoNetVe(trang: TrangVo, tuUrl url: String?, phienBan: Int) async {
         guard let url, let net = await taiNet(url) else { return }
         KhoVo.ghi(net, cho: trang.id)
-        KhoVo.dungAnhNho(net, kho: trang.khoTrang, cho: trang.id)
+        KhoVo.dungAnhNho(net, kho: trang.khoTrang, cho: trang.id,
+                             nenPdfTen: trang.nenPdfTen, nenPdfTrang: trang.nenPdfTrang,
+                             nenAnhTen: trang.nenAnhTen)
         trang.phienBanNet = phienBan
         trang.soNetDaDay = net.strokes.count
         trang.coNet = !net.strokes.isEmpty
@@ -561,6 +669,9 @@ private struct KetQuaDongBoCay: Decodable {
         let inkUrl: String?
         let previewUrl: String?
         let xungDot: Bool
+        let nenUrl: String?
+        let nenLoai: String?
+        let nenTrang: Int?
     }
     let mons: [Mon]
 }
@@ -571,6 +682,12 @@ private struct DuongDay: Decodable {
     let previewKey: String?
     let previewUrl: String?
     let phienBanMoi: Int
+}
+
+private struct DuongNen: Decodable {
+    let khoa: String
+    let url: String?
+    let daCo: Bool
 }
 
 private struct KetQuaXoa: Decodable { let daXoa: Int }
@@ -592,6 +709,9 @@ struct TrangTaiVe: Decodable {
     let inkStrokeCount: Int
     let inkUrl: String?
     let previewUrl: String?
+    let nenUrl: String?
+    let nenLoai: String?
+    let nenTrang: Int?
 }
 
 private struct CayVoTaiVe: Decodable {

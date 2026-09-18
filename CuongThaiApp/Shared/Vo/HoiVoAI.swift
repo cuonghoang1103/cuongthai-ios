@@ -46,7 +46,8 @@ enum NguonChuVo {
     /// một chỗ báo còn việc, chỗ kia báo xong.
     static func chuaQuet(_ trangs: [TrangVo]) -> [TrangVo] {
         trangs.filter { t in
-            guard t.coNet else { return false }
+            // Trang chỉ có nền PDF cũng đọc được — nội dung học nằm ở đó.
+            guard t.coNet || t.nenPdfTen != nil || t.nenAnhTen != nil else { return false }
             guard let luc = t.nhanDangLuc else { return true }
             return t.suaLuc > luc
         }

@@ -57,16 +57,24 @@ struct NoiDungVoView: View {
     /// cùng một cây dữ liệu cục bộ — tách ra thành hai chỗ thì người dùng
     /// phải nhớ "viết chữ Hán thì vào đâu".
     private enum Muc: String, CaseIterable, Identifiable {
-        case vo, luyenViet
+        case vo, luyenViet, daHoi
         var id: String { rawValue }
-        var ten: String { self == .vo ? T("Vở của tôi") : T("Luyện viết") }
+        var ten: String {
+            switch self {
+            case .vo:        return T("Vở của tôi")
+            case .luyenViet: return T("Luyện viết")
+            case .daHoi:     return T("Đã hỏi")
+            }
+        }
     }
     @State private var muc: Muc = .vo
     @State private var dangTim = false
 
     var body: some View {
         Group {
-                if muc == .luyenViet {
+                if muc == .daHoi {
+                    TheDaHoiView()
+                } else if muc == .luyenViet {
                     LuyenVietHubView()
                 } else if mons.isEmpty {
                     ManTrong()

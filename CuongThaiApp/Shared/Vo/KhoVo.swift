@@ -43,6 +43,26 @@ enum KhoVo {
         return u
     }
 
+    /// Thư mục ảnh vùng khoanh đã hỏi AI.
+    private static var thuMucHoi: URL {
+        let u = thuMucGoc.appendingPathComponent("hoi", isDirectory: true)
+        taoNeuThieu(u)
+        return u
+    }
+
+    static func duongDanAnhHoi(_ ten: String) -> URL {
+        thuMucHoi.appendingPathComponent(ten)
+    }
+
+    /// Lưu ảnh vùng khoanh, trả về tên tệp.
+    static func luuAnhHoi(_ data: Data) -> String? {
+        let ten = "\(UUID().uuidString).jpg"
+        do {
+            try data.write(to: duongDanAnhHoi(ten), options: .atomic)
+            return ten
+        } catch { return nil }
+    }
+
     static func duongDanNen(_ ten: String) -> URL {
         thuMucNen.appendingPathComponent(ten)
     }
@@ -145,12 +165,30 @@ enum KhoVo {
     /// Vẽ ảnh nhỏ cho dải trang. Chạy ngoài luồng chính vì `image(from:scale:)`
     /// dựng lại toàn bộ nét — với trang viết dày nó tốn vài chục mili giây,
     /// đủ để dải trang giật khi cuộn.
-    static func dungAnhNho(_ drawing: PKDrawing, kho: CGSize, cho idTrang: UUID) {
+    /// - Parameters:
+    ///   - nenPdfTen/nenPdfTrang/nenAnhTen: nền tài liệu của trang.
+    ///
+    /// ⚠️ Ảnh này là thứ DUY NHẤT web đọc được (`PKDrawing` là định dạng
+    /// riêng của Apple). Vẽ thiếu nền thì trên web cả cuốn vở trông như mấy
+    /// vệt mực vô nghĩa trên giấy trắng — người dùng chú thích lên giáo
+    /// trình, mà cái họ chú thích LÊN thì không ai thấy.
+    static func dungAnhNho(_ drawing: PKDrawing, kho: CGSize, cho idTrang: UUID,
+                           nenPdfTen: String? = nil, nenPdfTrang: Int = 0,
+                           nenAnhTen: String? = nil) {
         let ty: CGFloat = 0.25
         let khoNho = CGSize(width: kho.width * ty, height: kho.height * ty)
         let anh = UIGraphicsImageRenderer(size: khoNho).image { ctx in
             UIColor.white.setFill()
-            ctx.fill(CGRect(origin: .zero, size: khoNho))
+            let o = CGRect(origin: .zero, size: khoNho)
+            ctx.fill(o)
+            if let ten = nenPdfTen,
+               let nen = NenTrangView.veTrangPdf(ten: ten, trang: nenPdfTrang, kho: khoNho) {
+                nen.draw(in: o)
+            } else if let ten = nenAnhTen,
+                      let d = try? Data(contentsOf: duongDanNen(ten)),
+                      let nen = UIImage(data: d) {
+                nen.draw(in: o)
+            }
             guard !drawing.bounds.isEmpty else { return }
             let net = drawing.image(from: CGRect(origin: .zero, size: kho), scale: ty)
             net.draw(in: CGRect(origin: .zero, size: khoNho))

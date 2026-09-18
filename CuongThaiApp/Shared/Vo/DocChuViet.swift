@@ -45,13 +45,30 @@ enum DocChuViet {
     /// cả hai vào chỉ mục. Lượt sai hệ chữ sinh ra ít rác, nhưng rác trong
     /// chỉ mục TÌM KIẾM là vô hại — người dùng gõ "đạo hàm" thì mấy chữ rác
     /// không chen vào được. Bỏ một lượt mới là mất hẳn khả năng tìm.
+    /// - Parameters:
+    ///   - nenPdfTen/nenPdfTrang/nenAnhTen: NỀN tài liệu của trang.
+    ///
+    /// ⚠️ Phải đọc cả nền, không chỉ nét bút. Vở nhập từ PDF giáo trình gần
+    /// như KHÔNG có chữ viết tay — chỉ vài nét gạch chân — nên đọc mỗi mực
+    /// thì "Hỏi AI về cả vở" luôn báo không có gì để gửi. Đó đúng là thứ
+    /// người dùng gặp 18/09/2026 với 13 tệp JPD123.
     static func doc(net: PKDrawing, khoTrang: CGSize,
-                    ngonNgu: [String]? = nil) async -> String {
-        if let ngonNgu { return await docMotLuot(net: net, khoTrang: khoTrang, ngonNgu: ngonNgu) }
+                    ngonNgu: [String]? = nil,
+                    nenPdfTen: String? = nil, nenPdfTrang: Int = 0,
+                    nenAnhTen: String? = nil) async -> String {
+        if let ngonNgu {
+            return await docMotLuot(net: net, khoTrang: khoTrang, ngonNgu: ngonNgu,
+                                    nenPdfTen: nenPdfTen, nenPdfTrang: nenPdfTrang,
+                                    nenAnhTen: nenAnhTen)
+        }
         async let latin = docMotLuot(net: net, khoTrang: khoTrang,
-                                     ngonNgu: ["vi-VT", "en-US"])
+                                     ngonNgu: ["vi-VT", "en-US"],
+                                     nenPdfTen: nenPdfTen, nenPdfTrang: nenPdfTrang,
+                                     nenAnhTen: nenAnhTen)
         async let nhat = docMotLuot(net: net, khoTrang: khoTrang,
-                                    ngonNgu: ["ja-JP", "zh-Hans"])
+                                    ngonNgu: ["ja-JP", "zh-Hans"],
+                                    nenPdfTen: nenPdfTen, nenPdfTrang: nenPdfTrang,
+                                    nenAnhTen: nenAnhTen)
         let (a, b) = await (latin, nhat)
         // Bỏ lượt rỗng, và bỏ lượt trùng hệt lượt kia.
         if a.isEmpty { return b }
@@ -60,18 +77,32 @@ enum DocChuViet {
     }
 
     private static func docMotLuot(net: PKDrawing, khoTrang: CGSize,
-                                   ngonNgu: [String]) async -> String {
-        guard !net.strokes.isEmpty else { return "" }
+                                   ngonNgu: [String],
+                                   nenPdfTen: String? = nil, nenPdfTrang: Int = 0,
+                                   nenAnhTen: String? = nil) async -> String {
+        let coNen = nenPdfTen != nil || nenAnhTen != nil
+        guard !net.strokes.isEmpty || coNen else { return "" }
 
-        // Vẽ nét lên nền TRẮNG ở 2×: Vision đọc ảnh, và nét mảnh trên nền
-        // trong suốt thì nó gần như không thấy gì.
+        // Vẽ nền + nét lên nền TRẮNG ở 2×: Vision đọc ảnh, và nét mảnh trên
+        // nền trong suốt thì nó gần như không thấy gì.
         let ty: CGFloat = 2
         let kho = CGSize(width: khoTrang.width * ty, height: khoTrang.height * ty)
         let anh = UIGraphicsImageRenderer(size: kho).image { ctx in
             UIColor.white.setFill()
-            ctx.fill(CGRect(origin: .zero, size: kho))
-            net.image(from: CGRect(origin: .zero, size: khoTrang), scale: ty)
-                .draw(in: CGRect(origin: .zero, size: kho))
+            let o = CGRect(origin: .zero, size: kho)
+            ctx.fill(o)
+            if let ten = nenPdfTen,
+               let nen = NenTrangView.veTrangPdf(ten: ten, trang: nenPdfTrang, kho: kho) {
+                nen.draw(in: o)
+            } else if let ten = nenAnhTen,
+                      let d = try? Data(contentsOf: KhoVo.duongDanNen(ten)),
+                      let nen = UIImage(data: d) {
+                nen.draw(in: o)
+            }
+            if !net.strokes.isEmpty {
+                net.image(from: CGRect(origin: .zero, size: khoTrang), scale: ty)
+                    .draw(in: o)
+            }
         }
         guard let cg = anh.cgImage else { return "" }
 
@@ -116,7 +147,9 @@ enum DocChuViet {
     @MainActor
     static func docCaCuon(_ trangs: [TrangVo], tienDo: @escaping (Int, Int) -> Void) async {
         let canDoc = trangs.filter { t in
-            guard t.coNet else { return false }
+            // ⚠️ Trang CHỈ có nền (PDF giáo trình, chưa viết gì) vẫn phải
+            // đọc: nội dung học nằm ở nền, không ở mực.
+            guard t.coNet || t.nenPdfTen != nil || t.nenAnhTen != nil else { return false }
             guard let luc = t.nhanDangLuc else { return true }
             return t.suaLuc > luc
         }
@@ -125,7 +158,9 @@ enum DocChuViet {
         for (i, t) in canDoc.enumerated() {
             tienDo(i, canDoc.count)
             let net = KhoVo.nap(t.id)
-            let chu = await doc(net: net, khoTrang: t.khoTrang)
+            let chu = await doc(net: net, khoTrang: t.khoTrang,
+                                nenPdfTen: t.nenPdfTen, nenPdfTrang: t.nenPdfTrang,
+                                nenAnhTen: t.nenAnhTen)
             t.chuNhanDang = chu.isEmpty ? nil : chu
             t.nhanDangLuc = Date()
         }
