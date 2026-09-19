@@ -26,6 +26,16 @@ enum APIEndpoint {
     case voXoaTrang(clientIds: [String])
     case voXoaCuon(clientId: String)
 
+    // ─── IELTS (nội dung khoá học + tiến độ) ────────────────────────
+    case ieltsLoTrinh
+    case ieltsPhanChang(chang: String, phan: String)
+    case ieltsChung(phan: String)
+    case ieltsTienDo(chang: String?)
+    case ieltsGhiTienDo(items: [[String: Any]])
+    case ieltsXoaTienDo(chang: String, phan: String, muc: String)
+    case ieltsHoiAI([String: Any])
+    case ieltsChamViet([String: Any])
+
     // ─── Tiền nong (MoneyFlow) ───────────────────────────────────────
     // Khai `case` riêng chứ không dùng `.tuyChinh`: 45 đường dẫn gõ tay ở
     // nơi gọi thì một ký tự sai chỉ lộ ra lúc CHẠY, và lộ ra dưới dạng
@@ -888,6 +898,19 @@ enum APIEndpoint {
         case .dsDeDaLuu: return "/api/v1/exams/bookmarks/exams"
         case .dsCauHoiDaLuu: return "/api/v1/exams/bookmarks/questions"
         case .ghiChuCauHoi(let id, _): return "/api/v1/exams/questions/\(id)/bookmark-note"
+        // ─── IELTS ───
+        case .ieltsLoTrinh: return "/api/v1/ielts/lo-trinh"
+        case .ieltsHoiAI: return "/api/v1/ielts/ai/hoi"
+        case .ieltsChamViet: return "/api/v1/ielts/ai/cham-viet"
+        case .ieltsPhanChang(let c, let p): return "/api/v1/ielts/chang/\(c)/\(p)"
+        case .ieltsChung(let p): return "/api/v1/ielts/chung/\(p)"
+        case .ieltsTienDo(let c): return "/api/v1/ielts/tien-do" + (c.map { "?stage=\($0)" } ?? "")
+        case .ieltsGhiTienDo: return "/api/v1/ielts/tien-do"
+        case .ieltsXoaTienDo(let c, let p, let m):
+            // `muc` là id do người soạn đặt (`r1`, `w-hello`) — vẫn mã hoá,
+            // vì một id có dấu cách hay dấu `/` sẽ bẻ đường dẫn thành 404.
+            let mm = m.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? m
+            return "/api/v1/ielts/tien-do/\(c)/\(p)/\(mm)"
         // ─── Tiền nong ───
         case .tienBang(let t): return "/api/v1/finance/dashboard" + (t.map { "?month=\($0)" } ?? "")
         case .tienDsVi, .tienThemVi: return "/api/v1/finance/wallets"
@@ -933,6 +956,8 @@ enum APIEndpoint {
 
     var method: String {
         switch self {
+        case .ieltsGhiTienDo, .ieltsHoiAI, .ieltsChamViet: return "POST"
+        case .ieltsXoaTienDo: return "DELETE"
         // ─── Tiền nong ───
         case .tienThemVi, .tienChuyenVi, .tienThemNhomChi, .tienThemChi, .tienThemThu,
              .tienThemNguonThu, .tienThemNo, .tienTraKy, .tienHuyTraKy,
@@ -1006,6 +1031,8 @@ enum APIEndpoint {
 
     var body: [String: Any]? {
         switch self {
+        case .ieltsGhiTienDo(let items): return ["items": items]
+        case .ieltsHoiAI(let m), .ieltsChamViet(let m): return m
         // ─── Tiền nong ───
         case .tienThemVi(let m), .tienSuaVi(_, let m), .tienChuyenVi(let m),
              .tienThemNhomChi(let m), .tienSuaNhomChi(_, let m),

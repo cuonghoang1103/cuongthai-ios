@@ -680,6 +680,9 @@ struct TongQuanView: View {
                 NavigationLink { TienView() } label: {
                     theNhanh(T("Tiền nong"), T("Chi tiêu, nợ, mục tiêu"), "creditcard", AppColors.accent)
                 }
+                NavigationLink { IeltsView() } label: {
+                    theNhanh("IELTS", T("Nghe, nói, đọc, viết"), "textformat.abc", AppColors.brandPink)
+                }
             }
         }
     }

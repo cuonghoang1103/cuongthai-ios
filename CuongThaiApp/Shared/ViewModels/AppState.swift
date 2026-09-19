@@ -46,6 +46,8 @@ final class AppState: ObservableObject {
         case notebook = 5
         /// Tiền nong (MoneyFlow).
         case finance = 6
+        /// IELTS — khoá học 4 chặng.
+        case ielts = 7
         var id: Int { rawValue }
         var title: String {
             switch self {
@@ -56,6 +58,7 @@ final class AppState: ObservableObject {
             case .profile: return T("Cá nhân")
             case .notebook: return T("Vở")
             case .finance: return T("Tiền nong")
+            case .ielts: return "IELTS"
             }
         }
         var icon: String {
@@ -67,6 +70,7 @@ final class AppState: ObservableObject {
             case .profile: return "person.fill"
             case .notebook: return "book.closed.fill"
             case .finance: return "creditcard.fill"
+            case .ielts: return "textformat.abc"
             }
         }
     }
@@ -138,6 +142,9 @@ final class AppState: ObservableObject {
     /// này lên là mở. Bố cục cột đôi (iPad rộng) thì nó là một mục sidebar
     /// bình thường và cờ này không dùng tới.
     @Published var moTienNong = false
+
+    /// Mở IELTS dạng tấm phủ — cùng lý do với `moTienNong`.
+    @Published var moIelts = false
 
     /// Chạm thông báo 20h ("Hôm nay bạn đã chi tiêu những gì?") thì mở thẳng
     /// ô ghi khoản chi. Mở màn Tiền nong rồi bắt người dùng tự tìm nút cộng
