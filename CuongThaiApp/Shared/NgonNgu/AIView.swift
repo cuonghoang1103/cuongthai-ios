@@ -326,7 +326,7 @@ struct KiemNguPhapView: View {
             // Nhận xét chung: backend vẫn gửi từ đầu, app cũ không khai nên
             // vứt đi mất — mà đây là phần người học đọc được nhiều nhất.
             if !k.nhanXet.isEmpty {
-                Text(k.nhanXet)
+                NoiDungMarkdown(noiDung: k.nhanXet)
                     .font(.system(size: 14))
                     .foregroundColor(AppColors.textPrimary)
                     .fixedSize(horizontal: false, vertical: true)

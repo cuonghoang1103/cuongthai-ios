@@ -213,8 +213,11 @@ struct TienView: View {
                     .foregroundStyle(AppColors.primary)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(T("AI quản lí tiền")).font(.titleSmall).foregroundStyle(AppColors.textPrimary)
-                    Text(vm.nhanXetAI.map { $0.replacingOccurrences(of: "\n", with: " · ") }
-                         ?? T("Xem nhận xét về nợ, chi tiêu và mục tiêu của bạn"))
+                    // Dòng xem trước chỉ 2 dòng nên không dựng markdown được
+                    // — gỡ dấu bằng hàm dùng chung, KHÔNG tự viết lại ở đây.
+                    Text(vm.nhanXetAI.map {
+                        NoiDungMarkdown.chuTran($0).replacingOccurrences(of: "\n", with: " · ")
+                    } ?? T("Xem nhận xét về nợ, chi tiêu và mục tiêu của bạn"))
                         .font(.caption).foregroundStyle(AppColors.textSecondary)
                         .lineLimit(2).multilineTextAlignment(.leading)
                 }

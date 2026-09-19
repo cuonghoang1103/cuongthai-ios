@@ -292,7 +292,7 @@ struct TroChuyenAIView: View {
         HStack {
             if l.cuaToi { Spacer(minLength: 44) }
             VStack(alignment: l.cuaToi ? .trailing : .leading, spacing: 5) {
-                Text(l.chu)
+                NoiDungMarkdown(noiDung: l.chu)
                     .font(.system(size: 16))
                     .foregroundColor(l.cuaToi ? .white : AppColors.textPrimary)
                     .fixedSize(horizontal: false, vertical: true)

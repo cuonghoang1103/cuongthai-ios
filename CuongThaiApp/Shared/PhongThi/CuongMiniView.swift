@@ -293,7 +293,7 @@ struct CuongMiniView: View {
     private func bongBong(_ l: LuotHoiMini) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             if l.cuaToi {
-                Text(l.noiDung)
+                NoiDungMarkdown(noiDung: l.noiDung)
                     .font(.system(size: 14.5))
                     .foregroundColor(AppColors.textPrimary)
                     .fixedSize(horizontal: false, vertical: true)

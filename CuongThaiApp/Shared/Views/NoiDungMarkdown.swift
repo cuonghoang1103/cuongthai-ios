@@ -19,6 +19,42 @@ import SwiftUI
 struct NoiDungMarkdown: View {
     let noiDung: String
 
+    /// Bản CHỮ TRẦN của một câu trả lời AI — gỡ hết dấu cú pháp markdown.
+    ///
+    /// ⚠️ CHỈ dùng cho chỗ KHÔNG dựng được markdown: dòng xem trước một–hai
+    /// dòng trên thẻ, nội dung thông báo đẩy, chuỗi đưa cho máy đọc to. Mọi
+    /// chỗ hiện ĐẦY ĐỦ câu trả lời phải dùng `NoiDungMarkdown` để chữ đậm ra
+    /// chữ đậm, chứ không phải xoá dấu đi cho xong.
+    ///
+    /// Vì sao có hàm này: model trả `**Shoppe 2**` và một `Text` trần hiện
+    /// nguyên hai dấu sao giữa câu. Người dùng phải nhắc hai lần (19/09/2026)
+    /// vì lần đầu tôi chỉ vá đúng một màn thay vì sửa ở chỗ dùng chung.
+    static func chuTran(_ s: String) -> String {
+        var r = ""
+        var i = s.startIndex
+        while i < s.endIndex {
+            let c = s[i]
+            if c == "*" || c == "_" || c == "`" {
+                // Nuốt cả cụm dấu liền nhau (**, __, ```) trong một lượt.
+                var j = i
+                while j < s.endIndex, s[j] == c { j = s.index(after: j) }
+                i = j
+                continue
+            }
+            // `## Tiêu đề` và `- mục` ở ĐẦU DÒNG là dấu cú pháp; giữa dòng thì
+            // không (một phép trừ "5 - 3" không phải gạch đầu dòng).
+            if (c == "#" || c == ">" ) && (r.isEmpty || r.hasSuffix("\n")) {
+                var j = i
+                while j < s.endIndex, s[j] == c || s[j] == " " { j = s.index(after: j) }
+                i = j
+                continue
+            }
+            r.append(c)
+            i = s.index(after: i)
+        }
+        return r.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             ForEach(Array(KhoiMD.tach(noiDung).enumerated()), id: \.offset) { _, k in

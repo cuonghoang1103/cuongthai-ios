@@ -139,22 +139,10 @@ struct HoiVeChuView: View {
         }
     }
 
-    /// Gỡ dấu markdown còn sót.
-    ///
-    /// Lời dặn "không dùng markdown" trong prompt ăn phần lớn lượt, nhưng
-    /// KHÔNG phải mọi lượt — và một câu trả lời có `**từ**` giữa câu trông
-    /// như lỗi hiển thị. Gỡ ở đây rẻ hơn là tin vào lời dặn.
-    private static func goDau(_ s: String) -> String {
-        s.replacingOccurrences(of: "**", with: "")
-            .replacingOccurrences(of: "__", with: "")
-            .replacingOccurrences(of: "`", with: "")
-    }
-
     private func theDapAn(_ ten: String, _ chu: String) -> some View {
         VStack(alignment: .leading, spacing: 5) {
             Text(ten).font(.captionBold).foregroundStyle(AppColors.primary)
-            Text(Self.goDau(chu)).font(.bodyMedium).foregroundStyle(AppColors.textPrimary)
-                .fixedSize(horizontal: false, vertical: true)
+            NoiDungMarkdown(noiDung: chu)
                 .textSelection(.enabled)
         }
         .frame(maxWidth: .infinity, alignment: .leading)

@@ -41,7 +41,7 @@ struct LuyenNoiIeltsView: View {
                 if let c = cau { theCauHoi(c) }
                 if laPart2 && giaiDoan == .chuanBi { oGhiY }
                 khoiNut
-                if let b = banPhienAm { theChu(T("Bạn đã nói"), b, AppColors.secondary) }
+                if let b = banPhienAm { theChu(T("Bạn đã nói"), b, AppColors.secondary, laAI: false) }
                 if let k = ketQua { theChu(T("Giám khảo nhận xét"), k, AppColors.primary) }
                 if let l = loi {
                     Text(l).font(.bodySmall).foregroundStyle(AppColors.error)
@@ -190,12 +190,22 @@ struct LuyenNoiIeltsView: View {
         .disabled(dangCham)
     }
 
-    private func theChu(_ ten: String, _ chu: String, _ mau: Color) -> some View {
+    /// `laAI` quyết định có dựng markdown hay không.
+    ///
+    /// Bản phiên âm là chữ CHÍNH BẠN vừa nói — vẽ thẳng. Nhận xét của giám
+    /// khảo mới là chữ model sinh ra và mới cần dựng.
+    private func theChu(_ ten: String, _ chu: String, _ mau: Color, laAI: Bool = true) -> some View {
         VStack(alignment: .leading, spacing: 5) {
             Text(ten).font(.captionBold).foregroundStyle(mau)
-            Text(chu).font(.bodyMedium).foregroundStyle(AppColors.textPrimary)
-                .fixedSize(horizontal: false, vertical: true)
-                .textSelection(.enabled)
+            Group {
+                if laAI {
+                    NoiDungMarkdown(noiDung: chu)
+                } else {
+                    Text(chu).font(.bodyMedium).foregroundStyle(AppColors.textPrimary)
+                }
+            }
+            .fixedSize(horizontal: false, vertical: true)
+            .textSelection(.enabled)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(Spacing.md)

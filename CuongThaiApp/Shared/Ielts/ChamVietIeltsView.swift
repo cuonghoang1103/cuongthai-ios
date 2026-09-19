@@ -27,9 +27,7 @@ struct ChamVietIeltsView: View {
                 }
 
                 if let k = ketQua {
-                    Text(k)
-                        .font(.bodyMedium).foregroundStyle(AppColors.textPrimary)
-                        .fixedSize(horizontal: false, vertical: true)
+                    NoiDungMarkdown(noiDung: k)
                         .textSelection(.enabled)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(Spacing.md)

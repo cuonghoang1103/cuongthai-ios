@@ -84,8 +84,7 @@ struct CoVanAIView: View {
             if vm.dangHoiAI && vm.nhanXetAI == nil {
                 HStack { ProgressView().scaleEffect(0.8); Text(T("Đang xem…")).font(.caption) }
             } else if let n = vm.nhanXetAI, !n.isEmpty {
-                Text(n).font(.bodyMedium).foregroundStyle(AppColors.textPrimary)
-                    .fixedSize(horizontal: false, vertical: true)
+                NoiDungMarkdown(noiDung: n)
             } else if vm.thieuKhoaAI {
                 Text(T("Phần nhận xét bằng AI đang tắt. Các con số bên dưới vẫn đúng và vẫn dùng được."))
                     .font(.bodySmall).foregroundStyle(AppColors.textSecondary)
@@ -150,9 +149,16 @@ struct CoVanAIView: View {
     private func dongChat(_ d: DongCoVan) -> some View {
         HStack {
             if d.cuaToi { Spacer(minLength: 40) }
-            Text(d.chu)
-                .font(.bodyMedium)
-                .foregroundStyle(d.cuaToi ? Color.white : AppColors.textPrimary)
+            // Câu của MÌNH là chữ mình vừa gõ — vẽ thẳng. Câu của AI mới
+            // cần dựng markdown; đưa chữ người dùng qua bộ dựng thì một dấu
+            // sao họ gõ thật sẽ biến mất.
+            Group {
+                if d.cuaToi {
+                    Text(d.chu).font(.bodyMedium).foregroundStyle(Color.white)
+                } else {
+                    NoiDungMarkdown(noiDung: d.chu)
+                }
+            }
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(Spacing.sm + 2)
                 .background(d.cuaToi ? AppColors.primary : AppColors.backgroundCard)

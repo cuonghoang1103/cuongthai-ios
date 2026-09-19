@@ -36,7 +36,7 @@ struct TroLyGhiChuView: View {
                     }
 
                     if let t = traLoi {
-                        Text(t.answer)
+                        NoiDungMarkdown(noiDung: t.answer)
                             .font(.bodyMedium)
                             .foregroundColor(AppColors.textPrimary)
                             .textSelection(.enabled)
