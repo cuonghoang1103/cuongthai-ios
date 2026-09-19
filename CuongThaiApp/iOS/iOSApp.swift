@@ -97,6 +97,15 @@ struct CuongThaiApp: App {
                 // dòng này thì luồng đăng nhập mở ra được, người dùng chọn
                 // xong tài khoản, rồi app KHÔNG bao giờ nhận lại kết quả.
                 .onOpenURL { url in
+                    // `cuongthai://tien` — widget Tiền nong mở về đúng màn đó.
+                    //
+                    // ⚠️ Phải xử lý TRƯỚC khi chuyển cho Google: `nhanURL`
+                    // nhận mọi URL rồi tự quyết, và một ngày nào đó nó nuốt
+                    // nhầm thì widget chết câm mà không ai nghĩ tới đây.
+                    if url.scheme == "cuongthai" {
+                        if url.host == "tien" { appState.selectedTab = .finance }
+                        return
+                    }
                     _ = GoogleSignInService.nhanURL(url)
                 }
                 .task {

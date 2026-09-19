@@ -64,6 +64,7 @@ final class TienVM: ObservableObject {
             nhom.addTask { await self.napMucTieu() }
             nhom.addTask { await self.napNo() }
         }
+        ghiAnhChupChoWidget()
     }
 
     func napBang() async {
@@ -208,6 +209,37 @@ final class TienVM: ObservableObject {
         } catch { ghiLoi(error); return false }
     }
 
+    // MARK: Ảnh chụp cho widget
+
+    /// Ghi lại số liệu cho widget đọc. Gọi sau mỗi lần nạp/ghi tiền.
+    ///
+    /// ⚠️ Gọi ở ĐÂY chứ không ở màn hình: widget phải đúng kể cả khi người
+    /// dùng ghi một khoản chi rồi thoát app ngay, không kịp mở màn Tiền nong.
+    func ghiAnhChupChoWidget() {
+        var a = AnhChupTien()
+        // Chưa đặt mục tiêu ngày thì KHÔNG có "đã tiêu hôm nay" — máy chủ chỉ
+        // tính con số đó trong phạm vi một mục tiêu. Rơi về chi cả tháng còn
+        // hơn hiện 0₫, vì 0₫ trông như "hôm nay chưa tiêu gì".
+        a.chiHomNay = mucTieuNgay?.daTieu ?? 0
+        a.hanMucNgay = mucTieuNgay?.mucTieu
+        a.duNoSo = tongDuNo
+        a.duNo = DinhDangTien.ngan(tongDuNo)
+        a.laiMoiThang = DinhDangTien.ngan(tongLaiMoiThang)
+        a.chiHomNayChu = mucTieuNgay != nil
+            ? DinhDangTien.ngan(mucTieuNgay!.daTieu)
+            : DinhDangTien.ngan(bang?.expenseThisMonth ?? 0)
+        a.nhanChi = mucTieuNgay != nil ? "Chi hôm nay" : "Chi tháng này"
+        if let h = mucTieuNgay?.mucTieu { a.hanMucNgayChu = DinhDangTien.ngan(h) }
+        a.kyToi = noCanGap.prefix(3).map { k in
+            AnhChupTien.Ky(id: k.id, debtId: k.debtId, ten: k.lenderName,
+                           soTien: DinhDangTien.ngan(k.amountDue, k.currency),
+                           ngay: NgayTien.mayChu.date(from: String(k.dueDate.prefix(10))) ?? Date(),
+                           quaHan: k.isOverdue)
+        }
+        KhoAnhChupTien.ghi(a)
+        LamMoiWidget.ngay()
+    }
+
     /// Sau MỌI thao tác làm đổi tiền: bảng tổng quan, ví và mục tiêu đều lệch.
     private func sauKhiGhiTien() async {
         await withTaskGroup(of: Void.self) { n in
@@ -215,6 +247,7 @@ final class TienVM: ObservableObject {
             n.addTask { await self.napMucTieu() }
             n.addTask { await self.napDanhMuc() }
         }
+        ghiAnhChupChoWidget()
     }
 
     // MARK: - Cố vấn AI

@@ -103,6 +103,12 @@ targets:
         SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: YES
         ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES: YES
     dependencies:
+      # ⚠️ PHẢI nằm trong ĐÚNG khối `dependencies` này. Khai thành một khối
+      # `dependencies:` thứ hai trong cùng target thì YAML giữ khoá SAU và
+      # nuốt khoá trước — xcodegen chạy xanh, xcodebuild chạy xanh, và app
+      # ra lò KHÔNG có thư mục `PlugIns`. Không một dòng cảnh báo nào.
+      - target: TienWidget
+        embed: true
       - package: Kingfisher
       - package: SocketIO
         product: SocketIO
@@ -127,6 +133,16 @@ targets:
         com.apple.developer.applesignin: [Default]
         # SDK Google ghi Keychain qua GTMAppAuth và đòi nhóm truy cập Keychain.
         keychain-access-groups: ["$(AppIdentifierPrefix)com.cuongthai.app"]
+        # ⚠️ App Group PHẢI khai Ở ĐÂY, không phải sửa tay vào tệp
+        # `.entitlements` — XcodeGen SINH LẠI tệp đó từ khối này mỗi lần chạy
+        # `xcodegen generate`, nên sửa tay là bị ghi đè im lặng. Đo thật
+        # 19/09/2026: thêm vào tệp, dựng xanh, mà `codesign -d` của app KHÔNG
+        # có group, trong khi widget thì có — widget đọc được vùng chung còn
+        # app ghi vào chỗ khác, tức là widget vĩnh viễn trống.
+        #
+        # Chuỗi phải TRÙNG KHÍT với `KhoAnhChupTien.nhom` và với
+        # `Widget/Widget.entitlements`.
+        com.apple.security.application-groups: ["group.com.cuongthai.app"]
         # Thông báo đẩy. `development` cho bản chạy từ Xcode, và Apple TỰ ĐỔI
         # sang production khi đóng gói App Store / TestFlight — nên để
         # `development` ở đây là đúng cho cả hai, không phải sửa mỗi lần.
@@ -147,6 +163,28 @@ targets:
   # quy tắc — toàn bộ khối tuân thủ mà app chính phải mang.
   # ⚠️ Đổi lại: hồ sơ ký kiểu development hết hạn khoảng một năm, tới lúc đó
   # app không mở được nữa cho tới khi cài lại. Dữ liệu không mất.
+  # ─── Widget Tiền nong ──────────────────────────────────────────
+  # ⚠️ Chỉ nạp ĐÚNG một tệp mã của app (`AnhChupTien.swift`). Kéo cả
+  # `Shared` vào đây là lôi theo socket, Kingfisher, SwiftData… vào một
+  # extension chỉ được cấp vài chục MB — nó bị hệ thống giết và widget
+  # hiện ô trống, không có lỗi nào để thấy.
+  TienWidget:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: CuongThaiApp/Widget
+      - path: CuongThaiApp/Shared/Tien/AnhChupTien.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.cuongthai.app.TienWidget
+        INFOPLIST_FILE: CuongThaiApp/Widget/Info.plist
+        CODE_SIGN_ENTITLEMENTS: CuongThaiApp/Widget/Widget.entitlements
+        GENERATE_INFOPLIST_FILE: NO
+        SKIP_INSTALL: YES
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: "UR32PFUQ38"
+
   CuongThaiAdmin:
     type: application
     platform: iOS

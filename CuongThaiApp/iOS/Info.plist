@@ -94,6 +94,14 @@
     <key>GIDClientID</key><string>650641212127-07fqeii3rqbpduj1ko39sc83bautslrs.apps.googleusercontent.com</string>
     <key>CFBundleURLTypes</key>
     <array>
+		<dict>
+			<!-- Lược đồ riêng của app, để WIDGET mở thẳng màn Tiền nong.
+			     Thiếu khối này thì `widgetURL` không mở được gì và chạm vào
+			     widget chỉ mở app ở màn cũ — trông như widget chết. -->
+			<key>CFBundleURLName</key><string>com.cuongthai.app</string>
+			<key>CFBundleURLSchemes</key>
+			<array><string>cuongthai</string></array>
+		</dict>
         <dict>
             <key>CFBundleURLSchemes</key>
             <array>
