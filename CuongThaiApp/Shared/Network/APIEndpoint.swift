@@ -35,6 +35,9 @@ enum APIEndpoint {
     case ieltsXoaTienDo(chang: String, phan: String, muc: String)
     case ieltsHoiAI([String: Any])
     case ieltsChamViet([String: Any])
+    case ieltsDeThi(chang: String, hat: Int?)
+    case ieltsNopDe([String: Any])
+    case ieltsLichSuThi
 
     // ─── Tiền nong (MoneyFlow) ───────────────────────────────────────
     // Khai `case` riêng chứ không dùng `.tuyChinh`: 45 đường dẫn gõ tay ở
@@ -902,6 +905,9 @@ enum APIEndpoint {
         case .ieltsLoTrinh: return "/api/v1/ielts/lo-trinh"
         case .ieltsHoiAI: return "/api/v1/ielts/ai/hoi"
         case .ieltsChamViet: return "/api/v1/ielts/ai/cham-viet"
+        case .ieltsLichSuThi: return "/api/v1/ielts/de-thi/lich-su"
+        case .ieltsDeThi(let c, let h): return "/api/v1/ielts/de-thi/\(c)" + (h.map { "?hat=\($0)" } ?? "")
+        case .ieltsNopDe: return "/api/v1/ielts/de-thi/nop"
         case .ieltsPhanChang(let c, let p): return "/api/v1/ielts/chang/\(c)/\(p)"
         case .ieltsChung(let p): return "/api/v1/ielts/chung/\(p)"
         case .ieltsTienDo(let c): return "/api/v1/ielts/tien-do" + (c.map { "?stage=\($0)" } ?? "")
@@ -956,7 +962,7 @@ enum APIEndpoint {
 
     var method: String {
         switch self {
-        case .ieltsGhiTienDo, .ieltsHoiAI, .ieltsChamViet: return "POST"
+        case .ieltsGhiTienDo, .ieltsHoiAI, .ieltsChamViet, .ieltsNopDe: return "POST"
         case .ieltsXoaTienDo: return "DELETE"
         // ─── Tiền nong ───
         case .tienThemVi, .tienChuyenVi, .tienThemNhomChi, .tienThemChi, .tienThemThu,
@@ -1032,7 +1038,7 @@ enum APIEndpoint {
     var body: [String: Any]? {
         switch self {
         case .ieltsGhiTienDo(let items): return ["items": items]
-        case .ieltsHoiAI(let m), .ieltsChamViet(let m): return m
+        case .ieltsHoiAI(let m), .ieltsChamViet(let m), .ieltsNopDe(let m): return m
         // ─── Tiền nong ───
         case .tienThemVi(let m), .tienSuaVi(_, let m), .tienChuyenVi(let m),
              .tienThemNhomChi(let m), .tienSuaNhomChi(_, let m),

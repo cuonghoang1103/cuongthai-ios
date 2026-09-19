@@ -25,6 +25,7 @@ struct IeltsView: View {
                         chonChang
                         if let b = vm.bandCuaChang { theBand(b) }
                         luoiPhan
+                        nutPhongThi
                         if let b = vm.bandCuaChang { theKyNang(b) }
                     }
                 }
@@ -173,6 +174,33 @@ struct IeltsView: View {
             KhungTrongTien(bieuTuong: "hammer", tieuDe: T("Phần này đang làm"),
                            moTa: T("Đọc, Nghe, Viết, Nói, Từ vựng và Bài học đã dùng được."))
         }
+    }
+
+    // MARK: - Phòng thi
+
+    private var nutPhongThi: some View {
+        NavigationLink { PhongThiIeltsView(vm: vm) } label: {
+            HStack(spacing: Spacing.sm) {
+                Image(systemName: "timer")
+                    .font(.titleMedium).foregroundStyle(Color.white)
+                    .frame(width: 36, height: 36)
+                    .background(AppColors.error)
+                    .cornerRadius(CornerRadius.small)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(T("Phòng thi")).font(.titleSmall).foregroundStyle(AppColors.textPrimary)
+                    Text(T("Ba phần, đồng hồ chạy thật, có band ước lượng"))
+                        .font(.caption).foregroundStyle(AppColors.textSecondary)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right").font(.caption).foregroundStyle(AppColors.textTertiary)
+            }
+            .padding(Spacing.md)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(AppColors.backgroundCard)
+            .cornerRadius(CornerRadius.large)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Kỹ năng của chặng
