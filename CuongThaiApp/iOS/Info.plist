@@ -19,7 +19,12 @@
          launch. Declaring the manifest without a delegate class is correct here. -->
     <key>UIApplicationSceneManifest</key>
     <dict>
-        <key>UIApplicationSupportsMultipleScenes</key><false/>
+        <!-- Bật 19/09/2026 để Stage Manager mở được cửa sổ thứ hai (Vở bên
+             trái, bài giảng bên phải). Trước khi bật đã phải sửa mọi chỗ
+             giả định "chỉ có một cửa sổ": PKToolPicker gắn theo
+             `windows.first` (bảng công cụ câm ở cửa sổ đang vẽ) và phép đo
+             bề ngang qua `connectedScenes.first` (đo nhầm cửa sổ kia). -->
+        <key>UIApplicationSupportsMultipleScenes</key><true/>
     </dict>
     <!-- Storyboard thay cho `UILaunchScreen` dict rỗng — dict rỗng chính là
          cái màn hình TRẮNG lúc mở app. `UILaunchScreen` + `UIImageName` cũng

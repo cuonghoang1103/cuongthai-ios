@@ -119,5 +119,21 @@ struct CuongThaiApp: App {
         }
         // Phím tắt ⌘1…⌘0 — xem `LenhDieuHuong`.
         .commands { LenhDieuHuong(appState: appState) }
+
+        // CỬA SỔ PHỤ — một module tách ra cửa sổ riêng, để đặt cạnh cửa sổ
+        // chính trong Stage Manager / Split View.
+        //
+        // ⚠️ Nó KHÔNG đọc `appState.selectedTab`. Dùng chung biến đó thì hai
+        // cửa sổ luôn hiện cùng một màn, và đổi bên này là bên kia nhảy theo
+        // — tức là mất sạch lý do mở cửa sổ thứ hai. Module hiện ở đây đi
+        // theo GIÁ TRỊ mà `openWindow` truyền vào.
+        WindowGroup(id: "cua-so-phu", for: AppState.AppTab.self) { $tab in
+            NavigationStack { ManCuaTab(tab: tab ?? .notebook) }
+                .environmentObject(appState)
+                .modelContainer(KhoSwiftData.chung)
+                .lopPhuCuocGoi()
+                .preferredColorScheme(giaoDien.mauSac)
+                .id(ngonNgu.ngonNgu)
+        }
     }
 }

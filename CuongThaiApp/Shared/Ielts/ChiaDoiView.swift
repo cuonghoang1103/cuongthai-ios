@@ -115,8 +115,11 @@ struct GiayNhapView: UIViewRepresentable {
 
         // Bảng công cụ để đổi bút/màu/tẩy. Không có nó thì giấy nháp chỉ viết
         // được đúng một màu một cỡ, và người dùng tưởng app thiếu tính năng.
-        if let ws = v.window?.windowScene ?? UIApplication.shared.connectedScenes.first as? UIWindowScene {
-            let picker = PKToolPicker.shared(for: ws.windows.first ?? UIWindow())
+        // ⚠️ Gắn theo ĐÚNG cửa sổ của bảng vẽ — xem chú thích cùng nội
+        // dung ở `KhungVeView`. Bản cũ còn rơi về `connectedScenes.first`
+        // khi `v.window` chưa có, mà cửa sổ đầu tiên thì chẳng liên quan gì.
+        if let cuaSo = v.window {
+            let picker = PKToolPicker.shared(for: cuaSo)
             picker?.addObserver(v)
             picker?.setVisible(true, forFirstResponder: v)
             context.coordinator.picker = picker

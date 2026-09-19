@@ -147,7 +147,16 @@ struct KhungVeView: View {
         // cần hai ngón cho thao tác của chính nó, và cướp cử chỉ đó làm việc
         // hoàn tác/cuộn của bảng vẽ hỏng.
         .gesture(cheDo == .hinh ? phongHaiNgon : nil)
-        .onAppear { doKhung() }
+        // ⚠️ Đo bề ngang bằng GeometryReader, KHÔNG qua `connectedScenes`.
+        // Với Stage Manager có hai cửa sổ thì `connectedScenes.first` là cửa
+        // sổ NÀO là chuyện may rủi — "vừa khung" sẽ tính theo bề ngang của
+        // cửa sổ bên kia. Và kéo đổi cỡ cửa sổ thì số đo cũ thành sai mà
+        // không có gì báo; cách này tự cập nhật.
+        .background(GeometryReader { g in
+            Color.clear
+                .onAppear { rongKhungNhin = g.size.width }
+                .onChange(of: g.size.width) { _, moi in rongKhungNhin = moi }
+        })
     }
 
     /// Bề ngang khung nhìn, để tính "vừa khung".
@@ -183,13 +192,6 @@ struct KhungVeView: View {
         }
     }
 
-    private func doKhung() {
-        #if os(iOS)
-        rongKhungNhin = UIApplication.shared.connectedScenes
-            .compactMap { ($0 as? UIWindowScene)?.keyWindow?.bounds.width }
-            .first ?? 0
-        #endif
-    }
 
     private func hinhKeoDuoc(_ h: HinhVe) -> some View {
         let chon = dangChon == h.id && cheDo == .hinh
@@ -499,8 +501,13 @@ struct LopNetXuongVe: UIViewRepresentable {
     func updateUIView(_ v: PKCanvasView, context: Context) {
         // Bảng công cụ chỉ hiện ở chế độ nét. Để nó nằm lại khi đã sang chế
         // độ hình thì nó che mất thanh sửa hình ở đáy màn.
-        if let ws = v.window?.windowScene {
-            let picker = PKToolPicker.shared(for: ws.windows.first ?? UIWindow())
+        // ⚠️ `PKToolPicker.shared(for:)` phải nhận ĐÚNG cửa sổ chứa bảng vẽ
+        // này, không phải `windows.first` của scene. Khi bật đa cửa sổ
+        // (Stage Manager) thì `windows.first` có thể là cửa sổ KIA — bảng
+        // công cụ gắn vào đó, và ở cửa sổ đang vẽ nó không hiện ra: câm
+        // lặng, không lỗi. Đây đúng là bẫy "ToolPicker câm" đã gặp.
+        if let cuaSo = v.window {
+            let picker = PKToolPicker.shared(for: cuaSo)
             picker?.addObserver(v)
             picker?.setVisible(choCham, forFirstResponder: v)
             if choCham { v.becomeFirstResponder() } else { v.resignFirstResponder() }

@@ -38,7 +38,7 @@ final class AppState: ObservableObject {
     // "More". Search moved into the Home toolbar so the Learn tab (courses +
     // notes) can be a first-class destination — it is the substance the app is
     // reviewed on, not an extra.
-    enum AppTab: Int, CaseIterable, Identifiable {
+    enum AppTab: Int, CaseIterable, Identifiable, Codable, Hashable {
         case home = 0, learn = 1, create = 2, messages = 3, profile = 4
         /// Vở viết tay. CHỈ hiện ở thanh bên của màn rộng (iPad/Mac) —
         /// thanh tab của iPhone giữ đúng 5 mục, mục thứ sáu bị iOS dồn vào

@@ -200,6 +200,18 @@ struct iOSTabView: View {
 // chữa từ nay áp cho cả hai cùng lúc thay vì phải nhớ làm hai lần.
 struct BoCucCotDoi: View {
     @EnvironmentObject var appState: AppState
+    @Environment(\.openWindow) private var moCuaSo
+
+    /// `UIApplicationSupportsMultipleScenes` trong Info.plist. Đọc lúc chạy
+    /// chứ không ghi cứng `#if os(iOS)`: iPhone cũng là iOS mà không mở được
+    /// cửa sổ thứ hai.
+    private var nhieuCuaSoDuoc: Bool {
+        #if os(iOS)
+        return UIApplication.shared.supportsMultipleScenes
+        #else
+        return true
+        #endif
+    }
 
     var body: some View {
         NavigationSplitView {
@@ -216,6 +228,20 @@ struct BoCucCotDoi: View {
                     }
                     .badge(tab == .messages && appState.unreadMessages > 0
                            ? appState.unreadMessages : 0)
+                    // Mở module ra cửa sổ RIÊNG để đặt cạnh cửa sổ chính —
+                    // Vở bên trái, bài giảng bên phải. Chỉ iPad/Mac mới có
+                    // nhiều cửa sổ; trên iPhone `openWindow` không làm gì
+                    // nên giấu mục này đi cho khỏi thành nút chết.
+                    .contextMenu {
+                        if nhieuCuaSoDuoc {
+                            Button {
+                                moCuaSo(id: "cua-so-phu", value: tab)
+                            } label: {
+                                Label(T("Mở trong cửa sổ mới"),
+                                      systemImage: "macwindow.badge.plus")
+                            }
+                        }
+                    }
                 }
             }
             .listStyle(.sidebar)
@@ -246,6 +272,18 @@ struct BoCucCotDoi: View {
 
     @ViewBuilder
     private func manChiTiet(_ tab: AppState.AppTab) -> some View {
+        ManCuaTab(tab: tab)
+    }
+}
+
+/// Màn của MỘT module. Tách khỏi `BoCucCotDoi` vì cửa sổ PHỤ (Stage Manager)
+/// cũng dựng đúng những màn này — để hai bản `switch` song song là kiểu thêm
+/// module mới rồi quên một bên, và bên quên sẽ im lặng hiện màn trống.
+struct ManCuaTab: View {
+    let tab: AppState.AppTab
+
+    @ViewBuilder
+    var body: some View {
         switch tab {
         case .home: TongQuanView()
         case .learn: CoursesView()
