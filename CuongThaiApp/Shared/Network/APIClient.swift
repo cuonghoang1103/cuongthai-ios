@@ -255,7 +255,61 @@ actor APIClient {
 
     // MARK: - Transport
 
+    /// Khoá ngoại tuyến của một lời gọi: đường dẫn + query, đã sắp xếp.
+    ///
+    /// ⚠️ Sắp xếp query theo tên. `Dictionary` trong Swift KHÔNG có thứ tự,
+    /// nên cùng một lời gọi có thể sinh ra hai chuỗi khác nhau giữa hai lần
+    /// chạy — và khi đó bản đã tải về không bao giờ khớp lại được.
+    private func khoaNgoaiTuyen(_ endpoint: APIEndpoint) -> String {
+        var k = endpoint.path
+        if let q = endpoint.queryParams, !q.isEmpty {
+            k += "?" + q.map { "\($0.key)=\($0.value)" }.sorted().joined(separator: "&")
+        }
+        return k
+    }
+
     private func perform(_ endpoint: APIEndpoint, isRetry: Bool = false) async throws -> Data {
+        // ── NGOẠI TUYẾN ────────────────────────────────────────────────
+        //
+        // Đặt ở đây, KHÔNG ở từng màn: đây là chỗ duy nhất mọi lời gọi đi
+        // qua. Rải logic này vào từng ViewModel thì màn viết sau sẽ quên,
+        // và nó quên một cách im lặng — người dùng chỉ thấy màn trắng.
+        //
+        // ⚠️ KHÔNG kiểm "có mạng không" rồi tự quyết. Cứ GỌI THẬT, hỏng mới
+        // rơi về bản lưu: `NWPathMonitor` báo có sóng trong đủ thứ cảnh
+        // không đi ra internet được (cổng trường chặn, captive portal, VPN
+        // vừa bật) — tin nó là chặn nhầm cả những lời gọi vốn chạy được.
+        let choGET = endpoint.method == "GET"
+        let khoa = khoaNgoaiTuyen(endpoint)
+
+        do {
+            let d = try await goiMang(endpoint, isRetry: isRetry)
+            if choGET {
+                let ghim = await KhoNgoaiTuyen.chung.daGhim(khoa)
+                await KhoNgoaiTuyen.chung.ghi(d, khoa: khoa, ghim: ghim)
+                TrangThaiMang.bao(coMang: true, dungBanLuu: false)
+            }
+            return d
+        } catch {
+            // CHỈ rơi về bản lưu khi hỏng vì MẠNG. Lỗi 4xx/5xx là câu trả
+            // lời thật của máy chủ — che nó bằng dữ liệu cũ là biến "bạn
+            // không có quyền" thành "đây, nội dung của bạn".
+            guard choGET, laLoiMang(error),
+                  let cu = await KhoNgoaiTuyen.chung.doc(khoa) else { throw error }
+            TrangThaiMang.bao(coMang: false, dungBanLuu: true)
+            return cu
+        }
+    }
+
+    /// Mất mạng thật, không phải máy chủ từ chối.
+    private func laLoiMang(_ e: Error) -> Bool {
+        guard let u = e as? URLError else { return false }
+        return [.notConnectedToInternet, .networkConnectionLost, .timedOut,
+                .cannotConnectToHost, .cannotFindHost, .dataNotAllowed,
+                .internationalRoamingOff, .secureConnectionFailed].contains(u.code)
+    }
+
+    private func goiMang(_ endpoint: APIEndpoint, isRetry: Bool = false) async throws -> Data {
         guard let url = URL(string: baseURL + endpoint.path) else {
             throw APIError.invalidURL
         }
@@ -303,7 +357,10 @@ actor APIClient {
                 break
             }
             if !isRetry, await refreshToken() {
-                return try await perform(endpoint, isRetry: true)
+                // `goiMang` chứ không `perform`: quay lại `perform` là chạy
+                // lại cả lớp ngoại tuyến cho CÙNG một lời gọi — ghi đệm hai
+                // lần, và nếu lần hai hỏng thì nó trả về chính bản vừa ghi.
+                return try await goiMang(endpoint, isRetry: true)
             }
             throw APIError.unauthorized
         }

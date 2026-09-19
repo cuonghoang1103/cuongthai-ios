@@ -247,7 +247,13 @@ struct BoCucCotDoi: View {
             .listStyle(.sidebar)
             .frame(minWidth: 180)
         } detail: {
-            manChiTiet(appState.selectedTab)
+            VStack(spacing: 0) {
+                // Báo NGAY trên đầu mọi màn: đang xem bản đã tải. Hiện nội
+                // dung cũ mà im lặng là để người dùng tin vào số liệu lỗi
+                // thời — tệ hơn màn trắng, vì màn trắng thì họ biết là hỏng.
+                DaiNgoaiTuyen()
+                manChiTiet(appState.selectedTab)
+            }
         }
         // `.balanced` để iPad DỰNG ĐỨNG vẫn thấy cột trái. Kiểu mặc định
         // (`.automatic`) giấu nó sau một nút ở dọc, nên xoay máy một cái là

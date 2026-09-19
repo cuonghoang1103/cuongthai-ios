@@ -489,6 +489,16 @@ struct CourseDetailView: View {
         }
         .background(AppColors.backgroundPrimary)
         .navigationBarTitleDisplayMode(.inline)
+        // Nút tải về NẰM Ở ĐÂY, trên chính màn khoá học. Tính năng ngoại
+        // tuyến mà chôn trong Cài đặt thì không ai tìm ra — cùng bài học với
+        // ô tích nợ và nút đổi giọng IELTS.
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                if let c = viewModel.course {
+                    NutTaiVeHoc(id: c.id, slug: slug, ten: c.title)
+                }
+            }
+        }
         .navigationDestination(item: $baiDangMo) { bai in
             if let ct = viewModel.course {
                 LessonPlayerView(
