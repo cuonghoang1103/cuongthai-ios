@@ -3,6 +3,7 @@ import SwiftUI
 // ── Chọn ngôn ngữ ───────────────────────────────────────────────
 
 struct NgonNguView: View {
+    @EnvironmentObject private var appState: AppState
     @StateObject private var vm = NgonNguVM()
 
     private let cot = [GridItem(.adaptive(minimum: 150), spacing: Spacing.md)]
@@ -26,10 +27,27 @@ struct NgonNguView: View {
             } else {
                 LazyVGrid(columns: cot, spacing: Spacing.md) {
                     ForEach(vm.dsNgonNgu) { n in
-                        NavigationLink(destination: NgonNguHomeView(ngonNgu: n)) {
-                            TheNgonNgu(n: n)
+                        // ⚠️ TIẾNG ANH đi thẳng sang IELTS, không mở màn
+                        // ngôn ngữ riêng.
+                        //
+                        // Hai chỗ cùng dạy tiếng Anh là hai chỗ người dùng
+                        // phải tự nhớ "thứ mình cần nằm bên nào" — và đo
+                        // 19/09/2026 thì mỗi bên mạnh một nửa: bên này có
+                        // 13.226 từ, bên kia có bài tập và chấm điểm. IELTS
+                        // nay đã nối được vào kho từ ấy, nên nó là CỬA DUY
+                        // NHẤT. Giữ thẻ lại chứ không giấu đi: ai quen
+                        // đường cũ vẫn tới đúng chỗ.
+                        if laTiengAnh(n) {
+                            Button { appState.selectedTab = .ielts } label: {
+                                TheNgonNgu(n: n)
+                            }
+                            .buttonStyle(.plain)
+                        } else {
+                            NavigationLink(destination: NgonNguHomeView(ngonNgu: n)) {
+                                TheNgonNgu(n: n)
+                            }
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
                     }
                 }
                 .padding(Spacing.md)
@@ -41,6 +59,12 @@ struct NgonNguView: View {
         .task { if vm.dsNgonNgu.isEmpty { await vm.tai() } }
         .refreshable { await vm.tai() }
     }
+}
+
+/// Khớp theo MÃ, không theo tên: tên đổi theo ngôn ngữ giao diện
+/// ("Tiếng Anh" / "English"), còn mã thì cố định.
+private func laTiengAnh(_ n: NgonNgu) -> Bool {
+    n.code.lowercased().hasPrefix("en")
 }
 
 private struct TheNgonNgu: View {
