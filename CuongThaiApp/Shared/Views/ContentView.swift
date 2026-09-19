@@ -159,6 +159,7 @@ struct iOSTabView: View {
         .onChange(of: appState.selectedTab) { _, _ in neuLacTab() }
         .fullScreenCover(isPresented: $appState.moTienNong) { TienView(coNutDong: true) }
         .fullScreenCover(isPresented: $appState.moIelts) { IeltsView(coNutDong: true) }
+        .fullScreenCover(isPresented: $appState.moXuongVe) { XuongVeView(coNutDong: true) }
     }
 
     private func neuLacTab() {
@@ -174,6 +175,11 @@ struct iOSTabView: View {
         if appState.selectedTab == .ielts {
             appState.selectedTab = .home
             appState.moIelts = true
+            return
+        }
+        if appState.selectedTab == .xuongVe {
+            appState.selectedTab = .home
+            appState.moXuongVe = true
             return
         }
         if appState.selectedTab == .notebook { appState.selectedTab = .home }
@@ -246,6 +252,7 @@ struct BoCucCotDoi: View {
         case .notebook: VoView()
         case .finance: TienView()
         case .ielts: IeltsView()
+        case .xuongVe: XuongVeView()
         }
     }
 }

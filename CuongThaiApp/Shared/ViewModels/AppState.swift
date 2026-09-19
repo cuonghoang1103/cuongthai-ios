@@ -48,6 +48,8 @@ final class AppState: ObservableObject {
         case finance = 6
         /// IELTS — khoá học 4 chặng.
         case ielts = 7
+        /// Xưởng vẽ — canvas tự do + hình khối.
+        case xuongVe = 8
         var id: Int { rawValue }
         var title: String {
             switch self {
@@ -59,6 +61,7 @@ final class AppState: ObservableObject {
             case .notebook: return T("Vở")
             case .finance: return T("Tiền nong")
             case .ielts: return "IELTS"
+            case .xuongVe: return T("Xưởng vẽ")
             }
         }
         var icon: String {
@@ -71,6 +74,7 @@ final class AppState: ObservableObject {
             case .notebook: return "book.closed.fill"
             case .finance: return "creditcard.fill"
             case .ielts: return "textformat.abc"
+            case .xuongVe: return "paintbrush.pointed.fill"
             }
         }
     }
@@ -145,6 +149,9 @@ final class AppState: ObservableObject {
 
     /// Mở IELTS dạng tấm phủ — cùng lý do với `moTienNong`.
     @Published var moIelts = false
+
+    /// Mở Xưởng vẽ dạng tấm phủ — cùng lý do với `moTienNong`.
+    @Published var moXuongVe = false
 
     /// Chạm thông báo 20h ("Hôm nay bạn đã chi tiêu những gì?") thì mở thẳng
     /// ô ghi khoản chi. Mở màn Tiền nong rồi bắt người dùng tự tìm nút cộng

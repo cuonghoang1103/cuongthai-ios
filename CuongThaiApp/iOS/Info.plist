@@ -63,6 +63,11 @@
       <string>audio</string>
     </array>
     <key>NSPhotoLibraryUsageDescription</key><string>CuongThai cần thư viện ảnh để bạn chọn ảnh đính kèm vào bài viết và ảnh đại diện.</string>
+    <!-- ⚠️ `NSPhotoLibraryUsageDescription` (ĐỌC) KHÔNG thay được khoá này.
+         Ghi ảnh mà thiếu `AddUsageDescription` thì iOS giết tiến trình ngay
+         tại lời gọi — không phải báo lỗi, mà là SẬP. Xưởng vẽ xuất PNG vào
+         Ảnh nên bắt buộc phải có. -->
+    <key>NSPhotoLibraryAddUsageDescription</key><string>CuongThai cần quyền này để lưu ảnh bản vẽ bạn xuất ra từ Xưởng vẽ vào thư viện Ảnh.</string>
     <!-- BẮT BUỘC: gọi requestWhenInUseAuthorization() mà thiếu khoá này thì iOS
          GIẾT app ngay, không phải hiện lỗi. Dùng cho nút "Vị trí" trong chat. -->
     <key>NSLocationWhenInUseUsageDescription</key><string>CuongThai cần vị trí để bạn chia sẻ chỗ mình đang đứng vào cuộc trò chuyện. Vị trí chỉ được gửi khi bạn tự bấm nút, và app không theo dõi bạn trong nền.</string>

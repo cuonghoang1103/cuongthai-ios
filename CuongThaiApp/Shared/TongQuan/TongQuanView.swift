@@ -683,6 +683,9 @@ struct TongQuanView: View {
                 NavigationLink { IeltsView() } label: {
                     theNhanh("IELTS", T("Nghe, nói, đọc, viết"), "textformat.abc", AppColors.brandPink)
                 }
+                NavigationLink { XuongVeView() } label: {
+                    theNhanh(T("Xưởng vẽ"), T("Vẽ, phác bố cục, tô màu"), "paintbrush.pointed", AppColors.secondary)
+                }
             }
         }
     }

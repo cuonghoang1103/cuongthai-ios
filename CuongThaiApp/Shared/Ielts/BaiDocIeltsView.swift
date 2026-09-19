@@ -58,6 +58,10 @@ struct DanhSachDocView: View {
 struct BaiDocIeltsView: View {
     @ObservedObject var vm: IeltsVM
     let bai: BaiDocIelts
+    /// `true` khi view này nằm TRONG màn chia đôi — bỏ thanh tiêu đề và nút
+    /// riêng của nó, vì màn cha đã có. Không bỏ thì có hai thanh chồng nhau
+    /// và cột trái mất thêm 44pt chiều cao vô ích.
+    var gonTrongChiaDoi = false
 
     @State private var choseWord: ChuDaChon?
     @State private var hienDich = false
@@ -68,18 +72,18 @@ struct BaiDocIeltsView: View {
     @State private var coBut = false
 
     var body: some View {
+        if gonTrongChiaDoi {
+            than.padding(Spacing.md)
+        } else {
+            manDayDu
+        }
+    }
+
+    private var manDayDu: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: Spacing.md) {
-                dauBai
-                if !bai.strategy.isEmpty { khoiMeo }
-                khoiChu
-                if !bai.glossary.isEmpty { khoiTuKho }
-                khoiCauHoi
-                khoiDich
-                nutXong
-            }
-            .padding(Spacing.md)
-            .padding(.bottom, 80)
+            than
+                .padding(Spacing.md)
+                .padding(.bottom, 80)
         }
         .background(AppColors.backgroundPrimary)
         .navigationTitle(bai.title)
@@ -87,9 +91,15 @@ struct BaiDocIeltsView: View {
         .navigationBarTitleDisplayMode(.inline)
         #endif
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                // Nút bút CHỈ hiện khi máy có Apple Pencil từng chạm vào —
-                // trên iPhone nó chỉ là một nút chiếm chỗ và không ai dùng.
+            ToolbarItemGroup(placement: .primaryAction) {
+                // Chia đôi CHỈ trên iPad: hai cột trên màn 390pt thì cột nào
+                // cũng không đọc nổi.
+                if LopToIelts.coBut() {
+                    NavigationLink { DocVaGhiView(vm: vm, bai: bai) } label: {
+                        Image(systemName: "rectangle.split.2x1")
+                    }
+                    .accessibilityLabel(T("Chia đôi màn: đọc và ghi"))
+                }
                 if coBut {
                     Button { dangTo.toggle() } label: {
                         Image(systemName: dangTo ? "pencil.tip.crop.circle.fill" : "pencil.tip.crop.circle")
@@ -103,6 +113,18 @@ struct BaiDocIeltsView: View {
             HoiVeChuView(chu: c.chu, boiCanh: c.boiCanh, tuKho: tuKho(c.chu))
         }
         .task { coBut = LopToIelts.coBut() }
+    }
+
+    private var than: some View {
+            VStack(alignment: .leading, spacing: Spacing.md) {
+                dauBai
+                if !bai.strategy.isEmpty { khoiMeo }
+                khoiChu
+                if !bai.glossary.isEmpty { khoiTuKho }
+                khoiCauHoi
+                khoiDich
+                nutXong
+            }
     }
 
     // MARK: Đầu bài
