@@ -736,19 +736,19 @@ enum DungCanh {
         nut.eulerAngles = SCNVector3(k.xoayX * .pi / 180, k.xoayY * .pi / 180, k.xoayZ * .pi / 180)
         nut.scale = SCNVector3(k.coX, k.coY, k.coZ)
 
-        // Viền sáng: thêm/gỡ nút con chứ không dựng lại nút cha.
+        // Viền chọn: thêm/gỡ nút con chứ không dựng lại nút cha.
+        //
+        // Dựng lại khi cỡ đổi — viền là KHUNG DÂY bao quanh hộp bao, mà hộp
+        // bao đổi theo `co*`. Dựng lại 24 đỉnh thì rẻ, không phải dựng lại cảnh.
         let vienCu = nut.childNode(withName: "vien", recursively: false)
+        let coNay = SCNVector3(k.coX, k.coY, k.coZ)
+        let coCu = (vienCu?.value(forKey: khoaCoVien) as? NSValue)?.scnVector3Value
+        let coDoi = coCu == nil || coCu!.x != coNay.x || coCu!.y != coNay.y || coCu!.z != coNay.z
         if dangChon {
-            if vienCu == nil || canDoiHinh {
+            if vienCu == nil || canDoiHinh || coDoi {
                 vienCu?.removeFromParentNode()
-                let vien = SCNNode(geometry: laNhap ? hopBao(nut) : hinhCua(k.loai))
-                vien.name = "vien"
-                let mv = SCNMaterial()
-                mv.diffuse.contents = UIColor(Color(maHex: "#FAD129"))
-                mv.isDoubleSided = true
-                mv.cullMode = .front
-                vien.geometry?.materials = [mv]
-                vien.scale = SCNVector3(1.04, 1.04, 1.04)
+                let vien = nutVien(nut, co: coNay)
+                vien.setValue(NSValue(scnVector3: coNay), forKey: khoaCoVien)
                 nut.addChildNode(vien)
             }
         } else {
@@ -756,14 +756,68 @@ enum DungCanh {
         }
     }
 
-    /// Hộp bao quanh một nút nhập, để vẽ viền chọn.
-    private static func hopBao(_ nut: SCNNode) -> SCNGeometry {
+    private static let khoaCoVien = "coLucDungVien"
+
+    /// Khung dây 12 cạnh bao quanh khối đang chọn.
+    ///
+    /// ⚠️ KHÔNG dùng lại kiểu cũ — "chép hình rồi phóng to 1,04 lần, lật mặt
+    /// trong" (inverted hull). Kiểu đó CHẾT với hình mỏng:
+    ///   · `.phang` là `SCNPlane`, dày ĐÚNG BẰNG 0 — nhân 1,04 vẫn là 0, nên
+    ///     vỏ vàng nằm TRÙNG KHÍT lên mặt thật.
+    ///   · khối bẹt (coZ nhỏ) thì 4% của một số bé vẫn là số bé.
+    /// Hai mặt cùng độ sâu ⇒ GPU chọn ngẫu nhiên từng điểm ảnh ⇒ loang lổ
+    /// vàng/tím, và đổi mỗi lần camera nhích. Người dùng báo 19/09/2026:
+    /// *"phóng to thu nhỏ nó cứ nháy nháy chập chờn màu vàng với tím"*.
+    ///
+    /// Khung dây thì nằm NGOÀI bề mặt theo một khoảng cách cố định trong
+    /// không gian thật, nên không có mặt nào trùng mặt nào — đúng với mọi
+    /// hình, kể cả mặt phẳng và mô hình nhập.
+    private static func nutVien(_ nut: SCNNode, co: SCNVector3) -> SCNNode {
+        // Tính hộp bao SAU khi đã gỡ viền cũ, nếu không nó tự bao lấy chính
+        // mình và mỗi lần chọn lại là phình ra một nấc.
         let (mi, ma) = nut.boundingBox
-        return SCNBox(width: CGFloat(max(0.05, ma.x - mi.x)),
-                      height: CGFloat(max(0.05, ma.y - mi.y)),
-                      length: CGFloat(max(0.05, ma.z - mi.z)),
-                      chamferRadius: 0)
+
+        // Cách bề mặt 0,03 đơn vị THẬT. Chia cho `co` vì nút cha đã phóng
+        // sẵn — không chia thì khối to viền dày, khối nhỏ viền nuốt cả khối.
+        func le(_ c: Float) -> Float { 0.03 / max(abs(c), 0.05) }
+        let lx = le(co.x), ly = le(co.y), lz = le(co.z)
+        let x0 = mi.x - lx, x1 = ma.x + lx
+        let y0 = mi.y - ly, y1 = ma.y + ly
+        let z0 = mi.z - lz, z1 = ma.z + lz
+
+        let g: [(Float, Float, Float)] = [
+            (x0, y0, z0), (x1, y0, z0), (x1, y1, z0), (x0, y1, z0),
+            (x0, y0, z1), (x1, y0, z1), (x1, y1, z1), (x0, y1, z1),
+        ]
+        let canh = [(0, 1), (1, 2), (2, 3), (3, 0),
+                    (4, 5), (5, 6), (6, 7), (7, 4),
+                    (0, 4), (1, 5), (2, 6), (3, 7)]
+        var dinh: [SCNVector3] = []
+        for (a, b) in canh {
+            dinh.append(SCNVector3(g[a].0, g[a].1, g[a].2))
+            dinh.append(SCNVector3(g[b].0, g[b].1, g[b].2))
+        }
+
+        let nguon = SCNGeometrySource(vertices: dinh)
+        let phan = SCNGeometryElement(indices: (0..<Int32(dinh.count)).map { $0 },
+                                      primitiveType: .line)
+        let hinh = SCNGeometry(sources: [nguon], elements: [phan])
+        let m = SCNMaterial()
+        m.diffuse.contents = UIColor(Color(maHex: "#FAD129"))
+        m.lightingModel = .constant
+        m.isDoubleSided = true
+        // Không ghi vào bộ đệm độ sâu: khung dây không che vật nào, và đây
+        // là lớp chốt cuối chống mọi tranh chấp độ sâu còn sót.
+        m.writesToDepthBuffer = false
+        hinh.materials = [m]
+
+        let n = SCNNode(geometry: hinh)
+        n.name = "vien"
+        n.renderingOrder = 10
+        return n
     }
+
+    /// Hộp bao quanh một nút nhập, để vẽ viền chọn.
 
     private static func hopKieu(_ g: SCNGeometry?, _ l: LoaiKhoi) -> Bool {
         switch l {
