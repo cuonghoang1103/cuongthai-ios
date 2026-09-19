@@ -19,32 +19,38 @@ struct ConDuongIeltsView: View {
     @State private var anMung = false
     @State private var soXongTruoc = -1
 
-    private var nhip: NhipHocIelts { NhipHocIelts.tinh(mocXong: vm.mocXong) }
+    // ⚠️ TÍNH MỘT LẦN rồi giữ, KHÔNG để là thuộc tính tính-lại.
+    //
+    // Bản đầu khai `duong` và `nhip` là `private var { ... }`, mà SwiftUI đọc
+    // chúng nhiều lần trong MỖI lần dựng lại — riêng `duong` bị đọc ở ba chỗ,
+    // mỗi lần dựng lại tới 60 nút. Cộng với một hoạt ảnh `repeatForever`
+    // đang chạy, cây view không bao giờ đứng yên và màn hình đơ cứng.
+    @State private var duong: [NutDuongIelts] = []
+    @State private var nhip = NhipHocIelts()
 
-    private var duong: [NutDuongIelts] {
-        guard let c = vm.changHienTai else { return [] }
+    private func tinhLai() {
+        nhip = NhipHocIelts.tinh(mocXong: vm.mocXong)
+        guard let c = vm.changHienTai else { duong = []; return }
         var soMuc: [String: Int] = [:]
         var xongSo: [String: Int] = [:]
         for p in c.phanTheoThuTu {
             soMuc[p.kind] = p.soMuc
             xongSo[p.kind] = p.daXong
         }
-        return DungConDuong.dung(soMuc: soMuc, daXongSo: xongSo)
+        duong = DungConDuong.dung(soMuc: soMuc, daXongSo: xongSo)
     }
 
+    // ⚠️ KHÔNG có ScrollView ở đây. Màn IELTS đã bọc toàn bộ trong một
+    // `ScrollView`, và lồng hai ScrollView CÙNG TRỤC thì cái trong nuốt cử
+    // chỉ kéo còn cái ngoài đứng im — cả trang thành "đơ một cục, không di
+    // chuyển được" (người dùng báo 19/09/2026). Đây là một khối NỘI DUNG,
+    // cha lo việc cuộn.
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: Spacing.lg) {
             thanhNhip
-            ScrollView {
-                VStack(spacing: Spacing.lg) {
-                    loiRobot
-                    theHomNay
-                    khungConDuong
-                    Color.clear.frame(height: 40)
-                }
-                .padding(.horizontal, Spacing.md)
-                .padding(.top, Spacing.md)
-            }
+            loiRobot
+            theHomNay
+            khungConDuong
         }
         .background(AppColors.backgroundPrimary)
         .overlay {
@@ -61,8 +67,13 @@ struct ConDuongIeltsView: View {
         }
         .onAppear {
             soXongTruoc = vm.daXong.count
+            tinhLai()
             NhacChuoiIelts.datLai(daHocHomNay: nhip.xpHomNay > 0, chuoiNgay: nhip.chuoiNgay)
         }
+        // Tính lại ĐÚNG khi dữ liệu đổi, không phải mỗi lần vẽ.
+        .onChange(of: vm.changDangXem) { _, _ in tinhLai() }
+        .onChange(of: vm.daXong.count) { _, _ in tinhLai() }
+        .onChange(of: vm.loTrinh?.chang.count ?? 0) { _, _ in tinhLai() }
     }
 
     // MARK: Nhân vật
@@ -113,6 +124,7 @@ struct ConDuongIeltsView: View {
         .padding(.horizontal, Spacing.md)
         .padding(.vertical, Spacing.sm)
         .background(AppColors.backgroundCard)
+        .cornerRadius(CornerRadius.large)
         .overlay(alignment: .bottom) {
             // Thanh tiến độ ngày chạy sát đáy: nhìn một cái là biết còn
             // bao nhiêu nữa thì xong hôm nay.
@@ -238,7 +250,10 @@ private struct NutTrenDuong: View {
         .buttonStyle(.plain)
         .disabled(!nut.moKhoa)
         .onAppear {
-            guard dangMo else { return }
+            // ⚠️ `repeatForever` chỉ được bật MỘT lần. View dựng lại (đổi
+            // chặng, kéo làm mới) mà bật thêm lần nữa thì các lớp hoạt ảnh
+            // chồng lên nhau và CPU quay mãi cho một cái nhấp nháy.
+            guard dangMo, !nhay else { return }
             withAnimation(.easeInOut(duration: 1.1).repeatForever(autoreverses: true)) {
                 nhay = true
             }
