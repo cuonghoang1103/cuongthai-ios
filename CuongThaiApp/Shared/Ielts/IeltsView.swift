@@ -24,7 +24,12 @@ struct IeltsView: View {
                     } else {
                         chonChang
                         if let b = vm.bandCuaChang { theBand(b) }
-                        luoiPhan
+                        // CON ĐƯỜNG thay cho lưới 8 ô đếm số. Lưới cũ nói
+                        // "còn 200 bài tập" — đúng nhưng vô dụng; con đường
+                        // nói "bây giờ làm cái này", và đó là khác biệt giữa
+                        // mở app rồi đóng với mở app rồi học.
+                        ConDuongIeltsView(vm: vm)
+                            .frame(minHeight: 520)
                         nutPhongThi
                         if let b = vm.bandCuaChang { theKyNang(b) }
                     }

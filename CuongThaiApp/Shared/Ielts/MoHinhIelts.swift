@@ -363,6 +363,11 @@ struct MucTienDo: Decodable, Hashable {
     let muc: String
     let xong: Bool
     let diem: Int?
+    /// ⚠️ Máy chủ VẪN GỬI trường này (`select` trong `layTienDo` có nó), chỉ
+    /// là mô hình cũ không khai nên nó rơi mất. Đây là thứ duy nhất tính được
+    /// CHUỖI NGÀY học — không có nó thì phải thêm bảng mới ở backend cho một
+    /// dữ liệu vốn đã nằm sẵn trong tay.
+    let updatedAt: String?
 }
 
 struct GoiTienDo: Decodable {

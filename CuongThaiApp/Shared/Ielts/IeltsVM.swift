@@ -54,6 +54,8 @@ final class IeltsVM: ObservableObject {
     /// danh sách hỏi "mục này xong chưa" cho từng dòng, mà mảng thì mỗi dòng
     /// là một lượt quét toàn bộ.
     @Published var daXong: Set<String> = []
+    /// Mốc thời gian của mọi mục ĐÃ XONG — để tính chuỗi ngày và XP hôm nay.
+    @Published var mocXong: [Date] = []
 
     @Published var dangTai = false
     @Published var loi: String?
@@ -78,6 +80,16 @@ final class IeltsVM: ObservableObject {
             let (a, b) = try await (lt, td)
             loTrinh = a
             daXong = Set(b.filter(\.xong).map { Self.khoa($0.stage, $0.kind, $0.muc) })
+            let bo = ISO8601DateFormatter()
+            bo.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            let bo2 = ISO8601DateFormatter()
+            mocXong = b.filter(\.xong).compactMap {
+                // Hai bộ đọc: máy chủ trả ISO CÓ mili giây. Chỉ dùng bộ
+                // không-mili thì mọi mốc đều `nil` và chuỗi ngày luôn bằng 0
+                // — sai một cách im lặng, và trông y như "chưa học ngày nào".
+                guard let s = $0.updatedAt else { return nil }
+                return bo.date(from: s) ?? bo2.date(from: s)
+            }
         } catch { ghiLoi(error) }
     }
 
