@@ -117,5 +117,7 @@ struct CuongThaiApp: App {
                     }
                 }
         }
+        // Phím tắt ⌘1…⌘0 — xem `LenhDieuHuong`.
+        .commands { LenhDieuHuong(appState: appState) }
     }
 }

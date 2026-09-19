@@ -156,6 +156,18 @@ struct KhungBaView: View {
                      lanDongKhung: lanDongKhung)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(maHex: canh.mauNen))
+            // Thả tệp từ Files/Split View thẳng vào cảnh. Trên iPad đây là
+            // đường tự nhiên hơn hẳn menu → chọn tệp → duyệt thư mục.
+            .dropDestination(for: URL.self) { ds, _ in
+                guard let u = ds.first else { return false }
+                let duoi = u.pathExtension.lowercased()
+                guard ["usdz", "usd", "usda", "usdc", "obj", "dae", "scn"].contains(duoi) else {
+                    khoe(T("Chỉ thả được mô hình 3D: .usdz, .obj, .dae"))
+                    return false
+                }
+                nhapTuURL(u)
+                return true
+            }
     }
 
     /// Khối đã KHOÁ thì bỏ qua — sàn nằm dưới mọi thứ nên nó là thứ hay bị
@@ -534,6 +546,16 @@ struct KhungBaView: View {
     /// đó không còn gì để lần ra vì sao.
     private func nhapTep(_ kq: Result<[URL], Error>) {
         guard case .success(let ds) = kq, let u = ds.first else { return }
+        nhapTuURL(u)
+    }
+
+    /// Nhận mô hình từ MỘT url — dùng chung cho nút "Nhập tệp" và cho cú THẢ.
+    ///
+    /// Tách ra vì hai lối vào phải xử lý y hệt nhau: cùng chép vào hộp cát,
+    /// cùng dựng thử để bắt tệp hỏng. Viết hai bản là sớm muộn một bên quên
+    /// mất một bước — và bên quên sẽ là bên ít người dùng hơn, nên lỗi nằm
+    /// đó rất lâu.
+    private func nhapTuURL(_ u: URL) {
         let mo = u.startAccessingSecurityScopedResource()
         defer { if mo { u.stopAccessingSecurityScopedResource() } }
 

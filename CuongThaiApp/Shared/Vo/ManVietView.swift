@@ -148,25 +148,14 @@ struct ManVietView: View {
         .fileImporter(isPresented: $dangChonPdf, allowedContentTypes: [.pdf],
                       allowsMultipleSelection: true) { ket in
             switch ket {
-            case .success(let urls):
-                guard !urls.isEmpty else { return }
-                if urls.count == 1, let url = urls.first {
-                    // Một tệp thì vẫn hỏi khoảng trang như cũ — người dùng
-                    // hay chỉ cần vài trang giữa cuốn.
-                    guard let ten = KhoVo.chepVaoKho(tu: url, duoi: "pdf") else {
-                        bao(T("Không mở được tệp PDF này")); return
-                    }
-                    let n = NenTrangView.soTrangPdf(ten: ten)
-                    guard n > 0 else { bao(T("Tệp PDF rỗng hoặc hỏng")); return }
-                    pdfVuaChon = (ten, url.lastPathComponent, n)
-                    cuaSo = .hoiNhapPdf
-                } else {
-                    nhapNhieuPdf(urls)
-                }
-            case .failure(let e):
-                bao(e.localizedDescription)
+            case .success(let urls): nhanPdf(urls)
+            case .failure(let e):    bao(e.localizedDescription)
             }
         }
+        // Thả PDF hoặc ảnh từ Files / Split View thẳng vào trang đang mở.
+        // Trên iPad đây là đường tự nhiên hơn hẳn nút nhập → duyệt thư mục,
+        // nhất là khi giáo trình đang mở sẵn ở cửa sổ bên cạnh.
+        .dropDestination(for: URL.self) { ds, _ in nhanTepTha(ds) }
         .onAppear {
             // Từ tìm kiếm thì vào thẳng trang đó; không thì về trang đang
             // viết dở, không phải trang 1.
@@ -185,6 +174,56 @@ struct ManVietView: View {
     ///
     /// Không hỏi khoảng trang nữa: chọn nhiều tệp nghĩa là "đổ hết giáo
     /// trình vào đây", hỏi từng tệp một lại thành mười ba hộp thoại.
+    /// Nhận một hoặc nhiều PDF — dùng chung cho nút nhập và cho cú THẢ.
+    ///
+    /// Tách ra vì hai lối vào phải xử lý y hệt: cùng chép vào kho, cùng đếm
+    /// trang, cùng bắt tệp rỗng. Viết hai bản thì sớm muộn một bên thiếu một
+    /// bước, và bên thiếu sẽ là bên ít dùng hơn nên lỗi nằm đó rất lâu.
+    private func nhanPdf(_ urls: [URL]) {
+        guard !urls.isEmpty else { return }
+        if urls.count == 1, let url = urls.first {
+            // Một tệp thì vẫn hỏi khoảng trang như cũ — người dùng hay chỉ
+            // cần vài trang giữa cuốn.
+            guard let ten = KhoVo.chepVaoKho(tu: url, duoi: "pdf") else {
+                bao(T("Không mở được tệp PDF này")); return
+            }
+            let n = NenTrangView.soTrangPdf(ten: ten)
+            guard n > 0 else { bao(T("Tệp PDF rỗng hoặc hỏng")); return }
+            pdfVuaChon = (ten, url.lastPathComponent, n)
+            cuaSo = .hoiNhapPdf
+        } else {
+            nhapNhieuPdf(urls)
+        }
+    }
+
+    /// Xử lý một cú thả: PDF đi đường nhập PDF, ảnh thành trang mới.
+    ///
+    /// ⚠️ Ảnh phải ĐỌC NGAY trong hàm này. URL của cú thả trỏ vào một bản
+    /// tạm mà hệ thống dọn ngay sau khi hàm trả về — giữ URL rồi đọc sau là
+    /// nhận về tệp không tồn tại, mà lúc đó không còn gì để lần ra vì sao.
+    private func nhanTepTha(_ ds: [URL]) -> Bool {
+        let anhDuoi = ["png", "jpg", "jpeg", "heic", "heif", "gif", "tiff", "bmp"]
+        let pdfs = ds.filter { $0.pathExtension.lowercased() == "pdf" }
+        let anhs = ds.filter { anhDuoi.contains($0.pathExtension.lowercased()) }
+        guard !pdfs.isEmpty || !anhs.isEmpty else {
+            bao(T("Chỉ thả được tệp PDF hoặc ảnh"))
+            return false
+        }
+        if !pdfs.isEmpty { nhanPdf(pdfs) }
+        if !anhs.isEmpty {
+            // Giữ nguyên byte gốc, không giải mã ra `UIImage` rồi mã hoá
+            // lại: đi vòng đó làm mất chất lượng và xoay ảnh sai theo EXIF.
+            let dus: [Data] = anhs.compactMap { u in
+                let mo = u.startAccessingSecurityScopedResource()
+                defer { if mo { u.stopAccessingSecurityScopedResource() } }
+                return try? Data(contentsOf: u)
+            }
+            if dus.isEmpty { bao(T("Không đọc được ảnh vừa thả")) }
+            else { themTrangTuAnh(dus) }
+        }
+        return true
+    }
+
     private func nhapNhieuPdf(_ urls: [URL]) {
         var soTep = 0, soTrang = 0
         for url in urls {
