@@ -37,6 +37,7 @@ struct IeltsView: View {
                             nutHocVideo
                             nutPhongThi
                         }
+                        nutKhoTuVung
                         // CON ĐƯỜNG thay cho lưới 8 ô đếm số. Lưới cũ nói
                         // "còn 200 bài tập" — đúng nhưng vô dụng; con đường
                         // nói "bây giờ làm cái này", và đó là khác biệt giữa
@@ -222,6 +223,37 @@ struct IeltsView: View {
             oLoiVaoIelts(bieuTuong: "timer", mau: AppColors.error,
                          ten: T("Phòng thi"),
                          moTa: T("Ba phần, đồng hồ thật"))
+        }
+        .buttonStyle(.plain)
+    }
+
+    /// Kho từ vựng — cầu nối sang 13.226 từ của My Language.
+    ///
+    /// Để RIÊNG một hàng ngang (không chen vào hàng hai ô) vì con số 13.226
+    /// mới là thứ đáng nói, mà ô vuông thì không đủ chỗ cho nó.
+    private var nutKhoTuVung: some View {
+        NavigationLink { KhoTuVungView() } label: {
+            HStack(spacing: Spacing.md) {
+                Image(systemName: "character.book.closed.fill")
+                    .font(.titleMedium).foregroundStyle(Color.white)
+                    .frame(width: 36, height: 36)
+                    .background(AppColors.success)
+                    .cornerRadius(CornerRadius.small)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(T("Kho từ vựng")).font(.titleSmall)
+                        .foregroundStyle(AppColors.textPrimary)
+                    Text(T("13.226 từ · 346 chủ đề · có ví dụ và phát âm"))
+                        .font(.caption).foregroundStyle(AppColors.textSecondary)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right").font(.caption2)
+                    .foregroundStyle(AppColors.textTertiary)
+            }
+            .padding(Spacing.md)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(AppColors.backgroundCard)
+            .cornerRadius(CornerRadius.large)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
