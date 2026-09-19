@@ -97,6 +97,12 @@ struct ManHocVideoView: View {
                 }
                 .accessibilityLabel(thich ? T("Bỏ yêu thích") : T("Yêu thích"))
             }
+            // Nút đổi giọng đọc. `DocTu` vốn ĐÃ tôn trọng giọng người dùng
+            // chọn, nhưng màn chọn giọng trước nay chỉ mở được từ My
+            // Language và 4 màn IELTS — KHÔNG có ở đây, đúng nơi người ta
+            // bấm "Đọc to" rồi thấy giọng khó nghe. Lần thứ ba cùng một
+            // dạng lỗi: thiết lập chỉ có giá trị ở nơi nghe thấy vấn đề.
+            ToolbarItem(placement: .primaryAction) { NutGiongIelts() }
             ToolbarItem(placement: .primaryAction) { menuCongCu }
         }
         .task { thich = daThich; await nap() }
