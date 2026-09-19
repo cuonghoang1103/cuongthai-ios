@@ -22,6 +22,7 @@ struct KhungVeView: View {
     @State private var moThemHinh = false
     @State private var moCaiDat = false
     @State private var tiLe: CGFloat = 1
+    @State private var tiLeGoc: CGFloat = 1
     @State private var bao: String?
     @State private var suaChu: HinhVe?
 
@@ -88,11 +89,22 @@ struct KhungVeView: View {
 
             Spacer()
 
-            Text("\(Int(tiLe * 100))%").font(.caption2).foregroundStyle(AppColors.textTertiary)
-            Button { tiLe = max(0.25, tiLe - 0.25) } label: { Image(systemName: "minus.magnifyingglass") }
+            // Chạm vào số % để về 100%. Phóng lạc rồi mà phải bấm − mười lần
+            // mới về chỗ cũ là thứ làm người ta bỏ dùng nút phóng.
+            Button { withAnimation(AppAnimations.quick) { tiLe = 1 } } label: {
+                Text("\(Int(tiLe * 100))%")
+                    .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                    .foregroundStyle(AppColors.textSecondary)
+                    .frame(width: 48)
+            }
+            .buttonStyle(.plain)
+            Button { doiTiLe(-1) } label: { Image(systemName: "minus.magnifyingglass") }
                 .buttonStyle(.plain).foregroundStyle(AppColors.textSecondary)
-            Button { tiLe = min(3, tiLe + 0.25) } label: { Image(systemName: "plus.magnifyingglass") }
+            Button { doiTiLe(1) } label: { Image(systemName: "plus.magnifyingglass") }
                 .buttonStyle(.plain).foregroundStyle(AppColors.textSecondary)
+            Button { vuaKhung() } label: { Image(systemName: "arrow.up.left.and.arrow.down.right") }
+                .buttonStyle(.plain).foregroundStyle(AppColors.textSecondary)
+                .accessibilityLabel(T("Vừa khung"))
         }
         .padding(.horizontal, Spacing.md)
         .padding(.vertical, Spacing.sm)
@@ -127,6 +139,56 @@ struct KhungVeView: View {
             .padding(Spacing.lg)
         }
         .background(AppColors.backgroundTertiary)
+        // Chụm hai ngón để phóng — cách phóng mà ai cầm iPad cũng thử đầu
+        // tiên. Chỉ có hai nút ±25% thì người dùng chụm tay, thấy không ăn,
+        // rồi kết luận là app không phóng được.
+        //
+        // ⚠️ Chỉ bật khi ĐANG Ở CHẾ ĐỘ HÌNH KHỐI. Ở chế độ nét tay, PencilKit
+        // cần hai ngón cho thao tác của chính nó, và cướp cử chỉ đó làm việc
+        // hoàn tác/cuộn của bảng vẽ hỏng.
+        .gesture(cheDo == .hinh ? phongHaiNgon : nil)
+        .onAppear { doKhung() }
+    }
+
+    /// Bề ngang khung nhìn, để tính "vừa khung".
+    @State private var rongKhungNhin: CGFloat = 0
+
+    private var phongHaiNgon: some Gesture {
+        MagnifyGesture()
+            .onChanged { g in
+                if tiLeGoc == 0 { tiLeGoc = tiLe }
+                tiLe = keo(tiLeGoc * g.magnification)
+            }
+            .onEnded { _ in tiLeGoc = tiLe }
+    }
+
+    /// Trần 8× chứ không 3×: bản vẽ khổ Web rộng 1440pt, muốn sửa một chi
+    /// tiết 20pt thì 300% vẫn còn quá nhỏ để chạm trúng bằng ngón tay.
+    private func keo(_ v: CGFloat) -> CGFloat { min(8, max(0.1, v)) }
+
+    private func doiTiLe(_ huong: Int) {
+        // Nhân/chia 1,25 thay vì cộng/trừ 0,25: ở mức 800% thì bước cộng
+        // 0,25 là không thấy gì đổi, còn ở 25% thì nó nhảy gấp đôi.
+        withAnimation(AppAnimations.quick) {
+            tiLe = keo(huong > 0 ? tiLe * 1.25 : tiLe / 1.25)
+            tiLeGoc = tiLe
+        }
+    }
+
+    private func vuaKhung() {
+        guard rongKhungNhin > 0 else { return }
+        withAnimation(AppAnimations.quick) {
+            tiLe = keo((rongKhungNhin - Spacing.lg * 2) / banVe.coKhung.width)
+            tiLeGoc = tiLe
+        }
+    }
+
+    private func doKhung() {
+        #if os(iOS)
+        rongKhungNhin = UIApplication.shared.connectedScenes
+            .compactMap { ($0 as? UIWindowScene)?.keyWindow?.bounds.width }
+            .first ?? 0
+        #endif
     }
 
     private func hinhKeoDuoc(_ h: HinhVe) -> some View {

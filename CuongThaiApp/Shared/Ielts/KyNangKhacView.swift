@@ -466,6 +466,20 @@ struct DeVietView: View {
                     Text(n).font(.caption).foregroundStyle(AppColors.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
+                if let k = de.weakSample {
+                    Divider().padding(.vertical, 4)
+                    Text("Band \(k.band) — \(T("bài KÉM để đối chiếu"))")
+                        .font(.captionBold).foregroundStyle(AppColors.error)
+                    Text(k.text).font(.bodySmall).foregroundStyle(AppColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    ForEach(k.problems, id: \.self) { v in
+                        HStack(alignment: .top, spacing: 6) {
+                            Text("✗").font(.caption2).foregroundStyle(AppColors.error)
+                            Text(v).font(.caption).foregroundStyle(AppColors.textTertiary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
             }
             .padding(.top, 8)
         } label: {
@@ -773,19 +787,47 @@ struct BaiHocIeltsView: View {
         let chang = vm.changDangXem
         List {
             ForEach(vm.chuDiem[chang] ?? []) { cd in
-                Section("\(cd.icon ?? "📘") \(cd.title)") {
+                Section {
                     ForEach(cd.lessons) { b in
                         NavigationLink { MotBaiHocView(vm: vm, bai: b) } label: {
-                            HStack(spacing: Spacing.sm) {
-                                Image(systemName: vm.xong(chang, "units", b.id) ? "checkmark.circle.fill" : "book")
-                                    .foregroundStyle(vm.xong(chang, "units", b.id) ? AppColors.success : AppColors.textTertiary)
-                                VStack(alignment: .leading, spacing: 1) {
+                            HStack(alignment: .top, spacing: Spacing.sm) {
+                                // Số bài trong vòng tròn: người tự học cần biết
+                                // mình đang ở bài mấy trên tổng bao nhiêu, và
+                                // một hàng chỉ có tên bài thì không nói được điều đó.
+                                Text(b.n.map(String.init) ?? "•")
+                                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                                    .foregroundStyle(vm.xong(chang, "units", b.id) ? Color.white : AppColors.primary)
+                                    .frame(width: 28, height: 28)
+                                    .background(Circle().fill(vm.xong(chang, "units", b.id)
+                                                              ? AppColors.success : AppColors.primary.opacity(0.14)))
+                                VStack(alignment: .leading, spacing: 2) {
                                     Text(b.title).font(.bodyMedium).foregroundStyle(AppColors.textPrimary)
                                     if let g = b.goal, !g.isEmpty {
-                                        Text(g).font(.caption2).foregroundStyle(AppColors.textTertiary).lineLimit(2)
+                                        Text(g).font(.caption).foregroundStyle(AppColors.textSecondary)
+                                            .fixedSize(horizontal: false, vertical: true)
+                                    }
+                                    HStack(spacing: 8) {
+                                        if let n = b.blocks?.count, n > 0 {
+                                            nhanNho("\(n) \(T("điểm ngữ pháp"))", AppColors.primary)
+                                        }
+                                        if let n = b.keyWords?.count, n > 0 {
+                                            nhanNho("\(n) \(T("từ"))", AppColors.secondary)
+                                        }
+                                        if let n = b.practice?.count, n > 0 {
+                                            nhanNho("\(n) \(T("việc làm"))", AppColors.accent)
+                                        }
                                     }
                                 }
                             }
+                            .padding(.vertical, 3)
+                        }
+                    }
+                } header: {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("\(cd.icon ?? "📘") \(cd.title)")
+                        if let p = cd.subtitle, !p.isEmpty {
+                            Text(p).font(.caption2).textCase(nil)
+                                .foregroundStyle(AppColors.textTertiary)
                         }
                     }
                 }
@@ -801,6 +843,12 @@ struct BaiHocIeltsView: View {
         #endif
         .task { await vm.napBaiHoc(chang) }
     }
+
+    private func nhanNho(_ t: String, _ m: Color) -> some View {
+        Text(t).font(.caption2).foregroundStyle(m)
+            .padding(.horizontal, 6).padding(.vertical, 2)
+            .background(m.opacity(0.13)).cornerRadius(4)
+    }
 }
 
 struct MotBaiHocView: View {
@@ -810,102 +858,199 @@ struct MotBaiHocView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.md) {
-                if let g = bai.goal, !g.isEmpty {
-                    Text(g).font(.bodyMedium).foregroundStyle(AppColors.textSecondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(Spacing.md)
-                        .background(AppColors.backgroundCard)
-                        .cornerRadius(CornerRadius.large)
+                if let g = bai.goal, !g.isEmpty { theMucTieu(g) }
+
+                ForEach(Array((bai.blocks ?? []).enumerated()), id: \.offset) { i, b in
+                    theNguPhap(i + 1, b)
                 }
 
-                ForEach(Array((bai.grammar ?? []).enumerated()), id: \.offset) { _, g in
-                    VStack(alignment: .leading, spacing: Spacing.sm) {
-                        if let f = g.formula, !f.isEmpty {
-                            Text(f).font(.system(size: 15, weight: .semibold, design: .monospaced))
-                                .foregroundStyle(AppColors.primary)
-                                .padding(Spacing.sm)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(AppColors.primary.opacity(0.10))
-                                .cornerRadius(CornerRadius.medium)
-                        }
-                        Text(g.explain).font(.bodyMedium).foregroundStyle(AppColors.textPrimary)
-                            .fixedSize(horizontal: false, vertical: true)
-                        ForEach(g.examples) { e in
-                            VStack(alignment: .leading, spacing: 1) {
-                                HStack {
-                                    Text(e.en).font(.bodySmall).foregroundStyle(AppColors.textPrimary)
-                                    Spacer()
-                                    Button { DocTu.shared.doc(e.en, code: "en") } label: {
-                                        Image(systemName: "speaker.wave.2").font(.caption2)
-                                    }
-                                    .buttonStyle(.plain).foregroundStyle(AppColors.textTertiary)
-                                }
-                                Text(e.vi).font(.caption2).foregroundStyle(AppColors.textTertiary)
-                            }
-                        }
-                        if let m = g.mistake {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("✗ \(m.wrong)").font(.caption).foregroundStyle(AppColors.error)
-                                Text("✓ \(m.right)").font(.caption).foregroundStyle(AppColors.success)
-                                Text(m.why).font(.caption2).foregroundStyle(AppColors.textTertiary)
-                                    .fixedSize(horizontal: false, vertical: true)
-                            }
-                            .padding(Spacing.sm)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(AppColors.warning.opacity(0.10))
-                            .cornerRadius(CornerRadius.medium)
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(Spacing.md)
-                    .background(AppColors.backgroundCard)
-                    .cornerRadius(CornerRadius.large)
-                }
+                if let w = bai.keyWords, !w.isEmpty { theTuKhoa(w) }
+                if let p = bai.practice, !p.isEmpty { theTuLam(p) }
 
-                if let w = bai.words, !w.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Label(T("Từ của bài"), systemImage: "character.book.closed.fill")
-                            .font(.captionBold).foregroundStyle(AppColors.secondary)
-                        ForEach(w) { t in
-                            HStack(alignment: .top, spacing: Spacing.sm) {
-                                VStack(alignment: .leading, spacing: 1) {
-                                    Text(t.en).font(.bodyMedium).foregroundStyle(AppColors.textPrimary)
-                                    Text(t.ipa).font(.caption2).foregroundStyle(AppColors.textTertiary)
-                                }
-                                .frame(width: 120, alignment: .leading)
-                                Text(t.vi).font(.bodySmall).foregroundStyle(AppColors.textSecondary)
-                                Spacer(minLength: 0)
-                            }
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(Spacing.md)
-                    .background(AppColors.backgroundCard)
-                    .cornerRadius(CornerRadius.large)
-                }
-
-                let xong = vm.xong(vm.changDangXem, "units", bai.id)
-                Button {
-                    Task { await vm.doiXong(vm.changDangXem, "units", bai.id, !xong) }
-                } label: {
-                    Label(xong ? T("Đã học xong") : T("Đánh dấu đã học xong"),
-                          systemImage: xong ? "checkmark.circle.fill" : "circle")
-                        .font(.buttonText).frame(maxWidth: .infinity)
-                        .padding(.vertical, Spacing.sm + 2)
-                        .background(xong ? AppColors.success.opacity(0.15) : AppColors.backgroundTertiary)
-                        .foregroundStyle(xong ? AppColors.success : AppColors.textPrimary)
-                        .cornerRadius(CornerRadius.medium)
-                }
-                .buttonStyle(.plain)
+                nutXong
             }
             .padding(Spacing.md)
             .padding(.bottom, 80)
         }
         .background(AppColors.backgroundPrimary)
-        .navigationTitle(bai.title)
+        .navigationTitle(bai.n.map { "\(T("Bài")) \($0)" } ?? bai.title)
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
         .onDisappear { DocTu.shared.dung() }
     }
+
+    // MARK: Mục tiêu
+
+    /// "Học xong bài này LÀM ĐƯỢC gì" đặt trên cùng, viền trái đậm.
+    ///
+    /// Đây là câu duy nhất trả lời được "vì sao tôi phải đọc tiếp" — chôn nó
+    /// thành một dòng xám giữa đám nội dung là vứt đi thứ giữ người học lại.
+    private func theMucTieu(_ g: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(bai.title).font(.titleSmall).foregroundStyle(AppColors.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+            HStack(alignment: .top, spacing: 7) {
+                Image(systemName: "target").font(.caption).foregroundStyle(AppColors.success)
+                Text(g).font(.bodyMedium).foregroundStyle(AppColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(Spacing.md)
+        .background(AppColors.backgroundCard)
+        .overlay(alignment: .leading) {
+            Rectangle().fill(AppColors.success).frame(width: 4)
+        }
+        .cornerRadius(CornerRadius.large)
+    }
+
+    // MARK: Một điểm ngữ pháp
+
+    private func theNguPhap(_ so: Int, _ g: KhoiNguPhap) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            HStack(spacing: 7) {
+                Text("\(so)")
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.white)
+                    .frame(width: 22, height: 22)
+                    .background(Circle().fill(AppColors.primary))
+                Text(T("Điểm ngữ pháp")).font(.captionBold).foregroundStyle(AppColors.primary)
+            }
+
+            if let f = g.formula, !f.isEmpty {
+                // Công thức chạy chữ ĐỀU (monospaced): "S + am/is/are + N/Adj"
+                // đọc bằng font thường thì các ký hiệu trôi vào nhau.
+                Text(f)
+                    .font(.system(size: 15, weight: .semibold, design: .monospaced))
+                    .foregroundStyle(AppColors.textPrimary)
+                    .padding(Spacing.sm)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(AppColors.primary.opacity(0.10))
+                    .cornerRadius(CornerRadius.medium)
+            }
+
+            Text(g.explain).font(.bodyMedium).foregroundStyle(AppColors.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            if !g.examples.isEmpty {
+                VStack(alignment: .leading, spacing: 7) {
+                    ForEach(g.examples) { e in
+                        HStack(alignment: .top, spacing: Spacing.sm) {
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(e.en).font(.bodyMedium).foregroundStyle(AppColors.textPrimary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                Text(e.vi).font(.caption).foregroundStyle(AppColors.textTertiary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            Spacer(minLength: 0)
+                            Button { DocTu.shared.doc(e.en, code: "en") } label: {
+                                Image(systemName: "speaker.wave.2").font(.caption)
+                            }
+                            .buttonStyle(.plain).foregroundStyle(AppColors.primary)
+                        }
+                    }
+                }
+                .padding(Spacing.sm)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(AppColors.backgroundTertiary)
+                .cornerRadius(CornerRadius.medium)
+            }
+
+            // Lỗi người Việt hay mắc — phần đáng giá nhất của cả bài, nên nó
+            // được khung riêng màu cảnh báo chứ không nằm lẫn vào ví dụ.
+            if let m = g.mistake {
+                VStack(alignment: .leading, spacing: 4) {
+                    Label(T("Người Việt hay sai ở đây"), systemImage: "exclamationmark.triangle.fill")
+                        .font(.captionBold).foregroundStyle(AppColors.warning)
+                    HStack(alignment: .top, spacing: 6) {
+                        Text("✗").foregroundStyle(AppColors.error).font(.captionBold)
+                        Text(m.wrong).font(.bodySmall).foregroundStyle(AppColors.error)
+                            .strikethrough().fixedSize(horizontal: false, vertical: true)
+                    }
+                    HStack(alignment: .top, spacing: 6) {
+                        Text("✓").foregroundStyle(AppColors.success).font(.captionBold)
+                        Text(m.right).font(.bodySmall).foregroundStyle(AppColors.success)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Text(m.why).font(.caption).foregroundStyle(AppColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(Spacing.sm)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(AppColors.warning.opacity(0.10))
+                .cornerRadius(CornerRadius.medium)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(Spacing.md)
+        .background(AppColors.backgroundCard)
+        .cornerRadius(CornerRadius.large)
+    }
+
+    // MARK: Từ của bài
+
+    private func theTuKhoa(_ w: [TuKho]) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label("\(T("Từ cần thuộc")) (\(w.count))", systemImage: "character.book.closed.fill")
+                .font(.captionBold).foregroundStyle(AppColors.secondary)
+            ForEach(w) { t in
+                HStack(alignment: .top, spacing: Spacing.sm) {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(t.en).font(.bodyMedium).foregroundStyle(AppColors.textPrimary)
+                        Text(t.ipa).font(.caption2).foregroundStyle(AppColors.textTertiary)
+                    }
+                    .frame(width: 130, alignment: .leading)
+                    Text(t.vi).font(.bodySmall).foregroundStyle(AppColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 0)
+                    Button { DocTu.shared.doc(t.en, code: "en") } label: {
+                        Image(systemName: "speaker.wave.2").font(.caption)
+                    }
+                    .buttonStyle(.plain).foregroundStyle(AppColors.primary)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(Spacing.md)
+        .background(AppColors.backgroundCard)
+        .cornerRadius(CornerRadius.large)
+    }
+
+    // MARK: Việc tự làm
+
+    private func theTuLam(_ p: [String]) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label(T("Làm ngay sau bài"), systemImage: "checklist")
+                .font(.captionBold).foregroundStyle(AppColors.accent)
+            ForEach(Array(p.enumerated()), id: \.offset) { i, v in
+                HStack(alignment: .top, spacing: 8) {
+                    Text("\(i + 1).").font(.captionBold).foregroundStyle(AppColors.textTertiary)
+                    Text(v).font(.bodyMedium).foregroundStyle(AppColors.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(Spacing.md)
+        .background(AppColors.accent.opacity(0.08))
+        .cornerRadius(CornerRadius.large)
+    }
+
+    private var nutXong: some View {
+        let xong = vm.xong(vm.changDangXem, "units", bai.id)
+        return Button {
+            Task { await vm.doiXong(vm.changDangXem, "units", bai.id, !xong) }
+        } label: {
+            Label(xong ? T("Đã học xong") : T("Đánh dấu đã học xong"),
+                  systemImage: xong ? "checkmark.circle.fill" : "circle")
+                .font(.buttonText).frame(maxWidth: .infinity)
+                .padding(.vertical, Spacing.sm + 2)
+                .background(xong ? AppColors.success.opacity(0.15) : AppColors.backgroundTertiary)
+                .foregroundStyle(xong ? AppColors.success : AppColors.textPrimary)
+                .cornerRadius(CornerRadius.medium)
+        }
+        .buttonStyle(.plain)
+    }
 }
+

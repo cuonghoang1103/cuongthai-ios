@@ -269,7 +269,16 @@ struct DeVietIelts: Decodable, Identifiable, Hashable {
     let outline: [DanY]
     let phrases: [CumTu]
     let sample: BaiMau
+    /// Bài mẫu KÉM để đối chiếu. Nhìn cái sai mới nhớ cái đúng — bản đầu
+    /// tôi bỏ sót trường này, và mất đúng nửa giá trị của phần Viết.
+    let weakSample: BaiMauKem?
     let mistakes: [LoiHayMac]
+}
+
+struct BaiMauKem: Decodable, Hashable {
+    let band: String
+    let text: String
+    let problems: [String]
 }
 
 // ─── Nói ─────────────────────────────────────────────────────
@@ -312,19 +321,36 @@ struct KhoiNguPhap: Decodable, Hashable {
     let mistake: LoiHayMac?
 }
 
+/// ⚠️ TÊN TRƯỜNG PHẢI KHỚP `types.ts` CỦA WEB, KHÔNG ĐƯỢC ĐẶT LẠI CHO XUÔI TAI.
+///
+/// Bản đầu tiên tôi khai `grammar` và `words` vì nghe hợp lý hơn. Dữ liệu
+/// thật tên là `blocks` và `keyWords`, nên hai trường đó KHÔNG BAO GIỜ giải
+/// mã được và luôn là `nil` — màn Bài học chỉ hiện đúng một dòng `goal` rồi
+/// trống trơn. Không có lỗi, không có cảnh báo: chỉ là một khoá học trông
+/// như chẳng có gì để học. Người dùng báo 19/09/2026.
+///
+/// Và `practice` thì tôi quên hẳn — mất luôn phần việc tự làm sau mỗi bài,
+/// vốn là thứ biến một bài đọc hiểu thành một bài học.
 struct BaiHocIelts: Decodable, Identifiable, Hashable {
     let id: String
+    /// Số thứ tự bài trong cả chặng (1–40).
+    let n: Int?
     let title: String
-    let titleVi: String?
-    let minutes: Int?
+    /// Học xong LÀM ĐƯỢC gì — viết bằng động từ.
     let goal: String?
-    let grammar: [KhoiNguPhap]?
-    let words: [TuVungIelts]?
+    /// Phần giảng chính. Tên `blocks` là của web, giữ nguyên.
+    let blocks: [KhoiNguPhap]?
+    /// Từ cần thuộc ngay trong bài — chỉ có en/ipa/vi, KHÁC `TuVungIelts`
+    /// (cái kia còn có từ loại và câu ví dụ).
+    let keyWords: [TuKho]?
+    /// Việc tự làm sau bài, phải kiểm được.
+    let practice: [String]?
 }
 
 struct ChuDiemIelts: Decodable, Identifiable, Hashable {
     let id: String
     let title: String
+    let subtitle: String?
     let icon: String?
     let lessons: [BaiHocIelts]
 }

@@ -367,42 +367,55 @@ private struct BangChiaSe: UIViewControllerRepresentable {
 // MARK: - Dựng cảnh SceneKit
 
 enum DungCanh {
-    static func dung(_ canh: CanhBa, chon: UUID?) -> SCNScene {
-        let scn = SCNScene()
-        scn.background.contents = UIColor(Color(maHex: canh.mauNen))
+    /// Hình học của một loại khối. Dựng mới mỗi lần gọi — `SCNGeometry` dùng
+    /// chung giữa nhiều nút thì đổi vật liệu của một khối sẽ đổi luôn màu của
+    /// mọi khối cùng loại.
+    static func hinhCua(_ l: LoaiKhoi) -> SCNGeometry {
+        switch l {
+        case .hop: return SCNBox(width: 1, height: 1, length: 1, chamferRadius: 0.02)
+        case .cau: return SCNSphere(radius: 0.5)
+        case .tru: return SCNCylinder(radius: 0.5, height: 1)
+        case .non: return SCNCone(topRadius: 0, bottomRadius: 0.5, height: 1)
+        case .phang: return SCNPlane(width: 1, height: 1)
+        case .xuyen: return SCNTorus(ringRadius: 0.5, pipeRadius: 0.16)
+        }
+    }
 
-        for k in canh.khoi {
-            let hinh: SCNGeometry
-            switch k.loai {
-            case .hop: hinh = SCNBox(width: 1, height: 1, length: 1, chamferRadius: 0.02)
-            case .cau: hinh = SCNSphere(radius: 0.5)
-            case .tru: hinh = SCNCylinder(radius: 0.5, height: 1)
-            case .non: hinh = SCNCone(topRadius: 0, bottomRadius: 0.5, height: 1)
-            case .phang: hinh = SCNPlane(width: 1, height: 1)
-            case .xuyen: hinh = SCNTorus(ringRadius: 0.5, pipeRadius: 0.16)
-            }
+    static func dungNut(_ k: KhoiBa, dangChon: Bool) -> SCNNode {
+        let nut = SCNNode(geometry: hinhCua(k.loai))
+        nut.name = k.id.uuidString
+        apVao(nut, k, dangChon: dangChon)
+        return nut
+    }
 
-            let vl = SCNMaterial()
-            vl.lightingModel = .physicallyBased
-            vl.diffuse.contents = UIColor(Color(maHex: k.mau))
-            vl.metalness.contents = k.kimLoai
-            vl.roughness.contents = k.nham
-            // Mặt phẳng phải thấy được từ CẢ HAI phía: quay camera xuống dưới
-            // sàn mà sàn biến mất thì người dùng tưởng mình xoá nhầm.
-            vl.isDoubleSided = (k.loai == .phang)
-            hinh.materials = [vl]
+    /// Cập nhật một nút CÓ SẴN theo dữ liệu mới.
+    ///
+    /// Đổi loại khối thì phải thay hình học; còn lại chỉ sửa thuộc tính, nên
+    /// SceneKit vẽ tiếp khung hình kế mà không dựng lại gì — đó là toàn bộ
+    /// khác biệt giữa mượt và giật.
+    static func apVao(_ nut: SCNNode, _ k: KhoiBa, dangChon: Bool) {
+        let canDoiHinh = !hopKieu(nut.geometry, k.loai)
+        if canDoiHinh { nut.geometry = hinhCua(k.loai) }
 
-            let nut = SCNNode(geometry: hinh)
-            nut.name = k.id.uuidString
-            nut.position = SCNVector3(k.x, k.y, k.z)
-            nut.eulerAngles = SCNVector3(k.xoayX * .pi / 180, k.xoayY * .pi / 180, k.xoayZ * .pi / 180)
-            nut.scale = SCNVector3(k.coX, k.coY, k.coZ)
+        let vl = nut.geometry?.firstMaterial ?? SCNMaterial()
+        vl.lightingModel = .physicallyBased
+        vl.diffuse.contents = UIColor(Color(maHex: k.mau))
+        vl.metalness.contents = k.kimLoai
+        vl.roughness.contents = k.nham
+        vl.isDoubleSided = (k.loai == .phang)
+        nut.geometry?.materials = [vl]
 
-            if k.id == chon {
-                // Viền sáng quanh khối đang chọn. Dùng `SCNNode` bọc ngoài
-                // phóng to 1,04 lần và vẽ mặt trong — rẻ hơn hẳn bộ lọc
-                // outline và chạy được trên mọi máy.
-                let vien = SCNNode(geometry: hinh.copy() as? SCNGeometry)
+        nut.position = SCNVector3(k.x, k.y, k.z)
+        nut.eulerAngles = SCNVector3(k.xoayX * .pi / 180, k.xoayY * .pi / 180, k.xoayZ * .pi / 180)
+        nut.scale = SCNVector3(k.coX, k.coY, k.coZ)
+
+        // Viền sáng: thêm/gỡ nút con chứ không dựng lại nút cha.
+        let vienCu = nut.childNode(withName: "vien", recursively: false)
+        if dangChon {
+            if vienCu == nil || canDoiHinh {
+                vienCu?.removeFromParentNode()
+                let vien = SCNNode(geometry: hinhCua(k.loai))
+                vien.name = "vien"
                 let mv = SCNMaterial()
                 mv.diffuse.contents = UIColor(Color(maHex: "#FAD129"))
                 mv.isDoubleSided = true
@@ -411,7 +424,28 @@ enum DungCanh {
                 vien.scale = SCNVector3(1.04, 1.04, 1.04)
                 nut.addChildNode(vien)
             }
-            scn.rootNode.addChildNode(nut)
+        } else {
+            vienCu?.removeFromParentNode()
+        }
+    }
+
+    private static func hopKieu(_ g: SCNGeometry?, _ l: LoaiKhoi) -> Bool {
+        switch l {
+        case .hop: return g is SCNBox
+        case .cau: return g is SCNSphere
+        case .tru: return g is SCNCylinder
+        case .non: return g is SCNCone
+        case .phang: return g is SCNPlane
+        case .xuyen: return g is SCNTorus
+        }
+    }
+
+    static func dung(_ canh: CanhBa, chon: UUID?) -> SCNScene {
+        let scn = SCNScene()
+        scn.background.contents = UIColor(Color(maHex: canh.mauNen))
+
+        for k in canh.khoi {
+            scn.rootNode.addChildNode(dungNut(k, dangChon: k.id == chon))
         }
 
         // Đèn: một đèn chính có bóng + một đèn môi trường. Chỉ có đèn chính
@@ -457,16 +491,37 @@ struct CanhSceneKit: UIViewRepresentable {
         return v
     }
 
+    /// ⚠️ KHÔNG DỰNG LẠI CẢ CẢNH Ở ĐÂY. Bản đầu làm thế và tự trấn an là "vài
+    /// chục khối thì rẻ" — sai, và người dùng thấy ngay: kéo một thanh trượt
+    /// là SwiftUI gọi `updateUIView` vài chục lần mỗi giây, mỗi lần vứt cả
+    /// `SCNScene` đi dựng lại từ đầu. Kết quả là màu nháy, hình giật, và
+    /// camera nhảy vì `pointOfView` sau khi gán cảnh mới là một NÚT KHÁC.
+    ///
+    /// Giờ sửa TẠI CHỖ: khối nào còn thì cập nhật, khối mới thì thêm, khối
+    /// mất thì gỡ. Cảnh, đèn và camera không bao giờ bị đụng tới.
     func updateUIView(_ v: SCNView, context: Context) {
-        // Dựng lại cả cảnh mỗi lần đổi. Với vài chục khối thì rẻ, và nó bỏ
-        // hẳn được một lớp mã đồng bộ từng nút — mà mã đồng bộ đó chính là
-        // chỗ sinh ra những khối "sửa rồi mà không thấy đổi".
-        let goc = v.pointOfView?.transform
-        v.scene = DungCanh.dung(canh, chon: chon)
-        // Giữ nguyên góc nhìn: dựng lại cảnh mà camera nhảy về vị trí đầu thì
-        // mỗi lần kéo một thanh trượt là mất chỗ đang nhìn.
-        if let g = goc { v.pointOfView?.transform = g }
         context.coordinator.khiChon = khiChon
+        guard let scn = v.scene else {
+            v.scene = DungCanh.dung(canh, chon: chon)
+            return
+        }
+
+        let conLai = Set(canh.khoi.map(\.id.uuidString))
+        // Gỡ khối đã xoá. Chỉ đụng nút CÓ TÊN là UUID — đèn và camera không
+        // có tên nên chúng an toàn.
+        for nut in scn.rootNode.childNodes {
+            guard let t = nut.name, UUID(uuidString: t) != nil else { continue }
+            if !conLai.contains(t) { nut.removeFromParentNode() }
+        }
+
+        for k in canh.khoi {
+            let ten = k.id.uuidString
+            if let nut = scn.rootNode.childNode(withName: ten, recursively: false) {
+                DungCanh.apVao(nut, k, dangChon: k.id == chon)
+            } else {
+                scn.rootNode.addChildNode(DungCanh.dungNut(k, dangChon: k.id == chon))
+            }
+        }
     }
 
     func makeCoordinator() -> Dieu { Dieu() }
