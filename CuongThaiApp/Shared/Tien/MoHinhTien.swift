@@ -318,6 +318,30 @@ struct TinhNo: Decodable, Hashable {
     @TienSoTuyChon var interestPerDay: Double?
 }
 
+// MARK: - Lãi: những con số người đang vay thật sự cần nhìn
+
+extension No {
+    /// Kỳ CHƯA TRẢ gần nhất. `nil` nghĩa là lịch đã tích hết.
+    var kyToi: KyNo? {
+        schedule?.filter { !$0.isPaid }.min { $0.installmentNo < $1.installmentNo }
+    }
+
+    /// Tiền LÃI của kỳ tới — mỗi tháng riêng phần lãi đi mất bao nhiêu.
+    ///
+    /// ⚠️ Lấy `interestPart` của chính kỳ đó, KHÔNG nhân `gốc × lãi suất`.
+    /// Với lãi giảm dần (REDUCING_BALANCE) tiền lãi mỗi kỳ một khác: nhân tay
+    /// ra đúng số của tháng ĐẦU rồi sai dần mãi về sau — mà sai kiểu đó không
+    /// ai phát hiện, vì con số vẫn "trông hợp lý".
+    var laiKyToi: Double { kyToi?.interestPart ?? 0 }
+
+    /// Tổng lãi của CẢ khoản vay, gồm cả phần đã trả. Máy chủ tính sẵn
+    /// (`projectedInterest`) — đo thật: Momo 45tr × 3,02% × 18 kỳ = 24.462.000.
+    var laiCaKhoan: Double { computed?.projectedInterest ?? 0 }
+
+    /// Lãi CÒN phải trả từ giờ tới lúc hết khoản.
+    var laiConPhaiTra: Double { max(0, laiCaKhoan - (computed?.interestPaid ?? 0)) }
+}
+
 struct KyNo: Decodable, Identifiable, Hashable {
     let id: Int
     let debtId: Int

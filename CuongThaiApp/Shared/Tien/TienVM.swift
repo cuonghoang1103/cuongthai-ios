@@ -236,6 +236,26 @@ final class TienVM: ObservableObject {
 
     var mucTieuNgay: MucTieuChi? { mucTieu.first { $0.ky == "DAY" } }
 
+    // MARK: Tổng về nợ và lãi
+
+    /// ⚠️ Chỉ cộng khoản CHƯA trả xong. Cộng cả khoản đã tất toán vào "lãi
+    /// mỗi tháng" thì con số phình lên và mất hết ý nghĩa — nó phải trả lời
+    /// đúng một câu: từ tháng này trở đi mỗi tháng mất bao nhiêu tiền lãi.
+    private var noDangCon: [No] { dsNo.filter { $0.status != "PAID_OFF" } }
+
+    /// Tổng dư nợ gốc còn lại.
+    var tongDuNo: Double { noDangCon.reduce(0) { $0 + ($1.computed?.remaining ?? 0) } }
+
+    /// Mỗi tháng riêng tiền LÃI đi mất bao nhiêu (cộng kỳ tới của mọi khoản).
+    var tongLaiMoiThang: Double { noDangCon.reduce(0) { $0 + $1.laiKyToi } }
+
+    /// Tổng lãi của cả các khoản đang vay, gồm phần đã trả.
+    var tongLaiCaKhoan: Double { noDangCon.reduce(0) { $0 + $1.laiCaKhoan } }
+
+    /// Lãi CÒN phải trả từ giờ tới lúc hết nợ — con số đáng sợ nhất, và là
+    /// con số quyết định có nên trả trước hạn hay không.
+    var tongLaiConPhaiTra: Double { noDangCon.reduce(0) { $0 + $1.laiConPhaiTra } }
+
     /// Kỳ nợ đang QUÁ HẠN hoặc tới hạn trong 7 ngày — thứ cần hiện đỏ lên đầu.
     var noCanGap: [KyNoSapToi] {
         (bang?.upcomingPayments ?? []).filter { k in

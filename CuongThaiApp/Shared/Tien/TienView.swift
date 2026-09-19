@@ -15,6 +15,8 @@ struct TienView: View {
     @Environment(\.dismiss) private var dong
     @EnvironmentObject private var appState: AppState
     @State private var moGhiNhanh = false
+    /// Kỳ đang chờ chọn ví để tích đã trả.
+    @State private var kyDangTra: KyNoSapToi?
     @State private var moCoVan = false
     @State private var moMucTieu = false
 
@@ -25,6 +27,7 @@ struct TienView: View {
                     ThanhChonThang(thang: vm.thang) { b in Task { await vm.doiThang(b) } }
 
                     if !vm.noCanGap.isEmpty { khoiNoGap }
+                    if vm.tongDuNo > 0 { khoiTongNo }
                     khoiMucTieuNgay
                     khoiSoLieu
                     khoiCoVan
@@ -70,6 +73,22 @@ struct TienView: View {
                 await vm.napDanhMuc()
                 moGhiNhanh = true
             }
+            .sheet(item: $kyDangTra) { k in
+                ChonViTraView(vm: vm,
+                              nhanKy: "\(k.lenderName) · \(NgayTien.ngayDay(k.dueDate))",
+                              soTien: k.amountDue,
+                              tienTe: k.currency) { viId in
+                    Task {
+                        // `doiTichKy` tự nạp lại danh sách nợ VÀ bảng tổng
+                        // quan, nên mọi con số ở trên — dư nợ, lãi mỗi tháng,
+                        // lãi còn phải trả — tự trừ đi. Không tự tính lại ở
+                        // app: chép công thức lần hai là để hai bản trôi khỏi
+                        // nhau, và bản sai sẽ là bản người dùng nhìn.
+                        await vm.doiTichKy(noId: k.debtId, kyId: k.id,
+                                           dangTich: false, viId: viId)
+                    }
+                }
+            }
             .sheet(isPresented: $moGhiNhanh) { GhiChiView(vm: vm, sua: nil) }
             .sheet(isPresented: $moCoVan) { CoVanAIView(vm: vm) }
             .sheet(isPresented: $moMucTieu) { MucTieuChiView(vm: vm) }
@@ -94,15 +113,38 @@ struct TienView: View {
             }
             ForEach(vm.noCanGap.prefix(4)) { k in
                 HStack(spacing: Spacing.sm) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(k.lenderName).font(.bodyMedium).foregroundStyle(AppColors.textPrimary)
-                        Text(nhanHan(k)).font(.caption)
-                            .foregroundStyle(k.isOverdue ? AppColors.error : AppColors.warning)
+                    // ⚠️ Ô TÍCH PHẢI NẰM Ở ĐÂY.
+                    //
+                    // Nó vốn CÓ, nhưng chôn sâu ba lớp: Tiền nong → Nợ →
+                    // chạm vào khoản → cuộn xuống "Lịch trả". Còn chỗ người
+                    // ta NHÌN THẤY kỳ đến hạn thì lại không tích được, và
+                    // bấm vào chỉ mở danh sách nợ chứ không mở đúng khoản đó.
+                    // Người dùng báo 19/09/2026: "tìm mãi không có chỗ tích".
+                    // Tính năng đặt sai chỗ thì coi như không có.
+                    Button { kyDangTra = k } label: {
+                        Image(systemName: "circle")
+                            .font(.titleMedium)
+                            .foregroundStyle(k.isOverdue ? AppColors.error : AppColors.textTertiary)
                     }
-                    Spacer()
-                    Text(DinhDangTien.day(k.amountDue, k.currency))
-                        .font(.system(size: 15, weight: .semibold, design: .rounded))
-                        .foregroundStyle(k.isOverdue ? AppColors.error : AppColors.textPrimary)
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(T("Tích đã trả kỳ này"))
+
+                    NavigationLink { ChiTietNoView(vm: vm, noId: k.debtId) } label: {
+                        HStack(spacing: Spacing.sm) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(k.lenderName).font(.bodyMedium).foregroundStyle(AppColors.textPrimary)
+                                Text(nhanHan(k)).font(.caption)
+                                    .foregroundStyle(k.isOverdue ? AppColors.error : AppColors.warning)
+                            }
+                            Spacer()
+                            Text(DinhDangTien.day(k.amountDue, k.currency))
+                                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                                .foregroundStyle(k.isOverdue ? AppColors.error : AppColors.textPrimary)
+                            Image(systemName: "chevron.right")
+                                .font(.caption2).foregroundStyle(AppColors.textTertiary)
+                        }
+                    }
+                    .buttonStyle(.plain)
                 }
                 .padding(.vertical, 4)
             }
@@ -112,6 +154,49 @@ struct TienView: View {
         .overlay(RoundedRectangle(cornerRadius: CornerRadius.large)
             .stroke(AppColors.error.opacity(0.3), lineWidth: 1))
         .cornerRadius(CornerRadius.large)
+    }
+
+    // MARK: - Tổng nợ & lãi
+
+    /// Ba con số người đang vay cần thấy mà không phải bấm vào đâu: còn nợ
+    /// bao nhiêu, mỗi tháng riêng LÃI mất bao nhiêu, và cả khoản vay này tốn
+    /// tổng cộng bao nhiêu tiền lãi.
+    private var khoiTongNo: some View {
+        NavigationLink { NoView(vm: vm) } label: {
+            VStack(alignment: .leading, spacing: Spacing.sm) {
+                HStack(spacing: 6) {
+                    Image(systemName: "percent").foregroundStyle(AppColors.warning)
+                    Text(T("Nợ & lãi")).font(.titleSmall).foregroundStyle(AppColors.textPrimary)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption2).foregroundStyle(AppColors.textTertiary)
+                }
+                HStack(spacing: Spacing.sm) {
+                    oTongNo(T("Tổng dư nợ"), vm.tongDuNo, AppColors.warning)
+                    oTongNo(T("Lãi mỗi tháng"), vm.tongLaiMoiThang, AppColors.error)
+                    oTongNo(T("Lãi cả khoản"), vm.tongLaiCaKhoan, AppColors.textSecondary)
+                }
+                if vm.tongLaiConPhaiTra > 0 {
+                    Text("\(T("Còn phải trả lãi")): \(DinhDangTien.day(vm.tongLaiConPhaiTra))")
+                        .font(.caption).foregroundStyle(AppColors.textSecondary)
+                }
+            }
+            .padding(Spacing.md)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(AppColors.backgroundCard)
+            .cornerRadius(CornerRadius.large)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func oTongNo(_ nhan: String, _ v: Double, _ mau: Color) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(nhan).font(.caption2).foregroundStyle(AppColors.textTertiary)
+            Text(DinhDangTien.ngan(v))
+                .font(.system(size: 16, weight: .bold, design: .rounded))
+                .foregroundStyle(mau).lineLimit(1).minimumScaleFactor(0.65)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func nhanHan(_ k: KyNoSapToi) -> String {

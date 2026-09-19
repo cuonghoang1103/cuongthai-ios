@@ -72,7 +72,23 @@ struct NoView: View {
                         .foregroundStyle(AppColors.textSecondary)
                 }
             }
+            Divider().padding(.vertical, 2)
+            HStack(spacing: Spacing.sm) {
+                oLai(T("Lãi mỗi tháng"), vm.tongLaiMoiThang, AppColors.error)
+                oLai(T("Lãi còn phải trả"), vm.tongLaiConPhaiTra, AppColors.warning)
+                oLai(T("Lãi cả khoản"), vm.tongLaiCaKhoan, AppColors.textSecondary)
+            }
         }
+    }
+
+    private func oLai(_ nhan: String, _ v: Double, _ mau: Color) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text(nhan).font(.caption2).foregroundStyle(AppColors.textTertiary)
+            Text(DinhDangTien.ngan(v))
+                .font(.system(size: 14, weight: .bold, design: .rounded))
+                .foregroundStyle(mau).lineLimit(1).minimumScaleFactor(0.7)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func dongNo(_ n: No) -> some View {
@@ -96,6 +112,11 @@ struct NoView: View {
                 }
                 if let l = n.computed?.interestPerDay, l > 0 {
                     Text("· \(DinhDangTien.ngan(l))/\(T("ngày"))")
+                        .font(.caption2).foregroundStyle(AppColors.error)
+                } else if n.status != "PAID_OFF", n.laiKyToi > 0 {
+                    // Lãi của KỲ TỚI, không phải lãi cả khoản: đây là con số
+                    // trả lời "tháng này mất bao nhiêu tiền lãi".
+                    Text("· \(T("lãi")) \(DinhDangTien.ngan(n.laiKyToi))/\(T("tháng"))")
                         .font(.caption2).foregroundStyle(AppColors.error)
                 }
                 Spacer()
@@ -163,7 +184,10 @@ struct ChiTietNoView: View {
         .task { await nap() }
         .refreshable { await nap() }
         .sheet(item: $kyDangTra) { k in
-            ChonViTraView(vm: vm, ky: k) { viId in
+            ChonViTraView(vm: vm,
+                          nhanKy: "\(k.installmentNo) · \(NgayTien.ngayDay(k.dueDate))",
+                          soTien: k.amountDue,
+                          tienTe: no?.currency ?? "VND") { viId in
                 Task {
                     await vm.doiTichKy(noId: noId, kyId: k.id, dangTich: false, viId: viId)
                     await nap()
@@ -290,7 +314,12 @@ struct ChiTietNoView: View {
 
 struct ChonViTraView: View {
     @ObservedObject var vm: TienVM
-    let ky: KyNo
+    /// Nhận GIÁ TRỊ RỜI chứ không nhận `KyNo`: màn tổng quan chỉ có
+    /// `KyNoSapToi` (không có `installmentNo`, không có phần gốc/lãi). Buộc
+    /// nó phải dựng một `KyNo` giả để gọi được bảng này là mời gọi bịa số.
+    let nhanKy: String
+    let soTien: Double
+    let tienTe: String
     let xong: (Int?) -> Void
     @Environment(\.dismiss) private var dong
     @State private var viId: Int?
@@ -301,12 +330,11 @@ struct ChonViTraView: View {
                 Section {
                     HStack {
                         Text(T("Kỳ")); Spacer()
-                        Text("\(ky.installmentNo) · \(NgayTien.ngayDay(ky.dueDate))")
-                            .foregroundStyle(AppColors.textSecondary)
+                        Text(nhanKy).foregroundStyle(AppColors.textSecondary)
                     }
                     HStack {
                         Text(T("Số tiền")); Spacer()
-                        Text(DinhDangTien.day(ky.amountDue))
+                        Text(DinhDangTien.day(soTien, tienTe))
                             .font(.system(size: 15, weight: .semibold, design: .rounded))
                     }
                 }
