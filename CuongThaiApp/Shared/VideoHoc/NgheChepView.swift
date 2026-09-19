@@ -15,8 +15,15 @@ import SwiftUI
 struct NgheChepView: View {
     let video: VideoHoc
     let cues: [CauPhuDe]
+    /// Trình phát DÙNG CHUNG với màn học (khi màn này nằm trong bảng bên
+    /// phải). `nil` = màn đứng riêng, tự dựng trình phát của mình.
+    ///
+    /// ⚠️ Không có tham số này thì nhúng vào bảng sẽ có HAI trình phát cùng
+    /// phát một video — hai luồng tiếng chồng lên nhau.
+    var dkNgoai: DieuKhienVideo? = nil
 
-    @StateObject private var dk = DieuKhienVideo()
+    @StateObject private var dkRieng = DieuKhienVideo()
+    private var dk: DieuKhienVideo { dkNgoai ?? dkRieng }
     @State private var i = 0
     @State private var nhap = ""
     @State private var daSo = false
@@ -31,8 +38,10 @@ struct NgheChepView: View {
             // Trình phát vẫn phải có mặt (không có nó thì không phát được),
             // nhưng thu nhỏ còn 1pt: nhìn thấy hình là đọc được khẩu hình và
             // chữ trên slide — mất sạch ý nghĩa của bài nghe.
-            TrinhPhatYouTube(videoId: video.videoId, dk: dk)
-                .frame(width: 1, height: 1).opacity(0.02)
+            if dkNgoai == nil {
+                TrinhPhatYouTube(videoId: video.videoId, dk: dkRieng)
+                    .frame(width: 1, height: 1).opacity(0.02)
+            }
 
             ScrollView {
                 VStack(spacing: Spacing.lg) {
@@ -45,8 +54,9 @@ struct NgheChepView: View {
             }
             .background(AppColors.backgroundPrimary)
         }
-        .navigationTitle(T("Nghe — chép"))
+        .navigationTitle(dkNgoai == nil ? T("Nghe — chép") : "")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(dkNgoai == nil ? .automatic : .hidden, for: .navigationBar)
         .onAppear { dangGo = true }
     }
 

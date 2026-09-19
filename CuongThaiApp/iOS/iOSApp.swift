@@ -60,6 +60,13 @@ struct CuongThaiApp: App {
         KhoPro.shared.batDauNghe()
     }
 
+    /// Bọc chuỗi link thành `Identifiable` để dùng với `.sheet(item:)`.
+    private struct LienChiaSe: Identifiable {
+        let lien: String
+        var id: String { lien }
+        init(_ l: String) { lien = l }
+    }
+
     var body: some Scene {
         WindowGroup {
             ContentView()
@@ -67,6 +74,15 @@ struct CuongThaiApp: App {
                 // Kho Vở (SwiftData). Gắn ở gốc để mọi màn con — kể cả màn
                 // viết mở bằng `fullScreenCover` — đều thấy cùng một kho.
                 .modelContainer(KhoSwiftData.chung)
+                // Bảng "Thêm video" mở từ GỐC, không từ màn Học bằng video:
+                // người dùng bấm chia sẻ khi đang ở bất kỳ tab nào, và bắt họ
+                // tự đi tìm đúng màn thì coi như tính năng không có.
+                .sheet(item: Binding(
+                    get: { appState.videoChoThem.map(LienChiaSe.init) },
+                    set: { appState.videoChoThem = $0?.lien })
+                ) { l in
+                    ThemVideoView(lienSan: l.lien) { }
+                }
                 // Cuộc gọi tới phải reo dù người dùng đang ở màn nào.
                 .lopPhuCuocGoi()
                 // `nil` = để iOS quyết định. Màu của app vốn đã thích ứng nên
@@ -92,6 +108,10 @@ struct CuongThaiApp: App {
                     // động" suốt đêm trong khi máy nằm trong túi.
                     if moi == .active { BaoHoatDong.shared.batDau() }
                     else { BaoHoatDong.shared.dungLai() }
+
+                    // Chia sẻ từ app khác: `openURL` của extension có thể bị
+                    // hệ thống từ chối, nên nhặt lại mỗi lần quay lại app.
+                    if moi == .active { appState.nhatVideoDuocChiaSe() }
                 }
                 // Google trả người dùng về app qua URL scheme riêng. Thiếu
                 // dòng này thì luồng đăng nhập mở ra được, người dùng chọn
@@ -104,6 +124,9 @@ struct CuongThaiApp: App {
                     // nhầm thì widget chết câm mà không ai nghĩ tới đây.
                     if url.scheme == "cuongthai" {
                         if url.host == "tien" { appState.selectedTab = .finance }
+                        // Share Extension đã ghi link vào nhóm ứng dụng rồi
+                        // mới mở app — ở đây chỉ việc nhặt lên.
+                        if url.host == "them-video" { appState.nhatVideoDuocChiaSe() }
                         return
                     }
                     _ = GoogleSignInService.nhanURL(url)

@@ -109,6 +109,10 @@ targets:
       # ra lò KHÔNG có thư mục `PlugIns`. Không một dòng cảnh báo nào.
       - target: TienWidget
         embed: true
+      # Share Extension: "Chia sẻ → CuongThai" từ app YouTube/TikTok.
+      # ⚠️ Nằm TRONG khối này, không mở khối `dependencies:` thứ hai.
+      - target: ChiaSeVideo
+        embed: true
       - package: Kingfisher
       - package: SocketIO
         product: SocketIO
@@ -180,6 +184,26 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.cuongthai.app.TienWidget
         INFOPLIST_FILE: CuongThaiApp/Widget/Info.plist
         CODE_SIGN_ENTITLEMENTS: CuongThaiApp/Widget/Widget.entitlements
+        GENERATE_INFOPLIST_FILE: NO
+        SKIP_INSTALL: YES
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: "UR32PFUQ38"
+
+  # ─── Share Extension: nhận link video chia sẻ từ app khác ─────
+  # ⚠️ KHÔNG kéo `Shared` vào đây. Extension chia sẻ chỉ được cấp vài chục
+  # MB; lôi socket/Kingfisher/SwiftData vào là bị hệ thống giết và ô chia sẻ
+  # biến mất khỏi khay, không có lỗi nào để thấy. Nó chỉ cần UIKit.
+  ChiaSeVideo:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: CuongThaiApp/ChiaSe
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.cuongthai.app.ChiaSeVideo
+        INFOPLIST_FILE: CuongThaiApp/ChiaSe/Info.plist
+        CODE_SIGN_ENTITLEMENTS: CuongThaiApp/ChiaSe/ChiaSe.entitlements
         GENERATE_INFOPLIST_FILE: NO
         SKIP_INSTALL: YES
         CODE_SIGN_STYLE: Automatic

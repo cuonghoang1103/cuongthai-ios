@@ -345,6 +345,12 @@ enum APIEndpoint {
 
     // Học tiếng Anh bằng video — phụ đề của 1.030 video bài giảng.
     case videoDanhMuc
+    case videoThuVien
+    case videoPhuDeCuaToi(id: Int)
+    case videoThemCuaToi(url: String, nhomLon: String?)
+    case videoDoiNhom(id: Int, nhomLon: String)
+    case videoYeuThich(ma: Int)
+    case videoXoaCuaToi(id: Int)
     case videoCuaKhoa(id: Int)
     case videoPhuDe(lessonId: Int)
     case getCourseProgress(courseId: Int)
@@ -776,6 +782,12 @@ enum APIEndpoint {
         case .getCoursesBySemester(let id): return "/api/v1/courses/semester/\(id)?gon=1"
         case .getLesson(let c, let l): return "/api/v1/courses/\(c)/lessons/\(l)"
         case .videoDanhMuc: return "/api/v1/video-hoc/danh-muc"
+        case .videoThuVien: return "/api/v1/video-hoc/thu-vien"
+        case .videoPhuDeCuaToi(let i): return "/api/v1/video-hoc/cua-toi/\(i)/phu-de"
+        case .videoThemCuaToi: return "/api/v1/video-hoc/cua-toi"
+        case .videoDoiNhom(let i, _): return "/api/v1/video-hoc/cua-toi/\(i)/nhom"
+        case .videoYeuThich(let m): return "/api/v1/video-hoc/yeu-thich/\(m)"
+        case .videoXoaCuaToi(let i): return "/api/v1/video-hoc/cua-toi/\(i)"
         case .videoCuaKhoa(let id): return "/api/v1/video-hoc/khoa/\(id)"
         case .videoPhuDe(let l): return "/api/v1/video-hoc/phu-de/\(l)"
         case .hoiGiaSuBai(let l, _): return "/api/v1/courses/lessons/\(l)/ai/ask"
@@ -970,6 +982,10 @@ enum APIEndpoint {
 
     var method: String {
         switch self {
+        case .videoThemCuaToi: return "POST"
+        case .videoDoiNhom: return "PATCH"
+        case .videoYeuThich: return "POST"
+        case .videoXoaCuaToi: return "DELETE"
         case .ieltsGhiTienDo, .ieltsHoiAI, .ieltsChamViet, .ieltsNopDe: return "POST"
         case .ieltsXoaTienDo: return "DELETE"
         // ─── Tiền nong ───
@@ -1045,6 +1061,11 @@ enum APIEndpoint {
 
     var body: [String: Any]? {
         switch self {
+        case .videoThemCuaToi(let u, let n):
+            var m: [String: Any] = ["url": u]
+            if let n, !n.isEmpty { m["nhomLon"] = n }
+            return m
+        case .videoDoiNhom(_, let n): return ["nhomLon": n]
         case .ieltsGhiTienDo(let items): return ["items": items]
         case .ieltsHoiAI(let m), .ieltsChamViet(let m), .ieltsNopDe(let m): return m
         // ─── Tiền nong ───

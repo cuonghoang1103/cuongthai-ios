@@ -34,6 +34,27 @@ final class AppState: ObservableObject {
     /// bảng chuông. Trang chủ tự hạ cờ sau khi mở.
     @Published var moChuongThongBao = false
 
+    /// Link video người dùng vừa CHIA SẺ từ app khác (YouTube/TikTok) sang
+    /// CuongThai. Share Extension ghi vào nhóm ứng dụng, app gốc nhặt lên và
+    /// mở thẳng bảng "Thêm video" — bất kể đang đứng ở tab nào.
+    @Published var videoChoThem: String?
+
+    static let nhomUngDung = "group.com.cuongthai.app"
+    static let khoaVideoChoThem = "videoChoThem"
+
+    /// Nhặt link Share Extension để lại. Gọi lúc app mở và mỗi lần quay lại
+    /// tiền cảnh — mở app bằng `openURL` không phải lúc nào cũng thành công,
+    /// nên nhóm ứng dụng mới là đường chắc chắn.
+    func nhatVideoDuocChiaSe() {
+        guard let d = UserDefaults(suiteName: Self.nhomUngDung),
+              let lien = d.string(forKey: Self.khoaVideoChoThem), !lien.isEmpty
+        else { return }
+        // Xoá NGAY sau khi đọc: không xoá thì mỗi lần mở app lại bật bảng
+        // thêm video với đúng cái link cũ.
+        d.removeObject(forKey: Self.khoaVideoChoThem)
+        videoChoThem = lien
+    }
+
     // Five tabs is the iPhone maximum before iOS collapses the rest into
     // "More". Search moved into the Home toolbar so the Learn tab (courses +
     // notes) can be a first-class destination — it is the substance the app is

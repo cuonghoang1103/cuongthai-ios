@@ -17,8 +17,15 @@ import SwiftUI
 struct NhaiTheoView: View {
     let video: VideoHoc
     let cues: [CauPhuDe]
+    /// Trình phát DÙNG CHUNG với màn học (khi màn này nằm trong bảng bên
+    /// phải). `nil` = màn đứng riêng, tự dựng trình phát của mình.
+    ///
+    /// ⚠️ Không có tham số này thì nhúng vào bảng sẽ có HAI trình phát cùng
+    /// phát một video — hai luồng tiếng chồng lên nhau.
+    var dkNgoai: DieuKhienVideo? = nil
 
-    @StateObject private var dk = DieuKhienVideo()
+    @StateObject private var dkRieng = DieuKhienVideo()
+    private var dk: DieuKhienVideo { dkNgoai ?? dkRieng }
     @StateObject private var thu = ThuAmNoi()
     @State private var i = 0
     @State private var dangThu = false
@@ -32,8 +39,10 @@ struct NhaiTheoView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            TrinhPhatYouTube(videoId: video.videoId, dk: dk)
-                .frame(width: 1, height: 1).opacity(0.02)
+            if dkNgoai == nil {
+                TrinhPhatYouTube(videoId: video.videoId, dk: dkRieng)
+                    .frame(width: 1, height: 1).opacity(0.02)
+            }
             ScrollView {
                 VStack(spacing: Spacing.lg) {
                     thanhTren
@@ -48,8 +57,9 @@ struct NhaiTheoView: View {
             }
             .background(AppColors.backgroundPrimary)
         }
-        .navigationTitle(T("Nhại theo"))
+        .navigationTitle(dkNgoai == nil ? T("Nhại theo") : "")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(dkNgoai == nil ? .automatic : .hidden, for: .navigationBar)
         .onDisappear { dk.thoiLap(); dk.dung() }
     }
 
