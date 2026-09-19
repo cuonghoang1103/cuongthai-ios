@@ -96,12 +96,32 @@ enum DungConDuong {
     /// chưa có nội dung — một nút mở ra màn trống là thứ phá vỡ lòng tin
     /// nhanh hơn cả việc không có nút.
     static func dung(soMuc: [String: Int], daXongSo: [String: Int]) -> [NutDuongIelts] {
-        var conLai = soMuc
+        // ⚠️⚠️ VÒNG LẶP PHẢI DỪNG ĐƯỢC BẰNG CẤU TRÚC, không bằng điều kiện.
+        //
+        // Bản đầu viết `while (còn loại nào > 0) && (dưới 60 nút)`, và chỉ
+        // lấy loại từ `nhip`. Chặng 2 có `questionTypes: 15` — loại KHÔNG
+        // nằm trong nhịp — nên nó không bao giờ bị trừ, điều kiện đầu đúng
+        // mãi, không nút nào được thêm, `dung.count` đứng yên dưới 60:
+        // LẶP VÔ TẬN trên luồng chính ⇒ treo cứng cả app, bấm tab nào cũng
+        // không ăn. Người dùng báo 19/09/2026. Chặng 1 thoát được chỉ vì nó
+        // đủ 60 nút trước khi tới chỗ chết — tức là lỗi còn biết chọn chỗ
+        // mà hiện.
+        //
+        // Nay: chỉ đếm loại CÓ TRONG NHỊP, và số vòng bị chặn cứng. Loại lạ
+        // (nay là `questionTypes`, mai có thể là loại khác backend thêm vào)
+        // bị bỏ qua chứ không kéo vòng lặp theo.
+        var conLai: [String: Int] = [:]
+        for k in Set(nhip) { conLai[k] = max(0, soMuc[k] ?? 0) }
+
         var dung: [NutDuongIelts] = []
-        var i = 0
         var demTheoLoai: [String: Int] = [:]
 
-        while conLai.values.contains(where: { $0 > 0 }) && dung.count < 60 {
+        // Trần vòng lặp: mỗi vòng nhịp chắc chắn tiêu thụ ít nhất một mục
+        // nếu còn mục, nên `tổng mục + độ dài nhịp` là trần an toàn và rộng
+        // rãi. Hết trần thì dừng, dù còn gì.
+        let tranVong = conLai.values.reduce(0, +) + nhip.count
+        var i = 0
+        while i < tranVong && dung.count < 60 {
             let k = nhip[i % nhip.count]
             i += 1
             guard (conLai[k] ?? 0) > 0 else { continue }
@@ -116,8 +136,7 @@ enum DungConDuong {
             let (t, bt) = ten[k] ?? (k, "circle")
             let xong = n <= (daXongSo[k] ?? 0)
             dung.append(NutDuongIelts(
-                id: "\(k)-\(n)", kind: k,
-                ten: buoc > 1 ? "\(t) \(n)" : "\(t) \(n)",
+                id: "\(k)-\(n)", kind: k, ten: "\(t) \(n)",
                 bieuTuong: bt, xong: xong, moKhoa: false,
                 laMoc: dung.count % 5 == 4))
         }
