@@ -56,6 +56,10 @@ final class IeltsVM: ObservableObject {
     @Published var daXong: Set<String> = []
     /// Mốc thời gian của mọi mục ĐÃ XONG — để tính chuỗi ngày và XP hôm nay.
     @Published var mocXong: [Date] = []
+    /// Con đường đặt vào đây trước khi đẩy sang màn danh sách: "units#3"
+    /// nghĩa là mở thẳng bài học thứ 3. Màn danh sách đọc rồi XOÁ NGAY —
+    /// để lại thì lần sau mở danh sách bằng tay nó cũng tự nhảy vào bài cũ.
+    @Published var moMuc: String?
 
     @Published var dangTai = false
     @Published var loi: String?

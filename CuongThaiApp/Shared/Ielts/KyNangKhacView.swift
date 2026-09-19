@@ -782,6 +782,13 @@ struct TuVungIeltsView: View {
 
 struct BaiHocIeltsView: View {
     @ObservedObject var vm: IeltsVM
+    @State private var moBai: BaiHocIelts?
+
+    /// Phẳng hoá theo ĐÚNG thứ tự hiện trên màn — con đường đánh số theo
+    /// thứ tự đó, nên hai bên phải phẳng hoá giống hệt nhau.
+    private var moiBai: [BaiHocIelts] {
+        (vm.chuDiem[vm.changDangXem] ?? []).flatMap(\.lessons)
+    }
 
     var body: some View {
         let chang = vm.changDangXem
@@ -842,6 +849,11 @@ struct BaiHocIeltsView: View {
         .navigationBarTitleDisplayMode(.inline)
         #endif
         .task { await vm.napBaiHoc(chang) }
+        // Chạm một nút trên CON ĐƯỜNG thì vào thẳng bài đó, không bắt tự dò
+        // lại trong danh sách — đó là khác biệt giữa "một con đường" và "một
+        // cái mục lục có tô màu".
+        .navigationDestination(item: $moBai) { b in MotBaiHocView(vm: vm, bai: b) }
+        .moThangMuc(vm, kind: "units", danhSach: moiBai) { moBai = $0 }
     }
 
     private func nhanNho(_ t: String, _ m: Color) -> some View {

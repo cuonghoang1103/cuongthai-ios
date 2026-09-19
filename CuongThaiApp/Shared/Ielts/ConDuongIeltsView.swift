@@ -15,6 +15,9 @@ import SwiftUI
 
 struct ConDuongIeltsView: View {
     @ObservedObject var vm: IeltsVM
+    @ObservedObject private var tim = TimIelts.chung
+    @State private var anMung = false
+    @State private var soXongTruoc = -1
 
     private var nhip: NhipHocIelts { NhipHocIelts.tinh(mocXong: vm.mocXong) }
 
@@ -34,6 +37,7 @@ struct ConDuongIeltsView: View {
             thanhNhip
             ScrollView {
                 VStack(spacing: Spacing.lg) {
+                    loiRobot
                     theHomNay
                     khungConDuong
                     Color.clear.frame(height: 40)
@@ -43,6 +47,55 @@ struct ConDuongIeltsView: View {
             }
         }
         .background(AppColors.backgroundPrimary)
+        .overlay {
+            if anMung { AnMungXongView(xp: NhipHocIelts.xpMoiMuc,
+                                       chuoiNgay: nhip.chuoiNgay, hien: $anMung) }
+        }
+        // ⚠️ Bắt theo SỐ MỤC ĐÃ XONG, không theo "vừa bấm nút xong". Người
+        // dùng có thể xong một mục ở màn khác (Phòng thi, tra từ) rồi quay
+        // lại — ăn mừng phải đúng lúc con số nhích lên, bất kể nó nhích ở đâu.
+        .onChange(of: vm.daXong.count) { cu, moi in
+            if soXongTruoc >= 0 && moi > cu { withAnimation { anMung = true } }
+            soXongTruoc = moi
+            NhacChuoiIelts.datLai(daHocHomNay: nhip.xpHomNay > 0, chuoiNgay: nhip.chuoiNgay)
+        }
+        .onAppear {
+            soXongTruoc = vm.daXong.count
+            NhacChuoiIelts.datLai(daHocHomNay: nhip.xpHomNay > 0, chuoiNgay: nhip.chuoiNgay)
+        }
+    }
+
+    // MARK: Nhân vật
+
+    /// Robot nói một câu theo TÌNH HÌNH THẬT, không phải câu chúc chung.
+    /// "Cố lên nhé!" lặp mỗi lần mở app là thứ người ta thôi đọc sau hai hôm.
+    private var loiRobot: some View {
+        HStack(alignment: .top, spacing: Spacing.sm) {
+            Text("🤖").font(.system(size: 34))
+            Text(cauCuaRobot)
+                .font(.bodySmall).foregroundStyle(AppColors.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .padding(Spacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(AppColors.primary.opacity(0.08))
+        .cornerRadius(CornerRadius.large)
+    }
+
+    private var cauCuaRobot: String {
+        let n = nhip
+        if n.daDatMucTieu {
+            return T("Xong mục tiêu hôm nay rồi. Học thêm thì tốt, nghỉ cũng không mất chuỗi.")
+        }
+        if n.xpHomNay > 0 {
+            let con = (n.mucTieuNgay - n.xpHomNay) / NhipHocIelts.xpMoiMuc
+            return String(format: T("Còn %d mục nữa là xong hôm nay."), max(con, 1))
+        }
+        if n.chuoiNgay > 0 {
+            return String(format: T("Chuỗi %d ngày đang treo. Một mục thôi là giữ được."), n.chuoiNgay)
+        }
+        return T("Bắt đầu từ nút đang sáng bên dưới — hết đúng một mục là có chuỗi ngày đầu tiên.")
     }
 
     // MARK: Thanh trên — chuỗi ngày, XP, band
@@ -53,6 +106,8 @@ struct ConDuongIeltsView: View {
                   nhip.chuoiNgay > 0 ? AppColors.warning : AppColors.textTertiary)
             oNhip("⚡", "\(nhip.xpHomNay)/\(nhip.mucTieuNgay)", T("XP hôm nay"),
                   nhip.daDatMucTieu ? AppColors.success : AppColors.primary)
+            oNhip("❤️", "\(tim.con)", T("tim hôm nay"),
+                  tim.con > 2 ? AppColors.error : AppColors.textTertiary)
             oNhip("🎯", vm.bandCuaChang?.band ?? "—", T("mục tiêu"), AppColors.primary)
         }
         .padding(.horizontal, Spacing.md)
@@ -155,6 +210,7 @@ private struct NutTrenDuong: View {
     var body: some View {
         NavigationLink {
             ManCuaPhanIelts(kind: nut.kind, vm: vm)
+                .onAppear { vm.moMuc = nut.id }
         } label: {
             VStack(spacing: 4) {
                 ZStack {
