@@ -70,4 +70,53 @@ enum VideoHocAPI {
     static func phuDe(_ lessonId: Int) async throws -> GoiPhuDe {
         try await APIClient.shared.request(.videoPhuDe(lessonId: lessonId))
     }
+
+    /// Gửi đoạn ghi âm nhại theo, nhận BẢN PHIÊN ÂM.
+    ///
+    /// Dựng multipart bằng tay như `guiAudioChamNoi` của IELTS: `APIClient`
+    /// chỉ biết JSON, và thêm một nhánh multipart vào đó để dùng đúng hai
+    /// chỗ là đổi một tầng chung lấy một tiện nghi nhỏ.
+    static func nhai(duong: URL, cau: String) async throws -> KetQuaNhai {
+        let bien = "Bien-\(UUID().uuidString)"
+        var than = Data()
+        func them(_ s: String) { than.append(s.data(using: .utf8)!) }
+
+        them("--\(bien)\r\nContent-Disposition: form-data; name=\"cau\"\r\n\r\n")
+        them(cau + "\r\n")
+        them("--\(bien)\r\nContent-Disposition: form-data; name=\"audio\"; filename=\"nhai.m4a\"\r\n")
+        them("Content-Type: audio/m4a\r\n\r\n")
+        than.append(try Data(contentsOf: duong))
+        them("\r\n--\(bien)--\r\n")
+
+        guard let url = URL(string: APIClient.diaChiGoc + "/api/v1/video-hoc/nhai") else {
+            throw APIError.serverError("URL không hợp lệ")
+        }
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        req.setValue("multipart/form-data; boundary=\(bien)", forHTTPHeaderField: "Content-Type")
+        if let tok = StorageManager.shared.getAuthToken() {
+            req.setValue("Bearer \(tok)", forHTTPHeaderField: "Authorization")
+        }
+        // Chỉ phiên âm (không chấm LLM) nên nhanh hơn `cham-noi` nhiều — 45s
+        // là rộng rãi. Để 120s như bên kia thì lúc mạng chập chờn người học
+        // ngồi nhìn vòng quay hai phút rồi mới biết là hỏng.
+        req.timeoutInterval = 45
+        req.httpBody = than
+
+        let (data, resp) = try await URLSession.shared.data(for: req)
+        guard let http = resp as? HTTPURLResponse else {
+            throw APIError.serverError("Không có phản hồi")
+        }
+        if http.statusCode == 401 { throw APIError.unauthorized }
+        let goi = try JSONDecoder().decode(APIResponse<KetQuaNhai>.self, from: data)
+        guard goi.success, let d = goi.data else {
+            throw APIError.serverError(goi.message ?? "Máy chủ từ chối bản ghi")
+        }
+        return d
+    }
+}
+
+struct KetQuaNhai: Decodable {
+    let chu: String
+    let imLang: Bool
 }

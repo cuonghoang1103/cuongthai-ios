@@ -117,6 +117,9 @@ struct ManHocVideoView: View {
                 NavigationLink {
                     NgheChepView(video: video, cues: g.cues)
                 } label: { Label(T("Nghe — chép câu này"), systemImage: "pencil.and.scribble") }
+                NavigationLink {
+                    NhaiTheoView(video: video, cues: g.cues)
+                } label: { Label(T("Nhại theo (luyện nói)"), systemImage: "waveform.and.mic") }
             }
             Divider()
             Menu(T("Tốc độ")) {

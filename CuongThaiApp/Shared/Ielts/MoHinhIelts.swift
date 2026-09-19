@@ -373,3 +373,16 @@ struct MucTienDo: Decodable, Hashable {
 struct GoiTienDo: Decodable {
     let items: [MucTienDo]
 }
+
+
+/// Một câu bài tập, dùng cho bài ĐO TRÌNH ĐỘ.
+///
+/// `options` có thể vắng với dạng điền từ — bài đo chỉ lấy câu trắc nghiệm
+/// nên lọc bỏ câu không có lựa chọn, thay vì hiện một câu không bấm được.
+struct BaiTapDo: Decodable, Hashable {
+    let q: String
+    let answer: String
+    let options: [String]?
+    let why: String?
+    let kind: String?
+}

@@ -11,6 +11,7 @@ struct IeltsView: View {
     @StateObject private var vm = IeltsVM()
     @Environment(\.dismiss) private var dong
     @State private var moChiTietChang = false
+    @State private var moDoTrinhDo = false
 
     var body: some View {
         NavigationStack {
@@ -48,12 +49,19 @@ struct IeltsView: View {
                     ToolbarItem(placement: .cancellationAction) { Button(T("Đóng")) { dong() } }
                 }
                 ToolbarItem(placement: .primaryAction) { NutGiongIelts() }
+                ToolbarItem(placement: .primaryAction) {
+                    Button { moDoTrinhDo = true } label: {
+                        Image(systemName: "figure.stairs")
+                    }
+                    .accessibilityLabel(T("Đo trình độ để chọn chặng"))
+                }
             }
             .refreshable { await vm.napLoTrinh() }
             .task {
                 guard !vm.daNapLanDau else { return }
                 await vm.napLoTrinh()
             }
+            .sheet(isPresented: $moDoTrinhDo) { DoTrinhDoView(vm: vm) }
             .sheet(isPresented: $moChiTietChang) {
                 if let b = vm.bandCuaChang { ChiTietChangView(band: b) }
             }

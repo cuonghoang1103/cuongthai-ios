@@ -17,6 +17,18 @@ enum IeltsAPI {
         return goi.payload
     }
 
+    /// Bài tập thô của một chặng, cho bài ĐO TRÌNH ĐỘ.
+    ///
+    /// `payload` của `exercises` là `{all: [...], byLesson: {...}}`, khác hẳn
+    /// các phần khác vốn là mảng phẳng — nên phải khai riêng chứ không dùng
+    /// lại `phan(_:_:_:)`. Hỏng thì trả mảng rỗng: một chặng không tải được
+    /// chỉ nên làm đề ngắn đi, không nên làm chết cả bài đo.
+    static func baiTapThoTheoChang(_ chang: String) async -> [BaiTapDo] {
+        struct Goi: Decodable { let all: [BaiTapDo] }
+        let g: Goi? = try? await phan(chang, "exercises", Goi.self)
+        return g?.all ?? []
+    }
+
     static func tienDo(chang: String? = nil) async throws -> [MucTienDo] {
         let g: GoiTienDo = try await api.request(.ieltsTienDo(chang: chang))
         return g.items
