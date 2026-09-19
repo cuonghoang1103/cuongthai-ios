@@ -50,6 +50,8 @@ final class AppState: ObservableObject {
         case ielts = 7
         /// Xưởng vẽ — canvas tự do + hình khối.
         case xuongVe = 8
+        /// Xưởng 3D — dựng mô hình bằng cách ghép khối.
+        case xuongBa = 9
         var id: Int { rawValue }
         var title: String {
             switch self {
@@ -62,6 +64,7 @@ final class AppState: ObservableObject {
             case .finance: return T("Tiền nong")
             case .ielts: return "IELTS"
             case .xuongVe: return T("Xưởng vẽ")
+            case .xuongBa: return T("Xưởng 3D")
             }
         }
         var icon: String {
@@ -75,6 +78,7 @@ final class AppState: ObservableObject {
             case .finance: return "creditcard.fill"
             case .ielts: return "textformat.abc"
             case .xuongVe: return "paintbrush.pointed.fill"
+            case .xuongBa: return "cube.transparent.fill"
             }
         }
     }
@@ -152,6 +156,9 @@ final class AppState: ObservableObject {
 
     /// Mở Xưởng vẽ dạng tấm phủ — cùng lý do với `moTienNong`.
     @Published var moXuongVe = false
+
+    /// Mở Xưởng 3D dạng tấm phủ — cùng lý do với `moTienNong`.
+    @Published var moXuongBa = false
 
     /// Chạm thông báo 20h ("Hôm nay bạn đã chi tiêu những gì?") thì mở thẳng
     /// ô ghi khoản chi. Mở màn Tiền nong rồi bắt người dùng tự tìm nút cộng
