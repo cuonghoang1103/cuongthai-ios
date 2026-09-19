@@ -342,6 +342,11 @@ enum APIEndpoint {
     case getCoursesBySemester(semesterId: Int)
     /// Nội dung đầy đủ một bài (có kiểm quyền truy cập).
     case getLesson(courseId: Int, lessonId: Int)
+
+    // Học tiếng Anh bằng video — phụ đề của 1.030 video bài giảng.
+    case videoDanhMuc
+    case videoCuaKhoa(id: Int)
+    case videoPhuDe(lessonId: Int)
     case getCourseProgress(courseId: Int)
     /// Lưu tiến độ. `lastPositionSeconds` cho phép mở lại đúng chỗ đang dở.
     case saveLessonProgress(courseId: Int, lessonId: Int, isCompleted: Bool?, watchTimeSeconds: Int?, lastPositionSeconds: Int?)
@@ -770,6 +775,9 @@ enum APIEndpoint {
         // 136-391 KB mỗi kỳ và ~2 giây chờ, trong đó 93% là `sections`.
         case .getCoursesBySemester(let id): return "/api/v1/courses/semester/\(id)?gon=1"
         case .getLesson(let c, let l): return "/api/v1/courses/\(c)/lessons/\(l)"
+        case .videoDanhMuc: return "/api/v1/video-hoc/danh-muc"
+        case .videoCuaKhoa(let id): return "/api/v1/video-hoc/khoa/\(id)"
+        case .videoPhuDe(let l): return "/api/v1/video-hoc/phu-de/\(l)"
         case .hoiGiaSuBai(let l, _): return "/api/v1/courses/lessons/\(l)/ai/ask"
         case .cauHoiThuongGap(let l): return "/api/v1/courses/lessons/\(l)/ai/asks"
         case .xoaCauHoiThuongGap(let l, let a): return "/api/v1/courses/lessons/\(l)/ai/asks/\(a)"

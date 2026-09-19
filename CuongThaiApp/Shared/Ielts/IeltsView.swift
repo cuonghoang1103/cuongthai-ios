@@ -30,6 +30,7 @@ struct IeltsView: View {
                         // mở app rồi đóng với mở app rồi học.
                         ConDuongIeltsView(vm: vm)
                             .frame(minHeight: 520)
+                        nutHocVideo
                         nutPhongThi
                         if let b = vm.bandCuaChang { theKyNang(b) }
                     }
@@ -180,6 +181,37 @@ struct IeltsView: View {
             KhungTrongTien(bieuTuong: "hammer", tieuDe: T("Phần này đang làm"),
                            moTa: T("Đọc, Nghe, Viết, Nói, Từ vựng và Bài học đã dùng được."))
         }
+    }
+
+    // MARK: - Học bằng video
+
+    /// Đặt NGAY trên màn IELTS, không giấu trong thanh bên: người học tiếng
+    /// Anh mở IELTS, không mở một mục tên "Video" nào đó ở chỗ khác.
+    private var nutHocVideo: some View {
+        NavigationLink { VideoHocView() } label: {
+            HStack(spacing: Spacing.md) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: CornerRadius.medium)
+                        .fill(Color.red.opacity(0.14)).frame(width: 46, height: 46)
+                    Image(systemName: "play.rectangle.fill")
+                        .font(.title3).foregroundStyle(.red)
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(T("Học bằng video")).font(.titleSmall)
+                        .foregroundStyle(AppColors.textPrimary)
+                    Text(T("Video tiếng Anh có phụ đề — chạm câu để tua, tra từ, hỏi AI"))
+                        .font(.caption).foregroundStyle(AppColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right").font(.caption2)
+                    .foregroundStyle(AppColors.textTertiary)
+            }
+            .padding(Spacing.md)
+            .background(AppColors.backgroundCard)
+            .cornerRadius(CornerRadius.large)
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Phòng thi
