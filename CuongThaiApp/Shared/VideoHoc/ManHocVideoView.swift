@@ -113,6 +113,12 @@ struct ManHocVideoView: View {
             Toggle(T("Tự cuộn theo lời"), isOn: $tuDongCuon)
             Toggle(T("Ẩn phụ đề (luyện nghe)"), isOn: $anPhuDe)
             Divider()
+            if let g = goi, !g.cues.isEmpty {
+                NavigationLink {
+                    NgheChepView(video: video, cues: g.cues)
+                } label: { Label(T("Nghe — chép câu này"), systemImage: "pencil.and.scribble") }
+            }
+            Divider()
             Menu(T("Tốc độ")) {
                 ForEach([0.5, 0.75, 1.0, 1.25, 1.5], id: \.self) { x in
                     Button {

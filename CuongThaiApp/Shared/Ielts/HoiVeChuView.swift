@@ -83,6 +83,15 @@ struct HoiVeChuView: View {
 
                 Spacer()
                 #if os(iOS)
+                // Tra xong mà không lưu thì từ bay mất, và lần thứ ba tra lại
+                // vẫn thấy lạ. Đây là đường vào sổ ôn tập ngắt quãng ĐÃ CÓ —
+                // không dựng bộ ôn tập thứ hai.
+                NutLuuTiengAnh(tieuDe: chu,
+                               than: dapAn.values.first ?? chu,
+                               nghia: dapAn["nghia"],
+                               loai: laMotTu ? .tuVung : .ghiChu)
+                #endif
+                #if os(iOS)
                 Button { UIPasteboard.general.string = chu } label: {
                     Image(systemName: "doc.on.doc").font(.caption)
                 }
