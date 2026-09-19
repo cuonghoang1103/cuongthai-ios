@@ -70,6 +70,10 @@ final class DocTu: NSObject, ObservableObject {
         if case .trongMay(let idGiong)? = CaiDatGiong.shared.luaChon(code)?.nguon,
            let g = AVSpeechSynthesisVoice(identifier: idGiong) {
             giong = g
+        } else if let g = CaiDatGiong.giongTuDong(code) {
+            // Chưa chọn gì thì lấy giọng TỐT NHẤT máy đang có, không lấy
+            // giọng mặc định của hệ thống — xem `giongTuDong`.
+            giong = g
         } else if let g = AVSpeechSynthesisVoice(language: ma) {
             giong = g
         } else {

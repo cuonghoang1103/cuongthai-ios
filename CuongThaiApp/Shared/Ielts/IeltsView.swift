@@ -41,6 +41,7 @@ struct IeltsView: View {
                 if coNutDong {
                     ToolbarItem(placement: .cancellationAction) { Button(T("Đóng")) { dong() } }
                 }
+                ToolbarItem(placement: .primaryAction) { NutGiongIelts() }
             }
             .refreshable { await vm.napLoTrinh() }
             .task {

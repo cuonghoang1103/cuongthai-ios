@@ -58,6 +58,7 @@ struct LuyenNoiIeltsView: View {
         .navigationBarTitleDisplayMode(.inline)
         #endif
         .toolbar {
+            ToolbarItem(placement: .primaryAction) { NutGiongIelts() }
             ToolbarItem(placement: .primaryAction) {
                 if chuDe.questions.count > 1 {
                     Text("\(chiSo + 1)/\(chuDe.questions.count)")

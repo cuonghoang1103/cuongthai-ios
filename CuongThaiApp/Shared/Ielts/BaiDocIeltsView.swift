@@ -92,6 +92,7 @@ struct BaiDocIeltsView: View {
         #endif
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
+                NutGiongIelts()
                 // Chia đôi CHỈ trên iPad: hai cột trên màn 390pt thì cột nào
                 // cũng không đọc nổi.
                 if LopToIelts.coBut() {

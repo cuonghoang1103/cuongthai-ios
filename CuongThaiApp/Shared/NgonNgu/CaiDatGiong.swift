@@ -133,6 +133,36 @@ final class CaiDatGiong: ObservableObject {
         return code == "en" ? GIONG_MAY_NHA_ANH + trongMay : trongMay
     }
 
+    /// Giọng trong máy TỐT NHẤT cho một ngôn ngữ, dùng khi người dùng CHƯA
+    /// chọn gì.
+    ///
+    /// ⚠️ `AVSpeechSynthesisVoice(language:)` trả về giọng MẶC ĐỊNH của hệ
+    /// thống, gần như luôn là bản **Compact** — đúng cái giọng máy móc mà
+    /// người dùng chê 19/09/2026. Trong khi đó máy thường đã có sẵn bản
+    /// Enhanced hay hơn hẳn, chỉ là không ai trỏ vào nó.
+    ///
+    /// Bỏ qua giọng Siri: `speechVoices()` có liệt kê chúng, nhưng app bên
+    /// thứ ba KHÔNG đọc được bằng giọng Siri — chọn trúng thì ra im lặng
+    /// hoặc âm thầm rơi về giọng khác. Người dùng tự chọn trong danh sách
+    /// thì tuỳ họ; còn chọn THAY họ thì phải chọn thứ chắc chắn kêu.
+    static func giongTuDong(_ code: String) -> AVSpeechSynthesisVoice? {
+        guard let vung = maVung(code) else { return nil }
+        let goc = String(vung.prefix(2))
+        let thu: [AVSpeechSynthesisVoiceQuality: Int] = [.premium: 0, .enhanced: 1, .default: 2]
+        return AVSpeechSynthesisVoice.speechVoices()
+            .filter { $0.language.hasPrefix(goc) }
+            .filter { !laGiongVuiNhon($0) }
+            .filter { !$0.identifier.lowercased().contains("siri") }
+            .min { a, b in
+                let x = thu[a.quality] ?? 3, y = thu[b.quality] ?? 3
+                // Cùng hạng thì ưu tiên đúng mã vùng (en-US khi code là "en"
+                // và máy chủ khai en-US), rồi mới tới tên cho ổn định.
+                if x != y { return x < y }
+                let da = a.language == vung ? 0 : 1, db = b.language == vung ? 0 : 1
+                return da != db ? da < db : a.name < b.name
+            }
+    }
+
     /// Giọng "vui nhộn" của Apple — Albert, Bad News, Bahh, Zarvox, Trinoids…
     ///
     /// ⚠️ Đây là thứ khiến bản đầu bị chê "nghe như người ngoài hành tinh".

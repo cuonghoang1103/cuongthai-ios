@@ -73,6 +73,7 @@ struct PhongThiIeltsView: View {
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
+        .toolbar { ToolbarItem(placement: .primaryAction) { NutGiongIelts() } }
         // Rời màn giữa chừng thì phải dừng đồng hồ, nếu không nó vẫn đếm và
         // bắn `giaiDoan` sang phần sau của một bài thi đã bỏ dở.
         .onDisappear { tatDongHo(); DocTu.shared.dung() }
