@@ -25,13 +25,23 @@ struct IeltsView: View {
                     } else {
                         chonChang
                         if let b = vm.bandCuaChang { theBand(b) }
+                        // ⚠️ Hai lối vào này nằm TRƯỚC con đường.
+                        //
+                        // Bản đầu đặt chúng SAU — mà con đường tới 60 nút,
+                        // dài hơn chục màn hình. Người dùng báo 19/09/2026:
+                        // "sao tôi có thể thấy + lướt lâu quá qua hơn chục
+                        // màn học lận". Thứ người ta vào thẳng thì phải
+                        // trong tầm mắt đầu tiên; con đường là chỗ ở lại
+                        // lâu, nó nằm dưới mới đúng.
+                        HStack(spacing: Spacing.sm) {
+                            nutHocVideo
+                            nutPhongThi
+                        }
                         // CON ĐƯỜNG thay cho lưới 8 ô đếm số. Lưới cũ nói
                         // "còn 200 bài tập" — đúng nhưng vô dụng; con đường
                         // nói "bây giờ làm cái này", và đó là khác biệt giữa
                         // mở app rồi đóng với mở app rồi học.
                         ConDuongIeltsView(vm: vm)
-                        nutHocVideo
-                        nutPhongThi
                         if let b = vm.bandCuaChang { theKyNang(b) }
                     }
                 }
@@ -194,58 +204,47 @@ struct IeltsView: View {
 
     /// Đặt NGAY trên màn IELTS, không giấu trong thanh bên: người học tiếng
     /// Anh mở IELTS, không mở một mục tên "Video" nào đó ở chỗ khác.
+    /// Hai ô vuông cạnh nhau, không phải hai thẻ ngang.
+    ///
+    /// Thẻ ngang ăn trọn bề ngang nên đặt cạnh nhau là chữ bị bóp; ô vuông
+    /// thì chia đôi màn vừa vặn và vẫn đọc được trên iPhone hẹp.
     private var nutHocVideo: some View {
         NavigationLink { VideoHocView() } label: {
-            HStack(spacing: Spacing.md) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: CornerRadius.medium)
-                        .fill(Color.red.opacity(0.14)).frame(width: 46, height: 46)
-                    Image(systemName: "play.rectangle.fill")
-                        .font(.title3).foregroundStyle(.red)
-                }
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(T("Học bằng video")).font(.titleSmall)
-                        .foregroundStyle(AppColors.textPrimary)
-                    Text(T("Video tiếng Anh có phụ đề — chạm câu để tua, tra từ, hỏi AI"))
-                        .font(.caption).foregroundStyle(AppColors.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                Spacer(minLength: 0)
-                Image(systemName: "chevron.right").font(.caption2)
-                    .foregroundStyle(AppColors.textTertiary)
-            }
-            .padding(Spacing.md)
-            .background(AppColors.backgroundCard)
-            .cornerRadius(CornerRadius.large)
+            oLoiVaoIelts(bieuTuong: "play.rectangle.fill", mau: .red,
+                         ten: T("Học bằng video"),
+                         moTa: T("Phụ đề, nghe–chép, nhại theo"))
         }
         .buttonStyle(.plain)
     }
 
-    // MARK: - Phòng thi
-
     private var nutPhongThi: some View {
         NavigationLink { PhongThiIeltsView(vm: vm) } label: {
-            HStack(spacing: Spacing.sm) {
-                Image(systemName: "timer")
-                    .font(.titleMedium).foregroundStyle(Color.white)
-                    .frame(width: 36, height: 36)
-                    .background(AppColors.error)
-                    .cornerRadius(CornerRadius.small)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(T("Phòng thi")).font(.titleSmall).foregroundStyle(AppColors.textPrimary)
-                    Text(T("Ba phần, đồng hồ chạy thật, có band ước lượng"))
-                        .font(.caption).foregroundStyle(AppColors.textSecondary)
-                }
-                Spacer(minLength: 0)
-                Image(systemName: "chevron.right").font(.caption).foregroundStyle(AppColors.textTertiary)
-            }
-            .padding(Spacing.md)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(AppColors.backgroundCard)
-            .cornerRadius(CornerRadius.large)
-            .contentShape(Rectangle())
+            oLoiVaoIelts(bieuTuong: "timer", mau: AppColors.error,
+                         ten: T("Phòng thi"),
+                         moTa: T("Ba phần, đồng hồ thật"))
         }
         .buttonStyle(.plain)
+    }
+
+    private func oLoiVaoIelts(bieuTuong: String, mau: Color,
+                              ten: String, moTa: String) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Image(systemName: bieuTuong)
+                .font(.titleMedium).foregroundStyle(Color.white)
+                .frame(width: 36, height: 36)
+                .background(mau)
+                .cornerRadius(CornerRadius.small)
+            Text(ten).font(.titleSmall).foregroundStyle(AppColors.textPrimary)
+                .lineLimit(1).minimumScaleFactor(0.8)
+            Text(moTa).font(.caption).foregroundStyle(AppColors.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .padding(Spacing.md)
+        .frame(maxWidth: .infinity, minHeight: 124, alignment: .leading)
+        .background(AppColors.backgroundCard)
+        .cornerRadius(CornerRadius.large)
+        .contentShape(Rectangle())
     }
 
     // MARK: - Kỹ năng của chặng
