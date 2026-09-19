@@ -539,6 +539,30 @@ struct ChuDeNoiView: View {
                 .background(AppColors.backgroundCard)
                 .cornerRadius(CornerRadius.large)
 
+                NavigationLink { LuyenNoiIeltsView(chuDe: chuDe) } label: {
+                    HStack(spacing: Spacing.sm) {
+                        Image(systemName: "mic.circle.fill")
+                            .font(.system(size: 30)).foregroundStyle(AppColors.primary)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(T("Luyện nói với giám khảo")).font(.titleSmall)
+                                .foregroundStyle(AppColors.textPrimary)
+                            Text(T("Robot hỏi bằng giọng nói, bạn trả lời, AI chấm theo tiêu chí Speaking"))
+                                .font(.caption).foregroundStyle(AppColors.textSecondary)
+                                .multilineTextAlignment(.leading)
+                        }
+                        Spacer(minLength: 0)
+                        Image(systemName: "chevron.right").font(.caption)
+                            .foregroundStyle(AppColors.textTertiary)
+                    }
+                    .padding(Spacing.md)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(LinearGradient(colors: [AppColors.primary.opacity(0.14), AppColors.secondary.opacity(0.10)],
+                                               startPoint: .leading, endPoint: .trailing))
+                    .cornerRadius(CornerRadius.large)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+
                 ForEach(chuDe.questions) { c in MotCauNoi(cau: c, mo: moCau == c.id) { moCau = moCau == c.id ? nil : c.id } }
 
                 if let ph = chuDe.phrases, !ph.isEmpty {
