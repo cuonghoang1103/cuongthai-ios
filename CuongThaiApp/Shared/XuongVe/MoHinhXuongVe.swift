@@ -15,7 +15,7 @@ enum KhoVe: String, Codable, CaseIterable, Identifiable {
 
     var ten: String {
         switch self {
-        case .tuDo: return T("Tự do")
+        case .tuDo: return T("Tự do (rộng)")
         case .iphone: return "iPhone"
         case .ipad: return "iPad"
         case .web: return "Web"
@@ -30,7 +30,10 @@ enum KhoVe: String, Codable, CaseIterable, Identifiable {
     /// Kích thước điểm. `tuDo` trả về `nil` — khung co theo màn hình.
     var co: CGSize? {
         switch self {
-        case .tuDo: return nil
+        // ⚠️ "Tự do" trước trả `nil` ⇒ rơi về 1024×768, bé hơn cả màn iPad.
+        // Người dùng dạy học cần chỗ: "trang giấy bé quá sao tôi ghi hết
+        // nội dung và vẽ". Cho nó một tấm bảng rộng thật.
+        case .tuDo: return CGSize(width: 5000, height: 3500)
         case .iphone: return CGSize(width: 393, height: 852)
         case .ipad: return CGSize(width: 1024, height: 1366)
         case .web: return CGSize(width: 1440, height: 900)

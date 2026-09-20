@@ -174,7 +174,11 @@ struct KhungVeView: View {
             // kẹt ở trên", và chung quanh là một mảng tối vô nghĩa.
             .frame(minWidth: rongKhungNhin, minHeight: caoKhungNhin)
         }
-        .background(AppColors.backgroundTertiary)
+        // Nền quanh trang lấy LUÔN màu giấy, để kéo ra xa vẫn thấy một mặt
+        // phẳng liền chứ không phải một mảng tối bao quanh tờ giấy nhỏ —
+        // người dùng hỏi đúng ý đó: "khi kéo xa xa trang nó vẫn màu trắng
+        // được không?". Mép trang vẫn nhận ra nhờ bóng đổ.
+        .background(Color(maHex: banVe.nen).opacity(0.55))
         // Chụm hai ngón để phóng — cách phóng mà ai cầm iPad cũng thử đầu
         // tiên. Chỉ có hai nút ±25% thì người dùng chụm tay, thấy không ăn,
         // rồi kết luận là app không phóng được.
@@ -198,21 +202,8 @@ struct KhungVeView: View {
         // không có gì báo; cách này tự cập nhật.
         .background(GeometryReader { g in
             Color.clear
-                .onAppear {
-                    rongKhungNhin = g.size.width
-                    caoKhungNhin = g.size.height
-                    // Mở ra thì LẤP ĐẦY bề ngang, không "vừa cả trang".
-                    //
-                    // ⚠️ Vừa cả trang nghĩa là mọi thứ lọt gọn trong màn ⇒
-                    // KHÔNG CÒN GÌ ĐỂ CUỘN, và khung cuộn bật ngược mỗi lần
-                    // kéo. Người dùng báo đúng triệu chứng đó: "kéo lên được
-                    // tý nó tự nhảy về chỗ cũ".
-                    if !daVuaKhung { daVuaKhung = true; lapDayNgang() }
-                }
-                .onChange(of: g.size) { _, moi in
-                    rongKhungNhin = moi.width
-                    caoKhungNhin = moi.height
-                }
+                .onAppear { doKhung(g.size) }
+                .onChange(of: g.size) { _, moi in doKhung(moi) }
         })
     }
 
@@ -257,12 +248,28 @@ struct KhungVeView: View {
         }
     }
 
-    /// Lấp đầy bề NGANG. Dùng khi mở bản vẽ: trang phủ kín chiều ngang và
-    /// tràn xuống dưới, nên luôn có chỗ để cuộn dọc.
-    private func lapDayNgang() {
-        guard rongKhungNhin > 0 else { return }
+    /// Ghi số đo khung nhìn, và lần ĐẦU có số đo thật thì lấp đầy bề ngang.
+    ///
+    /// ⚠️ Nhận kích thước qua THAM SỐ, không đọc lại `@State` vừa gán.
+    /// Bản trước viết `rongKhungNhin = g.size.width` rồi gọi hàm đọc
+    /// `rongKhungNhin` NGAY trong cùng khối — SwiftUI chưa cập nhật @State
+    /// ở thời điểm đó nên nó vẫn là 0, `guard > 0` thoát ngay, và hàm lấp
+    /// đầy KHÔNG BAO GIỜ chạy. Build xanh, không lỗi, không gì đổi — đúng
+    /// thứ người dùng thấy suốt hai lần sửa.
+    private func doKhung(_ co: CGSize) {
+        rongKhungNhin = co.width
+        caoKhungNhin = co.height
+        guard co.width > 1, !daVuaKhung else { return }
+        daVuaKhung = true
+        lapDayNgang(co.width)
+    }
+
+    /// Lấp đầy bề NGANG: trang phủ kín chiều ngang và tràn xuống dưới, nên
+    /// luôn có chỗ để cuộn dọc.
+    private func lapDayNgang(_ rong: CGFloat) {
+        guard rong > 1 else { return }
         withAnimation(AppAnimations.quick) {
-            tiLe = keo((rongKhungNhin - Spacing.lg * 2) / banVe.coKhung.width)
+            tiLe = keo((rong - Spacing.lg * 2) / banVe.coKhung.width)
             tiLeGoc = tiLe
         }
     }
