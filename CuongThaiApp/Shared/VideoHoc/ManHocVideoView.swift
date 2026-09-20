@@ -38,11 +38,12 @@ struct ManHocVideoView: View {
     /// trong menu ⋯ ở thanh công cụ và mở ra thành MÀN RIÊNG — nghĩa là có
     /// cũng như không. Đưa ra thành tab ngay cạnh phụ đề.
     enum TabBang: String, CaseIterable, Identifiable {
-        case phuDe, nhaiTheo, ngheChep
+        case phuDe, hoiAI, nhaiTheo, ngheChep
         var id: String { rawValue }
         var ten: String {
             switch self {
             case .phuDe:    return T("Phụ đề")
+            case .hoiAI:    return T("Hỏi AI")
             case .nhaiTheo: return T("Nhại theo")
             case .ngheChep: return T("Nghe chép")
             }
@@ -50,6 +51,7 @@ struct ManHocVideoView: View {
         var icon: String {
             switch self {
             case .phuDe:    return "captions.bubble"
+            case .hoiAI:    return "sparkles"
             case .nhaiTheo: return "waveform.and.mic"
             case .ngheChep: return "pencil.and.scribble"
             }
@@ -217,6 +219,10 @@ struct ManHocVideoView: View {
                 switch tab {
                 case .phuDe:
                     bangPhuDe
+                case .hoiAI:
+                    HoiVeVideoView(video: video,
+                                   giayHienTai: { dk.giay },
+                                   tua: { g in dk.tua(g); dk.phat() })
                 case .nhaiTheo:
                     if let g = goi, !g.cues.isEmpty {
                         NhaiTheoView(video: video, cues: g.cues, dkNgoai: dk)

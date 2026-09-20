@@ -19,6 +19,7 @@ import SwiftUI
 struct NoiDungMarkdown: View {
     let noiDung: String
 
+
     /// Bản CHỮ TRẦN của một câu trả lời AI — gỡ hết dấu cú pháp markdown.
     ///
     /// ⚠️ CHỈ dùng cho chỗ KHÔNG dựng được markdown: dòng xem trước một–hai
@@ -65,7 +66,15 @@ struct NoiDungMarkdown: View {
                 case .trichDan(let chu):             trichDan(chu)
                 case .duongKe:                       Divider().background(AppColors.divider)
                 case .bang(let dau, let hang):       BangMD(dau: dau, hang: hang)
-                case .khoiMa(let ma, let ngonNgu):   KhoiMaView(ma: ma, ngonNgu: ngonNgu)
+                case .khoiMa(let ma, let ngonNgu):
+                // Khối ```mermaid dựng thành SƠ ĐỒ, không phải một đống chữ.
+                // Đặt ở đây (chỗ dùng chung) chứ không ở từng màn: mọi câu
+                // trả lời AI trong app đều đi qua bộ dựng này.
+                if (ngonNgu ?? "").lowercased() == "mermaid" {
+                    SoDoTuMarkdown(ma: ma)
+                } else {
+                    KhoiMaView(ma: ma, ngonNgu: ngonNgu)
+                }
                 }
             }
         }
@@ -349,3 +358,27 @@ extension String {
             .joined(separator: "`")
     }
 }
+
+#if os(iOS)
+/// Bọc `SoDoMermaidView` cho dùng được trong `NoiDungMarkdown`.
+///
+/// Hỏng thì LÙI về khối mã chứ không hiện khung trắng: sơ đồ sai cú pháp là
+/// chuyện model hay làm, và một khung trắng không nói cho người học biết
+/// rằng vẫn còn nội dung đọc được.
+private struct SoDoTuMarkdown: View {
+    let ma: String
+    @State private var cao: CGFloat = 180
+    @State private var hong = false
+
+    var body: some View {
+        if hong {
+            KhoiMaView(ma: ma, ngonNgu: "mermaid")
+        } else {
+            SoDoMermaidView(ma: ma, chieuCao: $cao, hong: $hong)
+                .frame(height: cao)
+                .background(RoundedRectangle(cornerRadius: CornerRadius.medium)
+                    .fill(AppColors.backgroundCard))
+        }
+    }
+}
+#endif
