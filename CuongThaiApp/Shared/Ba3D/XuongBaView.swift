@@ -152,7 +152,13 @@ struct KhungBaView: View {
     @AppStorage("xuong3d.caoBang") private var caoBang: Double = 280
     @State private var thuBang = false
     @State private var caoDangKeo: Double?
+    @State private var cheDoGizmo: DungCanh.CheDoGizmo = .doi
+    /// Giá trị xoay/cỡ lúc BẮT ĐẦU cú kéo. Cộng dồn từng khung hình thì sai
+    /// số tích lại và khối trôi; lấy gốc rồi cộng tổng thì không.
+    @State private var xoayGoc: SIMD3<Double>?
+    @State private var coGoc: SIMD3<Double>?
     @State private var moNhanDay = false
+    @State private var moThuVien = false
     @State private var soBan = 4
     @State private var buocDay = SIMD3<Double>(1, 0, 0)
 
@@ -170,9 +176,13 @@ struct KhungBaView: View {
                      thuMucTep: KhoCanhBa.thuMucTep(canh.id),
                      lanDongKhung: lanDongKhung,
                      lanChupAnh: lanChupAnh,
-                     khiChupXong: { anh in luuAnh(anh) })
+                     khiChupXong: { anh in luuAnh(anh) },
+                     cheDo: cheDoGizmo,
+                     khiXoay: xoayKhoi,
+                     khiCo: coKhoi)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(maHex: canh.mauNen))
+            .overlay(alignment: .topLeading) { chonCheDo }
             // Thả tệp từ Files/Split View thẳng vào cảnh. Trên iPad đây là
             // đường tự nhiên hơn hẳn menu → chọn tệp → duyệt thư mục.
             .dropDestination(for: URL.self) { ds, _ in
@@ -185,6 +195,68 @@ struct KhungBaView: View {
                 nhapTuURL(u)
                 return true
             }
+    }
+
+    /// Ba chế độ tay nắm, nổi góc trên trái khung 3D.
+    private var chonCheDo: some View {
+        HStack(spacing: 2) {
+            ForEach(DungCanh.CheDoGizmo.allCases) { c in
+                Button {
+                    cheDoGizmo = c
+                } label: {
+                    Image(systemName: c.icon)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(cheDoGizmo == c ? AppColors.onPrimary : AppColors.textSecondary)
+                        .frame(width: 38, height: 32)
+                        .background(RoundedRectangle(cornerRadius: 7)
+                            .fill(cheDoGizmo == c ? AppColors.primary : .clear))
+                }
+                .accessibilityLabel(c.ten)
+            }
+        }
+        .padding(3)
+        .background(RoundedRectangle(cornerRadius: 10).fill(.ultraThinMaterial))
+        .padding(Spacing.sm)
+        .opacity(dangChon == nil ? 0.35 : 1)
+    }
+
+    /// Xoay theo tay nắm. `d` là tổng độ đã quay tính từ lúc bắt đầu kéo.
+    private func xoayKhoi(_ id: UUID, _ truc: Int, _ d: Double) {
+        guard let i = canh.khoi.firstIndex(where: { $0.id == id }) else { return }
+        if xoayGoc == nil {
+            ghiNho()
+            dangKeo = true
+            xoayGoc = SIMD3(canh.khoi[i].xoayX, canh.khoi[i].xoayY, canh.khoi[i].xoayZ)
+        }
+        guard let g = xoayGoc else { return }
+        // Bắt điểm theo 5° khi cảnh đang bật bắt điểm — canh khớp bằng mắt
+        // ở mức độ là việc không làm được.
+        var v = g[truc] + d
+        if canh.buocBat > 0 { v = (v / 5).rounded() * 5 }
+        while v > 180 { v -= 360 }
+        while v < -180 { v += 360 }
+        switch truc {
+        case 0: canh.khoi[i].xoayX = v
+        case 1: canh.khoi[i].xoayY = v
+        default: canh.khoi[i].xoayZ = v
+        }
+    }
+
+    /// Co giãn theo tay nắm. `ti` là tỉ lệ so với lúc bắt đầu kéo.
+    private func coKhoi(_ id: UUID, _ truc: Int, _ ti: Double) {
+        guard let i = canh.khoi.firstIndex(where: { $0.id == id }) else { return }
+        if coGoc == nil {
+            ghiNho()
+            dangKeo = true
+            coGoc = SIMD3(canh.khoi[i].coX, canh.khoi[i].coY, canh.khoi[i].coZ)
+        }
+        guard let g = coGoc else { return }
+        let v = min(max(g[truc] * ti, 0.02), 500)
+        switch truc {
+        case 0: canh.khoi[i].coX = v
+        case 1: canh.khoi[i].coY = v
+        default: canh.khoi[i].coZ = v
+        }
     }
 
     /// Khối đã KHOÁ thì bỏ qua — sàn nằm dưới mọi thứ nên nó là thứ hay bị
@@ -236,7 +308,12 @@ struct KhungBaView: View {
         if let c = dangChon, !canh.khoi.contains(where: { $0.id == c }) { dangChon = nil }
     }
 
-    private func luuNgay() { dangKeo = false; kho.luu(canh) }
+    private func luuNgay() {
+        dangKeo = false
+        xoayGoc = nil
+        coGoc = nil
+        kho.luu(canh)
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -279,6 +356,16 @@ struct KhungBaView: View {
         }
         .sheet(isPresented: $moThem) { manThem }
         .sheet(isPresented: $moNhanDay) { manNhanDay }
+        .sheet(isPresented: $moThuVien) {
+            ThuVienBoPhanView { ds in
+                guard !ds.isEmpty else { return }
+                ghiNho()
+                canh.khoi.append(contentsOf: ds)
+                dangChon = ds.first?.id
+                kho.luu(canh)
+                khoe(String(format: T("Đã thêm %d khối"), ds.count))
+            }
+        }
         .sheet(isPresented: $moMau) { manMau }
         .fileImporter(isPresented: $moNhapTep,
                       allowedContentTypes: [.usdz, .threeDContent, .item],
@@ -308,6 +395,9 @@ struct KhungBaView: View {
         Menu {
             Button { moMau = true } label: { Label(T("Mẫu dựng sẵn"), systemImage: "square.stack.3d.up") }
             Button { moThem = true } label: { Label(T("Khối cơ bản"), systemImage: "cube") }
+            Button { moThuVien = true } label: {
+                Label(T("Thư viện bộ phận"), systemImage: "shippingbox")
+            }
             Button { moNhapTep = true } label: { Label(T("Nhập tệp .usdz / .obj"), systemImage: "square.and.arrow.down") }
             Divider()
             Button { canh.luoi.toggle(); kho.luu(canh) } label: {
@@ -1289,9 +1379,30 @@ enum DungCanh {
 
     static let TEN_GIZMO = "gizmo"
 
+    /// Ba việc của gizmo. Một bộ tay nắm làm cả ba thì rối và bấm nhầm liên
+    /// tục — Blender/Maya/Unity đều tách chế độ, vì thế người dùng đã quen.
+    enum CheDoGizmo: String, CaseIterable, Identifiable {
+        case doi, xoay, co
+        var id: String { rawValue }
+        var ten: String {
+            switch self {
+            case .doi:  return T("Dời")
+            case .xoay: return T("Xoay")
+            case .co:   return T("Co giãn")
+            }
+        }
+        var icon: String {
+            switch self {
+            case .doi:  return "move.3d"
+            case .xoay: return "rotate.3d"
+            case .co:   return "scale.3d"
+            }
+        }
+    }
+
     /// Ba mũi tên X (đỏ) · Y (xanh lá) · Z (xanh dương), theo quy ước
     /// Blender/Maya để người từng dùng phần mềm khác không phải học lại.
-    static func nutGizmo(dai: Float) -> SCNNode {
+    static func nutGizmo(dai: Float, cheDo: CheDoGizmo = .doi) -> SCNNode {
         let goc = SCNNode()
         goc.name = TEN_GIZMO
 
@@ -1301,14 +1412,36 @@ enum DungCanh {
             ("z", .systemBlue,  SCNVector3(Float.pi / 2, 0, 0)),
         ]
         for (ten, mau, xoay) in truc {
-            let than = SCNNode(geometry: SCNCylinder(radius: CGFloat(dai) * 0.022,
-                                                     height: CGFloat(dai)))
-            let dau = SCNNode(geometry: SCNCone(topRadius: 0,
-                                                bottomRadius: CGFloat(dai) * 0.075,
-                                                height: CGFloat(dai) * 0.22))
-            dau.position = SCNVector3(0, dai / 2 + dai * 0.11, 0)
+            var phan: [SCNNode] = []
+            switch cheDo {
+            case .doi:
+                let than = SCNNode(geometry: SCNCylinder(radius: CGFloat(dai) * 0.022,
+                                                         height: CGFloat(dai)))
+                let dau = SCNNode(geometry: SCNCone(topRadius: 0,
+                                                    bottomRadius: CGFloat(dai) * 0.075,
+                                                    height: CGFloat(dai) * 0.22))
+                dau.position = SCNVector3(0, dai / 2 + dai * 0.11, 0)
+                phan = [than, dau]
+            case .co:
+                // Cán mảnh + một KHỐI VUÔNG ở đầu: quy ước chung của mọi
+                // phần mềm 3D cho tay nắm co giãn.
+                let than = SCNNode(geometry: SCNCylinder(radius: CGFloat(dai) * 0.018,
+                                                         height: CGFloat(dai)))
+                let c = CGFloat(dai) * 0.12
+                let hop = SCNNode(geometry: SCNBox(width: c, height: c, length: c,
+                                                   chamferRadius: c * 0.12))
+                hop.position = SCNVector3(0, dai / 2 + Float(c) / 2, 0)
+                phan = [than, hop]
+            case .xoay:
+                // VÒNG quanh trục. Ống hơi dày để còn chạm trúng bằng ngón.
+                let vong = SCNNode(geometry: SCNTorus(ringRadius: CGFloat(dai) * 0.62,
+                                                      pipeRadius: CGFloat(dai) * 0.022))
+                // `SCNTorus` nằm trong mặt phẳng XZ, tức vòng của trục Y.
+                // Hai trục kia xoay 90° để vòng ôm đúng trục của mình.
+                phan = [vong]
+            }
 
-            for n in [than, dau] {
+            for n in phan {
                 let m = SCNMaterial()
                 m.diffuse.contents = mau
                 m.emission.contents = mau.withAlphaComponent(0.55)
@@ -1322,10 +1455,11 @@ enum DungCanh {
 
             let cum = SCNNode()
             cum.name = "\(TEN_GIZMO)-\(ten)"
-            cum.addChildNode(than)
-            cum.addChildNode(dau)
-            // Đẩy nửa thân ra để gốc mũi tên nằm ở tâm khối.
-            cum.pivot = SCNMatrix4MakeTranslation(0, -dai / 2, 0)
+            for n in phan { cum.addChildNode(n) }
+            if cheDo != .xoay {
+                // Đẩy nửa thân ra để gốc tay nắm nằm ở tâm khối.
+                cum.pivot = SCNMatrix4MakeTranslation(0, -dai / 2, 0)
+            }
             cum.eulerAngles = xoay
             goc.addChildNode(cum)
         }
@@ -1333,7 +1467,7 @@ enum DungCanh {
     }
 
     /// Gắn/bỏ gizmo theo khối đang chọn. Gọi mỗi lần cập nhật cảnh.
-    static func capNhatGizmo(_ scn: SCNScene, chon: UUID?) {
+    static func capNhatGizmo(_ scn: SCNScene, chon: UUID?, cheDo: CheDoGizmo = .doi) {
         let cu = scn.rootNode.childNode(withName: TEN_GIZMO, recursively: false)
         guard let id = chon,
               let nut = scn.rootNode.childNode(withName: id.uuidString, recursively: false)
@@ -1349,14 +1483,16 @@ enum DungCanh {
         // Dựng lại khi cỡ khối đổi nhiều; còn lại chỉ dời vị trí. Co giãn
         // nút có sẵn thì đầu mũi tên béo/nhọn theo, trông như hỏng.
         let caCu = cu.flatMap { $0.value(forKey: "dai") as? Float }
-        if let g = cu, let d = caCu, abs(d - dai) <= 0.01 {
+        let cheCu = cu.flatMap { $0.value(forKey: "cheDo") as? String }
+        if let g = cu, let d = caCu, abs(d - dai) <= 0.01, cheCu == cheDo.rawValue {
             g.position = nut.worldPosition
             return
         }
         cu?.removeFromParentNode()
-        let moi = nutGizmo(dai: dai)
+        let moi = nutGizmo(dai: dai, cheDo: cheDo)
         moi.position = nut.worldPosition
         moi.setValue(dai, forKey: "dai")
+        moi.setValue(cheDo.rawValue, forKey: "cheDo")
         scn.rootNode.addChildNode(moi)
     }
 
@@ -1510,6 +1646,9 @@ struct CanhSceneKit: UIViewRepresentable {
     /// Tăng số này để yêu cầu chụp một tấm ảnh của cảnh.
     var lanChupAnh: Int = 0
     var khiChupXong: ((UIImage) -> Void)?
+    var cheDo: DungCanh.CheDoGizmo = .doi
+    var khiXoay: ((UUID, Int, Double) -> Void)?
+    var khiCo: ((UUID, Int, Double) -> Void)?
 
     func makeUIView(context: Context) -> SCNView {
         let v = SCNView()
@@ -1542,6 +1681,9 @@ struct CanhSceneKit: UIViewRepresentable {
         context.coordinator.gan(v: v, khiChon: khiChon, khiKeo: khiKeo, khiTha: khiThaKeo)
         context.coordinator.dangChon = chon
         context.coordinator.buocBat = canh.buocBat
+        context.coordinator.cheDo = cheDo
+        context.coordinator.khiXoay = khiXoay
+        context.coordinator.khiCo = khiCo
 
         guard let scn = v.scene else {
             v.scene = DungCanh.dung(canh, chon: chon, thuMucTep: thuMucTep)
@@ -1590,7 +1732,7 @@ struct CanhSceneKit: UIViewRepresentable {
                 scn.rootNode.addChildNode(DungCanh.dungNut(k, dangChon: k.id == chon, thuMucTep: thuMucTep))
             }
         }
-        DungCanh.capNhatGizmo(scn, chon: chon)
+        DungCanh.capNhatGizmo(scn, chon: chon, cheDo: cheDo)
     }
 
     func makeCoordinator() -> Dieu { Dieu() }
@@ -1603,6 +1745,10 @@ struct CanhSceneKit: UIViewRepresentable {
         var lanDongKhung = 0
         var lanChupAnh = 0
         var buocBat: Double = 0
+        var cheDo: DungCanh.CheDoGizmo = .doi
+        /// `(id, trục 0/1/2, giá trị cộng thêm so với lúc bắt đầu kéo)`
+        var khiXoay: ((UUID, Int, Double) -> Void)?
+        var khiCo: ((UUID, Int, Double) -> Void)?
 
         /// Ảnh SẠCH của cảnh: giấu lưới sàn và viền chọn rồi mới chụp.
         ///
@@ -1636,6 +1782,12 @@ struct CanhSceneKit: UIViewRepresentable {
         /// Trục đang bị khoá trong cú kéo hiện tại ("x"/"y"/"z"), `nil` = tự do.
         private var trucKhoa: String?
         private var viTriDau = SCNVector3Zero
+        /// Góc (radian) của điểm chạm quanh tâm khối trên MÀN HÌNH lúc bắt
+        /// đầu — xoay tính bằng hiệu góc, đúng cảm giác "cầm vòng mà quay".
+        private var gocManDau: Double = 0
+        private var khoangManDau: Double = 1
+        private var tamMan = CGPoint.zero
+        private var chieuXoay: Double = 1
 
         func gan(v: SCNView,
                  khiChon: @escaping (UUID) -> Void,
@@ -1715,21 +1867,50 @@ struct CanhSceneKit: UIViewRepresentable {
             else { return }
             let diem = g.location(in: v)
 
+            let soTruc = ["x": 0, "y": 1, "z": 2]
+
             switch g.state {
             case .began:
-                // Bắt đầu TRÊN một mũi tên ⇒ khoá vào trục đó cho tới khi
+                // Bắt đầu TRÊN một tay nắm ⇒ khoá vào trục đó cho tới khi
                 // thả. Quyết một lần lúc chạm, không dò lại mỗi khung hình:
-                // giữa chừng đầu ngón rời khỏi mũi tên là chuyện thường, mà
+                // giữa chừng đầu ngón rời khỏi tay nắm là chuyện thường, mà
                 // dò lại thì khối nhảy sang chế độ tự do ngay giữa cú kéo.
                 trucKhoa = trucTai(diem, v)
                 let tren = v.projectPoint(nut.worldPosition)
                 sauManHinh = tren.z
                 viTriDau = nut.worldPosition
+                tamMan = CGPoint(x: CGFloat(tren.x), y: CGFloat(tren.y))
+                gocManDau = atan2(Double(diem.y - tamMan.y), Double(diem.x - tamMan.x))
+                khoangManDau = max(8, hypot(Double(diem.x - tamMan.x), Double(diem.y - tamMan.y)))
+                // Nhìn từ phía sau trục thì vòng quay NGƯỢC trên màn hình.
+                // Không lật dấu thì kéo sang phải có lúc quay trái.
+                if let t = trucKhoa, let i = soTruc[t], let mat = v.pointOfView {
+                    var tr = SIMD3<Float>(0, 0, 0); tr[i] = 1
+                    let tg = nut.simdWorldTransform * SIMD4<Float>(tr, 0)
+                    let toCam = mat.simdWorldPosition - nut.simdWorldPosition
+                    chieuXoay = simd_dot(SIMD3(tg.x, tg.y, tg.z), toCam) >= 0 ? -1 : 1
+                }
                 let theGioi = v.unprojectPoint(SCNVector3(Float(diem.x), Float(diem.y), sauManHinh))
                 lechTheGioi = SCNVector3(nut.worldPosition.x - theGioi.x,
                                          nut.worldPosition.y - theGioi.y,
                                          nut.worldPosition.z - theGioi.z)
             case .changed:
+                // ── Xoay: hiệu GÓC quanh tâm khối trên màn hình ──
+                if cheDo == .xoay, let t = trucKhoa, let i = soTruc[t] {
+                    let goc = atan2(Double(diem.y - tamMan.y), Double(diem.x - tamMan.x))
+                    var d = (goc - gocManDau) * chieuXoay * 180 / .pi
+                    // Chuẩn về (−180, 180] để vượt mốc không bị nhảy 360°.
+                    while d > 180 { d -= 360 }
+                    while d < -180 { d += 360 }
+                    khiXoay?(id, i, d)
+                    return
+                }
+                // ── Co giãn: tỉ lệ khoảng cách tới tâm ──
+                if cheDo == .co, let t = trucKhoa, let i = soTruc[t] {
+                    let kc = max(8, hypot(Double(diem.x - tamMan.x), Double(diem.y - tamMan.y)))
+                    khiCo?(id, i, kc / khoangManDau)
+                    return
+                }
                 let theGioi = v.unprojectPoint(SCNVector3(Float(diem.x), Float(diem.y), sauManHinh))
                 var moi = SCNVector3(theGioi.x + lechTheGioi.x,
                                      theGioi.y + lechTheGioi.y,

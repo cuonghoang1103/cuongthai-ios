@@ -350,6 +350,7 @@ enum APIEndpoint {
     case videoThemCuaToi(url: String, nhomLon: String?)
     case videoDoiNhom(id: Int, nhomLon: String)
     case videoYeuThich(ma: Int)
+    case xuong3dBoPhan
     case videoXoaCuaToi(id: Int)
     case videoCuaKhoa(id: Int)
     case videoPhuDe(lessonId: Int)
@@ -787,6 +788,7 @@ enum APIEndpoint {
         case .videoThemCuaToi: return "/api/v1/video-hoc/cua-toi"
         case .videoDoiNhom(let i, _): return "/api/v1/video-hoc/cua-toi/\(i)/nhom"
         case .videoYeuThich(let m): return "/api/v1/video-hoc/yeu-thich/\(m)"
+        case .xuong3dBoPhan: return "/api/v1/xuong-3d/bo-phan"
         case .videoXoaCuaToi(let i): return "/api/v1/video-hoc/cua-toi/\(i)"
         case .videoCuaKhoa(let id): return "/api/v1/video-hoc/khoa/\(id)"
         case .videoPhuDe(let l): return "/api/v1/video-hoc/phu-de/\(l)"
