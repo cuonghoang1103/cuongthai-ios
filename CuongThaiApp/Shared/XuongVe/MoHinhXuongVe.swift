@@ -9,6 +9,7 @@ import SwiftUI
 /// khung vuông rồi mới biết nó không vừa là mất công làm lại từ đầu.
 enum KhoVe: String, Codable, CaseIterable, Identifiable {
     case tuDo, iphone, ipad, web, vuong, a4
+    case bang, bangLon, voCucLon
 
     var id: String { rawValue }
 
@@ -20,6 +21,9 @@ enum KhoVe: String, Codable, CaseIterable, Identifiable {
         case .web: return "Web"
         case .vuong: return T("Vuông")
         case .a4: return "A4"
+        case .bang: return T("Bảng giảng")
+        case .bangLon: return T("Bảng lớn")
+        case .voCucLon: return T("Vô cực")
         }
     }
 
@@ -32,6 +36,12 @@ enum KhoVe: String, Codable, CaseIterable, Identifiable {
         case .web: return CGSize(width: 1440, height: 900)
         case .vuong: return CGSize(width: 1080, height: 1080)
         case .a4: return CGSize(width: 794, height: 1123)
+        // Dạy học thì cần chỗ: một sơ đồ mạch hay một bài toán nhiều bước
+        // không nhét vừa khổ 1440×900 — người dùng báo 20/09/2026 "diện
+        // tích được có tý".
+        case .bang: return CGSize(width: 3000, height: 2000)
+        case .bangLon: return CGSize(width: 6000, height: 4000)
+        case .voCucLon: return CGSize(width: 12000, height: 8000)
         }
     }
 
@@ -44,6 +54,7 @@ enum KhoVe: String, Codable, CaseIterable, Identifiable {
 /// Loại hình khối chèn được.
 enum LoaiHinh: String, Codable, CaseIterable, Identifiable {
     case chuNhat, bo, elip, duong, muiTen, chu
+    case tamGiac, thoi, trUong, saoNam, muiTenHai, netDut, trucToaDo
     var id: String { rawValue }
 
     var ten: String {
@@ -54,6 +65,13 @@ enum LoaiHinh: String, Codable, CaseIterable, Identifiable {
         case .duong: return T("Đường")
         case .muiTen: return T("Mũi tên")
         case .chu: return T("Chữ")
+        case .tamGiac: return T("Tam giác")
+        case .thoi: return T("Hình thoi")
+        case .trUong: return T("Trụ (CSDL)")
+        case .saoNam: return T("Ngôi sao")
+        case .muiTenHai: return T("Mũi tên hai đầu")
+        case .netDut: return T("Đường nét đứt")
+        case .trucToaDo: return T("Trục toạ độ")
         }
     }
 
@@ -65,6 +83,13 @@ enum LoaiHinh: String, Codable, CaseIterable, Identifiable {
         case .duong: return "line.diagonal"
         case .muiTen: return "arrow.right"
         case .chu: return "textformat"
+        case .tamGiac: return "triangle"
+        case .thoi: return "diamond"
+        case .trUong: return "cylinder"
+        case .saoNam: return "star"
+        case .muiTenHai: return "arrow.left.and.right"
+        case .netDut: return "line.diagonal"
+        case .trucToaDo: return "chart.xyaxis.line"
         }
     }
 }
@@ -93,17 +118,80 @@ struct HinhVe: Codable, Identifiable, Equatable {
     var khung: CGRect { CGRect(x: x, y: y, width: rong, height: cao) }
 }
 
+/// Nền giấy. Dạy toán thì lưới ô vuông và giấy kẻ ca-rô là thứ dùng nhiều
+/// nhất — vẽ trục toạ độ hay hình học trên giấy trắng là canh bằng mắt.
+enum KieuGiay: String, Codable, CaseIterable, Identifiable {
+    case trang, oVuong, caRo, chamBi, keDong, tamGiac
+    var id: String { rawValue }
+    var ten: String {
+        switch self {
+        case .trang:    return T("Trắng")
+        case .oVuong:   return T("Ô vuông")
+        case .caRo:     return T("Ca-rô nhỏ")
+        case .chamBi:   return T("Chấm bi")
+        case .keDong:   return T("Kẻ dòng")
+        case .tamGiac:  return T("Tam giác đều")
+        }
+    }
+    var bieuTuong: String {
+        switch self {
+        case .trang:   return "square"
+        case .oVuong:  return "grid"
+        case .caRo:    return "square.grid.4x3.fill"
+        case .chamBi:  return "circle.grid.3x3"
+        case .keDong:  return "list.dash"
+        case .tamGiac: return "triangle"
+        }
+    }
+    /// Bước lưới mặc định (điểm).
+    var buoc: Double {
+        switch self {
+        case .caRo: return 20
+        case .chamBi: return 40
+        case .keDong: return 36
+        case .tamGiac: return 48
+        default: return 50
+        }
+    }
+}
+
 /// Một bản vẽ hoàn chỉnh.
 struct BanVe: Codable, Identifiable, Equatable {
     var id: UUID = UUID()
     var ten: String
     var kho: KhoVe = .tuDo
     var nen: String = "#FFFFFF"
+    /// Kiểu giấy nền. Mặc định trắng để bản vẽ cũ không đổi vẻ ngoài.
+    var giay: KieuGiay = .trang
+    /// Bước lưới, `0` = dùng mặc định của kiểu giấy.
+    var buocLuoi: Double = 0
     var hinh: [HinhVe] = []
     var taoLuc: Date = Date()
     var suaLuc: Date = Date()
 
     var coKhung: CGSize { kho.co ?? CGSize(width: 1024, height: 768) }
+    var buocThat: Double { buocLuoi > 0 ? buocLuoi : giay.buoc }
+
+    /// ⚠️ TỰ VIẾT bộ giải mã. `Decodable` tự sinh đòi ĐỦ MỌI khoá kể cả khi
+    /// thuộc tính có giá trị mặc định — thêm `giay`/`buocLuoi` mà để nó tự
+    /// sinh thì MỌI bản vẽ đã lưu biến mất khỏi danh sách, im lặng.
+    init(from bo: Decoder) throws {
+        let c = try bo.container(keyedBy: CodingKeys.self)
+        id = try c.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        ten = try c.decodeIfPresent(String.self, forKey: .ten) ?? T("Bản vẽ")
+        kho = try c.decodeIfPresent(KhoVe.self, forKey: .kho) ?? .tuDo
+        nen = try c.decodeIfPresent(String.self, forKey: .nen) ?? "#FFFFFF"
+        giay = try c.decodeIfPresent(KieuGiay.self, forKey: .giay) ?? .trang
+        buocLuoi = try c.decodeIfPresent(Double.self, forKey: .buocLuoi) ?? 0
+        hinh = try c.decodeIfPresent([HinhVe].self, forKey: .hinh) ?? []
+        taoLuc = try c.decodeIfPresent(Date.self, forKey: .taoLuc) ?? Date()
+        suaLuc = try c.decodeIfPresent(Date.self, forKey: .suaLuc) ?? Date()
+    }
+
+    init(ten: String, kho: KhoVe = .tuDo) {
+        self.ten = ten
+        self.kho = kho
+    }
 }
 
 // MARK: - Kho lưu

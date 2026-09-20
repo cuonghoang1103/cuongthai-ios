@@ -210,6 +210,124 @@ struct VeMotHinh: View {
                 .font(.system(size: hinh.coChu, weight: .semibold))
                 .foregroundStyle(Color(maHex: hinh.mauChu))
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+
+        // ─── Hình cho sơ đồ giảng dạy ───────────────────────────────
+
+        case .tamGiac:
+            daGiac([(0.5, 0), (1, 1), (0, 1)])
+        case .thoi:
+            daGiac([(0.5, 0), (1, 0.5), (0.5, 1), (0, 0.5)])
+        case .saoNam:
+            daGiac(saoNamCanh())
+
+        case .trUong:
+            // Hình trụ đứng — ký hiệu CƠ SỞ DỮ LIỆU trong mọi sơ đồ kiến
+            // trúc. Vẽ tay mỗi lần là việc ai dạy hệ thống cũng phải làm.
+            ZStack {
+                Path { p in
+                    let n = min(hinh.cao * 0.18, hinh.rong * 0.5)
+                    p.move(to: CGPoint(x: 0, y: n))
+                    p.addLine(to: CGPoint(x: 0, y: hinh.cao - n))
+                    p.addCurve(to: CGPoint(x: hinh.rong, y: hinh.cao - n),
+                               control1: CGPoint(x: 0, y: hinh.cao + n * 0.6),
+                               control2: CGPoint(x: hinh.rong, y: hinh.cao + n * 0.6))
+                    p.addLine(to: CGPoint(x: hinh.rong, y: n))
+                    p.addCurve(to: CGPoint(x: 0, y: n),
+                               control1: CGPoint(x: hinh.rong, y: -n * 0.6),
+                               control2: CGPoint(x: 0, y: -n * 0.6))
+                }
+                .fill(Color(maHex: hinh.mauNen).opacity(hinh.doMo))
+                Path { p in
+                    let n = min(hinh.cao * 0.18, hinh.rong * 0.5)
+                    p.move(to: CGPoint(x: 0, y: n))
+                    p.addCurve(to: CGPoint(x: hinh.rong, y: n),
+                               control1: CGPoint(x: 0, y: n * 2.2),
+                               control2: CGPoint(x: hinh.rong, y: n * 2.2))
+                }
+                .stroke(Color(maHex: hinh.mauVien.isEmpty ? "#00000055" : hinh.mauVien),
+                        lineWidth: max(1, hinh.dayVien))
+            }
+
+        case .muiTenHai:
+            Path { p in
+                let y = hinh.cao / 2
+                let mui = min(14, hinh.rong * 0.25)
+                p.move(to: CGPoint(x: 0, y: y)); p.addLine(to: CGPoint(x: hinh.rong, y: y))
+                for (goc, huong) in [(0.0, 1.0), (hinh.rong, -1.0)] {
+                    p.move(to: CGPoint(x: goc + mui * huong, y: y - mui * 0.7))
+                    p.addLine(to: CGPoint(x: goc, y: y))
+                    p.addLine(to: CGPoint(x: goc + mui * huong, y: y + mui * 0.7))
+                }
+            }
+            .stroke(Color(maHex: hinh.mauNen).opacity(hinh.doMo),
+                    style: StrokeStyle(lineWidth: max(1, hinh.dayVien > 0 ? hinh.dayVien : 3),
+                                       lineCap: .round, lineJoin: .round))
+
+        case .netDut:
+            Path { p in
+                p.move(to: CGPoint(x: 0, y: hinh.cao / 2))
+                p.addLine(to: CGPoint(x: hinh.rong, y: hinh.cao / 2))
+            }
+            .stroke(Color(maHex: hinh.mauNen).opacity(hinh.doMo),
+                    style: StrokeStyle(lineWidth: max(1, hinh.dayVien > 0 ? hinh.dayVien : 3),
+                                       lineCap: .round, dash: [10, 8]))
+
+        case .trucToaDo:
+            // Hệ trục Oxy có mũi tên và vạch chia — thứ mở đầu mọi bài
+            // hàm số, đồ thị, vật lý.
+            Path { p in
+                let cx = hinh.rong / 2, cy = hinh.cao / 2, m = 9.0
+                p.move(to: CGPoint(x: 0, y: cy)); p.addLine(to: CGPoint(x: hinh.rong, y: cy))
+                p.move(to: CGPoint(x: hinh.rong - m, y: cy - m * 0.65))
+                p.addLine(to: CGPoint(x: hinh.rong, y: cy))
+                p.addLine(to: CGPoint(x: hinh.rong - m, y: cy + m * 0.65))
+                p.move(to: CGPoint(x: cx, y: hinh.cao)); p.addLine(to: CGPoint(x: cx, y: 0))
+                p.move(to: CGPoint(x: cx - m * 0.65, y: m))
+                p.addLine(to: CGPoint(x: cx, y: 0))
+                p.addLine(to: CGPoint(x: cx + m * 0.65, y: m))
+                let buoc = max(18.0, min(hinh.rong, hinh.cao) / 10)
+                var t = buoc
+                while t < max(hinh.rong, hinh.cao) / 2 {
+                    if cx + t < hinh.rong { p.move(to: CGPoint(x: cx + t, y: cy - 4)); p.addLine(to: CGPoint(x: cx + t, y: cy + 4)) }
+                    if cx - t > 0 { p.move(to: CGPoint(x: cx - t, y: cy - 4)); p.addLine(to: CGPoint(x: cx - t, y: cy + 4)) }
+                    if cy + t < hinh.cao { p.move(to: CGPoint(x: cx - 4, y: cy + t)); p.addLine(to: CGPoint(x: cx + 4, y: cy + t)) }
+                    if cy - t > 0 { p.move(to: CGPoint(x: cx - 4, y: cy - t)); p.addLine(to: CGPoint(x: cx + 4, y: cy - t)) }
+                    t += buoc
+                }
+            }
+            .stroke(Color(maHex: hinh.mauNen).opacity(hinh.doMo),
+                    style: StrokeStyle(lineWidth: max(1, hinh.dayVien > 0 ? hinh.dayVien : 2),
+                                       lineCap: .round, lineJoin: .round))
         }
+    }
+
+    /// Đa giác theo toạ độ TỈ LỆ (0…1) — tự co theo cỡ hình nên kéo to nhỏ
+    /// không méo, khác hẳn toạ độ tuyệt đối.
+    @ViewBuilder
+    private func daGiac(_ diem: [(Double, Double)]) -> some View {
+        let p = Path { p in
+            guard let d = diem.first else { return }
+            p.move(to: CGPoint(x: d.0 * hinh.rong, y: d.1 * hinh.cao))
+            for t in diem.dropFirst() {
+                p.addLine(to: CGPoint(x: t.0 * hinh.rong, y: t.1 * hinh.cao))
+            }
+            p.closeSubpath()
+        }
+        ZStack {
+            p.fill(Color(maHex: hinh.mauNen).opacity(hinh.doMo))
+            if hinh.dayVien > 0 {
+                p.stroke(Color(maHex: hinh.mauVien), lineWidth: hinh.dayVien)
+            }
+        }
+    }
+
+    private func saoNamCanh() -> [(Double, Double)] {
+        var ra: [(Double, Double)] = []
+        for i in 0..<10 {
+            let r = i % 2 == 0 ? 0.5 : 0.21
+            let a = Double(i) * .pi / 5 - .pi / 2
+            ra.append((0.5 + r * cos(a), 0.5 + r * sin(a)))
+        }
+        return ra
     }
 }

@@ -18,6 +18,10 @@ struct KhungVeView: View {
     @Environment(\.dismiss) private var dong
 
     @State private var cheDo: CheDo = .net
+    @StateObject private var bo = BoBut()
+    @State private var lanHoanTac = 0
+    @State private var lanLamLai = 0
+    @State private var lanXoaHet = 0
     @State private var dangChon: UUID?
     @State private var moThemHinh = false
     @State private var moCaiDat = false
@@ -35,6 +39,16 @@ struct KhungVeView: View {
     var body: some View {
         VStack(spacing: 0) {
             thanhCongCu
+            // Thanh bút nằm TRONG màn, không phải bảng nổi của hệ thống —
+            // bảng nổi có lúc không gắn được và khi đó không còn cách nào
+            // đổi bút. Chỉ hiện ở chế độ vẽ nét.
+            if cheDo == .net {
+                ThanhBut(bo: bo,
+                         hoanTac: { lanHoanTac += 1 },
+                         lamLai: { lanLamLai += 1 },
+                         xoaHet: { lanXoaHet += 1 })
+                Divider()
+            }
             khungGiay
             if cheDo == .hinh, hinhDangChon != nil { thanhSuaHinh }
         }
@@ -91,6 +105,14 @@ struct KhungVeView: View {
 
             // Chạm vào số % để về 100%. Phóng lạc rồi mà phải bấm − mười lần
             // mới về chỗ cũ là thứ làm người ta bỏ dùng nút phóng.
+            Button { withAnimation(AppAnimations.quick) { tiLe = keo(tiLe / 1.3) } } label: {
+                Image(systemName: "minus.magnifyingglass")
+            }
+            .accessibilityLabel(T("Thu nhỏ"))
+            Button { withAnimation(AppAnimations.quick) { tiLe = keo(tiLe * 1.3) } } label: {
+                Image(systemName: "plus.magnifyingglass")
+            }
+            .accessibilityLabel(T("Phóng to"))
             Button { withAnimation(AppAnimations.quick) { tiLe = 1 } } label: {
                 Text("\(Int(tiLe * 100))%")
                     .font(.system(size: 12, weight: .semibold, design: .monospaced))
@@ -119,6 +141,10 @@ struct KhungVeView: View {
                 Rectangle()
                     .fill(Color(maHex: banVe.nen))
                     .frame(width: banVe.coKhung.width, height: banVe.coKhung.height)
+
+                // Nền giấy nằm TRÊN màu nền, DƯỚI hình và nét — lưới phải
+                // thấy được qua hình trong suốt, nhưng không che nét bút.
+                GiayLuoi(kieu: banVe.giay, buoc: banVe.buocThat, co: banVe.coKhung)
                     .shadow(color: .black.opacity(0.12), radius: 10, y: 3)
 
                 // Tầng hình khối nằm DƯỚI tầng nét tay: nét bút là thứ viết
@@ -128,7 +154,9 @@ struct KhungVeView: View {
                 }
 
                 #if os(iOS)
-                LopNetXuongVe(ma: banVe.id, choCham: cheDo == .net)
+                LopNetXuongVe(ma: banVe.id, choCham: cheDo == .net, bo: bo,
+                              lanHoanTac: lanHoanTac, lanLamLai: lanLamLai,
+                              lanXoaHet: lanXoaHet)
                     .frame(width: banVe.coKhung.width, height: banVe.coKhung.height)
                     .allowsHitTesting(cheDo == .net)
                 #endif
@@ -146,7 +174,15 @@ struct KhungVeView: View {
         // ⚠️ Chỉ bật khi ĐANG Ở CHẾ ĐỘ HÌNH KHỐI. Ở chế độ nét tay, PencilKit
         // cần hai ngón cho thao tác của chính nó, và cướp cử chỉ đó làm việc
         // hoàn tác/cuộn của bảng vẽ hỏng.
-        .gesture(cheDo == .hinh ? phongHaiNgon : nil)
+        // ⚠️ Phóng phải chạy ở CẢ HAI chế độ. Bản cũ chỉ bật ở chế độ Hình,
+        // nên đang vẽ bài giảng thì KHÔNG zoom được — mà vẽ mới là việc
+        // chính. Người dùng báo 20/09/2026: "tôi zoom to zoom nhỏ bằng tay
+        // không được".
+        //
+        // `.simultaneousGesture` chứ không `.gesture`: PencilKit cần giữ cử
+        // chỉ vẽ của nó, thay hẳn thì hai ngón phóng được nhưng một ngón
+        // không vẽ được nữa.
+        .simultaneousGesture(phongHaiNgon)
         // ⚠️ Đo bề ngang bằng GeometryReader, KHÔNG qua `connectedScenes`.
         // Với Stage Manager có hai cửa sổ thì `connectedScenes.first` là cửa
         // sổ NÀO là chuyện may rủi — "vừa khung" sẽ tính theo bề ngang của
@@ -409,6 +445,28 @@ struct KhungVeView: View {
                         }
                     }
                 }
+                Section {
+                    Picker(T("Kiểu giấy"), selection: $banVe.giay) {
+                        ForEach(KieuGiay.allCases) { g in
+                            Label(g.ten, systemImage: g.bieuTuong).tag(g)
+                        }
+                    }
+                    if banVe.giay != .trang {
+                        HStack {
+                            Text(T("Bước lưới")).font(.subheadline)
+                            Slider(value: Binding(
+                                get: { banVe.buocThat },
+                                set: { banVe.buocLuoi = $0 }), in: 8...120, step: 2)
+                            Text(String(format: "%.0f", banVe.buocThat))
+                                .font(.system(size: 12, design: .monospaced))
+                                .foregroundStyle(AppColors.textTertiary).frame(width: 32)
+                        }
+                    }
+                } header: {
+                    Text(T("Nền giấy"))
+                } footer: {
+                    Text(T("Ô vuông và ca-rô để vẽ trục toạ độ, hình học, bảng biểu. Tam giác đều để vẽ phối cảnh."))
+                }
                 Section(T("Khổ giấy")) {
                     Picker(T("Khổ"), selection: $banVe.kho) {
                         ForEach(KhoVe.allCases) { k in Text("\(k.ten) · \(k.moTa)").tag(k) }
@@ -483,13 +541,24 @@ struct KhungVeView: View {
 struct LopNetXuongVe: UIViewRepresentable {
     let ma: UUID
     let choCham: Bool
+    @ObservedObject var bo: BoBut
+    /// Tăng để yêu cầu hoàn tác / làm lại / xoá hết.
+    var lanHoanTac: Int = 0
+    var lanLamLai: Int = 0
+    var lanXoaHet: Int = 0
 
     func makeUIView(context: Context) -> PKCanvasView {
         let v = PKCanvasView()
         v.backgroundColor = .clear
         v.isOpaque = false
         v.drawingPolicy = .anyInput
-        v.tool = PKInkingTool(.pen, color: .label, width: 3)
+        v.tool = bo.congCu
+        // Cho phóng và kéo bằng ngón NGAY TRONG bảng vẽ: `PKCanvasView` vốn
+        // là một `UIScrollView`, nhưng không đặt hai trần này thì nó không
+        // phóng được — đúng chỗ người dùng kêu "zoom bằng tay không được".
+        v.minimumZoomScale = 0.2
+        v.maximumZoomScale = 6
+        v.bouncesZoom = true
         if let d = try? Data(contentsOf: KhoBanVe.duongNet(ma)), let dr = try? PKDrawing(data: d) {
             v.drawing = dr
         }
@@ -506,7 +575,43 @@ struct LopNetXuongVe: UIViewRepresentable {
         // (Stage Manager) thì `windows.first` có thể là cửa sổ KIA — bảng
         // công cụ gắn vào đó, và ở cửa sổ đang vẽ nó không hiện ra: câm
         // lặng, không lỗi. Đây đúng là bẫy "ToolPicker câm" đã gặp.
-        if let cuaSo = v.window {
+        // Công cụ theo thanh bút trong app. So trước khi gán: gán lại mỗi
+        // khung hình làm PencilKit dựng lại bộ vẽ và nét đang kéo bị đứt.
+        let moi = bo.congCu
+        if !cungCongCu(v.tool, moi) { v.tool = moi }
+
+        if context.coordinator.lanHoanTac != lanHoanTac {
+            context.coordinator.lanHoanTac = lanHoanTac
+            if lanHoanTac > 0 { v.undoManager?.undo() }
+        }
+        if context.coordinator.lanLamLai != lanLamLai {
+            context.coordinator.lanLamLai = lanLamLai
+            if lanLamLai > 0 { v.undoManager?.redo() }
+        }
+        if context.coordinator.lanXoaHet != lanXoaHet {
+            context.coordinator.lanXoaHet = lanXoaHet
+            if lanXoaHet > 0 { v.drawing = PKDrawing() }
+        }
+
+        gan(v)
+        // ⚠️ `v.window` còn `nil` ở lần cập nhật ĐẦU — lúc đó `if let` lặng
+        // lẽ không gắn gì và bảng công cụ KHÔNG BAO GIỜ hiện ra, không một
+        // dòng lỗi. Người dùng báo 20/09/2026: "ấn nút không có tẩy, bút,
+        // màu". Thử lại ở khung hình sau cho tới khi có cửa sổ thật.
+        if v.window == nil {
+            DispatchQueue.main.async { [weak v] in
+                guard let v else { return }
+                gan(v)
+                if v.window == nil {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak v] in
+                        if let v { gan(v) }
+                    }
+                }
+            }
+        }
+
+        func gan(_ v: PKCanvasView) {
+            guard let cuaSo = v.window else { return }
             let picker = PKToolPicker.shared(for: cuaSo)
             picker?.addObserver(v)
             picker?.setVisible(choCham, forFirstResponder: v)
@@ -516,8 +621,23 @@ struct LopNetXuongVe: UIViewRepresentable {
 
     func makeCoordinator() -> Luu { Luu() }
 
+    /// So hai công cụ có "giống nhau đủ" không. `PKTool` không `Equatable`
+    /// nên phải so tay từng thuộc tính.
+    private func cungCongCu(_ a: PKTool, _ b: PKTool) -> Bool {
+        if let x = a as? PKInkingTool, let y = b as? PKInkingTool {
+            return x.inkType == y.inkType && x.color == y.color && abs(x.width - y.width) < 0.01
+        }
+        if let x = a as? PKEraserTool, let y = b as? PKEraserTool {
+            return x.eraserType == y.eraserType && abs(x.width - y.width) < 0.01
+        }
+        return false
+    }
+
     final class Luu: NSObject, PKCanvasViewDelegate {
         var ma: UUID?
+        var lanHoanTac = 0
+        var lanLamLai = 0
+        var lanXoaHet = 0
         private var hen: DispatchWorkItem?
 
         func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
