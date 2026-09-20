@@ -74,6 +74,10 @@ struct ThanhBut: View {
     var lamLai: (() -> Void)?
     var xoaHet: (() -> Void)?
 
+    /// Thu gọn còn MỘT hàng. Màn vẽ thì khung nhìn là thứ quý nhất — người
+    /// dùng báo 20/09/2026 "thanh bút ở trên kia to thế và không có nút ẩn".
+    @AppStorage("xuongve.thuThanhBut") private var thu = false
+
     /// Bảng màu cho giảng dạy: đen để viết, đỏ để nhấn, xanh để chú thích,
     /// vàng để tô sáng. Bốn màu đó phủ gần hết việc trên bảng.
     private static let bangMau: [Color] = [
@@ -84,75 +88,100 @@ struct ThanhBut: View {
     ]
 
     var body: some View {
-        VStack(spacing: Spacing.sm) {
-            HStack(spacing: Spacing.xs) {
-                ForEach(BoBut.LoaiBut.allCases) { l in
-                    Button {
-                        bo.loai = l
-                        bo.day = min(max(bo.day, l.khoangDay.lowerBound), l.khoangDay.upperBound)
-                    } label: {
-                        Image(systemName: l.icon)
-                            .font(.system(size: 15, weight: .medium))
-                            .foregroundStyle(bo.loai == l ? AppColors.onPrimary : AppColors.textSecondary)
-                            .frame(width: 40, height: 34)
-                            .background(RoundedRectangle(cornerRadius: 8)
-                                .fill(bo.loai == l ? AppColors.primary : .clear))
-                    }
-                    .accessibilityLabel(l.ten)
-                }
-
-                Divider().frame(height: 26)
-
-                // Màu: tẩy thì không có màu, ẩn đi cho khỏi bấm nhầm.
-                if bo.loai != .tay {
-                    ForEach(Array(Self.bangMau.enumerated()), id: \.offset) { _, m in
-                        Button { bo.mau = m } label: {
-                            Circle()
-                                .fill(m)
-                                .frame(width: 22, height: 22)
-                                .overlay(Circle().stroke(
-                                    bo.mau == m ? AppColors.primary : AppColors.border,
-                                    lineWidth: bo.mau == m ? 2.5 : 1))
-                        }
-                    }
-                    ColorPicker("", selection: $bo.mau)
-                        .labelsHidden()
-                        .frame(width: 28)
-                }
-
-                Spacer(minLength: Spacing.sm)
-
-                if let h = hoanTac {
-                    Button(action: h) { Image(systemName: "arrow.uturn.backward") }
-                        .frame(width: 34, height: 30)
-                }
-                if let l = lamLai {
-                    Button(action: l) { Image(systemName: "arrow.uturn.forward") }
-                        .frame(width: 34, height: 30)
-                }
-                if let x = xoaHet {
-                    Button(role: .destructive, action: x) { Image(systemName: "trash") }
-                        .frame(width: 34, height: 30)
-                }
+        HStack(spacing: Spacing.xs) {
+            // Nút ẩn/hiện luôn ở đầu, không bao giờ biến mất.
+            Button {
+                withAnimation(.easeInOut(duration: 0.16)) { thu.toggle() }
+            } label: {
+                Image(systemName: thu ? "chevron.down" : "chevron.up")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(AppColors.textSecondary)
+                    .frame(width: 28, height: 28)
+                    .background(RoundedRectangle(cornerRadius: 7).fill(AppColors.backgroundSecondary))
             }
+            .accessibilityLabel(thu ? T("Hiện thanh bút") : T("Ẩn thanh bút"))
 
-            HStack(spacing: Spacing.sm) {
-                Image(systemName: "lineweight").font(.caption)
-                    .foregroundStyle(AppColors.textTertiary)
-                Slider(value: $bo.day, in: bo.loai.khoangDay)
+            if thu {
+                // Thu gọn: chỉ còn bút đang dùng, màu đang dùng, và hoàn tác.
+                Image(systemName: bo.loai.icon).font(.system(size: 13))
+                    .foregroundStyle(AppColors.primary)
+                if bo.loai != .tay {
+                    Circle().fill(bo.mau).frame(width: 16, height: 16)
+                        .overlay(Circle().stroke(AppColors.border, lineWidth: 1))
+                }
                 Text(String(format: "%.0f", bo.day))
                     .font(.system(size: 11, design: .monospaced))
-                    .foregroundStyle(AppColors.textTertiary).frame(width: 26)
-                // Xem trước độ dày THẬT: con số 12 không nói lên điều gì
-                // cho tới khi thấy nét dày bao nhiêu.
-                Capsule()
-                    .fill(bo.loai == .tay ? AppColors.textTertiary : bo.mau)
-                    .frame(width: 44, height: max(2, min(bo.day, 26)))
+                    .foregroundStyle(AppColors.textTertiary)
+                Spacer(minLength: 0)
+                nutLui
+            } else {
+                dayDu
             }
         }
-        .padding(.horizontal, Spacing.md)
-        .padding(.vertical, Spacing.sm)
+        .padding(.horizontal, Spacing.sm)
+        .padding(.vertical, 5)
         .background(AppColors.backgroundCard)
+    }
+
+    /// Một hàng duy nhất: bút · màu · độ dày · hoàn tác. Bản đầu xếp hai
+    /// hàng và chiếm gần 100pt — trên iPad ngang thì đó là một phần tám
+    /// khung nhìn, chỉ để chọn bút.
+    private var dayDu: some View {
+        HStack(spacing: Spacing.xs) {
+            ForEach(BoBut.LoaiBut.allCases) { l in
+                Button {
+                    bo.loai = l
+                    bo.day = min(max(bo.day, l.khoangDay.lowerBound), l.khoangDay.upperBound)
+                } label: {
+                    Image(systemName: l.icon)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(bo.loai == l ? AppColors.onPrimary : AppColors.textSecondary)
+                        .frame(width: 32, height: 28)
+                        .background(RoundedRectangle(cornerRadius: 7)
+                            .fill(bo.loai == l ? AppColors.primary : .clear))
+                }
+                .accessibilityLabel(l.ten)
+            }
+
+            if bo.loai != .tay {
+                ForEach(Array(Self.bangMau.enumerated()), id: \.offset) { _, m in
+                    Button { bo.mau = m } label: {
+                        Circle().fill(m).frame(width: 18, height: 18)
+                            .overlay(Circle().stroke(
+                                bo.mau == m ? AppColors.primary : AppColors.border,
+                                lineWidth: bo.mau == m ? 2.5 : 1))
+                    }
+                }
+                ColorPicker("", selection: $bo.mau).labelsHidden().frame(width: 26)
+            }
+
+            Slider(value: $bo.day, in: bo.loai.khoangDay)
+                .frame(minWidth: 70, maxWidth: 150)
+            Capsule()
+                .fill(bo.loai == .tay ? AppColors.textTertiary : bo.mau)
+                .frame(width: 26, height: max(2, min(bo.day, 16)))
+
+            Spacer(minLength: 0)
+            nutLui
+        }
+    }
+
+    private var nutLui: some View {
+        HStack(spacing: 2) {
+            if let h = hoanTac {
+                Button(action: h) { Image(systemName: "arrow.uturn.backward") }
+                    .frame(width: 30, height: 28)
+            }
+            if let l = lamLai {
+                Button(action: l) { Image(systemName: "arrow.uturn.forward") }
+                    .frame(width: 30, height: 28)
+            }
+            if let x = xoaHet {
+                Button(role: .destructive, action: x) { Image(systemName: "trash") }
+                    .frame(width: 30, height: 28)
+            }
+        }
+        .font(.system(size: 13))
     }
 }
 #endif

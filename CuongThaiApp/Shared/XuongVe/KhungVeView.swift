@@ -105,14 +105,6 @@ struct KhungVeView: View {
 
             // Chạm vào số % để về 100%. Phóng lạc rồi mà phải bấm − mười lần
             // mới về chỗ cũ là thứ làm người ta bỏ dùng nút phóng.
-            Button { withAnimation(AppAnimations.quick) { tiLe = keo(tiLe / 1.3) } } label: {
-                Image(systemName: "minus.magnifyingglass")
-            }
-            .accessibilityLabel(T("Thu nhỏ"))
-            Button { withAnimation(AppAnimations.quick) { tiLe = keo(tiLe * 1.3) } } label: {
-                Image(systemName: "plus.magnifyingglass")
-            }
-            .accessibilityLabel(T("Phóng to"))
             Button { withAnimation(AppAnimations.quick) { tiLe = 1 } } label: {
                 Text("\(Int(tiLe * 100))%")
                     .font(.system(size: 12, weight: .semibold, design: .monospaced))
@@ -155,6 +147,7 @@ struct KhungVeView: View {
 
                 #if os(iOS)
                 LopNetXuongVe(ma: banVe.id, choCham: cheDo == .net, bo: bo,
+                              khiChamBa: { vuaKhung() },
                               lanHoanTac: lanHoanTac, lanLamLai: lanLamLai,
                               lanXoaHet: lanXoaHet)
                     .frame(width: banVe.coKhung.width, height: banVe.coKhung.height)
@@ -190,8 +183,15 @@ struct KhungVeView: View {
         // không có gì báo; cách này tự cập nhật.
         .background(GeometryReader { g in
             Color.clear
-                .onAppear { rongKhungNhin = g.size.width }
-                .onChange(of: g.size.width) { _, moi in rongKhungNhin = moi }
+                .onAppear {
+                    rongKhungNhin = g.size.width
+                    caoKhungNhin = g.size.height
+                    if !daVuaKhung { daVuaKhung = true; vuaKhung() }
+                }
+                .onChange(of: g.size) { _, moi in
+                    rongKhungNhin = moi.width
+                    caoKhungNhin = moi.height
+                }
         })
     }
 
@@ -220,13 +220,26 @@ struct KhungVeView: View {
         }
     }
 
+    /// Vừa khung theo CẢ hai chiều.
+    ///
+    /// ⚠️ Bản cũ chỉ chia theo bề NGANG, nên với khổ cao (A4, iPad dọc) thì
+    /// "vừa khung" xong vẫn phải cuộn dọc — mà người dùng bấm nút đó chính
+    /// vì muốn thấy TOÀN BỘ trang.
     private func vuaKhung() {
         guard rongKhungNhin > 0 else { return }
+        let dem = Spacing.lg * 2
+        let theoNgang = (rongKhungNhin - dem) / banVe.coKhung.width
+        let theoDoc = caoKhungNhin > 0 ? (caoKhungNhin - dem) / banVe.coKhung.height : theoNgang
         withAnimation(AppAnimations.quick) {
-            tiLe = keo((rongKhungNhin - Spacing.lg * 2) / banVe.coKhung.width)
+            tiLe = keo(min(theoNgang, theoDoc))
             tiLeGoc = tiLe
         }
     }
+
+    @State private var caoKhungNhin: CGFloat = 0
+    /// Chỉ tự vừa khung MỘT lần lúc mở. Chạy mỗi lần đo lại thì người dùng
+    /// vừa phóng to để viết là nó kéo ngược về.
+    @State private var daVuaKhung = false
 
 
     private func hinhKeoDuoc(_ h: HinhVe) -> some View {
@@ -542,6 +555,8 @@ struct LopNetXuongVe: UIViewRepresentable {
     let ma: UUID
     let choCham: Bool
     @ObservedObject var bo: BoBut
+    /// Chạm ba cái bằng đầu bút = nhảy về "vừa khung".
+    var khiChamBa: () -> Void = {}
     /// Tăng để yêu cầu hoàn tác / làm lại / xoá hết.
     var lanHoanTac: Int = 0
     var lanLamLai: Int = 0
@@ -551,19 +566,40 @@ struct LopNetXuongVe: UIViewRepresentable {
         let v = PKCanvasView()
         v.backgroundColor = .clear
         v.isOpaque = false
-        v.drawingPolicy = .anyInput
+        // ⚠️ `.anyInput` làm NGÓN TAY LUÔN VẼ, nên cú kéo không bao giờ
+        // tới được khung cuộn bên ngoài — người dùng báo 20/09/2026 "kéo
+        // lên kéo xuống còn không được".
+        //
+        // ⚠️ Và KHÔNG dùng `.pencilOnly`: trên máy chưa từng thấy Apple
+        // Pencil (iPhone, máy mô phỏng, iPad lúc bút hết pin) nó làm khung
+        // vẽ CHẾT HẲN — chạm khắp trang không ra một nét, không lỗi.
+        //
+        // `.default` đúng cả hai: vẽ bằng ngón cho tới khi hệ thống thấy
+        // Pencil lần đầu, từ đó ngón tay quay về vai trò CUỘN.
+        v.drawingPolicy = .default
         v.tool = bo.congCu
-        // Cho phóng và kéo bằng ngón NGAY TRONG bảng vẽ: `PKCanvasView` vốn
-        // là một `UIScrollView`, nhưng không đặt hai trần này thì nó không
-        // phóng được — đúng chỗ người dùng kêu "zoom bằng tay không được".
-        v.minimumZoomScale = 0.2
-        v.maximumZoomScale = 6
-        v.bouncesZoom = true
+        // ⚠️ KHÔNG bật zoom riêng của `PKCanvasView`. Nó nằm trong một
+        // khung đã `scaleEffect`, bật thêm zoom của chính nó là nhân hai
+        // lần biến đổi — nét bút lệch khỏi đầu bút.
+        v.isScrollEnabled = false
         if let d = try? Data(contentsOf: KhoBanVe.duongNet(ma)), let dr = try? PKDrawing(data: d) {
             v.drawing = dr
         }
         v.delegate = context.coordinator
         context.coordinator.ma = ma
+        context.coordinator.khiChamBa = khiChamBa
+
+        // Chạm BA lần bằng đầu bút → vừa khung. Đây là thao tác người dùng
+        // xin đúng chữ: "chạm đầu bút 3 cái vào màn hình là nó tự zoom và
+        // nhảy đến chính xác full chuẩn khung hình".
+        //
+        // Chỉ nhận đầu BÚT: ba lần chạm bằng ngón là thao tác hay xảy ra
+        // ngoài ý muốn khi đang tì tay lên màn.
+        let chamBa = UITapGestureRecognizer(target: context.coordinator,
+                                            action: #selector(Luu.chamBaLan))
+        chamBa.numberOfTapsRequired = 3
+        chamBa.allowedTouchTypes = [NSNumber(value: UITouch.TouchType.pencil.rawValue)]
+        v.addGestureRecognizer(chamBa)
         return v
     }
 
@@ -638,6 +674,9 @@ struct LopNetXuongVe: UIViewRepresentable {
         var lanHoanTac = 0
         var lanLamLai = 0
         var lanXoaHet = 0
+        var khiChamBa: () -> Void = {}
+
+        @objc func chamBaLan() { khiChamBa() }
         private var hen: DispatchWorkItem?
 
         func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
