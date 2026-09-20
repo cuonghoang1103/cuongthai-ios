@@ -141,6 +141,14 @@ struct KhungBaView: View {
     @State private var bao: String?
     @State private var chiaSe: URL?
 
+    @State private var lichSu: [[KhoiBa]] = []
+    @State private var lamLaiDuoc: [[KhoiBa]] = []
+    /// Một cú kéo sinh hàng trăm lần gọi `keoKhoi`. Chỉ chụp lịch sử ở lần
+    /// ĐẦU, không thì bấm hoàn tác một cái chỉ lùi được một milimét.
+    @State private var dangKeo = false
+    @State private var lanChupAnh = 0
+    @State private var xemAR: URL?
+
     private var khoiDangChon: KhoiBa? { canh.khoi.first { $0.id == dangChon } }
 
     /// Tách khỏi `body`: ba closure dựng ngay trong tham số khởi tạo là chỗ
@@ -153,7 +161,9 @@ struct KhungBaView: View {
                      khiKeo: keoKhoi,
                      khiThaKeo: luuNgay,
                      thuMucTep: KhoCanhBa.thuMucTep(canh.id),
-                     lanDongKhung: lanDongKhung)
+                     lanDongKhung: lanDongKhung,
+                     lanChupAnh: lanChupAnh,
+                     khiChupXong: { anh in luuAnh(anh) })
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(maHex: canh.mauNen))
             // Thả tệp từ Files/Split View thẳng vào cảnh. Trên iPad đây là
@@ -177,7 +187,49 @@ struct KhungBaView: View {
         dangChon = id
     }
 
-    private func luuNgay() { kho.luu(canh) }
+    // ════════════════════════════════════════════════════════════════
+    // HOÀN TÁC / LÀM LẠI
+    //
+    // Trước 20/09/2026 xưởng KHÔNG có hoàn tác. Với một công cụ dựng hình
+    // thì đó là thiếu sót nặng hơn mọi tính năng cao siêu: xoá nhầm một
+    // khối là mất hẳn, kéo hỏng một cụm là phải tự kéo về bằng mắt.
+    //
+    // Lưu nguyên mảng khối thay vì lưu "thao tác nghịch đảo": cảnh nặng
+    // nhất cũng chỉ vài trăm khối, mỗi khối là struct nhỏ — chép cả mảng
+    // rẻ hơn nhiều so với công sức viết (và gỡ lỗi) từng phép nghịch đảo.
+    // ════════════════════════════════════════════════════════════════
+
+    /// Chụp trạng thái TRƯỚC khi đổi. Gọi ở ĐẦU mỗi thao tác làm đổi khối.
+    private func ghiNho() {
+        lichSu.append(canh.khoi)
+        if lichSu.count > 60 { lichSu.removeFirst() }
+        // Làm một việc mới thì nhánh "làm lại" cũ không còn nghĩa nữa.
+        lamLaiDuoc.removeAll()
+    }
+
+    private func hoanTac() {
+        guard let truoc = lichSu.popLast() else { return }
+        lamLaiDuoc.append(canh.khoi)
+        canh.khoi = truoc
+        giuChonHopLe()
+        kho.luu(canh)
+    }
+
+    private func lamLai() {
+        guard let sau = lamLaiDuoc.popLast() else { return }
+        lichSu.append(canh.khoi)
+        canh.khoi = sau
+        giuChonHopLe()
+        kho.luu(canh)
+    }
+
+    /// Khối đang chọn có thể vừa biến mất sau khi lùi/tiến — để nguyên thì
+    /// bảng chỉnh bám vào một id không còn ai, và mọi thanh trượt về 0.
+    private func giuChonHopLe() {
+        if let c = dangChon, !canh.khoi.contains(where: { $0.id == c }) { dangChon = nil }
+    }
+
+    private func luuNgay() { dangKeo = false; kho.luu(canh) }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -192,6 +244,14 @@ struct KhungBaView: View {
         #endif
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
+                Button { hoanTac() } label: { Image(systemName: "arrow.uturn.backward") }
+                    .disabled(lichSu.isEmpty)
+                    .keyboardShortcut("z", modifiers: .command)
+                    .accessibilityLabel(T("Hoàn tác"))
+                Button { lamLai() } label: { Image(systemName: "arrow.uturn.forward") }
+                    .disabled(lamLaiDuoc.isEmpty)
+                    .keyboardShortcut("z", modifiers: [.command, .shift])
+                    .accessibilityLabel(T("Làm lại"))
                 menuThem
                 Button { xuatUsdz() } label: { Image(systemName: "square.and.arrow.up") }
                     .accessibilityLabel(T("Xuất .usdz"))
@@ -202,6 +262,10 @@ struct KhungBaView: View {
         .fileImporter(isPresented: $moNhapTep,
                       allowedContentTypes: [.usdz, .threeDContent, .item],
                       allowsMultipleSelection: false) { kq in nhapTep(kq) }
+        .fullScreenCover(item: Binding(get: { xemAR.map { TepChiaSe(url: $0) } },
+                                       set: { xemAR = $0?.url })) { t in
+            XemAR(url: t.url).ignoresSafeArea()
+        }
         .sheet(item: Binding(get: { chiaSe.map { TepChiaSe(url: $0) } },
                              set: { chiaSe = $0?.url })) { t in
             BangChiaSe(url: t.url)
@@ -228,6 +292,14 @@ struct KhungBaView: View {
             Button { canh.luoi.toggle(); kho.luu(canh) } label: {
                 Label(canh.luoi ? T("Tắt lưới sàn") : T("Bật lưới sàn"), systemImage: "grid")
             }
+            Divider()
+            Button { lanChupAnh += 1 } label: {
+                Label(T("Chụp ảnh mô hình"), systemImage: "camera")
+            }
+            Button { moAR() } label: {
+                Label(T("Xem trong phòng (AR)"), systemImage: "arkit")
+            }
+            Divider()
             Button { lanDongKhung += 1 } label: {
                 Label(T("Đóng khung lại"), systemImage: "viewfinder")
             }
@@ -294,7 +366,7 @@ struct KhungBaView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: Spacing.sm) {
                         ForEach(BangMau.mau, id: \.self) { m in
-                            Button { sua { $0.mau = m } } label: {
+                            Button { ghiNho(); sua { $0.mau = m } } label: {
                                 Circle().fill(Color(maHex: m)).frame(width: 26, height: 26)
                                     .overlay(Circle().stroke(AppColors.border, lineWidth: 1))
                             }
@@ -305,7 +377,7 @@ struct KhungBaView: View {
                 if khoiDangChon?.loai == .nhap {
                     Toggle(isOn: Binding(
                         get: { khoiDangChon?.toDe ?? false },
-                        set: { v in sua { $0.toDe = v } })) {
+                        set: { v in ghiNho(); sua { $0.toDe = v } })) {
                         Text(T("Tô đè màu lên mô hình nhập"))
                             .font(.bodySmall).foregroundStyle(AppColors.textPrimary)
                     }
@@ -336,7 +408,7 @@ struct KhungBaView: View {
                        "link", AppColors.primary) { doiNhom() }
                 nutNho(khoiDangChon?.khoa == true ? T("Mở khoá") : T("Khoá"),
                        khoiDangChon?.khoa == true ? "lock.open" : "lock",
-                       AppColors.textSecondary) { sua { $0.khoa.toggle() }; kho.luu(canh) }
+                       AppColors.textSecondary) { ghiNho(); sua { $0.khoa.toggle() }; kho.luu(canh) }
                 nutNho(T("Xoá"), "trash", AppColors.error) { xoaKhoi() }
             }
             .padding(.horizontal, 2)
@@ -359,6 +431,7 @@ struct KhungBaView: View {
     /// Xoá cả NHÓM nếu khối thuộc nhóm — xoá lẻ một khối của cụm để lại năm
     /// mảnh rời không ai dọn.
     private func xoaKhoi() {
+        ghiNho()
         guard let id = dangChon else { return }
         if let n = khoiDangChon?.nhom {
             canh.khoi.removeAll { $0.nhom == n }
@@ -372,6 +445,7 @@ struct KhungBaView: View {
     /// Kéo một khối. Khối thuộc NHÓM thì cả nhóm dời theo cùng độ lệch.
     private func keoKhoi(_ id: UUID, _ x: Double, _ y: Double, _ z: Double) {
         guard let i = canh.khoi.firstIndex(where: { $0.id == id }) else { return }
+        if !dangKeo { ghiNho(); dangKeo = true }
         let dx = x - canh.khoi[i].x, dy = y - canh.khoi[i].y, dz = z - canh.khoi[i].z
         if let n = canh.khoi[i].nhom {
             for j in canh.khoi.indices where canh.khoi[j].nhom == n {
@@ -387,6 +461,7 @@ struct KhungBaView: View {
     /// rồi tự canh cho cân, và không bao giờ cân.
     private func nhanDoi(guong: Bool) {
         guard let goc = khoiDangChon else { return }
+        ghiNho()
         let cum = goc.nhom.map { n in canh.khoi.filter { $0.nhom == n } } ?? [goc]
         let nhomMoi: String? = goc.nhom == nil ? nil : MauDungSan.maNhom("cum")
         var idDau: UUID?
@@ -412,12 +487,14 @@ struct KhungBaView: View {
     /// Hạ khối chạm mặt sàn. Canh bằng mắt là việc không làm được: nhìn
     /// nghiêng thì lơ lửng 0,1 với chìm 0,1 trông y hệt nhau.
     private func datXuongSan() {
+        ghiNho()
         sua { $0.y = -0.5 + DungCanh.nuaCao($0) }
         kho.luu(canh)
     }
 
     private func doiNhom() {
         guard let k = khoiDangChon else { return }
+        ghiNho()
         if k.nhom != nil {
             sua { $0.nhom = nil }
         } else if let i = canh.khoi.firstIndex(where: { $0.id == k.id }), i > 0 {
@@ -445,7 +522,10 @@ struct KhungBaView: View {
             Slider(value: Binding(
                 get: { khoiDangChon?[keyPath: kp] ?? 0 },
                 set: { v in sua { $0[keyPath: kp] = v } }
-            ), in: khoang) { dung in if !dung { kho.luu(canh) } }
+            ), in: khoang) { dung in
+                // `dung == true` là lúc BẮT ĐẦU kéo thanh trượt.
+                if dung { ghiNho() } else { kho.luu(canh) }
+            }
             Text(String(format: "%.2f", khoiDangChon?[keyPath: kp] ?? 0))
                 .font(.system(size: 11, design: .monospaced))
                 .foregroundStyle(AppColors.textTertiary).frame(width: 46, alignment: .trailing)
@@ -464,6 +544,7 @@ struct KhungBaView: View {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 110), spacing: Spacing.md)], spacing: Spacing.md) {
                 ForEach(LoaiKhoi.allCases) { l in
                     Button {
+                        ghiNho()
                         var k = KhoiBa(loai: l)
                         k.ten = "\(l.ten) \(canh.khoi.filter { $0.loai == l }.count + 1)"
                         canh.khoi.append(k)
@@ -529,6 +610,7 @@ struct KhungBaView: View {
     }
 
     private func chenMau(_ m: MauDungSan.Mau) {
+        ghiNho()
         let them = m.dung(MauDungSan.maNhom(m.nhom))
         canh.khoi.append(contentsOf: them)
         dangChon = them.first?.id
@@ -575,6 +657,7 @@ struct KhungBaView: View {
             khoe(T("Không phải mô hình 3D đọc được (.usdz, .obj, .dae)"))
             return
         }
+        ghiNho()
         var k = KhoiBa(loai: .nhap, ten: u.deletingPathExtension().lastPathComponent)
         k.tepNhap = ten
         // Đo chiều cao THẬT ngay lúc nhập, sau khi đã chuẩn hoá cỡ. Đo lúc
@@ -593,6 +676,34 @@ struct KhungBaView: View {
     /// người nhận xem xoay được ngay, không cần cài gì. Đó là lý do xuất
     /// `.usdz` chứ không phải một định dạng "chuẩn hơn" mà không ai mở được
     /// trên điện thoại.
+    /// Ghi ảnh vừa chụp ra tệp rồi mở bảng chia sẻ.
+    private func luuAnh(_ anh: UIImage) {
+        guard let d = anh.pngData() else { khoe(T("Không chụp được ảnh")); return }
+        let t = FileManager.default.temporaryDirectory
+            .appendingPathComponent("\(canh.ten.replacingOccurrences(of: "/", with: "-")).png")
+        do { try d.write(to: t); chiaSe = t }
+        catch { khoe(T("Không lưu được ảnh")) }
+    }
+
+    /// Mở AR Quick Look: đặt mô hình ra bàn thật qua camera.
+    ///
+    /// Dùng CHUNG đường xuất `.usdz` nên mọi thứ đã sửa ở đó (kèm mô hình
+    /// nhập, bỏ lưới sàn) tự có hiệu lực ở đây.
+    private func moAR() {
+        guard let d = dungTepUsdz() else { khoe(T("Không dựng được mô hình để xem AR")); return }
+        xemAR = d
+    }
+
+    /// Dựng tệp `.usdz` tạm. Trả `nil` nếu ghi hỏng.
+    private func dungTepUsdz() -> URL? {
+        let scn = DungCanh.dung(canh, chon: nil,
+                                thuMucTep: KhoCanhBa.thuMucTep(canh.id),
+                                keLuoi: false)
+        let d = FileManager.default.temporaryDirectory
+            .appendingPathComponent("\(canh.ten.replacingOccurrences(of: "/", with: "-")).usdz")
+        return scn.write(to: d, options: nil, delegate: nil, progressHandler: nil) ? d : nil
+    }
+
     private func xuatUsdz() {
         // ⚠️ PHẢI truyền `thuMucTep`. Thiếu nó thì `dungNut` không mở được
         // tệp nhập và rơi vào nhánh "khối xám thay thế" — tệp xuất ra có
@@ -602,16 +713,8 @@ struct KhungBaView: View {
         // ⚠️ Và `keLuoi: false`: lưới sàn là đồ nghề của xưởng, không phải
         // một phần của mô hình. Kèm vào thì người nhận mở AR Quick Look ra
         // thấy 20×20 vạch kẻ lơ lửng quanh vật.
-        let scn = DungCanh.dung(canh, chon: nil,
-                                thuMucTep: KhoCanhBa.thuMucTep(canh.id),
-                                keLuoi: false)
-        let d = FileManager.default.temporaryDirectory
-            .appendingPathComponent("\(canh.ten.replacingOccurrences(of: "/", with: "-")).usdz")
-        if scn.write(to: d, options: nil, delegate: nil, progressHandler: nil) {
-            chiaSe = d
-        } else {
-            khoe(T("Không xuất được tệp .usdz"))
-        }
+        if let d = dungTepUsdz() { chiaSe = d }
+        else { khoe(T("Không xuất được tệp .usdz")) }
     }
 
     private func khoe(_ c: String) {
@@ -904,6 +1007,90 @@ enum DungCanh {
     ///
     /// Vẽ bằng `SCNGeometry` đường thẳng chứ không bằng ảnh nền kẻ ô: ảnh thì
     /// mờ đi khi camera lại gần, còn đường thì sắc ở mọi khoảng cách.
+    // ════════════════════════════════════════════════════════════════
+    // GIZMO — ba mũi tên kéo theo trục
+    //
+    // Thanh trượt cho số CHÍNH XÁC, nhưng dựng hình là việc của mắt: muốn
+    // đẩy cái tay sang phải một chút thì phải dò đúng thanh "X", kéo, nhìn
+    // lên, kéo tiếp. Kéo tự do trong không gian thì lại không giữ được
+    // trục — thả tay ra là khối lệch cả ba chiều.
+    //
+    // Mũi tên bám vào khối đang chọn giải đúng khoảng giữa đó.
+    // ════════════════════════════════════════════════════════════════
+
+    static let TEN_GIZMO = "gizmo"
+
+    /// Ba mũi tên X (đỏ) · Y (xanh lá) · Z (xanh dương), theo quy ước
+    /// Blender/Maya để người từng dùng phần mềm khác không phải học lại.
+    static func nutGizmo(dai: Float) -> SCNNode {
+        let goc = SCNNode()
+        goc.name = TEN_GIZMO
+
+        let truc: [(String, UIColor, SCNVector3)] = [
+            ("x", .systemRed,   SCNVector3(0, 0, -Float.pi / 2)),
+            ("y", .systemGreen, SCNVector3(0, 0, 0)),
+            ("z", .systemBlue,  SCNVector3(Float.pi / 2, 0, 0)),
+        ]
+        for (ten, mau, xoay) in truc {
+            let than = SCNNode(geometry: SCNCylinder(radius: CGFloat(dai) * 0.022,
+                                                     height: CGFloat(dai)))
+            let dau = SCNNode(geometry: SCNCone(topRadius: 0,
+                                                bottomRadius: CGFloat(dai) * 0.075,
+                                                height: CGFloat(dai) * 0.22))
+            dau.position = SCNVector3(0, dai / 2 + dai * 0.11, 0)
+
+            for n in [than, dau] {
+                let m = SCNMaterial()
+                m.diffuse.contents = mau
+                m.emission.contents = mau.withAlphaComponent(0.55)
+                m.lightingModel = .constant
+                // Luôn vẽ ĐÈ lên mô hình: mũi tên chui vào trong khối thì
+                // không bấm được, mà khối to là chuyện bình thường.
+                m.readsFromDepthBuffer = false
+                n.geometry?.materials = [m]
+                n.renderingOrder = 900
+            }
+
+            let cum = SCNNode()
+            cum.name = "\(TEN_GIZMO)-\(ten)"
+            cum.addChildNode(than)
+            cum.addChildNode(dau)
+            // Đẩy nửa thân ra để gốc mũi tên nằm ở tâm khối.
+            cum.pivot = SCNMatrix4MakeTranslation(0, -dai / 2, 0)
+            cum.eulerAngles = xoay
+            goc.addChildNode(cum)
+        }
+        return goc
+    }
+
+    /// Gắn/bỏ gizmo theo khối đang chọn. Gọi mỗi lần cập nhật cảnh.
+    static func capNhatGizmo(_ scn: SCNScene, chon: UUID?) {
+        let cu = scn.rootNode.childNode(withName: TEN_GIZMO, recursively: false)
+        guard let id = chon,
+              let nut = scn.rootNode.childNode(withName: id.uuidString, recursively: false)
+        else { cu?.removeFromParentNode(); return }
+
+        // Dài theo cỡ khối nhưng có trần dưới/trên: khối bé tí thì mũi tên
+        // nhỏ đến mức không chạm trúng, khối to thì mũi tên dài quá màn.
+        let (lo, hi) = nut.boundingBox
+        let co = nut.scale
+        let canh = max(abs(hi.x - lo.x) * co.x, max(abs(hi.y - lo.y) * co.y, abs(hi.z - lo.z) * co.z))
+        let dai = min(max(canh * 1.5, 0.7), 4.0)
+
+        // Dựng lại khi cỡ khối đổi nhiều; còn lại chỉ dời vị trí. Co giãn
+        // nút có sẵn thì đầu mũi tên béo/nhọn theo, trông như hỏng.
+        let caCu = cu.flatMap { $0.value(forKey: "dai") as? Float }
+        if let g = cu, let d = caCu, abs(d - dai) <= 0.01 {
+            g.position = nut.worldPosition
+            return
+        }
+        cu?.removeFromParentNode()
+        let moi = nutGizmo(dai: dai)
+        moi.position = nut.worldPosition
+        moi.setValue(dai, forKey: "dai")
+        scn.rootNode.addChildNode(moi)
+    }
+
     static func nutLuoi(o: Int = 20) -> SCNNode {
         let goc = SCNNode()
         goc.name = "luoi"
@@ -957,6 +1144,7 @@ enum DungCanh {
         }
 
         if canh.luoi && keLuoi { scn.rootNode.addChildNode(nutLuoi()) }
+        if keLuoi { capNhatGizmo(scn, chon: chon) }   // bản xuất thì không kèm
 
         // Đèn: một đèn chính có bóng + một đèn môi trường. Chỉ có đèn chính
         // thì mặt khuất đen kịt và mô hình nhìn như hai mảnh rời.
@@ -1040,6 +1228,9 @@ struct CanhSceneKit: UIViewRepresentable {
     let thuMucTep: URL?
     /// Đổi số là đưa camera về khung mặc định — xem `camKhung`.
     let lanDongKhung: Int
+    /// Tăng số này để yêu cầu chụp một tấm ảnh của cảnh.
+    var lanChupAnh: Int = 0
+    var khiChupXong: ((UIImage) -> Void)?
 
     func makeUIView(context: Context) -> SCNView {
         let v = SCNView()
@@ -1083,6 +1274,10 @@ struct CanhSceneKit: UIViewRepresentable {
         // trong cảnh — `allowsCameraControl` sau lần xoay đầu tiên đã trỏ
         // `pointOfView` sang nút điều khiển của chính nó, nên sửa nút cũ thì
         // không có gì nhúc nhích.
+        if context.coordinator.lanChupAnh != lanChupAnh {
+            context.coordinator.lanChupAnh = lanChupAnh
+            if lanChupAnh > 0 { khiChupXong?(context.coordinator.chupAnh(v)) }
+        }
         if context.coordinator.lanDongKhung != lanDongKhung {
             context.coordinator.lanDongKhung = lanDongKhung
             if let mat = v.pointOfView {
@@ -1116,6 +1311,7 @@ struct CanhSceneKit: UIViewRepresentable {
                 scn.rootNode.addChildNode(DungCanh.dungNut(k, dangChon: k.id == chon, thuMucTep: thuMucTep))
             }
         }
+        DungCanh.capNhatGizmo(scn, chon: chon)
     }
 
     func makeCoordinator() -> Dieu { Dieu() }
@@ -1126,7 +1322,30 @@ struct CanhSceneKit: UIViewRepresentable {
         var khiTha: (() -> Void)?
         var dangChon: UUID?
         var lanDongKhung = 0
+        var lanChupAnh = 0
         var buocBat: Double = 0
+
+        /// Ảnh SẠCH của cảnh: giấu lưới sàn và viền chọn rồi mới chụp.
+        ///
+        /// Lưới và viền là đồ nghề của xưởng. Để nguyên thì tấm ảnh đem
+        /// khoe có vạch kẻ chạy khắp nền và một khối bị bọc viền sáng —
+        /// người xem tưởng đó là một phần của mô hình.
+        func chupAnh(_ v: SCNView) -> UIImage {
+            let luoi = v.scene?.rootNode.childNode(withName: "luoi", recursively: false)
+            let anLuoi = luoi?.isHidden ?? false
+            luoi?.isHidden = true
+
+            var daAn: [SCNNode] = []
+            v.scene?.rootNode.enumerateChildNodes { n, _ in
+                if n.name == "vien", !n.isHidden { n.isHidden = true; daAn.append(n) }
+            }
+
+            let anh = v.snapshot()
+
+            luoi?.isHidden = anLuoi
+            for n in daAn { n.isHidden = false }
+            return anh
+        }
 
         private weak var view: SCNView?
         /// Độ sâu màn hình của khối lúc bắt đầu kéo. Giữ nguyên nó trong suốt
@@ -1135,6 +1354,9 @@ struct CanhSceneKit: UIViewRepresentable {
         /// không mang theo.
         private var sauManHinh: Float = 0
         private var lechTheGioi = SCNVector3Zero
+        /// Trục đang bị khoá trong cú kéo hiện tại ("x"/"y"/"z"), `nil` = tự do.
+        private var trucKhoa: String?
+        private var viTriDau = SCNVector3Zero
 
         func gan(v: SCNView,
                  khiChon: @escaping (UUID) -> Void,
@@ -1164,7 +1386,29 @@ struct CanhSceneKit: UIViewRepresentable {
             for h in ket {
                 var n: SCNNode? = h.node
                 while let cur = n {
+                    // Chạm trúng mũi tên gizmo thì KHÔNG phải chọn khối —
+                    // nếu không, mỗi lần định kéo trục lại thành chọn lại
+                    // đúng khối đó, vô hại nhưng gizmo nhấp nháy.
+                    if cur.name?.hasPrefix(DungCanh.TEN_GIZMO) == true { break }
                     if let t = cur.name, let id = UUID(uuidString: t) { return id }
+                    n = cur.parent
+                }
+            }
+            return nil
+        }
+
+        /// Trục gizmo nằm dưới một điểm màn hình: "x" | "y" | "z" | nil.
+        private func trucTai(_ diem: CGPoint, _ v: SCNView) -> String? {
+            let ket = v.hitTest(diem, options: [
+                .searchMode: SCNHitTestSearchMode.all.rawValue,
+                .ignoreHiddenNodes: true,
+            ])
+            for h in ket {
+                var n: SCNNode? = h.node
+                while let cur = n {
+                    if let t = cur.name, t.hasPrefix(DungCanh.TEN_GIZMO + "-") {
+                        return String(t.suffix(1))
+                    }
                     n = cur.parent
                 }
             }
@@ -1194,19 +1438,33 @@ struct CanhSceneKit: UIViewRepresentable {
 
             switch g.state {
             case .began:
+                // Bắt đầu TRÊN một mũi tên ⇒ khoá vào trục đó cho tới khi
+                // thả. Quyết một lần lúc chạm, không dò lại mỗi khung hình:
+                // giữa chừng đầu ngón rời khỏi mũi tên là chuyện thường, mà
+                // dò lại thì khối nhảy sang chế độ tự do ngay giữa cú kéo.
+                trucKhoa = trucTai(diem, v)
                 let tren = v.projectPoint(nut.worldPosition)
                 sauManHinh = tren.z
+                viTriDau = nut.worldPosition
                 let theGioi = v.unprojectPoint(SCNVector3(Float(diem.x), Float(diem.y), sauManHinh))
                 lechTheGioi = SCNVector3(nut.worldPosition.x - theGioi.x,
                                          nut.worldPosition.y - theGioi.y,
                                          nut.worldPosition.z - theGioi.z)
             case .changed:
                 let theGioi = v.unprojectPoint(SCNVector3(Float(diem.x), Float(diem.y), sauManHinh))
-                let moi = SCNVector3(theGioi.x + lechTheGioi.x,
+                var moi = SCNVector3(theGioi.x + lechTheGioi.x,
                                      theGioi.y + lechTheGioi.y,
                                      theGioi.z + lechTheGioi.z)
+                // Khoá hai trục còn lại về đúng vị trí lúc bắt đầu.
+                switch trucKhoa {
+                case "x": moi.y = viTriDau.y; moi.z = viTriDau.z
+                case "y": moi.x = viTriDau.x; moi.z = viTriDau.z
+                case "z": moi.x = viTriDau.x; moi.y = viTriDau.y
+                default: break
+                }
                 khiKeo?(id, bat(Double(moi.x)), bat(Double(moi.y)), bat(Double(moi.z)))
             case .ended, .cancelled, .failed:
+                trucKhoa = nil
                 khiTha?()
             default: break
             }
@@ -1223,5 +1481,36 @@ struct CanhSceneKit: UIViewRepresentable {
 struct KhungBaView: View {
     let canh: CanhBa
     var body: some View { Text(T("Xưởng 3D chỉ chạy trên iPhone/iPad")) }
+}
+#endif
+
+#if os(iOS)
+import QuickLook
+
+/// AR Quick Look — đặt mô hình ra bàn thật qua camera.
+///
+/// Dùng `QLPreviewController` của hệ thống chứ không tự dựng phiên ARKit:
+/// nó cho sẵn nút "AR", bắt mặt phẳng, đổ bóng tiếp xúc và chia sẻ — tự
+/// làm lại là hàng trăm dòng để ra thứ kém hơn.
+struct XemAR: UIViewControllerRepresentable {
+    let url: URL
+
+    func makeUIViewController(context: Context) -> QLPreviewController {
+        let c = QLPreviewController()
+        c.dataSource = context.coordinator
+        return c
+    }
+    func updateUIViewController(_ c: QLPreviewController, context: Context) {}
+    func makeCoordinator() -> Nguon { Nguon(url: url) }
+
+    final class Nguon: NSObject, QLPreviewControllerDataSource {
+        let url: URL
+        init(url: URL) { self.url = url }
+        func numberOfPreviewItems(in c: QLPreviewController) -> Int { 1 }
+        func previewController(_ c: QLPreviewController,
+                               previewItemAt index: Int) -> QLPreviewItem {
+            url as QLPreviewItem
+        }
+    }
 }
 #endif
