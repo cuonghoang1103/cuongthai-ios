@@ -22,6 +22,7 @@ struct KhungVeView: View {
     @State private var lanHoanTac = 0
     @State private var lanLamLai = 0
     @State private var lanXoaHet = 0
+    @State private var hoiXoaHet = false
     @State private var dangChon: UUID?
     @State private var moThemHinh = false
     @State private var moCaiDat = false
@@ -46,7 +47,7 @@ struct KhungVeView: View {
                 ThanhBut(bo: bo,
                          hoanTac: { lanHoanTac += 1 },
                          lamLai: { lanLamLai += 1 },
-                         xoaHet: { lanXoaHet += 1 })
+                         xoaHet: { hoiXoaHet = true })
                 Divider()
             }
             khungGiay
@@ -66,6 +67,16 @@ struct KhungVeView: View {
         }
         .sheet(isPresented: $moThemHinh) { manThemHinh }
         .sheet(isPresented: $moCaiDat) { manCaiDat }
+        // ⚠️ Xoá hết nét PHẢI hỏi lại. Nút thùng rác nằm cạnh nút hoàn tác,
+        // lỡ tay một cái là mất cả bài giảng — người dùng báo 20/09/2026:
+        // "tôi lỡ ấn nó cái xoá hết sạch không khôi phục được".
+        .confirmationDialog(T("Xoá toàn bộ nét vẽ?"),
+                            isPresented: $hoiXoaHet, titleVisibility: .visible) {
+            Button(T("Xoá hết nét vẽ"), role: .destructive) { lanXoaHet += 1 }
+            Button(T("Huỷ"), role: .cancel) {}
+        } message: {
+            Text(T("Chỉ xoá nét bút, hình khối vẫn còn. Bấm hoàn tác ↶ ngay sau đó là lấy lại được."))
+        }
         .sheet(item: $suaChu) { h in manSuaChu(h) }
         .overlay(alignment: .bottom) {
             if let b = bao {
@@ -158,6 +169,10 @@ struct KhungVeView: View {
             .scaleEffect(tiLe, anchor: .topLeading)
             .frame(width: banVe.coKhung.width * tiLe, height: banVe.coKhung.height * tiLe)
             .padding(Spacing.lg)
+            // ⚠️ Trang nhỏ hơn khung nhìn thì CĂN GIỮA, không dính góc trái
+            // trên. Bản cũ để nó dính góc nên nhìn như "trang giấy bé tý
+            // kẹt ở trên", và chung quanh là một mảng tối vô nghĩa.
+            .frame(minWidth: rongKhungNhin, minHeight: caoKhungNhin)
         }
         .background(AppColors.backgroundTertiary)
         // Chụm hai ngón để phóng — cách phóng mà ai cầm iPad cũng thử đầu
@@ -186,7 +201,13 @@ struct KhungVeView: View {
                 .onAppear {
                     rongKhungNhin = g.size.width
                     caoKhungNhin = g.size.height
-                    if !daVuaKhung { daVuaKhung = true; vuaKhung() }
+                    // Mở ra thì LẤP ĐẦY bề ngang, không "vừa cả trang".
+                    //
+                    // ⚠️ Vừa cả trang nghĩa là mọi thứ lọt gọn trong màn ⇒
+                    // KHÔNG CÒN GÌ ĐỂ CUỘN, và khung cuộn bật ngược mỗi lần
+                    // kéo. Người dùng báo đúng triệu chứng đó: "kéo lên được
+                    // tý nó tự nhảy về chỗ cũ".
+                    if !daVuaKhung { daVuaKhung = true; lapDayNgang() }
                 }
                 .onChange(of: g.size) { _, moi in
                     rongKhungNhin = moi.width
@@ -232,6 +253,16 @@ struct KhungVeView: View {
         let theoDoc = caoKhungNhin > 0 ? (caoKhungNhin - dem) / banVe.coKhung.height : theoNgang
         withAnimation(AppAnimations.quick) {
             tiLe = keo(min(theoNgang, theoDoc))
+            tiLeGoc = tiLe
+        }
+    }
+
+    /// Lấp đầy bề NGANG. Dùng khi mở bản vẽ: trang phủ kín chiều ngang và
+    /// tràn xuống dưới, nên luôn có chỗ để cuộn dọc.
+    private func lapDayNgang() {
+        guard rongKhungNhin > 0 else { return }
+        withAnimation(AppAnimations.quick) {
+            tiLe = keo((rongKhungNhin - Spacing.lg * 2) / banVe.coKhung.width)
             tiLeGoc = tiLe
         }
     }
@@ -626,7 +657,14 @@ struct LopNetXuongVe: UIViewRepresentable {
         }
         if context.coordinator.lanXoaHet != lanXoaHet {
             context.coordinator.lanXoaHet = lanXoaHet
-            if lanXoaHet > 0 { v.drawing = PKDrawing() }
+            if lanXoaHet > 0 {
+                // ⚠️ Gán thẳng `v.drawing` KHÔNG ghi một bước hoàn tác nào —
+                // xoá xong là mất hẳn. Đăng ký tay với `undoManager` để nút
+                // ↶ lấy lại được.
+                let cu = v.drawing
+                v.undoManager?.registerUndo(withTarget: v) { $0.drawing = cu }
+                v.drawing = PKDrawing()
+            }
         }
 
         gan(v)
