@@ -99,6 +99,10 @@ struct KhoiBa: Codable, Identifiable, Equatable {
     /// vật liệu nào cả, và khi đó ô màu không bật được thì nhìn như hỏng.
     var toDe: Bool = false
 
+    /// Chiều cao thật (trục Y) của mô hình NHẬP sau khi chuẩn hoá cỡ. Đo một
+    /// lần lúc nhập. `nil` với khối dựng sẵn hoặc bản lưu cũ.
+    var caoGoc: Double?
+
     var tenHien: String { ten.isEmpty ? loai.ten : ten }
 
     // ⚠️⚠️ BỘ GIẢI MÃ VIẾT TAY, KHÔNG DÙNG BẢN SWIFT TỰ SINH.
@@ -133,6 +137,7 @@ struct KhoiBa: Codable, Identifiable, Equatable {
         khoa = try c.decodeIfPresent(Bool.self, forKey: .khoa) ?? false
         tepNhap = try c.decodeIfPresent(String.self, forKey: .tepNhap)
         toDe = try c.decodeIfPresent(Bool.self, forKey: .toDe) ?? false
+        caoGoc = try c.decodeIfPresent(Double.self, forKey: .caoGoc)
     }
 
     init(loai: LoaiKhoi, ten: String = "",

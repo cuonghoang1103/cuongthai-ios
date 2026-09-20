@@ -412,7 +412,7 @@ struct KhungBaView: View {
     /// Hạ khối chạm mặt sàn. Canh bằng mắt là việc không làm được: nhìn
     /// nghiêng thì lơ lửng 0,1 với chìm 0,1 trông y hệt nhau.
     private func datXuongSan() {
-        sua { $0.y = -0.5 + $0.coY / 2 }
+        sua { $0.y = -0.5 + DungCanh.nuaCao($0) }
         kho.luu(canh)
     }
 
@@ -577,6 +577,10 @@ struct KhungBaView: View {
         }
         var k = KhoiBa(loai: .nhap, ten: u.deletingPathExtension().lastPathComponent)
         k.tepNhap = ten
+        // Đo chiều cao THẬT ngay lúc nhập, sau khi đã chuẩn hoá cỡ. Đo lúc
+        // này là rẻ nhất — về sau `datXuongSan` chỉ đọc con số, không phải
+        // dựng lại cảnh để hỏi SceneKit.
+        k.caoGoc = DungCanh.caoSauChuanHoa(dich)
         canh.khoi.append(k)
         dangChon = k.id
         kho.luu(canh)
@@ -590,7 +594,17 @@ struct KhungBaView: View {
     /// `.usdz` chứ không phải một định dạng "chuẩn hơn" mà không ai mở được
     /// trên điện thoại.
     private func xuatUsdz() {
-        let scn = DungCanh.dung(canh, chon: nil)
+        // ⚠️ PHẢI truyền `thuMucTep`. Thiếu nó thì `dungNut` không mở được
+        // tệp nhập và rơi vào nhánh "khối xám thay thế" — tệp xuất ra có
+        // mọi thứ ĐÚNG CHỖ nhưng mô hình nhập biến thành hộp xám, mà nhìn
+        // trong app thì vẫn thấy mô hình nên không ai nghi ngờ gì.
+        //
+        // ⚠️ Và `keLuoi: false`: lưới sàn là đồ nghề của xưởng, không phải
+        // một phần của mô hình. Kèm vào thì người nhận mở AR Quick Look ra
+        // thấy 20×20 vạch kẻ lơ lửng quanh vật.
+        let scn = DungCanh.dung(canh, chon: nil,
+                                thuMucTep: KhoCanhBa.thuMucTep(canh.id),
+                                keLuoi: false)
         let d = FileManager.default.temporaryDirectory
             .appendingPathComponent("\(canh.ten.replacingOccurrences(of: "/", with: "-")).usdz")
         if scn.write(to: d, options: nil, delegate: nil, progressHandler: nil) {
@@ -628,6 +642,27 @@ enum DungCanh {
     /// Hình học của một loại khối. Dựng mới mỗi lần gọi — `SCNGeometry` dùng
     /// chung giữa nhiều nút thì đổi vật liệu của một khối sẽ đổi luôn màu của
     /// mọi khối cùng loại.
+    /// Nửa chiều cao THẬT của một khối, theo trục Y, ở tỉ lệ hiện tại.
+    ///
+    /// ⚠️ KHÔNG phải cứ `coY / 2`. Hình gốc của mỗi loại có chiều cao khác
+    /// nhau: hộp/cầu/trụ/nón/mặt phẳng cao đúng 1, nhưng **xuyến nằm trong
+    /// mặt phẳng XZ** nên chiều cao của nó chỉ bằng `2 × pipeRadius` = 0,32.
+    /// Dùng `coY / 2` cho xuyến thì nút "Đặt xuống sàn" treo nó lơ lửng
+    /// **0,34 đơn vị** trên sàn — nhìn nghiêng không thấy, xoay camera mới lộ.
+    ///
+    /// Khối NHẬP thì `chuanHoaCo` thu cạnh DÀI NHẤT về 1, nên mô hình bẹt
+    /// (xe, bàn) có chiều cao nhỏ hơn 1 nhiều. Chiều cao thật được đo lúc
+    /// nhập và cất trong `caoGoc`; chưa có thì lùi về 1 như cũ.
+    static func nuaCao(_ k: KhoiBa) -> Double {
+        let goc: Double
+        switch k.loai {
+        case .xuyen: goc = 0.32
+        case .nhap:  goc = k.caoGoc ?? 1
+        default:     goc = 1
+        }
+        return goc * k.coY / 2
+    }
+
     static func hinhCua(_ l: LoaiKhoi) -> SCNGeometry {
         switch l {
         case .hop: return SCNBox(width: 1, height: 1, length: 1, chamferRadius: 0.02)
@@ -667,6 +702,18 @@ enum DungCanh {
         nut.name = k.id.uuidString
         apVao(nut, k, dangChon: dangChon)
         return nut
+    }
+
+    /// Chiều cao (trục Y) của một tệp mô hình SAU khi đã chuẩn hoá cỡ.
+    /// `nil` nếu đọc không được — khi đó người gọi lùi về giả định cũ.
+    static func caoSauChuanHoa(_ tep: URL) -> Double? {
+        guard let scn = try? SCNScene(url: tep) else { return nil }
+        let bo = SCNNode()
+        for con in scn.rootNode.childNodes { bo.addChildNode(con) }
+        chuanHoaCo(bo)
+        let (lo, hi) = bo.boundingBox
+        let cao = Double(hi.y - lo.y)
+        return cao > 0.0001 ? cao : nil
     }
 
     /// Thu mô hình nhập về cỡ ~1 đơn vị.
@@ -900,7 +947,8 @@ enum DungCanh {
         return n
     }
 
-    static func dung(_ canh: CanhBa, chon: UUID?, thuMucTep: URL? = nil) -> SCNScene {
+    static func dung(_ canh: CanhBa, chon: UUID?, thuMucTep: URL? = nil,
+                     keLuoi: Bool = true) -> SCNScene {
         let scn = SCNScene()
         scn.background.contents = UIColor(Color(maHex: canh.mauNen))
 
@@ -908,7 +956,7 @@ enum DungCanh {
             scn.rootNode.addChildNode(dungNut(k, dangChon: k.id == chon, thuMucTep: thuMucTep))
         }
 
-        if canh.luoi { scn.rootNode.addChildNode(nutLuoi()) }
+        if canh.luoi && keLuoi { scn.rootNode.addChildNode(nutLuoi()) }
 
         // Đèn: một đèn chính có bóng + một đèn môi trường. Chỉ có đèn chính
         // thì mặt khuất đen kịt và mô hình nhìn như hai mảnh rời.
