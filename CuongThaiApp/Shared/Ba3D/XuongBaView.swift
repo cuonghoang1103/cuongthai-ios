@@ -256,8 +256,18 @@ struct KhungBaView: View {
                     .keyboardShortcut("z", modifiers: [.command, .shift])
                     .accessibilityLabel(T("Làm lại"))
                 menuThem
-                Button { xuatUsdz() } label: { Image(systemName: "square.and.arrow.up") }
-                    .accessibilityLabel(T("Xuất .usdz"))
+                Menu {
+                    Button { xuatGlb() } label: {
+                        Label(T(".glb — cho game (three.js, Unity, Godot)"), systemImage: "cube.transparent")
+                    }
+                    Button { xuatObj() } label: {
+                        Label(T(".obj + .mtl — mở được ở mọi phần mềm"), systemImage: "doc.on.doc")
+                    }
+                    Button { xuatUsdz() } label: {
+                        Label(T(".usdz — gửi qua tin nhắn, xem AR"), systemImage: "arkit")
+                    }
+                } label: { Image(systemName: "square.and.arrow.up") }
+                    .accessibilityLabel(T("Xuất"))
             }
         }
         .sheet(isPresented: $moThem) { manThem }
@@ -792,6 +802,51 @@ struct KhungBaView: View {
         let d = FileManager.default.temporaryDirectory
             .appendingPathComponent("\(canh.ten.replacingOccurrences(of: "/", with: "-")).usdz")
         return scn.write(to: d, options: nil, delegate: nil, progressHandler: nil) ? d : nil
+    }
+
+    /// Xuất `.glb` — định dạng đi được vào game.
+    ///
+    /// three.js và Babylon.js nạp thẳng cho web 3D game; Unity, Godot,
+    /// Blender đều đọc. Máy KHÔNG xuất sẵn được (đo 20/09/2026: ModelIO
+    /// xuất obj/ply/stl/usd, SceneKit ghi scn/usdz — không cái nào ra glb),
+    /// nên bộ xuất là tự viết, và đã qua bộ kiểm chính thức của Khronos:
+    /// 0 lỗi, 0 cảnh báo.
+    private func xuatGlb() {
+        let ms = Boolean3D.manhCuaCanh(canh, thuMucTep: KhoCanhBa.thuMucTep(canh.id))
+        guard let d = DungGLB.glb(ms, tenMoHinh: canh.ten) else {
+            khoe(T("Cảnh chưa có khối nào để xuất")); return
+        }
+        let t = FileManager.default.temporaryDirectory
+            .appendingPathComponent("\(tenTep).glb")
+        do { try d.write(to: t); chiaSe = t }
+        catch { khoe(T("Không ghi được tệp .glb")) }
+    }
+
+    /// Xuất `.obj` + `.mtl` gói trong một thư mục — phần mềm nào cũng mở.
+    private func xuatObj() {
+        let ms = Boolean3D.manhCuaCanh(canh, thuMucTep: KhoCanhBa.thuMucTep(canh.id))
+        guard !ms.isEmpty else { khoe(T("Cảnh chưa có khối nào để xuất")); return }
+        let (o, mtl) = DungGLB.obj(ms, tenMoHinh: tenTep)
+        let thuMuc = FileManager.default.temporaryDirectory
+            .appendingPathComponent("\(tenTep)-obj", isDirectory: true)
+        do {
+            try? FileManager.default.removeItem(at: thuMuc)
+            try FileManager.default.createDirectory(at: thuMuc, withIntermediateDirectories: true)
+            try o.write(to: thuMuc.appendingPathComponent("\(tenTep).obj"),
+                        atomically: true, encoding: .utf8)
+            // ⚠️ `.mtl` phải nằm CẠNH `.obj` và đúng tên đã khai trong
+            // `mtllib`, không thì mở ra mất sạch màu.
+            try mtl.write(to: thuMuc.appendingPathComponent("\(tenTep).mtl"),
+                          atomically: true, encoding: .utf8)
+            chiaSe = thuMuc
+        } catch { khoe(T("Không ghi được tệp .obj")) }
+    }
+
+    /// Tên tệp an toàn: bỏ dấu gạch chéo và khoảng trắng đầu/cuối.
+    private var tenTep: String {
+        let t = canh.ten.replacingOccurrences(of: "/", with: "-")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return t.isEmpty ? "mo-hinh" : t
     }
 
     private func xuatUsdz() {
@@ -1634,14 +1689,23 @@ extension KhungBaView {
         let thuMuc = KhoCanhBa.thuMucTep(canh.id)
         let na = DungCanh.dungNut(ka, dangChon: false, thuMucTep: thuMuc)
         let nb = DungCanh.dungNut(kb, dangChon: false, thuMucTep: thuMuc)
-        let da = Boolean3D.daGiac(na), db = Boolean3D.daGiac(nb)
+        // Nhãn 0 = khối A, nhãn 1 = khối B — đi theo tới tận hình cuối.
+        let da = Boolean3D.daGiac(na, vl: 0), db = Boolean3D.daGiac(nb, vl: 1)
         guard !da.isEmpty, !db.isEmpty else {
             khoe(T("Không đọc được lưới của một trong hai khối"))
             return
         }
 
+        func vatLieu(_ k: KhoiBa) -> SCNMaterial {
+            let m = SCNMaterial()
+            m.diffuse.contents = UIColor(Color(maHex: k.mau))
+            m.metalness.contents = k.kimLoai
+            m.roughness.contents = k.nham
+            return m
+        }
         let kq = Boolean3D.lam(phep, da, db)
-        guard let (hinh, tam) = Boolean3D.dungHinh(kq) else {
+        guard let (hinh, tam) = Boolean3D.dungHinhNhieuMau(
+                kq, mau: [0: vatLieu(ka), 1: vatLieu(kb)]) else {
             khoe(phep == .giao ? T("Hai khối không chạm nhau nên không có phần giao")
                                : T("Phép này ra hình rỗng"))
             return
@@ -1651,13 +1715,9 @@ extension KhungBaView {
         // lưu lưới, nên không ghi tệp thì mở lại là mất hình.
         let ten = "\(UUID().uuidString).scn"
         let scn = SCNScene()
-        let n = SCNNode(geometry: hinh)
-        let m = SCNMaterial()
-        m.diffuse.contents = UIColor(Color(maHex: ka.mau))
-        m.metalness.contents = ka.kimLoai
-        m.roughness.contents = ka.nham
-        hinh.materials = [m]
-        scn.rootNode.addChildNode(n)
+        // Vật liệu đã gán trong `dungHinhNhieuMau` — không đè lại, đè là
+        // mất đúng cái vừa giữ được.
+        scn.rootNode.addChildNode(SCNNode(geometry: hinh))
         guard scn.write(to: thuMuc.appendingPathComponent(ten),
                         options: nil, delegate: nil, progressHandler: nil) else {
             khoe(T("Không lưu được kết quả"))

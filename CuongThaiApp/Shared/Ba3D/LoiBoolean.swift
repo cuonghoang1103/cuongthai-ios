@@ -89,8 +89,8 @@ struct MatPhangBa {
                     t.append(v); s.append(v)
                 }
             }
-            if t.count >= 3, let p = DaGiacBa(t) { truoc.append(p) }
-            if s.count >= 3, let p = DaGiacBa(s) { sau.append(p) }
+            if t.count >= 3, let p = DaGiacBa(t, vl: dg.vl) { truoc.append(p) }
+            if s.count >= 3, let p = DaGiacBa(s, vl: dg.vl) { sau.append(p) }
         }
         return (truocCungMat, sauCungMat, truoc, sau)
     }
@@ -99,15 +99,21 @@ struct MatPhangBa {
 struct DaGiacBa {
     var dinh: [DinhBa]
     var mat: MatPhangBa
+    /// Nhãn vật liệu, đi THEO đa giác qua mọi lần cắt.
+    ///
+    /// Không có nhãn này thì gộp hai khối xong cả hình chỉ còn một màu —
+    /// mà làm robot thì thân, khớp, đèn, kính phải giữ được màu riêng.
+    var vl: Int = 0
 
-    init?(_ d: [DinhBa]) {
+    init?(_ d: [DinhBa], vl: Int = 0) {
         guard d.count >= 3, let m = MatPhangBa(d[0].vt, d[1].vt, d[2].vt) else { return nil }
         dinh = d
         mat = m
+        self.vl = vl
     }
 
     func lat() -> DaGiacBa {
-        var m = self
+        var m = self          // `vl` đi theo, không mất khi lật
         m.dinh = dinh.reversed().map { $0.lat() }
         m.mat.phap = -mat.phap
         m.mat.w = -mat.w
