@@ -148,6 +148,10 @@ struct KhungBaView: View {
     @State private var dangKeo = false
     @State private var lanChupAnh = 0
     @State private var xemAR: URL?
+    /// Chiều cao bảng chỉnh, người dùng kéo đổi được và NHỚ giữa các lần mở.
+    @AppStorage("xuong3d.caoBang") private var caoBang: Double = 280
+    @State private var thuBang = false
+    @State private var caoDangKeo: Double?
     @State private var moNhanDay = false
     @State private var soBan = 4
     @State private var buocDay = SIMD3<Double>(1, 0, 0)
@@ -239,7 +243,10 @@ struct KhungBaView: View {
             khung3D
 
             danhSachKhoi
-            if khoiDangChon != nil { bangChinh }
+            if khoiDangChon != nil {
+                tayNamBang
+                if !thuBang { bangChinh }
+            }
         }
         .navigationTitle(canh.ten)
         #if os(iOS)
@@ -366,14 +373,21 @@ struct KhungBaView: View {
                 // Tay nắm 3D nhìn thì sang nhưng chạm trượt liên tục trên màn
                 // cảm ứng, và người dùng kéo nhầm trục mà không biết. Số trên
                 // thanh trượt thì đọc được và lặp lại được.
+                // ⚠️ Khoảng KHÔNG cố định ±5 nữa. Dựng một map thành phố
+                // cần hàng trăm đơn vị, mà thanh trượt ±5 thì kéo khối ra xa
+                // bằng tay xong quay lại bảng là nó BẬT NGƯỢC về trong ±5 —
+                // trông như app tự dời khối. Khoảng nở theo cảnh, và luôn
+                // bao được khối đang chọn.
                 nhom(T("Vị trí"), [
-                    ("X", \.x, -5.0...5.0), ("Y", \.y, -5.0...5.0), ("Z", \.z, -5.0...5.0),
+                    ("X", \.x, -tamCanh...tamCanh),
+                    ("Y", \.y, -tamCanh...tamCanh),
+                    ("Z", \.z, -tamCanh...tamCanh),
                 ])
                 nhom(T("Xoay (độ)"), [
                     ("X", \.xoayX, -180.0...180.0), ("Y", \.xoayY, -180.0...180.0), ("Z", \.xoayZ, -180.0...180.0),
                 ])
                 nhom(T("Kích thước"), [
-                    ("X", \.coX, 0.1...5.0), ("Y", \.coY, 0.1...5.0), ("Z", \.coZ, 0.1...5.0),
+                    ("X", \.coX, 0.1...coToiDa), ("Y", \.coY, 0.1...coToiDa), ("Z", \.coZ, 0.1...coToiDa),
                 ])
 
                 Text(T("Màu & chất liệu")).font(.captionBold).foregroundStyle(AppColors.textSecondary)
@@ -405,8 +419,58 @@ struct KhungBaView: View {
             }
             .padding(Spacing.md)
         }
-        .frame(height: 300)
+        .frame(height: caoHienTai)
         .background(AppColors.backgroundCard)
+    }
+
+    /// Chiều cao đang dùng, chặn trong khoảng đọc được.
+    private var caoHienTai: Double {
+        min(max(caoDangKeo ?? caoBang, 140), 560)
+    }
+
+    /// Thanh nắm: kéo để đổi chiều cao, chạm để thu gọn.
+    ///
+    /// Bảng chỉnh trước đây cao CỨNG 300pt và không tắt được — người dùng
+    /// báo 20/09/2026: "nó cứ thế mãi thôi, che mất hết tầm nhìn". Với một
+    /// công cụ dựng hình thì khung nhìn là thứ quý nhất trên màn hình.
+    private var tayNamBang: some View {
+        VStack(spacing: 0) {
+            Capsule()
+                .fill(AppColors.textTertiary.opacity(0.5))
+                .frame(width: 44, height: 5)
+                .padding(.vertical, 7)
+        }
+        .frame(maxWidth: .infinity)
+        .background(AppColors.backgroundCard)
+        .overlay(alignment: .trailing) {
+            HStack(spacing: Spacing.md) {
+                Text(khoiDangChon?.tenHien ?? "")
+                    .font(.caption).foregroundStyle(AppColors.textTertiary).lineLimit(1)
+                Button {
+                    withAnimation(.easeInOut(duration: 0.18)) { thuBang.toggle() }
+                } label: {
+                    Image(systemName: thuBang ? "chevron.up" : "chevron.down")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(AppColors.textSecondary)
+                        .frame(width: 34, height: 26)
+                }
+            }
+            .padding(.trailing, Spacing.md)
+        }
+        .contentShape(Rectangle())
+        .gesture(
+            DragGesture(minimumDistance: 2)
+                .onChanged { g in
+                    if thuBang { thuBang = false }
+                    // Kéo LÊN là to ra, nên trừ.
+                    caoDangKeo = min(max(caoBang - g.translation.height, 140), 560)
+                }
+                .onEnded { _ in
+                    if let c = caoDangKeo { caoBang = c }
+                    caoDangKeo = nil
+                }
+        )
+        .onTapGesture { withAnimation(.easeInOut(duration: 0.18)) { thuBang.toggle() } }
     }
 
     /// Hàng thao tác. Tách khỏi thân `bangChinh` vì lý do KỸ THUẬT: nhét sáu
@@ -607,6 +671,20 @@ struct KhungBaView: View {
         kho.luu(canh)
     }
 
+    /// Nửa bề rộng thế giới cho thanh trượt: đủ bao mọi khối đang có, cộng
+    /// dư một khoảng để còn kéo ra xa thêm. Tối thiểu 10, tối đa 500.
+    private var tamCanh: Double {
+        let xa = canh.khoi.reduce(10.0) { m, k in
+            max(m, abs(k.x), abs(k.y), abs(k.z))
+        }
+        return min(max(xa * 1.6, 10), 500)
+    }
+
+    private var coToiDa: Double {
+        let lon = canh.khoi.reduce(5.0) { m, k in max(m, k.coX, k.coY, k.coZ) }
+        return min(max(lon * 1.5, 5), 200)
+    }
+
     private func nhom(_ ten: String, _ truc: [(String, WritableKeyPath<KhoiBa, Double>, ClosedRange<Double>)]) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(ten).font(.captionBold).foregroundStyle(AppColors.textSecondary)
@@ -626,9 +704,12 @@ struct KhungBaView: View {
                 // `dung == true` là lúc BẮT ĐẦU kéo thanh trượt.
                 if dung { ghiNho() } else { kho.luu(canh) }
             }
-            Text(String(format: "%.2f", khoiDangChon?[keyPath: kp] ?? 0))
-                .font(.system(size: 11, design: .monospaced))
-                .foregroundStyle(AppColors.textTertiary).frame(width: 46, alignment: .trailing)
+            // Ô GÕ ĐƯỢC, không phải chữ tĩnh. Dựng map lớn thì thanh trượt
+            // không đủ chính xác — đặt một toà nhà ở x = 137,5 mà phải rà
+            // thanh trượt dài 1000 đơn vị là việc không làm nổi.
+            OSoBa(gt: khoiDangChon?[keyPath: kp] ?? 0, khoang: khoang) { v in
+                ghiNho(); sua { $0[keyPath: kp] = v }; kho.luu(canh)
+            }
         }
     }
 
@@ -868,6 +949,48 @@ struct KhungBaView: View {
             try? await Task.sleep(for: .seconds(1.8))
             withAnimation { if bao == c { bao = nil } }
         }
+    }
+}
+
+/// Ô nhập số nhỏ cạnh thanh trượt.
+///
+/// Có `@State` riêng để người dùng gõ dở "12," không bị ghi đè mỗi khung
+/// hình; chỉ ghi vào mô hình khi gõ xong (Enter hoặc rời ô).
+///
+/// Vì sao cần: dựng map lớn thì thanh trượt không đủ chính xác — đặt một
+/// toà nhà ở x = 137,5 mà phải rà thanh trượt dài 1000 đơn vị là việc
+/// không làm nổi.
+private struct OSoBa: View {
+    let gt: Double
+    let khoang: ClosedRange<Double>
+    let xong: (Double) -> Void
+
+    @State private var chu = ""
+    @FocusState private var dangGo: Bool
+
+    var body: some View {
+        TextField("", text: $chu)
+            .font(.system(size: 11, design: .monospaced))
+            .foregroundStyle(dangGo ? AppColors.textPrimary : AppColors.textTertiary)
+            .multilineTextAlignment(.trailing)
+            .keyboardType(.numbersAndPunctuation)
+            .textFieldStyle(.plain)
+            .frame(width: 52)
+            .focused($dangGo)
+            .onAppear { chu = String(format: "%.2f", gt) }
+            .onChange(of: gt) { _, m in if !dangGo { chu = String(format: "%.2f", m) } }
+            .onSubmit { ghi() }
+            .onChange(of: dangGo) { _, m in if !m { ghi() } }
+    }
+
+    private func ghi() {
+        // Nhận cả dấu phẩy: bàn phím tiếng Việt cho dấu phẩy thập phân.
+        let sach = chu.replacingOccurrences(of: ",", with: ".")
+            .trimmingCharacters(in: .whitespaces)
+        guard let v = Double(sach) else { chu = String(format: "%.2f", gt); return }
+        let kep = min(max(v, khoang.lowerBound), khoang.upperBound)
+        chu = String(format: "%.2f", kep)
+        if abs(kep - gt) > 1e-9 { xong(kep) }
     }
 }
 
@@ -1237,13 +1360,19 @@ enum DungCanh {
         scn.rootNode.addChildNode(moi)
     }
 
-    static func nutLuoi(o: Int = 20) -> SCNNode {
+    /// Lưới sàn. `o` = bề rộng (đơn vị thế giới).
+    ///
+    /// ⚠️ Lưới to thì phải vẽ THƯA hơn, không thì 200×200 ô là 804 đoạn
+    /// thẳng chồng lên nhau thành một mảng xám đặc, vừa nặng vừa vô dụng.
+    /// Bước nhảy giữ số đường trong khoảng ~40.
+    static func nutLuoi(o: Int = 60) -> SCNNode {
         let goc = SCNNode()
         goc.name = "luoi"
+        let buoc = max(1, Int((Double(o) / 40).rounded(.up)))
         let nua = Float(o) / 2
         var dinh: [SCNVector3] = []
         var truc: [SCNVector3] = []
-        for i in 0...o {
+        for i in stride(from: 0, through: o, by: buoc) {
             let v = Float(i) - nua
             // Đường trùng trục cho vào nhóm riêng để tô sáng hơn — không có
             // hai đường đó thì nhìn lưới không biết gốc toạ độ ở đâu.
@@ -1321,6 +1450,10 @@ enum DungCanh {
     static func camKhung(_ canh: CanhBa) -> SCNNode {
         let cam = SCNNode()
         cam.camera = SCNCamera()
+        // ⚠️ Mặc định của SceneKit là zFar = 100. Dựng map cỡ thành phố thì
+        // mọi thứ xa hơn 100 đơn vị BIẾN MẤT — trông y như khối bị xoá.
+        cam.camera?.zNear = 0.05
+        cam.camera?.zFar = 5000
 
         // Hộp bao của cả cảnh, tính từ tâm ± nửa cỡ mỗi khối.
         var nhoX = 0.0, lonX = 0.0, nhoY = 0.0, lonY = 0.0, nhoZ = 0.0, lonZ = 0.0
