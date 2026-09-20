@@ -28,6 +28,8 @@ struct MucVideoView: View {
     @State private var chu = ""
     @State private var dangTai = false
     @State private var daGoi = false
+    /// Luồng đã đóng chưa — phân biệt "đang chờ" với "xong mà rỗng".
+    @State private var daXong = false
     @State private var loi: String?
     /// Nhịp đồng hồ: `giayHienTai()` là closure nên SwiftUI không theo dõi
     /// được nó. Không có nhịp này thì phần đang xem không bao giờ đổi.
@@ -55,6 +57,28 @@ struct MucVideoView: View {
                     if let g = MocThoiGian.giayTuURL(u) { tua(g); return .handled }
                     return .systemAction
                 })
+            } else if phan.isEmpty && daXong {
+                /*
+                 * ⚠️ PHẢI CÓ LỐI RA KHI LUỒNG KẾT THÚC MÀ KHÔNG CÓ GÌ.
+                 *
+                 * `LuongHoiDap` có thể đóng mà không phát `.hong` (mạng rớt
+                 * giữa chừng, máy chủ đóng sớm). Không có nhánh này thì màn
+                 * hình quay vòng tròn với dòng "Gia sư đang đọc phụ đề…"
+                 * VĨNH VIỄN: người học thấy một cái chờ không bao giờ kết
+                 * thúc, không biết vì sao, không có gì để bấm. Bản web có
+                 * cùng lỗi và đã vá cùng ngày.
+                 */
+                VStack(spacing: Spacing.sm) {
+                    Text(T("Chưa tạo được mục lục cho video này."))
+                        .font(.subheadline).foregroundStyle(AppColors.textSecondary)
+                    Button(T("Thử lại")) {
+                        daGoi = false; daXong = false; chu = ""; loi = nil
+                        Task { await taiMucLuc() }
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(Spacing.md)
             } else if phan.isEmpty {
                 dangCho
             } else {
@@ -142,7 +166,7 @@ struct MucVideoView: View {
             return
         }
         dangTai = true
-        defer { dangTai = false }
+        defer { dangTai = false; daXong = true }
 
         var gom = ""
         for await sk in LuongHoiDap.doc(
