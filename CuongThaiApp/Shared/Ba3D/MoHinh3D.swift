@@ -103,6 +103,10 @@ struct KhoiBa: Codable, Identifiable, Equatable {
     /// lần lúc nhập. `nil` với khối dựng sẵn hoặc bản lưu cũ.
     var caoGoc: Double?
 
+    /// Giữ nguyên cỡ, KHÔNG chuẩn hoá. Bật cho kết quả phép Boolean: nó đã
+    /// nằm đúng cỡ và đúng chỗ rồi, thu về 1 đơn vị là hỏng cả bố cục.
+    var giuCo: Bool = false
+
     var tenHien: String { ten.isEmpty ? loai.ten : ten }
 
     // ⚠️⚠️ BỘ GIẢI MÃ VIẾT TAY, KHÔNG DÙNG BẢN SWIFT TỰ SINH.
@@ -138,6 +142,7 @@ struct KhoiBa: Codable, Identifiable, Equatable {
         tepNhap = try c.decodeIfPresent(String.self, forKey: .tepNhap)
         toDe = try c.decodeIfPresent(Bool.self, forKey: .toDe) ?? false
         caoGoc = try c.decodeIfPresent(Double.self, forKey: .caoGoc)
+        giuCo = try c.decodeIfPresent(Bool.self, forKey: .giuCo) ?? false
     }
 
     init(loai: LoaiKhoi, ten: String = "",

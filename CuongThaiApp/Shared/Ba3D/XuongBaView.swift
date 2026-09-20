@@ -148,6 +148,9 @@ struct KhungBaView: View {
     @State private var dangKeo = false
     @State private var lanChupAnh = 0
     @State private var xemAR: URL?
+    @State private var moNhanDay = false
+    @State private var soBan = 4
+    @State private var buocDay = SIMD3<Double>(1, 0, 0)
 
     private var khoiDangChon: KhoiBa? { canh.khoi.first { $0.id == dangChon } }
 
@@ -258,6 +261,7 @@ struct KhungBaView: View {
             }
         }
         .sheet(isPresented: $moThem) { manThem }
+        .sheet(isPresented: $moNhanDay) { manNhanDay }
         .sheet(isPresented: $moMau) { manMau }
         .fileImporter(isPresented: $moNhapTep,
                       allowedContentTypes: [.usdz, .threeDContent, .item],
@@ -409,11 +413,97 @@ struct KhungBaView: View {
                 nutNho(khoiDangChon?.khoa == true ? T("Mở khoá") : T("Khoá"),
                        khoiDangChon?.khoa == true ? "lock.open" : "lock",
                        AppColors.textSecondary) { ghiNho(); sua { $0.khoa.toggle() }; kho.luu(canh) }
+                menuBoolean
+                nutNho(T("Nhân dãy"), "square.grid.3x1.below.line.grid.1x2",
+                       AppColors.secondary) { moNhanDay = true }
                 nutNho(T("Xoá"), "trash", AppColors.error) { xoaKhoi() }
             }
             .padding(.horizontal, 2)
         }
         .padding(.top, 2)
+    }
+
+    /// Phép Boolean: chọn PHÉP trước rồi chọn khối thứ hai.
+    ///
+    /// Không dùng "khối liền trước" như nút gộp nhóm: khoét là thao tác có
+    /// hướng (A trừ B khác B trừ A), chọn nhầm khối là ra hình ngược hẳn mà
+    /// người dùng không đoán được vì sao.
+    private var menuBoolean: some View {
+        Menu {
+            if khacNgoaiKhoiChon.isEmpty {
+                Text(T("Cần ít nhất hai khối"))
+            } else {
+                ForEach(PhepBa.allCases) { p in
+                    Menu {
+                        ForEach(khacNgoaiKhoiChon) { k in
+                            Button(k.tenHien) { lamBoolean(p, voi: k.id) }
+                        }
+                    } label: { Label(p.ten, systemImage: p.bieuTuong) }
+                }
+            }
+        } label: {
+            VStack(spacing: 2) {
+                Image(systemName: "circle.lefthalf.filled").font(.system(size: 16))
+                Text(T("Boolean")).font(.system(size: 10))
+            }
+            .foregroundStyle(AppColors.accent)
+            .frame(width: 62, height: 44)
+            .background(RoundedRectangle(cornerRadius: CornerRadius.small)
+                .fill(AppColors.accent.opacity(0.12)))
+        }
+    }
+
+    private var khacNgoaiKhoiChon: [KhoiBa] {
+        canh.khoi.filter { $0.id != dangChon && $0.loai != .phang }
+    }
+
+    /// Bảng nhân dãy.
+    private var manNhanDay: some View {
+        NavigationStack {
+            Form {
+                Section(T("Số bản")) {
+                    Stepper(value: $soBan, in: 2...40) {
+                        Text(String(format: T("%d bản"), soBan))
+                    }
+                }
+                Section {
+                    buocTruot("X", 0); buocTruot("Y", 1); buocTruot("Z", 2)
+                } header: {
+                    Text(T("Khoảng cách mỗi bước"))
+                } footer: {
+                    Text(T("Hàng rào thì đặt bước theo X; bậc thang thì X và Y cùng khác 0."))
+                }
+                Section {
+                    Button {
+                        nhanDay(so: soBan, dx: buocDay.x, dy: buocDay.y, dz: buocDay.z)
+                        moNhanDay = false
+                    } label: {
+                        Label(T("Nhân dãy"), systemImage: "square.grid.3x1.below.line.grid.1x2")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(buocDay == .zero)
+                    .listRowBackground(Color.clear)
+                }
+            }
+            .navigationTitle(T("Nhân dãy"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(T("Đóng")) { moNhanDay = false }
+                }
+            }
+        }
+    }
+
+    private func buocTruot(_ nhan: String, _ i: Int) -> some View {
+        HStack {
+            Text(nhan).font(.caption).frame(width: 18, alignment: .leading)
+            Slider(value: Binding(get: { buocDay[i] }, set: { buocDay[i] = $0 }), in: -4...4, step: 0.05)
+            Text(String(format: "%.2f", buocDay[i]))
+                .font(.system(size: 11, design: .monospaced))
+                .foregroundStyle(AppColors.textTertiary).frame(width: 44, alignment: .trailing)
+        }
     }
 
     private func nutNho(_ ten: String, _ bt: String, _ mau: Color, _ lam: @escaping () -> Void) -> some View {
@@ -789,7 +879,8 @@ enum DungCanh {
             // cây nút con, và đặt vị trí lên từng nút con là hỏng hình.
             nut = SCNNode()
             for con in scn.rootNode.childNodes { nut.addChildNode(con) }
-            chuanHoaCo(nut)
+            // Kết quả phép Boolean đã đúng cỡ đúng chỗ — chuẩn hoá là hỏng.
+            if !k.giuCo { chuanHoaCo(nut) }
         } else if k.loai == .nhap {
             // Tệp mất hoặc đọc không được: hiện một khối xám rỗng thay vì
             // KHÔNG HIỆN GÌ. Biến mất im lặng thì người dùng tưởng đã xoá
@@ -1511,6 +1602,107 @@ struct XemAR: UIViewControllerRepresentable {
                                previewItemAt index: Int) -> QLPreviewItem {
             url as QLPreviewItem
         }
+    }
+}
+#endif
+
+#if os(iOS)
+// ════════════════════════════════════════════════════════════════
+// PHÉP BOOLEAN + NHÂN DÃY — hai thứ của Blender đáng bê sang nhất
+// ════════════════════════════════════════════════════════════════
+
+extension KhungBaView {
+
+    /// Gộp / khoét / giao khối đang chọn với một khối khác.
+    ///
+    /// Kết quả là một lưới tự do, không còn là hộp hay cầu nữa, nên lưu
+    /// thành tệp `.scn` rồi dựng lại bằng đúng đường của khối NHẬP — dùng
+    /// lại toàn bộ máy móc sẵn có (vẽ, xuất, AR) thay vì thêm một loại khối
+    /// thứ tám với một nhánh riêng ở khắp nơi.
+    func lamBoolean(_ phep: PhepBa, voi idB: UUID) {
+        guard let ka = khoiDangChon,
+              let kb = canh.khoi.first(where: { $0.id == idB })
+        else { return }
+
+        // `.phang` dày bằng 0 nên không phải khối KÍN. Cắt nó bằng BSP ra
+        // hình rác chứ không báo lỗi — chặn ở đây, nói rõ lý do.
+        guard ka.loai != .phang, kb.loai != .phang else {
+            khoe(T("Mặt phẳng không dùng được cho phép Boolean (nó không kín)"))
+            return
+        }
+
+        let thuMuc = KhoCanhBa.thuMucTep(canh.id)
+        let na = DungCanh.dungNut(ka, dangChon: false, thuMucTep: thuMuc)
+        let nb = DungCanh.dungNut(kb, dangChon: false, thuMucTep: thuMuc)
+        let da = Boolean3D.daGiac(na), db = Boolean3D.daGiac(nb)
+        guard !da.isEmpty, !db.isEmpty else {
+            khoe(T("Không đọc được lưới của một trong hai khối"))
+            return
+        }
+
+        let kq = Boolean3D.lam(phep, da, db)
+        guard let (hinh, tam) = Boolean3D.dungHinh(kq) else {
+            khoe(phep == .giao ? T("Hai khối không chạm nhau nên không có phần giao")
+                               : T("Phép này ra hình rỗng"))
+            return
+        }
+
+        // Ghi ra tệp để lần mở sau vẫn còn — cảnh chỉ lưu dữ liệu, không
+        // lưu lưới, nên không ghi tệp thì mở lại là mất hình.
+        let ten = "\(UUID().uuidString).scn"
+        let scn = SCNScene()
+        let n = SCNNode(geometry: hinh)
+        let m = SCNMaterial()
+        m.diffuse.contents = UIColor(Color(maHex: ka.mau))
+        m.metalness.contents = ka.kimLoai
+        m.roughness.contents = ka.nham
+        hinh.materials = [m]
+        scn.rootNode.addChildNode(n)
+        guard scn.write(to: thuMuc.appendingPathComponent(ten),
+                        options: nil, delegate: nil, progressHandler: nil) else {
+            khoe(T("Không lưu được kết quả"))
+            return
+        }
+
+        ghiNho()
+        var moi = KhoiBa(loai: .nhap, ten: "\(ka.tenHien) \(phep == .gop ? "+" : phep == .khoet ? "−" : "∩") \(kb.tenHien)")
+        moi.tepNhap = ten
+        moi.giuCo = true
+        moi.mau = ka.mau
+        moi.kimLoai = ka.kimLoai
+        moi.nham = ka.nham
+        moi.x = tam.x; moi.y = tam.y; moi.z = tam.z
+
+        // Hai khối nguồn biến mất — đó là cách Blender làm và cũng là điều
+        // người dùng muốn: giữ lại thì chúng nằm chồng lên kết quả, che mất
+        // đúng cái vừa tạo ra và trông như phép Boolean không chạy.
+        canh.khoi.removeAll { $0.id == ka.id || $0.id == kb.id }
+        canh.khoi.append(moi)
+        dangChon = moi.id
+        kho.luu(canh)
+        khoe(T("Đã tạo hình mới"))
+    }
+
+    /// Nhân khối đang chọn thành một dãy cách đều.
+    func nhanDay(so: Int, dx: Double, dy: Double, dz: Double) {
+        guard let goc = khoiDangChon, so > 1 else { return }
+        ghiNho()
+        let cum = goc.nhom.map { n in canh.khoi.filter { $0.nhom == n } } ?? [goc]
+        for i in 1..<so {
+            let nhomMoi: String? = goc.nhom == nil ? nil : MauDungSan.maNhom("day")
+            for k in cum {
+                var m = k
+                m.id = UUID()
+                m.nhom = nhomMoi
+                m.x = k.x + dx * Double(i)
+                m.y = k.y + dy * Double(i)
+                m.z = k.z + dz * Double(i)
+                m.ten = k.ten.isEmpty ? "" : "\(k.ten) \(i + 1)"
+                canh.khoi.append(m)
+            }
+        }
+        kho.luu(canh)
+        khoe(String(format: T("Đã nhân thành %d bản"), so))
     }
 }
 #endif
