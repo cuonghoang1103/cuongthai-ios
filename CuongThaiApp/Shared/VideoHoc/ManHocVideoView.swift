@@ -38,11 +38,12 @@ struct ManHocVideoView: View {
     /// trong menu ⋯ ở thanh công cụ và mở ra thành MÀN RIÊNG — nghĩa là có
     /// cũng như không. Đưa ra thành tab ngay cạnh phụ đề.
     enum TabBang: String, CaseIterable, Identifiable {
-        case phuDe, hoiAI, nhaiTheo, ngheChep
+        case phuDe, mucVideo, hoiAI, nhaiTheo, ngheChep
         var id: String { rawValue }
         var ten: String {
             switch self {
             case .phuDe:    return T("Phụ đề")
+            case .mucVideo: return T("Mục video")
             case .hoiAI:    return T("Hỏi AI")
             case .nhaiTheo: return T("Nhại theo")
             case .ngheChep: return T("Nghe chép")
@@ -51,6 +52,7 @@ struct ManHocVideoView: View {
         var icon: String {
             switch self {
             case .phuDe:    return "captions.bubble"
+            case .mucVideo: return "list.bullet.rectangle"
             case .hoiAI:    return "sparkles"
             case .nhaiTheo: return "waveform.and.mic"
             case .ngheChep: return "pencil.and.scribble"
@@ -219,6 +221,10 @@ struct ManHocVideoView: View {
                 switch tab {
                 case .phuDe:
                     bangPhuDe
+                case .mucVideo:
+                    MucVideoView(video: video,
+                                 giayHienTai: { dk.giay },
+                                 tua: { g in dk.tua(g); dk.phat() })
                 case .hoiAI:
                     HoiVeVideoView(video: video,
                                    giayHienTai: { dk.giay },
@@ -238,7 +244,15 @@ struct ManHocVideoView: View {
         .background(AppColors.backgroundPrimary)
     }
 
+    /*
+     * ⚠️ HÀNG TAB PHẢI CUỘN NGANG ĐƯỢC.
+     *
+     * Từ 4 tab lên 5 ("Mục video"), và một `HStack` cố định sẽ ép các nhãn
+     * co lại rồi RỤNG chữ ở bề ngang iPhone — tab cuối trông như không có.
+     * `ScrollView(.horizontal)` giữ nguyên kích thước nhãn và cho vuốt tới.
+     */
     private var hangTab: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
         HStack(spacing: Spacing.xs) {
             ForEach(TabBang.allCases) { t in
                 Button {
@@ -262,6 +276,7 @@ struct ManHocVideoView: View {
         }
         .padding(.horizontal, Spacing.sm)
         .padding(.vertical, Spacing.sm)
+        }
         .background(AppColors.backgroundCard)
     }
 
