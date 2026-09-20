@@ -369,15 +369,41 @@ private struct SoDoTuMarkdown: View {
     let ma: String
     @State private var cao: CGFloat = 180
     @State private var hong = false
+    @State private var moTo = false
 
     var body: some View {
         if hong {
             KhoiMaView(ma: ma, ngonNgu: "mermaid")
         } else {
             SoDoMermaidView(ma: ma, chieuCao: $cao, hong: $hong)
-                .frame(height: cao)
+                /* Sơ đồ đã vừa bề ngang nên chiều cao là chiều cao thật của
+                   nó; chỉ chặn hai đầu để không bị 0pt lúc đang dựng, cũng
+                   không nuốt trọn khung chat khi sơ đồ quá cao. */
+                .frame(height: min(max(cao, 140), 340))
                 .background(RoundedRectangle(cornerRadius: CornerRadius.medium)
                     .fill(AppColors.backgroundCard))
+                /*
+                 * ⚠️ PHẢI CÓ NÚT XEM TO.
+                 *
+                 * Câu trả lời của gia sư nằm trong cột chat ~400pt, còn một sơ
+                 * đồ `graph TD` có 12 nhánh song song thì rộng gấp mấy lần thế.
+                 * Ép vừa bề ngang là chữ trong ô nhỏ tới mức vô dụng — người
+                 * dùng 20/09/2026 nói đúng: *"khó nhìn vậy không hiểu"*.
+                 */
+                .overlay(alignment: .topTrailing) {
+                    Button { moTo = true } label: {
+                        Image(systemName: "arrow.up.left.and.arrow.down.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(AppColors.textPrimary)
+                            .padding(7)
+                            .background(Circle().fill(AppColors.backgroundCard.opacity(0.92)))
+                            .overlay(Circle().stroke(AppColors.border, lineWidth: 0.5))
+                    }
+                    .buttonStyle(.plain)
+                    .padding(6)
+                    .accessibilityLabel(T("Xem sơ đồ toàn màn hình"))
+                }
+                .fullScreenCover(isPresented: $moTo) { SoDoToanManHinhChung(ma: ma) }
         }
     }
 }
