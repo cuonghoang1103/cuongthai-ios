@@ -219,6 +219,9 @@ targets:
     # — lỗi "Build input files cannot be found", nghe như thiếu file.
     sources:
       - path: CuongThaiApp/Admin
+        # Nguồn app quản trị KHÔNG nằm trong kho công khai. `optional` để bản
+        # clone từ GitHub vẫn `xcodegen generate` được (chỉ scheme này hỏng).
+        optional: true
       - path: CuongThaiApp/Shared/Network
       - path: CuongThaiApp/Shared/Models
       - path: CuongThaiApp/Shared/Storage
