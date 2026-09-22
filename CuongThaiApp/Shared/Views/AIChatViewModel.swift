@@ -11,7 +11,15 @@ struct TinAI: Identifiable {
     /// Ảnh người dùng đính ở lượt này (base64). Giữ lại vì lịch sử gửi lên
     /// model là CHỮ THUẦN — xem `anhKemLai()`.
     var anh: [String] = []
+    /// Dữ liệu tệp (data URL) đã gửi ở lượt này.
+    ///
+    /// ⚠️ Trước 22/09 KHÔNG giữ: "Tạo lại" gửi lại ảnh + TÊN tệp nhưng
+    /// `tep: []`, còn "Sửa và hỏi lại" bỏ tệp hẳn — hỏi về một PDF rồi bấm
+    /// Tạo lại là model nhận câu hỏi về một tệp nó không còn thấy.
+    var tep: [String] = []
     var tenTep: [String] = []
+    /// Dòng phụ dưới tên tệp trong bong bóng ("42 trang · đã đọc chữ").
+    var moTaTep: [String] = []
     /// Nguồn web model đã đọc cho lượt này.
     var nguon: [NguonWeb] = []
 }
@@ -91,6 +99,17 @@ final class AIChatViewModel: ObservableObject {
     /// trả lại qua khung `connected`.
     @Published private(set) var sessionId: String?
     @Published var dangNapLichSu = false
+
+    /// Chữ đang gõ + đính kèm chưa gửi.
+    ///
+    /// Nằm ở VM chứ không ở `@State` của màn hình: đổi cửa sổ ↔ toàn màn hình
+    /// là DỰNG LẠI màn hình trong một kiểu trình bày khác, và `@State` đi theo
+    /// cái màn cũ — người dùng đang gõ dở một câu dài, bấm phóng to, mất sạch.
+    @Published var nhap = ""
+    @Published var dinhKemNhap: [DinhKemAI] = []
+    /// Câu mở đầu chỉ điền MỘT lần cho mỗi cuộc — đổi kiểu trình bày thì màn
+    /// hình xuất hiện lại, và điền lại là đè lên thứ người dùng vừa xoá.
+    var daDienMoDau = false
     private var viec: Task<Void, Never>?
 
     var bacHienTai: BacAI { bac }
@@ -122,10 +141,9 @@ final class AIChatViewModel: ObservableObject {
         guard !dangTraLoi else { return }
         guard let iCuoi = tin.lastIndex(where: { $0.cuaNguoi }) else { return }
         let cauHoi = tin[iCuoi].noiDung
-        let anh = tin[iCuoi].anh
-        let tenTep = tin[iCuoi].tenTep
+        let cu = tin[iCuoi]
         tin.removeSubrange(iCuoi...)
-        gui(cauHoi, anh: anh, tep: [], tenTep: tenTep)
+        gui(cauHoi, anh: cu.anh, tep: cu.tep, tenTep: cu.tenTep, moTaTep: cu.moTaTep)
     }
 
     /// Sửa một câu hỏi của mình rồi hỏi lại từ đó.
@@ -140,9 +158,9 @@ final class AIChatViewModel: ObservableObject {
         if let sid = sessionId {
             try? await APIClient.shared.send(.catPhien(id: sid, tuChiSo: i))
         }
-        let anh = tin[i].anh
+        let cu = tin[i]
         tin.removeSubrange(i...)
-        gui(c, anh: anh)
+        gui(c, anh: cu.anh, tep: cu.tep, tenTep: cu.tenTep, moTaTep: cu.moTaTep)
     }
 
     /// Cả cuộc dưới dạng markdown, để chia sẻ hoặc lưu.
@@ -179,6 +197,8 @@ final class AIChatViewModel: ObservableObject {
         tin = []
         sessionId = nil
         buocHienTai = nil
+        nhap = ""
+        dinhKemNhap = []
     }
 
     func dung() {
@@ -229,14 +249,16 @@ final class AIChatViewModel: ObservableObject {
     /// chế độ nói chuyện: câu trả lời đọc lên phải NGẮN, mà người dùng thì
     /// không nên thấy dòng chỉ dẫn đó lặp lại ở mọi lượt.
     func gui(_ cauHoi: String, anh: [String] = [], tep: [String] = [],
-             tenTep: [String] = [], guiKem: String? = nil, voice: Bool = false) {
+             tenTep: [String] = [], moTaTep: [String] = [],
+             guiKem: String? = nil, voice: Bool = false) {
         guard !dangTraLoi else { return }
         // Ngữ cảnh phải chộp TRƯỚC khi thêm lượt mới, không thì câu vừa gõ
         // lọt vào lịch sử và model đọc nó hai lần.
         let lichSu = lichSuGui()
         let anhGui = anh.isEmpty ? anhKemLai() : anh
 
-        tin.append(TinAI(cuaNguoi: true, noiDung: cauHoi, anh: anh, tenTep: tenTep))
+        tin.append(TinAI(cuaNguoi: true, noiDung: cauHoi, anh: anh,
+                         tep: tep, tenTep: tenTep, moTaTep: moTaTep))
         tin.append(TinAI(cuaNguoi: false, noiDung: "", dangChay: true))
         dangTraLoi = true
         buocHienTai = nil

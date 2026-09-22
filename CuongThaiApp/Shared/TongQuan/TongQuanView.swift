@@ -117,9 +117,9 @@ struct TongQuanView: View {
             .sheet(item: $buoiDangSua) { b in
                 NavigationStack { SuaBuoiHocView(vm: vm, buoi: b) }
             }
-            .sheet(item: $moChat) { m in
-                AIChatView(cauMoDau: m.cau, bacBanDau: .pro)
-            }
+            .moAIChat(dangMo: Binding(get: { moChat != nil },
+                                      set: { if !$0 { moChat = nil } }),
+                      cauMoDau: moChat?.cau, bacBanDau: .pro)
             .sheet(item: Binding(
                 get: { monDangMo.map(MonMo.init) },
                 set: { monDangMo = $0?.ma })) { m in

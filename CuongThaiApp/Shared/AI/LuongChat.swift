@@ -54,6 +54,30 @@ final class LuongChat {
     /// - Parameter lichSu: các lượt TRƯỚC đó. Backend KHÔNG tự nạp lịch sử
     ///   theo `sessionId` — `streamChat` chỉ GHI vào phiên chứ không đọc ra.
     ///   Không gửi cái này thì mỗi câu hỏi là một cuộc đời mới.
+    /// Câu báo lỗi cho người dùng từ mã HTTP + thân lỗi của máy chủ.
+    ///
+    /// Máy chủ trả `{success:false, message, code}`. Câu của nó ưu tiên hơn
+    /// câu soạn sẵn ở đây — trừ 5xx, vì máy chủ cố ý giấu chi tiết ở đó và
+    /// chỉ còn "Internal Server Error" tiếng Anh.
+    static func cauLoi(_ ma: Int, than: Data) -> String {
+        let json = (try? JSONSerialization.jsonObject(with: than)) as? [String: Any]
+        let cuaMay = (json?["message"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
+        switch ma {
+        case 401:
+            return "Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại."
+        case 413:
+            // Bản máy chủ cũ trả "request entity too large" tiếng Anh.
+            if let cuaMay, cuaMay.contains("gửi kèm") { return cuaMay }
+            return "Ảnh hoặc tệp gửi kèm quá lớn. Hãy bớt tệp, hoặc gửi tệp nhỏ hơn."
+        case 429:
+            return cuaMay ?? "Bạn gửi hơi nhanh — đợi vài giây rồi thử lại nhé."
+        case 400..<500:
+            return cuaMay.flatMap { $0.isEmpty ? nil : $0 } ?? "Yêu cầu không hợp lệ (mã \(ma))."
+        default:
+            return "Máy chủ đang gặp sự cố (mã \(ma)). Thử lại sau ít phút."
+        }
+    }
+
     static func gui(cauHoi: String,
                     sessionId: String?,
                     model: String?,
@@ -112,9 +136,15 @@ final class LuongChat {
                 do {
                     let (bytes, resp) = try await URLSession.shared.bytes(for: req)
                     if let http = resp as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
-                        tiep.yield(.hong(http.statusCode == 401
-                                         ? "Phiên đăng nhập đã hết hạn."
-                                         : "Máy chủ trả lỗi \(http.statusCode)"))
+                        // ĐỌC thân lỗi. Bản cũ chỉ in con số — người dùng gửi hai
+                        // PDF và nhận "Máy chủ trả lỗi 413", không một chữ nào nói
+                        // là do tệp to, trong khi máy chủ có trả câu giải thích.
+                        var than = Data()
+                        for try await b in bytes {
+                            than.append(b)
+                            if than.count > 16_384 { break }
+                        }
+                        tiep.yield(.hong(Self.cauLoi(http.statusCode, than: than)))
                         tiep.finish(); return
                     }
                     for try await dong in bytes.lines {

@@ -15,15 +15,35 @@ struct AIChatView: View {
     /// đúng là nói một đằng làm một nẻo.
     var bacBanDau: BacAI? = nil
 
+    /// Có = đang được `MoAIChat` trình bày: `true` toàn màn, `false` cửa sổ.
+    /// `nil` = mở kiểu cũ (vd màn xem thử), không có nút đổi kiểu.
+    var toanMan: Bool? = nil
+    /// Bấm nút phóng to / thu nhỏ.
+    var doiCheDo: (() -> Void)? = nil
+
     @Environment(\.dismiss) private var dismiss
-    @StateObject private var vm = AIChatViewModel()
-    @State private var cauHoi = ""
+    @Environment(\.horizontalSizeClass) private var coNgang
+    @StateObject private var vm: AIChatViewModel
+
+    init(cauMoDau: String? = nil, bacBanDau: BacAI? = nil,
+         vmNgoai: AIChatViewModel? = nil,
+         toanMan: Bool? = nil, doiCheDo: (() -> Void)? = nil) {
+        self.cauMoDau = cauMoDau
+        self.bacBanDau = bacBanDau
+        self.toanMan = toanMan
+        self.doiCheDo = doiCheDo
+        // `vmNgoai` do `MoAIChat` giữ, để cuộc trò chuyện SỐNG QUA lượt đổi
+        // cửa sổ ↔ toàn màn. Biểu thức trong ngoặc chỉ chạy MỘT lần cho mỗi
+        // màn (autoclosure của StateObject).
+        _vm = StateObject(wrappedValue: vmNgoai ?? AIChatViewModel())
+    }
     /// 0 = "đang suy nghĩ", 1 = "đợi tớ chút nhé". Xem `loiCho`.
     @State private var phaCho = 0
     @State private var hienChonModel = false
-    @State private var dinhKem: [DinhKemAI] = []
     @State private var anhChon: [PhotosPickerItem] = []
     @State private var hienChonTep = false
+    /// Đang đọc tệp vừa chọn (rút chữ PDF có thể mất một hai giây).
+    @State private var dangNapTep = false
     @State private var hienLichSu = false
     @StateObject private var ghiAm = GhiAmThoai()
     @StateObject private var mayDoc = MayDoc()
@@ -48,10 +68,17 @@ struct AIChatView: View {
                 oNhap
             }
             .background(AppColors.backgroundPrimary)
+            // Ở dạng cửa sổ nổi, vuốt xuống là ĐÓNG — đang cuộn đọc câu trả lời
+            // dài hay đang gõ dở thì một cú vuốt lỡ tay mất sạch. Chặn đúng lúc
+            // có thứ để mất; nút "Đóng" vẫn luôn dùng được.
+            .interactiveDismissDisabled(vm.dangTraLoi || !vm.nhap.isEmpty || !vm.dinhKemNhap.isEmpty)
             .onAppear {
                 // Chỉ điền khi ô còn trống: người dùng quay lại màn này giữa
                 // chừng thì không được đè lên thứ họ đang gõ dở.
-                if cauHoi.isEmpty, let c = cauMoDau { cauHoi = c }
+                if !vm.daDienMoDau {
+                    vm.daDienMoDau = true
+                    if vm.nhap.isEmpty, let c = cauMoDau { vm.nhap = c }
+                }
                 // Chỉ đặt khi hội thoại còn TRỐNG: quay lại màn giữa chừng mà
                 // bị nhảy bậc thì những lượt đã hỏi và lượt sắp hỏi trả lời
                 // bằng hai model khác nhau.
@@ -66,6 +93,16 @@ struct AIChatView: View {
                 ToolbarItem(placement: .navigation) {
                     Button { hienLichSu = true } label: {
                         Image(systemName: "clock.arrow.circlepath")
+                    }
+                }
+                if let doiCheDo, let toanMan {
+                    ToolbarItem(placement: .primaryAction) {
+                        Button(action: doiCheDo) {
+                            Image(systemName: toanMan
+                                  ? "arrow.down.right.and.arrow.up.left"
+                                  : "arrow.up.left.and.arrow.down.right")
+                        }
+                        .accessibilityLabel(toanMan ? "Thu nhỏ thành cửa sổ" : "Mở toàn màn hình")
                     }
                 }
                 ToolbarItem(placement: .primaryAction) {
@@ -131,7 +168,7 @@ struct AIChatView: View {
                 MayAnh { d in
                     namBacNeuCan()
                     let nen = PlatformImage(data: d)?.jpegDataForUpload() ?? d
-                    dinhKem.append(DinhKemAI(ten: "ảnh-chụp.jpg", mime: "image/jpeg", duLieu: nen))
+                    vm.dinhKemNhap.append(DinhKemAI(ten: "ảnh-chụp.jpg", mime: "image/jpeg", duLieu: nen))
                 }
                 .ignoresSafeArea()
             }
@@ -145,8 +182,8 @@ struct AIChatView: View {
             // Đổi xuống bậc nhanh mà đang có đính kèm thì NÓI RA rồi bỏ —
             // giữ lại chỉ làm người dùng tưởng nó vẫn được gửi đi.
             .onChange(of: vm.bac) { _, b in
-                if !b.nhanTep && !dinhKem.isEmpty {
-                    dinhKem = []
+                if !b.nhanTep && !vm.dinhKemNhap.isEmpty {
+                    vm.dinhKemNhap = []
                     vm.loi = "CuongMini3.11 chưa đọc được ảnh và tệp nên đã bỏ phần đính kèm."
                 }
             }
@@ -174,7 +211,7 @@ struct AIChatView: View {
                 VStack(spacing: 8) {
                     ForEach(Self.goiY, id: \.self) { g in
                         Button {
-                            cauHoi = g
+                            vm.nhap = g
                             gui()
                         } label: {
                             HStack {
@@ -231,6 +268,8 @@ struct AIChatView: View {
                     Color.clear.frame(height: 1).id("day")
                 }
                 .padding(Spacing.md)
+                .frame(maxWidth: beRongDoc)
+                .frame(maxWidth: .infinity)
             }
             // Cuộn theo chữ đang chảy — không thì người dùng phải tự vuốt
             // suốt lúc AI trả lời.
@@ -279,13 +318,27 @@ struct AIChatView: View {
     private var oNhap: some View {
         VStack(spacing: 0) {
             Divider().background(AppColors.divider)
-            if !dinhKem.isEmpty { daiDinhKem }
+            // Khay + dòng "đang đọc" phải nằm TRONG cột như ô nhập — trên iPad
+            // toàn màn hình chúng từng dính sát mép trái, lệch hẳn với ô gõ.
+            if !vm.dinhKemNhap.isEmpty {
+                daiDinhKem.frame(maxWidth: beRongDoc).frame(maxWidth: .infinity)
+            }
+            if dangNapTep {
+                HStack(spacing: 8) {
+                    ProgressView().scaleEffect(0.7)
+                    Text("Đang đọc tệp…").font(.system(size: 12))
+                        .foregroundColor(AppColors.textSecondary)
+                    Spacer()
+                }
+                .padding(.horizontal, Spacing.md).padding(.top, 6)
+                .frame(maxWidth: beRongDoc).frame(maxWidth: .infinity)
+            }
             HStack(alignment: .bottom, spacing: Spacing.sm) {
                 // LUÔN hiện. Ẩn theo bậc thì người dùng mở app ở bậc mặc định
                 // là không thấy nút nào và tưởng app không gửi được ảnh —
                 // đúng thứ đã xảy ra. Đính kèm ở bậc nhanh thì tự nâng bậc.
                 nutKep
-                TextField("Nhắn cho CuongMini…", text: $cauHoi, axis: .vertical)
+                TextField("Nhắn cho CuongMini…", text: $vm.nhap, axis: .vertical)
                     .font(.bodyMedium)
                     .lineLimit(1...6)
                     .focused($dangGo)
@@ -322,15 +375,22 @@ struct AIChatView: View {
             }
             .padding(.horizontal, Spacing.md)
             .padding(.vertical, Spacing.sm)
+            .frame(maxWidth: beRongDoc)
+            .frame(maxWidth: .infinity)
         }
         .background(AppColors.backgroundSecondary)
     }
 
-    private var coChu: Bool { !cauHoi.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    /// Bề rộng cột chat. Trên iPad toàn màn hình mà để chữ chạy hết 1.200 điểm
+    /// thì mỗi dòng dài gấp ba mức mắt đọc thoải mái — app Claude/ChatGPT
+    /// trên iPad đều gom chat vào một cột giữa. iPhone không bị ảnh hưởng.
+    private var beRongDoc: CGFloat { coNgang == .regular ? 820 : .infinity }
+
+    private var coChu: Bool { !vm.nhap.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
 
     // MARK: Đính kèm
 
-    private var guiDuoc: Bool { coChu || !dinhKem.isEmpty }
+    private var guiDuoc: Bool { coChu || !vm.dinhKemNhap.isEmpty }
 
     /// Mở chế độ nói chuyện rảnh tay.
     ///
@@ -386,7 +446,7 @@ struct AIChatView: View {
                 if let chu = try await GiongNoiAI.chuTuGiong(thu.data) {
                     // Ghép vào chữ đang có thay vì đè — người dùng có thể gõ
                     // một nửa rồi nói nốt.
-                    cauHoi = cauHoi.isEmpty ? chu : cauHoi + " " + chu
+                    vm.nhap = vm.nhap.isEmpty ? chu : vm.nhap + " " + chu
                 } else {
                     vm.loi = "Chưa nghe rõ, thử nói lại gần micro hơn nhé."
                 }
@@ -433,7 +493,7 @@ struct AIChatView: View {
     private var daiDinhKem: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                ForEach(dinhKem) { d in
+                ForEach(vm.dinhKemNhap) { d in
                     HStack(spacing: 6) {
                         if d.laAnh, let ui = PlatformImage(data: d.duLieu) {
                             Image(platformImage: ui).resizable().scaledToFill()
@@ -442,10 +502,16 @@ struct AIChatView: View {
                         } else {
                             Image(systemName: d.bieuTuong).foregroundColor(AppColors.primary)
                         }
-                        Text(d.ten).font(.system(size: 12)).lineLimit(1)
-                            .foregroundColor(AppColors.textPrimary)
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text(d.ten).font(.system(size: 12)).lineLimit(1)
+                                .foregroundColor(AppColors.textPrimary)
+                            if let m = d.moTa {
+                                Text(m).font(.system(size: 10)).lineLimit(1)
+                                    .foregroundColor(AppColors.textSecondary)
+                            }
+                        }
                         Button {
-                            dinhKem.removeAll { $0.id == d.id }
+                            vm.dinhKemNhap.removeAll { $0.id == d.id }
                         } label: {
                             Image(systemName: "xmark.circle.fill")
                                 .foregroundColor(AppColors.textTertiary)
@@ -479,41 +545,59 @@ struct AIChatView: View {
             // `jpegDataForUpload` còn thu nhỏ về 1600px trước khi nén.
             let nen = PlatformImage(data: d)?.jpegDataForUpload() ?? d
             namBacNeuCan()
-            dinhKem.append(DinhKemAI(ten: "ảnh.jpg", mime: "image/jpeg", duLieu: nen))
+            vm.dinhKemNhap.append(DinhKemAI(ten: "ảnh.jpg", mime: "image/jpeg", duLieu: nen))
         }
         anhChon = []
     }
 
+    /// Đọc tệp vừa chọn qua `NapTep` — PDF có chữ được rút chữ ngay trên máy,
+    /// PDF bản scan được chụp trang thành ảnh. Xem ghi chú đầu `NapTep`.
     private func napTep(_ kq: Result<[URL], Error>) {
         guard case .success(let urls) = kq else { return }
-        for url in urls.prefix(HanMucDinhKem.soTep) {
-            // Tệp ngoài hộp cát cần xin quyền rồi TRẢ LẠI, không thì lần chọn
-            // sau bị từ chối im lặng.
-            let mo = url.startAccessingSecurityScopedResource()
-            defer { if mo { url.stopAccessingSecurityScopedResource() } }
-            guard let d = try? Data(contentsOf: url) else {
-                vm.loi = "Không đọc được “\(url.lastPathComponent)”."; continue
+        let conTep = HanMucDinhKem.soTep - vm.dinhKemNhap.filter { !$0.laAnh }.count
+        guard conTep > 0 else {
+            vm.loi = "Mỗi lượt gửi tối đa \(HanMucDinhKem.soTep) tệp."; return
+        }
+        dangNapTep = true
+        Task {
+            defer { dangNapTep = false }
+            var bao: [String] = []
+            for url in urls.prefix(conTep) {
+                let conAnh = HanMucDinhKem.soAnh - vm.dinhKemNhap.filter(\.laAnh).count
+                let kq = await NapTep.nap(url, conChoAnh: conAnh)
+                if !kq.dinhKem.isEmpty {
+                    namBacNeuCan()
+                    vm.dinhKemNhap.append(contentsOf: kq.dinhKem)
+                }
+                bao += kq.thongBao
             }
-            guard d.count <= HanMucDinhKem.byteMoiTep else {
-                vm.loi = "“\(url.lastPathComponent)” nặng quá 6MB."; continue
+            if urls.count > conTep {
+                bao.append("Chỉ lấy \(conTep) tệp đầu — mỗi lượt tối đa \(HanMucDinhKem.soTep) tệp.")
             }
-            namBacNeuCan()
-            dinhKem.append(DinhKemAI(ten: url.lastPathComponent,
-                                     mime: HanMucDinhKem.mime(cho: url),
-                                     duLieu: d))
+            if !bao.isEmpty { vm.loi = bao.joined(separator: "\n\n") }
         }
     }
 
     private func gui() {
-        let c = cauHoi.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !c.isEmpty || !dinhKem.isEmpty else { return }
-        let anh = dinhKem.filter(\.laAnh).map(\.dataURL)
-        let tep = dinhKem.filter { !$0.laAnh }
-        cauHoi = ""
-        dinhKem = []
+        let c = vm.nhap.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !c.isEmpty || !vm.dinhKemNhap.isEmpty else { return }
+        let anh = vm.dinhKemNhap.filter(\.laAnh).map(\.dataURL)
+        let tep = vm.dinhKemNhap.filter { !$0.laAnh }
+        let tepGui = tep.map(\.dataURL)
+        // Chặn Ở ĐÂY, trước khi gửi — để máy chủ trả 413 thì người dùng đã
+        // mất công chờ đẩy hàng chục MB lên, và phải chọn lại tệp từ đầu.
+        let tong = anh.reduce(0) { $0 + $1.utf8.count } + tepGui.reduce(0) { $0 + $1.utf8.count }
+        guard tong <= HanMucDinhKem.tongGuiToiDa else {
+            vm.loi = "Ảnh và tệp đính kèm cộng lại khoảng \(HanMucDinhKem.coChu(tong)) — "
+                   + "quá lớn để gửi một lượt. Hãy bỏ bớt rồi gửi lại."
+            return
+        }
+        vm.nhap = ""
+        vm.dinhKemNhap = []
         dangGo = false
         Haptics.cham()
-        vm.gui(c, anh: anh, tep: tep.map(\.dataURL), tenTep: tep.map(\.ten))
+        vm.gui(c, anh: anh, tep: tepGui, tenTep: tep.map(\.ten),
+               moTaTep: tep.map { $0.moTa ?? "" })
     }
 }
 
@@ -571,6 +655,20 @@ struct BongBongAI: View {
     var body: some View {
         VStack(alignment: tin.cuaNguoi ? .trailing : .leading, spacing: 4) {
             if tin.cuaNguoi {
+                // Ảnh và tệp đi TRƯỚC chữ, như app Claude/ChatGPT: câu hỏi
+                // thường nói về chính cái vừa đính kèm ("giải bài này").
+                if !tin.anh.isEmpty {
+                    HStack(spacing: 6) {
+                        ForEach(Array(tin.anh.enumerated()), id: \.offset) { _, a in
+                            AnhTrongTin(dataURL: a, canh: tin.anh.count > 2 ? 78 : 116)
+                        }
+                    }
+                }
+                ForEach(Array(tin.tenTep.enumerated()), id: \.offset) { i, ten in
+                    TheTepTrongTin(ten: ten, moTa: i < tin.moTaTep.count ? tin.moTaTep[i] : "")
+                }
+            }
+            if tin.cuaNguoi && !tin.noiDung.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 Text(tin.noiDung)
                     .font(.bodyMedium)
                     .foregroundColor(AppColors.onPrimary)
@@ -595,7 +693,7 @@ struct BongBongAI: View {
                         .font(.system(size: 10))
                         .foregroundColor(AppColors.textTertiary)
                 }
-            } else {
+            } else if !tin.cuaNguoi {
                 // Câu trả lời dựng theo ĐÚNG luật của bài viết: tiêu đề, khối
                 // mã tô màu, đường kẻ. AI hay trả lời kèm mã, để chữ trơn thì
                 // mã dính liền văn xuôi và không đọc được.

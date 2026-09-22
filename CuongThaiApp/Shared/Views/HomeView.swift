@@ -89,10 +89,13 @@ struct HomeView: View {
     // One `.sheet(item:)` rather than two `.sheet(isPresented:)` — SwiftUI
     // only honours the last presentation modifier attached to a view.
     enum QuickSheet: String, Identifiable {
-        case search, notes, notifications, ai
+        case search, notes, notifications
         var id: String { rawValue }
     }
     @State private var tabDangChon: TabTrangChu = .tatCa
+    /// AI Chat mở RIÊNG qua `moAIChat` (toàn màn hình / cửa sổ), không nằm
+    /// trong `quickSheet` nữa — sheet chỉ có một kiểu, không phóng to được.
+    @State private var moAI = false
     /// Bấm logo → cuộn về đầu. Dùng cờ thay vì gọi thẳng: `ScrollViewReader`
     /// nằm sâu trong `feedContent`, còn thanh công cụ ở ngoài — hai bên không
     /// với tới `proxy` của nhau.
@@ -210,7 +213,7 @@ struct HomeView: View {
                                     }
                                 }
                         }
-                        Button { quickSheet = .ai } label: {
+                        Button { moAI = true } label: {
                             Image(systemName: "sparkles")
                                 .foregroundStyle(AppColors.brandGradient)
                         }
@@ -234,9 +237,9 @@ struct HomeView: View {
             case .search: SearchView()
             case .notes: NotesView()
             case .notifications: NotificationsView()
-            case .ai: AIChatView()
             }
         }
+        .moAIChat(dangMo: $moAI)
         // Chạm thông báo mạng xã hội từ ngoài app ⇒ mở thẳng bảng chuông.
         .onChange(of: appState.moChuongThongBao) { _, bat in
             guard bat else { return }

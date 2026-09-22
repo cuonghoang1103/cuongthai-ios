@@ -113,9 +113,7 @@ struct TroLyTrang: View {
                 guard !moKhung else { return }
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.82)) { moKhung = true }
             }
-            .sheet(isPresented: $moChatDayDu) {
-                AIChatView(cauMoDau: cauMoDauChoChat, bacBanDau: .pro)
-            }
+            .moAIChat(dangMo: $moChatDayDu, cauMoDau: cauMoDauChoChat, bacBanDau: .pro)
         }
     }
 

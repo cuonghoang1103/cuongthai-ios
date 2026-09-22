@@ -41,6 +41,8 @@ struct ManXemThu: View {
             // Cả màn AI Chat — để soi Ô NHẬP. Không gọi được AI vì chưa đăng
             // nhập, nhưng bố cục thanh dưới thì thấy đủ.
             case "aichat": AIChatView()
+            case "aichat-bong": ThuAIChatBong()
+            case "aichat-toanman": ThuAIChatToanMan()
             // Màn Thời khoá biểu — để soi menu "+" mà không cần phiên đăng nhập.
             case "lichtuan": ThuLichTuan()
             // Bộ dựng câu trả lời AI — soi SVG, bảng, màu mã.
@@ -452,6 +454,54 @@ struct ThuTongQuanTab: View {
     private func trong(_ tab: AppState.AppTab) -> some View {
         Color.clear
             .tabItem { Label(tab.title, systemImage: tab.icon) }
+    }
+}
+
+
+/// Bong bóng tin người dùng có ẢNH + TỆP + chữ, và khay đính kèm đang chờ gửi.
+private struct ThuAIChatBong: View {
+    @StateObject private var vm = AIChatViewModel()
+    var body: some View {
+        AIChatView(vmNgoai: vm, toanMan: true, doiCheDo: {})
+            .onAppear {
+                let a1 = Self.anhMau("Đề bài 1", .systemTeal)
+                let a2 = Self.anhMau("Hình vẽ", .systemOrange)
+                vm.bac = .pro
+                vm.tin = [
+                    TinAI(cuaNguoi: true, noiDung: "Giải giúp mình câu 2 trong đề này, đối chiếu với giáo trình nhé",
+                          anh: [a1, a2], tep: [""], tenTep: ["SWR302-giao-trinh.pdf"],
+                          moTaTep: ["6 trang · 1,5 MB"]),
+                    TinAI(cuaNguoi: false, noiDung: "Câu 2 hỏi về **yêu cầu phi chức năng**. Theo giáo trình trang 3…"),
+                    TinAI(cuaNguoi: true, noiDung: "", anh: [a2]),
+                ]
+                vm.dinhKemNhap = [
+                    DinhKemAI(ten: "Software_Requirements.pdf", mime: "text/plain", duLieu: Data("x".utf8),
+                              moTa: "673 trang · đọc chữ trên máy"),
+                ]
+            }
+    }
+    static func anhMau(_ chu: String, _ mau: UIColor) -> String {
+        let r = UIGraphicsImageRenderer(size: CGSize(width: 600, height: 420))
+        let img = r.image { c in
+            mau.setFill(); c.fill(CGRect(x: 0, y: 0, width: 600, height: 420))
+            (chu as NSString).draw(at: CGPoint(x: 40, y: 170),
+                withAttributes: [.font: UIFont.boldSystemFont(ofSize: 56), .foregroundColor: UIColor.white])
+        }
+        return "data:image/jpeg;base64," + (img.jpegData(compressionQuality: 0.8) ?? Data()).base64EncodedString()
+    }
+}
+
+/// Mở AI Chat qua `moAIChat` THẬT — để bấm thử nút phóng to / thu nhỏ.
+private struct ThuAIChatToanMan: View {
+    @State private var mo = false
+    var body: some View {
+        VStack(spacing: 16) {
+            Text("Màn gọi AI Chat").font(.title3)
+            Button("Mở AI Chat") { mo = true }.buttonStyle(.borderedProminent)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .moAIChat(dangMo: $mo, cauMoDau: "Câu mở đầu thử", bacBanDau: .pro)
+        .onAppear { mo = true }
     }
 }
 
