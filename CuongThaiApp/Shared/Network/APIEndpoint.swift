@@ -337,6 +337,22 @@ enum APIEndpoint {
     /// Khoá đã ghi danh — trả bản ghi ghi danh kèm tiến độ, không phải Course.
     case getMyCourses
     case getSemesters
+
+    // ─── Academy: hồ sơ ngành + Phòng tư vấn ngành hẹp ───
+    /// `{ theme, preferences }` — app chỉ đọc `preferences.academy`.
+    case layTuyChonNguoiDung
+    /// PATCH một phần: chỉ gửi `{ preferences: { academy } }`, máy chủ gộp.
+    case luuHoSoAcademy(hoSo: [String: Any])
+    case tuVanDanhMuc
+    case tuVanHoi(than: [String: Any])
+    case tuVanFaq(khoi: String, nganh: String?)
+    case tuVanBinhLuan(khoi: String, nganh: String?)
+    case tuVanDangBinhLuan(than: [String: Any])
+    case tuVanXoaBinhLuan(id: Int)
+    case tuVanThichBinhLuan(id: Int)
+    case tuVanBaoCaoBinhLuan(id: Int)
+    /// Câu trả lời tư vấn không có id nên không đi `/ai/feedback` được.
+    case tuVanBaoCaoTraLoi(than: [String: Any])
     /// Các môn của một học kỳ — 50 môn `academyType: "FPT"` chỉ lấy được ở đây,
     /// `/courses` KHÔNG trả chúng.
     case getCoursesBySemester(semesterId: Int)
@@ -776,6 +792,15 @@ enum APIEndpoint {
         case .getSavedPosts: return "/api/v1/social/saves"
         case .getMyCourses: return "/api/v1/courses/my"
         case .getSemesters: return "/api/v1/academy/semesters"
+        case .layTuyChonNguoiDung, .luuHoSoAcademy: return "/api/v1/users/me/preferences"
+        case .tuVanDanhMuc: return "/api/v1/academy/advisor/catalog"
+        case .tuVanHoi: return "/api/v1/academy/advisor"
+        case .tuVanFaq: return "/api/v1/academy/advisor/faq"
+        case .tuVanBinhLuan, .tuVanDangBinhLuan: return "/api/v1/academy/advisor/comments"
+        case .tuVanXoaBinhLuan(let id): return "/api/v1/academy/advisor/comments/\(id)"
+        case .tuVanThichBinhLuan(let id): return "/api/v1/academy/advisor/comments/\(id)/like"
+        case .tuVanBaoCaoBinhLuan(let id): return "/api/v1/academy/advisor/comments/\(id)/report"
+        case .tuVanBaoCaoTraLoi: return "/api/v1/academy/advisor/report-answer"
         // `gon=1` — màn Học viện chỉ hiện tên/mã/ảnh/mô tả ngắn/số bài, KHÔNG
         // đọc `sections`. Không có tham số này thì mỗi lần mở một kỳ là kéo về
         // cả cây chương→bài của mọi môn trong kỳ: đo thật 09/09/2026 là
@@ -984,6 +1009,9 @@ enum APIEndpoint {
 
     var method: String {
         switch self {
+        case .luuHoSoAcademy: return "PATCH"
+        case .tuVanHoi, .tuVanDangBinhLuan, .tuVanThichBinhLuan, .tuVanBaoCaoBinhLuan, .tuVanBaoCaoTraLoi: return "POST"
+        case .tuVanXoaBinhLuan: return "DELETE"
         case .videoThemCuaToi: return "POST"
         case .videoDoiNhom: return "PATCH"
         case .videoYeuThich: return "POST"
@@ -1063,6 +1091,8 @@ enum APIEndpoint {
 
     var body: [String: Any]? {
         switch self {
+        case .luuHoSoAcademy(let h): return ["preferences": ["academy": h]]
+        case .tuVanHoi(let t), .tuVanDangBinhLuan(let t), .tuVanBaoCaoTraLoi(let t): return t
         case .videoThemCuaToi(let u, let n):
             var m: [String: Any] = ["url": u]
             if let n, !n.isEmpty { m["nhomLon"] = n }
@@ -1330,6 +1360,10 @@ enum APIEndpoint {
 
     var queryParams: [String: Any]? {
         switch self {
+        case .tuVanFaq(let k, let n), .tuVanBinhLuan(let k, let n):
+            var m: [String: Any] = ["facultyId": k]
+            if let n, !n.isEmpty { m["majorId"] = n }
+            return m
         // ⚠️ Tham số của GET PHẢI ở ĐÂY, không phải ở `body`. Đặt `httpBody`
         // lên một yêu cầu GET thì URLSession ném
         // `NSURLErrorDataLengthExceedsMaximum` — hiện ra thành câu

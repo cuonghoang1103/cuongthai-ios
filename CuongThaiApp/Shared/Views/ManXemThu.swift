@@ -98,6 +98,15 @@ struct ManXemThu: View {
             // Bố cục cột đôi của iPad/macOS. Các màn bên trong cần đăng nhập
             // nên chúng hiện trạng thái rỗng — đủ để soi CẤU TRÚC hai cột,
             // không phải để soi nội dung.
+            // Academy theo ngành — danh sách môn + tư vấn công khai, không cần đăng nhập.
+            case "academy": AcademyView()
+            case "chonnganh": ChonNganhView(batDau: .hoi)
+            case "sodo":
+                SoDoMonHocView(hoSo: HoSoNganh(isStudent: true, faculty: "it", major: "se", combo: "react-nodejs"),
+                               tatCaMon: [])
+            case "tuvan": TuVanNganhView(khoiId: "it", nganhId: "se")
+            case "tuvan-sosanh": TuVanNganhView(khoiId: "it", nganhId: "se", theBanDau: .soSanh)
+            case "tuvan-thaoluan": TuVanNganhView(khoiId: "it", nganhId: "se", theBanDau: .thaoLuan)
             case "vo": VoView()
             case "cotdoi": BoCucCotDoi()
             case "trangchu": HomeView()
@@ -110,7 +119,7 @@ struct ManXemThu: View {
                 VStack(spacing: Spacing.sm) {
                     Text("Không có màn tên “\(ten)”")
                         .font(.system(size: 15, weight: .semibold))
-                    Text("Không cần đăng nhập:\ncodelab · snippets · tudien · lotrinh · phongthi · noidungthi · logo\ntongquan · tongquan-rong · tongquan-dai · tongquan-tai · tongquan-loi · tongquan-tab")
+                    Text("Không cần đăng nhập:\ncodelab · snippets · tudien · lotrinh · phongthi · noidungthi · logo\nacademy · chonnganh · sodo · tuvan\ntongquan · tongquan-rong · tongquan-dai · tongquan-tai · tongquan-loi · tongquan-tab")
                         .font(.system(size: 12))
                         .foregroundColor(AppColors.textSecondary)
                         .multilineTextAlignment(.center)
