@@ -582,6 +582,7 @@ enum APIEndpoint {
     case workTaoThe(pid: Int, than: [String: Any])
     case workDsBinhLuan(pid: Int, so: Int)
     case workThemBinhLuan(pid: Int, so: Int, than: [String: Any])
+    case workBaoCaoBinhLuan(pid: Int, so: Int, cid: Int, lyDo: String)
 
     // ── CV Builder ────────────────────────────────────────────
     //
@@ -944,6 +945,8 @@ enum APIEndpoint {
         case .workTaoThe(let pid, _): return "/api/v1/work/projects/\(pid)/issues"
         case .workDsBinhLuan(let pid, let so), .workThemBinhLuan(let pid, let so, _):
             return "/api/v1/work/projects/\(pid)/issues/\(so)/comments"
+        case .workBaoCaoBinhLuan(let pid, let so, let cid, _):
+            return "/api/v1/work/projects/\(pid)/issues/\(so)/comments/\(cid)/report"
         case .cvHoSo, .cvLuuHoSo: return "/api/v1/cv/profile"
         case .cvDoDay: return "/api/v1/cv/profile/completeness"
         case .cvThemMuc: return "/api/v1/cv/items"
@@ -1050,7 +1053,7 @@ enum APIEndpoint {
         switch self {
         case .luuHoSoAcademy: return "PATCH"
         case .workSuaThe: return "PATCH"
-        case .workChuyenThe, .workTaoThe, .workThemBinhLuan: return "POST"
+        case .workChuyenThe, .workTaoThe, .workThemBinhLuan, .workBaoCaoBinhLuan: return "POST"
         case .tuVanHoi, .tuVanDangBinhLuan, .tuVanThichBinhLuan, .tuVanBaoCaoBinhLuan, .tuVanBaoCaoTraLoi: return "POST"
         case .tuVanXoaBinhLuan: return "DELETE"
         case .videoThemCuaToi: return "POST"
@@ -1177,6 +1180,7 @@ enum APIEndpoint {
         case .workSuaThe(_, _, let m), .workChuyenThe(_, _, let m), .workTaoThe(_, let m),
              .workThemBinhLuan(_, _, let m):
             return m
+        case .workBaoCaoBinhLuan(_, _, _, let l): return ["reason": l]
         case .pvBaoLoiCau(_, _, let l): return ["reason": l]
         case .login(let u, let p, let c):
             var m: [String: Any] = ["username": u, "password": p]

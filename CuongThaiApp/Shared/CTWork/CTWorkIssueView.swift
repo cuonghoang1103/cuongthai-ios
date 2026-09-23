@@ -109,6 +109,9 @@ struct CTWIssueView: View {
     @State private var chonNgay = false
     @State private var ngayNhap = Date()
     @State private var hoiChan: CTWUser?
+    /// Bình luận đang chờ chọn lý do báo cáo.
+    @State private var baoCao: CTWComment?
+    @State private var daBaoCao: String?
 
     init(pid: Int, so: Int) {
         _vm = StateObject(wrappedValue: CTWIssueVM(pid: pid, so: so))
@@ -146,6 +149,31 @@ struct CTWIssueView: View {
             }
         } message: {
             Text("You won't see their comments anywhere in the app.")
+        }
+        .confirmationDialog(
+            "Report this comment",
+            isPresented: Binding(get: { baoCao != nil }, set: { if !$0 { baoCao = nil } }),
+            titleVisibility: .visible
+        ) {
+            ForEach(ctwLyDoBaoCao, id: \.ma) { l in
+                Button(l.nhan, role: .destructive) {
+                    guard let c = baoCao, let pid = vm.cauHinh?.id else { return }
+                    let cid = c.id
+                    let so = vm.so
+                    Task {
+                        do {
+                            let r: CTWBaoCaoKetQua = try await APIClient.shared.request(
+                                .workBaoCaoBinhLuan(pid: pid, so: so, cid: cid, lyDo: l.ma))
+                            daBaoCao = r.duplicate == true ? "You already reported this comment." : "Thanks — project admins have been notified."
+                        } catch { vm.loi = CTW.loi(error) }
+                    }
+                }
+            }
+        } message: {
+            Text("Project admins will review it and remove it if it breaks the rules.")
+        }
+        .alert(daBaoCao ?? "", isPresented: Binding(get: { daBaoCao != nil }, set: { if !$0 { daBaoCao = nil } })) {
+            Button("OK", role: .cancel) {}
         }
     }
 
@@ -571,6 +599,11 @@ struct CTWIssueView: View {
         .padding(10)
         .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(AppColors.backgroundCard))
         .contextMenu {
+            if c.author?.id != appState.currentUser?.id {
+                Button(role: .destructive) { baoCao = c } label: {
+                    Label("Report comment", systemImage: "flag")
+                }
+            }
             if let a = c.author, c.isAi != true, a.id != appState.currentUser?.id {
                 Button(role: .destructive) { hoiChan = a } label: {
                     Label("Block \(a.ten)", systemImage: "hand.raised")
@@ -579,3 +612,21 @@ struct CTWIssueView: View {
         }
     }
 }
+
+
+// MARK: - Báo cáo bình luận (App Store 1.2)
+
+struct CTWBaoCaoKetQua: Decodable {
+    var reported: Bool?
+    var duplicate: Bool?
+}
+
+/// Lý do báo cáo — khớp COMMENT_REPORT_REASONS ở backend.
+let ctwLyDoBaoCao: [(ma: String, nhan: String)] = [
+    ("spam", "Spam or advertising"),
+    ("harassment", "Harassment or bullying"),
+    ("hate", "Hate speech"),
+    ("sexual", "Sexual content"),
+    ("violence", "Violence or threats"),
+    ("other", "Something else"),
+]
