@@ -564,6 +564,25 @@ enum APIEndpoint {
     case pvChamOnTap(cardId: Int, than: [String: Any])
     case pvThanhThao
 
+    // ── CT Work (quản lý dự án kiểu Jira, `/api/v1/work`) ─────
+    //
+    // ⚠️ CẦN đăng nhập. Quyền kiểm ở máy chủ theo vai trò dự án; app chỉ
+    // ẩn/hiện nút theo `permissions` của `GET /projects/:pid`.
+    // `than` là JSON thô vì PATCH phải gửi được `null` (bỏ giao, xoá hạn) —
+    // dùng `NSNull()`.
+    case workViecCuaToi
+    case workDsKhongGian
+    case workKhongGian(slug: String)
+    case workTimDuAn(slug: String, ma: String)
+    case workDuAn(pid: Int)
+    case workBang(pid: Int, sprintId: Int?)
+    case workThe(pid: Int, so: Int)
+    case workSuaThe(pid: Int, so: Int, than: [String: Any])
+    case workChuyenThe(pid: Int, so: Int, than: [String: Any])
+    case workTaoThe(pid: Int, than: [String: Any])
+    case workDsBinhLuan(pid: Int, so: Int)
+    case workThemBinhLuan(pid: Int, so: Int, than: [String: Any])
+
     // ── CV Builder ────────────────────────────────────────────
     //
     // ⚠️ CẦN đăng nhập. Đường gốc là `/api/v1/cv`.
@@ -913,6 +932,18 @@ enum APIEndpoint {
         case .pvOnTap: return "/api/v1/interview/drill"
         case .pvChamOnTap(let c, _): return "/api/v1/interview/drill/\(c)/grade"
         case .pvThanhThao: return "/api/v1/interview/mastery"
+        case .workViecCuaToi: return "/api/v1/work/me/work"
+        case .workDsKhongGian: return "/api/v1/work/workspaces"
+        case .workKhongGian(let slug): return "/api/v1/work/workspaces/by-slug/\(Self.maHoaDoan(slug))"
+        case .workTimDuAn(let slug, let ma): return "/api/v1/work/resolve/\(Self.maHoaDoan(slug))/\(Self.maHoaDoan(ma))"
+        case .workDuAn(let pid): return "/api/v1/work/projects/\(pid)"
+        case .workBang(let pid, _): return "/api/v1/work/projects/\(pid)/board"
+        case .workThe(let pid, let so), .workSuaThe(let pid, let so, _):
+            return "/api/v1/work/projects/\(pid)/issues/\(so)"
+        case .workChuyenThe(let pid, let so, _): return "/api/v1/work/projects/\(pid)/issues/\(so)/move"
+        case .workTaoThe(let pid, _): return "/api/v1/work/projects/\(pid)/issues"
+        case .workDsBinhLuan(let pid, let so), .workThemBinhLuan(let pid, let so, _):
+            return "/api/v1/work/projects/\(pid)/issues/\(so)/comments"
         case .cvHoSo, .cvLuuHoSo: return "/api/v1/cv/profile"
         case .cvDoDay: return "/api/v1/cv/profile/completeness"
         case .cvThemMuc: return "/api/v1/cv/items"
@@ -1007,9 +1038,19 @@ enum APIEndpoint {
         }
     }
 
+    /// Mã hoá MỘT đoạn đường dẫn (slug không gian, mã dự án) — slug do người
+    /// dùng đặt, đừng tin là chỉ có chữ thường và gạch nối.
+    static func maHoaDoan(_ s: String) -> String {
+        var cho = CharacterSet.urlPathAllowed
+        cho.remove(charactersIn: "/?#")
+        return s.addingPercentEncoding(withAllowedCharacters: cho) ?? s
+    }
+
     var method: String {
         switch self {
         case .luuHoSoAcademy: return "PATCH"
+        case .workSuaThe: return "PATCH"
+        case .workChuyenThe, .workTaoThe, .workThemBinhLuan: return "POST"
         case .tuVanHoi, .tuVanDangBinhLuan, .tuVanThichBinhLuan, .tuVanBaoCaoBinhLuan, .tuVanBaoCaoTraLoi: return "POST"
         case .tuVanXoaBinhLuan: return "DELETE"
         case .videoThemCuaToi: return "POST"
@@ -1133,6 +1174,9 @@ enum APIEndpoint {
         case .pvTuCham(_, _, let m): return m
         case .pvTraLoiCauPhu(_, _, let m): return m
         case .pvChamOnTap(_, let m): return m
+        case .workSuaThe(_, _, let m), .workChuyenThe(_, _, let m), .workTaoThe(_, let m),
+             .workThemBinhLuan(_, _, let m):
+            return m
         case .pvBaoLoiCau(_, _, let l): return ["reason": l]
         case .login(let u, let p, let c):
             var m: [String: Any] = ["username": u, "password": p]
@@ -1484,6 +1528,8 @@ enum APIEndpoint {
             // `levels` để dựng thanh chọn, đúng khuôn của trang ngữ pháp.
             if let lv { m["level"] = lv }
             return m
+        case .workBang(_, let sid):
+            return sid.map { ["sprintId": $0] }
         case .timTuVung(_, let q):
             return ["q": q]
         case .hoiThoai(_, let p, let l), .baiDoc(_, let p, let l), .hoiDap(_, let p, let l),

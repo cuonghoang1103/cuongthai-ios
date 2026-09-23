@@ -96,8 +96,28 @@ final class ThongBaoDay: NSObject, ObservableObject, UNUserNotificationCenterDel
         NhatKy.thongBao.info("cất định tuyến — Tiền nong (ghi chi ngay: \(ghiChiNgay))")
     }
 
+    /// Thông báo CT Work (`kieu` = WORK_*): mở thẳng thẻ trong module CT Work.
+    @MainActor private static var canMoCTWork = false
+    @MainActor private static var ctWorkDichCho: CTWDich?
+
+    @MainActor static func catDinhTuyenCTWork(duongDan: String?) {
+        canMoCTWork = true
+        ctWorkDichCho = CTWDich.tuDuongDan(duongDan)
+        NhatKy.thongBao.info("cất định tuyến — CT Work \(duongDan ?? "(không có đường dẫn)")")
+    }
+
     /// Idempotent: áp xong tự xoá, ba móc có gọi chồng cũng chỉ áp một lần.
     @MainActor static func apDungDinhTuyen() {
+        if canMoCTWork {
+            canMoCTWork = false
+            let d = ctWorkDichCho
+            ctWorkDichCho = nil
+            NhatKy.thongBao.info("ÁP định tuyến — mở CT Work")
+            // Cùng cách với `.finance`: màn rộng là mục sidebar, iPhone thì
+            // `neuLacTab()` đổi thành tấm phủ. `CTWorkView` đọc `ctWorkDich`.
+            AppState.shared.ctWorkDich = d
+            AppState.shared.selectedTab = .ctWork
+        }
         if canMoChuong {
             canMoChuong = false
             NhatKy.thongBao.info("ÁP định tuyến — mở chuông")
@@ -241,6 +261,8 @@ final class ThongBaoDay: NSObject, ObservableObject, UNUserNotificationCenterDel
             ?? (info["threadId"] as? NSNumber)?.intValue
             ?? Int((info["threadId"] as? String) ?? "")
         let loai = info["loai"] as? String
+        let kieu = info["kieu"] as? String
+        let duongDan = info["duongDan"] as? String
         // Về luồng CHÍNH rồi mới làm gì và mới gọi completion — đây là toàn
         // bộ bản vá. `main.async` chứ không gọi thẳng: tách hẳn khỏi lượt
         // giao dịch CATransaction mà UIKit đang giữ khi gọi mình.
@@ -248,7 +270,11 @@ final class ThongBaoDay: NSObject, ObservableObject, UNUserNotificationCenterDel
             MainActor.assumeIsolated {
                 NhatKy.thongBao.info("didReceive CHẠY — loai=\(loai ?? "(không có)") · threadId=\(tid.map(String.init) ?? "(không đọc được)")")
                 let man = info["man"] as? String
-                if man?.hasPrefix("finance") == true {
+                if kieu?.hasPrefix("WORK_") == true {
+                    // Thông báo CT Work cũng mang `loai: "xa-hoi"` — phải bắt
+                    // TRƯỚC nhánh chuông, không thì nó chỉ mở chuông.
+                    Self.catDinhTuyenCTWork(duongDan: duongDan)
+                } else if man?.hasPrefix("finance") == true {
                     Self.catDinhTuyenTienNong(ghiChiNgay: (info["hoiChiTieu"] as? Bool) == true
                                               || (info["hoiChiTieu"] as? NSNumber)?.boolValue == true)
                 } else if loai == "xa-hoi" {

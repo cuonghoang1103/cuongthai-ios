@@ -83,7 +83,7 @@ extension AppNotification {
     func danhDauDoc() -> AppNotification {
         AppNotification(
             id: id, type: type, entityId: entityId, secondaryEntityId: secondaryEntityId,
-            isRead: true, createdAt: createdAt, sender: sender,
+            isRead: true, createdAt: createdAt, sender: sender, payload: payload,
         )
     }
 }
@@ -226,6 +226,15 @@ struct NotificationsView: View {
             } catch {
                 vm.loi = "Không mở được bài viết — có thể nó đã bị xoá."
             }
+
+        case .ctWork(let dich):
+            // Đóng chuông TRƯỚC rồi mới mở CT Work: iPhone mở nó bằng tấm phủ
+            // toàn màn, mà trình bày tấm phủ lúc sheet đang đóng dở thì iOS
+            // bỏ qua im lặng.
+            dismiss()
+            try? await Task.sleep(nanoseconds: 450_000_000)
+            appState.ctWorkDich = dich
+            appState.selectedTab = .ctWork
 
         case .khongDauCa:
             // Ghi chú, tài liệu Hub, thông báo ban quản trị: app chưa có màn

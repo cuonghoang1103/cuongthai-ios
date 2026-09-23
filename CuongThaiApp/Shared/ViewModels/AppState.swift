@@ -73,6 +73,8 @@ final class AppState: ObservableObject {
         case xuongVe = 8
         /// Xưởng 3D — dựng mô hình bằng cách ghép khối.
         case xuongBa = 9
+        /// CT Work — quản lý dự án kiểu Jira (chữ tiếng Anh).
+        case ctWork = 10
         var id: Int { rawValue }
         var title: String {
             switch self {
@@ -86,6 +88,7 @@ final class AppState: ObservableObject {
             case .ielts: return "IELTS"
             case .xuongVe: return T("Xưởng vẽ")
             case .xuongBa: return T("Xưởng 3D")
+            case .ctWork: return "CT Work"   // tên sản phẩm, không dịch
             }
         }
         var icon: String {
@@ -100,6 +103,7 @@ final class AppState: ObservableObject {
             case .ielts: return "textformat.abc"
             case .xuongVe: return "paintbrush.pointed.fill"
             case .xuongBa: return "cube.transparent.fill"
+            case .ctWork: return "rectangle.3.group.fill"
             }
         }
     }
@@ -180,6 +184,12 @@ final class AppState: ObservableObject {
 
     /// Mở Xưởng 3D dạng tấm phủ — cùng lý do với `moTienNong`.
     @Published var moXuongBa = false
+
+    /// Mở CT Work dạng tấm phủ — cùng lý do với `moTienNong`.
+    @Published var moCTWork = false
+    /// Thẻ CT Work cần mở (từ thông báo đẩy / màn Thông báo). `CTWorkView`
+    /// đọc rồi tự xoá.
+    @Published var ctWorkDich: CTWDich?
 
     /// Chạm thông báo 20h ("Hôm nay bạn đã chi tiêu những gì?") thì mở thẳng
     /// ô ghi khoản chi. Mở màn Tiền nong rồi bắt người dùng tự tìm nút cộng

@@ -1119,6 +1119,10 @@ struct AppNotification: Codable, Identifiable, Hashable {
     let isRead: Bool
     let createdAt: String
     let sender: User?
+    /// JSON tự do đi kèm. Chỉ đọc vài khoá của CT Work (`url`, `issueKey`,
+    /// `message`) — giải mã khoan dung, hỏng thì thành rỗng chứ không làm
+    /// hỏng cả danh sách thông báo.
+    var payload: TaiTrongThongBao? = nil
 
     func hash(into hasher: inout Hasher) { hasher.combine(id) }
     static func == (lhs: AppNotification, rhs: AppNotification) -> Bool { lhs.id == rhs.id }
@@ -1145,6 +1149,12 @@ struct AppNotification: Codable, Identifiable, Hashable {
         case "NOTE_COMMENT": return "đã bình luận ghi chú của bạn"
         case "HUB_SHARE": return "đã chia sẻ một tài liệu với bạn"
         case "ADMIN_ANNOUNCEMENT": return "có thông báo mới từ ban quản trị"
+        // CT Work chỉ có tiếng Anh (quyết định sản phẩm) — câu cũng tiếng Anh.
+        case "WORK_ASSIGN": return "assigned you \(payload?.issueKey ?? "an issue")" + (payload?.title.map { ": \($0)" } ?? "")
+        case "WORK_COMMENT": return "commented on \(payload?.issueKey ?? "an issue")" + (payload?.excerpt.map { ": \($0)" } ?? "")
+        case "WORK_MENTION": return "mentioned you in \(payload?.issueKey ?? "an issue")" + (payload?.excerpt.map { ": \($0)" } ?? "")
+        case "WORK_ALERT": return "· \(payload?.issueKey ?? "CT Work"): \(payload?.message ?? "needs your attention")"
+        case "WORK_INVITE": return "added you to \(payload?.workspaceName ?? "a CT Work workspace")"
         default: return "có hoạt động mới"
         }
     }
@@ -1160,6 +1170,11 @@ struct AppNotification: Codable, Identifiable, Hashable {
         case "FRIEND_REQUEST", "FRIEND_ACCEPT": return "person.2.fill"
         case "NOTE_SHARE", "HUB_SHARE": return "square.and.arrow.up.fill"
         case "ADMIN_ANNOUNCEMENT": return "megaphone.fill"
+        case "WORK_ASSIGN": return "person.fill.checkmark"
+        case "WORK_COMMENT": return "text.bubble.fill"
+        case "WORK_MENTION": return "at"
+        case "WORK_ALERT": return "exclamationmark.circle.fill"
+        case "WORK_INVITE": return "rectangle.3.group.fill"
         default: return "bell.fill"
         }
     }
@@ -1170,6 +1185,8 @@ struct AppNotification: Codable, Identifiable, Hashable {
         case baiViet(Int)
         case nguoiDung(Int)
         case tinNhan
+        /// CT Work: mở thẻ (hoặc không gian) theo đường dẫn web trong payload.
+        case ctWork(CTWDich?)
         case khongDauCa
     }
 
@@ -1183,10 +1200,38 @@ struct AppNotification: Codable, Identifiable, Hashable {
             return sender.map { .nguoiDung($0.id) } ?? .khongDauCa
         case "NEW_REACTION", "NEW_COMMENT", "NEW_REPLY", "NEW_MENTION", "NEW_POST":
             return entityId.map { .baiViet($0) } ?? .khongDauCa
+        case let t where t.hasPrefix("WORK_"):
+            return .ctWork(CTWDich.tuDuongDan(payload?.url))
         default:
             // NOTE_*, HUB_SHARE, ADMIN_ANNOUNCEMENT: app chưa có màn tương ứng.
             return .khongDauCa
         }
+    }
+}
+
+/// Các khoá của `payload` thông báo mà app đọc. `init(from:)` KHÔNG BAO GIỜ
+/// ném: payload là JSON tự do của máy chủ, một khoá sai kiểu mà làm hỏng cả
+/// danh sách thì chuông hiện "Chưa có thông báo" — nói sai thành trống.
+struct TaiTrongThongBao: Codable, Hashable {
+    var url: String?
+    var issueKey: String?
+    var title: String?
+    var excerpt: String?
+    var message: String?
+    var workspaceName: String?
+
+    private enum CodingKeys: String, CodingKey {
+        case url, issueKey, title, excerpt, message, workspaceName
+    }
+
+    init(from decoder: Decoder) throws {
+        guard let c = try? decoder.container(keyedBy: CodingKeys.self) else { return }
+        url = try? c.decodeIfPresent(String.self, forKey: .url)
+        issueKey = try? c.decodeIfPresent(String.self, forKey: .issueKey)
+        title = try? c.decodeIfPresent(String.self, forKey: .title)
+        excerpt = try? c.decodeIfPresent(String.self, forKey: .excerpt)
+        message = try? c.decodeIfPresent(String.self, forKey: .message)
+        workspaceName = try? c.decodeIfPresent(String.self, forKey: .workspaceName)
     }
 }
 

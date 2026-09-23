@@ -17,7 +17,7 @@ struct LenhDieuHuong: Commands {
         CommandMenu(T("Đi tới")) {
             ForEach(AppState.AppTab.allCases) { tab in
                 Button(tab.title) { appState.selectedTab = tab }
-                    .keyboardShortcut(Self.phim(tab), modifiers: .command)
+                    .keyboardShortcut(Self.phim(tab), modifiers: Self.phimPhu(tab))
             }
         }
     }
@@ -30,6 +30,13 @@ struct LenhDieuHuong: Commands {
     /// nhảy về đầu, không hiểu vì sao.
     private static func phim(_ t: AppState.AppTab) -> KeyEquivalent {
         let i = t.rawValue
+        // Mục thứ 11 trở đi: ⌥⌘1, ⌥⌘2… — đếm lại từ 1 với thêm phím ⌥,
+        // không lặng lẽ trùng ⌘0 của mục thứ mười.
+        if i >= 10 { return KeyEquivalent(Character(String(i - 9))) }
         return KeyEquivalent(Character(i < 9 ? String(i + 1) : "0"))
+    }
+
+    private static func phimPhu(_ t: AppState.AppTab) -> EventModifiers {
+        t.rawValue >= 10 ? [.command, .option] : .command
     }
 }

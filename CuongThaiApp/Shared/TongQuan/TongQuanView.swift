@@ -686,6 +686,12 @@ struct TongQuanView: View {
                 NavigationLink { XuongVeView() } label: {
                     theNhanh(T("Xưởng vẽ"), T("Vẽ, phác bố cục, tô màu"), "paintbrush.pointed", AppColors.secondary)
                 }
+                // Đổi TAB chứ không đẩy: CT Work có NavigationStack riêng (để
+                // thông báo đẩy mở thẳng một thẻ). iPhone ⇒ tấm phủ, iPad ⇒ mục sidebar.
+                Button { appState.selectedTab = .ctWork } label: {
+                    theNhanh("CT Work", "My work, boards, issues", "rectangle.3.group", AppColors.primary)
+                }
+                .buttonStyle(.plain)
             }
         }
     }
