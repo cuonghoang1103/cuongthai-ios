@@ -159,8 +159,6 @@ struct CoursesView: View {
                 Menu {
                     Button("Mới nhất") { viewModel.sortBy = .newest }
                     Button("Phổ biến nhất") { viewModel.sortBy = .popular }
-                    Button("Giá: Thấp đến cao") { viewModel.sortBy = .priceLow }
-                    Button("Giá: Cao đến thấp") { viewModel.sortBy = .priceHigh }
                 } label: {
                     HStack(spacing: 4) {
                         Text("Sắp xếp")
@@ -1018,6 +1016,16 @@ struct MyCoursesView: View {
 @MainActor
 class CoursesViewModel: ObservableObject {
     @Published var courses: [Course] = []
+
+    /// App Store 3.1.1: app KHÔNG bán nội dung số ngoài In-App Purchase. Chỉ
+    /// hiện khoá MIỄN PHÍ và khoá người dùng ĐÃ ghi danh (mua trên web — được
+    /// dùng theo 3.1.3(b)). Khoá trả phí chưa sở hữu mà hiện ra thì sẽ kèm
+    /// giá VND và nút ghi danh trả 402 "mua hoặc nhập mã kích hoạt" — đúng thứ
+    /// người duyệt trả về. Đo 24/09/2026: 12/12 khoá công khai đều miễn phí,
+    /// nên bộ lọc này hiện chưa bỏ khoá nào; nó chặn trước cho khoá sau này.
+    nonisolated static func hienDuoc(_ c: Course) -> Bool {
+        c.isFree || c.isEnrolled == true
+    }
     @Published var featuredCourses: [Course] = []
     @Published var categories: [String] = ["Tất cả", "Lập trình", "Design", "Marketing", "Kinh doanh", "Nghệ thuật"]
     @Published var selectedCategory = "Tất cả"
@@ -1035,8 +1043,8 @@ class CoursesViewModel: ObservableObject {
             // `/courses` phân trang kiểu page/totalPages, KHÔNG phải con trỏ.
             let response: (items: [Course], nextCursor: Int?, hasMore: Bool) =
                 try await APIClient.shared.requestList(.getCourses(page: 1, size: 20, keyword: nil))
-            courses = response.items
-            featuredCourses = Array(response.items.prefix(5))
+            courses = response.items.filter(Self.hienDuoc)
+            featuredCourses = Array(courses.prefix(5))
             page = 1
             hasMore = response.items.count >= 20
         } catch {
@@ -1053,7 +1061,7 @@ class CoursesViewModel: ObservableObject {
             let response: (items: [Course], nextCursor: Int?, hasMore: Bool) =
                 try await APIClient.shared.requestList(.getCourses(page: page + 1, size: 20, keyword: nil))
             let daCo = Set(courses.map(\.id))
-            courses.append(contentsOf: response.items.filter { !daCo.contains($0.id) })
+            courses.append(contentsOf: response.items.filter { !daCo.contains($0.id) && Self.hienDuoc($0) })
             page += 1
             hasMore = !response.items.isEmpty
         } catch {
@@ -1072,7 +1080,7 @@ class CoursesViewModel: ObservableObject {
         do {
             let response: (items: [Course], nextCursor: Int?, hasMore: Bool) =
                 try await APIClient.shared.requestList(.getCourses(page: 1, size: 20, keyword: query))
-            courses = response.items
+            courses = response.items.filter(Self.hienDuoc)
         } catch {
             self.error = error.localizedDescription
         }

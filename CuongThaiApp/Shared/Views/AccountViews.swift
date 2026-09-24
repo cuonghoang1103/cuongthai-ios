@@ -12,7 +12,7 @@ struct DeletionRequest: Codable, Identifiable {
 
     var statusLabel: String {
         switch status {
-        case "PENDING": return "Đang chờ xử lý"
+        case "PENDING": return "Đang chờ xoá (72 giờ)"
         case "APPROVED": return "Đã xoá"
         case "REJECTED": return "Bị từ chối"
         case "CANCELLED": return "Đã rút lại"
@@ -67,16 +67,30 @@ struct DeleteAccountView: View {
                 Task { await submit() }
             }
         } message: {
-            Text("Sau khi xử lý, tài khoản và dữ liệu cá nhân của bạn sẽ bị xoá và KHÔNG thể khôi phục.")
+            Text("72 giờ sau khi gửi yêu cầu, tài khoản và dữ liệu cá nhân của bạn sẽ tự động bị xoá và KHÔNG thể khôi phục. Bạn có thể rút lại yêu cầu trong 72 giờ đó.")
         }
     }
 
     // MARK: Sections
 
+    /// "lúc 14:05 ngày 27/09" — mốc máy chủ tự xoá (`HAN_TU_XOA_GIO` = 72 trong
+    /// `accountDeletion.service.ts`). Không đọc được mốc thì nói chung chung.
+    private func hanXoa(_ request: DeletionRequest) -> String {
+        guard let iso = request.createdAt else { return "sau 72 giờ" }
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let goc = f.date(from: iso) ?? ISO8601DateFormatter().date(from: iso)
+        guard let goc else { return "sau 72 giờ" }
+        let d = DateFormatter()
+        d.locale = Locale(identifier: "vi_VN")
+        d.dateFormat = "HH:mm 'ngày' dd/MM"
+        return "lúc " + d.string(from: goc.addingTimeInterval(72 * 3600))
+    }
+
     @ViewBuilder
     private func pendingSections(_ request: DeletionRequest) -> some View {
         Section {
-            Label("Yêu cầu xoá đang chờ xử lý", systemImage: "clock.fill")
+            Label("Tài khoản sẽ bị xoá \(hanXoa(request))", systemImage: "clock.fill")
                 .foregroundColor(AppColors.warning)
             if let reason = request.reason, !reason.isEmpty {
                 Text("Lý do bạn ghi: \(reason)")
@@ -84,7 +98,7 @@ struct DeleteAccountView: View {
                     .foregroundColor(AppColors.textSecondary)
             }
         } footer: {
-            Text("Tài khoản sẽ bị xoá sau khi yêu cầu được xử lý. Trong thời gian này bạn vẫn dùng ứng dụng bình thường và có thể rút lại yêu cầu.")
+            Text("Tài khoản và dữ liệu cá nhân sẽ TỰ ĐỘNG bị xoá vĩnh viễn 72 giờ sau khi gửi yêu cầu. Trong 72 giờ này bạn vẫn dùng ứng dụng bình thường và có thể rút lại yêu cầu.")
         }
 
         Section {

@@ -14,6 +14,10 @@ import PhotosUI
 struct HangTinView: View {
     @StateObject private var vm = HangTinViewModel()
     @State private var dangMo: Tin?
+    /// Apple 1.2: tin của người đã chặn KHÔNG được hiện. `/stories/feed` không
+    /// tự lọc theo danh sách chặn (`/messages/blocks`), nên lọc ở đây — cùng
+    /// cách bảng tin lọc bài viết qua `ModerationStore`.
+    @ObservedObject private var kiemDuyet = ModerationStore.shared
     #if os(iOS)
     @State private var anhChon: [PhotosPickerItem] = []
     #endif
@@ -28,7 +32,7 @@ struct HangTinView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 14) {
                         oTinCuaBan
-                        ForEach(vm.ds) { t in
+                        ForEach(vm.ds.filter { !kiemDuyet.blockedUserIds.contains($0.userId) }) { t in
                             Button {
                                 Haptics.cham()
                                 dangMo = t

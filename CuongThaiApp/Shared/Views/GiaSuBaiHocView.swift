@@ -455,7 +455,14 @@ struct GiaSuBaiHocView: View {
                 // như web (`renderMath={!t.streaming}`). Dùng lại đúng bộ dựng
                 // của CuongMini để hai chỗ không hiện khác nhau.
                 TraLoiAI(chu: l.noiDung, xong: !l.dangChay)
-                if !l.dangChay { hangHanhDong(l, i) }
+                if !l.dangChay {
+                    hangHanhDong(l, i)
+                    // Apple 4.7: chỗ nào AI trả lời thì phải báo cáo được.
+                    NutBaoCaoTraLoiAI(
+                        nguon: "AI · Gia sư bài học",
+                        cauHoi: l.cauGoc ?? vm.luot[..<min(i, vm.luot.count)].last { $0.cuaToi }?.noiDung ?? "",
+                        traLoi: l.noiDung)
+                }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -589,6 +596,10 @@ struct GiaSuBaiHocView: View {
                             .foregroundColor(AppColors.primary)
                     }
                     .buttonStyle(.plain)
+                    // Câu hỏi của người khác + câu trả lời AI dùng chung ⇒
+                    // phải báo cáo được (Apple 1.2 + 4.7).
+                    NutBaoCaoTraLoiAI(nguon: "AI · Gia sư – câu thường gặp",
+                                      cauHoi: c.question, traLoi: c.answer)
                     if c.cuaToi == true {
                         Button(role: .destructive) {
                             Task { await vm.xoaThuongGap(c.id) }

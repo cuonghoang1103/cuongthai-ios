@@ -89,6 +89,20 @@ struct BinhLuanCauHoiView: View {
     @State private var suaCho: BinhLuanCauHoi?
     @State private var chuSua = ""
     @FocusState private var dangGo: Bool
+    // Kiểm duyệt (Apple 1.2): báo cáo + chặn + lọc bình luận của người đã chặn.
+    @ObservedObject private var kiemDuyet = ModerationStore.shared
+    /// MỘT `.sheet(item:)` duy nhất trên view này (CLAUDE.md C5).
+    @State private var baoCao: ReportSheet.Target?
+    @State private var canChan: BinhLuanCauHoi.TacGia?
+
+    /// Bình luận NGƯỜI THẬT của người đã chặn bị bỏ — cả ở tầng trả lời.
+    /// Bình luận AI giữ lại: đó là lời giải của CuongMini, không phải nội dung
+    /// của người bị chặn (dù `author` có thể là người đã hỏi).
+    private func biChan(_ c: BinhLuanCauHoi) -> Bool {
+        guard !c.laAI, let id = c.author?.id else { return false }
+        return kiemDuyet.blockedUserIds.contains(id)
+    }
+    private var dsHien: [BinhLuanCauHoi] { vm.ds.filter { !biChan($0) } }
 
     /// Id người đang đăng nhập — để biết bình luận nào sửa/xoá được.
     let toiLa: Int?
@@ -129,14 +143,14 @@ struct BinhLuanCauHoiView: View {
                     }
                     if vm.dangTai && vm.ds.isEmpty {
                         ProgressView().frame(maxWidth: .infinity)
-                    } else if vm.ds.isEmpty {
+                    } else if dsHien.isEmpty {
                         Text("Chưa có bình luận nào cho câu này. Hãy là người đầu tiên!")
                             .font(.system(size: 13)).foregroundColor(AppColors.textTertiary)
                             .fixedSize(horizontal: false, vertical: true)
                     } else {
-                        ForEach(vm.ds) { c in
+                        ForEach(dsHien) { c in
                             moi(c, cap: 0)
-                            ForEach(c.traLoi) { r in moi(r, cap: 1) }
+                            ForEach(c.traLoi.filter { !biChan($0) }) { r in moi(r, cap: 1) }
                         }
                     }
                 }
@@ -157,6 +171,40 @@ struct BinhLuanCauHoiView: View {
                 suaCho = nil
             }
         }
+        .sheet(item: $baoCao) { ReportSheet(target: $0) }
+        .confirmationDialog(T("Chặn") + " \(canChan?.ten ?? "")?",
+                            isPresented: Binding(get: { canChan != nil },
+                                                 set: { if !$0 { canChan = nil } }),
+                            titleVisibility: .visible,
+                            presenting: canChan) { u in
+            Button(T("Chặn"), role: .destructive) {
+                if let id = u.id {
+                    Task {
+                        do { try await kiemDuyet.block(userId: id); Haptics.xong() }
+                        catch { vm.loi = error.localizedDescription }
+                    }
+                }
+            }
+            Button(T("Huỷ"), role: .cancel) { }
+        } message: { _ in
+            Text(T("Bạn sẽ không thấy bình luận của người này nữa, và họ không thể nhắn tin cho bạn. Bỏ chặn trong Cài đặt → Danh sách chặn."))
+        }
+    }
+
+    /// Báo cáo một bình luận — kể cả bình luận của CuongMini (Apple 4.7: nội
+    /// dung AI sinh ra cũng phải báo cáo được). Backend không có endpoint báo
+    /// cáo bình luận câu hỏi thi ⇒ đi qua `baoCaoNoiDung` với nhãn nguồn.
+    private func moBaoCao(_ c: BinhLuanCauHoi) {
+        let tacGia = c.laAI ? "CuongMini (AI)" : (c.author?.ten ?? "Người dùng")
+        baoCao = .noiDung(
+            ma: "blch-\(c.id)",
+            tieuDe: c.laAI ? T("Báo cáo câu trả lời AI") : T("Báo cáo bình luận"),
+            nhan: "\(c.laAI ? "AI " : "")BL câu thi #\(vm.questionId) · bl #\(c.id)",
+            authorId: c.laAI ? 0 : (c.author?.id ?? 0),
+            authorName: tacGia,
+            noiDung: c.content,
+            ngucanh: "Bình luận câu hỏi thi #\(vm.questionId) của \(tacGia)"
+                + (c.author?.id.map { " (user #\($0))" } ?? ""))
     }
 
     // ── Ô gõ ────────────────────────────────────────────────────
@@ -260,6 +308,20 @@ struct BinhLuanCauHoiView: View {
                         } label: {
                             Text("Xoá").font(.system(size: 11.5, weight: .medium))
                                 .foregroundColor(AppColors.error)
+                        }
+                    }
+                    // Bình luận AI luôn báo cáo được — kể cả khi `author` là
+                    // chính mình (CuongMini đăng lại dưới tên người đã hỏi).
+                    if c.laAI || toiLa == nil || c.author?.id != toiLa {
+                        Button { moBaoCao(c) } label: {
+                            Text(T("Báo cáo")).font(.system(size: 11.5, weight: .medium))
+                                .foregroundColor(AppColors.textTertiary)
+                        }
+                        if !c.laAI, let a = c.author, a.id != nil {
+                            Button { canChan = a } label: {
+                                Text(T("Chặn")).font(.system(size: 11.5, weight: .medium))
+                                    .foregroundColor(AppColors.textTertiary)
+                            }
                         }
                     }
                     Spacer(minLength: 0)

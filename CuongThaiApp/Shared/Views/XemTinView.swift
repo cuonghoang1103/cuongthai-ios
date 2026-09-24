@@ -14,6 +14,15 @@ struct XemTinView: View {
     @State private var tienDo: Double = 0
     @State private var tamDung = false
     @State private var dangTai = true
+    // Kiểm duyệt (Apple 1.2): báo cáo tin + chặn người đăng.
+    @ObservedObject private var kiemDuyet = ModerationStore.shared
+    /// Tin đang mở bảng "•••" — cũng là cờ TẠM DỪNG: đang đọc menu mà tin tự
+    /// chạy sang người kế thì bấm "Báo cáo" trúng nhầm tin khác.
+    @State private var tinDangChon: Tin?
+    /// MỘT `.sheet(item:)` duy nhất trên màn này (CLAUDE.md C5).
+    @State private var baoCao: ReportSheet.Target?
+    @State private var canChan: Tin?
+    @State private var loiChan: String?
 
     private let nhip = 0.05
 
@@ -66,6 +75,47 @@ struct XemTinView: View {
             chay()
         }
         .statusBarHiddenNeuCo()
+        .confirmationDialog(T("Tin của") + " \(tinDangChon?.tenNguoi ?? "")",
+                            isPresented: Binding(get: { tinDangChon != nil },
+                                                 set: { if !$0 { tinDangChon = nil } }),
+                            titleVisibility: .visible,
+                            presenting: tinDangChon) { t in
+            Button(T("Báo cáo tin"), role: .destructive) {
+                baoCao = .noiDung(
+                    ma: "tin-\(t.id)", tieuDe: T("Báo cáo tin"),
+                    nhan: "TIN 24H #\(t.id) · user #\(t.userId)",
+                    authorId: t.userId, authorName: t.tenNguoi,
+                    noiDung: [t.caption, t.mediaUrl].compactMap { $0 }
+                        .filter { !$0.isEmpty }.joined(separator: "\n"),
+                    ngucanh: "Tin 24h của \(t.tenNguoi) (user #\(t.userId))")
+            }
+            Button(T("Chặn") + " \(t.tenNguoi)", role: .destructive) { canChan = t }
+            Button(T("Huỷ"), role: .cancel) { }
+        }
+        .sheet(item: $baoCao) { ReportSheet(target: $0) }
+        .alert(T("Chặn") + " \(canChan?.tenNguoi ?? "")?",
+               isPresented: Binding(get: { canChan != nil }, set: { if !$0 { canChan = nil } }),
+               presenting: canChan) { t in
+            Button(T("Huỷ"), role: .cancel) { }
+            Button(T("Chặn"), role: .destructive) { Task { await chan(t) } }
+        } message: { _ in
+            Text(T("Bạn sẽ không thấy tin và bài viết của người này nữa, và họ không thể nhắn tin cho bạn. Có thể bỏ chặn trong Cài đặt."))
+        }
+        .alert(T("Không chặn được"), isPresented: .constant(loiChan != nil)) {
+            Button("OK") { loiChan = nil }
+        } message: { Text(loiChan ?? "") }
+    }
+
+    private func chan(_ t: Tin) async {
+        do {
+            try await kiemDuyet.block(userId: t.userId)
+            Haptics.xong()
+            // Tin của người vừa chặn không được hiện thêm một giây nào nữa.
+            dongLai()
+            dismiss()
+        } catch {
+            loiChan = error.localizedDescription
+        }
     }
 
     // MARK: Các mảnh
@@ -99,6 +149,19 @@ struct XemTinView: View {
                     .foregroundColor(.white.opacity(0.75))
             }
             Spacer()
+            if !t.laCuaToi {
+                Button {
+                    tinDangChon = t
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundColor(.white)
+                        .frame(width: 36, height: 36)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(T("Tuỳ chọn tin"))
+            }
             Button {
                 dongLai()
                 dismiss()
@@ -165,7 +228,8 @@ struct XemTinView: View {
     }
 
     private func chay() {
-        guard !tamDung, !dangTai, let tin else { return }
+        guard !tamDung, !dangTai, tinDangChon == nil, baoCao == nil, canChan == nil,
+              let tin else { return }
         tienDo += nhip / tin.soGiay
         if tienDo >= 1 { toi() }
     }

@@ -23,8 +23,19 @@ struct ProfileView: View {
     // MỘT `.sheet(item:)` cho cả hai màn: hai `.sheet(isPresented:)` trên cùng
     // một view thì chỉ cái cuối chạy, cái kia bấm im lặng.
     enum ProfileSheet: String, Identifiable {
-        case settings, editProfile
+        case settings, editProfile, baoCaoNguoiDung
         var id: String { rawValue }
+    }
+
+    // Kiểm duyệt (Apple 1.2) — chỉ dùng khi xem hồ sơ NGƯỜI KHÁC.
+    @ObservedObject private var kiemDuyet = ModerationStore.shared
+    @State private var hoiChan = false
+    @State private var loiChan: String?
+
+    /// Đang xem hồ sơ người khác (không phải chính mình).
+    private var idNguoiKhac: Int? {
+        guard let id = userIdKhac, id != appState.currentUser?.id else { return nil }
+        return id
     }
 
     /// KHÔNG BAO GIỜ vẽ hồ sơ khi chưa có hồ sơ.
@@ -85,11 +96,43 @@ struct ProfileView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        sheet = .settings
-                    } label: {
-                        Image(systemName: "gearshape")
-                            .foregroundColor(AppColors.textPrimary)
+                    if let idKhac = idNguoiKhac {
+                        // Hồ sơ người khác: báo cáo + chặn thay cho nút Cài đặt
+                        // (Cài đặt ở đây là cài đặt CỦA MÌNH, lạc chỗ).
+                        Menu {
+                            Button(role: .destructive) {
+                                sheet = .baoCaoNguoiDung
+                            } label: {
+                                Label(T("Báo cáo người dùng"), systemImage: "flag")
+                            }
+                            if kiemDuyet.blockedUserIds.contains(idKhac) {
+                                Button {
+                                    Task {
+                                        do { try await kiemDuyet.unblock(userId: idKhac); Haptics.xong() }
+                                        catch { loiChan = error.localizedDescription }
+                                    }
+                                } label: {
+                                    Label(T("Bỏ chặn"), systemImage: "hand.raised.slash")
+                                }
+                            } else {
+                                Button(role: .destructive) {
+                                    hoiChan = true
+                                } label: {
+                                    Label(T("Chặn người dùng"), systemImage: "hand.raised")
+                                }
+                            }
+                        } label: {
+                            Image(systemName: "ellipsis.circle")
+                                .foregroundColor(AppColors.textPrimary)
+                        }
+                        .accessibilityLabel(T("Tuỳ chọn hồ sơ"))
+                    } else {
+                        Button {
+                            sheet = .settings
+                        } label: {
+                            Image(systemName: "gearshape")
+                                .foregroundColor(AppColors.textPrimary)
+                        }
                     }
                 }
             }
@@ -97,7 +140,39 @@ struct ProfileView: View {
                 switch which {
                 case .settings: SettingsView()
                 case .editProfile: NavigationStack { ChinhSuaHoSoView() }
+                case .baoCaoNguoiDung:
+                    if let id = idNguoiKhac {
+                        let p = viewModel.profile
+                        let ten = p?.name ?? "Người dùng #\(id)"
+                        ReportSheet(target: .noiDung(
+                            ma: "user-\(id)", tieuDe: T("Báo cáo người dùng"),
+                            nhan: "HỒ SƠ user #\(id)",
+                            authorId: id, authorName: ten,
+                            noiDung: [
+                                "Hồ sơ @\(p?.username ?? "?") — \(ten)",
+                                p?.bio.map { "Giới thiệu: \($0)" },
+                            ].compactMap { $0 }.joined(separator: "\n"),
+                            ngucanh: "Báo cáo tài khoản user #\(id)"))
+                    }
                 }
+            }
+            .confirmationDialog(T("Chặn") + " \(viewModel.profile?.name ?? "")?",
+                                isPresented: $hoiChan, titleVisibility: .visible) {
+                Button(T("Chặn"), role: .destructive) {
+                    guard let id = idNguoiKhac else { return }
+                    Task {
+                        do { try await kiemDuyet.block(userId: id); Haptics.xong() }
+                        catch { loiChan = error.localizedDescription }
+                    }
+                }
+                Button(T("Huỷ"), role: .cancel) { }
+            } message: {
+                Text(T("Bạn sẽ không thấy bài viết, tin và bình luận của người này nữa, và họ không thể nhắn tin cho bạn. Có thể bỏ chặn trong Cài đặt."))
+            }
+            .alert(T("Chặn người dùng"), isPresented: .constant(loiChan != nil)) {
+                Button("OK") { loiChan = nil }
+            } message: {
+                Text(loiChan ?? "")
             }
             // Đổi ảnh: chọn xong là tải lên rồi ghi vào hồ sơ ngay, không có
             // bước "Lưu" riêng — người dùng chọn ảnh là đã quyết định rồi.

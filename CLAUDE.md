@@ -167,19 +167,39 @@ nếu app có dùng:
 | `…CategoryDiskSpace` | `volumeAvailableCapacity`, `systemFreeSize` |
 | `…CategoryActiveKeyboards` | `activeInputModes` |
 
-Kiểm nhanh cả năm nhóm:
+Kiểm nhanh cả năm nhóm (quét cả `Widget/` và `ChiaSe/` — mỗi extension là
+một bundle riêng, cần bản khai riêng):
 ```bash
 cd CuongThaiApp
-/usr/bin/grep -rlE --include='*.swift' 'creationDate|modificationDate' .
+/usr/bin/grep -rlE --include='*.swift' 'creationDate|modificationDate|contentModificationDateKey|attributesOfItem|getattrlist|\bstat\(' .
 /usr/bin/grep -rlE --include='*.swift' 'systemUptime|mach_absolute_time' .
 /usr/bin/grep -rlE --include='*.swift' 'volumeAvailableCapacity|systemFreeSize' .
 /usr/bin/grep -rlE --include='*.swift' 'activeInputModes' .
 /usr/bin/grep -rl  --include='*.swift' 'UserDefaults' .
 ```
 
-Trạng thái hiện tại (đo 14/09/2026): chỉ dùng `UserDefaults`, đã khai `CA92.1`.
-Bốn nhóm kia = 0 file. **Thêm mã mới chạm vào bốn nhóm đó thì phải bổ sung
-manifest.**
+Trạng thái hiện tại (soát lại 24/09/2026 — dòng cũ "bốn nhóm kia = 0 file"
+đo 14/09 là SAI, lệnh quét cũ không bắt `contentModificationDateKey` và
+`attributesOfItem`):
+
+| Bundle | Bản khai | Nhóm API + lý do |
+|---|---|---|
+| App chính | `Resources/PrivacyInfo.xcprivacy` | UserDefaults `CA92.1` + `1C8F.1` (đọc App Group do Share Extension ghi) · FileTimestamp `C617.1` (`KhoNgoaiTuyen` dọn đệm theo `contentModificationDate`; `ThuVienBoPhan` đọc `attributesOfItem`; `NhatKy` cũng gọi nhưng chỉ trong `#if DEBUG`) |
+| `ChiaSeVideo` | `ChiaSe/PrivacyInfo.xcprivacy` | UserDefaults `1C8F.1` (`UserDefaults(suiteName: group…)`) |
+| `TienWidget` | `Widget/PrivacyInfo.xcprivacy` | không nhóm nào (chỉ `Data(contentsOf:)` trong App Group) |
+
+SystemBootTime, DiskSpace, ActiveKeyboards = 0 chỗ. `C617.1` = tệp trong
+vùng chứa của app; `3B52.1` chỉ dành cho tệp người dùng chọn qua trình chọn
+tài liệu — KHÔNG áp dụng ở đây. **Thêm mã mới chạm vào một nhóm nào thì phải
+bổ sung đúng bản khai của đúng bundle.** XcodeGen tự đưa `PrivacyInfo.xcprivacy`
+nằm trong thư mục nguồn của target vào Copy Bundle Resources.
+
+`NSPrivacyCollectedDataTypes` của app chính (đều Linked, không Tracking,
+mục đích App Functionality): EmailAddress, Name, UserID, DeviceID (push
+token), PhotosorVideos, AudioData (luyện nói → Groq Whisper, không lưu),
+EmailsOrTextMessages (tin nhắn trong app), OtherUserContent,
+OtherFinancialInfo (mục Tiền), PreciseLocation (chỉ khi tự bấm chia sẻ vị trí
+trong chat). Nhãn App Privacy trên App Store Connect phải khớp danh sách này.
 
 Và phải kiểm nó **thật sự được đóng gói**:
 ```bash

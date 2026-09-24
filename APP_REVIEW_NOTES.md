@@ -61,8 +61,12 @@ Tab bar giờ là: **Trang chủ · Học · Tạo · Tin nhắn · Cá nhân**
    verify token đó — **không phải cập nhật app**. Đây là lỗ hổng có sẵn từ luồng
    Google/GitHub, không phải do đợt sửa này tạo ra.
 4. Chuẩn bị **tài khoản demo** (bật Pro) và điền vào App Review Information.
-5. Khai App Privacy labels: Email, Tên, Ảnh, Nội dung người dùng, ID người dùng —
-   đều "Linked to you", mục đích "App Functionality", **không** dùng để theo dõi.
+5. Khai App Privacy labels — PHẢI khớp `Resources/PrivacyInfo.xcprivacy`
+   (soát 24/09/2026): Email, Tên, ID người dùng, Device ID (push token), Ảnh/
+   video, Dữ liệu âm thanh (luyện nói → Groq Whisper), Email hoặc tin nhắn
+   (tin nhắn trong app), Nội dung người dùng khác, Thông tin tài chính khác
+   (mục Tiền), Vị trí chính xác (chỉ khi tự chia sẻ trong chat) — đều "Linked
+   to you", mục đích "App Functionality", **không** dùng để theo dõi.
 6. Phân loại độ tuổi: khai có nội dung do người dùng tạo + chat AI.
 
 ## 3. Đã kiểm thật (không phải đọc mã)
@@ -94,6 +98,17 @@ Moderation (Guideline 1.2):
 - Blocked users are managed in Settings > Danh sách chặn (Blocked list).
 - Reports reach a moderation queue and are reviewed within 24 hours.
 - Contact: cuongthaihnhe176322@gmail.com
+
+Third-party AI (Guideline 5.1.2(i)):
+- A separate consent dialog is shown the first time any AI feature is
+  used (Agree / No). If declined, nothing is sent to AI.
+- Sent only when the user uses that feature: questions, chat history,
+  attachments, related notes (Notes assistant), finance data (Finance AI),
+  CV / interview answers / submitted work, and speaking-practice audio
+  (uploaded to our server, transcribed by Groq Whisper, not stored).
+- Providers: Anthropic (Claude) and OpenAI (GPT) via gateways rambo.ai.vn
+  and modelapi.vn; Groq (Whisper).
+- Withdraw anytime: Settings > Chính sách bảo mật > "Cho phép gửi dữ liệu tới AI".
 
 Account deletion (Guideline 5.1.1(v)):
   Settings (gear icon on the Profile tab) > Xoá tài khoản (Delete account).
@@ -146,15 +161,38 @@ Enter it on the first screen.
 2) AI Speaking Practice. Tab "Hoc" -> card "Ngoai ngu" -> choose a
    language -> "Luyen noi". iOS asks for Microphone and Speech Recognition
    permission on first use.
-   IMPORTANT: speech is transcribed ON-DEVICE using SFSpeechRecognizer. No
-   audio recording is uploaded to our servers. Only the resulting text is
-   sent to the AI tutor to generate a reply.
+   Language conversation practice uses Apple's SFSpeechRecognizer: on-device
+   when the device supports it, otherwise Apple's speech servers. The
+   recognized text is sent to the AI tutor to generate a reply.
+   IELTS speaking practice (and "shadowing" in video lessons, and voice
+   chat with the AI) DOES upload the audio recording: it goes to our server,
+   then to Groq (Whisper) for transcription, and the transcript goes to an
+   AI model for scoring/replying. The audio is not stored after
+   transcription.
+
+=== THIRD-PARTY AI & CONSENT (Guideline 5.1.2(i)) ===
+The first time the user uses ANY AI feature, the app shows a separate
+consent dialog ("Cho phep gui du lieu toi AI?") listing what is sent and to
+whom, with "Dong y" (Agree) / "Khong" (No). If the user taps No, nothing
+is sent. Consent can be withdrawn in Settings > Chinh sach bao mat
+(Privacy Policy) > toggle "Cho phep gui du lieu toi AI".
+What is sent (only when the user uses that feature): questions, chat
+history, attached images/files; related notes (Notes assistant); income/
+expense data (Finance AI); CV text, interview answers, submitted code or
+writing; speaking-practice audio (see above).
+Providers: Anthropic (Claude) and OpenAI (GPT) models via the gateways
+rambo.ai.vn and modelapi.vn; Groq (Whisper speech-to-text). Data is used
+only to produce the requested answer. Passwords and private messages
+between users are never sent to AI.
 
 === WHY EACH PERMISSION IS REQUESTED ===
-- Microphone + Speech Recognition: speaking practice, voice messages, and
-  1-to-1 voice calls.
-- Camera and Photo Library: attaching photos or video to posts, and
-  setting a profile picture.
+- Microphone: voice calls, voice messages, recording video, recording a
+  study session into the handwriting notebook (stored on device only), and
+  IELTS speaking / AI voice practice (uploaded for transcription, see above).
+- Speech Recognition: language conversation practice (on-device when
+  supported, otherwise Apple's servers).
+- Camera and Photo Library: attaching photos or video to posts, setting a
+  profile picture, and scanning book pages/documents into the notebook.
 - Location: sent only when the user explicitly taps "share location"
   inside a conversation. The app never tracks location in the background.
 - Notifications: new messages and incoming calls.

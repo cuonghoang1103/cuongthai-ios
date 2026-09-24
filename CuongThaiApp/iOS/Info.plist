@@ -53,12 +53,14 @@
         <string>UIInterfaceOrientationLandscapeLeft</string>
         <string>UIInterfaceOrientationLandscapeRight</string>
     </array>
-    <key>NSCameraUsageDescription</key><string>CuongThai cần camera để bạn chụp ảnh hoặc quay video đăng lên bảng tin và đổi ảnh đại diện.</string>
-    <!-- Nhận giọng nói CHẠY TRÊN MÁY cho phần luyện nói với AI. Không có
+    <key>NSCameraUsageDescription</key><string>CuongThai cần camera để bạn chụp ảnh hoặc quay video đăng lên bảng tin, đổi ảnh đại diện, và quét trang sách/tài liệu vào Vở ghi chép.</string>
+    <!-- Nhận giọng nói cho phần luyện hội thoại (`NgheLienTuc.swift`): chạy
+         TRÊN MÁY khi được, nhưng CÓ đường lùi sang máy chủ Apple
+         (`epNhanQuaMang`) — nên chuỗi KHÔNG được hứa "chỉ trên máy". Không có
          khoá này thì `SFSpeechRecognizer` trả lỗi quyền và màn luyện nói
          câm hoàn toàn — app vẫn chạy, chỉ là không nghe được gì. -->
-    <key>NSSpeechRecognitionUsageDescription</key><string>CuongThai chuyển lời bạn nói thành chữ để luyện hội thoại với gia sư AI. Việc này xử lý ngay trên máy.</string>
-    <key>NSMicrophoneUsageDescription</key><string>CuongThai cần micro để bạn gọi thoại với bạn bè, ghi tin nhắn thoại, ghi âm khi quay video, và ghi câu trả lời khi luyện nói IELTS. Bản ghi luyện nói chỉ dùng để chấm và bị xoá ngay sau đó.</string>
+    <key>NSSpeechRecognitionUsageDescription</key><string>CuongThai chuyển lời bạn nói thành chữ khi luyện hội thoại với gia sư AI. Việc nhận dạng chạy trên máy nếu máy hỗ trợ; nếu không, dịch vụ nhận dạng giọng nói của Apple xử lý.</string>
+    <key>NSMicrophoneUsageDescription</key><string>CuongThai cần micro để bạn gọi thoại, ghi tin nhắn thoại, ghi âm khi quay video, ghi âm buổi học vào Vở (lưu trên máy), và ghi câu trả lời khi luyện nói IELTS hoặc nói chuyện với AI — bản ghi luyện nói được gửi lên máy chủ để chuyển thành chữ và chấm, không được lưu lại.</string>
     <!-- Cuộc gọi phải tiếp tục khi người dùng chuyển sang app khác hoặc khoá
          máy. Thiếu `audio` thì iOS treo tiến trình sau vài giây và cuộc gọi
          chết câm — người kia chỉ nghe im lặng.

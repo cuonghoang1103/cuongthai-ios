@@ -72,12 +72,17 @@ struct TermsView: View {
 struct PrivacyPolicyView: View {
     /// Đặt `true` khi mở dạng sheet để có nút "Xong".
     var dismissible: Bool = false
+    /// Đồng ý chia sẻ dữ liệu với AI — tách riêng khỏi điều khoản (5.1.2(i)).
+    /// Tắt ở đây = rút lại; lần dùng AI kế tiếp app sẽ hỏi lại.
+    @AppStorage(DongYChiaSeAI.khoa) private var dongYChiaSeAI = false
 
     var body: some View {
         LegalScrollView(title: "Chính sách bảo mật", dismissible: dismissible) {
             LegalSection("Dữ liệu chúng tôi thu thập") {
                 LegalBullet("Thông tin tài khoản: tên đăng nhập, email, họ tên, ảnh đại diện")
                 LegalBullet("Nội dung bạn tạo: bài viết, bình luận, tin nhắn, ghi chú, ảnh và video bạn tải lên")
+                LegalBullet("Bản ghi âm khi bạn luyện nói với AI (gửi đi để chấm, không lưu lại), số liệu tài chính bạn nhập ở mục Tiền, vị trí chính xác chỉ khi bạn tự bấm chia sẻ vị trí trong tin nhắn")
+                LegalBullet("Mã thiết bị để gửi thông báo đẩy")
                 LegalBullet("Dữ liệu sử dụng: khoá học đã đăng ký, tiến độ học, thời điểm đăng nhập")
             }
 
@@ -90,19 +95,38 @@ struct PrivacyPolicyView: View {
             // parties, INCLUDING WITH THIRD-PARTY AI, and obtain explicit
             // permission before doing so."
             //
-            // App này có AI ở bảy chỗ (chat, gia sư bài học, chấm mã, chấm CV,
-            // viết lại CV, luyện nói, hỏi bài trong phòng thi) và mọi nội dung
-            // đó ĐỀU rời khỏi máy chủ của chúng tôi để tới nhà cung cấp mô
-            // hình. Trước 14/09/2026 chính sách không nói một chữ nào về việc
-            // này — nói "lưu trên máy chủ tại Việt Nam" là chưa đủ và dễ bị
-            // đọc thành cam kết dữ liệu không đi đâu cả.
+            // Viết lại 24/09/2026 theo đợt soát App Store: bản trước nói ghi
+            // chú KHÔNG gửi tới AI và âm thanh KHÔNG lên máy chủ — cả hai SAI.
+            // Đối chiếu với mã thật (api-backend):
+            //  · Trợ lý ghi chú `/notes/ai/hoi` đọc ghi chú của người dùng rồi
+            //    đưa vào model (`noteAssistant.service.ts`).
+            //  · Luyện nói IELTS gửi FILE ÂM THANH lên máy chủ → Groq Whisper
+            //    (`ielts/chamNoi.service.ts`); cũng vậy với `/ai/stt` và
+            //    `/video-hoc/nhai`.
+            //  · AI Tiền `/finance/ai/*` gửi số liệu thu chi (`coVan.service.ts`).
+            //  · Model chữ đi qua cổng rambo.ai.vn (Claude) và modelapi.vn
+            //    (Claude + GPT) — `src/services/llm/gateway.ts`.
+            // Đổi nhà cung cấp ở backend thì PHẢI sửa đoạn này, sửa
+            // `DongYChiaSeAI.tomTat`, và nâng hậu tố khoá đồng ý để hỏi lại.
             LegalSection("Tính năng AI và bên thứ ba") {
-                Text("Khi bạn dùng một tính năng AI, nội dung bạn gửi cho tính năng đó được chuyển tới nhà cung cấp mô hình AI bên ngoài để tạo câu trả lời. Đây là điều kiện để tính năng chạy được.")
-                LegalBullet("Nội dung được gửi đi: câu bạn hỏi, đoạn mã bạn nhờ chấm, nội dung CV bạn nhờ chấm hoặc viết lại, câu hỏi trong phòng thi bạn nhờ giảng, và bài bạn luyện nói (dạng CHỮ)")
-                LegalBullet("KHÔNG gửi đi: mật khẩu, tin nhắn riêng với người khác, ghi chú, và mọi thứ bạn không chủ động đưa vào tính năng AI")
-                LegalBullet("Nhà cung cấp AI xử lý nội dung để trả lời rồi thôi; chúng tôi không cho phép dùng nội dung của bạn để huấn luyện mô hình")
-                Text("Về luyện nói: giọng của bạn được chuyển thành chữ NGAY TRÊN MÁY khi máy hỗ trợ. Máy không hỗ trợ thì phần nhận dạng do dịch vụ của Apple xử lý — đây là dịch vụ hệ thống của Apple, không phải máy chủ của chúng tôi. Trong mọi trường hợp, file âm thanh KHÔNG được gửi lên máy chủ của chúng tôi; chỉ phần chữ nhận được mới đi tiếp tới AI.")
-                Text("Vì nội dung rời khỏi hệ thống của chúng tôi, đừng đưa thông tin nhạy cảm (số căn cước, số tài khoản ngân hàng, mật khẩu, hồ sơ y tế) vào các tính năng AI.")
+                Text("Khi bạn dùng một tính năng AI, nội dung cần cho câu trả lời được gửi từ máy chủ CuongThai tới nhà cung cấp mô hình AI bên thứ ba. Lần đầu dùng AI, app hỏi riêng bạn có đồng ý không; nếu không đồng ý, tính năng AI không gửi gì đi.")
+                LegalBullet("AI Chat, gia sư bài học, hỏi bài trong phòng thi, tư vấn ngành: câu hỏi, lịch sử trò chuyện, ảnh và tệp bạn đính kèm")
+                LegalBullet("Trợ lý ghi chú: câu hỏi của bạn và nội dung các ghi chú liên quan mà trợ lý tìm được trong sổ ghi chú của bạn; công cụ AI trong trình soạn ghi chú: đoạn bạn đang chọn")
+                LegalBullet("AI Tiền: số liệu thu chi, ngân sách, khoản nợ và câu bạn hỏi")
+                LegalBullet("CV và phỏng vấn thử: nội dung CV, mô tả công việc, câu trả lời phỏng vấn của bạn")
+                LegalBullet("Chấm bài: mã nguồn, bài viết, bài luyện ngôn ngữ bạn nộp để chấm; ảnh thời khoá biểu khi bạn dùng tính năng quét lịch")
+                LegalBullet("Giọng nói: khi luyện nói IELTS, nhại theo video, hoặc nói chuyện bằng giọng với AI, FILE ÂM THANH bạn ghi được gửi lên máy chủ CuongThai rồi tới Groq (Whisper) để chuyển thành chữ; phần chữ sau đó được gửi tới model AI để chấm hoặc trả lời. Máy chủ CuongThai không lưu lại file âm thanh luyện nói")
+                Text("Nhà cung cấp AI hiện tại:")
+                LegalBullet("Anthropic (các model Claude) và OpenAI (các model GPT), qua cổng trung gian rambo.ai.vn và modelapi.vn")
+                LegalBullet("Groq (Whisper — chuyển giọng nói thành chữ; và một số model mở cho AI Chat miễn phí)")
+                LegalBullet("Một số việc (tìm ghi chú theo nghĩa, đọc to văn bản) chạy trên máy chủ riêng của CuongThai, không gửi cho bên thứ ba")
+                Text("Nội dung chỉ được gửi để tạo câu trả lời cho chính yêu cầu của bạn. Chúng tôi không bán, không dùng để quảng cáo. Việc lưu giữ tạm thời phía nhà cung cấp tuân theo chính sách của họ. KHÔNG gửi tới AI: mật khẩu, và tin nhắn riêng giữa bạn với người khác.")
+                Text("Chuyển lời nói thành chữ trong phần luyện hội thoại ngôn ngữ dùng bộ nhận dạng giọng nói của Apple: chạy ngay trên máy khi máy hỗ trợ, nếu không thì do máy chủ của Apple xử lý.")
+                Text("Đừng đưa thông tin nhạy cảm (số căn cước, số tài khoản ngân hàng, mật khẩu, hồ sơ y tế) vào các tính năng AI.")
+                Toggle("Cho phép gửi dữ liệu tới AI", isOn: $dongYChiaSeAI)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(AppColors.textPrimary)
+                    .padding(.top, Spacing.sm)
             }
 
             LegalSection("Đăng nhập bằng Apple") {
@@ -178,12 +202,11 @@ struct TermsConsentView: View {
                 LegalBullet("Không đăng nội dung khiêu dâm, bạo lực hay vi phạm bản quyền")
                 LegalBullet("Nội dung vi phạm bị gỡ và tài khoản bị khoá vĩnh viễn")
                 LegalBullet("Mọi bài viết đều có nút Báo cáo; bạn có thể chặn bất kỳ ai")
-                // Guideline 5.1.2(i) đòi "explicit permission" TRƯỚC khi chia
-                // sẻ dữ liệu cá nhân với AI bên thứ ba. Nút "Tôi đồng ý" bên
-                // dưới là chỗ duy nhất trong app lấy được sự đồng ý đó, nên
-                // câu này phải nằm ở ĐÂY chứ không chỉ nằm trong trang chính
-                // sách mà phần lớn người dùng không mở.
-                LegalBullet("Nội dung bạn đưa vào các tính năng AI được gửi tới nhà cung cấp mô hình AI bên ngoài để tạo câu trả lời")
+                // Sự đồng ý chia sẻ với AI (5.1.2(i)) KHÔNG lấy ở đây nữa: gộp
+                // chung một nút với quy tắc cộng đồng thì không phải "explicit
+                // permission". Nó được hỏi RIÊNG, lần đầu dùng tính năng AI —
+                // xem `Shared/AI/DongYChiaSeAI.swift`. Dòng dưới chỉ báo trước.
+                LegalBullet("Tính năng AI gửi nội dung bạn đưa vào tới nhà cung cấp AI bên thứ ba; app sẽ hỏi riêng sự đồng ý của bạn lần đầu bạn dùng AI")
             }
             .padding(Spacing.lg)
             .background(AppColors.backgroundSecondary)

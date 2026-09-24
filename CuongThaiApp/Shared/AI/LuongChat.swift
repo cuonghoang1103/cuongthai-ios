@@ -89,11 +89,16 @@ final class LuongChat {
                     voice: Bool = false) -> AsyncStream<SuKienChat> {
         AsyncStream { tiep in
             Task {
+                // App Store 5.1.2(i): chưa đồng ý chia sẻ với AI thì không gửi.
+                guard await DongYChiaSeAI.xinPhep() else {
+                    tiep.yield(.hong(T(DongYChiaSeAI.loiTuChoi))); tiep.finish(); return
+                }
                 guard let url = URL(string: APIClient.diaChiGoc + "/api/v1/ai/chat") else {
                     tiep.yield(.hong("Địa chỉ máy chủ không hợp lệ")); tiep.finish(); return
                 }
                 var req = URLRequest(url: url)
                 req.httpMethod = "POST"
+                req.setValue(APIClient.nenTang, forHTTPHeaderField: "X-Client-Platform")
                 req.setValue("application/json", forHTTPHeaderField: "Content-Type")
                 // Bắt buộc: thiếu header này một số proxy sẽ gom cả luồng lại
                 // rồi mới trả, và chữ hiện ra một cục.

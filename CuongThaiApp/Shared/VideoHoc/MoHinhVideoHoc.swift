@@ -271,6 +271,8 @@ enum VideoHocAPI {
         than.append(try Data(contentsOf: duong))
         them("\r\n--\(bien)--\r\n")
 
+        // Âm thanh đi tới Groq Whisper — cần đồng ý chia sẻ (5.1.2(i)).
+        try await DongYChiaSeAI.batBuoc()
         guard let url = URL(string: APIClient.diaChiGoc + "/api/v1/video-hoc/nhai") else {
             throw APIError.serverError("URL không hợp lệ")
         }

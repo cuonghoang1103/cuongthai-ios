@@ -53,6 +53,8 @@ enum QuetAnhLich {
         guard let data = nen(anh) else {
             throw APIError.serverError("Không đọc được ảnh vừa chọn.")
         }
+        // Ảnh đi tới model AI thị giác — cần đồng ý chia sẻ (5.1.2(i)).
+        try await DongYChiaSeAI.batBuoc()
         guard let url = URL(string: APIClient.diaChiGoc + "/api/v1/class-schedule/doc-anh") else {
             throw APIError.invalidURL
         }

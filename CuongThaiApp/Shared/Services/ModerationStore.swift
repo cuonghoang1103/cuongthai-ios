@@ -136,6 +136,34 @@ final class ModerationStore: ObservableObject {
         )
     }
 
+    /// Báo cáo nội dung KHÔNG phải bài viết: tin 24h, bình luận câu hỏi thi,
+    /// hồ sơ người dùng, câu trả lời AI ở các màn không lưu tin nhắn.
+    ///
+    /// Backend chưa có endpoint báo cáo chung (chỉ có bài viết, hội thoại,
+    /// bình luận tư vấn, bình luận CT Work). `POST /academy/advisor/report-answer`
+    /// là đường DUY NHẤT nhận văn bản tự do và đẩy thẳng vào hàng thông báo
+    /// `BAO_CAO` của admin — `facultyId` được in vào tiêu đề nên dùng làm nhãn
+    /// nguồn ("TIN 24H #12 · user #5"). KHÔNG dùng `reportPost` với id của thứ
+    /// khác: bảng `post_reports` có khoá ngoại tới `posts`, id tin/bình luận
+    /// sẽ trỏ nhầm sang một bài viết không liên quan hoặc hỏng hẳn.
+    func baoCaoNoiDung(nhan: String, noiDung: String, ngucanh: String?,
+                       lyDo: ReportReason, chiTiet: String?) async throws {
+        let chu = noiDung.trimmingCharacters(in: .whitespacesAndNewlines)
+        var lyDoDayDu = lyDo.label
+        if let c = chiTiet?.trimmingCharacters(in: .whitespacesAndNewlines), !c.isEmpty {
+            lyDoDayDu += " — " + c
+        }
+        try await APIClient.shared.send(.tuVanBaoCaoTraLoi(than: [
+            "answer": chu.isEmpty ? "(không có chữ)" : chu,
+            "question": ngucanh ?? "",
+            "reason": lyDoDayDu,
+            "facultyId": String(nhan.prefix(64)),
+            // Backend in `nguon` vào tiêu đề ("Báo cáo nội dung: …") thay cho
+            // câu mặc định "câu trả lời AI ở Phòng tư vấn".
+            "nguon": String(nhan.prefix(64)),
+        ]))
+    }
+
     // MARK: - Persistence
 
     private func persistBlocked() {

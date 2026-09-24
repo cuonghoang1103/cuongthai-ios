@@ -29,6 +29,14 @@ final class KhoPro: ObservableObject {
     /// Mã sản phẩm trên App Store Connect. Phải khớp ĐÚNG bảng `SAN_PHAM_PRO`
     /// ở `src/services/appleIAP/quyTac.ts` — lệch một ký tự là máy chủ trả
     /// "Không biết sản phẩm".
+    /// CÔNG TẮC BÁN PRO TRONG APP. Bản 1.0 lên App Store KHÔNG bán qua IAP
+    /// (quyết định 24/09/2026): Pro mua trên web, app chỉ đọc `isPro` của
+    /// máy chủ. Tắt ở đây thì không nạp bảng giá ⇒ hàng "Gói" trong Cài đặt
+    /// không bấm được ⇒ màn `MuaProView` không có lối vào, và không nghe
+    /// `Transaction.updates`. Bị Apple trả về theo 3.1.1 thì bật `true` là
+    /// đường IAP (app + backend `/pro/apple/transactions`) chạy lại nguyên vẹn.
+    static let banTrongApp = false
+
     static let maSanPham = [
         "com.cuongthai.app.pro.1m",
         "com.cuongthai.app.pro.3m",
@@ -57,7 +65,7 @@ final class KhoPro: ObservableObject {
     /// ngoài app: mua lúc app đang tắt, "Hỏi để mua" của trẻ em được bố mẹ
     /// duyệt sau, gia hạn, và giao dịch lần trước chưa `finish()`.
     func batDauNghe() {
-        guard theoDoi == nil else { return }
+        guard Self.banTrongApp, theoDoi == nil else { return }
         theoDoi = Task.detached { [weak self] in
             for await kq in Transaction.updates {
                 await self?.xuLy(kq, tuNgoai: true)
@@ -66,7 +74,7 @@ final class KhoPro: ObservableObject {
     }
 
     func napGoi() async {
-        guard goi.isEmpty, !dangTai else { return }
+        guard Self.banTrongApp, goi.isEmpty, !dangTai else { return }
         dangTai = true
         defer { dangTai = false }
         do {

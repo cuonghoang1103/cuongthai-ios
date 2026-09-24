@@ -20,6 +20,8 @@ enum GiongNoiAI {
     /// Trả `nil` khi máy chủ báo `heard: false` — tức nó nghe thấy tiếng
     /// nhưng không ra lời (gió, tiếng gõ bàn). Ném lỗi thì là chuyện khác.
     static func chuTuGiong(_ duLieu: Data) async throws -> String? {
+        // Âm thanh đi tới Groq Whisper — cần đồng ý chia sẻ (5.1.2(i)).
+        try await DongYChiaSeAI.batBuoc()
         guard let url = URL(string: APIClient.diaChiGoc + "/api/v1/ai/stt") else {
             throw APIError.invalidURL
         }

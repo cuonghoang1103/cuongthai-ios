@@ -409,6 +409,8 @@ extension APIClient {
     /// Viết riêng chứ không dùng `request(_:)`: đường chung gửi JSON, còn ở
     /// đây phải là `multipart/form-data` vì thân là một tệp âm thanh.
     func guiAudioChamNoi(duong: URL, cauHoi: String, part: String) async throws -> DapAnChamNoi {
+        // Âm thanh đi tới Groq Whisper, chữ tới model chấm — cần đồng ý (5.1.2(i)).
+        try await DongYChiaSeAI.batBuoc()
         guard let url = URL(string: APIClient.diaChiGoc + "/api/v1/ielts/ai/cham-noi") else {
             throw APIError.serverError("URL không hợp lệ")
         }

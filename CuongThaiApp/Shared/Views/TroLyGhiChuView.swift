@@ -44,6 +44,12 @@ struct TroLyGhiChuView: View {
                             .padding(Spacing.md)
                             .background(RoundedRectangle(cornerRadius: 14).fill(AppColors.backgroundSecondary))
 
+                        // Apple 4.7: câu trả lời AI phải báo cáo được. `.id` để
+                        // câu trả lời MỚI có nút mới (không kế thừa "Đã báo cáo").
+                        NutBaoCaoTraLoiAI(nguon: "AI · Trợ lý ghi chú",
+                                          cauHoi: cauHoi, traLoi: t.answer)
+                            .id(t.answer)
+
                         if let ng = t.sources, !ng.isEmpty {
                             Text("Dựa trên \(ng.count) ghi chú")
                                 .font(.system(size: 12, weight: .semibold))

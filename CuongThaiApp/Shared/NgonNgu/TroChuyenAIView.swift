@@ -329,6 +329,11 @@ struct TroChuyenAIView: View {
                             }
                             .buttonStyle(.plain)
                         }
+                        // Apple 4.7: câu AI nói phải báo cáo được.
+                        NutBaoCaoTraLoiAI(
+                            nguon: "AI · Luyện nói \(ngonNgu.code)",
+                            cauHoi: vm.loiNoi.prefix { $0.id != l.id }.last { $0.cuaToi }?.chu ?? "",
+                            traLoi: l.chu)
                     }
                     if hienNghia.contains(l.id), let n = l.nghia {
                         Text(n).font(.system(size: 13))

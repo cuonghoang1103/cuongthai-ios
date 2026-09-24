@@ -6,6 +6,12 @@ struct ReportSheet: View {
     enum Target: Identifiable {
         case post(id: Int, authorId: Int, authorName: String)
         case comment(postId: Int, commentId: Int, authorName: String)
+        /// Mọi thứ KHÔNG phải bài viết (tin 24h, bình luận câu hỏi thi, hồ sơ
+        /// người dùng). Đi qua `ModerationStore.baoCaoNoiDung` — xem lý do ở đó.
+        /// `ma`: khoá duy nhất cho `.sheet(item:)`; `nhan`: nhãn nguồn cho admin;
+        /// `authorId` = 0 khi không có người để chặn (vd. bình luận của AI).
+        case noiDung(ma: String, tieuDe: String, nhan: String, authorId: Int,
+                     authorName: String, noiDung: String, ngucanh: String?)
 
         // Two `.sheet` modifiers on one view fight over the presentation slot
         // in SwiftUI — every screen here presents ONE `.sheet(item:)` instead.
@@ -13,6 +19,7 @@ struct ReportSheet: View {
             switch self {
             case .post(let id, _, _): return "post-\(id)"
             case .comment(_, let commentId, _): return "comment-\(commentId)"
+            case .noiDung(let ma, _, _, _, _, _, _): return "khac-\(ma)"
             }
         }
 
@@ -20,12 +27,23 @@ struct ReportSheet: View {
             switch self {
             case .post: return "Báo cáo bài viết"
             case .comment: return "Báo cáo bình luận"
+            case .noiDung(_, let tieuDe, _, _, _, _, _): return tieuDe
             }
         }
 
         var authorName: String {
             switch self {
             case .post(_, _, let name), .comment(_, _, let name): return name
+            case .noiDung(_, _, _, _, let name, _, _): return name
+            }
+        }
+
+        /// Id người có thể chặn kèm khi báo cáo; 0 = không có.
+        var authorIdCoTheChan: Int {
+            switch self {
+            case .post(_, let authorId, _): return authorId
+            case .noiDung(_, _, _, let authorId, _, _, _): return authorId
+            case .comment: return 0
             }
         }
     }
@@ -41,6 +59,13 @@ struct ReportSheet: View {
     @State private var didSend = false
     @State private var alsoBlockAuthor = false
 
+    /// Chỉ bài viết bị ẩn ngay sau khi báo cáo (`hide(postId:)`); các loại
+    /// khác thì chỉ ẩn khi người dùng chọn chặn luôn tác giả.
+    private var daAnSauKhiGui: Bool {
+        if case .post = target { return true }
+        return alsoBlockAuthor
+    }
+
     var body: some View {
         NavigationStack {
             Form {
@@ -48,7 +73,9 @@ struct ReportSheet: View {
                     Section {
                         Label("Đã gửi báo cáo", systemImage: "checkmark.seal.fill")
                             .foregroundColor(AppColors.success)
-                        Text("Đội kiểm duyệt sẽ xem xét trong vòng 24 giờ. Nội dung này đã được ẩn khỏi màn hình của bạn.")
+                        Text(daAnSauKhiGui
+                             ? T("Đội kiểm duyệt sẽ xem xét trong vòng 24 giờ. Nội dung này đã được ẩn khỏi màn hình của bạn.")
+                             : T("Đội kiểm duyệt sẽ xem xét trong vòng 24 giờ."))
                             .font(.footnote)
                             .foregroundColor(AppColors.textSecondary)
                     }
@@ -68,11 +95,12 @@ struct ReportSheet: View {
                             .lineLimit(3...6)
                     }
 
-                    if case .post(_, let authorId, let name) = target, authorId > 0 {
+                    if target.authorIdCoTheChan > 0,
+                       target.authorIdCoTheChan != AppState.shared.currentUser?.id {
                         Section {
-                            Toggle("Chặn luôn \(name)", isOn: $alsoBlockAuthor)
+                            Toggle(T("Chặn luôn") + " \(target.authorName)", isOn: $alsoBlockAuthor)
                         } footer: {
-                            Text("Chặn sẽ ẩn toàn bộ bài viết của người này và chặn họ nhắn tin cho bạn.")
+                            Text(T("Chặn sẽ ẩn nội dung của người này và chặn họ nhắn tin cho bạn."))
                         }
                     }
 
@@ -118,6 +146,13 @@ struct ReportSheet: View {
                 try await moderation.reportComment(
                     postId: postId, commentId: commentId, reason: reason, details: details
                 )
+            case .noiDung(_, _, let nhan, let authorId, _, let noiDung, let ngucanh):
+                try await moderation.baoCaoNoiDung(
+                    nhan: nhan, noiDung: noiDung, ngucanh: ngucanh,
+                    lyDo: reason, chiTiet: details)
+                if alsoBlockAuthor, authorId > 0 {
+                    try await moderation.block(userId: authorId, reason: reason.rawValue)
+                }
             }
             didSend = true
         } catch {
@@ -142,11 +177,17 @@ struct PostModerationMenu: View {
     }
 
     @ObservedObject private var moderation = ModerationStore.shared
-    @State private var showReport = false
+    /// MỘT `.sheet(item:)` cho cả "Báo cáo" lẫn "Sửa bài". Bản cũ gắn hai
+    /// `.sheet(isPresented:)` lên cùng cái Menu này — SwiftUI chỉ chạy cái
+    /// cuối, nên "Báo cáo bài viết" trên bảng tin bấm im lặng (CLAUDE.md C5).
+    private enum BangMenu: Identifiable {
+        case baoCao, suaBai
+        var id: Int { self == .baoCao ? 0 : 1 }
+    }
+    @State private var bang: BangMenu?
     @State private var showBlockConfirm = false
     @State private var daLuu: Bool
     @State private var hoiXoa = false
-    @State private var hienSuaBai = false
     @State private var daGhim = false
     @State private var quyen: String
     @State private var loi: String?
@@ -259,7 +300,7 @@ struct PostModerationMenu: View {
                     Label("Quyền riêng tư: \(tenQuyen)", systemImage: bieuTuongQuyen)
                 }
 
-                Button { hienSuaBai = true } label: {
+                Button { bang = .suaBai } label: {
                     Label("Sửa bài viết", systemImage: "pencil")
                 }
 
@@ -270,7 +311,7 @@ struct PostModerationMenu: View {
 
             if !laBaiCuaMinh {
                 Button(role: .destructive) {
-                    showReport = true
+                    bang = .baoCao
                 } label: {
                     Label("Báo cáo bài viết", systemImage: "flag")
                 }
@@ -287,8 +328,15 @@ struct PostModerationMenu: View {
                 .frame(width: 32, height: 32)
                 .contentShape(Rectangle())
         }
-        .sheet(isPresented: $showReport) {
-            ReportSheet(target: .post(id: post.id, authorId: post.author.id, authorName: post.author.name))
+        .sheet(item: $bang) { b in
+            switch b {
+            case .baoCao:
+                ReportSheet(target: .post(id: post.id, authorId: post.author.id, authorName: post.author.name))
+            case .suaBai:
+                SuaBaiVietView(post: post, quyenBanDau: quyen) { noiDungMoi, quyenMoi in
+                    quyen = quyenMoi
+                }
+            }
         }
         .alert("Chặn \(post.author.name)?", isPresented: $showBlockConfirm) {
             Button("Huỷ", role: .cancel) { }
@@ -303,11 +351,6 @@ struct PostModerationMenu: View {
             Button("Xoá", role: .destructive) { Task { await xoa() } }
         } message: {
             Text("Bài viết cùng mọi bình luận và lượt thích sẽ bị xoá. Không khôi phục lại được.")
-        }
-        .sheet(isPresented: $hienSuaBai) {
-            SuaBaiVietView(post: post, quyenBanDau: quyen) { noiDungMoi, quyenMoi in
-                quyen = quyenMoi
-            }
         }
         .alert("Bài viết", isPresented: .constant(loi != nil)) {
             Button("OK") { loi = nil }
@@ -438,5 +481,75 @@ struct BlockedUsersView: View {
         .navigationBarTitleDisplayMode(.inline)
         .task { await moderation.refreshBlocks() }
         .refreshable { await moderation.refreshBlocks() }
+    }
+}
+
+// MARK: - Nút báo cáo câu trả lời AI (Apple 4.7 + 1.2)
+//
+// Dùng ở các màn AI KHÔNG lưu tin nhắn (không có `messageId` cho `/ai/feedback`):
+// gia sư bài học, luyện nói, hỏi về video, trợ lý ghi chú. Gửi kèm câu hỏi +
+// câu trả lời để admin đọc được ngay — xem `ModerationStore.baoCaoNoiDung`.
+// Nút tự mang alert của nó ⇒ đặt được vào bất kỳ bong bóng nào mà không đụng
+// tới sheet/alert của màn cha.
+struct NutBaoCaoTraLoiAI: View {
+    /// Nhãn nguồn hiện trong tiêu đề thông báo admin, vd. "AI · Gia sư bài học".
+    let nguon: String
+    let cauHoi: String
+    let traLoi: String
+
+    private enum Pha: Identifiable {
+        case hoi, loi(String)
+        var id: String { if case .loi(let s) = self { return "loi-" + s }; return "hoi" }
+    }
+    @State private var pha: Pha?
+    @State private var daGui = false
+    @State private var dangGui = false
+
+    var body: some View {
+        Button { pha = .hoi } label: {
+            Label(daGui ? T("Đã báo cáo") : T("Báo cáo"),
+                  systemImage: daGui ? "checkmark" : "flag")
+                .font(.system(size: 12))
+                .foregroundColor(AppColors.textTertiary)
+        }
+        .buttonStyle(.plain)
+        .disabled(daGui || dangGui)
+        .accessibilityLabel(T("Báo cáo câu trả lời AI"))
+        .alert(tieuDe, isPresented: Binding(get: { pha != nil }, set: { if !$0 { pha = nil } }),
+               presenting: pha) { p in
+            switch p {
+            case .hoi:
+                Button(T("Gửi báo cáo"), role: .destructive) { Task { await gui() } }
+                Button(T("Huỷ"), role: .cancel) { }
+            case .loi:
+                Button("OK") { }
+            }
+        } message: { p in
+            switch p {
+            case .hoi:
+                Text(T("Câu trả lời này sai, gây hiểu lầm, hoặc không phù hợp? Báo cho chúng tôi để xem lại."))
+            case .loi(let s):
+                Text(s)
+            }
+        }
+    }
+
+    private var tieuDe: String {
+        if case .loi = pha { return T("Không gửi được báo cáo") }
+        return T("Báo cáo câu trả lời")
+    }
+
+    private func gui() async {
+        dangGui = true
+        defer { dangGui = false }
+        do {
+            try await ModerationStore.shared.baoCaoNoiDung(
+                nhan: nguon, noiDung: traLoi, ngucanh: cauHoi,
+                lyDo: .other, chiTiet: "Câu trả lời AI bị người dùng báo cáo từ app iOS")
+            daGui = true
+            Haptics.xong()
+        } catch {
+            pha = .loi(error.localizedDescription)
+        }
     }
 }

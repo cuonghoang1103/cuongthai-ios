@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  BẢN KHAI QUYỀN RIÊNG TƯ của Share Extension (ChiaSeVideo).
+  Mỗi bundle nộp lên App Store cần bản khai riêng — bản của app chính KHÔNG
+  phủ extension. `ChiaSeViewController` ghi link vào
+  `UserDefaults(suiteName: "group.com.cuongthai.app")` để app chính nhặt
+  ⇒ UserDefaults với lý do 1C8F.1 (App Group dùng chung với app chính).
+-->
+<plist version="1.0">
+<dict>
+    <key>NSPrivacyTracking</key>
+    <false/>
+    <key>NSPrivacyTrackingDomains</key>
+    <array/>
+    <key>NSPrivacyAccessedAPITypes</key>
+    <array>
+        <dict>
+            <key>NSPrivacyAccessedAPIType</key>
+            <string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+            <key>NSPrivacyAccessedAPITypeReasons</key>
+            <array>
+                <string>1C8F.1</string>
+            </array>
+        </dict>
+    </array>
+    <!-- Extension không tự thu thập gì gửi đi; app chính khai phần thu thập. -->
+    <key>NSPrivacyCollectedDataTypes</key>
+    <array/>
+</dict>
+</plist>

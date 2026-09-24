@@ -19,6 +19,9 @@ struct ChatView: View {
     @State private var tuKhoa = ""
     @State private var hienEmoji = false
     @State private var thongBaoTat: String?
+    /// Apple 1.2: chặn đối phương ngay trong hội thoại (cạnh "Báo cáo").
+    @ObservedObject private var kiemDuyet = ModerationStore.shared
+    @State private var hoiChanDoiPhuong = false
     #if os(iOS)
     @State private var anhDangChon: [PhotosPickerItem] = []
     @State private var videoDangChon: [PhotosPickerItem] = []
@@ -313,6 +316,29 @@ struct ChatView: View {
             } label: {
                 Label("Báo cáo hội thoại", systemImage: "flag")
             }
+
+            // Chỉ hội thoại 1-1 với người dùng thật — kênh hỗ trợ (ADMIN)
+            // không có ai để chặn.
+            if hoiThoai.laNhanRieng, let peerId = hoiThoai.peer?.id {
+                if kiemDuyet.blockedUserIds.contains(peerId) {
+                    Button {
+                        Task {
+                            do {
+                                try await kiemDuyet.unblock(userId: peerId)
+                                thongBaoTat = T("Đã bỏ chặn") + " \(hoiThoai.displayName)"
+                            } catch { thongBaoTat = error.localizedDescription }
+                        }
+                    } label: {
+                        Label(T("Bỏ chặn"), systemImage: "hand.raised.slash")
+                    }
+                } else {
+                    Button(role: .destructive) {
+                        hoiChanDoiPhuong = true
+                    } label: {
+                        Label(T("Chặn") + " \(hoiThoai.displayName)", systemImage: "hand.raised")
+                    }
+                }
+            }
             } label: {
                 Image(systemName: "ellipsis")
                     .font(.system(size: 19))
@@ -321,6 +347,24 @@ struct ChatView: View {
                     .contentShape(Rectangle())
             }
             .accessibilityLabel("Tuỳ chọn hội thoại")
+            // Gắn vào CHÍNH cái Menu, không gắn vào thân màn — thân màn đã có
+            // sẵn nhiều sheet/alert.
+            .confirmationDialog(T("Chặn") + " \(hoiThoai.displayName)?",
+                                isPresented: $hoiChanDoiPhuong, titleVisibility: .visible) {
+                Button(T("Chặn"), role: .destructive) {
+                    guard let peerId = hoiThoai.peer?.id else { return }
+                    Task {
+                        do {
+                            try await kiemDuyet.block(userId: peerId)
+                            Haptics.xong()
+                            thongBaoTat = T("Đã chặn") + " \(hoiThoai.displayName)"
+                        } catch { thongBaoTat = error.localizedDescription }
+                    }
+                }
+                Button(T("Huỷ"), role: .cancel) { }
+            } message: {
+                Text(T("Người này sẽ không nhắn tin được cho bạn, và bài viết, tin, bình luận của họ được ẩn. Có thể bỏ chặn trong Cài đặt → Danh sách chặn."))
+            }
         }
         .padding(.horizontal, Spacing.md)
         .frame(height: 52)

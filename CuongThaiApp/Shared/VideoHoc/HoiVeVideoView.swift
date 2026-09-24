@@ -145,6 +145,11 @@ struct HoiVeVideoView: View {
                                 // Mốc `[2:19]` được biến thành liên kết TRƯỚC
                                 // khi dựng markdown, nên bộ dựng sẵn có lo nốt.
                                 NoiDungMarkdown(noiDung: MocThoiGian.themLienKet(l.dap))
+                                // Apple 4.7: câu trả lời AI phải báo cáo được.
+                                if l.xong {
+                                    NutBaoCaoTraLoiAI(nguon: "AI · Hỏi về video",
+                                                      cauHoi: l.hoi, traLoi: l.dap)
+                                }
                             }
                         }
                         .id(l.id)

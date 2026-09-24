@@ -1,18 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
-  BẢN KHAI QUYỀN RIÊNG TƯ — bắt buộc từ 01/05/2024.
+  BẢN KHAI QUYỀN RIÊNG TƯ của APP CHÍNH — bắt buộc từ 01/05/2024.
 
-  Thiếu file này thì App Store Connect TỪ CHỐI bản tải lên, và thông báo lỗi
-  chỉ nói chung chung về "required reason API" chứ không chỉ ra API nào.
+  Thiếu mục nào thì App Store Connect gửi ITMS-91053, và thông báo lỗi chỉ nói
+  chung chung về "required reason API" chứ không chỉ ra dòng mã nào.
 
-  ⚠️ Chỉ khai NHỮNG GÌ APP THẬT SỰ DÙNG. Đo ngày 09/09/2026 bằng cách quét mã:
-  UserDefaults 39 chỗ; KHÔNG dùng file timestamp, disk space, system boot time
-  hay active processor count. Khai thừa cũng là khai sai — Apple đối chiếu với
-  mã, và một mục thừa là một câu hỏi phải trả lời khi bị soi.
+  ⚠️ Chỉ khai NHỮNG GÌ APP THẬT SỰ DÙNG. Soát lại 24/09/2026 (quét mã bản
+  Release, bỏ qua `#if DEBUG`) — xem CLAUDE.md mục A8 để có lệnh quét:
+    · UserDefaults — rất nhiều chỗ + `UserDefaults(suiteName: group…)` ở
+      `AppState.nhatVideoDuocChiaSe()` (đọc link Share Extension để lại).
+    · File timestamp — `contentModificationDateKey` ở
+      `NgoaiTuyen/KhoNgoaiTuyen.swift` (dọn đệm cũ nhất trước) và
+      `attributesOfItem` ở `Ba3D/ThuVienBoPhan.swift` (đọc cỡ tệp đệm).
+      (`NhatKy.swift` cũng gọi `attributesOfItem` nhưng chỉ trong `#if DEBUG`.)
+    · KHÔNG dùng: system boot time, disk space, active keyboards.
 
-  Các SDK bên thứ ba (GoogleSignIn, Kingfisher, Socket.IO…) mang bản khai
-  RIÊNG của chúng trong gói; file này chỉ nói về mã của chính app.
+  Extension có bản khai RIÊNG: `ChiaSe/PrivacyInfo.xcprivacy`,
+  `Widget/PrivacyInfo.xcprivacy`. Các SDK bên thứ ba (GoogleSignIn,
+  Kingfisher, Socket.IO, WebRTC…) mang bản khai riêng trong gói của chúng.
 -->
 <plist version="1.0">
 <dict>
@@ -27,19 +33,36 @@
         <dict>
             <key>NSPrivacyAccessedAPIType</key>
             <string>NSPrivacyAccessedAPICategoryUserDefaults</string>
-            <!-- CA92.1 = đọc/ghi dữ liệu của CHÍNH app này, không chia sẻ với
-                 app khác và không dùng để nhận dạng thiết bị. Đúng với cách
-                 dùng ở đây: giọng đọc đã chọn, tốc độ đọc, từ khoá tìm gần
-                 đây, cờ đã-xem-hướng-dẫn. -->
+            <!-- CA92.1 = đọc/ghi dữ liệu chỉ app này dùng (giọng đọc, cờ
+                 đã-xem-hướng-dẫn, từ khoá tìm gần đây…).
+                 1C8F.1 = đọc/ghi vùng App Group `group.com.cuongthai.app`
+                 dùng chung với Share Extension (link video được chia sẻ). -->
             <key>NSPrivacyAccessedAPITypeReasons</key>
             <array>
                 <string>CA92.1</string>
+                <string>1C8F.1</string>
+            </array>
+        </dict>
+        <dict>
+            <key>NSPrivacyAccessedAPIType</key>
+            <string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+            <!-- C617.1 = đọc thời điểm/thuộc tính của tệp NẰM TRONG vùng chứa
+                 của chính app (Caches). Không đọc tệp người dùng chọn qua
+                 trình chọn tài liệu (đó mới là 3B52.1), không đọc tệp của
+                 App Group (0A2A.1). -->
+            <key>NSPrivacyAccessedAPITypeReasons</key>
+            <array>
+                <string>C617.1</string>
             </array>
         </dict>
     </array>
 
+    <!-- Mọi loại: LIÊN KẾT với tài khoản, KHÔNG dùng để theo dõi, mục đích
+         duy nhất là chức năng của app. Phải khớp với nhãn App Privacy trên
+         App Store Connect. -->
     <key>NSPrivacyCollectedDataTypes</key>
     <array>
+        <!-- Email tài khoản. -->
         <dict>
             <key>NSPrivacyCollectedDataType</key>
             <string>NSPrivacyCollectedDataTypeEmailAddress</string>
@@ -52,6 +75,7 @@
                 <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
             </array>
         </dict>
+        <!-- Họ tên / tên hiển thị. -->
         <dict>
             <key>NSPrivacyCollectedDataType</key>
             <string>NSPrivacyCollectedDataTypeName</string>
@@ -64,6 +88,33 @@
                 <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
             </array>
         </dict>
+        <!-- Mã tài khoản trên máy chủ CuongThai. -->
+        <dict>
+            <key>NSPrivacyCollectedDataType</key>
+            <string>NSPrivacyCollectedDataTypeUserID</string>
+            <key>NSPrivacyCollectedDataTypeLinked</key>
+            <true/>
+            <key>NSPrivacyCollectedDataTypeTracking</key>
+            <false/>
+            <key>NSPrivacyCollectedDataTypePurposes</key>
+            <array>
+                <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+            </array>
+        </dict>
+        <!-- Mã thiết bị APNs (push token) để gửi thông báo đẩy. -->
+        <dict>
+            <key>NSPrivacyCollectedDataType</key>
+            <string>NSPrivacyCollectedDataTypeDeviceID</string>
+            <key>NSPrivacyCollectedDataTypeLinked</key>
+            <true/>
+            <key>NSPrivacyCollectedDataTypeTracking</key>
+            <false/>
+            <key>NSPrivacyCollectedDataTypePurposes</key>
+            <array>
+                <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+            </array>
+        </dict>
+        <!-- Ảnh/video đăng bài, ảnh đại diện, ảnh gửi AI Chat, ảnh quét lịch. -->
         <dict>
             <key>NSPrivacyCollectedDataType</key>
             <string>NSPrivacyCollectedDataTypePhotosorVideos</string>
@@ -76,6 +127,7 @@
                 <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
             </array>
         </dict>
+        <!-- Bản ghi luyện nói IELTS / nhại video / nói với AI: gửi lên máy chủ rồi tới Groq Whisper để chuyển thành chữ (không lưu lại). Tin nhắn thoại. -->
         <dict>
             <key>NSPrivacyCollectedDataType</key>
             <string>NSPrivacyCollectedDataTypeAudioData</string>
@@ -88,9 +140,49 @@
                 <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
             </array>
         </dict>
+        <!-- Tin nhắn trong app giữa người dùng với nhau. -->
+        <dict>
+            <key>NSPrivacyCollectedDataType</key>
+            <string>NSPrivacyCollectedDataTypeEmailsOrTextMessages</string>
+            <key>NSPrivacyCollectedDataTypeLinked</key>
+            <true/>
+            <key>NSPrivacyCollectedDataTypeTracking</key>
+            <false/>
+            <key>NSPrivacyCollectedDataTypePurposes</key>
+            <array>
+                <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+            </array>
+        </dict>
+        <!-- Bài viết, bình luận, ghi chú, CV, bài làm, câu hỏi gửi AI. -->
         <dict>
             <key>NSPrivacyCollectedDataType</key>
             <string>NSPrivacyCollectedDataTypeOtherUserContent</string>
+            <key>NSPrivacyCollectedDataTypeLinked</key>
+            <true/>
+            <key>NSPrivacyCollectedDataTypeTracking</key>
+            <false/>
+            <key>NSPrivacyCollectedDataTypePurposes</key>
+            <array>
+                <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+            </array>
+        </dict>
+        <!-- Số liệu thu chi, ngân sách, khoản nợ người dùng tự nhập ở mục Tiền. -->
+        <dict>
+            <key>NSPrivacyCollectedDataType</key>
+            <string>NSPrivacyCollectedDataTypeOtherFinancialInfo</string>
+            <key>NSPrivacyCollectedDataTypeLinked</key>
+            <true/>
+            <key>NSPrivacyCollectedDataTypeTracking</key>
+            <false/>
+            <key>NSPrivacyCollectedDataTypePurposes</key>
+            <array>
+                <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+            </array>
+        </dict>
+        <!-- CHỈ khi người dùng tự bấm chia sẻ vị trí trong tin nhắn; không theo dõi nền. -->
+        <dict>
+            <key>NSPrivacyCollectedDataType</key>
+            <string>NSPrivacyCollectedDataTypePreciseLocation</string>
             <key>NSPrivacyCollectedDataTypeLinked</key>
             <true/>
             <key>NSPrivacyCollectedDataTypeTracking</key>

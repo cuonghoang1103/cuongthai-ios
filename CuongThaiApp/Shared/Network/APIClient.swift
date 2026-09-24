@@ -32,6 +32,15 @@ actor APIClient {
     }
 
     private let baseURL = APIClient.diaChiGoc
+    /// Header `X-Client-Platform` gửi kèm mọi yêu cầu. Máy chủ dựa vào nó để
+    /// bỏ lời mời mua ("Nâng cấp tại /pro") khỏi thông báo trả về app — App
+    /// Store 3.1.1 cấm dẫn người dùng tới kênh mua ngoài app.
+    #if os(iOS)
+    nonisolated static let nenTang = "ios"
+    #else
+    nonisolated static let nenTang = "macos"
+    #endif
+
     /// Cho `LuongChat` dùng — nó tự dựng `URLRequest` vì phải đọc luồng SSE,
     /// không đi qua `request()` được.
     ///
@@ -54,6 +63,14 @@ actor APIClient {
         return "https://cuongthai.com"
     }()
     private let storage = StorageManager.shared
+
+    /// Chốt đồng ý chia sẻ dữ liệu với AI (App Store 5.1.2(i)).
+    ///
+    /// App chính gắn móc này lúc khởi động (`DongYChiaSeAI.ganVaoAPIClient()`);
+    /// nó nhận (method, path) và NÉM lỗi nếu đây là lời gọi AI mà người dùng
+    /// chưa đồng ý. Để là móc chứ không gọi thẳng vì `Shared/Network` còn được
+    /// dựng vào app Quản trị — app đó không có `Shared/AI` và không cần chốt.
+    nonisolated(unsafe) static var chotAI: (@Sendable (String, String) async throws -> Void)?
 
     private init() {}
 
@@ -169,6 +186,7 @@ actor APIClient {
         let boundary = "Boundary-\(UUID().uuidString)"
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
+        request.setValue(APIClient.nenTang, forHTTPHeaderField: "X-Client-Platform")
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
         if let token = storage.getAuthToken() {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
@@ -220,6 +238,7 @@ actor APIClient {
         let boundary = "Boundary-\(UUID().uuidString)"
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
+        request.setValue(APIClient.nenTang, forHTTPHeaderField: "X-Client-Platform")
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
         if let token = storage.getAuthToken() {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
@@ -269,6 +288,10 @@ actor APIClient {
     }
 
     private func perform(_ endpoint: APIEndpoint, isRetry: Bool = false) async throws -> Data {
+        // Chưa đồng ý chia sẻ với AI ⇒ dừng TRƯỚC khi có byte nào rời máy.
+        if !isRetry, let chot = APIClient.chotAI {
+            try await chot(endpoint.method, endpoint.path)
+        }
         // ── NGOẠI TUYẾN ────────────────────────────────────────────────
         //
         // Đặt ở đây, KHÔNG ở từng màn: đây là chỗ duy nhất mọi lời gọi đi
@@ -316,6 +339,7 @@ actor APIClient {
 
         var request = URLRequest(url: url)
         request.httpMethod = endpoint.method
+        request.setValue(APIClient.nenTang, forHTTPHeaderField: "X-Client-Platform")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
 

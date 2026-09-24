@@ -58,6 +58,9 @@ struct CuongThaiApp: App {
         // Nghe muộn thì những giao dịch đó nằm lại hàng đợi — người dùng đã
         // trả tiền mà không thấy Pro đâu.
         KhoPro.shared.batDauNghe()
+        // Chốt đồng ý chia sẻ dữ liệu với AI (5.1.2(i)) cho mọi lời gọi AI đi
+        // qua `APIClient`. Xem `Shared/AI/DongYChiaSeAI.swift`.
+        DongYChiaSeAI.ganVaoAPIClient()
     }
 
     /// Bọc chuỗi link thành `Identifiable` để dùng với `.sheet(item:)`.

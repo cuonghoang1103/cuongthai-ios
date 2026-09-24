@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  BẢN KHAI QUYỀN RIÊNG TƯ của widget Tiền (TienWidget).
+  Soát 24/09/2026: widget chỉ đọc một tệp JSON trong App Group bằng
+  `Data(contentsOf:)` (`KhoAnhChupTien`) — KHÔNG dùng UserDefaults, file
+  timestamp, disk space, boot time hay active keyboards. Nên danh sách API
+  trống. Có file này để extension cũng mang bản khai của nó; thêm mã chạm vào
+  một nhóm API trên thì PHẢI bổ sung ở đây.
+-->
+<plist version="1.0">
+<dict>
+    <key>NSPrivacyTracking</key>
+    <false/>
+    <key>NSPrivacyTrackingDomains</key>
+    <array/>
+    <key>NSPrivacyAccessedAPITypes</key>
+    <array/>
+    <!-- Extension không tự thu thập gì gửi đi; app chính khai phần thu thập. -->
+    <key>NSPrivacyCollectedDataTypes</key>
+    <array/>
+</dict>
+</plist>
