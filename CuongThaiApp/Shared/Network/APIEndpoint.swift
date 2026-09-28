@@ -25,6 +25,9 @@ enum APIEndpoint {
     case voXacNhanNet(trangId: Int, than: [String: Any])
     case voXoaTrang(clientIds: [String])
     case voXoaCuon(clientId: String)
+    /// AI vẽ bằng nét (`kieu`: `hinh` | `sodo`). Chạy 30–90 giây — xem
+    /// `thoiGianCho` bên dưới, mặc định 60 giây của `URLRequest` là cắt ngang.
+    case voVe(de: String, kieu: String)
 
     // ─── IELTS (nội dung khoá học + tiến độ) ────────────────────────
     case ieltsLoTrinh
@@ -655,6 +658,7 @@ enum APIEndpoint {
         case .voXacNhanNet(let id, _): return "/api/v1/vo/trang/\(id)/xac-nhan"
         case .voXoaTrang: return "/api/v1/vo/trang/xoa"
         case .voXoaCuon: return "/api/v1/vo/cuon/xoa"
+        case .voVe: return "/api/v1/vo/ve"
         case .login: return "/api/v1/auth/login"
         case .register: return "/api/v1/auth/register"
         case .oauthToken: return "/api/v1/auth/oauth/token"
@@ -1049,6 +1053,19 @@ enum APIEndpoint {
         return s.addingPercentEncoding(withAllowedCharacters: cho) ?? s
     }
 
+    /// Thời gian chờ riêng cho lời gọi chạy lâu. `nil` = mặc định của
+    /// `URLRequest` (60 giây giữa hai lần nhận byte).
+    ///
+    /// ⚠️ `/vo/ve` trả JSON một cục sau 30–90 giây (máy chủ tự cắt ở 120 giây,
+    /// có thử lại 1 lần). Để mặc định là app bỏ cuộc ở giây 60 trong khi máy
+    /// chủ vẫn vẽ tiếp và vẫn trừ hạn mức.
+    var thoiGianCho: TimeInterval? {
+        switch self {
+        case .voVe: return 200
+        default: return nil
+        }
+    }
+
     var method: String {
         switch self {
         case .luuHoSoAcademy: return "PATCH"
@@ -1077,7 +1094,7 @@ enum APIEndpoint {
         case .tuyChinh(_, let pt, _): return pt
         case .voLayCay: return "GET"
         case .voDongBoCay, .voXinDuongDay, .voXacNhanNet, .voXoaTrang, .voXoaCuon,
-             .voXinDuongNen: return "POST"
+             .voXinDuongNen, .voVe: return "POST"
         case .ghiTienDo, .ghiKetQuaQuiz, .doiYeuThich, .aiDich, .aiKiemNguPhap, .aiNoiChuyen,
              .aiChamBaiViet, .batDauLuotThi, .nopBaiTracNghiem,
              .hienDapAn, .baiHocLienQuan, .hoiCuongMini, .themBinhLuanCauHoi, .hoiGiaSuBai,
@@ -1166,6 +1183,7 @@ enum APIEndpoint {
         case .voXacNhanNet(_, let than): return than
         case .voXoaTrang(let ids): return ["clientIds": ids]
         case .voXoaCuon(let id): return ["clientId": id]
+        case .voVe(let de, let kieu): return ["de": de, "kieu": kieu]
         case .cvLuuHoSo(let m), .cvThemMuc(let m), .cvThemGach(_, let m),
              .cvSuaMuc(_, let m), .cvSuaGach(_, let m), .cvVietLaiGach(_, let m),
              .cvThemKyNang(let m), .cvThemChungChi(let m), .cvThemNgonNgu(let m),

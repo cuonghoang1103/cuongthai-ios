@@ -339,6 +339,7 @@ actor APIClient {
 
         var request = URLRequest(url: url)
         request.httpMethod = endpoint.method
+        if let cho = endpoint.thoiGianCho { request.timeoutInterval = cho }
         request.setValue(APIClient.nenTang, forHTTPHeaderField: "X-Client-Platform")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
