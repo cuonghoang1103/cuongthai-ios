@@ -93,6 +93,7 @@ struct BangVe: UIViewControllerRepresentable {
 
     func makeUIViewController(context: Context) -> BangVeVC {
         let vc = BangVeVC(idTrang: idTrang, giay: giay, khoTrang: khoTrang, khoGoc: khoGoc ?? khoTrang)
+        NhatKy.vo.info("makeUIViewController: vc MỚI \(ObjectIdentifier(vc).hashValue % 10000) · trang \(idTrang.uuidString.prefix(6))")
         vc.khiGanDay = khiGanDay
         vc.datNen(pdfTen: nenPdfTen, trang: nenPdfTrang, anhTen: nenAnhTen)
         vc.khiLuu = khiLuu
@@ -218,8 +219,14 @@ final class BangVeVC: UIViewController {
     func chenNet(_ ds: [PKStroke], tenViec: String) {
         guard !ds.isEmpty else { return }
         var d = canvas.drawing
+        let truoc = d.strokes.count
         d.strokes.append(contentsOf: ds)
         datBanVe(d, tenViec: tenViec)
+        NhatKy.vo.info("chenNet[\(tenViec)]: \(truoc) → \(canvas.drawing.strokes.count) nét · trang \(idTrang.uuidString.prefix(6)) · cửa sổ \(view.window != nil) · vc \(ObjectIdentifier(self).hashValue % 10000)")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+            guard let self else { NhatKy.vo.info("chenNet +1,5s: vc đã bị giải phóng"); return }
+            NhatKy.vo.info("chenNet +1,5s: còn \(self.canvas.drawing.strokes.count) nét · cửa sổ \(self.view.window != nil)")
+        }
     }
 
     /// Khung theo toạ độ VÙNG ĐANG THẤY (gốc ở góc trên-trái khung vẽ — đúng
@@ -502,6 +509,7 @@ final class BangVeVC: UIViewController {
     func veDanRoiChen(_ ds: [PKStroke], tenViec: String, thoiGian: TimeInterval,
                       xong: (() -> Void)?) {
         guard !ds.isEmpty else { return }
+        NhatKy.vo.info("veDan: bắt đầu \(ds.count) nét \(thoiGian)s · cửa sổ \(view.window != nil) · vc \(ObjectIdentifier(self).hashValue % 10000)")
         lopXemTruoc?.dung()
         lopXemTruoc?.removeFromSuperview()
         let z = canvas.zoomScale

@@ -26,6 +26,16 @@ struct HinhVeAI {
     let cao: CGFloat
     /// Nhãn gợi ý (chỉ sơ đồ) — người học TỰ viết vào, AI không viết chữ hộ.
     let nhan: [String]
+    /// Chỗ viết từng nhãn, cùng hệ toạ độ với `net`. App vẽ số ①②③ ở đó để
+    /// người học biết viết nhãn nào vào đâu (người dùng hỏi 28/09: "không đánh
+    /// dấu chỗ thì sao tôi viết được"). Rỗng với máy chủ cũ.
+    var nhanViTri: [NhanVe] = []
+}
+
+struct NhanVe: Hashable {
+    let so: Int
+    let ten: String
+    let diem: CGPoint
 }
 
 enum KieuVe: String, CaseIterable, Identifiable {
@@ -47,14 +57,38 @@ enum VeBangNet {
         var rong: Double?
         var cao: Double?
         var nhan: [String]?
+        var nhanViTri: [NhanViTri]?
         var model: String?
+        var xong: Bool?
+        var giay: Int?
     }
+    private struct NhanViTri: Decodable {
+        var so: Int?
+        var ten: String?
+        var x: Double?
+        var y: Double?
+    }
+    private struct Viec: Decodable { var viec: String? }
 
-    static func ve(de: String, kieu: KieuVe) async throws -> (HinhVeAI, String?) {
+    static func ve(de: String, kieu: KieuVe, chiTiet: Bool = false) async throws -> (HinhVeAI, String?) {
         // Chốt đồng ý chia sẻ với AI chạy trong `APIClient` (`laDuongAI` bắt
-        // `POST /vo/ve` từ 28/09/2026). Đừng gọi thêm `batBuoc()` ở đây — hai
-        // chốt là người dùng chưa đồng ý bị hỏi HAI lần liền.
-        let kq: KetQua = try await APIClient.shared.request(.voVe(de: de, kieu: kieu.rawValue))
+        // `POST /vo/ve/viec`). Đừng gọi thêm `batBuoc()` ở đây — hai chốt là
+        // người dùng chưa đồng ý bị hỏi HAI lần liền.
+        //
+        // ⚠️ Gửi việc rồi HỎI LẠI, không chờ một cục: Cloudflare cắt yêu cầu
+        // quá 100 giây (524) mà bản "Chi tiết" mất 100–150 giây.
+        let v: Viec = try await APIClient.shared.request(.voVeViec(de: de, kieu: kieu.rawValue, chiTiet: chiTiet))
+        guard let id = v.viec else {
+            throw APIError.coMa(ma: "VE_RONG", thongDiep: T("Máy chủ chưa nhận lượt vẽ — thử lại."))
+        }
+        var kq = KetQua()
+        let han = Date().addingTimeInterval(chiTiet ? 330 : 200)
+        while true {
+            try await Task.sleep(for: .seconds(3))
+            kq = try await APIClient.shared.request(.voVeXem(viec: id))
+            if kq.xong == true { break }
+            if Date() > han { throw URLError(.timedOut) }
+        }
         let net: [[CGPoint]] = (kq.net ?? []).compactMap { n in
             let d = n.compactMap { p in p.count >= 2 ? CGPoint(x: p[0], y: p[1]) : nil }
             return d.isEmpty ? nil : d
@@ -62,8 +96,14 @@ enum VeBangNet {
         guard !net.isEmpty else {
             throw APIError.coMa(ma: "VE_RONG", thongDiep: T("AI chưa vẽ được hình này — thử mô tả khác một chút."))
         }
+        let viTri: [NhanVe] = (kq.nhanViTri ?? []).compactMap { n in
+            guard let so = n.so, let ten = n.ten, let x = n.x, let y = n.y else { return nil }
+            return NhanVe(so: so, ten: ten, diem: CGPoint(x: x, y: y))
+        }
         let hinh = HinhVeAI(net: net, rong: CGFloat(max(kq.rong ?? 1000, 1)),
-                            cao: CGFloat(max(kq.cao ?? 1000, 1)), nhan: kq.nhan ?? [])
+                            cao: CGFloat(max(kq.cao ?? 1000, 1)),
+                            nhan: viTri.isEmpty ? (kq.nhan ?? []) : viTri.map(\.ten),
+                            nhanViTri: viTri)
         return (hinh, kq.model)
     }
 
@@ -94,6 +134,12 @@ final class MayVe: ObservableObject {
 
     @Published var de = ""
     @Published var kieu: KieuVe = .hinh
+    /// Bản "Chi tiết": ~100 nét, có bóng + chi tiết, mất 1–3 phút.
+    /// (`@Published` + UserDefaults chứ không `@AppStorage`: `@AppStorage` trong
+    /// ObservableObject không phát thay đổi ⇒ công tắc bấm không đổi hình.)
+    @Published var chiTiet = UserDefaults.standard.bool(forKey: "vo.ve.chitiet") {
+        didSet { UserDefaults.standard.set(chiTiet, forKey: "vo.ve.chitiet") }
+    }
     @Published private(set) var trangThai: TrangThai = .rong
     private var viec: Task<Void, Never>?
 
@@ -106,9 +152,10 @@ final class MayVe: ObservableObject {
         trangThai = .dangVe(batDau: Date())
         Haptics.cham()
         let kieu = self.kieu
+        let chiTiet = self.chiTiet
         viec = Task { [weak self] in
             do {
-                let (h, m) = try await VeBangNet.ve(de: d, kieu: kieu)
+                let (h, m) = try await VeBangNet.ve(de: d, kieu: kieu, chiTiet: chiTiet)
                 guard let self, !Task.isCancelled else { return }
                 self.trangThai = .xong(h, model: m)
                 Haptics.xong()
@@ -153,9 +200,24 @@ struct HinhVeXemTruoc: View {
 
     var body: some View {
         GeometryReader { g in
-            duong(trong: g.size)
-                .trim(from: 0, to: (veDan && !giamChuyenDong) ? tien : 1)
-                .stroke(mau, style: StrokeStyle(lineWidth: 2.2, lineCap: .round, lineJoin: .round))
+            ZStack(alignment: .topLeading) {
+                duong(trong: g.size)
+                    .trim(from: 0, to: (veDan && !giamChuyenDong) ? tien : 1)
+                    .stroke(mau, style: StrokeStyle(lineWidth: 2.2, lineCap: .round, lineJoin: .round))
+                // Số nhãn đúng chỗ AI chỉ — khớp số trong danh sách nhãn bên dưới.
+                let ty = min(g.size.width / max(hinh.rong, 1), g.size.height / max(hinh.cao, 1))
+                let leX = (g.size.width - hinh.rong * ty) / 2
+                let leY = (g.size.height - hinh.cao * ty) / 2
+                ForEach(hinh.nhanViTri, id: \.self) { n in
+                    Text("\(n.so)")
+                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                        .foregroundStyle(.white)
+                        .frame(width: 17, height: 17)
+                        .background(Circle().fill(Color(red: 0.86, green: 0.16, blue: 0.2)))
+                        .position(x: leX + n.diem.x * ty, y: leY + n.diem.y * ty)
+                        .opacity((veDan && !giamChuyenDong) ? Double(tien) : 1)
+                }
+            }
         }
         .aspectRatio(hinh.rong / max(hinh.cao, 1), contentMode: .fit)
         .onAppear {
@@ -313,7 +375,20 @@ struct KhungVeGiup: View {
         .buttonStyle(.plain)
         .disabled(!coTheVe)
 
-        Label(T("Thường mất 30–90 giây. Đóng khung vẫn vẽ tiếp."), systemImage: "clock")
+        Toggle(isOn: $may.chiTiet) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(T("Vẽ chi tiết hơn"))
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(AppColors.textPrimary)
+                Text(T("Nhiều nét, có bóng và chi tiết nhỏ — đẹp hơn nhưng mất 1–3 phút"))
+                    .font(.caption)
+                    .foregroundStyle(AppColors.textSecondary)
+            }
+        }
+        .tint(AppColors.primary)
+
+        Label(may.chiTiet ? T("Thường mất 1–3 phút. Đóng khung vẫn vẽ tiếp.")
+                          : T("Thường mất 30–90 giây. Đóng khung vẫn vẽ tiếp."), systemImage: "clock")
             .font(.caption)
             .foregroundStyle(AppColors.textTertiary)
     }
@@ -530,7 +605,7 @@ private struct ManChoVe: View {
                         Text(dongHo(da))
                             .monospacedDigit()
                         Spacer()
-                        Text(da < 90 ? T("thường 30–90 giây") : T("hình khó, chờ thêm chút"))
+                        Text(da < 90 ? T("thường 30–90 giây") : da < 180 ? T("hình khó / chi tiết, chờ thêm chút") : T("sắp xong rồi…"))
                     }
                     .font(.caption)
                     .foregroundStyle(AppColors.textTertiary)
@@ -643,7 +718,11 @@ enum HinhVeMau {
         for i in 0..<10 { net.append([CGPoint(x: 700, y: 330 + CGFloat(i) * 37), CGPoint(x: 700, y: 348 + CGFloat(i) * 37)]) }
         for i in 0..<10 { net.append([CGPoint(x: 330 + CGFloat(i) * 37, y: 300), CGPoint(x: 348 + CGFloat(i) * 37, y: 300)]) }
         return HinhVeAI(net: net, rong: 1000, cao: 1000,
-                        nhan: ["O (gốc toạ độ)", "trục hoành Ox", "trục tung Oy", "A(2; 3)"])
+                        nhan: ["O (gốc toạ độ)", "trục hoành Ox", "trục tung Oy", "A(2; 3)"],
+                        nhanViTri: [NhanVe(so: 1, ten: "O (gốc toạ độ)", diem: CGPoint(x: 260, y: 740)),
+                                    NhanVe(so: 2, ten: "trục hoành Ox", diem: CGPoint(x: 960, y: 760)),
+                                    NhanVe(so: 3, ten: "trục tung Oy", diem: CGPoint(x: 350, y: 40)),
+                                    NhanVe(so: 4, ten: "A(2; 3)", diem: CGPoint(x: 750, y: 260))])
     }()
 }
 #endif

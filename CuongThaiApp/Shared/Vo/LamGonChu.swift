@@ -119,18 +119,20 @@ private final class NetLG {
         let giu = abs(tl - 1) < 0.001
         var ds: [PKStrokePoint] = []
         for p in s.path.interpolatedPoints(by: .distance(1.0)) {
-            ds.append(PKStrokePoint(location: p.location.applying(t), timeOffset: p.timeOffset,
+            ds.append(PKStrokePoint.dayDu(location: p.location.applying(t), timeOffset: p.timeOffset,
                                     size: giu ? p.size : CGSize(width: p.size.width * tl,
                                                                 height: p.size.height * tl),
                                     opacity: p.opacity, force: p.force,
-                                    azimuth: p.azimuth, altitude: p.altitude))
+                                    azimuth: p.azimuth, altitude: p.altitude,
+                                    secondaryScale: p.secondaryScale, threshold: p.nguong))
         }
         if ds.isEmpty {
             // Nét một chấm: `interpolatedPoints` có thể trả rỗng.
             ds = s.path.map { p in
-                PKStrokePoint(location: p.location.applying(t), timeOffset: p.timeOffset,
+                PKStrokePoint.dayDu(location: p.location.applying(t), timeOffset: p.timeOffset,
                               size: p.size, opacity: p.opacity, force: p.force,
-                              azimuth: p.azimuth, altitude: p.altitude)
+                              azimuth: p.azimuth, altitude: p.altitude,
+                              secondaryScale: p.secondaryScale, threshold: p.nguong)
             }
         }
         diem = ds
@@ -1218,9 +1220,10 @@ enum DungNet {
         return ds.map { p in
             var ww = w + (p.size.width - w) * 0.4, hh = h + (p.size.height - h) * 0.4
             ww = max(0.7 * w, min(1.4 * w, ww)); hh = max(0.7 * h, min(1.4 * h, hh))
-            return PKStrokePoint(location: p.location, timeOffset: p.timeOffset,
+            return PKStrokePoint.dayDu(location: p.location, timeOffset: p.timeOffset,
                                  size: CGSize(width: ww, height: hh), opacity: p.opacity,
-                                 force: f + (p.force - f) * 0.4, azimuth: p.azimuth, altitude: p.altitude)
+                                 force: f + (p.force - f) * 0.4, azimuth: p.azimuth, altitude: p.altitude,
+                                 secondaryScale: p.secondaryScale, threshold: p.nguong)
         }
     }
 
@@ -1242,8 +1245,9 @@ enum DungNet {
     /// Thuộc tính bút (cỡ, lực, thời điểm…) lấy theo TỈ LỆ vị trí trên nét gốc.
     private static func mauTai(_ mau: [PKStrokePoint], _ t: CGFloat) -> PKStrokePoint {
         guard !mau.isEmpty else {
-            return PKStrokePoint(location: .zero, timeOffset: 0, size: CGSize(width: 3, height: 3),
-                                 opacity: 1, force: 1, azimuth: 0, altitude: .pi / 2)
+            return PKStrokePoint.dayDu(location: .zero, timeOffset: 0, size: CGSize(width: 3, height: 3),
+                                 opacity: 1, force: 1, azimuth: 0, altitude: .pi / 2,
+                                 secondaryScale: 1, threshold: 0)
         }
         let i = min(mau.count - 1, max(0, Int((t * CGFloat(mau.count - 1)).rounded())))
         return mau[i]
@@ -1336,8 +1340,9 @@ enum DungNet {
 
 extension PKStrokePoint {
     func voiViTri(_ p: CGPoint) -> PKStrokePoint {
-        PKStrokePoint(location: p, timeOffset: timeOffset, size: size, opacity: opacity,
-                      force: force, azimuth: azimuth, altitude: altitude)
+        PKStrokePoint.dayDu(location: p, timeOffset: timeOffset, size: size, opacity: opacity,
+                      force: force, azimuth: azimuth, altitude: altitude,
+                      secondaryScale: secondaryScale, threshold: nguong)
     }
     fileprivate func doi(_ t: CGAffineTransform) -> PKStrokePoint {
         t.isIdentity ? self : voiViTri(location.applying(t))

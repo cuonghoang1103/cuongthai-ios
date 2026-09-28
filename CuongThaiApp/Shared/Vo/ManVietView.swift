@@ -466,7 +466,16 @@ struct ManVietView: View {
     // MARK: Làm gọn chữ
 
     private func moLamGon(vung: CGRect? = nil) {
-        guard trangHienTai?.coNet == true else { bao(T("Trang này chưa có nét nào")); return }
+        // ⚠️ Đếm nét THẬT, không tin cờ `coNet`: cờ đó chỉ được đặt lúc tự
+        // lưu, nên trang cũ / trang kéo về từ máy khác mang `coNet = false` dù
+        // đầy chữ — bấm "Làm gọn" không có phản hồi gì (người dùng báo 28/09).
+        guard let t = trangHienTai else { return }
+        let soNet = (cauNoiVe.idTrangDangMo == t.id ? cauNoiVe.banVe : nil)?.strokes.count
+            ?? KhoVo.nap(t.id).strokes.count
+        NhatKy.vo.info("làm gọn: mở · \(soNet) nét · vùng \(vung.map { "\(Int($0.width))×\(Int($0.height))" } ?? "cả trang")")
+        guard soNet > 0 else { bao(T("Trang này chưa có nét nào")); return }
+        if !t.coNet { t.coNet = true }
+        cauNoiVe.luuNgay()
         cuaSo = .lamGon(vung)
     }
 
@@ -557,8 +566,22 @@ struct ManVietView: View {
         let khung = VeLenTrang.timCho(vungNhin: nhin, trang: kho,
                                       tiLe: h.rong / max(h.cao, 1), netCo: netCo)
         let (ink, day) = VeLenTrang.butChoAI(cauNoiVe.butDangChon)
-        let ds = VeLenTrang.taoNet(h, vao: khung, ink: ink, doDay: day)
+        // Điểm mẫu lấy từ một nét BÚT (không phải bút dạ) người dùng đã viết.
+        let mau = (cauNoiVe.banVe ?? KhoVo.nap(t.id)).strokes.last { $0.ink.inkType != .marker }
+            .flatMap { $0.path.count > 2 ? $0.path[$0.path.count / 2] : nil }
+        let ds = VeLenTrang.taoNet(h, vao: khung, ink: ink, doDay: day, mau: mau)
         guard !ds.isEmpty else { return }
+        let bv = ds.reduce(CGRect.null) { $0.union($1.renderBounds) }
+        if let cuoi = ds.last {
+            NhatKy.vo.info("AI vẽ: nét cuối \(cuoi.path.count) điểm · khung \(cuoi.renderBounds) · size điểm \(cuoi.path.first?.size ?? .zero) · mực \(cuoi.ink.inkType.rawValue)")
+        }
+        NhatKy.vo.info("AI vẽ: bút đang cầm \(cauNoiVe.butDangChon.map { "\($0.inkType.rawValue) w\($0.width)" } ?? "nil") → mực \(ink.inkType.rawValue) \(ink.color) dày \(day) · khung nét \(Int(bv.minX)),\(Int(bv.minY)) \(Int(bv.width))×\(Int(bv.height)) · điểm nét đầu \(ds[0].path.count) · mẫu \(mau.map { "size \($0.size) force \($0.force) op \($0.opacity) alt \($0.altitude) sec \($0.secondaryScale) thr \($0.nguong)" } ?? "nil")")
+        #if DEBUG
+        if !bv.isNull, let png = PKDrawing(strokes: ds).image(from: bv.insetBy(dx: -8, dy: -8), scale: 2).pngData(),
+           let dir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
+            try? png.write(to: dir.appendingPathComponent("ai-ve-thu.png"))
+        }
+        #endif
         let ten = T("Vẽ bằng AI")
         let nhan = h.nhan
         let xong = {

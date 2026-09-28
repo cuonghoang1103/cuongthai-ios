@@ -87,10 +87,17 @@ enum VeLenTrang {
     /// coi điểm là điểm điều khiển của đường cong B-spline, nên với điểm thưa
     /// nó bo tròn góc, cắt cụt đầu mút. Rải thêm điểm mỗi ~4pt thì đường cong
     /// ôm sát đường gấp khúc — góc vẫn sắc, nét tròn vẫn tròn.
-    static func taoNet(_ hinh: HinhVeAI, vao khung: CGRect, ink: PKInk, doDay: CGFloat) -> [PKStroke] {
+    static func taoNet(_ hinh: HinhVeAI, vao khung: CGRect, ink: PKInk, doDay: CGFloat,
+                       mau: PKStrokePoint? = nil) -> [PKStroke] {
         let ty = min(khung.width / max(hinh.rong, 1), khung.height / max(hinh.cao, 1))
         let goc = CGPoint(x: khung.midX - hinh.rong * ty / 2, y: khung.midY - hinh.cao * ty / 2)
         let tocDo: CGFloat = 320   // pt/giây — nhịp tay viết bình thường
+        // ⚠️ `size` của ĐIỂM không phải bề rộng của BÚT. Bút mảnh nhất người
+        // dùng chọn (width 0,88) cho ra điểm cỡ ~2,6pt trong nét thật; điểm
+        // 1,2pt với mực `.pen` thì PencilKit trên iPad thật KHÔNG vẽ ra gì —
+        // nét nằm trong bản vẽ mà vô hình (đo 28/09/2026, iPad M5). Lấy cỡ
+        // điểm của nét mẫu người dùng, và không bao giờ dưới 2,4pt.
+        let co = max(mau?.size.width ?? 0, doDay * 2.2, 2.4)
         let batDau = Date()
         var ra: [PKStroke] = []
         for (i, n) in hinh.net.enumerated() {
@@ -104,13 +111,49 @@ enum VeLenTrang {
             diem.reserveCapacity(day.count)
             for (j, p) in day.enumerated() {
                 if j > 0 { t += Double(hypot(p.x - day[j - 1].x, p.y - day[j - 1].y) / tocDo) }
-                diem.append(PKStrokePoint(location: p, timeOffset: t,
-                                          size: CGSize(width: doDay, height: doDay),
-                                          opacity: 1, force: 1, azimuth: 0, altitude: .pi / 2))
+                // ⚠️ Khai ĐỦ `secondaryScale` + `threshold`. Init ngắn (không có
+                // hai tham số này) cho ra nét VÔ HÌNH trên iPadOS 27: nét vẫn
+                // vào bản vẽ (109 → 131 nét) nhưng không có một điểm mực nào,
+                // kể cả khi dựng ảnh riêng — đo thật trên iPad M5 28/09/2026.
+                // Máy ảo iOS 26 thì vẫn hiện, nên bàn thử không bắt được.
+                // Có nét mẫu của chính người dùng thì chép luôn các thông số
+                // đó — PencilKit của máy này chắc chắn vẽ được chúng.
+                diem.append(PKStrokePoint.dayDu(location: p, timeOffset: t,
+                                          size: CGSize(width: co, height: co),
+                                          opacity: mau?.opacity ?? 1,
+                                          force: mau?.force ?? 1,
+                                          azimuth: mau?.azimuth ?? 0,
+                                          altitude: mau?.altitude ?? .pi / 2,
+                                          secondaryScale: mau?.secondaryScale ?? 1,
+                                          threshold: mau?.nguong ?? 0))
             }
             let path = PKStrokePath(controlPoints: diem,
                                     creationDate: batDau.addingTimeInterval(Double(i) * 0.3))
             ra.append(PKStroke(ink: ink, path: path))
+        }
+        // Số nhãn ①②③ ở đúng chỗ AI chỉ, màu đỏ như lời thầy ghi chú: người
+        // học viết tên nhãn cạnh số, đối chiếu với thẻ nhãn gợi ý. Cỡ cố định
+        // theo trang (không co theo hình) để hình nhỏ vẫn đọc được số.
+        let mucDo = PKInk(.pen, color: UIColor(red: 0.86, green: 0.16, blue: 0.2, alpha: 1))
+        for n in hinh.nhanViTri {
+            let tam = CGPoint(x: goc.x + n.diem.x * ty, y: goc.y + n.diem.y * ty)
+            for (k, d) in SoNet.so(n.so, tam: tam, cao: 13).enumerated() {
+                let day = raiDiem(d, cachToiDa: 2)
+                var t: TimeInterval = 0
+                let diem: [PKStrokePoint] = day.enumerated().map { j, p in
+                    if j > 0 { t += Double(hypot(p.x - day[j - 1].x, p.y - day[j - 1].y) / tocDo) }
+                    // Nét số cố định 2,4pt (mức thấp nhất PencilKit trên iPad thật
+                    // còn vẽ ra — xem `co` ở trên): lấy cỡ bút người dùng thì
+                    // bút to biến số thành một cục mực.
+                    return PKStrokePoint.dayDu(location: p, timeOffset: t, size: CGSize(width: 2.4, height: 2.4),
+                                               opacity: mau?.opacity ?? 1, force: mau?.force ?? 1,
+                                               azimuth: mau?.azimuth ?? 0, altitude: mau?.altitude ?? .pi / 2,
+                                               secondaryScale: mau?.secondaryScale ?? 1, threshold: mau?.nguong ?? 0)
+                }
+                let path = PKStrokePath(controlPoints: diem,
+                                        creationDate: batDau.addingTimeInterval(Double(ra.count + k) * 0.3))
+                ra.append(PKStroke(ink: mucDo, path: path))
+            }
         }
         return ra
     }
@@ -134,6 +177,75 @@ enum VeLenTrang {
     /// Thời gian vẽ dần: 2–4 giây, hình nhiều nét thì lâu hơn chút.
     static func thoiGianVeDan(soNet: Int) -> TimeInterval {
         min(4, max(2, 1.4 + Double(soNet) * 0.09))
+    }
+}
+
+// MARK: - Chữ số bằng nét (cho số nhãn)
+
+/// Chữ số 0–9 bằng nét đơn trong ô 0…1 (rộng 0,6), khoanh trong một vòng tròn.
+enum SoNet {
+    private static let mau: [Character: [[CGPoint]]] = {
+        func p(_ a: [(CGFloat, CGFloat)]) -> [CGPoint] { a.map { CGPoint(x: $0.0, y: $0.1) } }
+        return [
+            "0": [p([(0.3, 0), (0.05, 0.2), (0, 0.5), (0.05, 0.8), (0.3, 1), (0.55, 0.8), (0.6, 0.5), (0.55, 0.2), (0.3, 0)])],
+            "1": [p([(0.12, 0.2), (0.35, 0), (0.35, 1)])],
+            "2": [p([(0.03, 0.22), (0.2, 0.02), (0.45, 0.02), (0.58, 0.22), (0.5, 0.45), (0, 1), (0.6, 1)])],
+            "3": [p([(0.03, 0.08), (0.3, 0), (0.55, 0.15), (0.5, 0.4), (0.25, 0.48), (0.55, 0.6), (0.58, 0.85), (0.3, 1), (0.02, 0.92)])],
+            "4": [p([(0.45, 1), (0.45, 0), (0, 0.7), (0.6, 0.7)])],
+            "5": [p([(0.55, 0), (0.08, 0), (0.03, 0.45), (0.35, 0.4), (0.58, 0.6), (0.55, 0.88), (0.3, 1), (0.02, 0.9)])],
+            "6": [p([(0.52, 0.05), (0.25, 0.05), (0.05, 0.35), (0.02, 0.75), (0.25, 1), (0.52, 0.9), (0.58, 0.65), (0.35, 0.48), (0.05, 0.6)])],
+            "7": [p([(0, 0), (0.6, 0), (0.22, 1)])],
+            "8": [p([(0.3, 0.48), (0.05, 0.25), (0.3, 0), (0.55, 0.25), (0.3, 0.48), (0.02, 0.73), (0.3, 1), (0.58, 0.73), (0.3, 0.48)])],
+            "9": [p([(0.55, 0.4), (0.3, 0.52), (0.05, 0.35), (0.1, 0.08), (0.35, 0), (0.58, 0.2), (0.55, 0.65), (0.35, 1), (0.08, 0.95)])],
+        ]
+    }()
+
+    /// Các nét của số `n` (chữ số cao `cao` pt) đặt giữa `tam`, kèm vòng tròn bao quanh.
+    static func so(_ n: Int, tam: CGPoint, cao: CGFloat) -> [[CGPoint]] {
+        let chu = Array(String(n))
+        let rongMot = cao * 0.6, khe = cao * 0.2
+        let rong = CGFloat(chu.count) * rongMot + CGFloat(max(0, chu.count - 1)) * khe
+        var ra: [[CGPoint]] = []
+        for (i, c) in chu.enumerated() {
+            let x0 = tam.x - rong / 2 + CGFloat(i) * (rongMot + khe)
+            let y0 = tam.y - cao / 2
+            for net in mau[c] ?? [] {
+                ra.append(net.map { CGPoint(x: x0 + $0.x * cao, y: y0 + $0.y * cao) })
+            }
+        }
+        let r = max(cao * 0.95, rong / 2 + cao * 0.4)
+        ra.append((0...36).map { k in
+            let g = CGFloat(k) / 36 * 2 * .pi - .pi / 2
+            return CGPoint(x: tam.x + r * cos(g), y: tam.y + r * sin(g))
+        })
+        return ra
+    }
+}
+
+// MARK: - Tạo điểm nét an toàn cho mọi bản iOS
+
+extension PKStrokePoint {
+    /// `threshold` của điểm (iOS 26+), bản cũ không có thì 0.
+    var nguong: CGFloat {
+        if #available(iOS 26.0, *) { return threshold }
+        return 0
+    }
+
+    /// Tạo điểm với ĐỦ thông số. ⚠️ Trên iPadOS 26+ PHẢI dùng init có
+    /// `secondaryScale` + `threshold`: init ngắn cho ra nét VÔ HÌNH (nét vẫn
+    /// nằm trong bản vẽ nhưng không có một điểm mực nào — đo thật trên iPad M5
+    /// iPadOS 27, 28/09/2026: AI vẽ 22 nét, 109 → 131 nét, trang trống trơn).
+    /// Máy ảo iOS 26 lại hiện bình thường nên bàn thử không bắt được.
+    static func dayDu(location: CGPoint, timeOffset: TimeInterval, size: CGSize,
+                      opacity: CGFloat, force: CGFloat, azimuth: CGFloat, altitude: CGFloat,
+                      secondaryScale: CGFloat, threshold: CGFloat) -> PKStrokePoint {
+        if #available(iOS 26.0, *) {
+            return PKStrokePoint(location: location, timeOffset: timeOffset, size: size,
+                                 opacity: opacity, force: force, azimuth: azimuth, altitude: altitude,
+                                 secondaryScale: secondaryScale, threshold: threshold)
+        }
+        return PKStrokePoint(location: location, timeOffset: timeOffset, size: size,
+                             opacity: opacity, force: force, azimuth: azimuth, altitude: altitude)
     }
 }
 

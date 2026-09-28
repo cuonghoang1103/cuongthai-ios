@@ -104,7 +104,7 @@ enum DongYChiaSeAI {
         // Tư vấn ngành (Academy): câu hỏi đi tới AI.
         if path == "/api/v1/academy/advisor" && method == "POST" { return true }
         // Vở · Vẽ giúp: mô tả người dùng gõ đi thẳng tới model vẽ SVG.
-        if path == "/api/v1/vo/ve" && method == "POST" { return true }
+        if (path == "/api/v1/vo/ve" || path == "/api/v1/vo/ve/viec") && method == "POST" { return true }
         // Vở · AI viết lại trang: ẢNH trang viết tay + chữ máy đọc trên trang
         // đi tới model thị giác (gpt-6-sol qua modelapi.vn).
         if (path == "/api/v1/vo/viet-lai" || path == "/api/v1/vo/viet-lai/viec") && method == "POST" { return true }

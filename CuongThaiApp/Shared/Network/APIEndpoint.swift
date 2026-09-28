@@ -28,6 +28,11 @@ enum APIEndpoint {
     /// AI vẽ bằng nét (`kieu`: `hinh` | `sodo`). Chạy 30–90 giây — xem
     /// `thoiGianCho` bên dưới, mặc định 60 giây của `URLRequest` là cắt ngang.
     case voVe(de: String, kieu: String)
+    /// Vẽ CHẠY NỀN: gửi việc (trả `{viec}` ngay) rồi hỏi lại bằng `voVeXem`.
+    /// Cloudflare cắt yêu cầu chờ quá 100 giây (524), mà bản "Chi tiết" mất
+    /// 100–150 giây — nên không bao giờ chờ một cục như `voVe` nữa.
+    case voVeViec(de: String, kieu: String, chiTiet: Bool)
+    case voVeXem(viec: String)
     /// ✍️ AI viết lại trang, CHẠY NỀN: gửi `anh` (JPEG base64) + `goiY` (chữ
     /// Vision đọc trên máy) + `giay` ⇒ `{viec}` ngay, rồi hỏi lại bằng
     /// `voVietLaiXem` — một trang mất 20–90 giây, Cloudflare cắt ở 100 giây.
@@ -670,6 +675,8 @@ enum APIEndpoint {
         case .voXoaTrang: return "/api/v1/vo/trang/xoa"
         case .voXoaCuon: return "/api/v1/vo/cuon/xoa"
         case .voVe: return "/api/v1/vo/ve"
+        case .voVeViec: return "/api/v1/vo/ve/viec"
+        case .voVeXem(let id): return "/api/v1/vo/ve/viec/\(id)"
         case .voVietLai: return "/api/v1/vo/viet-lai/viec"
         case .voVietLaiXem(let id): return "/api/v1/vo/viet-lai/viec/\(id)"
         case .login: return "/api/v1/auth/login"
@@ -1114,9 +1121,9 @@ enum APIEndpoint {
              .tienXoaTietKiem, .tienXoaMucTieuTietKiem, .tienXoaDauTu:
             return "DELETE"
         case .tuyChinh(_, let pt, _): return pt
-        case .voLayCay, .voVietLaiXem: return "GET"
+        case .voLayCay, .voVeXem, .voVietLaiXem: return "GET"
         case .voDongBoCay, .voXinDuongDay, .voXacNhanNet, .voXoaTrang, .voXoaCuon,
-             .voXinDuongNen, .voVe, .voVietLai: return "POST"
+             .voXinDuongNen, .voVe, .voVeViec, .voVietLai: return "POST"
         case .ghiTienDo, .ghiKetQuaQuiz, .doiYeuThich, .aiDich, .aiKiemNguPhap, .aiNoiChuyen,
              .aiChamBaiViet, .batDauLuotThi, .nopBaiTracNghiem,
              .hienDapAn, .baiHocLienQuan, .hoiCuongMini, .themBinhLuanCauHoi, .hoiGiaSuBai,
@@ -1206,6 +1213,7 @@ enum APIEndpoint {
         case .voXoaTrang(let ids): return ["clientIds": ids]
         case .voXoaCuon(let id): return ["clientId": id]
         case .voVe(let de, let kieu): return ["de": de, "kieu": kieu]
+        case .voVeViec(let de, let kieu, let chiTiet): return ["de": de, "kieu": kieu, "chiTiet": chiTiet]
         case .voVietLai(let than): return than
         case .cvLuuHoSo(let m), .cvThemMuc(let m), .cvThemGach(_, let m),
              .cvSuaMuc(_, let m), .cvSuaGach(_, let m), .cvVietLaiGach(_, let m),
