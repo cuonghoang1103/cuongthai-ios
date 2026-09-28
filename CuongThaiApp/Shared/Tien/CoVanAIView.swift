@@ -17,9 +17,18 @@ struct CoVanAIView: View {
         let id = UUID()
         let cuaToi: Bool
         let chu: String
+        /// Câu hỏi đã sinh ra câu trả lời này — đi kèm báo cáo (A12).
+        var cauHoi: String? = nil
+        var kiemSo: KiemSoAI? = nil
+        /// `true` = câu trả lời thật của AI (có nút báo cáo); `false` = dòng
+        /// lỗi/thông báo của app.
+        var laAI: Bool = false
     }
 
-    private let goiY = [
+    /// Câu hỏi nhanh: máy chủ gợi ý theo đúng số liệu; rỗng thì dùng mặc định.
+    private var goiY: [String] { vm.goiYAI.isEmpty ? goiYMacDinh : vm.goiYAI }
+
+    private let goiYMacDinh = [
         "Tôi nên trả khoản nợ nào trước?",
         "Tháng này tôi tiêu quá tay chỗ nào?",
         "Với mức thu này tôi để dành được bao nhiêu mỗi tháng?",
@@ -51,6 +60,7 @@ struct CoVanAIView: View {
                     }
                 }
 
+                if !loiThoai.isEmpty { hangGoiY }
                 oNhap
             }
             .background(AppColors.backgroundPrimary)
@@ -85,6 +95,13 @@ struct CoVanAIView: View {
                 HStack { ProgressView().scaleEffect(0.8); Text(T("Đang xem…")).font(.caption) }
             } else if let n = vm.nhanXetAI, !n.isEmpty {
                 NoiDungMarkdown(noiDung: n)
+                dongKiemSo(vm.kiemSoTomTat)
+                HStack {
+                    Spacer()
+                    NutBaoCaoTraLoiAI(nguon: "AI · Quản lí tiền",
+                                      cauHoi: "Tóm tắt tình hình tài chính",
+                                      traLoi: n)
+                }
             } else if vm.thieuKhoaAI {
                 Text(T("Phần nhận xét bằng AI đang tắt. Các con số bên dưới vẫn đúng và vẫn dùng được."))
                     .font(.bodySmall).foregroundStyle(AppColors.textSecondary)
@@ -95,6 +112,7 @@ struct CoVanAIView: View {
 
             Divider()
             soNhanh
+            khoiCanhBao
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(Spacing.md)
@@ -102,12 +120,61 @@ struct CoVanAIView: View {
         .cornerRadius(CornerRadius.large)
     }
 
+    @ViewBuilder
     private var soNhanh: some View {
-        HStack(spacing: Spacing.sm) {
-            oSo(T("Số dư"), vm.bang?.totalBalance ?? 0, AppColors.primary)
-            oSo(T("Nợ"), vm.bang?.totalRemainingDebt ?? 0, AppColors.warning)
-            oSo(T("Để dành"), vm.bang?.savingsThisMonth ?? 0,
-                (vm.bang?.savingsThisMonth ?? 0) >= 0 ? AppColors.success : AppColors.error)
+        if let so = vm.soLieuAI {
+            // Đúng bảng số máy chủ đưa cho AI — người dùng đối chiếu được.
+            HStack(spacing: Spacing.sm) {
+                oSo(T("Số dư"), so.tongSoDu, AppColors.primary)
+                oSo(T("Nợ gốc"), so.tongNoConLai, AppColors.warning)
+                oSo(T("Lãi còn trả"), so.tongLaiConPhaiTra ?? 0, AppColors.error)
+                oSo(T("Còn lại"), so.deDanhThangNay,
+                    so.deDanhThangNay >= 0 ? AppColors.success : AppColors.error)
+            }
+            Text(T("“Còn lại” = thu − chi − trả nợ tháng này."))
+                .font(.caption2).foregroundStyle(AppColors.textTertiary)
+        } else {
+            HStack(spacing: Spacing.sm) {
+                oSo(T("Số dư"), vm.bang?.totalBalance ?? 0, AppColors.primary)
+                oSo(T("Nợ"), vm.bang?.totalRemainingDebt ?? 0, AppColors.warning)
+                oSo(T("Để dành"), vm.bang?.savingsThisMonth ?? 0,
+                    (vm.bang?.savingsThisMonth ?? 0) >= 0 ? AppColors.success : AppColors.error)
+            }
+        }
+    }
+
+    /// Cảnh báo do máy chủ chốt — cùng danh sách với màn Phân tích.
+    @ViewBuilder
+    private var khoiCanhBao: some View {
+        let ds = vm.canhBaoAI.isEmpty ? (vm.phanTich?.canhBao ?? []) : vm.canhBaoAI
+        if !ds.isEmpty {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 6) {
+                    Image(systemName: "bell.badge.fill").foregroundStyle(MauTien.muc(MauTien.nangNhat(ds)))
+                    Text(T("Cảnh báo")).font(.captionBold).foregroundStyle(AppColors.textSecondary)
+                    Spacer()
+                    if ds.count > 4 {
+                        NavigationLink { PhanTichView(vm: vm) } label: {
+                            Text("\(T("Xem hết")) \(ds.count)").font(.caption).foregroundStyle(AppColors.primary)
+                        }
+                    }
+                }
+                ForEach(Array(ds.prefix(4))) { c in DongCanhBaoTien(vm: vm, c: c) }
+            }
+            .padding(.top, 4)
+        }
+    }
+
+    /// Dòng nhỏ màu cam khi máy chủ thấy số trong câu trả lời không khớp bảng tính.
+    @ViewBuilder
+    private func dongKiemSo(_ k: KiemSoAI?) -> some View {
+        if let k, k.hopLe == false {
+            let ds = (k.soKhongKhop ?? []).prefix(6).joined(separator: ", ")
+            Label("\(T("Có số không khớp bảng tính")): \(ds.isEmpty ? "…" : ds)",
+                  systemImage: "exclamationmark.triangle.fill")
+                .font(.caption2)
+                .foregroundStyle(AppColors.accent)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -147,7 +214,7 @@ struct CoVanAIView: View {
     }
 
     private func dongChat(_ d: DongCoVan) -> some View {
-        HStack {
+        HStack(alignment: .top) {
             if d.cuaToi { Spacer(minLength: 40) }
             // Câu của MÌNH là chữ mình vừa gõ — vẽ thẳng. Câu của AI mới
             // cần dựng markdown; đưa chữ người dùng qua bộ dựng thì một dấu
@@ -156,7 +223,18 @@ struct CoVanAIView: View {
                 if d.cuaToi {
                     Text(d.chu).font(.bodyMedium).foregroundStyle(Color.white)
                 } else {
-                    NoiDungMarkdown(noiDung: d.chu)
+                    VStack(alignment: .leading, spacing: 6) {
+                        NoiDungMarkdown(noiDung: d.chu)
+                        dongKiemSo(d.kiemSo)
+                        if d.laAI {
+                            HStack {
+                                Spacer()
+                                NutBaoCaoTraLoiAI(nguon: "AI · Quản lí tiền",
+                                                  cauHoi: d.cauHoi ?? "",
+                                                  traLoi: d.chu)
+                            }
+                        }
+                    }
                 }
             }
                 .fixedSize(horizontal: false, vertical: true)
@@ -165,6 +243,29 @@ struct CoVanAIView: View {
                 .cornerRadius(CornerRadius.large)
             if !d.cuaToi { Spacer(minLength: 40) }
         }
+    }
+
+    /// Câu hỏi nhanh dạng hàng cuộn ngang — để hỏi TIẾP sau lượt đầu.
+    private var hangGoiY: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: Spacing.sm) {
+                ForEach(goiY, id: \.self) { g in
+                    Button { Task { await hoi(T(g)) } } label: {
+                        Text(T(g)).font(.caption).lineLimit(1)
+                            .padding(.horizontal, Spacing.sm + 2).padding(.vertical, 6)
+                            .background(AppColors.backgroundCard)
+                            .foregroundStyle(AppColors.textPrimary)
+                            .clipShape(Capsule())
+                            .overlay(Capsule().stroke(AppColors.border, lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(dangHoi)
+                }
+            }
+            .padding(.horizontal, Spacing.sm + 2)
+            .padding(.vertical, 6)
+        }
+        .background(AppColors.backgroundSecondary)
     }
 
     private var oNhap: some View {
@@ -201,11 +302,16 @@ struct CoVanAIView: View {
         defer { dangHoi = false }
         do {
             let kq = try await TienAPI.aiHoi(t)
-            loiThoai.append(DongCoVan(
-                cuaToi: false,
-                chu: kq.chu ?? (kq.thieuKhoaAI
-                    ? T("Phần trả lời bằng AI đang tắt trên máy chủ.")
-                    : T("Chưa có câu trả lời."))))
+            if let g = kq.goiY, !g.isEmpty { vm.goiYAI = g }
+            if let c = kq.chu, !c.isEmpty {
+                loiThoai.append(DongCoVan(cuaToi: false, chu: c, cauHoi: t, kiemSo: kq.kiemSo, laAI: true))
+            } else {
+                loiThoai.append(DongCoVan(
+                    cuaToi: false,
+                    chu: kq.thieuKhoaAI
+                        ? T("Phần trả lời bằng AI đang tắt trên máy chủ.")
+                        : T("Chưa có câu trả lời.")))
+            }
         } catch {
             loiThoai.append(DongCoVan(cuaToi: false, chu: error.localizedDescription))
         }

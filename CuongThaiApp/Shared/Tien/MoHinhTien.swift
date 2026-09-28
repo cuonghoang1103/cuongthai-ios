@@ -294,14 +294,22 @@ struct No: Decodable, Identifiable, Hashable {
     let note: String?
     let schedule: [KyNo]?
     let computed: TinhNo?
+    /// `DAY` | `MONTH` | `YEAR` | nil (khoản cũ — máy chủ hiểu theo kiểu lãi).
+    var rateUnit: String?
+    /// Phí trả trước hạn, % trên số gốc trả trước. `nil` = CHƯA KHAI (khác 0).
+    @TienSoTuyChon var prepayFeePct: Double?
+    /// Chỉ `GET /debts/:id` mới có — danh sách không kèm.
+    var phanTich: PhanTichKhoanNo?
 
     static let tenBenChoVay: [(String, String)] = [
         ("LOAN_APP", "App vay"), ("BANK", "Ngân hàng"), ("PERSON", "Cá nhân"),
         ("CREDIT_CARD", "Thẻ tín dụng"), ("OTHER", "Khác"),
     ]
     static let tenKieuLai: [(String, String)] = [
-        ("FLAT_MONTHLY", "Lãi phẳng / tháng"),
-        ("REDUCING_BALANCE", "Lãi giảm dần"),
+        ("EQUAL_PRINCIPAL", "Dư nợ giảm dần — gốc đều"),
+        ("REDUCING_BALANCE", "Trả góp đều (lãi trên dư nợ giảm dần)"),
+        ("FLAT_MONTHLY", "Lãi phẳng (trên gốc ban đầu)"),
+        ("INTEREST_ONLY", "Trả lãi hằng tháng, gốc cuối kỳ"),
         ("DAILY_PERCENT", "Lãi ngày (%/ngày)"),
         ("NO_INTEREST", "Không lãi"),
     ]
@@ -441,6 +449,9 @@ struct SoLieuCoVan: Decodable {
     let chiThangNay: Double
     let deDanhThangNay: Double
     let tiLeChiTrenThu: Double?
+    // Thêm 28/09/2026. `deDanhThangNay` giờ = thu − chi − TRẢ NỢ.
+    var tongLaiConPhaiTra: Double?
+    var traNoThangNay: Double?
 }
 
 struct TraLoiCoVan: Decodable {
@@ -448,6 +459,12 @@ struct TraLoiCoVan: Decodable {
     let traLoi: String?
     let lyDo: String?
     let so: SoLieuCoVan?
+    /// Cảnh báo do máy chủ chốt (cùng danh sách với `/phan-tich`).
+    var canhBao: [CanhBaoTien]?
+    /// Câu hỏi nhanh do máy chủ gợi ý theo đúng số liệu của người dùng.
+    var goiY: [String]?
+    /// Máy chủ soát mọi con số trong câu trả lời với bảng tính.
+    var kiemSo: KiemSoAI?
 
     /// Phần chữ, dù backend gọi nó là `nhanXet` (tóm tắt) hay `traLoi` (hỏi).
     var chu: String? { traLoi ?? nhanXet }

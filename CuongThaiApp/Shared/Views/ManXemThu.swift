@@ -116,6 +116,8 @@ struct ManXemThu: View {
             case "daluu": DaLuuView()
             case "lichsu": LichSuThiView()
             case "tim": SearchView()
+            // Tiền nong — xem ThuTienDebug.swift (cần máy ảo RIÊNG + CT_TOKEN_THU).
+            case let s where s.hasPrefix("tien"): ThuTienView(cheDo: s)
 
             default:
                 VStack(spacing: Spacing.sm) {

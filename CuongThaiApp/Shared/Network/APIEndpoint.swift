@@ -90,6 +90,11 @@ enum APIEndpoint {
     case tienDatMucTieu(ky: String, soTien: Double)
     case tienAITomTat
     case tienAIHoi(cauHoi: String)
+    // Phân tích (28/09/2026): số do máy chủ tính, app chỉ hiện.
+    case tienPhanTich
+    case tienChienLuocNo(traThem: Double, motLan: Double)
+    case tienXemTatToan(noId: Int, ngay: String?)
+    case tienGhiTatToan(noId: Int, [String: Any])
 
     // Auth
     case login(username: String, password: String, captchaToken: String?)
@@ -1040,6 +1045,12 @@ enum APIEndpoint {
         case .tienMucTieu, .tienDatMucTieu: return "/api/v1/finance/goals"
         case .tienAITomTat: return "/api/v1/finance/ai/tom-tat"
         case .tienAIHoi: return "/api/v1/finance/ai/hoi"
+        case .tienPhanTich: return "/api/v1/finance/phan-tich"
+        case .tienChienLuocNo(let them, let motLan):
+            return "/api/v1/finance/debts/chien-luoc?traThem=\(Int(max(0, them)))&motLan=\(Int(max(0, motLan)))"
+        case .tienXemTatToan(let id, let ngay):
+            return "/api/v1/finance/debts/\(id)/tat-toan" + (ngay.map { "?ngay=\($0)" } ?? "")
+        case .tienGhiTatToan(let id, _): return "/api/v1/finance/debts/\(id)/tat-toan"
         case .markNotificationsRead: return "/api/v1/social/notifications"
         case .getPost(let id): return "/api/v1/social/posts/\(id)"
         }
@@ -1083,7 +1094,7 @@ enum APIEndpoint {
         case .tienThemVi, .tienChuyenVi, .tienThemNhomChi, .tienThemChi, .tienThemThu,
              .tienThemNguonThu, .tienThemNo, .tienTraKy, .tienHuyTraKy,
              .tienThemTietKiem, .tienRutTietKiem, .tienThemMucTieuTietKiem,
-             .tienGopMucTieuTietKiem, .tienThemDauTu, .tienAIHoi:
+             .tienGopMucTieuTietKiem, .tienThemDauTu, .tienAIHoi, .tienGhiTatToan:
             return "POST"
         case .tienSuaVi, .tienSuaNhomChi, .tienSuaChi, .tienSuaThu, .tienSuaNo,
              .tienSuaDauTu, .tienDatMucTieu:
@@ -1169,7 +1180,7 @@ enum APIEndpoint {
              .tienThemNo(let m), .tienSuaNo(_, let m), .tienTraKy(_, _, let m),
              .tienThemTietKiem(let m), .tienRutTietKiem(_, let m),
              .tienThemMucTieuTietKiem(let m), .tienGopMucTieuTietKiem(_, let m),
-             .tienThemDauTu(let m), .tienSuaDauTu(_, let m):
+             .tienThemDauTu(let m), .tienSuaDauTu(_, let m), .tienGhiTatToan(_, let m):
             return m
         case .tienDatMucTieu(let ky, let soTien): return ["ky": ky, "soTien": soTien]
         case .tienAIHoi(let c): return ["cauHoi": c]

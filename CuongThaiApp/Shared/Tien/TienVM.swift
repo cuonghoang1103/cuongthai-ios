@@ -38,8 +38,23 @@ final class TienVM: ObservableObject {
     @Published var dsMucTieuTietKiem: [MucTieuTietKiem] = []
     @Published var dsDauTu: [KhoanDauTu] = []
 
+    /// Gói phân tích của máy chủ (`/finance/phan-tich`): cảnh báo, sức khoẻ
+    /// tài chính, nợ tổng hợp, xu hướng. Luôn là số của HÔM NAY — không theo
+    /// tháng đang chọn ở thanh tháng.
+    @Published var phanTich: GoiPhanTich?
+    /// Lỗi của RIÊNG gói phân tích — hiện trong khối, không bật bảng lỗi chung
+    /// (cùng lý do với `loiMucTieu`).
+    @Published var loiPhanTich: String?
+
     // Cố vấn AI
     @Published var nhanXetAI: String?
+    /// Câu hỏi nhanh máy chủ gợi ý (rỗng ⇒ màn AI dùng vài câu mặc định).
+    @Published var goiYAI: [String] = []
+    @Published var canhBaoAI: [CanhBaoTien] = []
+    /// Kết quả soát số của bản nhận xét hiện tại.
+    @Published var kiemSoTomTat: KiemSoAI?
+    /// Bảng số máy chủ đưa cho AI — hiện ngay dưới nhận xét.
+    @Published var soLieuAI: SoLieuCoVan?
     @Published var dangHoiAI = false
     @Published var thieuKhoaAI = false
 
@@ -63,8 +78,19 @@ final class TienVM: ObservableObject {
             nhom.addTask { await self.napDanhMuc() }
             nhom.addTask { await self.napMucTieu() }
             nhom.addTask { await self.napNo() }
+            nhom.addTask { await self.napPhanTich() }
         }
         ghiAnhChupChoWidget()
+    }
+
+    func napPhanTich() async {
+        do {
+            phanTich = try await TienAPI.phanTich()
+            loiPhanTich = nil
+        } catch {
+            if case APIError.unauthorized = error { return }
+            loiPhanTich = error.localizedDescription
+        }
     }
 
     func napBang() async {
@@ -241,11 +267,12 @@ final class TienVM: ObservableObject {
     }
 
     /// Sau MỌI thao tác làm đổi tiền: bảng tổng quan, ví và mục tiêu đều lệch.
-    private func sauKhiGhiTien() async {
+    func sauKhiGhiTien() async {
         await withTaskGroup(of: Void.self) { n in
             n.addTask { await self.napBang() }
             n.addTask { await self.napMucTieu() }
             n.addTask { await self.napDanhMuc() }
+            n.addTask { await self.napPhanTich() }
         }
         ghiAnhChupChoWidget()
     }
@@ -259,6 +286,10 @@ final class TienVM: ObservableObject {
             let kq = try await TienAPI.aiTomTat()
             thieuKhoaAI = kq.thieuKhoaAI
             nhanXetAI = kq.chu
+            if let g = kq.goiY, !g.isEmpty { goiYAI = g }
+            canhBaoAI = kq.canhBao ?? []
+            kiemSoTomTat = kq.kiemSo
+            if let so = kq.so { soLieuAI = so }
         } catch { ghiLoi(error) }
     }
 

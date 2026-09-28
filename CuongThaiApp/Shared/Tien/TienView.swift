@@ -19,6 +19,7 @@ struct TienView: View {
     @State private var kyDangTra: KyNoSapToi?
     @State private var moCoVan = false
     @State private var moMucTieu = false
+    @Environment(\.horizontalSizeClass) private var beRong
 
     var body: some View {
         NavigationStack {
@@ -27,6 +28,7 @@ struct TienView: View {
                     ThanhChonThang(thang: vm.thang) { b in Task { await vm.doiThang(b) } }
 
                     if !vm.noCanGap.isEmpty { khoiNoGap }
+                    khoiPhanTich
                     if vm.tongDuNo > 0 { khoiTongNo }
                     khoiMucTieuNgay
                     khoiSoLieu
@@ -156,6 +158,42 @@ struct TienView: View {
         .cornerRadius(CornerRadius.large)
     }
 
+    // MARK: - Cảnh báo & sức khoẻ tài chính (máy chủ tính)
+
+    @ViewBuilder
+    private var khoiPhanTich: some View {
+        if let p = vm.phanTich {
+            let cb = canhBaoManChinh(p)
+            if beRong == .regular {
+                HStack(alignment: .top, spacing: Spacing.md) {
+                    KhoiSucKhoeTaiChinh(vm: vm, p: p, soCot: cb.isEmpty ? nil : 2)
+                    if !cb.isEmpty { KhoiCanhBaoTien(vm: vm, ds: cb) }
+                }
+            } else {
+                if !cb.isEmpty { KhoiCanhBaoTien(vm: vm, ds: cb) }
+                KhoiSucKhoeTaiChinh(vm: vm, p: p)
+            }
+        } else if let l = vm.loiPhanTich {
+            HStack(spacing: Spacing.sm) {
+                Image(systemName: "exclamationmark.icloud").foregroundStyle(AppColors.textTertiary)
+                Text("\(T("Chưa tải được phân tích")): \(l)")
+                    .font(.caption).foregroundStyle(AppColors.textSecondary)
+                    .lineLimit(2)
+                Spacer(minLength: 0)
+                Button(T("Thử lại")) { Task { await vm.napPhanTich() } }.font(.caption)
+            }
+            .theTien()
+        }
+    }
+
+    /// Kỳ quá hạn / sắp hạn đã có khối "Nợ cần trả" (có ô tích) ngay trên —
+    /// lặp lại ở khối cảnh báo chỉ đẩy các cảnh báo khác xuống khuất.
+    private func canhBaoManChinh(_ p: GoiPhanTich) -> [CanhBaoTien] {
+        let ds = p.canhBao ?? []
+        guard !vm.noCanGap.isEmpty else { return ds }
+        return ds.filter { $0.ma != "qua_han" && $0.ma != "sap_han" }
+    }
+
     // MARK: - Tổng nợ & lãi
 
     /// Ba con số người đang vay cần thấy mà không phải bấm vào đâu: còn nợ
@@ -171,12 +209,25 @@ struct TienView: View {
                     Image(systemName: "chevron.right")
                         .font(.caption2).foregroundStyle(AppColors.textTertiary)
                 }
+                if let t = vm.phanTich?.no?.tong {
+                    // Số của MÁY CHỦ: đã quy USD ra VND, lãi đúng từng kiểu.
+                    HStack(spacing: Spacing.sm) {
+                        oTongNo(T("Gốc còn lại"), t.gocConLai ?? 0, AppColors.warning)
+                        oTongNo(T("Lãi còn phải trả"), t.laiConPhaiTra ?? 0, AppColors.error)
+                        oTongNo(T("Trả tháng này"), vm.phanTich?.no?.thangNay?.tongNghiaVu ?? 0, AppColors.accent)
+                    }
+                    if let h = t.ngayHetNo {
+                        Text("\(T("Tổng còn phải trả")) \(DinhDangTien.day(t.tongConPhaiTra ?? 0)) · \(T("hết nợ")) \(NgayTien.ngayDay(h))")
+                            .font(.caption).foregroundStyle(AppColors.textSecondary)
+                    }
+                } else {
                 HStack(spacing: Spacing.sm) {
                     oTongNo(T("Tổng dư nợ"), vm.tongDuNo, AppColors.warning)
                     oTongNo(T("Lãi mỗi tháng"), vm.tongLaiMoiThang, AppColors.error)
                     oTongNo(T("Lãi cả khoản"), vm.tongLaiCaKhoan, AppColors.textSecondary)
                 }
-                if vm.tongLaiConPhaiTra > 0 {
+                }
+                if vm.phanTich?.no?.tong == nil, vm.tongLaiConPhaiTra > 0 {
                     Text("\(T("Còn phải trả lãi")): \(DinhDangTien.day(vm.tongLaiConPhaiTra))")
                         .font(.caption).foregroundStyle(AppColors.textSecondary)
                 }
@@ -338,6 +389,13 @@ struct TienView: View {
             }.buttonStyle(.plain)
             NavigationLink { DauTuView(vm: vm) } label: {
                 oLoiVao("Đầu tư", "chart.pie.fill", AppColors.accent, DinhDangTien.ngan(vm.bang?.totalAssetValue ?? 0))
+            }.buttonStyle(.plain)
+            NavigationLink { PhanTichView(vm: vm) } label: {
+                oLoiVao("Phân tích", "chart.bar.xaxis", AppColors.primary,
+                        "\((vm.phanTich?.canhBao ?? []).count) \(T("cảnh báo"))")
+            }.buttonStyle(.plain)
+            NavigationLink { ChienLuocNoView(vm: vm) } label: {
+                oLoiVao("Trả nợ thông minh", "arrow.triangle.branch", AppColors.success, T("Nên trả khoản nào trước"))
             }.buttonStyle(.plain)
         }
     }

@@ -122,6 +122,34 @@ enum TienAPI {
         try await api.request(.tienHuyTraKy(noId: noId, kyId: kyId))
     }
 
+    /// Chỉ sửa phí trả trước hạn — máy chủ cho sửa bất cứ lúc nào (không
+    /// đổi lịch). `nil` = xoá về "chưa khai".
+    static func suaPhiTraTruoc(noId: Int, phanTram: Double?) async throws -> KetQuaTrong {
+        let m: [String: Any] = ["prepayFeePct": phanTram.map { $0 as Any } ?? NSNull()]
+        return try await api.request(.tienSuaNo(id: noId, m))
+    }
+
+    // ─── Phân tích (máy chủ tính, app chỉ hiện) ──────────────
+    static func phanTich() async throws -> GoiPhanTich { try await api.request(.tienPhanTich) }
+
+    static func chienLuocNo(traThem: Double, motLan: Double) async throws -> ChienLuocNo {
+        try await api.request(.tienChienLuocNo(traThem: traThem, motLan: motLan))
+    }
+
+    static func xemTatToan(noId: Int, ngay: String?) async throws -> MoPhongTatToan {
+        try await api.request(.tienXemTatToan(noId: noId, ngay: ngay))
+    }
+
+    /// Ghi nhận đã tất toán. Máy chủ trả 400 nếu còn kỳ quá hạn chưa tích.
+    static func ghiTatToan(noId: Int, ngay: String?, viId: Int?, soTienThucTe: Double?, ghiChu: String?) async throws -> KetQuaTrong {
+        var m: [String: Any] = [:]
+        if let ngay { m["ngay"] = ngay }
+        if let viId { m["walletId"] = viId }
+        if let soTienThucTe, soTienThucTe > 0 { m["actualAmount"] = soTienThucTe }
+        if let g = ghiChu, !g.isEmpty { m["note"] = g }
+        return try await api.request(.tienGhiTatToan(noId: noId, m))
+    }
+
     // ─── Tiết kiệm ───────────────────────────────────────────
     static func dsTietKiem() async throws -> [SoTietKiem] { try await api.request(.tienDsTietKiem) }
 
