@@ -12,6 +12,8 @@ enum ViecTrang {
     case doiTen, nhanBan, chenTruoc, chenSau
     case doiGiay(LoaiGiay)
     case chuyenCuon, xuatPdf, xoa
+    /// Chỉ màn viết làm được (cần khung vẽ đang mở) — xem `MenuTrang.coLamGon`.
+    case lamGon
 }
 
 /// Menu giữ-lâu của một trang.
@@ -21,9 +23,18 @@ enum ViecTrang {
 struct MenuTrang: View {
     let trang: TrangVo
     let conXoaDuoc: Bool
+    /// Hiện "Làm gọn chữ". Chỉ dải trang của màn viết bật: làm gọn cần khung
+    /// vẽ đang mở (xem trước + hoàn tác đi qua bộ hoàn tác của nó), màn "Các
+    /// trang" không có khung vẽ nào.
+    var coLamGon = false
     let lam: (ViecTrang) -> Void
 
     var body: some View {
+        if coLamGon && trang.coNet {
+            Section {
+                Button { lam(.lamGon) } label: { Label(T("Làm gọn chữ"), systemImage: "wand.and.stars") }
+            }
+        }
         Section {
             Button { lam(.doiTen) } label: { Label(T("Đổi tên trang"), systemImage: "character.cursor.ibeam") }
             Button { lam(.nhanBan) } label: { Label(T("Nhân bản"), systemImage: "plus.square.on.square") }
@@ -578,6 +589,8 @@ struct TongQuanTrangView: View {
             cuaSo = .xuat([t.id])
         case .xoa:
             xacNhanXoa = [t]
+        case .lamGon:
+            break   // không hiện ở màn này
         }
         Haptics.cham()
     }

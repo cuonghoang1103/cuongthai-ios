@@ -25,6 +25,19 @@ final class CauNoiBangVe: ObservableObject {
     /// (xem `BangVeVC.boHoanTac` — không dựa vào responder chain).
     func hoanTac() { vc?.hoanTacNet() }
     func lamLai() { vc?.lamLaiNet() }
+
+    /// Trang mà khung vẽ ĐANG giữ. Đổi trang bằng `.id(...)` là dựng bộ điều
+    /// khiển mới — trong khoảnh khắc đó `vc` vẫn là của trang CŨ. Ai định ghi
+    /// nét vào khung phải so id này trước, kẻo ghi nét trang này sang trang kia.
+    var idTrangDangMo: UUID? { vc?.idTrang }
+    /// Bản vẽ đang hiện trên khung (mới hơn bản trên đĩa tới 2 giây tự lưu).
+    var banVe: PKDrawing? { vc?.canvas.drawing }
+    /// Thay cả bản vẽ, CÓ hoàn tác. Xem `BangVeVC.datBanVe`.
+    func datBanVe(_ moi: PKDrawing, tenViec: String) { vc?.datBanVe(moi, tenViec: tenViec) }
+    /// Chèn thêm nét, CÓ hoàn tác. Xem `BangVeVC.chenNet`.
+    func chenNet(_ ds: [PKStroke], tenViec: String) { vc?.chenNet(ds, tenViec: tenViec) }
+    /// Khung trong toạ độ màn khung vẽ (lớp khoanh) → toạ độ TRANG (toạ độ nét).
+    func sangToaDoTrang(_ r: CGRect) -> CGRect? { vc?.sangToaDoTrang(r) }
 }
 
 struct BangVe: UIViewControllerRepresentable {
@@ -144,6 +157,48 @@ final class BangVeVC: UIViewController {
     }
     func lamLaiNet() {
         if boHoanTac.canRedo { boHoanTac.redo() }
+    }
+
+    // MARK: Ghi nét bằng mã (Làm gọn chữ, AI vẽ bằng nét…)
+
+    /// Thay TOÀN BỘ bản vẽ bằng `moi`, đăng ký vào `boHoanTac` ⇒ nút ↶ và
+    /// ⌘Z trả lại y nguyên bản trước, ↷ / ⇧⌘Z làm lại. Lưu xuống đĩa NGAY
+    /// (không đợi hẹn giờ 2 giây): đây là thay đổi lớn, người dùng bấm Áp
+    /// dụng rồi đóng vở liền là chuyện thường.
+    ///
+    /// ⚠️ Mọi chỗ muốn ghi nét vào trang từ mã đều phải đi qua đây (hoặc
+    /// `chenNet`). Gán thẳng `canvas.drawing = …` thì PencilKit KHÔNG ghi
+    /// hoàn tác — người dùng không có đường lùi.
+    func datBanVe(_ moi: PKDrawing, tenViec: String) {
+        let cu = canvas.drawing
+        boHoanTac.registerUndo(withTarget: self) { vc in
+            // Đăng ký ngược lại bên trong lần hoàn tác ⇒ thành "làm lại".
+            vc.datBanVe(cu, tenViec: tenViec)
+        }
+        boHoanTac.setActionName(tenViec)
+        canvas.drawing = moi
+        choLuu = true
+        luuNgay()
+    }
+
+    /// Chèn thêm `ds` lên trên các nét đang có — một lần hoàn tác gỡ cả cụm.
+    /// Nét phải ở TOẠ ĐỘ TRANG (khổ `khoTrang`, không nhân mức phóng).
+    func chenNet(_ ds: [PKStroke], tenViec: String) {
+        guard !ds.isEmpty else { return }
+        var d = canvas.drawing
+        d.strokes.append(contentsOf: ds)
+        datBanVe(d, tenViec: tenViec)
+    }
+
+    /// Khung theo toạ độ VÙNG ĐANG THẤY (gốc ở góc trên-trái khung vẽ — đúng
+    /// hệ toạ độ của lớp phủ SwiftUI đặt đè lên nó) → toạ độ trang. Với
+    /// scroll view, `bounds.origin` chính là `contentOffset`, nên cộng nó vào
+    /// rồi chia mức phóng.
+    func sangToaDoTrang(_ r: CGRect) -> CGRect {
+        let z = max(canvas.zoomScale, 0.01)
+        let o = canvas.contentOffset
+        return CGRect(x: (r.minX + o.x) / z, y: (r.minY + o.y) / z,
+                      width: r.width / z, height: r.height / z)
     }
 
     /// Hẹn giờ tự lưu. Lưu mỗi nét là ghi đĩa hàng trăm lần một phút; lưu

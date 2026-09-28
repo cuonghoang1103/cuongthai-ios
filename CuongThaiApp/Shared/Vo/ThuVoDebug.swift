@@ -16,6 +16,12 @@ import SwiftUI
 //   CT_XEM_MAN=vo-viet       (gieo vở mẫu nếu kho trống) mở màn viết
 //   CT_XEM_MAN=vo-tongquan   … mở thẳng màn "Các trang" (lưới)
 //   CT_XEM_MAN=vo-sapxep     … mở thẳng màn "Các trang" (danh sách tay nắm)
+//   CT_XEM_MAN=vo-lamgon-thu bộ đo "Làm gọn chữ" trên nét giả (ThuLamGon)
+//   CT_XEM_MAN=vo-lamgon     gieo một trang viết XẤU rồi mở màn viết; thêm
+//                              CT_LAMGON=mo            tự mở cửa sổ Làm gọn
+//                              CT_LAMGON=ap            … và tự bấm Áp dụng
+//                              CT_LAMGON_HOANTAC=1     … rồi ↶ / ↷ và đối chiếu (log)
+//                              CT_LAMGON_XEM=goc       cửa sổ mở ở bản "Trước"
 
 @MainActor
 enum ThuVo {
@@ -199,6 +205,31 @@ enum ThuVo {
         return cuon
     }
 
+    /// Một cuốn "Thử làm gọn" với MỘT trang kẻ ngang viết xấu (chữ nghiêng,
+    /// nhảy, run tay, bảng lệch, hình méo). Mỗi lần mở ghi đè lại trang xấu,
+    /// trừ khi đặt `CT_LAMGON_GIU=1` (để xem bản đã áp dụng còn nguyên không).
+    static func gieoTrangXau(_ kho: ModelContext) -> CuonVo? {
+        let ten = "Thử làm gọn"
+        var cuon = (try? kho.fetch(FetchDescriptor<CuonVo>()))?.first { $0.ten == ten }
+        if cuon == nil {
+            let mon = MonVo(ten: "Thử", emoji: "✨"); kho.insert(mon)
+            let c = CuonVo(ten: ten, mon: mon); kho.insert(c)
+            let t = TrangVo(cuon: c, thuTu: 0, giay: .keNgang, huong: .doc)
+            kho.insert(t)
+            cuon = c
+        }
+        guard let cuon, let trang = cuon.trangsTheoThuTu.first else { return nil }
+        if ProcessInfo.processInfo.environment["CT_LAMGON_GIU"] != "1" || !trang.coNet {
+            let d = ThuLamGon.trangMau().k.drawing
+            KhoVo.ghi(d, cho: trang.id)
+            KhoVo.dungAnhNho(d, kho: trang.khoTrang, cho: trang.id)
+            trang.coNet = true
+        }
+        cuon.trangDangDoc = 0
+        try? kho.save()
+        return cuon
+    }
+
     /// Chữ số 1–9 vẽ bằng nét theo lưới 7 đoạn — đủ để nhận ra trên ảnh nhỏ.
     private static func veSo(_ n: Int) -> PKDrawing {
         let doan: [Int: [(CGPoint, CGPoint)]] = {
@@ -238,7 +269,7 @@ struct ThuVoView: View {
         ZStack {
             Color.clear
             switch cheDo {
-            case "vo-viet":
+            case "vo-viet", "vo-lamgon":
                 if let cuon { ManVietView(cuon: cuon) }
             case "vo-tongquan", "vo-sapxep":
                 if let cuon {
@@ -253,6 +284,10 @@ struct ThuVoView: View {
             switch cheDo {
             case "vo-thu": dong = ThuVo.chayHet()
             case "vo-kiem": dong = ThuVo.tomTatKhoThat(kho)
+            case "vo-lamgon-thu":
+                dong = ThuLamGon.chayHet()
+                for d in dong { NSLog("[THU-LAMGON] %@", d) }
+            case "vo-lamgon": cuon = ThuVo.gieoTrangXau(kho)
             default:
                 UserDefaults.standard.set(cheDo == "vo-sapxep" ? "danhSach" : "luoi",
                                           forKey: "vo.tongquan.chedo")

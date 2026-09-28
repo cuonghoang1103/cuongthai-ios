@@ -57,6 +57,43 @@ final class GiayNenView: UIView {
     private static let oLy      = mm(5)
     private static let leTrai   = mm(25)
 
+    // MARK: Đường chân chữ (cho "Làm gọn chữ")
+
+    /// Toạ độ y (toạ độ TRANG) của các đường chữ đứng lên, theo loại giấy.
+    /// "Làm gọn chữ" đặt mỗi dòng chữ lên đường gần nhất.
+    ///
+    /// ⚠️ Phải khớp TỪNG SỐ với các hàm `ve…` bên dưới — đổi khoảng cách dòng
+    /// ở đó mà quên ở đây thì chữ được "làm gọn" nằm lơ lửng giữa hai dòng kẻ.
+    /// Giấy không có đường chân (trắng, 原稿用紙, khuông nhạc) trả rỗng: khi đó
+    /// chỉ nắn dòng cho thẳng, không dời lên xuống.
+    static func dongChanChu(giay: LoaiGiay, khoTrang: CGSize) -> [CGFloat] {
+        let h = khoTrang.height
+        var ds: [CGFloat] = []
+        switch giay {
+        case .keNgang:
+            var y = caoDong * 3
+            while y < h - caoDong { ds.append(y); y += caoDong }
+        case .cornell:
+            var y = caoDong * 2
+            while y < h * 0.80 { ds.append(y); y += caoDong }
+        case .oLy, .cham:
+            var y = oLy
+            while y < h { ds.append(y); y += oLy }
+        case .bonDong:
+            // Chữ đứng lên dòng CHÂN (dòng thứ ba của mỗi hàng 4 dòng).
+            let tang = mm(4.5), cachHang = mm(7)
+            var y = mm(22)
+            while y + tang * 3 < h - mm(12) { ds.append(y + tang * 2); y += tang * 3 + cachHang }
+        case .luoiCode:
+            let cao = mm(7)
+            var y = mm(18)
+            while y + cao <= h - mm(10) { ds.append(y + cao); y += cao }
+        case .trang, .genkou, .nhacLy:
+            break
+        }
+        return ds
+    }
+
     // MARK: Vẽ
 
     override func draw(_ rect: CGRect) {

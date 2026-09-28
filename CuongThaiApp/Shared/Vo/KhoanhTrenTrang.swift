@@ -19,6 +19,10 @@ import SwiftUI
 
 struct LopKhoanhTrenTrang: View {
     /// Trả về khung bao của nét khoanh, theo toạ độ của chính lớp phủ này.
+    /// Lời nhắc trên thanh — lớp khoanh dùng chung cho hỏi AI và "Làm gọn".
+    var loiNhac = T("Khoanh tròn hoặc tô chỗ cần hỏi")
+    var loiThaTay = T("Thả tay ra là hỏi được")
+    var bieuTuong = "lasso.badge.sparkles"
     let khiXong: (CGRect) -> Void
     let khiHuy: () -> Void
 
@@ -84,10 +88,9 @@ struct LopKhoanhTrenTrang: View {
 
     private var thanhNhac: some View {
         HStack(spacing: Spacing.md) {
-            Image(systemName: "lasso.badge.sparkles")
+            Image(systemName: bieuTuong)
                 .foregroundStyle(AppColors.primary)
-            Text(diem.isEmpty ? T("Khoanh tròn hoặc tô chỗ cần hỏi")
-                              : T("Thả tay ra là hỏi được"))
+            Text(diem.isEmpty ? loiNhac : loiThaTay)
                 .font(Font.bodyMedium.weight(.medium))
                 .foregroundStyle(AppColors.textPrimary)
             Spacer(minLength: Spacing.sm)

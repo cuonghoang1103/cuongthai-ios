@@ -199,6 +199,17 @@ final class TrangVo {
     /// cảnh báo, và KHÔNG tự ghi đè bản trên máy chủ.
     var vuongXungDot: Bool = false
     var dayLuc: Date?
+    /// Nét CŨ đã bị viết lại (Làm gọn chữ) kể từ lần đẩy gần nhất.
+    ///
+    /// Hợp nhất xung đột dựa trên TIỀN TỐ NÉT: "`soNetDaDay` nét đầu hai bên
+    /// cùng có". Làm gọn giữ nguyên SỐ nét nhưng đổi NỘI DUNG từng nét, nên
+    /// phép đếm vẫn nói "chỉ vẽ thêm" — và nếu máy khác vừa ghi trang này, bản
+    /// gộp sẽ lấy tiền tố của máy chủ, lặng lẽ vứt cả trang đã làm gọn. Cờ này
+    /// bắt nhánh đó đi đường an toàn: giữ CẢ HAI thành hai trang.
+    ///
+    /// ⚠️ Thêm 28/09/2026 vào model đã có dữ liệu: phải có giá trị mặc định
+    /// (xem ghi chú ở `tieuDe`).
+    var daVietLaiNet: Bool = false
 
     var cuon: CuonVo?
 

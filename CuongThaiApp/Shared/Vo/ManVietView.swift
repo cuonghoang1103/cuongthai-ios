@@ -38,6 +38,8 @@ struct ManVietView: View {
     @State private var xinKhoanh = 0
     /// Đang ở chế độ bút-hỏi-AI: lớp phủ khoanh đang phủ lên trang.
     @State private var dangKhoanhTrang = false
+    /// Đang khoanh vùng để LÀM GỌN (cùng lớp khoanh với hỏi AI, khác việc).
+    @State private var khoanhDeLamGon = false
     /// Vùng vừa cắt từ màn hình, chờ trợ lý hỏi.
     @State private var vungVuaCat: AnhVungCat?
     @StateObject private var cauNoiVe = CauNoiBangVe()
@@ -51,8 +53,11 @@ struct ManVietView: View {
         case doiGiay, datTenChuong, quetTaiLieu, hoiNhapPdf, tomTat, tongQuan
         case chuyenCuon([UUID])
         case xuatPdf([UUID], String)
+        /// Làm gọn chữ trang đang mở; kèm vùng khoanh (toạ độ trang) nếu có.
+        case lamGon(CGRect?)
         var id: String {
             switch self {
+            case .lamGon: return "lamGon"
             case .doiGiay: return "doiGiay"
             case .datTenChuong: return "datTenChuong"
             case .quetTaiLieu: return "quetTaiLieu"
@@ -117,6 +122,12 @@ struct ManVietView: View {
                         if dangKhoanhTrang {
                             LopKhoanhTrenTrang(khiXong: { k in catVung(k) },
                                                khiHuy: { dangKhoanhTrang = false })
+                        } else if khoanhDeLamGon {
+                            LopKhoanhTrenTrang(loiNhac: T("Khoanh vùng chữ cần làm gọn"),
+                                               loiThaTay: T("Thả tay ra để xem trước"),
+                                               bieuTuong: "wand.and.stars",
+                                               khiXong: { k in khoanhXongLamGon(k) },
+                                               khiHuy: { khoanhDeLamGon = false })
                         }
                     }
             }
@@ -200,6 +211,14 @@ struct ManVietView: View {
                 }
             case .xuatPdf(let ids, let ten):
                 XuatPdfView(trangs: trangs.filter { ids.contains($0.id) }, tenTep: ten)
+            case .lamGon(let vung):
+                if let t = trangHienTai {
+                    LamGonView(idTrang: t.id, goc: banVeDangMo(t), giay: t.giay,
+                               khoTrang: t.khoTrang, vung: vung) { moi in
+                        apDungLamGon(moi, cho: t)
+                    }
+                    .presentationDetents([.large])
+                }
             case .tomTat:
                 HoiVoAIView(tieuDe: T("Đề cương ôn thi"),
                             trangs: trangs,
@@ -231,6 +250,9 @@ struct ManVietView: View {
             }
             idHienTai = trangHienTai?.id
         }
+        #if DEBUG
+        .task { await thuLamGonTuDong() }
+        #endif
         .onChange(of: chiSo) { _, moi in
             cuon.trangDangDoc = moi
             idHienTai = trangHienTai?.id
@@ -391,6 +413,83 @@ struct ManVietView: View {
         }
     }
 
+    // MARK: Làm gọn chữ
+
+    private func moLamGon(vung: CGRect? = nil) {
+        guard trangHienTai?.coNet == true else { bao(T("Trang này chưa có nét nào")); return }
+        cuaSo = .lamGon(vung)
+    }
+
+    private func batKhoanhLamGon() {
+        dangKhoanhTrang = false
+        khoanhDeLamGon = true
+        bao(T("Khoanh vùng chữ cần làm gọn"))
+        Haptics.cham()
+    }
+
+    private func khoanhXongLamGon(_ khung: CGRect) {
+        khoanhDeLamGon = false
+        guard let r = cauNoiVe.sangToaDoTrang(khung) else { return }
+        moLamGon(vung: r)
+    }
+
+    /// Nét đang HIỆN trên khung (mới hơn bản trên đĩa tới 2 giây). Khung chưa
+    /// kịp sang trang này thì đọc đĩa — nhưng khi đó Áp dụng sẽ bị chặn.
+    private func banVeDangMo(_ t: TrangVo) -> PKDrawing {
+        if cauNoiVe.idTrangDangMo == t.id, let d = cauNoiVe.banVe { return d }
+        return KhoVo.nap(t.id)
+    }
+
+    /// ⚠️ Chỉ ghi khi khung vẽ ĐANG giữ đúng trang này — lệch là ghi nét của
+    /// trang này đè lên trang kia.
+    private func apDungLamGon(_ moi: PKDrawing, cho t: TrangVo) -> Bool {
+        guard cauNoiVe.idTrangDangMo == t.id else { return false }
+        cauNoiVe.datBanVe(moi, tenViec: T("Làm gọn chữ"))
+        // Nét CŨ đã đổi nội dung ⇒ đồng bộ không được hợp nhất theo tiền tố.
+        t.daVietLaiNet = true
+        t.suaLuc = Date()
+        try? kho.save()
+        bao(T("Đã làm gọn — bấm ↶ để trả lại"))
+        return true
+    }
+
+    #if DEBUG
+    /// Bàn thử máy ảo (xem `ThuVoDebug.swift`, CT_XEM_MAN=vo-lamgon): mở cửa
+    /// sổ Làm gọn, và nếu xin thì hoàn tác / làm lại rồi đối chiếu TỪNG NÉT.
+    private func thuLamGonTuDong() async {
+        let env = ProcessInfo.processInfo.environment
+        guard env["CT_LAMGON"] != nil else { return }
+        try? await Task.sleep(for: .seconds(1.5))
+        guard let goc = cauNoiVe.banVe else { NSLog("[THU-LAMGON] ❌ chưa có khung vẽ"); return }
+        moLamGon()
+        guard env["CT_LAMGON_HOANTAC"] == "1" else { return }
+        func giong(_ a: PKDrawing, _ b: PKDrawing) -> Bool {
+            a.strokes.count == b.strokes.count && zip(a.strokes, b.strokes).allSatisfy { ThuLamGon.giongHet($0, $1) }
+        }
+        // Đợi tới khi Áp dụng thật sự đổi khung (máy ảo có lúc rất chậm).
+        for _ in 0..<60 {
+            try? await Task.sleep(for: .seconds(0.5))
+            if let d = cauNoiVe.banVe, !giong(d, goc) { break }
+        }
+        try? await Task.sleep(for: .seconds(1))
+        guard let sau = cauNoiVe.banVe else { return }
+        NSLog("[THU-LAMGON] sau Áp dụng: %d nét · khác gốc = %@ · cờ daVietLaiNet = %@ · đĩa khớp khung = %@",
+              sau.strokes.count, giong(goc, sau) ? "KHÔNG ❌" : "CÓ ✅",
+              trangHienTai?.daVietLaiNet == true ? "true ✅" : "false ❌",
+              giong(KhoVo.nap(trangHienTai!.id), sau) ? "có ✅" : "không ❌")
+        cauNoiVe.hoanTac()
+        try? await Task.sleep(for: .seconds(1.5))
+        if let d = cauNoiVe.banVe {
+            NSLog("[THU-LAMGON] sau ↶: trùng bản GỐC từng nét = %@", giong(d, goc) ? "CÓ ✅" : "KHÔNG ❌")
+        }
+        cauNoiVe.lamLai()
+        try? await Task.sleep(for: .seconds(1.5))
+        if let d = cauNoiVe.banVe {
+            NSLog("[THU-LAMGON] sau ↷: trùng bản ĐÃ LÀM GỌN = %@", giong(d, sau) ? "CÓ ✅" : "KHÔNG ❌")
+        }
+    }
+    #endif
+
     // MARK: Thanh trên
 
     private var thanhTren: some View {
@@ -524,6 +623,16 @@ struct ManVietView: View {
             }
 
             Menu {
+                Section {
+                    Button { moLamGon() } label: {
+                        Label(T("Làm gọn chữ"), systemImage: "wand.and.stars")
+                    }
+                    Button { batKhoanhLamGon() } label: {
+                        Label(T("Làm gọn một vùng (khoanh)…"), systemImage: "lasso")
+                    }
+                }
+                .disabled(trangHienTai?.coNet != true)
+
                 Section {
                     Button { cuaSo = .doiGiay } label: {
                         Label(T("Đổi giấy trang này"), systemImage: "doc.plaintext")
@@ -724,7 +833,10 @@ struct ManVietView: View {
                    nenPdfTen: trang.nenPdfTen,
                    nenPdfTrang: trang.nenPdfTrang,
                    nenAnhTen: trang.nenAnhTen,
-                   hienCongCu: hienCongCu,
+                   // Bảng công cụ là cửa sổ NỔI của hệ thống: nó nằm đè lên cả
+                   // cửa sổ đang mở (đo 28/09: che mất công tắc và nút của
+                   // "Làm gọn chữ"). Có cửa sổ thì tạm ẩn, đóng lại là hiện.
+                   hienCongCu: hienCongCu && cuaSo == nil,
                    lanVuaKhung: lanVuaKhung,
                    khiLuu: { drawing in
                        trang.coNet = !drawing.strokes.isEmpty
@@ -877,6 +989,16 @@ struct ManVietView: View {
             cuaSo = .xuatPdf([t.id], cuon.ten + " — " + t.tenHienThi(so: i + 1))
         case .xoa:
             xoaTrang(i)
+        case .lamGon:
+            if t.id == trangHienTai?.id {
+                moLamGon()
+            } else {
+                // Trang khác: mở nó ra trước. Khung vẽ của trang mới dựng ở
+                // vòng cập nhật SAU, nên cửa sổ phải đợi một nhịp — mở ngay
+                // thì nó đọc nét của trang CŨ (`cauNoiVe.vc` chưa đổi).
+                moTheoId(t.id)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { moLamGon() }
+            }
         }
     }
 
@@ -995,7 +1117,7 @@ private struct DaiTrang: View {
                             // chỉ có `contextMenu` với mỗi "Xoá trang", nên
                             // giữ rồi kéo không làm gì cả.
                             .contextMenu {
-                                MenuTrang(trang: trang, conXoaDuoc: trangs.count > 1) { lam($0, trang) }
+                                MenuTrang(trang: trang, conXoaDuoc: trangs.count > 1, coLamGon: true) { lam($0, trang) }
                             }
                             .onDrag {
                                 dangKeo = trang.id

@@ -441,6 +441,8 @@ final class DongBoVo: ObservableObject {
         trang.soNetDaDay = net.strokes.count
         trang.canDay = false
         trang.vuongXungDot = false
+        // Máy chủ đã nhận NGUYÊN bản (kể cả phần viết lại) ⇒ tiền tố lại chung.
+        trang.daVietLaiNet = false
         trang.dayLuc = Date()
     }
 
@@ -484,7 +486,10 @@ final class DongBoVo: ObservableObject {
         }
 
         let banLocal = KhoVo.nap(trang.id)
-        let chiVeThem = banLocal.strokes.count >= trang.soNetDaDay
+        // Trang đã "Làm gọn chữ" thì nét cũ đã đổi nội dung dù SỐ nét y
+        // nguyên — phép đếm dưới đây không thấy, phải hỏi cờ.
+        let chiVeThem = !trang.daVietLaiNet
+            && banLocal.strokes.count >= trang.soNetDaDay
             && trang.soNetDaDay <= banMayChu.strokes.count
 
         if chiVeThem {
@@ -523,7 +528,8 @@ final class DongBoVo: ObservableObject {
             trang.soNetDaDay = banMayChu.strokes.count
             trang.canDay = false
             trang.vuongXungDot = false
-            NhatKy.vo.info("không gộp được (có tẩy/sửa) — đã tách thành hai trang")
+            trang.daVietLaiNet = false   // trang gốc giờ là bản máy chủ
+            NhatKy.vo.info("không gộp được (có tẩy/sửa/làm gọn) — đã tách thành hai trang")
         }
         try kho.save()
     }
