@@ -19,9 +19,14 @@ import SwiftUI
 // giấy — mà trang giấy mới là thứ người ta đang nhìn.
 //
 // Thao tác:
-//   · chạm      → mở/đóng khung hỏi
-//   · chạm đúp  → mở CuongMini đầy đủ
-//   · giữ       → menu: ẩn trợ lý, đổi mép, nhích lên/xuống
+//   · chạm      → mở/đóng khung hỏi — NGAY LẬP TỨC
+//   · giữ       → menu: mở CuongMini đầy đủ, ẩn trợ lý, đổi mép, nhích lên/xuống
+//
+// ⚠️ 28/09/2026 người dùng: "ấn vào 1-2s sau nó mới mở ra". Thủ phạm là cú
+// CHẠM ĐÚP: có `onTapGesture(count: 2)` thì SwiftUI bắt chạm đơn đợi xem có
+// cú thứ hai không (~0,35s), rồi `demCham()` lại tự đợi thêm 260ms, rồi mới
+// tới hoạt ảnh lò xo. Chạm đúp đã bỏ — "Mở CuongMini đầy đủ" nằm ở menu giữ
+// và menu trong khung hỏi. Đừng thêm lại cử chỉ chạm đúp lên con robot.
 //
 // Bản desktop cho KÉO con robot; ở đây thì không — xem ghi chú ở `nutRobot`.
 // ════════════════════════════════════════════════════════════════
@@ -64,9 +69,11 @@ struct TroLyTrang: View {
     @AppStorage(CaiDatTroLy.khoaY) private var tiLeY = 0.78
 
     @State private var moKhung = false
-    @State private var choChamDon: Task<Void, Never>?
-    @State private var soCham = 0
     @State private var moChatDayDu = false
+    /// Cuộc trò chuyện sống ở ĐÂY chứ không trong khung hỏi: khung bị gỡ khỏi
+    /// cây mỗi lần đóng, để `@StateObject` trong khung thì đóng–mở lại là mất
+    /// sạch câu vừa hỏi, và lần mở nào cũng phải dựng lại từ đầu.
+    @StateObject private var vm = AIChatViewModel()
     @State private var khoanhNgay = 0
 
     private let canhNut: CGFloat = 62
@@ -78,7 +85,7 @@ struct TroLyTrang: View {
 
                 ZStack(alignment: .topLeading) {
                     if moKhung {
-                        KhungHoiTrang(trang: trang, tenCuon: tenCuon,
+                        KhungHoiTrang(vm: vm, trang: trang, tenCuon: tenCuon,
                                       khoanhNgay: khoanhNgay,
                                       vungNgoai: vungNgoai,
                                       dong: { moKhung = false; khoanhNgay = 0 },
@@ -156,14 +163,10 @@ struct TroLyTrang: View {
             // Nên đổi chỗ bằng LỆNH RÕ RÀNG trong menu giữ — hai góc, một cú
             // chạm, lần nào cũng đúng. Một nút bấm là chạy được ăn đứt một cử
             // chỉ kéo chạy được một nửa.
-            .onTapGesture(count: 2) {
-                choChamDon?.cancel(); choChamDon = nil
-                soCham = 0
-                moKhung = false
-                moChatDayDu = true
+            .onTapGesture {
+                moKhung.toggle()
                 Haptics.cham()
             }
-            .onTapGesture { demCham() }
             .contextMenu {
                 Button {
                     moKhung = false
@@ -189,30 +192,7 @@ struct TroLyTrang: View {
                 .disabled(tiLeY >= 0.89)
             }
             .accessibilityLabel(T("Trợ lý trang"))
-            .accessibilityHint(T("Chạm để hỏi về trang này, chạm đúp để mở CuongMini, giữ để đổi chỗ"))
-    }
-
-    /// Đếm cú chạm để phân biệt chạm đơn với chạm đúp.
-    ///
-    /// Chạm đơn phải ĐỢI xem có cú thứ hai không, nếu không mỗi cú chạm đúp
-    /// sẽ mở khung hỏi rồi mới nhảy sang màn chat đầy đủ — người dùng thấy
-    /// một cái nháy vô nghĩa. 260ms là ngưỡng nhấp đúp quen thuộc, lấy đúng
-    /// con số bản desktop đã chốt.
-    private func demCham() {
-        soCham += 1
-        choChamDon?.cancel()
-        choChamDon = Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(260))
-            guard !Task.isCancelled else { return }
-            if soCham >= 2 {
-                moKhung = false
-                moChatDayDu = true
-            } else {
-                moKhung.toggle()
-            }
-            soCham = 0
-            Haptics.cham()
-        }
+            .accessibilityHint(T("Chạm để hỏi về trang này, giữ để mở CuongMini hoặc đổi chỗ"))
     }
 
     /// Đổi mép đứng của robot. Hai góc, không có trạng thái lửng ở giữa.
@@ -254,6 +234,7 @@ struct TroLyTrang: View {
 // MARK: - Khung hỏi
 
 struct KhungHoiTrang: View {
+    @ObservedObject var vm: AIChatViewModel
     let trang: TrangVo?
     let tenCuon: String
     /// Khác 0 = vào màn là mở khoanh vùng ngay.
@@ -263,7 +244,6 @@ struct KhungHoiTrang: View {
     let dong: () -> Void
     let moDayDu: () -> Void
 
-    @StateObject private var vm = AIChatViewModel()
     @StateObject private var mayDoc = MayDoc()
     @StateObject private var ghiAm = GhiAmThoai()
     @State private var cauHoi = ""
