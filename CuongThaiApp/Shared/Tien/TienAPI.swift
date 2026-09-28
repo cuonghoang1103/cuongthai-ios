@@ -203,6 +203,9 @@ enum TienAPI {
     // ─── Cố vấn AI ───────────────────────────────────────────
     static func aiTomTat() async throws -> TraLoiCoVan { try await api.request(.tienAITomTat) }
 
+    /// Câu hỏi nhanh theo số liệu — máy chủ trả ngay, không gọi model.
+    static func aiGoiY() async throws -> [String] { try await api.request(.tienAIGoiY) }
+
     static func aiHoi(_ cauHoi: String) async throws -> TraLoiCoVan { try await api.request(.tienAIHoi(cauHoi: cauHoi)) }
 }
 

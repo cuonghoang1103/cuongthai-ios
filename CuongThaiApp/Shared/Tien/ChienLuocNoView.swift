@@ -450,7 +450,10 @@ struct TatToanSomView: View {
                 dongSo(T("Phí trả trước hạn"), DinhDangTien.day(k.phiTraTruoc ?? 0, tienTe))
             }
             dongSo(T("Chi phí tất toán"), DinhDangTien.day(k.chiPhiTatToan ?? 0, tienTe), AppColors.textPrimary, dam: true)
-            Divider()
+        }
+
+        // Tách Section thay vì Divider: Divider trong List thành một hàng trống.
+        Section(T("So với trả theo lịch")) {
             dongSo(T("Nếu trả theo lịch"), DinhDangTien.day(k.neuTraTheoLich ?? 0, tienTe), AppColors.textSecondary)
             dongSo(T("Lãi tránh được"), DinhDangTien.day(k.laiTranhDuoc ?? 0, tienTe), AppColors.success)
             if let n = k.soKyBoQua, n > 0 {

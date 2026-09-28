@@ -279,6 +279,12 @@ final class TienVM: ObservableObject {
 
     // MARK: - Cố vấn AI
 
+    /// Gợi ý hiện ngay khi mở màn — nhận xét AI có thể mất vài chục giây.
+    func napGoiYAI() async {
+        guard goiYAI.isEmpty, let g = try? await TienAPI.aiGoiY(), !g.isEmpty else { return }
+        if goiYAI.isEmpty { goiYAI = g }
+    }
+
     func hoiAITomTat() async {
         dangHoiAI = true
         defer { dangHoiAI = false }

@@ -72,6 +72,9 @@ struct CoVanAIView: View {
                 ToolbarItem(placement: .cancellationAction) { Button(T("Đóng")) { dong() } }
             }
             .task {
+                // Tuần tự (không async let — xem bài học "let+aw"): gợi ý về
+                // trong vài trăm ms, nhận xét AI mới là phần chậm.
+                await vm.napGoiYAI()
                 if vm.nhanXetAI == nil { await vm.hoiAITomTat() }
             }
         }

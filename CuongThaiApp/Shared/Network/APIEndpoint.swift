@@ -92,6 +92,7 @@ enum APIEndpoint {
     case tienAIHoi(cauHoi: String)
     // Phân tích (28/09/2026): số do máy chủ tính, app chỉ hiện.
     case tienPhanTich
+    case tienAIGoiY
     case tienChienLuocNo(traThem: Double, motLan: Double)
     case tienXemTatToan(noId: Int, ngay: String?)
     case tienGhiTatToan(noId: Int, [String: Any])
@@ -1046,6 +1047,7 @@ enum APIEndpoint {
         case .tienAITomTat: return "/api/v1/finance/ai/tom-tat"
         case .tienAIHoi: return "/api/v1/finance/ai/hoi"
         case .tienPhanTich: return "/api/v1/finance/phan-tich"
+        case .tienAIGoiY: return "/api/v1/finance/ai/goi-y"
         case .tienChienLuocNo(let them, let motLan):
             return "/api/v1/finance/debts/chien-luoc?traThem=\(Int(max(0, them)))&motLan=\(Int(max(0, motLan)))"
         case .tienXemTatToan(let id, let ngay):
