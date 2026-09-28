@@ -11,6 +11,11 @@ final class NenTrangView: UIView {
 
     private let anhView = UIImageView()
     private var khoaHienTai: String?
+    /// Nền là LỚP CHỮ "✍️ AI viết lại" (PNG mực trong suốt), không phải ảnh
+    /// quét: ở chế độ tối phải đổi mực sang màu sáng — giấy tối + mực xanh
+    /// đậm là không đọc được. Ảnh quét (giấy trắng đục) thì để nguyên.
+    private var anhLopChu: UIImage?
+    private var tenLopChu: String?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -33,8 +38,17 @@ final class NenTrangView: UIView {
         guard khoa != khoaHienTai else { return }
         khoaHienTai = khoa
 
+        anhLopChu = nil
+        tenLopChu = nil
         if let anhTen {
-            anhView.image = UIImage(contentsOfFile: KhoVo.duongDanNen(anhTen).path)
+            let anh = UIImage(contentsOfFile: KhoVo.duongDanNen(anhTen).path)
+            if trang == TrangVo.trangLopChuAI, let anh {
+                anhLopChu = anh
+                tenLopChu = anhTen
+                apMauLopChu()
+            } else {
+                anhView.image = anh
+            }
             return
         }
         guard let pdfTen else { anhView.image = nil; return }
@@ -43,6 +57,28 @@ final class NenTrangView: UIView {
         anhView.image = Self.veTrangPdf(ten: pdfTen, trang: trang,
                                         kho: CGSize(width: khoTrang.width * 2,
                                                     height: khoTrang.height * 2))
+    }
+
+    override func traitCollectionDidChange(_ truoc: UITraitCollection?) {
+        super.traitCollectionDidChange(truoc)
+        if traitCollection.userInterfaceStyle != truoc?.userInterfaceStyle { apMauLopChu() }
+    }
+
+    /// Lớp chữ AI: sáng ⇒ ảnh gốc; tối ⇒ bản đảo độ sáng (tính một lần NGOÀI
+    /// luồng chính rồi nhớ — ảnh 3× khổ A4 là ~4,5 triệu điểm).
+    private func apMauLopChu() {
+        guard let anh = anhLopChu, let ten = tenLopChu else { return }
+        guard traitCollection.userInterfaceStyle == .dark else { anhView.image = anh; return }
+        if let co = MucToi.coSan(ten) { anhView.image = co; return }
+        anhView.image = anh
+        Task.detached(priority: .userInitiated) { [weak self] in
+            let toi = MucToi.doi(anh, khoa: ten)
+            await MainActor.run {
+                guard let self, self.tenLopChu == ten, self.traitCollection.userInterfaceStyle == .dark,
+                      let toi else { return }
+                self.anhView.image = toi
+            }
+        }
     }
 
     static func veTrangPdf(ten: String, trang: Int, kho: CGSize) -> UIImage? {

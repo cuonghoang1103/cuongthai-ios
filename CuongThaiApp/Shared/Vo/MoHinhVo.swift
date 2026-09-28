@@ -255,7 +255,20 @@ final class TrangVo {
 
     /// Trang có nền tài liệu (PDF / ảnh quét) — khổ theo tài liệu, không
     /// theo cuốn.
-    var coNenTaiLieu: Bool { nenPdfTen != nil || nenAnhTen != nil }
+    ///
+    /// ⚠️ Lớp chữ "✍️ AI viết lại" (`nenPdfTrang == trangLopChuAI`) KHÔNG phải
+    /// tài liệu: nó dựng đúng theo khổ + dòng kẻ của cuốn, nên khổ trang phải
+    /// theo cuốn chứ không bị ép về A4 như ảnh quét.
+    var coNenTaiLieu: Bool {
+        nenPdfTen != nil || (nenAnhTen != nil && nenPdfTrang != TrangVo.trangLopChuAI)
+    }
+
+    /// Giá trị `nenPdfTrang` đánh dấu nền ảnh là LỚP CHỮ do "✍️ AI viết lại"
+    /// dựng (PNG trong suốt), không phải trang sách quét. Với nền ảnh, số
+    /// trang PDF vốn vô nghĩa, và máy chủ đã lưu/trả nguyên số này (`bgPage`)
+    /// ⇒ đồng bộ sang máy khác KHÔNG cần cột mới. Đừng đổi số này: trang đã
+    /// lưu trên máy chủ mang đúng giá trị cũ.
+    static let trangLopChuAI = 1_000_000
 
     /// Khổ giấy đang áp cho trang (của riêng trang, hoặc của cuốn).
     var khoGiayApDung: KhoGiay {

@@ -60,6 +60,9 @@ enum DoiKhoGiay {
     static func xetMotTrang(_ t: TrangVo, sang moi: KhoGiay) -> KetQuaTrang {
         if t.coNenTaiLieu { return .khoTaiLieu }
         let goc = moi.kho(t.huong)
+        // Trang "✍️ AI viết lại": chữ đã dựng sẵn thành ảnh đúng khổ + dòng kẻ
+        // cũ — đổi khổ là ảnh bị co giãn lệch khỏi dòng kẻ. Giữ khổ cũ.
+        if t.laLopChuAI && t.khoGiayApDung != moi { return .giuKhoCu(t.khoGiayApDung) }
         // KHÔNG tin cờ `coNet`: trang kéo về / gieo bằng mã có thể chưa đặt
         // cờ mà tệp nét vẫn có — đọc thẳng tệp mới chắc không cắt mất nét.
         let b = KhoVo.nap(t.id).bounds

@@ -22,6 +22,9 @@ import SwiftUI
 //                              CT_LAMGON=ap            … và tự bấm Áp dụng
 //                              CT_LAMGON_HOANTAC=1     … rồi ↶ / ↷ và đối chiếu (log)
 //                              CT_LAMGON_XEM=goc       cửa sổ mở ở bản "Trước"
+//   CT_XEM_MAN=vo-vietlai    gieo trang viết tay rồi mở màn viết; CT_VIETLAI=mau
+//                              … mở "✍️ AI viết lại" với kết quả mẫu (xem
+//                              `thuVietLaiTuDong` trong ManVietView để biết thêm cờ)
 
 @MainActor
 enum ThuVo {
@@ -250,6 +253,31 @@ enum ThuVo {
         return cuon
     }
 
+    /// Cuốn "Thử viết lại": MỘT trang kẻ ngang có nét viết tay (trang xấu của
+    /// bàn thử Làm gọn). Mỗi lần mở dọn cuốn về đúng một trang, để phép đếm
+    /// trang trước/sau Lưu và Hoàn tác luôn bắt đầu từ cùng một chỗ.
+    static func gieoTrangVietLai(_ kho: ModelContext) -> CuonVo? {
+        let ten = "Thử viết lại"
+        var cuon = (try? kho.fetch(FetchDescriptor<CuonVo>()))?.first { $0.ten == ten }
+        if cuon == nil {
+            let mon = MonVo(ten: "Thử AI", emoji: "✍️"); kho.insert(mon)
+            let c = CuonVo(ten: ten, mon: mon); kho.insert(c)
+            cuon = c
+        }
+        guard let cuon else { return nil }
+        for t in cuon.trangsTheoThuTu { KhoVo.xoa(t.id); kho.delete(t) }
+        let t = TrangVo(cuon: cuon, thuTu: 0, giay: .keNgang, huong: .doc)
+        t.tieuDe = "Bài 3 — mạng"
+        kho.insert(t)
+        let d = ThuLamGon.trangMau().k.drawing
+        KhoVo.ghi(d, cho: t.id)
+        KhoVo.dungAnhNho(d, kho: t.khoTrang, khoNen: t.khoGoc, cho: t.id)
+        t.coNet = true
+        cuon.trangDangDoc = 0
+        try? kho.save()
+        return cuon
+    }
+
     /// Chữ số 1–9 vẽ bằng nét theo lưới 7 đoạn — đủ để nhận ra trên ảnh nhỏ.
     private static func veSo(_ n: Int) -> PKDrawing {
         let doan: [Int: [(CGPoint, CGPoint)]] = {
@@ -289,7 +317,7 @@ struct ThuVoView: View {
         ZStack {
             Color.clear
             switch cheDo {
-            case "vo-viet", "vo-lamgon":
+            case "vo-viet", "vo-lamgon", "vo-vietlai":
                 if let cuon { ManVietView(cuon: cuon) }
             case "vo-tongquan", "vo-sapxep":
                 if let cuon {
@@ -308,6 +336,7 @@ struct ThuVoView: View {
                 dong = ThuLamGon.chayHet()
                 for d in dong { NSLog("[THU-LAMGON] %@", d) }
             case "vo-lamgon": cuon = ThuVo.gieoTrangXau(kho)
+            case "vo-vietlai": cuon = ThuVo.gieoTrangVietLai(kho)
             default:
                 UserDefaults.standard.set(cheDo == "vo-sapxep" ? "danhSach" : "luoi",
                                           forKey: "vo.tongquan.chedo")

@@ -51,6 +51,8 @@ struct ManVietView: View {
     @State private var nhanGoiY: [String] = []
     /// Đang vẽ dần một hình AI — chặn vẽ chồng hình thứ hai lúc chưa xong.
     @State private var dangVeAI = false
+    /// Lần lưu "✍️ AI viết lại" gần nhất — còn giữ thì dải Hoàn tác còn hiện.
+    @State private var luotVietLai: LuotLuuVietLai?
     @Environment(\.accessibilityReduceMotion) private var giamChuyenDong
 
 
@@ -64,8 +66,11 @@ struct ManVietView: View {
         case xuatPdf([UUID], String)
         /// Làm gọn chữ trang đang mở; kèm vùng khoanh (toạ độ trang) nếu có.
         case lamGon(CGRect?)
+        /// ✍️ AI viết lại trang đang mở (xem trước → Hoàn tác / Lưu).
+        case vietLai
         var id: String {
             switch self {
+            case .vietLai: return "vietLai"
             case .lamGon: return "lamGon"
             case .khoGiay: return "khoGiay"
             case .doiGiay: return "doiGiay"
@@ -163,6 +168,15 @@ struct ManVietView: View {
             }
         }
         .animation(AppAnimations.quick, value: baoHoanTac)
+        .overlay(alignment: .top) {
+            if let l = luotVietLai, baoHoanTac == nil {
+                DaiHoanTacVietLai(cau: l.cach == .thayTrang ? T("Đã thay bằng bản viết lại — bản gốc ở trang sau")
+                                                          : T("Đã thêm bản viết lại ngay sau trang gốc"),
+                                  hoanTac: { hoanTacVietLai(l) },
+                                  dong: { luotVietLai = nil })
+            }
+        }
+        .animation(AppAnimations.quick, value: luotVietLai)
         .confirmationDialog(
             xacNhanXoa.map { $0.count == 1 ? T("Xoá trang này?") : "\(T("Xoá")) \($0.count) \(T("trang?"))" } ?? "",
             isPresented: Binding(get: { xacNhanXoa != nil }, set: { if !$0 { xacNhanXoa = nil } }),
@@ -182,7 +196,8 @@ struct ManVietView: View {
             TroLyTrang(trang: trangHienTai, tenCuon: cuon.ten,
                        xinMo: xinMoTroLy, xinKhoanh: xinKhoanh,
                        vungNgoai: $vungVuaCat,
-                       chenHinhVe: { veHinhAI($0) })
+                       chenHinhVe: { veHinhAI($0) },
+                       vietLaiTrang: { moVietLai() })
         }
         // Nhãn gợi ý của hình AI vừa vẽ: người học TỰ viết vào hình.
         .overlay(alignment: .topLeading) {
@@ -245,6 +260,13 @@ struct ManVietView: View {
                     }
                     .presentationDetents([.large])
                 }
+            case .vietLai:
+                if let t = trangHienTai {
+                    VietLaiView(goc: t, net: banVeDangMo(t),
+                                muc: DungChuDep.mauMuc(cauNoiVe.butDangChon)) { cach, ds in
+                        luuVietLai(ds, cach: cach, goc: t)
+                    }
+                }
             case .tomTat:
                 HoiVoAIView(tieuDe: T("Đề cương ôn thi"),
                             trangs: trangs,
@@ -278,6 +300,7 @@ struct ManVietView: View {
         }
         #if DEBUG
         .task { await thuLamGonTuDong() }
+        .task { await thuVietLaiTuDong() }
         .task { await thuKhoTrangTuDong() }
         #endif
         .onChange(of: chiSo) { _, moi in
@@ -480,6 +503,41 @@ struct ManVietView: View {
         return true
     }
 
+    // MARK: ✍️ AI viết lại trang
+
+    private func moVietLai() {
+        guard trangHienTai?.coNet == true else { bao(T("Trang này chưa có nét nào")); return }
+        // Ghi nét đang hiện xuống đĩa trước: bản gửi AI và bản gốc giữ lại
+        // phải là CÙNG một bản, kể cả 2 giây nét cuối chưa kịp tự lưu.
+        cauNoiVe.luuNgay()
+        cuaSo = .vietLai
+    }
+
+    private func luuVietLai(_ ds: [TrangChuDep], cach: CachLuuVietLai, goc t: TrangVo) -> Bool {
+        cauNoiVe.luuNgay()
+        guard let l = LuuVietLai.luu(ds, goc: t, cach: cach,
+                                     muc: DungChuDep.mauMuc(cauNoiVe.butDangChon), kho: kho),
+              let dau = l.idMoi.first else { return false }
+        moTheoId(dau)
+        luotVietLai = l
+        Task {
+            try? await Task.sleep(for: .seconds(15))
+            if luotVietLai == l { luotVietLai = nil }
+        }
+        return true
+    }
+
+    private func hoanTacVietLai(_ l: LuotLuuVietLai) {
+        luotVietLai = nil
+        guard LuuVietLai.hoanTac(l, trongCuon: cuon, kho: kho) else {
+            bao(T("Chưa hoàn tác được — xoá tay trang viết lại nếu cần"))
+            return
+        }
+        moTheoId(l.idGoc)
+        bao(T("Đã hoàn tác — trang viết tay về chỗ cũ"))
+        Haptics.xong()
+    }
+
     // MARK: AI vẽ lên trang
 
     /// Đặt hình AI vẽ lên trang đang mở: tìm chỗ trống trong phần trang đang
@@ -595,6 +653,52 @@ struct ManVietView: View {
                       t.khoTrang.width, t.khoTrang.height,
                       abs(r.height - t.khoTrang.height) < 1 ? "ĐÚNG ✅" : "SAI ❌")
             }
+        }
+    }
+
+    /// Bàn thử "✍️ AI viết lại" (CT_XEM_MAN=vo-vietlai), KHÔNG gọi mạng:
+    ///   CT_VIETLAI=mau            mở cửa sổ với kết quả mẫu (VietLaiView đọc biến này)
+    ///   CT_VIETLAI_TAB=sua|goc    mở sẵn tab "Chỗ AI đã sửa" / "Bản gốc"
+    ///   CT_VIETLAI_CHO=1          hiện màn CHỜ (thanh tiến độ) thay vì kết quả
+    ///   CT_VIETLAI_LUU=thay|them  … rồi tự Lưu theo cách đó (đóng cửa sổ)
+    ///   CT_VIETLAI_HOANTAC=1      … lưu xong đợi 4 giây rồi bấm Hoàn tác (log)
+    ///   CT_VIETLAI_XUATPDF=1      … lưu xong xuất trang đẹp ra Documents/vietlai.pdf
+    private func thuVietLaiTuDong() async {
+        let env = ProcessInfo.processInfo.environment
+        guard env["CT_VIETLAI"] == "mau", let mau = MauVietLai.ketQua else { return }
+        try? await Task.sleep(for: .seconds(1.5))
+        moVietLai()
+        guard let cach = env["CT_VIETLAI_LUU"].map({ $0 == "them" ? CachLuuVietLai.themSau : .thayTrang }),
+              let t = trangHienTai else { return }
+        try? await Task.sleep(for: .seconds(2.5))
+        let truoc = trangs.map { $0.tenHienThi(so: 0) }
+        let ds = DungChuDep.dan(mau.khoi ?? [], giay: LuuVietLai.giayDich(cho: t), kho: LuuVietLai.khoDich(cho: t),
+                                muc: DungChuDep.mauMuc(cauNoiVe.butDangChon))
+        cuaSo = nil
+        let ok = luuVietLai(ds, cach: cach, goc: t)
+        try? await Task.sleep(for: .seconds(1))
+        NSLog("[THU-VIETLAI] lưu %@ (%@): %d trang → %d trang · đang mở: %@ · lớp chữ AI = %@ · khổ %.0f×%.0f · chữ tìm kiếm %d ký tự",
+              ok ? "✅" : "❌", cach.rawValue, truoc.count, trangs.count,
+              trangHienTai?.tenHienThi(so: chiSo + 1) ?? "-",
+              trangHienTai?.laLopChuAI == true ? "có ✅" : "không ❌",
+              trangHienTai?.khoTrang.width ?? 0, trangHienTai?.khoTrang.height ?? 0,
+              trangHienTai?.chuNhanDang?.count ?? 0)
+        NSLog("[THU-VIETLAI] thứ tự: %@", trangs.enumerated().map { $0.element.tenHienThi(so: $0.offset + 1) }.joined(separator: " | "))
+        if env["CT_VIETLAI_XUATPDF"] == "1", let moi = trangHienTai,
+           let url = XuatPdfVo.taoPdf(trangs: [moi], tenTep: "vietlai") {
+            let dich = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+                .appendingPathComponent("vietlai.pdf")
+            try? FileManager.default.removeItem(at: dich)
+            try? FileManager.default.copyItem(at: url, to: dich)
+            NSLog("[THU-VIETLAI] PDF: %@", dich.path)
+        }
+        if env["CT_VIETLAI_HOANTAC"] == "1", let l = luotVietLai {
+            try? await Task.sleep(for: .seconds(4))
+            hoanTacVietLai(l)
+            try? await Task.sleep(for: .seconds(1))
+            NSLog("[THU-VIETLAI] sau Hoàn tác: %d trang · khớp lúc đầu = %@ · đang mở: %@", trangs.count,
+                  trangs.map { $0.tenHienThi(so: 0) } == truoc ? "CÓ ✅" : "KHÔNG ❌",
+                  trangHienTai?.tenHienThi(so: chiSo + 1) ?? "-")
         }
     }
 
@@ -774,6 +878,9 @@ struct ManVietView: View {
                     Button { batKhoanhLamGon() } label: {
                         Label(T("Làm gọn một vùng (khoanh)…"), systemImage: "lasso")
                     }
+                    Button { moVietLai() } label: {
+                        Label(T("✍️ AI viết lại trang"), systemImage: "character.book.closed")
+                    }
                 }
                 .disabled(trangHienTai?.coNet != true)
 
@@ -841,7 +948,9 @@ struct ManVietView: View {
                     }
                     if trangHienTai?.nenPdfTen != nil || trangHienTai?.nenAnhTen != nil {
                         Button(role: .destructive) { goNen() } label: {
-                            Label(T("Gỡ nền tài liệu của trang này"), systemImage: "rectangle.slash")
+                            Label(trangHienTai?.laLopChuAI == true ? T("Gỡ lớp chữ AI của trang này")
+                                                                   : T("Gỡ nền tài liệu của trang này"),
+                                  systemImage: "rectangle.slash")
                         }
                     }
                 }

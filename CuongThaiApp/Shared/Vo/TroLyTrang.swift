@@ -82,6 +82,8 @@ struct TroLyTrang: View {
     /// Đặt hình AI vẽ lên trang. `nil` = màn viết chưa nối — nút "Vẽ lên
     /// trang" vẫn hiện nhưng báo "sắp có".
     var chenHinhVe: ((HinhVeAI) -> Void)? = nil
+    /// Mở "✍️ AI viết lại trang" của màn viết. `nil` = không hiện thẻ.
+    var vietLaiTrang: (() -> Void)? = nil
 
     @AppStorage(CaiDatTroLy.khoaHien) private var hien = true
     @AppStorage(CaiDatTroLy.khoaX) private var tiLeX = 0.93
@@ -172,6 +174,7 @@ struct TroLyTrang: View {
                       vungNgoai: vungNgoai,
                       neo: neoCanh,
                       chenHinhVe: chenHinhVe,
+                      vietLaiTrang: vietLaiTrang,
                       doiNeo: { withAnimation(loXo) { neoCanh.toggle() }; Haptics.cham() },
                       dong: { moKhung = false; khoanhNgay = 0 },
                       moDayDu: { moKhung = false; moChatDayDu = true })
@@ -566,6 +569,7 @@ struct KhungHoiTrang: View {
     var vungNgoai: Binding<AnhVungCat?> = .constant(nil)
     var neo = false
     var chenHinhVe: ((HinhVeAI) -> Void)? = nil
+    var vietLaiTrang: (() -> Void)? = nil
     var doiNeo: () -> Void = {}
     let dong: () -> Void
     let moDayDu: () -> Void
@@ -910,6 +914,7 @@ struct KhungHoiTrang: View {
             }
 
             theVe
+            if vietLaiTrang != nil { theVietLai }
 
             Label(T("Ba thẻ đầu tự gửi kèm ảnh trang bạn đang mở."), systemImage: "photo.on.rectangle")
                 .font(.caption)
@@ -996,6 +1001,50 @@ struct KhungHoiTrang: View {
             .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
         .buttonStyle(NhanThe())
+    }
+
+    /// Thẻ rộng "✍️ AI viết lại trang" — đóng khung hỏi rồi mở cửa sổ viết
+    /// lại của màn viết (xem trước → Hoàn tác / Lưu).
+    private var theVietLai: some View {
+        Button {
+            Haptics.cham()
+            dong()
+            vietLaiTrang?()
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "character.book.closed.fill")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(Color.white)
+                    .frame(width: 36, height: 36)
+                    .background(RoundedRectangle(cornerRadius: 11, style: .continuous)
+                        .fill(LinearGradient(colors: [AppColors.secondary, AppColors.primary],
+                                             startPoint: .topLeading, endPoint: .bottomTrailing)))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(T("AI viết lại trang"))
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(AppColors.textPrimary)
+                    Text(T("Chép sạch chữ viết vội, căn dòng, tạo bảng — giữ nguyên ý"))
+                        .font(.caption)
+                        .foregroundStyle(AppColors.textSecondary)
+                        .lineLimit(2)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(AppColors.textTertiary)
+            }
+            .padding(12)
+            .background(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(LinearGradient(colors: [AppColors.secondary.opacity(0.12), AppColors.primary.opacity(0.10)],
+                                         startPoint: .leading, endPoint: .trailing)),
+            )
+            .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .strokeBorder(AppColors.secondary.opacity(0.25), lineWidth: 1))
+            .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        }
+        .buttonStyle(NhanThe())
+        .disabled(trang?.coNet != true)
     }
 
     // ── Báo lỗi ─────────────────────────────────────────────────

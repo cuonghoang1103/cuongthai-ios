@@ -53,6 +53,7 @@ enum DongYChiaSeAI {
     Để trả lời, tính năng AI gửi nội dung bạn đưa vào qua máy chủ CuongThai tới nhà cung cấp AI bên thứ ba:
 
     • Câu hỏi, ảnh/tệp đính kèm và lịch sử trò chuyện
+    • Ảnh trang vở viết tay khi bạn hỏi về trang, khoanh vùng hỏi, hoặc bấm "AI viết lại trang"
     • Ghi chú liên quan (Trợ lý ghi chú), số liệu thu chi (AI Tiền), CV, bài làm, mã nguồn
     • Bản ghi âm khi luyện nói IELTS / nói với AI
 
@@ -104,6 +105,9 @@ enum DongYChiaSeAI {
         if path == "/api/v1/academy/advisor" && method == "POST" { return true }
         // Vở · Vẽ giúp: mô tả người dùng gõ đi thẳng tới model vẽ SVG.
         if path == "/api/v1/vo/ve" && method == "POST" { return true }
+        // Vở · AI viết lại trang: ẢNH trang viết tay + chữ máy đọc trên trang
+        // đi tới model thị giác (gpt-6-sol qua modelapi.vn).
+        if (path == "/api/v1/vo/viet-lai" || path == "/api/v1/vo/viet-lai/viec") && method == "POST" { return true }
         guard method != "GET" else { return false }
         // Phỏng vấn thử: câu trả lời được AI chấm (trừ nút báo lỗi câu hỏi).
         if path.hasPrefix("/api/v1/interview/") && !path.hasSuffix("/flag") { return true }
