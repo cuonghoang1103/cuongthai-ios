@@ -13,6 +13,11 @@ final class GiayNenView: UIView {
     var giay: LoaiGiay = .keNgang { didSet { setNeedsDisplay() } }
     /// Khổ trang theo point, KHÔNG nhân tỷ lệ phóng.
     var khoTrang: CGSize = HuongGiay.doc.khoA4 { didSet { setNeedsDisplay() } }
+    /// Chiều cao GỐC của trang (chưa nối dài). `nil` = bằng `khoTrang.height`.
+    /// Giấy có bố cục theo cả trang (Cornell: dải tóm tắt ở đáy; 原稿用紙: cỡ
+    /// ô) cần biết số này để phần nối dài là "thêm hàng", không phải kéo
+    /// giãn cả bố cục.
+    var caoGoc: CGFloat? { didSet { setNeedsDisplay() } }
     /// Tỷ lệ phóng hiện tại của khung vẽ.
     var tyLe: CGFloat = 1 { didSet { setNeedsDisplay() } }
 
@@ -66,8 +71,9 @@ final class GiayNenView: UIView {
     /// ở đó mà quên ở đây thì chữ được "làm gọn" nằm lơ lửng giữa hai dòng kẻ.
     /// Giấy không có đường chân (trắng, 原稿用紙, khuông nhạc) trả rỗng: khi đó
     /// chỉ nắn dòng cho thẳng, không dời lên xuống.
-    static func dongChanChu(giay: LoaiGiay, khoTrang: CGSize) -> [CGFloat] {
+    static func dongChanChu(giay: LoaiGiay, khoTrang: CGSize, caoGoc: CGFloat? = nil) -> [CGFloat] {
         let h = khoTrang.height
+        let hGoc = min(caoGoc ?? h, h)
         var ds: [CGFloat] = []
         switch giay {
         case .keNgang:
@@ -75,7 +81,7 @@ final class GiayNenView: UIView {
             while y < h - caoDong { ds.append(y); y += caoDong }
         case .cornell:
             var y = caoDong * 2
-            while y < h * 0.80 { ds.append(y); y += caoDong }
+            while y < yTomTatCornell(h: h, hGoc: hGoc) { ds.append(y); y += caoDong }
         case .oLy, .cham:
             var y = oLy
             while y < h { ds.append(y); y += oLy }
@@ -92,6 +98,12 @@ final class GiayNenView: UIView {
             break
         }
         return ds
+    }
+
+    /// Mép trên dải tóm tắt Cornell: 20% chiều cao GỐC tính từ đáy — trang
+    /// nối dài thì vùng ghi chép dài ra, dải tóm tắt giữ nguyên bề cao.
+    static func yTomTatCornell(h: CGFloat, hGoc: CGFloat) -> CGFloat {
+        h - hGoc * 0.20
     }
 
     // MARK: Vẽ
@@ -180,7 +192,7 @@ final class GiayNenView: UIView {
     private func veCornell(_ ctx: CGContext, _ dayNet: CGFloat) {
         let w = khoTrang.width, h = khoTrang.height
         let xTuKhoa = w * 0.30            // cột trái: từ khoá / câu hỏi
-        let yTomTat = h * 0.80            // dải dưới: tóm tắt
+        let yTomTat = Self.yTomTatCornell(h: h, hGoc: min(caoGoc ?? h, h))   // dải dưới: tóm tắt
 
         mauKe.setStroke()
         var y = Self.caoDong * 2
@@ -210,12 +222,17 @@ final class GiayNenView: UIView {
         // chia theo bề ngang rồi lấp đầy chiều cao, ra 28 hàng và mất luôn
         // cái làm nên tờ giấy này.
         let le = Self.mm(12)
-        let soCot = 20, soHang = 20
-        let canh = min((w - le * 2) / CGFloat(soCot), (h - le * 2) / CGFloat(soHang))
+        let hGoc = min(caoGoc ?? h, h)
+        let soCot = 20
+        // Cỡ ô tính theo khổ GỐC (20×20). Trang nối dài thì THÊM HÀNG cùng cỡ
+        // ô xuống dưới — tính theo cả chiều cao đã nối thì ô vẫn như cũ (bề
+        // ngang chặn), nhưng lưới 20 hàng lại trôi ra giữa phần nối.
+        let canh = min((w - le * 2) / CGFloat(soCot), (hGoc - le * 2) / 20)
+        let yGoc = (hGoc - canh * 20) / 2
+        let soHang = 20 + max(0, Int(((h - hGoc) / canh).rounded(.down)))
         let rongThat = canh * CGFloat(soCot)
         let caoThat = canh * CGFloat(soHang)
         let xGoc = (w - rongThat) / 2
-        let yGoc = (h - caoThat) / 2
 
         // Chữ thập mờ trong từng ô — vẽ TRƯỚC để khung đè lên trên.
         mauKeNhat.setStroke()

@@ -5,7 +5,8 @@ import UIKit
 
 // MARK: - Xuất trang / cuốn vở ra PDF
 //
-// Mỗi trang vở = một trang PDF đúng khổ (A4 dọc/ngang), ba lớp như trên màn:
+// Mỗi trang vở = một trang PDF đúng khổ THẬT của trang (khổ cuốn + phần nối
+// dài — không mặc định A4), ba lớp như trên màn:
 // giấy kẻ → nền tài liệu (PDF/ảnh quét) → nét bút.
 //
 // ⚠️ Vẽ trong chế độ SÁNG, bất kể máy đang tối. `PKDrawing.image(...)` và
@@ -26,9 +27,9 @@ enum XuatPdfVo {
         try? FileManager.default.removeItem(at: url)
 
         // Chụp dữ liệu trên luồng chính (model SwiftData) trước khi vẽ.
-        struct Tho { let id: UUID; let kho: CGSize; let giay: LoaiGiay
+        struct Tho { let id: UUID; let kho: CGSize; let khoGoc: CGSize; let giay: LoaiGiay
                      let pdf: String?; let pdfTrang: Int; let anh: String? }
-        let ds = trangs.map { Tho(id: $0.id, kho: $0.khoTrang, giay: $0.giay,
+        let ds = trangs.map { Tho(id: $0.id, kho: $0.khoTrang, khoGoc: $0.khoGoc, giay: $0.giay,
                                   pdf: $0.nenPdfTen, pdfTrang: $0.nenPdfTrang, anh: $0.nenAnhTen) }
 
         let dau = ds[0].kho
@@ -45,22 +46,26 @@ enum XuatPdfVo {
                         giay.overrideUserInterfaceStyle = .light
                         giay.giay = t.giay
                         giay.khoTrang = t.kho
+                        giay.caoGoc = t.khoGoc.height
                         giay.tyLe = 1
                         giay.draw(khung)
-                        // 2. Nền tài liệu.
+                        // 2. Nền tài liệu — phủ khổ GỐC, phần nối dài để trắng.
+                        let khungNen = CGRect(origin: .zero, size: t.khoGoc)
                         if let p = t.pdf,
                            let anh = NenTrangView.veTrangPdf(ten: p, trang: t.pdfTrang,
-                                                             kho: CGSize(width: t.kho.width * 2,
-                                                                         height: t.kho.height * 2)) {
-                            anh.draw(in: vuaKhung(anh.size, trong: khung))
+                                                             kho: CGSize(width: t.khoGoc.width * 2,
+                                                                         height: t.khoGoc.height * 2)) {
+                            anh.draw(in: vuaKhung(anh.size, trong: khungNen))
                         } else if let a = t.anh,
                                   let anh = UIImage(contentsOfFile: KhoVo.duongDanNen(a).path) {
-                            anh.draw(in: vuaKhung(anh.size, trong: khung))
+                            anh.draw(in: vuaKhung(anh.size, trong: khungNen))
                         }
-                        // 3. Nét bút, 2× cho in ấn nét.
+                        // 3. Nét bút, 2× cho in ấn nét (trang rất to thì hạ tỉ lệ
+                        // để một ảnh không vượt ~6000px cạnh dài).
                         let net = KhoVo.nap(t.id)
                         if !net.bounds.isEmpty {
-                            net.image(from: khung, scale: 2).draw(in: khung)
+                            let ty = min(2, 6000 / max(t.kho.width, t.kho.height, 1))
+                            net.image(from: khung, scale: ty).draw(in: khung)
                         }
                     }
                 }

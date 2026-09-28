@@ -43,6 +43,15 @@ struct ManVietView: View {
     /// Vùng vừa cắt từ màn hình, chờ trợ lý hỏi.
     @State private var vungVuaCat: AnhVungCat?
     @StateObject private var cauNoiVe = CauNoiBangVe()
+    /// Tự nối dài trang khi viết tới gần đáy. Cùng khoá với cửa sổ Khổ giấy.
+    @AppStorage(CaiDatKhoTrang.khoaTuNoiDai) private var tuNoiDai = true
+    /// Tăng một nấc = đưa CẢ trang vào khung (xem toàn cảnh trang dài).
+    @State private var lanVuaCaTrang = 0
+    /// Nhãn gợi ý của hình AI vừa vẽ lên trang — người học tự viết vào.
+    @State private var nhanGoiY: [String] = []
+    /// Đang vẽ dần một hình AI — chặn vẽ chồng hình thứ hai lúc chưa xong.
+    @State private var dangVeAI = false
+    @Environment(\.accessibilityReduceMotion) private var giamChuyenDong
 
 
     /// ⚠️ MỘT `.sheet(item:)` cho mọi cửa sổ của màn này. Thêm cửa sổ mới thì
@@ -50,7 +59,7 @@ struct ManVietView: View {
     /// lên cùng một view — hai cái chồng nhau thì cái sau nuốt cái trước và
     /// một trong hai không bao giờ mở được.
     private enum CuaSoViet: Identifiable {
-        case doiGiay, datTenChuong, quetTaiLieu, hoiNhapPdf, tomTat, tongQuan
+        case doiGiay, datTenChuong, quetTaiLieu, hoiNhapPdf, tomTat, tongQuan, khoGiay
         case chuyenCuon([UUID])
         case xuatPdf([UUID], String)
         /// Làm gọn chữ trang đang mở; kèm vùng khoanh (toạ độ trang) nếu có.
@@ -58,6 +67,7 @@ struct ManVietView: View {
         var id: String {
             switch self {
             case .lamGon: return "lamGon"
+            case .khoGiay: return "khoGiay"
             case .doiGiay: return "doiGiay"
             case .datTenChuong: return "datTenChuong"
             case .quetTaiLieu: return "quetTaiLieu"
@@ -171,8 +181,19 @@ struct ManVietView: View {
         .overlay {
             TroLyTrang(trang: trangHienTai, tenCuon: cuon.ten,
                        xinMo: xinMoTroLy, xinKhoanh: xinKhoanh,
-                       vungNgoai: $vungVuaCat)
+                       vungNgoai: $vungVuaCat,
+                       chenHinhVe: { veHinhAI($0) })
         }
+        // Nhãn gợi ý của hình AI vừa vẽ: người học TỰ viết vào hình.
+        .overlay(alignment: .topLeading) {
+            if !nhanGoiY.isEmpty {
+                TheNhanGoiY(nhan: nhanGoiY) { nhanGoiY = [] }
+                    .padding(.top, 64)
+                    .padding(.leading, Spacing.md + (hienDaiTrang ? 128 : 0))
+                    .transition(.move(edge: .leading).combined(with: .opacity))
+            }
+        }
+        .animation(AppAnimations.quick, value: nhanGoiY)
         // Nút bút AI đứng cạnh bảng công cụ, đúng chỗ người dùng xin.
         .overlay(alignment: .bottomTrailing) {
             if CaiDatTroLy.chayDuoc && hienTroLy && !dangKhoanhTrang {
@@ -185,6 +206,11 @@ struct ManVietView: View {
         .sheet(item: $cuaSo) { cua in
             switch cua {
             case .doiGiay:      DoiGiayView(trang: trangHienTai, cuon: cuon)
+            case .khoGiay:
+                KhoGiayCuonView(cuon: cuon, trang: trangHienTai,
+                                luuTruoc: { cauNoiVe.luuNgay() },
+                                bao: { bao($0) })
+                .modifier(CoTrangLon())
             case .datTenChuong: DatTenChuongView(trang: trangHienTai)
             case .quetTaiLieu:
                 MayQuetTaiLieu { anhs in themTrangTuAnh(anhs) }
@@ -214,7 +240,7 @@ struct ManVietView: View {
             case .lamGon(let vung):
                 if let t = trangHienTai {
                     LamGonView(idTrang: t.id, goc: banVeDangMo(t), giay: t.giay,
-                               khoTrang: t.khoTrang, vung: vung) { moi in
+                               khoTrang: t.khoTrang, caoGoc: t.khoGoc.height, vung: vung) { moi in
                         apDungLamGon(moi, cho: t)
                     }
                     .presentationDetents([.large])
@@ -252,6 +278,7 @@ struct ManVietView: View {
         }
         #if DEBUG
         .task { await thuLamGonTuDong() }
+        .task { await thuKhoTrangTuDong() }
         #endif
         .onChange(of: chiSo) { _, moi in
             cuon.trangDangDoc = moi
@@ -453,7 +480,124 @@ struct ManVietView: View {
         return true
     }
 
+    // MARK: AI vẽ lên trang
+
+    /// Đặt hình AI vẽ lên trang đang mở: tìm chỗ trống trong phần trang đang
+    /// NHÌN, đổi ra nét bằng bút đang cầm, vẽ DẦN 2–4 giây rồi ghi một lần
+    /// (↶ một cái là gỡ cả hình).
+    private func veHinhAI(_ h: HinhVeAI) {
+        guard let t = trangHienTai, cauNoiVe.idTrangDangMo == t.id else {
+            bao(T("Chưa mở được trang để vẽ — thử lại"))
+            return
+        }
+        guard !dangVeAI else { bao(T("Đang vẽ hình trước — đợi chút")); return }
+        guard !h.net.isEmpty else { return }
+        cauNoiVe.luuNgay()
+        let kho = t.khoTrang
+        let nhin = cauNoiVe.vungDangNhin ?? CGRect(origin: .zero, size: kho)
+        let netCo = (cauNoiVe.banVe ?? KhoVo.nap(t.id)).strokes.map(\.renderBounds)
+        let khung = VeLenTrang.timCho(vungNhin: nhin, trang: kho,
+                                      tiLe: h.rong / max(h.cao, 1), netCo: netCo)
+        let (ink, day) = VeLenTrang.butChoAI(cauNoiVe.butDangChon)
+        let ds = VeLenTrang.taoNet(h, vao: khung, ink: ink, doDay: day)
+        guard !ds.isEmpty else { return }
+        let ten = T("Vẽ bằng AI")
+        let nhan = h.nhan
+        let xong = {
+            dangVeAI = false
+            if !nhan.isEmpty { nhanGoiY = nhan }
+            bao(T("Đã vẽ lên trang — ↶ để gỡ, dùng lasso để dời/phóng"))
+        }
+        NhatKy.vo.info("AI vẽ: \(ds.count) nét vào \(Int(khung.minX)),\(Int(khung.minY)) \(Int(khung.width))×\(Int(khung.height)) · nhìn \(Int(nhin.minY))…\(Int(nhin.maxY))")
+        if giamChuyenDong {
+            cauNoiVe.chenNet(ds, tenViec: ten)
+            xong()
+        } else {
+            dangVeAI = true
+            cauNoiVe.veDanRoiChen(ds, tenViec: ten,
+                                  thoiGian: VeLenTrang.thoiGianVeDan(soNet: ds.count)) { xong() }
+        }
+        t.suaLuc = Date()
+    }
+
+    /// Nét vừa viết chạm vùng đáy trang ⇒ tự nối dài (nếu người dùng bật).
+    private func ganDay(_ t: TrangVo) {
+        guard tuNoiDai, t.noiDaiNuaTrang() else { return }
+        ThaoTacTrang.danhDauCay(cuon)
+        try? kho.save()
+        bao(T("Trang tự nối dài thêm ½ trang"))
+    }
+
     #if DEBUG
+    /// Bàn thử khổ trang + AI vẽ (CT_XEM_MAN=vo-viet):
+    ///   CT_KHO=a5|b5|a4|letter|b4|a3|rong169|bangLon   đổi khổ cả cuốn
+    ///   CT_GIAY=oLy|keNgang|…   đổi giấy trang đang mở
+    ///   CT_NOIDAI=n             nối dài trang đang mở n lần (+½ trang mỗi lần)
+    ///   CT_XEMCA=1              đưa cả trang vào khung
+    ///   CT_VEAI=meo|oxy         vẽ hình mẫu lên trang (không gọi mạng)
+    ///   CT_VEAI_HOANTAC=1       … xong thì ↶ một lần, đếm nét trước/sau (log)
+    ///   CT_XUATPDF=1            xuất trang đang mở ra PDF, in khổ trang PDF (log)
+    ///   CT_KHO_MO=1             mở cửa sổ "Khổ giấy của cuốn"
+    private func thuKhoTrangTuDong() async {
+        let env = ProcessInfo.processInfo.environment
+        guard env["CT_KHO"] != nil || env["CT_NOIDAI"] != nil || env["CT_VEAI"] != nil
+                || env["CT_XUATPDF"] != nil || env["CT_GIAY"] != nil || env["CT_XEMCA"] != nil
+                || env["CT_KHO_MO"] != nil else { return }
+        try? await Task.sleep(for: .seconds(1.0))
+        if let k = env["CT_KHO"].flatMap(KhoGiay.init(rawValue:)) {
+            let tt = DoiKhoGiay.ap(cuon, sang: k, kho: kho)
+            NSLog("[THU-KHO] đổi khổ %@: theo=%d nốiDài=%d giữCũ=%d tàiLiệu=%d", k.rawValue,
+                  tt.theoCuon, tt.noiDai, tt.giuKhoCu, tt.taiLieu)
+        }
+        if let g = env["CT_GIAY"].flatMap(LoaiGiay.init(rawValue:)), let t = trangHienTai {
+            t.loaiGiay = g.rawValue
+        }
+        if let n = env["CT_NOIDAI"].flatMap(Int.init), let t = trangHienTai {
+            for _ in 0..<n { t.noiDaiNuaTrang() }
+        }
+        if let t = trangHienTai {
+            NSLog("[THU-KHO] trang: khổ %@ · gốc %.0f×%.0f · thật %.0f×%.0f · nối %.0f",
+                  t.khoGiayApDung.rawValue, t.khoGoc.width, t.khoGoc.height,
+                  t.khoTrang.width, t.khoTrang.height, t.chieuCaoThem)
+        }
+        try? await Task.sleep(for: .seconds(0.8))
+        if env["CT_XEMCA"] == "1" { lanVuaCaTrang += 1 }
+        try? await Task.sleep(for: .seconds(0.8))
+        if let v = env["CT_VEAI"] {
+            let h = v == "oxy" ? HinhVeMau.oxy : HinhVeMau.meo
+            let truoc = cauNoiVe.banVe?.strokes.count ?? -1
+            veHinhAI(h)
+            try? await Task.sleep(for: .seconds(1.2))
+            NSLog("[THU-KHO] đang vẽ dần: nét trên trang = %d (trước %d — chưa ghi là đúng)",
+                  cauNoiVe.banVe?.strokes.count ?? -1, truoc)
+            for _ in 0..<20 where dangVeAI { try? await Task.sleep(for: .seconds(0.5)) }
+            let sau = cauNoiVe.banVe?.strokes.count ?? -1
+            NSLog("[THU-KHO] vẽ xong: %d → %d nét (+%d, hình có %d nét)", truoc, sau, sau - truoc, h.net.count)
+            if env["CT_VEAI_HOANTAC"] == "1" {
+                try? await Task.sleep(for: .seconds(2.5))
+                cauNoiVe.hoanTac()
+                try? await Task.sleep(for: .seconds(0.6))
+                NSLog("[THU-KHO] sau MỘT lần ↶: %d nét (%@)", cauNoiVe.banVe?.strokes.count ?? -1,
+                      (cauNoiVe.banVe?.strokes.count ?? -1) == truoc ? "gỡ CẢ hình ✅" : "❌")
+            }
+        }
+        if env["CT_KHO_MO"] == "1" { cuaSo = .khoGiay }
+        if env["CT_XUATPDF"] == "1", let t = trangHienTai {
+            cauNoiVe.luuNgay()
+            if let url = XuatPdfVo.taoPdf(trangs: [t], tenTep: "thu-kho"),
+               let doc = CGPDFDocument(url as CFURL), let p = doc.page(at: 1) {
+                let r = p.getBoxRect(.mediaBox)
+                let dich = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+                    .appendingPathComponent("thu-kho.pdf")
+                try? FileManager.default.removeItem(at: dich)
+                try? FileManager.default.copyItem(at: url, to: dich)
+                NSLog("[THU-KHO] PDF: %.0f×%.0f pt (trang %.0f×%.0f) %@", r.width, r.height,
+                      t.khoTrang.width, t.khoTrang.height,
+                      abs(r.height - t.khoTrang.height) < 1 ? "ĐÚNG ✅" : "SAI ❌")
+            }
+        }
+    }
+
     /// Bàn thử máy ảo (xem `ThuVoDebug.swift`, CT_XEM_MAN=vo-lamgon): mở cửa
     /// sổ Làm gọn, và nếu xin thì hoàn tác / làm lại rồi đối chiếu TỪNG NÉT.
     private func thuLamGonTuDong() async {
@@ -703,8 +847,34 @@ struct ManVietView: View {
                 }
 
                 Section {
+                    Button { cuaSo = .khoGiay } label: {
+                        Label("\(T("Khổ giấy của cuốn")) · \(cuon.kho.ten)…", systemImage: "rectangle.expand.vertical")
+                    }
+                    Button {
+                        if let t = trangHienTai, t.noiDaiNuaTrang() {
+                            ThaoTacTrang.danhDauCay(cuon)
+                            try? kho.save()
+                            bao(T("Đã nối dài trang thêm ½ trang"))
+                        }
+                    } label: {
+                        Label(trangHienTai?.noiDaiDuoc == false ? T("Nối dài trang (đã tới 4× — tối đa)")
+                                                                : T("Nối dài trang này (+½ trang)"),
+                              systemImage: "arrow.down.to.line.compact")
+                    }
+                    .disabled(trangHienTai?.noiDaiDuoc != true)
+                    Button { tuNoiDai.toggle() } label: {
+                        Label(tuNoiDai ? T("Tự nối dài khi viết gần đáy: BẬT")
+                                       : T("Tự nối dài khi viết gần đáy: TẮT"),
+                              systemImage: tuNoiDai ? "arrow.down.doc.fill" : "arrow.down.doc")
+                    }
+                }
+
+                Section {
                     Button { lanVuaKhung += 1 } label: {
                         Label(T("Trang vừa bề ngang"), systemImage: "arrow.left.and.right.square")
+                    }
+                    Button { lanVuaCaTrang += 1 } label: {
+                        Label(T("Xem cả trang"), systemImage: "arrow.up.and.down.square")
                     }
                     Button { hienCongCu.toggle() } label: {
                         Label(hienCongCu ? T("Ẩn bảng công cụ") : T("Hiện bảng công cụ"),
@@ -830,6 +1000,9 @@ struct ManVietView: View {
             BangVe(idTrang: trang.id,
                    giay: trang.giay,
                    khoTrang: trang.khoTrang,
+                   khoGoc: trang.khoGoc,
+                   khiGanDay: { ganDay(trang) },
+                   lanVuaCaTrang: lanVuaCaTrang,
                    nenPdfTen: trang.nenPdfTen,
                    nenPdfTrang: trang.nenPdfTrang,
                    nenAnhTen: trang.nenAnhTen,

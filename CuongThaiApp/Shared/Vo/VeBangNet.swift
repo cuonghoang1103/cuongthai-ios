@@ -51,10 +51,9 @@ enum VeBangNet {
     }
 
     static func ve(de: String, kieu: KieuVe) async throws -> (HinhVeAI, String?) {
-        // `/vo/ve` không lọt lưới `laDuongAI` (nó không chứa "/ai/"), nên chốt
-        // đồng ý chia sẻ với AI phải gọi TAY ở đây — mô tả người dùng gõ đi
-        // thẳng tới model của bên thứ ba.
-        try await DongYChiaSeAI.batBuoc()
+        // Chốt đồng ý chia sẻ với AI chạy trong `APIClient` (`laDuongAI` bắt
+        // `POST /vo/ve` từ 28/09/2026). Đừng gọi thêm `batBuoc()` ở đây — hai
+        // chốt là người dùng chưa đồng ý bị hỏi HAI lần liền.
         let kq: KetQua = try await APIClient.shared.request(.voVe(de: de, kieu: kieu.rawValue))
         let net: [[CGPoint]] = (kq.net ?? []).compactMap { n in
             let d = n.compactMap { p in p.count >= 2 ? CGPoint(x: p[0], y: p[1]) : nil }
@@ -412,7 +411,13 @@ struct KhungVeGiup: View {
         }
 
         Button {
-            if let chen { chen(h); Haptics.xong(); dong() } else { baoSapCo = true }
+            if let chen {
+                // Đóng khung TRƯỚC rồi mới vẽ: hình vẽ dần lên trang, khung
+                // hỏi còn mở là che mất đúng chỗ đang vẽ.
+                dong()
+                Haptics.xong()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { chen(h) }
+            } else { baoSapCo = true }
         } label: {
             Label(T("Vẽ lên trang"), systemImage: "square.and.pencil")
                 .font(.body.weight(.semibold))

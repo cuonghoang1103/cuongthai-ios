@@ -1341,6 +1341,8 @@ struct KhungHoiTrang: View {
         // một `@Model` của SwiftData, đụng vào từ luồng khác là hành vi không
         // xác định.
         let kho = t.khoTrang
+        // Nền tài liệu phủ khổ GỐC; phần nối dài bên dưới là giấy trắng.
+        let khoNen = t.khoGoc
         let net = KhoVo.nap(t.id)
         let pdfTen = t.nenPdfTen
         let pdfTrang = t.nenPdfTrang
@@ -1354,13 +1356,14 @@ struct KhungHoiTrang: View {
             let anh = UIGraphicsImageRenderer(size: khoVe).image { ctx in
                 UIColor.white.setFill()
                 ctx.fill(o)
+                let oNen = CGRect(x: 0, y: 0, width: khoNen.width * ty, height: khoNen.height * ty)
                 if let ten = pdfTen,
-                   let nen = NenTrangView.veTrangPdf(ten: ten, trang: pdfTrang, kho: khoVe) {
-                    nen.draw(in: o)
+                   let nen = NenTrangView.veTrangPdf(ten: ten, trang: pdfTrang, kho: oNen.size) {
+                    nen.draw(in: oNen)
                 } else if let ten = anhTen,
                           let d = try? Data(contentsOf: KhoVo.duongDanNen(ten)),
                           let nen = UIImage(data: d) {
-                    nen.draw(in: o)
+                    nen.draw(in: oNen)
                 }
                 if !net.bounds.isEmpty {
                     net.image(from: CGRect(origin: .zero, size: kho), scale: ty).draw(in: o)

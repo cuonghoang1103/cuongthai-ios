@@ -59,6 +59,8 @@ struct TrangDaXoa {
     let ghiAmDai: Double
     let mocNet: [Double]
     let coNet: Bool
+    var chieuCaoThem: Double = 0
+    var khoGiayRieng: String? = nil
 }
 
 @MainActor
@@ -160,6 +162,10 @@ enum ThaoTacTrang {
         t.chuNhanDang = goc.chuNhanDang
         t.nhanDangLuc = goc.nhanDangLuc
         t.coNet = goc.coNet
+        // Nét chép nguyên toạ độ ⇒ khổ cũng phải chép theo, không thì bản sao
+        // của một trang đã nối dài bị cắt cụt phần dưới.
+        t.chieuCaoThem = goc.chieuCaoThem
+        t.khoGiayRieng = goc.khoGiayRieng
         kho.insert(t)
         KhoVo.nhanBan(tu: goc.id, sang: t.id)
         KhoVo.nhanBanAnhNho(tu: goc.id, sang: t.id)
@@ -204,6 +210,12 @@ enum ThaoTacTrang {
         guard !sapXep.isEmpty else { return true }
         var dsDich = dich.trangsTheoThuTu
         for t in sapXep {
+            // Cuốn đích khác khổ: trang GIỮ khổ đang có — nét giữ nguyên
+            // toạ độ, sang khổ hẹp hơn là nét trôi ra ngoài mép. Muốn theo
+            // khổ cuốn đích thì đổi "Khổ giấy của cuốn" ở đó (có kiểm nét).
+            if t.khoGiayRieng == nil, !t.coNenTaiLieu, t.cuon?.kho != dich.kho {
+                t.khoGiayRieng = t.khoGiayApDung.rawValue
+            }
             t.cuon = dich
             t.suaLuc = Date()
             dsDich.append(t)
@@ -256,7 +268,8 @@ enum ThaoTacTrang {
                 chuNhanDang: t.chuNhanDang, nhanDangLuc: t.nhanDangLuc,
                 nenPdfTen: t.nenPdfTen, nenPdfTrang: t.nenPdfTrang, nenAnhTen: t.nenAnhTen,
                 nenKhoaR2: t.nenKhoaR2, nenLoaiR2: t.nenLoaiR2,
-                ghiAmTen: t.ghiAmTen, ghiAmDai: t.ghiAmDai, mocNet: t.mocNet, coNet: t.coNet))
+                ghiAmTen: t.ghiAmTen, ghiAmDai: t.ghiAmDai, mocNet: t.mocNet, coNet: t.coNet,
+                chieuCaoThem: t.chieuCaoThem, khoGiayRieng: t.khoGiayRieng))
             DongBoVo.ghiNhanXoa(kho: kho, maDoiTuong: t.id.uuidString, loai: "trang")
             kho.delete(t)
         }
@@ -293,6 +306,8 @@ enum ThaoTacTrang {
             t.ghiAmDai = c.ghiAmDai
             t.mocNet = c.mocNet
             t.coNet = c.coNet
+            t.chieuCaoThem = c.chieuCaoThem
+            t.khoGiayRieng = c.khoGiayRieng
             kho.insert(t)
             let tam = thuMucHoanTac.appendingPathComponent("\(c.idCu.uuidString).drawing")
             if FileManager.default.fileExists(atPath: tam.path) {
@@ -300,7 +315,7 @@ enum ThaoTacTrang {
                 try? FileManager.default.removeItem(at: tam)
             }
             let net = KhoVo.nap(t.id)
-            KhoVo.dungAnhNho(net, kho: t.khoTrang, cho: t.id, nenPdfTen: t.nenPdfTen,
+            KhoVo.dungAnhNho(net, kho: t.khoTrang, khoNen: t.khoGoc, cho: t.id, nenPdfTen: t.nenPdfTen,
                              nenPdfTrang: t.nenPdfTrang, nenAnhTen: t.nenAnhTen)
             ds.insert(t, at: min(c.viTri, ds.count))
             moi.append(t)

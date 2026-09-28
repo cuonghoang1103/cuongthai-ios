@@ -52,20 +52,20 @@ enum DocChuViet {
     /// như KHÔNG có chữ viết tay — chỉ vài nét gạch chân — nên đọc mỗi mực
     /// thì "Hỏi AI về cả vở" luôn báo không có gì để gửi. Đó đúng là thứ
     /// người dùng gặp 18/09/2026 với 13 tệp JPD123.
-    static func doc(net: PKDrawing, khoTrang: CGSize,
+    static func doc(net: PKDrawing, khoTrang: CGSize, khoNen: CGSize? = nil,
                     ngonNgu: [String]? = nil,
                     nenPdfTen: String? = nil, nenPdfTrang: Int = 0,
                     nenAnhTen: String? = nil) async -> String {
         if let ngonNgu {
-            return await docMotLuot(net: net, khoTrang: khoTrang, ngonNgu: ngonNgu,
+            return await docMotLuot(net: net, khoTrang: khoTrang, khoNen: khoNen, ngonNgu: ngonNgu,
                                     nenPdfTen: nenPdfTen, nenPdfTrang: nenPdfTrang,
                                     nenAnhTen: nenAnhTen)
         }
-        async let latin = docMotLuot(net: net, khoTrang: khoTrang,
+        async let latin = docMotLuot(net: net, khoTrang: khoTrang, khoNen: khoNen,
                                      ngonNgu: ["vi-VT", "en-US"],
                                      nenPdfTen: nenPdfTen, nenPdfTrang: nenPdfTrang,
                                      nenAnhTen: nenAnhTen)
-        async let nhat = docMotLuot(net: net, khoTrang: khoTrang,
+        async let nhat = docMotLuot(net: net, khoTrang: khoTrang, khoNen: khoNen,
                                     ngonNgu: ["ja-JP", "zh-Hans"],
                                     nenPdfTen: nenPdfTen, nenPdfTrang: nenPdfTrang,
                                     nenAnhTen: nenAnhTen)
@@ -76,7 +76,7 @@ enum DocChuViet {
         return a + "\n" + b
     }
 
-    private static func docMotLuot(net: PKDrawing, khoTrang: CGSize,
+    private static func docMotLuot(net: PKDrawing, khoTrang: CGSize, khoNen: CGSize?,
                                    ngonNgu: [String],
                                    nenPdfTen: String? = nil, nenPdfTrang: Int = 0,
                                    nenAnhTen: String? = nil) async -> String {
@@ -85,19 +85,23 @@ enum DocChuViet {
 
         // Vẽ nền + nét lên nền TRẮNG ở 2×: Vision đọc ảnh, và nét mảnh trên
         // nền trong suốt thì nó gần như không thấy gì.
-        let ty: CGFloat = 2
+        // Trang to (Bảng lớn, nối dài 4×) ở 2× là ảnh vài chục triệu điểm —
+        // chặn cạnh dài ~5000px, vẫn đủ nét cho Vision.
+        let ty: CGFloat = min(2, 5000 / max(khoTrang.width, khoTrang.height, 1))
         let kho = CGSize(width: khoTrang.width * ty, height: khoTrang.height * ty)
+        let nenGoc = khoNen ?? khoTrang
         let anh = UIGraphicsImageRenderer(size: kho).image { ctx in
             UIColor.white.setFill()
             let o = CGRect(origin: .zero, size: kho)
             ctx.fill(o)
+            let oNen = CGRect(x: 0, y: 0, width: nenGoc.width * ty, height: nenGoc.height * ty)
             if let ten = nenPdfTen,
-               let nen = NenTrangView.veTrangPdf(ten: ten, trang: nenPdfTrang, kho: kho) {
-                nen.draw(in: o)
+               let nen = NenTrangView.veTrangPdf(ten: ten, trang: nenPdfTrang, kho: oNen.size) {
+                nen.draw(in: oNen)
             } else if let ten = nenAnhTen,
                       let d = try? Data(contentsOf: KhoVo.duongDanNen(ten)),
                       let nen = UIImage(data: d) {
-                nen.draw(in: o)
+                nen.draw(in: oNen)
             }
             if !net.strokes.isEmpty {
                 net.image(from: CGRect(origin: .zero, size: khoTrang), scale: ty)
@@ -158,7 +162,7 @@ enum DocChuViet {
         for (i, t) in canDoc.enumerated() {
             tienDo(i, canDoc.count)
             let net = KhoVo.nap(t.id)
-            let chu = await doc(net: net, khoTrang: t.khoTrang,
+            let chu = await doc(net: net, khoTrang: t.khoTrang, khoNen: t.khoGoc,
                                 nenPdfTen: t.nenPdfTen, nenPdfTrang: t.nenPdfTrang,
                                 nenAnhTen: t.nenAnhTen)
             t.chuNhanDang = chu.isEmpty ? nil : chu

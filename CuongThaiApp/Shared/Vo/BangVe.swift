@@ -25,6 +25,9 @@ final class CauNoiBangVe: ObservableObject {
     /// (xem `BangVeVC.boHoanTac` — không dựa vào responder chain).
     func hoanTac() { vc?.hoanTacNet() }
     func lamLai() { vc?.lamLaiNet() }
+    /// Ghi nét đang hiện xuống đĩa NGAY (không đợi hẹn giờ 2 giây) — trước
+    /// khi một việc khác đọc tệp nét (đổi khổ cuốn, đặt hình AI).
+    func luuNgay() { vc?.luuNgay() }
 
     /// Trang mà khung vẽ ĐANG giữ. Đổi trang bằng `.id(...)` là dựng bộ điều
     /// khiển mới — trong khoảnh khắc đó `vc` vẫn là của trang CŨ. Ai định ghi
@@ -38,12 +41,31 @@ final class CauNoiBangVe: ObservableObject {
     func chenNet(_ ds: [PKStroke], tenViec: String) { vc?.chenNet(ds, tenViec: tenViec) }
     /// Khung trong toạ độ màn khung vẽ (lớp khoanh) → toạ độ TRANG (toạ độ nét).
     func sangToaDoTrang(_ r: CGRect) -> CGRect? { vc?.sangToaDoTrang(r) }
+    /// Phần TRANG đang nhìn thấy trên màn (toạ độ trang, đã trừ phần bảng
+    /// công cụ che), để đặt hình AI vẽ vào đúng chỗ người dùng đang nhìn.
+    var vungDangNhin: CGRect? { vc?.vungDangNhin() }
+    /// Bút đang chọn trong bảng công cụ. `nil` khi đang cầm tẩy / lasso / thước.
+    var butDangChon: PKInkingTool? { vc?.canvas.tool as? PKInkingTool }
+    /// Vẽ DẦN từng nét như người đang cầm bút (xem trước trên lớp riêng), xong
+    /// mới ghi vào trang bằng MỘT lần `chenNet` ⇒ ↶ một cái gỡ cả hình.
+    func veDanRoiChen(_ ds: [PKStroke], tenViec: String, thoiGian: TimeInterval,
+                      xong: (() -> Void)? = nil) {
+        guard let vc else { return }
+        vc.veDanRoiChen(ds, tenViec: tenViec, thoiGian: thoiGian, xong: xong)
+    }
 }
 
 struct BangVe: UIViewControllerRepresentable {
     let idTrang: UUID
     let giay: LoaiGiay
     let khoTrang: CGSize
+    /// Khổ GỐC (chưa nối dài) — nền tài liệu vẽ vừa khung này, và giấy
+    /// Cornell / 原稿用紙 giữ bố cục theo nó. `nil` = bằng `khoTrang`.
+    var khoGoc: CGSize? = nil
+    /// Nét vừa viết chạm vùng gần đáy trang ⇒ xin nối dài (màn ngoài quyết).
+    var khiGanDay: (() -> Void)? = nil
+    /// Tăng lên là đưa CẢ trang vào khung (vừa chiều cao lẫn bề ngang).
+    var lanVuaCaTrang: Int = 0
     /// Nền PDF / ảnh quét nằm dưới lớp mực.
     var nenPdfTen: String? = nil
     var nenPdfTrang: Int = 0
@@ -70,7 +92,8 @@ struct BangVe: UIViewControllerRepresentable {
     var cauNoi: CauNoiBangVe? = nil
 
     func makeUIViewController(context: Context) -> BangVeVC {
-        let vc = BangVeVC(idTrang: idTrang, giay: giay, khoTrang: khoTrang)
+        let vc = BangVeVC(idTrang: idTrang, giay: giay, khoTrang: khoTrang, khoGoc: khoGoc ?? khoTrang)
+        vc.khiGanDay = khiGanDay
         vc.datNen(pdfTen: nenPdfTen, trang: nenPdfTrang, anhTen: nenAnhTen)
         vc.khiLuu = khiLuu
         vc.khiBaoBut = khiBaoBut
@@ -95,10 +118,12 @@ struct BangVe: UIViewControllerRepresentable {
     }
 
     func updateUIViewController(_ vc: BangVeVC, context: Context) {
-        vc.capNhat(giay: giay, khoTrang: khoTrang)
+        vc.capNhat(giay: giay, khoTrang: khoTrang, khoGoc: khoGoc ?? khoTrang)
         vc.datNen(pdfTen: nenPdfTen, trang: nenPdfTrang, anhTen: nenAnhTen)
         vc.datHienCongCu(hienCongCu)
         vc.xinVuaKhung(lanVuaKhung)
+        vc.xinVuaCaTrang(lanVuaCaTrang)
+        vc.khiGanDay = khiGanDay
         vc.khiLuu = khiLuu
         vc.khiBaoBut = khiBaoBut
         vc.khiThemNet = khiThemNet
@@ -120,6 +145,9 @@ final class BangVeVC: UIViewController {
     private(set) var idTrang: UUID
     private var giay: LoaiGiay
     private var khoTrang: CGSize
+    /// Khổ gốc (chưa nối dài) — xem `BangVe.khoGoc`.
+    private var khoGoc: CGSize
+    var khiGanDay: (() -> Void)?
 
     var khiLuu: ((PKDrawing) -> Void)?
     /// Báo một câu ngắn lên màn khi cú bóp bút ăn — không có phản hồi nhìn
@@ -176,7 +204,11 @@ final class BangVeVC: UIViewController {
             vc.datBanVe(cu, tenViec: tenViec)
         }
         boHoanTac.setActionName(tenViec)
+        // Ghi bằng mã (làm gọn, AI vẽ, hoàn tác) không phải "đang viết tới
+        // đáy" ⇒ không tự nối dài.
+        dangGhiBangMa = true
         canvas.drawing = moi
+        dangGhiBangMa = false
         choLuu = true
         luuNgay()
     }
@@ -204,6 +236,7 @@ final class BangVeVC: UIViewController {
     /// Hẹn giờ tự lưu. Lưu mỗi nét là ghi đĩa hàng trăm lần một phút; lưu
     /// quá thưa thì mất bài khi app bị hệ thống thu hồi bộ nhớ. 2 giây là
     /// chỗ đứng giữa, cộng với lưu CƯỠNG BỨC lúc rời màn và lúc app xuống nền.
+    private var dangGhiBangMa = false
     private var henLuu: Timer?
     private var choLuu = false
 
@@ -211,10 +244,11 @@ final class BangVeVC: UIViewController {
 
     // MARK: Vòng đời
 
-    init(idTrang: UUID, giay: LoaiGiay, khoTrang: CGSize) {
+    init(idTrang: UUID, giay: LoaiGiay, khoTrang: CGSize, khoGoc: CGSize) {
         self.idTrang = idTrang
         self.giay = giay
         self.khoTrang = khoTrang
+        self.khoGoc = khoGoc
         super.init(nibName: nil, bundle: nil)
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) chưa dùng tới") }
@@ -257,7 +291,9 @@ final class BangVeVC: UIViewController {
         canvas.isOpaque = false
         canvas.delegate = self
         canvas.alwaysBounceVertical = true
-        canvas.minimumZoomScale = 0.4
+        // 0,2: khổ Bảng lớn (1600×2263) hay trang nối dài 4× cần thu nhỏ
+        // dưới 0,4 mới "xem cả trang" được trên iPad 11".
+        canvas.minimumZoomScale = 0.2
         canvas.maximumZoomScale = 5.0
         canvas.contentSize = khoTrang
         // ⚠️ `.default`, KHÔNG phải `.pencilOnly`.
@@ -275,6 +311,7 @@ final class BangVeVC: UIViewController {
 
         nen.giay = giay
         nen.khoTrang = khoTrang
+        nen.caoGoc = khoGoc.height
         nen.frame = CGRect(origin: .zero, size: khoTrang)
 
         view.addSubview(canvas)
@@ -357,9 +394,13 @@ final class BangVeVC: UIViewController {
         let khoPhong = CGSize(width: khoTrang.width * z, height: khoTrang.height * z)
         nen.frame = CGRect(origin: .zero, size: khoPhong)
         nen.tyLe = z
-        nenTaiLieu.frame = CGRect(origin: .zero, size: khoPhong)
-        nenTaiLieu.dat(pdfTen: pdfTen, trang: pdfTrang, anhTen: anhTen, khoTrang: khoTrang)
+        // Nền tài liệu chỉ phủ khổ GỐC: trang nối dài thì phần thêm là giấy
+        // trắng dưới đề bài, không kéo giãn trang PDF ra cho vừa.
+        nenTaiLieu.frame = CGRect(origin: .zero, size: CGSize(width: khoGoc.width * z,
+                                                              height: khoGoc.height * z))
+        nenTaiLieu.dat(pdfTen: pdfTen, trang: pdfTrang, anhTen: anhTen, khoTrang: khoGoc)
         canvas.contentSize = khoPhong
+        if let xem = lopXemTruoc { xem.frame = CGRect(origin: .zero, size: khoPhong); xem.tyLe = z }
 
         let duThua = max(0, (canvas.bounds.width - khoPhong.width) / 2)
         let duThuaDoc = max(0, (canvas.bounds.height - khoPhong.height) / 2)
@@ -415,6 +456,73 @@ final class BangVeVC: UIViewController {
     }
     private var lanVuaKhungDaLam = 0
 
+    /// Đưa CẢ trang vào khung (vừa cả chiều cao) — xem toàn cảnh trang dài.
+    func xinVuaCaTrang(_ lan: Int) {
+        guard lan != lanVuaCaTrangDaLam else { return }
+        lanVuaCaTrangDaLam = lan
+        guard canvas.bounds.width > 0, khoTrang.width > 0, khoTrang.height > 0 else { return }
+        // Bảng công cụ đang hiện mà hệ thống chưa báo phần che (máy ảo, lúc
+        // mới dựng) ⇒ chừa ước lượng 110pt, không thì đáy trang nằm dưới gầm.
+        let che = max(cheDuoi(), (bangCongCu?.isVisible == true) ? 110 : 0)
+        let caoDung = canvas.bounds.height - che - 24
+        let vua = min(max(min((canvas.bounds.width - 32) / khoTrang.width,
+                              max(caoDung, 100) / khoTrang.height),
+                          canvas.minimumZoomScale), canvas.maximumZoomScale)
+        UIView.animate(withDuration: 0.25) { [weak self] in
+            guard let self else { return }
+            canvas.zoomScale = vua
+            capNhatNenVaLe()
+            canvas.contentOffset = CGPoint(x: -canvas.contentInset.left, y: -canvas.contentInset.top)
+        }
+    }
+    private var lanVuaCaTrangDaLam = 0
+
+    /// Phần trang đang thấy, toạ độ TRANG, đã trừ phần đáy bị bảng công cụ
+    /// che và kẹp trong trang.
+    func vungDangNhin() -> CGRect {
+        let b = canvas.bounds
+        let r = sangToaDoTrang(CGRect(x: 0, y: 0, width: b.width,
+                                      height: max(1, b.height - cheDuoi())))
+        let trang = CGRect(origin: .zero, size: khoTrang)
+        let giao = r.intersection(trang)
+        return giao.isNull || giao.width < 10 || giao.height < 10 ? trang : giao
+    }
+
+    // MARK: Vẽ dần (AI vẽ bằng nét)
+
+    private var lopXemTruoc: LopVeDan?
+
+    /// Hiện `ds` DẦN trên một lớp xem trước (không phải bản vẽ thật), hết giờ
+    /// thì gỡ lớp đó và ghi cả cụm bằng `chenNet` — một bước hoàn tác.
+    ///
+    /// Vì sao không `chenNet` từng nét: mỗi lần là một bước ↶, hình 20 nét
+    /// thì phải bấm ↶ 20 lần mới gỡ hết. Và vì sao không gán thẳng
+    /// `canvas.drawing` từng khung hình: mỗi lần gán là một lần lưu + dựng
+    /// lại ảnh thu nhỏ, ở 30 khung/giây là khựng thấy rõ.
+    func veDanRoiChen(_ ds: [PKStroke], tenViec: String, thoiGian: TimeInterval,
+                      xong: (() -> Void)?) {
+        guard !ds.isEmpty else { return }
+        lopXemTruoc?.dung()
+        lopXemTruoc?.removeFromSuperview()
+        let z = canvas.zoomScale
+        let lop = LopVeDan(net: ds, thoiGian: thoiGian)
+        lop.frame = CGRect(origin: .zero, size: CGSize(width: khoTrang.width * z, height: khoTrang.height * z))
+        lop.tyLe = z
+        // Trên nền + nền tài liệu, dưới mực thật (mực là lớp riêng của canvas).
+        canvas.insertSubview(lop, aboveSubview: nenTaiLieu)
+        lopXemTruoc = lop
+        lop.batDau { [weak self, weak lop] in
+            guard let self else { return }
+            // Trang đã đổi giữa chừng (vc khác) thì `self` không còn là khung
+            // của trang đó — nhưng lớp này gắn vào CHÍNH canvas này, nên nét
+            // vẫn vào đúng trang đã xin vẽ.
+            lop?.removeFromSuperview()
+            if self.lopXemTruoc === lop { self.lopXemTruoc = nil }
+            self.chenNet(ds, tenViec: tenViec)
+            xong?()
+        }
+    }
+
     private var pdfTen: String?
     private var pdfTrang = 0
     private var anhTen: String?
@@ -424,20 +532,27 @@ final class BangVeVC: UIViewController {
         self.pdfTen = pdfTen
         self.pdfTrang = trang
         self.anhTen = anhTen
-        nenTaiLieu.dat(pdfTen: pdfTen, trang: trang, anhTen: anhTen, khoTrang: khoTrang)
+        nenTaiLieu.dat(pdfTen: pdfTen, trang: trang, anhTen: anhTen, khoTrang: khoGoc)
     }
 
-    func capNhat(giay moi: LoaiGiay, khoTrang khoMoi: CGSize) {
+    func capNhat(giay moi: LoaiGiay, khoTrang khoMoi: CGSize, khoGoc gocMoi: CGSize) {
         var doi = false
         if moi != giay { giay = moi; nen.giay = moi; doi = true }
         if khoMoi != khoTrang { khoTrang = khoMoi; nen.khoTrang = khoMoi; doi = true }
-        if doi { capNhatNenVaLe() }
+        if gocMoi != khoGoc { khoGoc = gocMoi; nen.caoGoc = gocMoi.height; doi = true }
+        // Khổ đổi thì ảnh thu nhỏ phải dựng lại theo khổ mới ngay, không đợi
+        // người dùng viết thêm một nét.
+        if doi { capNhatNenVaLe(); choLuu = true; henGioLuu() }
     }
 
     // MARK: Nạp / lưu
 
     private func napNet() {
         let drawing = KhoVo.nap(idTrang)
+        // Đặt số nét TRƯỚC khi gán: gán cũng phát `canvasViewDrawingDidChange`,
+        // và nếu coi 144 nét vừa nạp là "vừa viết thêm" thì trang có chữ sát
+        // đáy tự nối dài mỗi lần mở (đo thật trên máy ảo 28/09/2026).
+        soNetTruoc = drawing.strokes.count
         canvas.drawing = drawing
         // Nạp xong mới gắn hẹn giờ — gán `drawing` cũng phát
         // `canvasViewDrawingDidChange`, và nếu coi đó là "người dùng vừa
@@ -459,6 +574,7 @@ final class BangVeVC: UIViewController {
         henLuu?.invalidate()
         let drawing = canvas.drawing
         let kho = khoTrang
+        let goc = khoGoc
         let id = idTrang
         // Chộp con trỏ nền TRÊN luồng chính rồi mới rời đi — `Task.detached`
         // bên dưới không được đụng vào thuộc tính của bộ điều khiển.
@@ -468,7 +584,7 @@ final class BangVeVC: UIViewController {
         // Ảnh thu nhỏ dựng ở luồng nền: với trang viết dày nó mất vài chục
         // mili giây, đủ để nét bút khựng nếu làm ngay trên luồng chính.
         Task.detached(priority: .utility) {
-            KhoVo.dungAnhNho(drawing, kho: kho, cho: id,
+            KhoVo.dungAnhNho(drawing, kho: kho, khoNen: goc, cho: id,
                              nenPdfTen: pdfT, nenPdfTrang: pdfTr, nenAnhTen: anhT)
         }
     }
@@ -621,7 +737,16 @@ extension BangVeVC: PKCanvasViewDelegate {
         let n = canvasView.drawing.strokes.count
         // Chỉ báo khi nét TĂNG. Tẩy cũng gọi hàm này, và coi mọi thay đổi là
         // "vừa viết thêm" thì mỗi lần xoá lại ghi thêm một mốc thời gian.
-        if n > soNetTruoc { khiThemNet?(n) }
+        if n > soNetTruoc {
+            khiThemNet?(n)
+            // Nét vừa viết kết thúc trong 12% cuối (tính theo khổ GỐC) ⇒
+            // xin nối dài. Chỉ nhìn nét CUỐI: nét cũ nằm sát đáy từ trước
+            // không phải là "đang viết tới đáy".
+            if !dangGhiBangMa, let cuoi = canvasView.drawing.strokes.last {
+                let day = khoTrang.height - khoGoc.height * 0.12
+                if cuoi.renderBounds.maxY > day { khiGanDay?() }
+            }
+        }
         soNetTruoc = n
     }
 

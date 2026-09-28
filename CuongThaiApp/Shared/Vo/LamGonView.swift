@@ -20,6 +20,8 @@ struct LamGonView: View {
     let goc: PKDrawing
     let giay: LoaiGiay
     let khoTrang: CGSize
+    /// Chiều cao GỐC (chưa nối dài) — đường chân chữ Cornell phụ thuộc nó.
+    var caoGoc: CGFloat? = nil
     /// Vùng khoanh (toạ độ trang); `nil` = cả trang.
     let vung: CGRect?
     /// Trả `false` nếu không áp được (khung đã sang trang khác) — cửa sổ ở lại.
@@ -144,7 +146,7 @@ struct LamGonView: View {
             dongChon($lamMuot, "scribble", T("Làm mượt nét"),
                      T("Khử run tay, giữ nguyên góc gãy; độ đậm nét đều hơn"))
             dongChon($thangHang, "text.alignleft", T("Thẳng hàng theo dòng"),
-                     giay == .trang || GiayNenView.dongChanChu(giay: giay, khoTrang: khoTrang).isEmpty
+                     giay == .trang || GiayNenView.dongChanChu(giay: giay, khoTrang: khoTrang, caoGoc: caoGoc).isEmpty
                         ? T("Nắn dòng nghiêng cho ngang, chữ về cùng đường chân")
                         : T("Nắn dòng nghiêng, đặt chữ lên dòng kẻ, đều cỡ vừa phải"))
             dongChon($nanBang, "tablecells", T("Nắn nét thẳng và bảng"),
@@ -193,7 +195,7 @@ struct LamGonView: View {
         dangTinh = true
         defer { dangTinh = false }
         let tc = tuyChon, d = goc, v = vung
-        let dk = GiayNenView.dongChanChu(giay: giay, khoTrang: khoTrang)
+        let dk = GiayNenView.dongChanChu(giay: giay, khoTrang: khoTrang, caoGoc: caoGoc)
         // Chạy NỀN: trang dày hai nghìn nét mất vài chục mili giây — nhỏ,
         // nhưng bật/tắt công tắc liên tục thì cộng dồn thành giật.
         let kq = await Task.detached(priority: .userInitiated) {
@@ -202,8 +204,8 @@ struct LamGonView: View {
         guard !Task.isCancelled else { return }
         ketQua = kq
         let r = vungAnh
-        anhGoc = Self.dungAnh(goc, giay: giay, khoTrang: khoTrang, vung: r)
-        anhSau = Self.dungAnh(kq.drawing, giay: giay, khoTrang: khoTrang, vung: r)
+        anhGoc = Self.dungAnh(goc, giay: giay, khoTrang: khoTrang, caoGoc: caoGoc, vung: r)
+        anhSau = Self.dungAnh(kq.drawing, giay: giay, khoTrang: khoTrang, caoGoc: caoGoc, vung: r)
         NhatKy.vo.info("làm gọn: \(kq.soNetDoi) nét · \(kq.soDong) dòng · \(kq.soBang) bảng · \(kq.soHinh) hình · \(Int(kq.mili)) ms")
         #if DEBUG
         // Bàn thử máy ảo: CT_LAMGON=ap ⇒ tự bấm Áp dụng khi đã có kết quả.
@@ -225,7 +227,7 @@ struct LamGonView: View {
     }
 
     /// Ảnh giấy + mực của vùng `vung`, luôn ở giao diện SÁNG (giấy thật).
-    static func dungAnh(_ d: PKDrawing, giay: LoaiGiay, khoTrang: CGSize, vung: CGRect,
+    static func dungAnh(_ d: PKDrawing, giay: LoaiGiay, khoTrang: CGSize, caoGoc: CGFloat? = nil, vung: CGRect,
                         rongPx: CGFloat = 1600) -> UIImage {
         let s = max(0.5, min(6, rongPx / max(vung.width, 1)))
         let kho = CGSize(width: vung.width * s, height: vung.height * s)
@@ -234,7 +236,7 @@ struct LamGonView: View {
         var ra = UIImage()
         UITraitCollection(userInterfaceStyle: .light).performAsCurrent {
             let nen = GiayNenView(frame: CGRect(origin: .zero, size: khoTrang))
-            nen.giay = giay; nen.khoTrang = khoTrang; nen.tyLe = 1
+            nen.giay = giay; nen.khoTrang = khoTrang; nen.caoGoc = caoGoc; nen.tyLe = 1
             let muc = d.image(from: vung, scale: s)
             ra = UIGraphicsImageRenderer(size: kho, format: fmt).image { c in
                 c.cgContext.saveGState()
@@ -251,7 +253,7 @@ struct LamGonView: View {
 /// Cửa sổ khổ TRANG trên iPad (iOS 18+). Khổ "form" mặc định chỉ ~540pt —
 /// ảnh xem trước bé tới mức không thấy chữ đã thẳng hàng hay chưa (đo trên
 /// máy ảo 28/09). iOS 17 vẫn dùng khổ mặc định.
-private struct CoTrangLon: ViewModifier {
+struct CoTrangLon: ViewModifier {
     func body(content: Content) -> some View {
         if #available(iOS 18.0, *) {
             content.presentationSizing(.page)

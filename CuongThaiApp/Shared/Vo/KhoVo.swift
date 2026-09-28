@@ -181,22 +181,28 @@ enum KhoVo {
     /// riêng của Apple). Vẽ thiếu nền thì trên web cả cuốn vở trông như mấy
     /// vệt mực vô nghĩa trên giấy trắng — người dùng chú thích lên giáo
     /// trình, mà cái họ chú thích LÊN thì không ai thấy.
-    static func dungAnhNho(_ drawing: PKDrawing, kho: CGSize, cho idTrang: UUID,
+    /// `kho` = khổ THẬT của trang (kể cả phần nối dài); `khoNen` = khổ gốc
+    /// mà nền tài liệu phủ (`nil` = bằng `kho`).
+    static func dungAnhNho(_ drawing: PKDrawing, kho: CGSize, khoNen: CGSize? = nil, cho idTrang: UUID,
                            nenPdfTen: String? = nil, nenPdfTrang: Int = 0,
                            nenAnhTen: String? = nil) {
-        let ty: CGFloat = 0.25
+        // Trang to (Bảng lớn, A3, nối dài) thì tỉ lệ 0,25 ra ảnh nhỏ tới
+        // 400×2000px — dải trang chỉ rộng 128pt. Chặn cạnh dài ~560px.
+        let ty: CGFloat = min(0.25, 560 / max(kho.width, kho.height, 1))
         let khoNho = CGSize(width: kho.width * ty, height: kho.height * ty)
+        let nenGoc = khoNen ?? kho
         let anh = UIGraphicsImageRenderer(size: khoNho).image { ctx in
             UIColor.white.setFill()
             let o = CGRect(origin: .zero, size: khoNho)
             ctx.fill(o)
+            let oNen = CGRect(x: 0, y: 0, width: nenGoc.width * ty, height: nenGoc.height * ty)
             if let ten = nenPdfTen,
-               let nen = NenTrangView.veTrangPdf(ten: ten, trang: nenPdfTrang, kho: khoNho) {
-                nen.draw(in: o)
+               let nen = NenTrangView.veTrangPdf(ten: ten, trang: nenPdfTrang, kho: oNen.size) {
+                nen.draw(in: oNen)
             } else if let ten = nenAnhTen,
                       let d = try? Data(contentsOf: duongDanNen(ten)),
                       let nen = UIImage(data: d) {
-                nen.draw(in: o)
+                nen.draw(in: oNen)
             }
             guard !drawing.bounds.isEmpty else { return }
             let net = drawing.image(from: CGRect(origin: .zero, size: kho), scale: ty)

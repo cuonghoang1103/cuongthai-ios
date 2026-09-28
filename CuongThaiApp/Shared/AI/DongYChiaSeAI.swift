@@ -102,6 +102,8 @@ enum DongYChiaSeAI {
         if path.contains("/ai/") { return true }
         // Tư vấn ngành (Academy): câu hỏi đi tới AI.
         if path == "/api/v1/academy/advisor" && method == "POST" { return true }
+        // Vở · Vẽ giúp: mô tả người dùng gõ đi thẳng tới model vẽ SVG.
+        if path == "/api/v1/vo/ve" && method == "POST" { return true }
         guard method != "GET" else { return false }
         // Phỏng vấn thử: câu trả lời được AI chấm (trừ nút báo lỗi câu hỏi).
         if path.hasPrefix("/api/v1/interview/") && !path.hasSuffix("/flag") { return true }

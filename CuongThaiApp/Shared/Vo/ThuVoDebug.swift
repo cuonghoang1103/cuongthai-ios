@@ -144,6 +144,26 @@ enum ThuVo {
         kiem("máy chủ cũ: 'Trang 3' không thành chương", cu?.mayChuMoi == false && cu?.tenChuongThat == nil)
         let moi = try? JSONDecoder().decode(TrangTaiVe.self, from: Data(#"{"clientId":"x","id":1,"thuTu":0,"tenChuong":null,"tieuDe":"Bài 1","inkVersion":0,"inkStrokeCount":0}"#.utf8))
         kiem("máy chủ mới: đọc tieuDe", moi?.mayChuMoi == true && moi?.tieuDe == "Bài 1")
+        // 10b. Khổ trang (28/09/2026): khoá vắng = máy chủ cũ, không được áp.
+        kiem("máy chủ cũ: không có khổ trang", moi?.coKhoTrang == false)
+        let kt = try? JSONDecoder().decode(TrangTaiVe.self, from: Data(#"{"clientId":"x","id":1,"thuTu":0,"tieuDe":null,"chieuCaoThem":421,"khoGiayRieng":"a4","inkVersion":0,"inkStrokeCount":0}"#.utf8))
+        kiem("máy chủ mới: đọc nối dài + khổ riêng", kt?.coKhoTrang == true && kt?.chieuCaoThem == 421 && kt?.khoGiayRieng == "a4")
+        // 10c. Đổi khổ cuốn: nét dưới đáy A5 ⇒ nối dài, không cắt.
+        let tK = cuon.trangsTheoThuTu[0]
+        var dK = PKDrawing()
+        dK.strokes.append(PKStroke(ink: PKInk(.pen, color: .black), path: PKStrokePath(controlPoints: [
+            PKStrokePoint(location: CGPoint(x: 50, y: 500), timeOffset: 0, size: CGSize(width: 3, height: 3), opacity: 1, force: 1, azimuth: 0, altitude: .pi / 2),
+            PKStrokePoint(location: CGPoint(x: 60, y: 700), timeOffset: 0.1, size: CGSize(width: 3, height: 3), opacity: 1, force: 1, azimuth: 0, altitude: .pi / 2)],
+            creationDate: Date())))
+        KhoVo.ghi(dK, cho: tK.id)
+        DoiKhoGiay.ap(cuon, sang: .a5, kho: kho)
+        kiem("A5: trang có nét y=700 tự nối dài ≥ 106pt", tK.khoTrang.height >= 702 && tK.khoGiayRieng == nil,
+             "\(Int(tK.khoTrang.width))×\(Int(tK.khoTrang.height))")
+        DoiKhoGiay.ap(cuon, sang: .a4, kho: kho)
+        kiem("về A4: theo cuốn, vẫn chứa nét", tK.khoGiayRieng == nil && tK.khoTrang.width == 595
+             && tK.khoTrang.height >= 702, "\(Int(tK.khoTrang.height))")
+        DoiKhoGiay.ap(cuon, sang: .a3, kho: kho)
+        kiem("A3 (cao hơn cả trang đã nối): gỡ nối dài thừa", tK.chieuCaoThem == 0, "\(tK.chieuCaoThem)")
 
         // 11. Xuất PDF cả cuốn: đủ số trang.
         if let url = XuatPdfVo.taoPdf(trangs: cuon.trangsTheoThuTu, tenTep: "thu-xuat"),
@@ -199,7 +219,7 @@ enum ThuVo {
             // Vẽ SỐ TRANG thật to bằng nét để nhìn ảnh nhỏ là biết trang nào.
             let d = veSo(i + 1)
             KhoVo.ghi(d, cho: t.id)
-            KhoVo.dungAnhNho(d, kho: t.khoTrang, cho: t.id)
+            KhoVo.dungAnhNho(d, kho: t.khoTrang, khoNen: t.khoGoc, cho: t.id)
         }
         try? kho.save()
         return cuon
@@ -222,7 +242,7 @@ enum ThuVo {
         if ProcessInfo.processInfo.environment["CT_LAMGON_GIU"] != "1" || !trang.coNet {
             let d = ThuLamGon.trangMau().k.drawing
             KhoVo.ghi(d, cho: trang.id)
-            KhoVo.dungAnhNho(d, kho: trang.khoTrang, cho: trang.id)
+            KhoVo.dungAnhNho(d, kho: trang.khoTrang, khoNen: trang.khoGoc, cho: trang.id)
             trang.coNet = true
         }
         cuon.trangDangDoc = 0

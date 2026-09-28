@@ -309,6 +309,10 @@ final class DongBoVo: ObservableObject {
                         "ten": cuon.ten,
                         "mauBiaHex": cuon.mauBiaHex,
                         "giayMacDinh": cuon.giayMacDinh,
+                        // Khổ giấy của cuốn (28/09/2026). LUÔN gửi khoá
+                        // (NSNull = A4): máy chủ phân biệt "máy mới bảo về
+                        // A4" với "máy cũ không biết khổ là gì".
+                        "khoGiay": cuon.khoGiay.map { $0 as Any } ?? NSNull(),
                         "thuTu": cuon.thuTu,
                         "ghim": cuon.ghim,
                         "trangs": cuon.trangsTheoThuTu.map { trang in
@@ -322,6 +326,9 @@ final class DongBoVo: ObservableObject {
                                 "tieuDe": trang.tieuDe.map { $0 as Any } ?? NSNull(),
                                 "giay": trang.loaiGiay,
                                 "huong": trang.huongGiay,
+                                // Phần nối dài (pt) + khổ riêng — luôn gửi.
+                                "chieuCaoThem": Int(trang.chieuCaoThem.rounded()),
+                                "khoGiayRieng": trang.khoGiayRieng.map { $0 as Any } ?? NSNull(),
                                 "phienBanNet": trang.phienBanNet,
                                 // Con trỏ nền. Chỉ gửi khi đã đẩy tệp lên —
                                 // `nenKhoa` rỗng nghĩa là GỠ nền, còn không
@@ -500,7 +507,7 @@ final class DongBoVo: ObservableObject {
             trang.soNetDaDay = gop.strokes.count
             trang.canDay = true          // đẩy lại bản đã gộp
             trang.vuongXungDot = false
-            KhoVo.dungAnhNho(gop, kho: trang.khoTrang, cho: trang.id,
+            KhoVo.dungAnhNho(gop, kho: trang.khoTrang, khoNen: trang.khoGoc, cho: trang.id,
                              nenPdfTen: trang.nenPdfTen, nenPdfTrang: trang.nenPdfTrang,
                              nenAnhTen: trang.nenAnhTen)
             NhatKy.vo.info("gộp được \(netThem.count) nét vào bản máy chủ")
@@ -521,7 +528,7 @@ final class DongBoVo: ObservableObject {
             trangMoi.canDay = true
 
             KhoVo.ghi(banMayChu, cho: trang.id)
-            KhoVo.dungAnhNho(banMayChu, kho: trang.khoTrang, cho: trang.id,
+            KhoVo.dungAnhNho(banMayChu, kho: trang.khoTrang, khoNen: trang.khoGoc, cho: trang.id,
                              nenPdfTen: trang.nenPdfTen, nenPdfTrang: trang.nenPdfTrang,
                              nenAnhTen: trang.nenAnhTen)
             trang.phienBanNet = tMayChu.inkVersion
@@ -569,6 +576,11 @@ final class DongBoVo: ObservableObject {
                 let cuon: CuonVo
                 if let co = cuonTheoId[cuid] {
                     cuon = co
+                    // Máy khác đổi khổ cuốn ⇒ theo, trừ khi máy này cũng có
+                    // thay đổi cây chưa đẩy (bản của máy này sẽ lên sau).
+                    if c.coKhoGiay, !co.canDayCay, co.khoGiay != c.khoGiayHopLe {
+                        co.khoGiay = c.khoGiayHopLe
+                    }
                 } else {
                     cuon = CuonVo(ten: c.ten, mon: mon,
                                   mauBiaHex: hexSangSo(c.mauBiaHex) ?? mon.mauHex,
@@ -576,6 +588,7 @@ final class DongBoVo: ObservableObject {
                                   huong: .doc, thuTu: c.thuTu)
                     cuon.id = cuid
                     cuon.idMayChu = c.id
+                    cuon.khoGiay = c.khoGiayHopLe
                     cuon.canDayCay = false
                     kho.insert(cuon)
                     cuonTheoId[cuid] = cuon
@@ -601,6 +614,8 @@ final class DongBoVo: ObservableObject {
                     trang.idMayChu = t.id
                     trang.tenChuong = t.tenChuongThat
                     trang.tieuDe = t.tieuDe
+                    trang.chieuCaoThem = Double(max(0, t.chieuCaoThem ?? 0))
+                    trang.khoGiayRieng = t.khoGiayRieng.flatMap { KhoGiay(rawValue: $0)?.rawValue }
                     trang.canDay = false
                     kho.insert(trang)
                     trangTheoId[tuid] = trang
@@ -635,6 +650,14 @@ final class DongBoVo: ObservableObject {
         if trang.tenChuong != t.tenChuong { trang.tenChuong = t.tenChuong; doi = true }
         if let g = t.giay, LoaiGiay(rawValue: g) != nil, g != trang.loaiGiay { trang.loaiGiay = g; doi = true }
         if let h = t.huong, HuongGiay(rawValue: h) != nil, h != trang.huongGiay { trang.huongGiay = h; doi = true }
+        // Khổ trang: chỉ áp khi máy chủ HIỂU khổ (có khoá) — máy chủ cũ không
+        // gửi gì, áp `nil` là xoá phần nối dài người dùng vừa làm.
+        if t.coKhoTrang {
+            let cao = Double(max(0, t.chieuCaoThem ?? 0))
+            if abs(cao - trang.chieuCaoThem) > 0.5 { trang.chieuCaoThem = cao; doi = true }
+            let rieng = t.khoGiayRieng.flatMap { KhoGiay(rawValue: $0)?.rawValue }
+            if rieng != trang.khoGiayRieng { trang.khoGiayRieng = rieng; doi = true }
+        }
         if doi { NhatKy.vo.info("kéo về: cập nhật thứ tự/tên trang \(trang.id.uuidString.prefix(8))") }
     }
 
@@ -678,7 +701,7 @@ final class DongBoVo: ObservableObject {
     private func keoNetVe(trang: TrangVo, tuUrl url: String?, phienBan: Int) async {
         guard let url, let net = await taiNet(url) else { return }
         KhoVo.ghi(net, cho: trang.id)
-        KhoVo.dungAnhNho(net, kho: trang.khoTrang, cho: trang.id,
+        KhoVo.dungAnhNho(net, kho: trang.khoTrang, khoNen: trang.khoGoc, cho: trang.id,
                              nenPdfTen: trang.nenPdfTen, nenPdfTrang: trang.nenPdfTrang,
                              nenAnhTen: trang.nenAnhTen)
         trang.phienBanNet = phienBan
@@ -775,10 +798,14 @@ struct TrangTaiVe: Decodable {
     let nenUrl: String?
     let nenLoai: String?
     let nenTrang: Int?
+    /// Phần nối dài (pt) + khổ riêng. Máy chủ cũ không có khoá ⇒ `coKhoTrang = false`.
+    let chieuCaoThem: Int?
+    let khoGiayRieng: String?
+    let coKhoTrang: Bool
 
     private enum CodingKeys: String, CodingKey {
         case clientId, id, thuTu, tenChuong, tieuDe, giay, huong, inkVersion, inkStrokeCount
-        case inkUrl, previewUrl, nenUrl, nenLoai, nenTrang
+        case inkUrl, previewUrl, nenUrl, nenLoai, nenTrang, chieuCaoThem, khoGiayRieng
     }
 
     // Viết tay: phải phân biệt khoá VẮNG (máy chủ cũ) với khoá mang null.
@@ -799,6 +826,9 @@ struct TrangTaiVe: Decodable {
         nenUrl = try? c.decodeIfPresent(String.self, forKey: .nenUrl)
         nenLoai = try? c.decodeIfPresent(String.self, forKey: .nenLoai)
         nenTrang = try? c.decodeIfPresent(Int.self, forKey: .nenTrang)
+        coKhoTrang = c.contains(.chieuCaoThem)
+        chieuCaoThem = try? c.decodeIfPresent(Int.self, forKey: .chieuCaoThem)
+        khoGiayRieng = try? c.decodeIfPresent(String.self, forKey: .khoGiayRieng)
     }
 
     /// Nhãn chương dùng được. Máy chủ cũ trả "Trang N" tự sinh cho trang
@@ -820,6 +850,33 @@ private struct CayVoTaiVe: Decodable {
         let clientId: String; let id: Int; let ten: String
         let mauBiaHex: String?; let giayMacDinh: String?; let thuTu: Int; let ghim: Bool
         let trangs: [TrangTaiVe]
+        /// Khổ giấy của cuốn (máy chủ từ 28/09/2026). `coKhoGiay` = khoá có mặt.
+        let khoGiay: String?
+        let coKhoGiay: Bool
+
+        private enum CodingKeys: String, CodingKey {
+            case clientId, id, ten, mauBiaHex, giayMacDinh, thuTu, ghim, trangs, khoGiay
+        }
+        // Viết tay: khoá mới phải là tuỳ chọn, và phải biết nó VẮNG hay null.
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            clientId = try c.decode(String.self, forKey: .clientId)
+            id = try c.decode(Int.self, forKey: .id)
+            ten = try c.decode(String.self, forKey: .ten)
+            mauBiaHex = try? c.decodeIfPresent(String.self, forKey: .mauBiaHex)
+            giayMacDinh = try? c.decodeIfPresent(String.self, forKey: .giayMacDinh)
+            thuTu = (try? c.decode(Int.self, forKey: .thuTu)) ?? 0
+            ghim = (try? c.decode(Bool.self, forKey: .ghim)) ?? false
+            trangs = try c.decode([TrangTaiVe].self, forKey: .trangs)
+            coKhoGiay = c.contains(.khoGiay)
+            khoGiay = try? c.decodeIfPresent(String.self, forKey: .khoGiay)
+        }
+
+        /// Khổ dùng được: lạ / A4 ⇒ `nil` (A4 mặc định).
+        var khoGiayHopLe: String? {
+            guard let k = khoGiay.flatMap(KhoGiay.init(rawValue:)), k != .a4 else { return nil }
+            return k.rawValue
+        }
     }
     let mons: [Mon]
 }

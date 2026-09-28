@@ -88,16 +88,17 @@ struct SuaMonView: View {
 
 struct LapCuonVoView: View {
     let mauGoiY: Int
-    let xong: (String, Int, LoaiGiay, HuongGiay) -> Void
+    let xong: (String, Int, LoaiGiay, HuongGiay, KhoGiay) -> Void
 
     @Environment(\.dismiss) private var dong
     @State private var ten = ""
     @State private var mau: Int
     @State private var giay: LoaiGiay = .keNgang
     @State private var huong: HuongGiay = .doc
+    @State private var khoGiay: KhoGiay = .a4
     @FocusState private var dangGoTen: Bool
 
-    init(mauGoiY: Int, xong: @escaping (String, Int, LoaiGiay, HuongGiay) -> Void) {
+    init(mauGoiY: Int, xong: @escaping (String, Int, LoaiGiay, HuongGiay, KhoGiay) -> Void) {
         self.mauGoiY = mauGoiY
         self.xong = xong
         _mau = State(initialValue: mauGoiY)
@@ -145,6 +146,16 @@ struct LapCuonVoView: View {
                     .pickerStyle(.segmented)
                 }
 
+                Section {
+                    Picker(T("Khổ giấy"), selection: $khoGiay) {
+                        ForEach(KhoGiay.allCases) { k in
+                            Text("\(k.ten) — \(k.moTa)").tag(k)
+                        }
+                    }
+                } footer: {
+                    Text(T("Khổ to hơn = viết được nhiều hơn trên một trang. Đổi lại lúc nào cũng được ở menu ⋯ › Khổ giấy của cuốn."))
+                }
+
                 Section(T("Màu bìa")) {
                     ChonMau(dangChon: $mau)
                 }
@@ -158,7 +169,7 @@ struct LapCuonVoView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(T("Lập vở")) {
                         let t = ten.trimmingCharacters(in: .whitespacesAndNewlines)
-                        xong(t.isEmpty ? T("Vở mới") : t, mau, giay, huong)
+                        xong(t.isEmpty ? T("Vở mới") : t, mau, giay, huong, khoGiay)
                         dong()
                     }
                     .fontWeight(.semibold)

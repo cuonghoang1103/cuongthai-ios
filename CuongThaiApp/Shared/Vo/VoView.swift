@@ -325,10 +325,11 @@ struct MonVoView: View {
         .sheet(isPresented: $dangTaoCuon, onDismiss: {
             if let c = cuonVuaLap { cuonVuaLap = nil; cuonDangMo = c }
         }) {
-            LapCuonVoView(mauGoiY: mon.mauHex) { ten, mau, giay, huong in
+            LapCuonVoView(mauGoiY: mon.mauHex) { ten, mau, giay, huong, khoGiay in
                 let c = CuonVo(ten: ten, mon: mon, mauBiaHex: mau, giay: giay,
                                huong: huong,
                                thuTu: (mon.cuonsTheoThuTu.map(\.thuTu).max() ?? 0) + 1)
+                c.khoGiay = khoGiay == .a4 ? nil : khoGiay.rawValue
                 kho.insert(c)
                 // Vở mới phải có sẵn một trang: mở ra thấy "0 trang" rồi phải
                 // đi tìm nút thêm trang là một bước thừa ngay ở lần dùng đầu.

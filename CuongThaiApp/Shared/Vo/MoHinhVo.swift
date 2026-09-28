@@ -84,6 +84,16 @@ final class CuonVo {
     var giayMacDinh: String = LoaiGiay.keNgang.rawValue
     var huongMacDinh: String = HuongGiay.doc.rawValue
 
+    /// Khổ giấy của CẢ cuốn (`KhoGiay.rawValue`). `nil` = A4 — mọi cuốn lập
+    /// trước 28/09/2026.
+    ///
+    /// ⚠️ Thêm vào model ĐÃ có dữ liệu thật: phải OPTIONAL để SwiftData tự
+    /// nâng kho cũ (xem ghi chú ở `TrangVo.tieuDe`). Đặt ở CUỐN chứ không ở
+    /// từng trang: người dùng xin "chỉnh một trang thì cả cuốn theo" — vở
+    /// thật cũng một khổ từ đầu tới cuối. Trang nào cần khác thì có
+    /// `TrangVo.khoGiayRieng`.
+    var khoGiay: String?
+
     /// Trang đang đọc dở. Mở lại vở là về đúng chỗ bỏ bút xuống — với cuốn
     /// 200 trang thì quay về trang 1 mỗi lần mở là thứ khiến người ta bỏ app.
     var trangDangDoc: Int = 0
@@ -109,6 +119,9 @@ final class CuonVo {
     var trangsTheoThuTu: [TrangVo] {
         (trangs ?? []).sorted { $0.thuTu < $1.thuTu }
     }
+
+    /// Khổ của cuốn, đã đọc ra enum (giá trị lạ/`nil` ⇒ A4).
+    var kho: KhoGiay { KhoGiay(rawValue: khoGiay ?? "") ?? .a4 }
 
     var soTrang: Int { (trangs ?? []).count }
 
@@ -211,6 +224,20 @@ final class TrangVo {
     /// (xem ghi chú ở `tieuDe`).
     var daVietLaiNet: Bool = false
 
+    // ─── Khổ trang (28/09/2026) ─────────────────────────────────────────
+    /// Phần NỐI DÀI thêm dưới đáy trang, theo point. 0 = đúng khổ của cuốn.
+    ///
+    /// Người dùng: "trang vở nhìn nhỏ quá, viết được tý là hết". Nối dài
+    /// giữ nguyên toạ độ nét (gốc ở góc trên-trái), chỉ thêm giấy ở dưới —
+    /// không có nét nào phải dời chỗ. ⚠️ Mặc định 0 ⇒ kho cũ nâng được.
+    var chieuCaoThem: Double = 0
+    /// Khổ RIÊNG của trang này (`KhoGiay.rawValue`), đè khổ của cuốn.
+    ///
+    /// Chỉ dùng khi đổi khổ cả cuốn sang khổ HẸP hơn mà trang này có nét nằm
+    /// ngoài khổ mới: trang đó giữ khổ cũ thay vì bị cắt mất nét. `nil` =
+    /// theo cuốn.
+    var khoGiayRieng: String?
+
     var cuon: CuonVo?
 
     init(cuon: CuonVo?, thuTu: Int, giay: LoaiGiay, huong: HuongGiay) {
@@ -226,9 +253,109 @@ final class TrangVo {
     var giay: LoaiGiay { LoaiGiay(rawValue: loaiGiay) ?? .keNgang }
     var huong: HuongGiay { HuongGiay(rawValue: huongGiay) ?? .doc }
 
-    /// Khổ trang tính bằng point (1pt = 1/72 inch), đúng khổ A4 để in ra
-    /// không phải co giãn.
-    var khoTrang: CGSize { huong.khoA4 }
+    /// Trang có nền tài liệu (PDF / ảnh quét) — khổ theo tài liệu, không
+    /// theo cuốn.
+    var coNenTaiLieu: Bool { nenPdfTen != nil || nenAnhTen != nil }
+
+    /// Khổ giấy đang áp cho trang (của riêng trang, hoặc của cuốn).
+    var khoGiayApDung: KhoGiay {
+        if let r = khoGiayRieng, let k = KhoGiay(rawValue: r) { return k }
+        return cuon?.kho ?? .a4
+    }
+
+    /// Khổ GỐC — chưa tính phần nối dài. Nền tài liệu (PDF/ảnh) vẽ vừa đúng
+    /// khung này, nên nối dài trang không kéo méo trang PDF.
+    ///
+    /// ⚠️ Trang có nền tài liệu GIỮ khổ cũ (A4 theo hướng của tài liệu): nét
+    /// chú thích đã nằm đúng chỗ trên đề bài, đổi khổ cuốn mà co giãn nền là
+    /// mọi nét lệch khỏi chữ nó chú thích.
+    var khoGoc: CGSize {
+        coNenTaiLieu ? huong.khoA4 : khoGiayApDung.kho(huong)
+    }
+
+    /// Khổ THẬT của trang tính bằng point (1pt = 1/72 inch): khổ gốc + phần
+    /// nối dài. Mọi chỗ dựng ảnh / xuất PDF / đặt nét phải dùng số này, không
+    /// mặc định A4.
+    var khoTrang: CGSize {
+        let g = khoGoc
+        return CGSize(width: g.width, height: g.height + CGFloat(max(0, chieuCaoThem)))
+    }
+
+    /// Nối dài tối đa bao nhiêu — 4× chiều cao gốc là cả tờ giấy cuộn, quá
+    /// nữa thì dải trang và PDF xuất ra thành một sợi mì.
+    var chieuCaoThemToiDa: Double { Double(khoGoc.height) * 3 }
+    var noiDaiDuoc: Bool { chieuCaoThem + 1 < chieuCaoThemToiDa }
+
+    /// Nối thêm nửa trang (không vượt trần). Trả về có đổi hay không.
+    @discardableResult
+    func noiDaiNuaTrang() -> Bool {
+        guard noiDaiDuoc else { return false }
+        let buoc = (Double(khoGoc.height) / 2).rounded()
+        chieuCaoThem = min(chieuCaoThemToiDa, chieuCaoThem + buoc)
+        suaLuc = Date()
+        return true
+    }
+}
+
+// MARK: - Khổ giấy
+
+/// Khổ giấy của một cuốn vở. Kích thước theo point (72 point = 1 inch), cạnh
+/// NGẮN trước — `kho(_:)` xoay theo hướng giấy.
+enum KhoGiay: String, CaseIterable, Identifiable {
+    case a5, b5, a4, letter, b4, a3
+    /// Khổ màn chiếu 16:9 — luôn NẰM NGANG, hợp chép slide.
+    case rong169
+    /// Bảng lớn: gần gấp đôi A3 theo cạnh, tỉ lệ √2 như khổ A.
+    case bangLon
+
+    var id: String { rawValue }
+
+    var ten: String {
+        switch self {
+        case .a5: return "A5"
+        case .b5: return "B5"
+        case .a4: return "A4"
+        case .letter: return "Letter"
+        case .b4: return "B4"
+        case .a3: return "A3"
+        case .rong169: return T("Rộng 16:9")
+        case .bangLon: return T("Bảng lớn")
+        }
+    }
+
+    var moTa: String {
+        switch self {
+        case .a5: return T("148×210 mm · sổ tay nhỏ")
+        case .b5: return T("176×250 mm · vở học sinh")
+        case .a4: return T("210×297 mm · mặc định")
+        case .letter: return T("216×279 mm · khổ Mỹ")
+        case .b4: return T("250×353 mm · rộng hơn A4 một nấc")
+        case .a3: return T("297×420 mm · gấp đôi A4")
+        case .rong169: return T("Màn chiếu 16:9 · chép slide")
+        case .bangLon: return T("Như bảng trắng · sơ đồ, bài dài")
+        }
+    }
+
+    /// Khổ theo hướng DỌC (rộng < cao), riêng 16:9 là khổ ngang sẵn.
+    private var goc: CGSize {
+        switch self {
+        case .a5: return CGSize(width: 420, height: 595)
+        case .b5: return CGSize(width: 499, height: 709)
+        case .a4: return CGSize(width: 595, height: 842)
+        case .letter: return CGSize(width: 612, height: 792)
+        case .b4: return CGSize(width: 709, height: 1001)
+        case .a3: return CGSize(width: 842, height: 1191)
+        case .rong169: return CGSize(width: 1280, height: 720)
+        case .bangLon: return CGSize(width: 1600, height: 2263)
+        }
+    }
+
+    /// Khổ theo hướng giấy. 16:9 bỏ qua hướng — dựng dọc thì nó thành một
+    /// dải hẹp dài, không còn là "rộng".
+    func kho(_ huong: HuongGiay) -> CGSize {
+        if self == .rong169 { return goc }
+        return huong == .doc ? goc : CGSize(width: goc.height, height: goc.width)
+    }
 }
 
 // MARK: - Tiến độ luyện viết
