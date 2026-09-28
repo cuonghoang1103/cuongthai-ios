@@ -2,6 +2,7 @@
 import PencilKit
 import SwiftData
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// Màn viết — mở toàn màn hình, không thanh tab, không thanh điều hướng của
 /// app. Một cuốn vở mở ra thì cả màn hình là trang giấy.
@@ -46,10 +47,32 @@ struct ManVietView: View {
     /// thêm một `case` vào đây, KHÔNG dán thêm `.sheet(isPresented:)` thứ hai
     /// lên cùng một view — hai cái chồng nhau thì cái sau nuốt cái trước và
     /// một trong hai không bao giờ mở được.
-    private enum CuaSoViet: String, Identifiable {
-        case doiGiay, datTenChuong, quetTaiLieu, hoiNhapPdf, tomTat
-        var id: String { rawValue }
+    private enum CuaSoViet: Identifiable {
+        case doiGiay, datTenChuong, quetTaiLieu, hoiNhapPdf, tomTat, tongQuan
+        case chuyenCuon([UUID])
+        case xuatPdf([UUID], String)
+        var id: String {
+            switch self {
+            case .doiGiay: return "doiGiay"
+            case .datTenChuong: return "datTenChuong"
+            case .quetTaiLieu: return "quetTaiLieu"
+            case .hoiNhapPdf: return "hoiNhapPdf"
+            case .tomTat: return "tomTat"
+            case .tongQuan: return "tongQuan"
+            case .chuyenCuon(let d): return "chuyen-" + d.map(\.uuidString).joined()
+            case .xuatPdf(let d, _): return "xuat-" + d.map(\.uuidString).joined()
+            }
+        }
     }
+    /// Trang ĐANG MỞ theo id. `chiSo` là vị trí, mà vị trí đổi mỗi khi sắp
+    /// xếp/chèn/xoá — chỉ giữ vị trí thì kéo trang 4 lên đầu là màn viết tự
+    /// nhảy sang trang khác dưới tay người dùng.
+    @State private var idHienTai: UUID?
+    @State private var trangDoiTen: TrangVo?
+    @State private var tenDangGo = ""
+    @State private var xacNhanXoa: [TrangVo]?
+    @State private var baoHoanTac: BaoHoanTac?
+    @State private var dangKeoTrang: UUID?
     @State private var dangChonPdf = false
     /// `ten` là tên tệp TRONG KHO (UUID), `tenHienThi` là tên gốc người dùng
     /// nhìn thấy — hiện UUID lên màn thì không ai biết mình vừa chọn tệp nào.
@@ -71,7 +94,14 @@ struct ManVietView: View {
             HStack(spacing: 0) {
                 if hienDaiTrang {
                     DaiTrang(trangs: trangs, chiSo: $chiSo, lanLuu: lanLuu,
-                             themTrang: themTrang, xoaTrang: xoaTrang)
+                             dangKeo: $dangKeoTrang,
+                             themTrang: themTrang,
+                             moTongQuan: { cuaSo = .tongQuan },
+                             lam: lam,
+                             dat: { id, dich in
+                                 guard let t = trangs.first(where: { $0.id == id }) else { return }
+                                 ThaoTacTrang.datVaoCho(t, choCua: dich, trongCuon: cuon, kho: kho)
+                             })
                         .frame(width: 128)
                         .background(AppColors.backgroundSecondary)
                     Divider()
@@ -106,6 +136,25 @@ struct ManVietView: View {
             }
         }
         .animation(AppAnimations.quick, value: baoBut)
+        .overlay(alignment: .bottom) {
+            if let b = baoHoanTac {
+                DaiHoanTac(bao: b) { hoanTacXoa(b) }
+            }
+        }
+        .animation(AppAnimations.quick, value: baoHoanTac)
+        .confirmationDialog(
+            xacNhanXoa.map { $0.count == 1 ? T("Xoá trang này?") : "\(T("Xoá")) \($0.count) \(T("trang?"))" } ?? "",
+            isPresented: Binding(get: { xacNhanXoa != nil }, set: { if !$0 { xacNhanXoa = nil } }),
+            titleVisibility: .visible
+        ) {
+            Button(T("Xoá"), role: .destructive) {
+                if let ds = xacNhanXoa { xoaThat(ds) }
+                xacNhanXoa = nil
+            }
+            Button(T("Huỷ"), role: .cancel) { xacNhanXoa = nil }
+        } message: {
+            Text(T("Bấm Hoàn tác ngay sau đó để lấy lại. Trên máy chủ trang nằm trong thùng rác 30 ngày."))
+        }
         // Trợ lý nằm TRÊN cùng, ngoài `khungViet`, để nó không bị khung vẽ
         // nuốt cử chỉ và không bị cuốn/phóng theo trang giấy.
         .overlay {
@@ -135,6 +184,22 @@ struct ManVietView: View {
                         themTrangTuPdf(ten: p.ten, tu: tu, den: den)
                     }
                 }
+            case .tongQuan:
+                TongQuanTrangView(cuon: cuon, idDangMo: trangHienTai?.id, lanLuu: lanLuu) { id in
+                    moTheoId(id)
+                }
+            case .chuyenCuon(let ids):
+                ChonCuonView(boQua: cuon.id) { dich in
+                    let ds = trangs.filter { ids.contains($0.id) }
+                    if ThaoTacTrang.chuyen(ds, sang: dich, kho: kho) {
+                        bao("\(T("Đã chuyển sang")) “\(dich.ten)”")
+                        Haptics.xong()
+                    } else {
+                        bao(T("Không chuyển được — vở phải còn ít nhất 1 trang"))
+                    }
+                }
+            case .xuatPdf(let ids, let ten):
+                XuatPdfView(trangs: trangs.filter { ids.contains($0.id) }, tenTep: ten)
             case .tomTat:
                 HoiVoAIView(tieuDe: T("Đề cương ôn thi"),
                             trangs: trangs,
@@ -164,9 +229,43 @@ struct ManVietView: View {
             } else {
                 chiSo = min(max(0, cuon.trangDangDoc), max(0, trangs.count - 1))
             }
+            idHienTai = trangHienTai?.id
         }
         .onChange(of: chiSo) { _, moi in
             cuon.trangDangDoc = moi
+            idHienTai = trangHienTai?.id
+        }
+        // Thứ tự trang đổi (kéo xếp, chèn, xoá, chuyển đi) ⇒ bám theo ĐÚNG
+        // trang đang mở, không bám theo vị trí cũ.
+        .onChange(of: trangs.map(\.id)) { _, ds in
+            if let id = idHienTai, let i = ds.firstIndex(of: id) {
+                if i != chiSo { chiSo = i }
+            } else {
+                chiSo = min(chiSo, max(0, ds.count - 1))
+                idHienTai = trangHienTai?.id
+            }
+        }
+        // Phím tắt bàn phím iPad (Magic Keyboard). Nút ẩn: có mặt trong cây
+        // view là phím tắt sống, và hiện trong bảng ⌘ giữ lâu.
+        .background {
+            Group {
+                Button(T("Trang trước")) { lui() }.keyboardShortcut(.leftArrow, modifiers: .command)
+                Button(T("Trang sau")) { toi() }.keyboardShortcut(.rightArrow, modifiers: .command)
+                Button(T("Thêm trang sau trang này")) { chenSauHienTai() }
+                    .keyboardShortcut("n", modifiers: [.command, .shift])
+                Button(T("Nhân bản trang")) { nhanBanTrang() }
+                    .keyboardShortcut("d", modifiers: [.command, .shift])
+                Button(T("Đổi tên trang")) { if let t = trangHienTai { lam(.doiTen, t) } }
+                    .keyboardShortcut("r", modifiers: [.command, .shift])
+                Button(T("Các trang")) { cuaSo = .tongQuan }
+                    .keyboardShortcut("p", modifiers: [.command, .shift])
+                // ⌘Z / ⇧⌘Z KHÔNG đặt ở đây: khung vẽ là first responder và
+                // UIKit đã tự nối hai phím đó vào `undoManager` của nó. Đặt
+                // thêm là một lần bấm hoàn tác HAI nét.
+            }
+            .opacity(0)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
         }
     }
 
@@ -317,16 +416,46 @@ struct ManVietView: View {
             }
             .accessibilityLabel(T("Dải trang"))
 
-            VStack(spacing: 1) {
-                Text(cuon.ten)
-                    .font(Font.bodyMedium.weight(.semibold))
-                    .foregroundStyle(AppColors.textPrimary)
-                    .lineLimit(1)
-                if let t = trangHienTai, let ch = t.tenChuong, !ch.isEmpty {
-                    Text(ch).font(.caption2).foregroundStyle(AppColors.textTertiary).lineLimit(1)
+            // Hoàn tác / làm lại NÉT — luôn thấy, không phụ thuộc bảng công cụ
+            // đang ẩn hay hiện (GoodNotes để đúng chỗ này).
+            Button { cauNoiVe.hoanTac() } label: { Image(systemName: "arrow.uturn.backward") }
+                .accessibilityLabel(T("Hoàn tác"))
+            Button { cauNoiVe.lamLai() } label: { Image(systemName: "arrow.uturn.forward") }
+                .accessibilityLabel(T("Làm lại"))
+
+            // Chạm vào tên trang = đổi tên ngay tại chỗ.
+            Button {
+                if let t = trangHienTai { lam(.doiTen, t) }
+            } label: {
+                VStack(spacing: 1) {
+                    Text(cuon.ten)
+                        .font(Font.bodyMedium.weight(.semibold))
+                        .foregroundStyle(AppColors.textPrimary)
+                        .lineLimit(1)
+                    if let t = trangHienTai {
+                        let ten = t.tenHienThi(so: chiSo + 1)
+                        let ch = (t.tenChuong ?? "").isEmpty ? "" : " · " + (t.tenChuong ?? "")
+                        Text(ten + ch)
+                            .font(.caption2)
+                            .foregroundStyle(t.coTenRieng ? AppColors.textSecondary : AppColors.textTertiary)
+                            .lineLimit(1)
+                    }
                 }
+                .frame(maxWidth: .infinity)
             }
-            .frame(maxWidth: .infinity)
+            .buttonStyle(.plain)
+            .accessibilityHint(T("Chạm để đổi tên trang"))
+            .alert(T("Đổi tên trang"), isPresented: Binding(get: { trangDoiTen != nil },
+                                                          set: { if !$0 { trangDoiTen = nil } })) {
+                TextField(T("Để trống = “Trang N”"), text: $tenDangGo)
+                Button(T("Huỷ"), role: .cancel) { trangDoiTen = nil }
+                Button(T("Lưu")) {
+                    if let t = trangDoiTen { ThaoTacTrang.doiTen(t, thanh: tenDangGo, kho: kho) }
+                    trangDoiTen = nil
+                }
+            } message: {
+                Text(T("Tên hiện ở dải trang, màn Các trang và đồng bộ lên web."))
+            }
 
             // Chuyển trang bằng nút. KHÔNG dùng vuốt ngang: cả bề mặt trang
             // đã thuộc về bút và về cử chỉ cuộn/phóng của khung vẽ, thêm một
@@ -334,10 +463,16 @@ struct ManVietView: View {
             HStack(spacing: Spacing.xs) {
                 Button { lui() } label: { Image(systemName: "chevron.left.circle") }
                     .disabled(chiSo <= 0)
-                Text("\(chiSo + 1)/\(max(trangs.count, 1))")
-                    .font(.caption.monospacedDigit())
-                    .foregroundStyle(AppColors.textSecondary)
-                    .frame(minWidth: 44)
+                // Chạm số trang = mở màn "Các trang" (xem lưới, sắp xếp, nhảy).
+                Button { cuaSo = .tongQuan } label: {
+                    Text("\(chiSo + 1)/\(max(trangs.count, 1))")
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(AppColors.textSecondary)
+                        .frame(minWidth: 44, minHeight: 30)
+                        .background(Capsule().fill(AppColors.backgroundPrimary.opacity(0.7)))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(T("Các trang"))
                 Button { toi() } label: { Image(systemName: "chevron.right.circle") }
                     .disabled(chiSo >= trangs.count - 1)
             }
@@ -435,6 +570,16 @@ struct ManVietView: View {
                 }
 
                 Section {
+                    Button {
+                        if let t = trangHienTai {
+                            cuaSo = .xuatPdf([t.id], cuon.ten + " — " + t.tenHienThi(so: chiSo + 1))
+                        }
+                    } label: {
+                        Label(T("Xuất trang này ra PDF"), systemImage: "square.and.arrow.up")
+                    }
+                    Button { cuaSo = .xuatPdf(trangs.map(\.id), cuon.ten) } label: {
+                        Label(T("Xuất cả cuốn ra PDF"), systemImage: "square.and.arrow.up.on.square")
+                    }
                     Button { dangChonPdf = true } label: {
                         Label(T("Nhập PDF để viết đè"), systemImage: "doc.badge.plus")
                     }
@@ -459,8 +604,17 @@ struct ManVietView: View {
                 }
 
                 Section {
+                    Button { cuaSo = .tongQuan } label: {
+                        Label(T("Các trang — sắp xếp, tìm, chọn nhiều"), systemImage: "square.grid.3x3")
+                    }
+                    Button { if let t = trangHienTai { lam(.doiTen, t) } } label: {
+                        Label(T("Đổi tên trang"), systemImage: "character.cursor.ibeam")
+                    }
                     Button { themTrang() } label: {
-                        Label(T("Thêm trang"), systemImage: "plus.rectangle.portrait")
+                        Label(T("Thêm trang ở cuối"), systemImage: "plus.rectangle.portrait")
+                    }
+                    Button { chenSauHienTai() } label: {
+                        Label(T("Chèn trang trắng sau trang này"), systemImage: "arrow.down.doc")
                     }
                     Button { nhanBanTrang() } label: {
                         Label(T("Nhân bản trang"), systemImage: "doc.on.doc")
@@ -642,52 +796,88 @@ struct ManVietView: View {
     private func lui() { if chiSo > 0 { chiSo -= 1 } }
     private func toi() { if chiSo < trangs.count - 1 { chiSo += 1 } }
 
+    private var giayMoi: LoaiGiay {
+        trangHienTai?.giay ?? LoaiGiay(rawValue: cuon.giayMacDinh) ?? .keNgang
+    }
+    private var huongMoi: HuongGiay {
+        trangHienTai?.huong ?? HuongGiay(rawValue: cuon.huongMacDinh) ?? .doc
+    }
+
+    private func moTheoId(_ id: UUID) {
+        if let i = trangs.firstIndex(where: { $0.id == id }) { chiSo = i; idHienTai = id }
+    }
+
     private func themTrang() {
-        let sau = trangs.count
-        let t = TrangVo(cuon: cuon,
-                        thuTu: sau,
-                        giay: trangHienTai?.giay ?? LoaiGiay(rawValue: cuon.giayMacDinh) ?? .keNgang,
-                        huong: trangHienTai?.huong ?? HuongGiay(rawValue: cuon.huongMacDinh) ?? .doc)
-        kho.insert(t)
-        cuon.suaLuc = Date()
-        try? kho.save()
-        chiSo = sau
+        let t = ThaoTacTrang.chenTrangTrang(vao: cuon, viTri: trangs.count,
+                                            giay: giayMoi, huong: huongMoi, kho: kho)
+        moTheoId(t.id)
+    }
+
+    private func chenSauHienTai() {
+        let t = ThaoTacTrang.chenTrangTrang(vao: cuon, viTri: chiSo + 1,
+                                            giay: giayMoi, huong: huongMoi, kho: kho)
+        moTheoId(t.id)
     }
 
     private func nhanBanTrang() {
-        guard let goc = trangHienTai else { return }
-        let t = TrangVo(cuon: cuon, thuTu: goc.thuTu + 1, giay: goc.giay, huong: goc.huong)
-        t.tenChuong = goc.tenChuong
-        kho.insert(t)
-        // Dồn thứ tự các trang phía sau LÊN trước khi chèn, nếu không hai
-        // trang cùng `thuTu` và thứ tự hiện ra tuỳ lúc.
-        for khac in trangs where khac.thuTu > goc.thuTu && khac.id != t.id {
-            khac.thuTu += 1
-        }
-        try? kho.save()
-        KhoVo.nhanBan(tu: goc.id, sang: t.id)
-        t.coNet = goc.coNet
-        chiSo = min(goc.thuTu + 1, cuon.trangsTheoThuTu.count - 1)
+        guard let goc = trangHienTai, let t = ThaoTacTrang.nhanBan(goc, kho: kho) else { return }
+        moTheoId(t.id)
+        bao(T("Đã nhân bản trang"))
     }
 
+    /// Xin xoá trang ở vị trí `i` — hỏi lại trước (một chạm nhầm trên iPad
+    /// không được làm mất một buổi học), rồi cho Hoàn tác thêm lần nữa.
     private func xoaTrang(_ i: Int) {
-        let ds = trangs
-        guard ds.indices.contains(i) else { return }
-        // Cuốn vở phải luôn còn ít nhất một trang: xoá trang cuối cùng rồi để
-        // lại cuốn vở rỗng là một trạng thái không lối ra trên màn viết.
-        guard ds.count > 1 else { return }
-        let t = ds[i]
-        let id = t.id
-        DongBoVo.ghiNhanXoa(kho: kho, maDoiTuong: id.uuidString, loai: "trang")
-        kho.delete(t)
-        for khac in ds where khac.thuTu > t.thuTu { khac.thuTu -= 1 }
-        try? kho.save()
-        KhoVo.xoa(id)
-        chiSo = min(i, cuon.trangsTheoThuTu.count - 1)
-        // Báo máy chủ NGAY, đừng đợi tới lúc rời vở: người dùng xoá xong có
-        // thể đóng app luôn, và hàng đợi tuy bền nhưng không có lý do gì để
-        // trang đã xoá còn nằm trên máy chủ thêm một phiên nữa.
-        DongBoVo.shared.batDau()
+        guard trangs.indices.contains(i), trangs.count > 1 else { return }
+        xacNhanXoa = [trangs[i]]
+    }
+
+    private func xoaThat(_ ds: [TrangVo]) {
+        guard let chup = ThaoTacTrang.xoa(ds, kho: kho) else {
+            bao(T("Vở phải còn ít nhất 1 trang"))
+            return
+        }
+        let b = BaoHoanTac(cau: chup.count == 1 ? T("Đã xoá 1 trang")
+                                                : "\(T("Đã xoá")) \(chup.count) \(T("trang"))",
+                           chup: chup)
+        baoHoanTac = b
+        Task {
+            try? await Task.sleep(for: .seconds(6))
+            if baoHoanTac == b { baoHoanTac = nil }
+        }
+    }
+
+    private func hoanTacXoa(_ b: BaoHoanTac) {
+        let moi = ThaoTacTrang.hoanTacXoa(b.chup, vao: cuon, kho: kho)
+        baoHoanTac = nil
+        if let t = moi.first { moTheoId(t.id) }
+        Haptics.xong()
+    }
+
+    /// Một việc trên một trang — dùng chung cho dải trang, menu ⋯ và phím tắt.
+    private func lam(_ v: ViecTrang, _ t: TrangVo) {
+        guard let i = trangs.firstIndex(where: { $0.id == t.id }) else { return }
+        switch v {
+        case .doiTen:
+            tenDangGo = t.tieuDe ?? ""
+            trangDoiTen = t
+        case .nhanBan:
+            if let m = ThaoTacTrang.nhanBan(t, kho: kho) { moTheoId(m.id) }
+        case .chenTruoc:
+            let m = ThaoTacTrang.chenTrangTrang(vao: cuon, viTri: i, giay: t.giay, huong: t.huong, kho: kho)
+            moTheoId(m.id)
+        case .chenSau:
+            let m = ThaoTacTrang.chenTrangTrang(vao: cuon, viTri: i + 1, giay: t.giay, huong: t.huong, kho: kho)
+            moTheoId(m.id)
+        case .doiGiay(let g):
+            ThaoTacTrang.doiGiay([t], thanh: g, kho: kho)
+        case .chuyenCuon:
+            cuaSo = .chuyenCuon([t.id])
+        case .xuatPdf:
+            cuaSo = .xuatPdf([t.id], cuon.ten + " — " + t.tenHienThi(so: i + 1))
+        case .xoa:
+            xoaTrang(i)
+        }
     }
 
     /// Mỗi trang PDF thành MỘT trang vở, chèn ngay sau trang hiện tại.
@@ -708,7 +898,7 @@ struct ManVietView: View {
             for khac in daCo where khac.thuTu >= sau { khac.thuTu += 1 }
             sau += 1
         }
-        cuon.suaLuc = Date()
+        ThaoTacTrang.danhDauCay(cuon)
         try? kho.save()
         chiSo = min((trangHienTai?.thuTu ?? 0) + 1, cuon.trangsTheoThuTu.count - 1)
         bao("\(T("Đã nhập")) \(den - tu + 1) \(T("trang"))")
@@ -727,7 +917,7 @@ struct ManVietView: View {
             for khac in daCo where khac.thuTu >= sau { khac.thuTu += 1 }
             sau += 1
         }
-        cuon.suaLuc = Date()
+        ThaoTacTrang.danhDauCay(cuon)
         try? kho.save()
         chiSo = min((trangHienTai?.thuTu ?? 0) + 1, cuon.trangsTheoThuTu.count - 1)
         bao("\(T("Đã thêm")) \(anhs.count) \(T("trang quét"))")
@@ -736,9 +926,15 @@ struct ManVietView: View {
 
     /// Gỡ nền, GIỮ NGUYÊN nét đã viết — nét nằm ở lớp riêng.
     private func goNen() {
-        trangHienTai?.nenPdfTen = nil
-        trangHienTai?.nenAnhTen = nil
-        trangHienTai?.suaLuc = Date()
+        guard let t = trangHienTai else { return }
+        t.nenPdfTen = nil
+        t.nenAnhTen = nil
+        // Nền đã lên mây thì phải gửi LỆNH GỠ (khoá rỗng) — để nguyên khoá
+        // cũ là máy chủ giữ nền, và lượt kéo về kế tiếp mang nó sống lại.
+        if t.nenKhoaR2 != nil { t.nenKhoaR2 = ""; t.nenLoaiR2 = nil }
+        t.suaLuc = Date()
+        ThaoTacTrang.danhDauCay(cuon)
+        try? kho.save()
         bao(T("Đã gỡ nền — nét viết vẫn còn"))
     }
 
@@ -763,25 +959,50 @@ private struct DaiTrang: View {
     let trangs: [TrangVo]
     @Binding var chiSo: Int
     let lanLuu: Int
+    @Binding var dangKeo: UUID?
     let themTrang: () -> Void
-    let xoaTrang: (Int) -> Void
+    let moTongQuan: () -> Void
+    let lam: (ViecTrang, TrangVo) -> Void
+    let dat: (UUID, TrangVo) -> Void
 
     var body: some View {
         ScrollViewReader { cuon in
             ScrollView {
                 LazyVStack(spacing: Spacing.sm) {
+                    Button(action: moTongQuan) {
+                        Label(T("Sắp xếp"), systemImage: "square.grid.3x3")
+                            .font(.caption.weight(.semibold))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 6)
+                            .background(RoundedRectangle(cornerRadius: CornerRadius.small)
+                                .fill(AppColors.primary.opacity(0.12)))
+                            .foregroundStyle(AppColors.primary)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityHint(T("Mở màn Các trang để kéo sắp xếp, đổi tên, chọn nhiều"))
+
                     ForEach(Array(trangs.enumerated()), id: \.element.id) { i, trang in
-                        Button { chiSo = i } label: {
-                            OTrangNho(trang: trang, thuTu: i + 1,
-                                      dangChon: i == chiSo, lanLuu: lanLuu)
-                        }
-                        .buttonStyle(.plain)
-                        .id(i)
-                        .contextMenu {
-                            Button(role: .destructive) { xoaTrang(i) } label: {
-                                Label(T("Xoá trang"), systemImage: "trash")
+                        AnhTrangNho(trang: trang, so: i + 1, dangChon: i == chiSo, lanLuu: lanLuu)
+                            .opacity(dangKeo == trang.id ? 0.35 : 1)
+                            .contentShape(Rectangle())
+                            .onTapGesture { chiSo = i }
+                            .accessibilityAddTraits(.isButton)
+                            .accessibilityLabel(trang.tenHienThi(so: i + 1))
+                            .id(trang.id)
+                            // ⚠️ Menu giữ-lâu VÀ kéo cùng lúc: giữ yên = menu,
+                            // giữ rồi rê đi = nhấc trang lên kéo. Đây là cách
+                            // của Tệp/Ảnh trên iPad. Trước 28/09/2026 dải này
+                            // chỉ có `contextMenu` với mỗi "Xoá trang", nên
+                            // giữ rồi kéo không làm gì cả.
+                            .contextMenu {
+                                MenuTrang(trang: trang, conXoaDuoc: trangs.count > 1) { lam($0, trang) }
                             }
-                        }
+                            .onDrag {
+                                dangKeo = trang.id
+                                return NSItemProvider(object: trang.id.uuidString as NSString)
+                            }
+                            .onDrop(of: [UTType.text],
+                                    delegate: ThaTrangDeXep(dich: trang, dangKeo: $dangKeo, dat: dat))
                     }
                     Button(action: themTrang) {
                         VStack(spacing: Spacing.xs) {
@@ -801,57 +1022,10 @@ private struct DaiTrang: View {
                 .padding(Spacing.sm)
             }
             .onChange(of: chiSo) { _, moi in
-                withAnimation(AppAnimations.quick) { cuon.scrollTo(moi, anchor: .center) }
+                guard trangs.indices.contains(moi) else { return }
+                withAnimation(AppAnimations.quick) { cuon.scrollTo(trangs[moi].id, anchor: .center) }
             }
         }
-    }
-}
-
-private struct OTrangNho: View {
-    let trang: TrangVo
-    let thuTu: Int
-    let dangChon: Bool
-    let lanLuu: Int
-
-    @State private var anh: UIImage?
-
-    var body: some View {
-        VStack(spacing: 4) {
-            ZStack {
-                RoundedRectangle(cornerRadius: CornerRadius.small)
-                    .fill(Color.white)
-                if let anh {
-                    Image(uiImage: anh)
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.small))
-                }
-                if trang.danhDau {
-                    Image(systemName: "flag.fill")
-                        .font(.system(size: 9))
-                        .foregroundStyle(AppColors.warning)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity,
-                               alignment: .topTrailing)
-                        .padding(4)
-                }
-            }
-            .aspectRatio(trang.khoTrang.width / trang.khoTrang.height, contentMode: .fit)
-            .overlay(
-                RoundedRectangle(cornerRadius: CornerRadius.small)
-                    .strokeBorder(dangChon ? AppColors.primary : AppColors.border,
-                                  lineWidth: dangChon ? 2 : 1)
-            )
-            Text("\(thuTu)")
-                .font(.caption2.monospacedDigit())
-                .foregroundStyle(dangChon ? AppColors.primary : AppColors.textTertiary)
-        }
-        .task(id: lanLuu) { napAnh() }
-    }
-
-    private func napAnh() {
-        // Đọc ảnh thu nhỏ từ đĩa, KHÔNG dựng lại từ `PKDrawing`: dải trang
-        // hiện chục trang một lúc, dựng lại từng cái là khựng ngay khi cuộn.
-        anh = KhoVo.anhNho(trang.id)
     }
 }
 
@@ -911,6 +1085,7 @@ private struct DoiGiayView: View {
             trang?.loaiGiay = g.rawValue
         }
         trang?.suaLuc = Date()
+        ThaoTacTrang.danhDauCay(cuon)
     }
 }
 
@@ -943,6 +1118,7 @@ private struct DatTenChuongView: View {
                         let t = ten.trimmingCharacters(in: .whitespacesAndNewlines)
                         trang?.tenChuong = t.isEmpty ? nil : t
                         trang?.suaLuc = Date()
+                        ThaoTacTrang.danhDauCay(trang?.cuon)
                         dong()
                     }
                     .fontWeight(.semibold)

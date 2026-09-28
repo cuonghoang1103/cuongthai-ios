@@ -261,6 +261,10 @@ struct MonVoView: View {
     /// mở: SwiftUI đang chạy hiệu ứng đóng sheet, và một modal thứ hai yêu
     /// cầu giữa chừng bị nuốt im lặng. Phải đợi `onDismiss`.
     @State private var cuonVuaLap: CuonVo?
+    /// Cuốn đang đổi tên (hộp nhập). Trước 28/09/2026 cuốn vở KHÔNG đổi tên
+    /// được — đặt nhầm tên lúc lập là mang nó cả học kỳ.
+    @State private var cuonDoiTen: CuonVo?
+    @State private var tenCuonGo = ""
 
     private var soCot: Int { beRong == .regular ? 4 : 2 }
 
@@ -290,7 +294,13 @@ struct MonVoView: View {
                         Button { cuonDangMo = cuon } label: { BiaVo(cuon: cuon) }
                             .buttonStyle(.plain)
                             .contextMenu {
-                                Button { cuon.ghim.toggle() } label: {
+                                Button {
+                                    tenCuonGo = cuon.ten
+                                    cuonDoiTen = cuon
+                                } label: {
+                                    Label(T("Đổi tên cuốn vở"), systemImage: "character.cursor.ibeam")
+                                }
+                                Button { cuon.ghim.toggle(); ThaoTacTrang.danhDauCay(cuon) } label: {
                                     Label(cuon.ghim ? T("Bỏ ghim") : T("Ghim"),
                                           systemImage: cuon.ghim ? "pin.slash" : "pin")
                                 }
@@ -330,6 +340,21 @@ struct MonVoView: View {
         }
         .fullScreenCover(item: $cuonDangMo) { cuon in
             ManVietView(cuon: cuon)
+        }
+        .alert(T("Đổi tên cuốn vở"), isPresented: Binding(get: { cuonDoiTen != nil },
+                                                         set: { if !$0 { cuonDoiTen = nil } })) {
+            TextField(T("Tên cuốn vở"), text: $tenCuonGo)
+            Button(T("Huỷ"), role: .cancel) { cuonDoiTen = nil }
+            Button(T("Lưu")) {
+                let t = tenCuonGo.trimmingCharacters(in: .whitespacesAndNewlines)
+                if let c = cuonDoiTen, !t.isEmpty, t != c.ten {
+                    c.ten = String(t.prefix(200))
+                    ThaoTacTrang.danhDauCay(c)
+                    try? kho.save()
+                    DongBoVo.shared.batDau()
+                }
+                cuonDoiTen = nil
+            }
         }
     }
 

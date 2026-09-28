@@ -126,6 +126,14 @@ final class TrangVo {
     var thuTu: Int = 0
     /// Nhãn chương đặt trên trang này (tuỳ chọn) — nguồn của mục lục.
     var tenChuong: String?
+    /// Tên trang người dùng đặt ("Đổi tên trang"). `nil` ⇒ hiện "Trang N".
+    ///
+    /// ⚠️ Thêm 28/09/2026 vào một model ĐÃ có dữ liệu thật trên iPad. Phải là
+    /// OPTIONAL (hoặc có giá trị mặc định) thì SwiftData mới tự nâng kho cũ
+    /// lên được — thuộc tính bắt buộc không mặc định là kho mở hỏng, app lùi
+    /// sang kho tạm trong bộ nhớ, và người dùng thấy vở TRỐNG. Đừng đổi tên
+    /// hay bỏ thuộc tính nào đã lưu; muốn đổi thì thêm cái mới.
+    var tieuDe: String?
     var loaiGiay: String = LoaiGiay.keNgang.rawValue
     var huongGiay: String = HuongGiay.doc.rawValue
     var danhDau: Bool = false
@@ -282,6 +290,11 @@ enum LoaiGiay: String, Codable, CaseIterable, Identifiable {
     case cornell
     case genkou
     case nhacLy
+    /// Giấy tập viết tiếng Anh: mỗi hàng 4 dòng (đỉnh chữ hoa · đường giữa
+    /// nét đứt · dòng chân · đuôi chữ g/y) — thêm 28/09/2026.
+    case bonDong
+    /// Lưới viết code tay: cột số dòng bên trái + ô vuông nhỏ canh thụt lề.
+    case luoiCode
 
     var id: String { rawValue }
 
@@ -294,6 +307,8 @@ enum LoaiGiay: String, Codable, CaseIterable, Identifiable {
         case .cornell: return T("Cornell")
         case .genkou:  return T("Ô vuông (tiếng Nhật)")
         case .nhacLy:  return T("Khuông nhạc")
+        case .bonDong: return T("4 dòng tập viết (tiếng Anh)")
+        case .luoiCode: return T("Lưới viết code")
         }
     }
 
@@ -306,6 +321,8 @@ enum LoaiGiay: String, Codable, CaseIterable, Identifiable {
         case .cornell: return T("Chia ba vùng: từ khoá · ghi chép · tóm tắt")
         case .genkou:  return T("原稿用紙 — ô vuông có đường chéo mờ, tập kanji")
         case .nhacLy:  return T("Năm dòng kẻ nhạc")
+        case .bonDong: return T("Đỉnh chữ hoa · đường giữa · dòng chân · đuôi — tập viết tay tiếng Anh")
+        case .luoiCode: return T("Cột số dòng + ô 4mm để canh thụt lề khi viết code")
         }
     }
 
@@ -318,6 +335,8 @@ enum LoaiGiay: String, Codable, CaseIterable, Identifiable {
         case .cornell: return "rectangle.split.3x1"
         case .genkou:  return "square.grid.4x3.fill"
         case .nhacLy:  return "music.note.list"
+        case .bonDong: return "textformat.abc"
+        case .luoiCode: return "chevron.left.forwardslash.chevron.right"
         }
     }
 }

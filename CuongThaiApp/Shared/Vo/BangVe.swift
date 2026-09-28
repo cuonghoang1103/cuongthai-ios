@@ -21,6 +21,10 @@ import UIKit
 final class CauNoiBangVe: ObservableObject {
     weak var vc: BangVeVC?
     func anhDangNhin() -> UIImage? { vc?.anhDangNhin() }
+    /// Hoàn tác / làm lại NÉT bằng đúng bộ hoàn tác riêng của khung vẽ
+    /// (xem `BangVeVC.boHoanTac` — không dựa vào responder chain).
+    func hoanTac() { vc?.hoanTacNet() }
+    func lamLai() { vc?.lamLaiNet() }
 }
 
 struct BangVe: UIViewControllerRepresentable {
@@ -132,6 +136,15 @@ final class BangVeVC: UIViewController {
     /// dùng báo là app lỗi vặt chứ không ai ngồi tìm được nguyên nhân.
     private let boHoanTac = UndoManager()
     override var undoManager: UndoManager? { boHoanTac }
+
+    func hoanTacNet() {
+        // Hoàn tác lúc đang có một nét dở (bút còn trên mặt kính) thì
+        // PencilKit tự bỏ qua; không cần chặn thêm ở đây.
+        if boHoanTac.canUndo { boHoanTac.undo() }
+    }
+    func lamLaiNet() {
+        if boHoanTac.canRedo { boHoanTac.redo() }
+    }
 
     /// Hẹn giờ tự lưu. Lưu mỗi nét là ghi đĩa hàng trăm lần một phút; lưu
     /// quá thưa thì mất bài khi app bị hệ thống thu hồi bộ nhớ. 2 giây là

@@ -289,6 +289,12 @@ final class DongBoVo: ObservableObject {
         // nhận một khoá trỏ vào hư không.
         await dayNenChuaLen(mons: mons)
 
+        // Mốc chụp cây. Cuốn nào đổi SAU mốc này (người dùng kéo xếp trang
+        // trong lúc lượt đẩy đang bay) thì KHÔNG được gỡ cờ `canDayCay` khi
+        // lượt này về — bản vừa gửi là bản cũ, gỡ cờ là lượt kéo về sau đè
+        // thứ tự mới bằng thứ tự cũ trên máy chủ.
+        let mocChup = Date()
+
         let payload: [[String: Any]] = mons.map { mon in
             [
                 "clientId": mon.id.uuidString,
@@ -310,6 +316,10 @@ final class DongBoVo: ObservableObject {
                                 "clientId": trang.id.uuidString,
                                 "thuTu": trang.thuTu,
                                 "tenChuong": trang.tenChuong as Any,
+                                // LUÔN gửi khoá này, kể cả khi rỗng (NSNull):
+                                // máy chủ phân biệt "máy mới bảo bỏ tên" với
+                                // "máy cũ không biết tên trang là gì".
+                                "tieuDe": trang.tieuDe.map { $0 as Any } ?? NSNull(),
                                 "giay": trang.loaiGiay,
                                 "huong": trang.huongGiay,
                                 "phienBanNet": trang.phienBanNet,
@@ -348,7 +358,7 @@ final class DongBoVo: ObservableObject {
             for c in m.cuons {
                 if let uid = UUID(uuidString: c.clientId), let cuon = cuonTheoId[uid] {
                     cuon.idMayChu = c.id
-                    cuon.canDayCay = false
+                    if cuon.suaLuc <= mocChup { cuon.canDayCay = false }
                 }
                 for t in c.trangs {
                     guard let uid = UUID(uuidString: t.clientId), let trang = theoId[uid] else { continue }
@@ -568,6 +578,7 @@ final class DongBoVo: ObservableObject {
                 for t in c.trangs {
                     guard let tuid = UUID(uuidString: t.clientId) else { continue }
                     if let co = trangTheoId[tuid] {
+                        apMetaTuMayChu(trang: co, t, cuonMayChu: cuon)
                         // ⚠️ Trang đã có trên máy mà đang BẨN thì KHÔNG đè.
                         // Nó sẽ đi qua đường xung đột ở lượt đẩy, nơi có phép
                         // hợp nhất. Đè ở đây là xoá thẳng thứ vừa viết.
@@ -582,7 +593,8 @@ final class DongBoVo: ObservableObject {
                                         huong: HuongGiay(rawValue: t.huong ?? "") ?? .doc)
                     trang.id = tuid
                     trang.idMayChu = t.id
-                    trang.tenChuong = t.tenChuong
+                    trang.tenChuong = t.tenChuongThat
+                    trang.tieuDe = t.tieuDe
                     trang.canDay = false
                     kho.insert(trang)
                     trangTheoId[tuid] = trang
@@ -591,7 +603,33 @@ final class DongBoVo: ObservableObject {
                 }
             }
         }
+        // Trang mới kéo về + trang cục bộ chưa đẩy có thể trùng `thuTu`.
+        // Đánh số lại cho liền mạch; thứ tự tương đối giữ nguyên.
+        for cuon in cuonTheoId.values { ThaoTacTrang.danhSoLai(cuon.trangsTheoThuTu) }
         try kho.save()
+    }
+
+    /// Áp thứ tự / tên / nhãn chương / giấy / cuốn chứa từ máy chủ vào một
+    /// trang ĐÃ có trên máy (máy khác vừa sắp xếp hoặc đổi tên).
+    ///
+    /// ⚠️ Hai chốt, cả hai đều để KHÔNG đè thứ người dùng vừa làm trên máy này:
+    ///   1. Cuốn chứa trang (cả cuốn cũ lẫn cuốn máy chủ nói) còn cờ
+    ///      `canDayCay` ⇒ máy này có thay đổi cây chưa đẩy ⇒ bỏ qua; lượt đẩy
+    ///      sau sẽ đưa bản của máy này lên.
+    ///   2. Máy chủ CŨ (chưa có cột tên trang) trả `tenChuong` = "Trang N" tự
+    ///      sinh cho mọi trang. Áp nó vào là mọi trang thành một mục lục — nên
+    ///      chỉ áp khi phản hồi mang khoá `tieuDe` (dấu hiệu máy chủ mới).
+    private func apMetaTuMayChu(trang: TrangVo, _ t: TrangTaiVe, cuonMayChu: CuonVo) {
+        guard t.mayChuMoi else { return }
+        guard trang.cuon?.canDayCay != true, !cuonMayChu.canDayCay else { return }
+        var doi = false
+        if trang.cuon?.id != cuonMayChu.id { trang.cuon = cuonMayChu; doi = true }
+        if trang.thuTu != t.thuTu { trang.thuTu = t.thuTu; doi = true }
+        if trang.tieuDe != t.tieuDe { trang.tieuDe = t.tieuDe; doi = true }
+        if trang.tenChuong != t.tenChuong { trang.tenChuong = t.tenChuong; doi = true }
+        if let g = t.giay, LoaiGiay(rawValue: g) != nil, g != trang.loaiGiay { trang.loaiGiay = g; doi = true }
+        if let h = t.huong, HuongGiay(rawValue: h) != nil, h != trang.huongGiay { trang.huongGiay = h; doi = true }
+        if doi { NhatKy.vo.info("kéo về: cập nhật thứ tự/tên trang \(trang.id.uuidString.prefix(8))") }
     }
 
     /// Tải NỀN tài liệu về máy này nếu chưa có.
@@ -600,6 +638,9 @@ final class DongBoVo: ObservableObject {
     /// trang cùng nguồn dùng chung một tệp và tải một lần. Có tệp rồi thì
     /// chỉ ghi lại con trỏ, không tải lại.
     private func keoNenVe(trang: TrangVo, _ t: TrangTaiVe) async {
+        // `nenKhoaR2 == ""` = người dùng vừa GỠ nền trên máy này, lệnh gỡ
+        // chưa lên máy chủ. Kéo về lúc này mà áp nền cũ là nền sống lại.
+        guard trang.nenKhoaR2 != "" else { return }
         guard let url = t.nenUrl, let loai = t.nenLoai else { return }
         // Tên tệp lấy từ URL: nó chính là `<sha256>.<đuôi>`.
         guard let u = URL(string: url) else { return }
@@ -714,6 +755,11 @@ struct TrangTaiVe: Decodable {
     let id: Int
     let thuTu: Int
     let tenChuong: String?
+    /// Tên trang (máy chủ từ 28/09/2026). Máy chủ cũ không có khoá này.
+    let tieuDe: String?
+    /// Phản hồi có mang khoá `tieuDe` không — dấu hiệu máy chủ đã hiểu tên
+    /// trang và `tenChuong` là nhãn chương THẬT, không phải "Trang N" tự sinh.
+    let mayChuMoi: Bool
     let giay: String?
     let huong: String?
     let inkVersion: Int
@@ -723,6 +769,39 @@ struct TrangTaiVe: Decodable {
     let nenUrl: String?
     let nenLoai: String?
     let nenTrang: Int?
+
+    private enum CodingKeys: String, CodingKey {
+        case clientId, id, thuTu, tenChuong, tieuDe, giay, huong, inkVersion, inkStrokeCount
+        case inkUrl, previewUrl, nenUrl, nenLoai, nenTrang
+    }
+
+    // Viết tay: phải phân biệt khoá VẮNG (máy chủ cũ) với khoá mang null.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        clientId = try c.decode(String.self, forKey: .clientId)
+        id = try c.decode(Int.self, forKey: .id)
+        thuTu = (try? c.decode(Int.self, forKey: .thuTu)) ?? 0
+        tenChuong = try? c.decodeIfPresent(String.self, forKey: .tenChuong)
+        mayChuMoi = c.contains(.tieuDe)
+        tieuDe = try? c.decodeIfPresent(String.self, forKey: .tieuDe)
+        giay = try? c.decodeIfPresent(String.self, forKey: .giay)
+        huong = try? c.decodeIfPresent(String.self, forKey: .huong)
+        inkVersion = (try? c.decode(Int.self, forKey: .inkVersion)) ?? 0
+        inkStrokeCount = (try? c.decode(Int.self, forKey: .inkStrokeCount)) ?? 0
+        inkUrl = try? c.decodeIfPresent(String.self, forKey: .inkUrl)
+        previewUrl = try? c.decodeIfPresent(String.self, forKey: .previewUrl)
+        nenUrl = try? c.decodeIfPresent(String.self, forKey: .nenUrl)
+        nenLoai = try? c.decodeIfPresent(String.self, forKey: .nenLoai)
+        nenTrang = try? c.decodeIfPresent(Int.self, forKey: .nenTrang)
+    }
+
+    /// Nhãn chương dùng được. Máy chủ cũ trả "Trang N" tự sinh cho trang
+    /// không có chương — đó không phải chương.
+    var tenChuongThat: String? {
+        guard let s = tenChuong, !s.isEmpty else { return nil }
+        if !mayChuMoi, s.range(of: #"^Trang \d+$"#, options: .regularExpression) != nil { return nil }
+        return s
+    }
 }
 
 private struct CayVoTaiVe: Decodable {

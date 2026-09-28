@@ -160,6 +160,15 @@ enum KhoVo {
         try? FileManager.default.copyItem(at: a, to: b)
     }
 
+    /// Chép luôn ảnh nhỏ khi nhân bản — không thì dải trang hiện ô trắng cho
+    /// tới lần lưu kế tiếp của trang mới, trông như nhân bản bị mất nét.
+    static func nhanBanAnhNho(tu nguon: UUID, sang dich: UUID) {
+        let a = duongDanAnhNho(nguon), b = duongDanAnhNho(dich)
+        guard FileManager.default.fileExists(atPath: a.path) else { return }
+        try? FileManager.default.removeItem(at: b)
+        try? FileManager.default.copyItem(at: a, to: b)
+    }
+
     // MARK: Ảnh thu nhỏ
 
     /// Vẽ ảnh nhỏ cho dải trang. Chạy ngoài luồng chính vì `image(from:scale:)`

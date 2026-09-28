@@ -83,6 +83,8 @@ final class GiayNenView: UIView {
         case .cornell: veCornell(ctx, dayNet)
         case .genkou:  veGenkou(ctx)
         case .nhacLy:  veNhacLy(ctx)
+        case .bonDong: veBonDong(ctx, dayNet)
+        case .luoiCode: veLuoiCode(ctx, dayNet)
         }
     }
 
@@ -202,6 +204,103 @@ final class GiayNenView: UIView {
             ctx.move(to: CGPoint(x: xGoc, y: y))
             ctx.addLine(to: CGPoint(x: xGoc + rongThat, y: y))
         }
+        ctx.strokePath()
+    }
+
+    /// Giấy tập viết tiếng Anh kiểu trường tiểu học: mỗi hàng 4 dòng.
+    ///
+    /// Từ trên xuống: đỉnh chữ hoa/chữ cao (b, d, h) · đường GIỮA nét đứt
+    /// (đỉnh chữ thường a, c, e) · dòng CHÂN đậm hơn (mọi chữ đứng lên đây)
+    /// · dòng ĐUÔI (g, j, p, q, y thò xuống). Thiếu đường giữa thì người mới
+    /// tập viết chữ thường to nhỏ lung tung — đó là lý do giấy này tồn tại.
+    private func veBonDong(_ ctx: CGContext, _ dayNet: CGFloat) {
+        let w = khoTrang.width, h = khoTrang.height
+        let x0 = Self.mm(12), x1 = w - Self.mm(12)
+        let tang = Self.mm(4.5)            // khoảng giữa hai dòng liền nhau
+        let cachHang = Self.mm(7)           // khoảng trống giữa hai hàng 4 dòng
+        var y = Self.mm(22)
+        while y + tang * 3 < h - Self.mm(12) {
+            // Đỉnh + đuôi: nhạt.
+            mauKeNhat.setStroke()
+            ctx.setLineWidth(dayNet)
+            ctx.setLineDash(phase: 0, lengths: [])
+            for dy in [0, tang * 3] {
+                ctx.move(to: CGPoint(x: x0, y: y + dy)); ctx.addLine(to: CGPoint(x: x1, y: y + dy))
+            }
+            ctx.strokePath()
+            // Đường giữa: nét đứt.
+            mauKe.setStroke()
+            ctx.setLineDash(phase: 0, lengths: [Self.mm(1.6), Self.mm(1.2)])
+            ctx.move(to: CGPoint(x: x0, y: y + tang)); ctx.addLine(to: CGPoint(x: x1, y: y + tang))
+            ctx.strokePath()
+            // Dòng chân: đậm nhất.
+            ctx.setLineDash(phase: 0, lengths: [])
+            mauLe.setStroke()
+            ctx.setLineWidth(dayNet * 1.3)
+            ctx.move(to: CGPoint(x: x0, y: y + tang * 2)); ctx.addLine(to: CGPoint(x: x1, y: y + tang * 2))
+            ctx.strokePath()
+            y += tang * 3 + cachHang
+        }
+        ctx.setLineDash(phase: 0, lengths: [])
+    }
+
+    /// Lưới viết code tay: cột số dòng bên trái, mỗi dòng mã cao 7mm chia ô
+    /// 3,5mm để canh ký tự, và vạch thụt lề nhạt mỗi 4 ô (≈ một cấp thụt lề).
+    private func veLuoiCode(_ ctx: CGContext, _ dayNet: CGFloat) {
+        let w = khoTrang.width, h = khoTrang.height
+        let cao = Self.mm(7), o = Self.mm(3.5)
+        let xLe = Self.mm(16)              // hết cột số dòng
+        let yDau = Self.mm(18)
+
+        // Ô nhỏ: rất nhạt, chỉ để canh.
+        mauKeNhat.setStroke()
+        ctx.setLineWidth(dayNet * 0.8)
+        var x = xLe + o
+        while x < w - Self.mm(8) {
+            ctx.move(to: CGPoint(x: x, y: yDau)); ctx.addLine(to: CGPoint(x: x, y: h - Self.mm(10)))
+            x += o
+        }
+        ctx.strokePath()
+
+        // Vạch thụt lề mỗi 4 ô.
+        mauKe.setStroke()
+        ctx.setLineDash(phase: 0, lengths: [Self.mm(1), Self.mm(1.5)])
+        x = xLe + o * 4
+        while x < w - Self.mm(8) {
+            ctx.move(to: CGPoint(x: x, y: yDau)); ctx.addLine(to: CGPoint(x: x, y: h - Self.mm(10)))
+            x += o * 4
+        }
+        ctx.strokePath()
+        ctx.setLineDash(phase: 0, lengths: [])
+
+        // Dòng + số dòng.
+        mauKe.setStroke()
+        ctx.setLineWidth(dayNet)
+        let chu: [NSAttributedString.Key: Any] = [
+            .font: UIFont.monospacedDigitSystemFont(ofSize: 7, weight: .regular),
+            .foregroundColor: mauKe,
+        ]
+        var y = yDau
+        while y + cao <= h - Self.mm(10) {
+            ctx.move(to: CGPoint(x: xLe, y: y + cao)); ctx.addLine(to: CGPoint(x: w - Self.mm(8), y: y + cao))
+            y += cao
+        }
+        ctx.strokePath()
+        // Số dòng vẽ SAU khi đã nét xong đường kẻ: vẽ chữ giữa lúc đang gom
+        // path thì path đang dở có thể bị bỏ.
+        y = yDau
+        var so = 1
+        while y + cao <= h - Self.mm(10) {
+            let s = "\(so)" as NSString
+            let kt = s.size(withAttributes: chu)
+            s.draw(at: CGPoint(x: xLe - Self.mm(2) - kt.width, y: y + cao - kt.height - 1), withAttributes: chu)
+            y += cao; so += 1
+        }
+
+        // Mép cột số dòng.
+        mauLe.setStroke()
+        ctx.setLineWidth(dayNet * 1.3)
+        ctx.move(to: CGPoint(x: xLe, y: 0)); ctx.addLine(to: CGPoint(x: xLe, y: h))
         ctx.strokePath()
     }
 
