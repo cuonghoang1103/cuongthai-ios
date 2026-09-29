@@ -368,6 +368,18 @@ struct TroLyTrang: View {
             cheDo = .ve; mayVe.de = "Chu trình nước"; mayVe.kieu = .sodo
             mayVe.gia(.dangVe(batDau: Date().addingTimeInterval(-23)))
         }
+        // Hai mục mới (29/09): ve-nhap-han · ve-nhap-khoi (màn nhập) · ve-han (学)
+        // · ve-han3 (日本語) · ve-chon (chọn ứng viên "gaku") · ve-mvc · ve-jwt
+        if c.contains("ve-nhap-han") { cheDo = .ve; mayVe.kieu = .chuHan; mayVe.de = "học" }
+        if c.contains("ve-nhap-khoi") { cheDo = .ve; mayVe.kieu = .soDoKhoi; mayVe.de = "Mô hình MVC" }
+        if c.contains("ve-han") && !c.contains("ve-han3") { cheDo = .ve; mayVe.giaHan("学", thongTin: MauVeMoi.hoc) }
+        if c.contains("ve-han3") { cheDo = .ve; mayVe.giaHan("日本語", thongTin: MauVeMoi.nhatBanNgu) }
+        if c.contains("ve-chon") {
+            cheDo = .ve; mayVe.kieu = .chuHan; mayVe.de = "gaku"
+            mayVe.gia(.chonChu(MauVeMoi.gaku))
+        }
+        if c.contains("ve-mvc") { cheDo = .ve; mayVe.giaSoDo(MauVeMoi.mvc, de: "Mô hình MVC") }
+        if c.contains("ve-jwt") { cheDo = .ve; mayVe.giaSoDo(MauVeMoi.jwt, de: "Luồng đăng nhập JWT") }
         if c.contains("mo") { moKhung = true }
         if c.contains("moi") { coMoi = true }
     }

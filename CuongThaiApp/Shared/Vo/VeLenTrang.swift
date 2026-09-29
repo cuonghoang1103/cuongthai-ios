@@ -23,7 +23,7 @@ enum VeLenTrang {
     /// KHÔNG đè nét nào gần tâm vùng nhìn nhất. Không cỡ nào trống ⇒ đặt
     /// giữa vùng nhìn ở cỡ vừa (người dùng dời bằng lasso được).
     static func timCho(vungNhin v: CGRect, trang: CGSize, tiLe: CGFloat,
-                       netCo: [CGRect]) -> CGRect {
+                       netCo: [CGRect], coUuTien: CGSize? = nil) -> CGRect {
         let le: CGFloat = 16
         let nhin = v.insetBy(dx: min(le, v.width * 0.05), dy: min(le, v.height * 0.05))
         guard nhin.width > 40, nhin.height > 40, tiLe > 0 else {
@@ -40,12 +40,15 @@ enum VeLenTrang {
             return CGSize(width: w, height: h)
         }
 
-        let coThu: [CGFloat] = [0.6, 0.52, 0.45].map { trang.width * $0 }
+        // Hình có cỡ thật (chữ Hán, sơ đồ khối có chữ): thử đúng cỡ đó trước —
+        // phóng to theo trang thì chữ 9pt thành 20pt, co nhỏ thì không đọc được.
+        var coThu: [CGFloat] = [0.6, 0.52, 0.45].map { trang.width * $0 }
+        if let c = coUuTien, c.width > 0 { coThu = [c.width, c.width * 0.85, c.width * 0.72] }
         for rong in coThu {
             let k = khung(rong: rong)
             // Cỡ đã bị vùng nhìn ép nhỏ hơn 30% trang thì thôi, sang cỡ sau
             // cũng vậy — dùng luôn phương án giữa màn.
-            if k.width < trang.width * 0.3 && k.height < nhin.height { continue }
+            if coUuTien == nil && k.width < trang.width * 0.3 && k.height < nhin.height { continue }
             let buoc: CGFloat = 12
             var tot: (CGRect, CGFloat)?
             var y = nhin.minY
@@ -63,7 +66,7 @@ enum VeLenTrang {
             }
             if let tot { return tot.0 }
         }
-        let k = khung(rong: trang.width * 0.5)
+        let k = khung(rong: coUuTien?.width ?? trang.width * 0.5)
         return CGRect(x: tam.x - k.width / 2, y: tam.y - k.height / 2, width: k.width, height: k.height)
     }
 
@@ -100,12 +103,32 @@ enum VeLenTrang {
         let co = max(mau?.size.width ?? 0, doDay * 2.2, 2.4)
         let batDau = Date()
         var ra: [PKStroke] = []
+        // Mực theo VAI TRÒ nét (chữ Hán / sơ đồ khối). Cỡ điểm của nét phụ cố
+        // định 2,4–2,6pt — mức thấp nhất PencilKit trên iPad thật còn vẽ ra
+        // (xem `co` ở trên); lấy cỡ bút người dùng thì chữ 9pt thành cục mực.
+        let mauBut = ink.color
+        let mucChu = PKInk(.pen, color: mauBut.withAlphaComponent(1))
+        let mucMo = PKInk(.pen, color: UIColor(red: 0.62, green: 0.63, blue: 0.68, alpha: 1))
+        let mucSo = PKInk(.pen, color: UIColor(red: 0.86, green: 0.16, blue: 0.2, alpha: 1))
+        let mucPhu = PKInk(.pen, color: mauBut.withAlphaComponent(0.6))
+        let coChinh = hinh.coNetCoDinh ?? max(co, hinh.coNetChinh ?? 0)
         for (i, n) in hinh.net.enumerated() {
             var d = n.map { CGPoint(x: goc.x + $0.x * ty, y: goc.y + $0.y * ty) }
             guard !d.isEmpty else { continue }
             // Một điểm (chấm mắt) ⇒ một nét cực ngắn cho PencilKit vẽ ra chấm.
             if d.count == 1 { d.append(CGPoint(x: d[0].x + 0.6, y: d[0].y + 0.3)) }
-            let day = raiDiem(d, cachToiDa: 4)
+            let vaiTro = hinh.loaiCua(i)
+            let (mucNay, coNay): (PKInk, CGFloat) = {
+                switch vaiTro {
+                case .chinh: return (ink, coChinh)
+                case .chu: return (mucChu, 2.6)
+                case .mo: return (mucMo, 2.4)
+                case .so: return (mucSo, 2.5)
+                case .phu: return (mucPhu, 2.4)
+                }
+            }()
+            // Chữ nhỏ: rải điểm dày hơn để B-spline của PencilKit ôm sát nét chữ.
+            let day = raiDiem(d, cachToiDa: vaiTro == .chinh ? 4 : 1.2)
             var t: TimeInterval = 0
             var diem: [PKStrokePoint] = []
             diem.reserveCapacity(day.count)
@@ -119,7 +142,7 @@ enum VeLenTrang {
                 // Có nét mẫu của chính người dùng thì chép luôn các thông số
                 // đó — PencilKit của máy này chắc chắn vẽ được chúng.
                 diem.append(PKStrokePoint.dayDu(location: p, timeOffset: t,
-                                          size: CGSize(width: co, height: co),
+                                          size: CGSize(width: coNay, height: coNay),
                                           opacity: mau?.opacity ?? 1,
                                           force: mau?.force ?? 1,
                                           azimuth: mau?.azimuth ?? 0,
@@ -129,7 +152,7 @@ enum VeLenTrang {
             }
             let path = PKStrokePath(controlPoints: diem,
                                     creationDate: batDau.addingTimeInterval(Double(i) * 0.3))
-            ra.append(PKStroke(ink: ink, path: path))
+            ra.append(PKStroke(ink: mucNay, path: path))
         }
         // Số nhãn ①②③ ở đúng chỗ AI chỉ, màu đỏ như lời thầy ghi chú: người
         // học viết tên nhãn cạnh số, đối chiếu với thẻ nhãn gợi ý. Cỡ cố định

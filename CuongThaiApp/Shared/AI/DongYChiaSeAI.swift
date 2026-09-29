@@ -54,6 +54,7 @@ enum DongYChiaSeAI {
 
     • Câu hỏi, ảnh/tệp đính kèm và lịch sử trò chuyện
     • Ảnh trang vở viết tay khi bạn hỏi về trang, khoanh vùng hỏi, hoặc bấm "AI viết lại trang"
+    • Mô tả bạn gõ ở "Vẽ giúp" (tranh, sơ đồ, chữ Hán cần tra, sơ đồ khối)
     • Ghi chú liên quan (Trợ lý ghi chú), số liệu thu chi (AI Tiền), CV, bài làm, mã nguồn
     • Bản ghi âm khi luyện nói IELTS / nói với AI
 
@@ -108,6 +109,9 @@ enum DongYChiaSeAI {
         // Vở · AI viết lại trang: ẢNH trang viết tay + chữ máy đọc trên trang
         // đi tới model thị giác (gpt-6-sol qua modelapi.vn).
         if (path == "/api/v1/vo/viet-lai" || path == "/api/v1/vo/viet-lai/viec") && method == "POST" { return true }
+        // Vở · Vẽ giúp → Chữ Hán (chữ/âm cần tra) và Luồng / sơ đồ khối (mô tả
+        // sơ đồ) — đều đi tới model qua modelapi.vn / rambo.ai.vn.
+        if (path == "/api/v1/vo/han/tra" || path == "/api/v1/vo/so-do/viec") && method == "POST" { return true }
         guard method != "GET" else { return false }
         // Phỏng vấn thử: câu trả lời được AI chấm (trừ nút báo lỗi câu hỏi).
         if path.hasPrefix("/api/v1/interview/") && !path.hasSuffix("/flag") { return true }

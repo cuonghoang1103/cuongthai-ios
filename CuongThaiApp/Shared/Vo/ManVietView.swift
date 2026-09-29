@@ -564,7 +564,8 @@ struct ManVietView: View {
         let nhin = cauNoiVe.vungDangNhin ?? CGRect(origin: .zero, size: kho)
         let netCo = (cauNoiVe.banVe ?? KhoVo.nap(t.id)).strokes.map(\.renderBounds)
         let khung = VeLenTrang.timCho(vungNhin: nhin, trang: kho,
-                                      tiLe: h.rong / max(h.cao, 1), netCo: netCo)
+                                      tiLe: h.rong / max(h.cao, 1), netCo: netCo,
+                                      coUuTien: h.coTuNhien ? CGSize(width: h.rong, height: h.cao) : nil)
         let (ink, day) = VeLenTrang.butChoAI(cauNoiVe.butDangChon)
         // Điểm mẫu lấy từ một nét BÚT (không phải bút dạ) người dùng đã viết.
         let mau = (cauNoiVe.banVe ?? KhoVo.nap(t.id)).strokes.last { $0.ink.inkType != .marker }
@@ -580,6 +581,22 @@ struct ManVietView: View {
         if !bv.isNull, let png = PKDrawing(strokes: ds).image(from: bv.insetBy(dx: -8, dy: -8), scale: 2).pngData(),
            let dir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
             try? png.write(to: dir.appendingPathComponent("ai-ve-thu.png"))
+        }
+        // Đếm điểm ảnh có mực THEO TỪNG MÀU MỰC (chữ/khung/số/ô mờ): nét cỡ
+        // điểm nhỏ vào bản vẽ mà vô hình trên iPad thật — đếm nét là không đủ.
+        for (mau, nhom) in Dictionary(grouping: ds, by: { "\($0.ink.color.cgColor.components ?? []) cỡ \($0.path.first?.size.width ?? 0)" }) {
+            let r = nhom.reduce(CGRect.null) { $0.union($1.renderBounds) }
+            guard !r.isNull, let cg = PKDrawing(strokes: nhom).image(from: r, scale: 2).cgImage else { continue }
+            let w = cg.width, hh = cg.height
+            var buf = [UInt8](repeating: 0, count: w * hh * 4)
+            if let ctx = CGContext(data: &buf, width: w, height: hh, bitsPerComponent: 8, bytesPerRow: w * 4,
+                                   space: CGColorSpaceCreateDeviceRGB(),
+                                   bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) {
+                ctx.draw(cg, in: CGRect(x: 0, y: 0, width: w, height: hh))
+            }
+            let co = stride(from: 3, to: buf.count, by: 4).reduce(0) { $0 + (buf[$1] > 0 ? 1 : 0) }
+            NSLog("[VE-ALPHA] %@: %d nét · %d px có mực / %d · cỡ điểm %.2f", mau, nhom.count, co, w * hh,
+                  nhom.first?.path.first?.size.width ?? 0)
         }
         #endif
         let ten = T("Vẽ bằng AI")
@@ -615,7 +632,7 @@ struct ManVietView: View {
     ///   CT_GIAY=oLy|keNgang|…   đổi giấy trang đang mở
     ///   CT_NOIDAI=n             nối dài trang đang mở n lần (+½ trang mỗi lần)
     ///   CT_XEMCA=1              đưa cả trang vào khung
-    ///   CT_VEAI=meo|oxy         vẽ hình mẫu lên trang (không gọi mạng)
+    ///   CT_VEAI=meo|oxy|han|mvc|jwt  vẽ hình mẫu lên trang (không gọi mạng)
     ///   CT_VEAI_HOANTAC=1       … xong thì ↶ một lần, đếm nét trước/sau (log)
     ///   CT_XUATPDF=1            xuất trang đang mở ra PDF, in khổ trang PDF (log)
     ///   CT_KHO_MO=1             mở cửa sổ "Khổ giấy của cuốn"
@@ -645,7 +662,17 @@ struct ManVietView: View {
         if env["CT_XEMCA"] == "1" { lanVuaCaTrang += 1 }
         try? await Task.sleep(for: .seconds(0.8))
         if let v = env["CT_VEAI"] {
-            let h = v == "oxy" ? HinhVeMau.oxy : HinhVeMau.meo
+            let h: HinhVeAI = {
+                switch v {
+                case "oxy": return HinhVeMau.oxy
+                case "han":
+                    let ds = "学日本語".map { c in VeChuHan.Chu(chu: String(c), medians: MauVeMoi.medians[String(c)] ?? [], danhSo: true) }
+                    return HinhVeAI(VeChuHan.dung(ds, canh: VeChuHan.Co.vua.canh, soThuTu: true, oDien: true))
+                case "mvc": return SoDoKhoi.dung(MauVeMoi.mvc).map { HinhVeAI($0) } ?? HinhVeMau.meo
+                case "jwt": return SoDoKhoi.dung(MauVeMoi.jwt).map { HinhVeAI($0) } ?? HinhVeMau.meo
+                default: return HinhVeMau.meo
+                }
+            }()
             let truoc = cauNoiVe.banVe?.strokes.count ?? -1
             veHinhAI(h)
             try? await Task.sleep(for: .seconds(1.2))
