@@ -77,18 +77,16 @@ enum VeBangNet {
         //
         // ⚠️ Gửi việc rồi HỎI LẠI, không chờ một cục: Cloudflare cắt yêu cầu
         // quá 100 giây (524) mà bản "Chi tiết" mất 100–150 giây.
-        let v: Viec = try await APIClient.shared.request(.voVeViec(de: de, kieu: kieu.rawValue, chiTiet: chiTiet))
-        guard let id = v.viec else {
-            throw APIError.coMa(ma: "VE_RONG", thongDiep: T("Máy chủ chưa nhận lượt vẽ — thử lại."))
-        }
-        var kq = KetQua()
-        let han = Date().addingTimeInterval(chiTiet ? 330 : 200)
-        while true {
-            try await Task.sleep(for: .seconds(3))
-            kq = try await APIClient.shared.request(.voVeXem(viec: id))
-            if kq.xong == true { break }
-            if Date() > han { throw URLError(.timedOut) }
-        }
+        let kq: KetQua = try await ViecNen.cho(han: chiTiet ? 330 : 200, gui: {
+            let v: Viec = try await APIClient.shared.request(.voVeViec(de: de, kieu: kieu.rawValue, chiTiet: chiTiet))
+            guard let id = v.viec else {
+                throw APIError.coMa(ma: "VE_RONG", thongDiep: T("Máy chủ chưa nhận lượt vẽ — thử lại."))
+            }
+            return id
+        }, xem: { id in
+            let k: KetQua = try await APIClient.shared.request(.voVeXem(viec: id))
+            return k.xong == true ? k : nil
+        })
         let net: [[CGPoint]] = (kq.net ?? []).compactMap { n in
             let d = n.compactMap { p in p.count >= 2 ? CGPoint(x: p[0], y: p[1]) : nil }
             return d.isEmpty ? nil : d
@@ -118,6 +116,49 @@ enum VeBangNet {
             return T("Máy chủ chưa có tính năng vẽ — sắp có.")
         }
         return (e as? LocalizedError)?.errorDescription ?? e.localizedDescription
+    }
+}
+
+// MARK: - Việc chạy nền: gửi, hỏi lại, tự gửi lại khi máy chủ khởi động lại
+
+/// Việc AI chạy nền (vẽ, viết lại trang) sống trong BỘ NHỚ máy chủ. Máy chủ
+/// khởi động lại (deploy) là việc đang chạy MẤT: lượt hỏi kế tiếp nhận 502
+/// (container đang tráo) rồi 404 "không tìm thấy lượt". Đo thật 29/09/2026:
+/// người dùng bấm "AI viết lại trang" đúng lúc một phiên khác deploy ⇒ màn báo
+/// "Máy chủ trả lỗi 502". Nên: lỗi kiểu "máy chủ vừa đi vắng" thì đợi rồi GỬI
+/// LẠI việc (tối đa 2 lần), không báo lỗi ngay.
+enum ViecNen {
+    static func cho<T>(han giay: TimeInterval, gui: () async throws -> String,
+                       xem: (String) async throws -> T?) async throws -> T {
+        let han = Date().addingTimeInterval(giay)
+        var id = try await gui()
+        var soLanGuiLai = 0
+        while true {
+            try await Task.sleep(for: .seconds(3))
+            do {
+                if let kq = try await xem(id) { return kq }
+            } catch {
+                guard laMayChuVang(error), soLanGuiLai < 2, Date() < han else { throw error }
+                soLanGuiLai += 1
+                NhatKy.vo.info("việc nền: máy chủ vắng (\(error.localizedDescription)) — gửi lại lần \(soLanGuiLai)")
+                try await Task.sleep(for: .seconds(6))
+                id = try await gui()
+                continue
+            }
+            if Date() > han { throw URLError(.timedOut) }
+        }
+    }
+
+    /// 502/503/504, mất kết nối, hay "không tìm thấy lượt" (máy chủ mới không
+    /// biết việc của máy chủ cũ) — đều là máy chủ vừa khởi động lại.
+    static func laMayChuVang(_ e: Error) -> Bool {
+        if e is URLError { return true }
+        switch e as? APIError {
+        case .networkError?: return true
+        case .serverError(let m)?: return m.contains("502") || m.contains("503") || m.contains("504")
+        case .coMa(let ma, _)?: return ma.hasSuffix("KHONG_CO")
+        default: return false
+        }
     }
 }
 

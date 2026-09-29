@@ -96,18 +96,16 @@ enum VietLaiTrang {
         ]
         // ⚠️ Gửi việc rồi HỎI LẠI mỗi 3 giây, không chờ một cục: Cloudflare cắt
         // yêu cầu quá 100 giây (524) mà một trang dày mất tới 90 giây.
-        let v: Viec = try await APIClient.shared.request(.voVietLai(than: than))
-        guard let id = v.viec else {
-            throw APIError.coMa(ma: "AI_LOI", thongDiep: T("Máy chủ chưa nhận lượt viết lại — thử lại."))
-        }
-        var kq = KetQuaVietLai()
-        let han = Date().addingTimeInterval(240)
-        while true {
-            try await Task.sleep(for: .seconds(3))
-            kq = try await APIClient.shared.request(.voVietLaiXem(viec: id))
-            if kq.xong == true { break }
-            if Date() > han { throw URLError(.timedOut) }
-        }
+        let kq: KetQuaVietLai = try await ViecNen.cho(han: 240, gui: {
+            let v: Viec = try await APIClient.shared.request(.voVietLai(than: than))
+            guard let id = v.viec else {
+                throw APIError.coMa(ma: "AI_LOI", thongDiep: T("Máy chủ chưa nhận lượt viết lại — thử lại."))
+            }
+            return id
+        }, xem: { id in
+            let k: KetQuaVietLai = try await APIClient.shared.request(.voVietLaiXem(viec: id))
+            return k.xong == true ? k : nil
+        })
         guard !(kq.khoi ?? []).isEmpty else {
             throw APIError.coMa(ma: "TRANG_TRONG", thongDiep: T("Không đọc ra chữ nào trên trang này."))
         }
