@@ -113,7 +113,7 @@ struct PrivacyPolicyView: View {
                 LegalBullet("AI Chat, gia sư bài học, hỏi bài trong phòng thi, tư vấn ngành: câu hỏi, lịch sử trò chuyện, ảnh và tệp bạn đính kèm")
                 LegalBullet("Trợ lý ghi chú: câu hỏi của bạn và nội dung các ghi chú liên quan mà trợ lý tìm được trong sổ ghi chú của bạn; công cụ AI trong trình soạn ghi chú: đoạn bạn đang chọn")
                 LegalBullet("AI Tiền: số liệu thu chi, ngân sách, khoản nợ và câu bạn hỏi")
-                LegalBullet("Vở viết tay (iPad): khi bạn hỏi trợ lý về trang, khoanh vùng để hỏi, nhờ vẽ giúp (tranh, sơ đồ, chữ Hán cần tra, sơ đồ khối), hoặc bấm \"AI viết lại trang\": ảnh trang/vùng khoanh, mô tả hoặc chữ bạn gõ, và chữ máy đọc được trên trang (đọc ngay trên iPad). Ảnh gửi đi để AI chép lại, máy chủ không lưu ảnh")
+                LegalBullet("Vở viết tay (iPad): khi bạn hỏi trợ lý về trang, khoanh vùng để hỏi, nhờ vẽ giúp (tranh, sơ đồ, chữ Hán cần tra, sơ đồ khối, sơ đồ mạch điện), hoặc bấm \"AI viết lại trang\": ảnh trang/vùng khoanh, mô tả hoặc chữ bạn gõ, và chữ máy đọc được trên trang (đọc ngay trên iPad). Ảnh gửi đi để AI chép lại, máy chủ không lưu ảnh")
                 LegalBullet("CV và phỏng vấn thử: nội dung CV, mô tả công việc, câu trả lời phỏng vấn của bạn")
                 LegalBullet("Chấm bài: mã nguồn, bài viết, bài luyện ngôn ngữ bạn nộp để chấm; ảnh thời khoá biểu khi bạn dùng tính năng quét lịch")
                 LegalBullet("Giọng nói: khi luyện nói IELTS, nhại theo video, hoặc nói chuyện bằng giọng với AI, FILE ÂM THANH bạn ghi được gửi lên máy chủ CuongThai rồi tới Groq (Whisper) để chuyển thành chữ; phần chữ sau đó được gửi tới model AI để chấm hoặc trả lời. Máy chủ CuongThai không lưu lại file âm thanh luyện nói")

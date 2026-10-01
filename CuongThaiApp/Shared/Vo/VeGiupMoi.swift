@@ -81,6 +81,28 @@ enum TaiSoDo {
     }
 }
 
+/// Vẽ giúp → ⚡ Mạch điện: gửi mô tả nối dây, hỏi lại tới khi xong, dựng hình.
+enum TaiMach {
+    private struct Viec: Decodable { var viec: String? }
+
+    static func dung(_ de: String) async throws -> (HinhVeAI, MachDien) {
+        let m: MachDien = try await ViecNen.cho(han: 180, gui: {
+            let v: Viec = try await APIClient.shared.request(.voMachViec(de: de))
+            guard let id = v.viec else {
+                throw APIError.coMa(ma: "MACH_RONG", thongDiep: T("Máy chủ chưa nhận lượt dựng — thử lại."))
+            }
+            return id
+        }, xem: { id in
+            let k: MachDien = try await APIClient.shared.request(.voMachXem(viec: id))
+            return k.xong == true ? k : nil
+        })
+        guard let b = SoDoMach.dung(m) else {
+            throw APIError.coMa(ma: "MACH_RONG", thongDiep: T("AI chưa tách được sơ đồ này — kể rõ các module và từng chân nối vào đâu."))
+        }
+        return (HinhVeAI(b), m)
+    }
+}
+
 // MARK: - Thẻ chọn ứng viên
 
 struct DanhSachUngVienHan: View {
@@ -267,6 +289,14 @@ enum MauVeMoi {
     ]
 
     /// Sơ đồ MVC có nhiều chữ tiếng Việt nhiều dấu.
+    /// Kết quả THẬT của máy chủ (gpt-6-sol, 01/10/2026) cho đề nối mic + ampli
+    /// + loa của robot Odin — đúng ca làm lộ lỗi của chế độ "Sơ đồ học tập".
+    /// `##"…"##` chứ không `#"…"#`: mã màu `"#C99A06"` chứa đúng chuỗi đóng `"#`.
+    static let machMicLoa: MachDien = {
+        let json = ##"{"tieuDe":"Nối INMP441 và MAX98357A với ESP32-S3","chinh":"esp","khoi":[{"id":"esp","ten":"ESP32-S3","phu":"trên shield MKE-B01","loai":"mcu","chan":["GPIO 4","GPIO 5","GPIO 6","GPIO 7","GPIO 15","GPIO 16","5V","3V3","GND"]},{"id":"mic","ten":"INMP441","phu":"micro","loai":"cam_bien","chan":["SCK","WS","L/R","SD","VDD","GND"]},{"id":"amp","ten":"MAX98357A","phu":"ampli","loai":"module","chan":["LRC","BCLK","DIN","GAIN","SD","GND","Vin","+","-"]},{"id":"loa","ten":"Loa","phu":"loa tròn","loai":"loa","chan":["+","-"]}],"day":[{"tu":{"khoi":"mic","chan":"SCK"},"toi":{"khoi":"esp","chan":"GPIO 4"},"mau":"#C99A06","tenMau":"vàng"},{"tu":{"khoi":"mic","chan":"WS"},"toi":{"khoi":"esp","chan":"GPIO 5"},"mau":"#16A34A","tenMau":"lục"},{"tu":{"khoi":"mic","chan":"SD"},"toi":{"khoi":"esp","chan":"GPIO 6"},"mau":"#2563EB","tenMau":"lam"},{"tu":{"khoi":"mic","chan":"VDD"},"toi":{"khoi":"esp","chan":"3V3"},"mau":"#DC2626","tenMau":"đỏ"},{"tu":{"khoi":"mic","chan":"GND"},"toi":{"khoi":"esp","chan":"GND"},"mau":"#111827","tenMau":"đen"},{"tu":{"khoi":"mic","chan":"L/R"},"toi":{"khoi":"mic","chan":"GND"},"mau":"#111827","tenMau":"đen","nhan":"BẮT BUỘC, dây ngắn"},{"tu":{"khoi":"amp","chan":"DIN"},"toi":{"khoi":"esp","chan":"GPIO 7"},"mau":"#7C3AED","tenMau":"tím"},{"tu":{"khoi":"amp","chan":"BCLK"},"toi":{"khoi":"esp","chan":"GPIO 15"},"mau":"#6B7280","tenMau":"xám"},{"tu":{"khoi":"amp","chan":"LRC"},"toi":{"khoi":"esp","chan":"GPIO 16"},"mau":"#92400E","tenMau":"nâu"},{"tu":{"khoi":"amp","chan":"Vin"},"toi":{"khoi":"esp","chan":"5V"},"mau":"#EA580C","tenMau":"cam"},{"tu":{"khoi":"amp","chan":"GND"},"toi":{"khoi":"esp","chan":"GND"},"mau":"#111827","tenMau":"đen"},{"tu":{"khoi":"amp","chan":"+"},"toi":{"khoi":"loa","chan":"+"},"mau":"#DB2777","tenMau":"hồng"},{"tu":{"khoi":"amp","chan":"-"},"toi":{"khoi":"loa","chan":"-"},"mau":"#0D9488","tenMau":"xanh ngọc","nhan":"KHÔNG nối GND"}],"deHo":[{"khoi":"amp","chan":"GAIN","nhan":"để hở"},{"khoi":"amp","chan":"SD","nhan":"để hở"}],"linhKien":[{"loai":"tu_hoa","a":{"khoi":"amp","chan":"Vin"},"b":{"khoi":"amp","chan":"GND"},"giaTri":"1000uF","nhan":"nên có"}],"ghiChuChan":[{"khoi":"esp","chan":"3V3","nhan":"khối chân đỏ góc trên bên phải"},{"khoi":"esp","chan":"5V","nhan":"hàng chân màu cam"}],"canhBao":["Micro chỉ dùng 3.3V. Cấp 5V là chết micro.","Chỉ ampli dùng 5V.","Dây - của loa đi thẳng vào loa, không bao giờ nối GND.","Ba dây ampli NGƯỢC thứ tự in trên bo: DIN->7, BCLK->15, LRC->16."]}"##
+        return (try? JSONDecoder().decode(MachDien.self, from: Data(json.utf8))) ?? MachDien()
+    }()
+
     static let mvc: DoThiKhoi = {
         typealias N = DoThiKhoi.Nut
         typealias C = DoThiKhoi.Canh

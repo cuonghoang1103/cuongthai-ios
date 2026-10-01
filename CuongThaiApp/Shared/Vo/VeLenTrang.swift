@@ -118,7 +118,7 @@ enum VeLenTrang {
             // Một điểm (chấm mắt) ⇒ một nét cực ngắn cho PencilKit vẽ ra chấm.
             if d.count == 1 { d.append(CGPoint(x: d[0].x + 0.6, y: d[0].y + 0.3)) }
             let vaiTro = hinh.loaiCua(i)
-            let (mucNay, coNay): (PKInk, CGFloat) = {
+            let (mucVaiTro, coNay): (PKInk, CGFloat) = {
                 switch vaiTro {
                 case .chinh: return (ink, coChinh)
                 case .chu: return (mucChu, 2.6)
@@ -127,6 +127,9 @@ enum VeLenTrang {
                 case .phu: return (mucPhu, 2.4)
                 }
             }()
+            // Dây điện có màu riêng (sơ đồ mạch): giữ cỡ theo vai trò, đổi mực.
+            let mucNay = hinh.mauCua(i).map { PKInk(.pen, color: UIColor(red: $0.r, green: $0.g, blue: $0.b, alpha: 1)) }
+                ?? mucVaiTro
             // Chữ nhỏ: rải điểm dày hơn để B-spline của PencilKit ôm sát nét chữ.
             let day = raiDiem(d, cachToiDa: vaiTro == .chinh ? 4 : 1.2)
             var t: TimeInterval = 0

@@ -380,6 +380,11 @@ struct TroLyTrang: View {
         }
         if c.contains("ve-mvc") { cheDo = .ve; mayVe.giaSoDo(MauVeMoi.mvc, de: "Mô hình MVC") }
         if c.contains("ve-jwt") { cheDo = .ve; mayVe.giaSoDo(MauVeMoi.jwt, de: "Luồng đăng nhập JWT") }
+        // ⚡ Mạch điện (01/10): ve-nhap-mach (màn nhập) · ve-mach (kết quả mic + loa thật)
+        if c.contains("ve-nhap-mach") { cheDo = .ve; mayVe.kieu = .mach }
+        if c.contains("ve-mach") && !c.contains("ve-nhap-mach") {
+            cheDo = .ve; mayVe.giaMach(MauVeMoi.machMicLoa, de: "Nối mic INMP441 + ampli MAX98357A + loa vào ESP32-S3")
+        }
         if c.contains("mo") { moKhung = true }
         if c.contains("moi") { coMoi = true }
     }

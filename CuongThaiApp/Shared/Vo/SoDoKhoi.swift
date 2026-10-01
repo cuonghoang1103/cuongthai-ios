@@ -37,10 +37,35 @@ enum VaiTroNet: Int {
     case phu
 }
 
+/// Màu RIÊNG của một nét — dây điện trong sơ đồ mạch phải đúng màu dây
+/// thật (đỏ 3V3, đen GND, vàng SCK…). RGB 0…1, không dùng UIColor/Color để
+/// file này vẫn dựng thử được trên macOS. `nil` = mực theo vai trò như cũ.
+struct MauNet: Hashable {
+    let r: CGFloat
+    let g: CGFloat
+    let b: CGFloat
+
+    init(r: CGFloat, g: CGFloat, b: CGFloat) {
+        self.r = r; self.g = g; self.b = b
+    }
+
+    /// `"#RRGGBB"` (máy chủ gửi) → màu. Sai dạng → `nil`, KHÔNG đoán màu.
+    init?(hex: String?) {
+        guard var s = hex?.trimmingCharacters(in: .whitespaces), !s.isEmpty else { return nil }
+        if s.hasPrefix("#") { s.removeFirst() }
+        guard s.count == 6, let v = UInt32(s, radix: 16) else { return nil }
+        r = CGFloat((v >> 16) & 0xFF) / 255
+        g = CGFloat((v >> 8) & 0xFF) / 255
+        b = CGFloat(v & 0xFF) / 255
+    }
+}
+
 /// Một bản vẽ bằng nét, toạ độ pt (gốc trên-trái), kèm vai trò từng nét.
 struct BanVeNet {
     var net: [[CGPoint]] = []
     var loai: [VaiTroNet] = []
+    /// Màu riêng từng nét, song song với `net` (`nil` = mực theo vai trò).
+    var mau: [MauNet?] = []
     var rong: CGFloat = 0
     var cao: CGFloat = 0
     /// Cỡ ĐIỂM tối thiểu cho nét `.chinh` (pt). Chữ Hán ô lớn cần nét đậm theo
@@ -51,11 +76,11 @@ struct BanVeNet {
     /// và hình người thành vết đen — đo trên máy ảo iPadOS 27, 29/09.
     var coNetCoDinh: CGFloat?
 
-    mutating func them(_ n: [CGPoint], _ l: VaiTroNet) {
+    mutating func them(_ n: [CGPoint], _ l: VaiTroNet, mau m: MauNet? = nil) {
         guard !n.isEmpty else { return }
-        net.append(n); loai.append(l)
+        net.append(n); loai.append(l); mau.append(m)
     }
-    mutating func them(_ ns: [[CGPoint]], _ l: VaiTroNet) { for n in ns { them(n, l) } }
+    mutating func them(_ ns: [[CGPoint]], _ l: VaiTroNet, mau m: MauNet? = nil) { for n in ns { them(n, l, mau: m) } }
 
     /// Dời mọi nét để khung bao bắt đầu ở (le, le); đặt `rong`/`cao`.
     mutating func chotKhung(le: CGFloat) {

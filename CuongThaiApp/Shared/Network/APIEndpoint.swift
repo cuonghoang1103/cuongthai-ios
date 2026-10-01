@@ -45,6 +45,10 @@ enum APIEndpoint {
     /// bằng `voSoDoXem` ⇒ đồ thị JSON (app tự dàn bố cục).
     case voSoDoViec(de: String)
     case voSoDoXem(viec: String)
+    /// Vẽ giúp → ⚡ Mạch điện, CHẠY NỀN: gửi mô tả nối dây ⇒ `{viec}`, hỏi lại
+    /// bằng `voMachXem` ⇒ cấu trúc mạch JSON (app tự dàn bậc thang).
+    case voMachViec(de: String)
+    case voMachXem(viec: String)
 
     // ─── IELTS (nội dung khoá học + tiến độ) ────────────────────────
     case ieltsLoTrinh
@@ -689,6 +693,8 @@ enum APIEndpoint {
         case .voHanTra: return "/api/v1/vo/han/tra"
         case .voSoDoViec: return "/api/v1/vo/so-do/viec"
         case .voSoDoXem(let id): return "/api/v1/vo/so-do/viec/\(id)"
+        case .voMachViec: return "/api/v1/vo/mach/viec"
+        case .voMachXem(let id): return "/api/v1/vo/mach/viec/\(id)"
         case .login: return "/api/v1/auth/login"
         case .register: return "/api/v1/auth/register"
         case .oauthToken: return "/api/v1/auth/oauth/token"
@@ -1133,10 +1139,10 @@ enum APIEndpoint {
              .tienXoaTietKiem, .tienXoaMucTieuTietKiem, .tienXoaDauTu:
             return "DELETE"
         case .tuyChinh(_, let pt, _): return pt
-        case .voLayCay, .voVeXem, .voVietLaiXem, .voSoDoXem: return "GET"
+        case .voLayCay, .voVeXem, .voVietLaiXem, .voSoDoXem, .voMachXem: return "GET"
         case .voDongBoCay, .voXinDuongDay, .voXacNhanNet, .voXoaTrang, .voXoaCuon,
              .voXinDuongNen, .voVe, .voVeViec, .voVietLai,
-             .voHanTra, .voSoDoViec: return "POST"
+             .voHanTra, .voSoDoViec, .voMachViec: return "POST"
         case .ghiTienDo, .ghiKetQuaQuiz, .doiYeuThich, .aiDich, .aiKiemNguPhap, .aiNoiChuyen,
              .aiChamBaiViet, .batDauLuotThi, .nopBaiTracNghiem,
              .hienDapAn, .baiHocLienQuan, .hoiCuongMini, .themBinhLuanCauHoi, .hoiGiaSuBai,
@@ -1230,6 +1236,7 @@ enum APIEndpoint {
         case .voVietLai(let than): return than
         case .voHanTra(let q): return ["q": q]
         case .voSoDoViec(let de): return ["de": de]
+        case .voMachViec(let de): return ["de": de]
         case .cvLuuHoSo(let m), .cvThemMuc(let m), .cvThemGach(_, let m),
              .cvSuaMuc(_, let m), .cvSuaGach(_, let m), .cvVietLaiGach(_, let m),
              .cvThemKyNang(let m), .cvThemChungChi(let m), .cvThemNgonNgu(let m),

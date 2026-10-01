@@ -41,6 +41,9 @@ struct HinhVeAI {
     var coNetChinh: CGFloat?
     /// Cỡ ĐIỂM cố định của nét `.chinh` (xem `BanVeNet.coNetCoDinh`).
     var coNetCoDinh: CGFloat?
+    /// Màu riêng từng nét, song song với `net` — dây điện trong sơ đồ mạch
+    /// phải đúng màu dây thật. Rỗng = mực theo vai trò như mọi kiểu khác.
+    var mau: [MauNet?] = []
 }
 
 extension HinhVeAI {
@@ -50,9 +53,11 @@ extension HinhVeAI {
         coTuNhien = true
         coNetChinh = b.coNetChinh
         coNetCoDinh = b.coNetCoDinh
+        mau = b.mau
     }
 
     func loaiCua(_ i: Int) -> VaiTroNet { i < loai.count ? loai[i] : .chinh }
+    func mauCua(_ i: Int) -> MauNet? { i < mau.count ? mau[i] : nil }
 }
 
 struct NhanVe: Hashable {
@@ -62,7 +67,7 @@ struct NhanVe: Hashable {
 }
 
 enum KieuVe: String, CaseIterable, Identifiable {
-    case hinh, sodo, chuHan, soDoKhoi
+    case hinh, sodo, chuHan, soDoKhoi, mach
     var id: String { rawValue }
 
     var ten: String {
@@ -71,6 +76,7 @@ enum KieuVe: String, CaseIterable, Identifiable {
         case .sodo: return T("Sơ đồ học tập")
         case .chuHan: return T("Chữ Hán")
         case .soDoKhoi: return T("Sơ đồ khối")
+        case .mach: return T("Mạch điện")
         }
     }
     var bieuTuong: String {
@@ -79,6 +85,7 @@ enum KieuVe: String, CaseIterable, Identifiable {
         case .sodo: return "point.3.connected.trianglepath.dotted"
         case .chuHan: return "character.book.closed.ja"
         case .soDoKhoi: return "flowchart"
+        case .mach: return "cpu"
         }
     }
     var moTa: String {
@@ -87,6 +94,7 @@ enum KieuVe: String, CaseIterable, Identifiable {
         case .sodo: return T("Rõ khối, có nhãn")
         case .chuHan: return T("Đúng thứ tự nét")
         case .soDoKhoi: return T("Luồng, MVC, có chữ")
+        case .mach: return T("Nối dây, đúng chân")
         }
     }
     /// Hai kiểu đầu: AI vẽ SVG (`/vo/ve`). Hai kiểu sau có đường riêng.
@@ -251,6 +259,8 @@ final class MayVe: ObservableObject {
     private var netHan: [String: NetChu] = [:]
     /// Mô tả gốc của sơ đồ khối vừa dựng (tiêu đề hiển thị).
     @Published private(set) var tieuDeSoDo: String?
+    /// Cấu trúc mạch vừa dựng — tiêu đề, số dây, và bản chữ gửi kèm khi báo cáo.
+    @Published private(set) var machVuaDung: MachDien?
 
     var dangVe: Bool { if case .dangVe = trangThai { return true } else { return false } }
     var hinh: HinhVeAI? { if case .xong(let h, _) = trangThai { return h } else { return nil } }
@@ -260,6 +270,7 @@ final class MayVe: ObservableObject {
         guard d.count >= (kieu == .chuHan ? 1 : 2), !dangVe else { return }
         if kieu == .chuHan { veChuHan(d); return }
         if kieu == .soDoKhoi { veSoDoKhoi(d); return }
+        if kieu == .mach { veMach(d); return }
         trangThai = .dangVe(batDau: Date())
         Haptics.cham()
         let kieu = self.kieu
@@ -402,7 +413,44 @@ final class MayVe: ObservableObject {
         }
     }
 
+    // MARK: Mạch điện
+
+    private func veMach(_ d: String) {
+        trangThai = .dangVe(batDau: Date())
+        machVuaDung = nil
+        Haptics.cham()
+        viec = Task { [weak self] in
+            do {
+                let (h, m) = try await TaiMach.dung(d)
+                guard let self, !Task.isCancelled else { return }
+                self.machVuaDung = m
+                self.trangThai = .xong(h, model: m.model)
+                Haptics.xong()
+            } catch {
+                guard let self, !Task.isCancelled else { return }
+                self.trangThai = .loi(VeBangNet.cauLoi(error))
+                Haptics.hong()
+            }
+        }
+    }
+
+    /// Bản CHỮ của kết quả, gửi kèm khi người dùng báo cáo (Apple 4.7) — admin
+    /// đọc được ngay mà không phải dựng lại hình.
+    func tomTatKetQua(_ h: HinhVeAI) -> String {
+        if kieu == .mach, let m = machVuaDung { return SoDoMach.tomTat(m) }
+        if kieu == .soDoKhoi { return "\(tieuDeSoDo ?? de) · \(h.net.count) nét" }
+        let nhan = h.nhan.isEmpty ? "" : " · nhãn: " + h.nhan.joined(separator: ", ")
+        return "Hình vẽ \(h.net.count) nét\(nhan)"
+    }
+
     #if DEBUG
+    func giaMach(_ m: MachDien, de: String) {
+        kieu = .mach
+        self.de = de
+        machVuaDung = m
+        if let b = SoDoMach.dung(m) { trangThai = .xong(HinhVeAI(b), model: "gpt-6-sol") }
+    }
+
     /// Chỉ cho bàn thử `CT_TROLY` — dựng trạng thái mà không gọi mạng.
     func gia(_ t: TrangThai) { trangThai = t }
 
@@ -451,7 +499,8 @@ struct HinhVeXemTruoc: View {
                 } else {
                     // Vẽ theo vai trò, cùng tỉ lệ bề dày như trên trang (cỡ điểm
                     // PencilKit ≈ 2,2 × bề rộng nét hiện ra).
-                    ForEach([VaiTroNet.mo, .phu, .chinh, .chu, .so], id: \.rawValue) { l in
+                    ForEach(nhomNet, id: \.self) { nh in
+                        let l = nh.vaiTro
                         let day: CGFloat = {
                             switch l {
                             case .chinh: return max(1.2, (hinh.coNetCoDinh ?? hinh.coNetChinh ?? 3.6) * 0.5 * tyXem)
@@ -459,10 +508,11 @@ struct HinhVeXemTruoc: View {
                             default: return max(0.5, 1.0 * tyXem)
                             }
                         }()
-                        let mauNay: Color = l == .so ? Color(red: 0.86, green: 0.16, blue: 0.2)
-                            : l == .mo ? Color(red: 0.62, green: 0.63, blue: 0.68)
-                            : l == .phu ? mau.opacity(0.6) : mau
-                        duong(trong: g.size, chi: l)
+                        let mauNay: Color = nh.mau.map { Color(red: Double($0.r), green: Double($0.g), blue: Double($0.b)) }
+                            ?? (l == .so ? Color(red: 0.86, green: 0.16, blue: 0.2)
+                                : l == .mo ? Color(red: 0.62, green: 0.63, blue: 0.68)
+                                : l == .phu ? mau.opacity(0.6) : mau)
+                        duong(trong: g.size, chi: l, locMau: true, mauLoc: nh.mau)
                             .trim(from: 0, to: (veDan && !giamChuyenDong && l != .mo) ? tien : 1)
                             .stroke(mauNay, style: StrokeStyle(lineWidth: day, lineCap: .round, lineJoin: .round))
                     }
@@ -492,13 +542,33 @@ struct HinhVeXemTruoc: View {
         .accessibilityLabel(T("Hình xem trước"))
     }
 
-    private func duong(trong kho: CGSize, chi: VaiTroNet? = nil) -> Path {
+    /// Nét gom theo (vai trò, màu riêng) — mỗi nhóm một lượt `stroke`. Thứ tự
+    /// lớp giữ như cũ: mờ → phụ → chính → chữ → số.
+    private struct NhomNet: Hashable {
+        let vaiTro: VaiTroNet
+        let mau: MauNet?
+    }
+
+    private var nhomNet: [NhomNet] {
+        var ra: [NhomNet] = []
+        for l in [VaiTroNet.mo, .phu, .chinh, .chu, .so] {
+            var daCo = Set<MauNet?>()
+            for i in hinh.net.indices where hinh.loaiCua(i) == l {
+                let m = hinh.mauCua(i)
+                if daCo.insert(m).inserted { ra.append(NhomNet(vaiTro: l, mau: m)) }
+            }
+        }
+        return ra
+    }
+
+    private func duong(trong kho: CGSize, chi: VaiTroNet? = nil, locMau: Bool = false, mauLoc: MauNet? = nil) -> Path {
         let ty = min(kho.width / max(hinh.rong, 1), kho.height / max(hinh.cao, 1))
         let leX = (kho.width - hinh.rong * ty) / 2
         let leY = (kho.height - hinh.cao * ty) / 2
         var p = Path()
         for (i, net) in hinh.net.enumerated() {
             if let chi, hinh.loaiCua(i) != chi { continue }
+            if locMau && hinh.mauCua(i) != mauLoc { continue }
             let d = net.map { CGPoint(x: leX + $0.x * ty, y: leY + $0.y * ty) }
             guard let dau = d.first else { continue }
             if chi != nil && chi != .chinh {
@@ -552,6 +622,13 @@ struct KhungVeGiup: View {
             ("Flowchart chẵn lẻ", "Flowchart kiểm tra một số là chẵn hay lẻ"),
             ("Git → CI/CD → VPS", "Luồng CI/CD: git push → GitHub Actions chạy test, build Docker → deploy lên VPS"),
         ]
+        case .mach: return [
+            ("Mic INMP441 + ESP32", "Nối mic INMP441 vào ESP32-S3: SCK -> GPIO 4, WS -> GPIO 5, SD -> GPIO 6, VDD -> 3V3, GND -> GND; L/R nối sang GND ngay trên bo mic (bắt buộc)"),
+            ("Ampli MAX98357A + loa", "Ampli MAX98357A với ESP32-S3: DIN -> GPIO 7, BCLK -> GPIO 15, LRC -> GPIO 16, Vin -> 5V, GND -> GND; GAIN và SD để hở; cầu đấu + và - nối hai cực loa, dây - không nối GND"),
+            ("LED + điện trở", "Arduino Uno nháy LED: D13 qua điện trở 220 ohm tới chân dương LED đỏ, chân âm LED về GND"),
+            ("DHT22", "Cảm biến DHT22 với ESP32: VCC -> 3V3, DATA -> GPIO 4, GND -> GND, điện trở kéo lên 10k giữa DATA và VCC"),
+            ("L298N + 2 động cơ", "L298N với ESP32: IN1 -> GPIO 25, IN2 -> GPIO 26, ENA -> GPIO 27, IN3 -> GPIO 32, IN4 -> GPIO 33, ENB -> GPIO 14; OUT1, OUT2 vào động cơ trái; OUT3, OUT4 vào động cơ phải; GND chung với ESP32"),
+        ]
         }
     }
 
@@ -561,6 +638,7 @@ struct KhungVeGiup: View {
         case .sodo: return T("Ví dụ: sơ đồ quang hợp có mũi tên…")
         case .chuHan: return T("Gõ chữ Hán, âm Hán Việt, nghĩa hoặc romaji — 学, học, gaku…")
         case .soDoKhoi: return T("Mô tả sơ đồ — vd: luồng đăng nhập JWT: client → API → DB…")
+        case .mach: return T("Kể từng chân nối vào đâu — vd: SCK -> GPIO 4, VDD -> 3V3, GND -> GND, màu dây nếu có…")
         }
     }
 
@@ -568,6 +646,7 @@ struct KhungVeGiup: View {
         switch may.kieu {
         case .chuHan: return (T("Vẽ chữ Hán nào?"), T("Nét lấy từ dữ liệu nét chuẩn, vẽ đúng thứ tự — AI chỉ tra chữ và cách đọc."))
         case .soDoKhoi: return (T("Sơ đồ gì?"), T("AI dựng khung sơ đồ, app tự căn thẳng hàng và viết chữ bằng nét bút — tẩy, sửa được."))
+        case .mach: return (T("Mạch gì?"), T("AI chép đúng từng chân bạn kể, app vẽ dây thẳng hàng, đúng màu — mọi nét tẩy, sửa được."))
         default: return (T("Bạn muốn vẽ gì?"), T("AI vẽ bằng nét bút — đặt lên trang rồi bạn tẩy, sửa, tô tiếp như nét của mình."))
         }
     }
@@ -627,7 +706,7 @@ struct KhungVeGiup: View {
 
         TextField(goiYO, text: $may.de, axis: .vertical)
             .font(.body)
-            .lineLimit(2...5)
+            .lineLimit(may.kieu == .mach ? 3...10 : 2...5)
             .focused($dangGo)
             .padding(12)
             .background(RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -665,8 +744,9 @@ struct KhungVeGiup: View {
             dangGo = false
             may.ve()
         } label: {
-            Label(may.kieu == .chuHan ? T("Vẽ chữ") : may.kieu == .soDoKhoi ? T("Dựng sơ đồ") : T("Vẽ giúp mình"),
-                  systemImage: may.kieu == .soDoKhoi ? "flowchart.fill" : "paintbrush.pointed.fill")
+            Label(may.kieu == .chuHan ? T("Vẽ chữ") : may.kieu == .soDoKhoi ? T("Dựng sơ đồ")
+                  : may.kieu == .mach ? T("Dựng sơ đồ mạch") : T("Vẽ giúp mình"),
+                  systemImage: may.kieu == .soDoKhoi ? "flowchart.fill" : may.kieu == .mach ? "cpu.fill" : "paintbrush.pointed.fill")
                 .font(.body.weight(.semibold))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 13)
@@ -698,6 +778,7 @@ struct KhungVeGiup: View {
 
         Label(may.kieu == .chuHan ? T("Gõ thẳng chữ thì vẽ ngay; tra từ âm/nghĩa mất 5–20 giây.")
               : may.kieu == .soDoKhoi ? T("Thường mất 15–40 giây. Đóng khung vẫn dựng tiếp.")
+              : may.kieu == .mach ? T("Thường mất 20–60 giây. Đóng khung vẫn dựng tiếp.")
               : may.chiTiet ? T("Thường mất 1–3 phút. Đóng khung vẫn vẽ tiếp.")
                           : T("Thường mất 30–90 giây. Đóng khung vẫn vẽ tiếp."), systemImage: "clock")
             .font(.caption)
@@ -767,7 +848,7 @@ struct KhungVeGiup: View {
             .id(may.kieu == .chuHan ? "\(h.net.count)-\(h.rong)" : "h")   // đổi tuỳ chọn ⇒ vẽ dần lại
             .padding(Spacing.md)
             .frame(maxWidth: .infinity)
-            .frame(maxHeight: may.kieu == .soDoKhoi ? 420 : 300)
+            .frame(maxHeight: may.kieu == .soDoKhoi || may.kieu == .mach ? 460 : 300)
             .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(Color.white))
             .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .strokeBorder(Color.black.opacity(0.08), lineWidth: 1))
@@ -835,16 +916,22 @@ struct KhungVeGiup: View {
             if may.kieu == .chuHan {
                 nutPhu(T("Chữ khác"), "character.cursor.ibeam") { may.xoaKetQua() }
             } else {
-                nutPhu(may.kieu == .soDoKhoi ? T("Dựng lại") : T("Vẽ lại"), "arrow.clockwise") { may.veLai() }
+                nutPhu(may.kieu == .soDoKhoi || may.kieu == .mach ? T("Dựng lại") : T("Vẽ lại"), "arrow.clockwise") { may.veLai() }
                 nutPhu(T("Sửa mô tả"), "text.cursor") { may.xoaKetQua() }
             }
         }
 
-        if let model {
-            Text(model)
-                .font(.caption2)
-                .foregroundStyle(AppColors.textTertiary)
-                .frame(maxWidth: .infinity, alignment: .trailing)
+        // Apple 4.7: chỗ nào AI tạo nội dung thì phải báo cáo được — hình vẽ
+        // cũng vậy. Gửi kèm bản chữ của kết quả để admin đọc ngay.
+        HStack(alignment: .firstTextBaseline) {
+            NutBaoCaoTraLoiAI(nguon: "AI · Vở · Vẽ giúp", cauHoi: "[\(may.kieu.rawValue)] \(may.de)",
+                              traLoi: may.tomTatKetQua(h))
+            Spacer(minLength: 0)
+            if let model {
+                Text(model)
+                    .font(.caption2)
+                    .foregroundStyle(AppColors.textTertiary)
+            }
         }
     }
 
@@ -855,6 +942,8 @@ struct KhungVeGiup: View {
             return "\(may.thongTinHan?.chu ?? may.de) · \(so) \(T("nét")) · \(T("vẽ đúng thứ tự nét"))"
         case .soDoKhoi:
             return "“\(may.tieuDeSoDo ?? may.de)” · \(T("khung, mũi tên và chữ đều là nét bút"))"
+        case .mach:
+            return "“\(may.machVuaDung?.tieuDe ?? may.de)” · \(may.machVuaDung?.day?.count ?? 0) \(T("dây")) · \(T("đúng từng chân, dây có màu"))"
         default:
             return "“\(may.de)” · \(h.net.count) \(T("nét"))"
         }
@@ -907,7 +996,7 @@ private struct ManChoVe: View {
     @Environment(\.accessibilityReduceMotion) private var giamChuyenDong
     /// Mốc để thanh tiến độ tới ~95%. Không phải số đo — chỉ để thanh không
     /// đứng im; tới 95% là dừng, không bao giờ báo "xong" giả.
-    private var moc: Double { kieu == .chuHan ? 12 : kieu == .soDoKhoi ? 30 : 75 }
+    private var moc: Double { kieu == .chuHan ? 12 : kieu == .soDoKhoi ? 30 : kieu == .mach ? 40 : 75 }
 
     var body: some View {
         VStack(spacing: Spacing.md) {
@@ -921,7 +1010,8 @@ private struct ManChoVe: View {
                 .strokeBorder(Color.black.opacity(0.06), lineWidth: 1))
 
             VStack(spacing: 4) {
-                Text(kieu == .chuHan ? T("Đang tra chữ và tải nét chuẩn…") : kieu == .soDoKhoi ? T("Đang dựng sơ đồ…") : T("Đang vẽ…"))
+                Text(kieu == .chuHan ? T("Đang tra chữ và tải nét chuẩn…") : kieu == .soDoKhoi ? T("Đang dựng sơ đồ…")
+                     : kieu == .mach ? T("Đang đọc từng chân, dựng sơ đồ mạch…") : T("Đang vẽ…"))
                     .font(.headline)
                     .foregroundStyle(AppColors.textPrimary)
                 Text("“\(de)”")
@@ -951,6 +1041,7 @@ private struct ManChoVe: View {
                         Spacer()
                         Text(kieu == .chuHan ? T("thường 5–20 giây")
                              : kieu == .soDoKhoi ? (da < 40 ? T("thường 15–40 giây") : T("sơ đồ lớn, chờ thêm chút"))
+                             : kieu == .mach ? (da < 60 ? T("thường 20–60 giây") : T("mạch nhiều dây, chờ thêm chút"))
                              : da < 90 ? T("thường 30–90 giây") : da < 180 ? T("hình khó / chi tiết, chờ thêm chút") : T("sắp xong rồi…"))
                     }
                     .font(.caption)

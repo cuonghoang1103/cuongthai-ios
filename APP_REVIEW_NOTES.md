@@ -219,6 +219,23 @@ The account and personal data are erased and cannot be recovered.
 Contact: cuongthaihnhe176322@gmail.com
 ```
 
+### Khai ở lần nộp KẾ TIẾP (thêm 01/10/2026) — Vở · Vẽ giúp → ⚡ Mạch điện
+
+A6 (2.3): tính năng mới phải khai CỤ THỂ. Dán đoạn này vào mục "WHAT IS NEW"
+của khối trên khi nộp bản có chế độ Mạch điện:
+
+```
+Handwriting notebook (iPad): floating robot assistant -> "Ve giup" (Draw
+for me) -> new mode "Mach dien" (Circuit). The user types a wiring
+description (e.g. "SCK -> GPIO 4, VDD -> 3V3, GND -> GND"). The text is
+sent to an AI model (OpenAI GPT via modelapi.vn) only after the existing
+AI consent dialog; the model returns only the STRUCTURE (boards, pins,
+wires, wire colours). The app draws the diagram itself, as ordinary
+editable PencilKit strokes on the page. Every "Ve giup" result (all modes)
+now has a "Bao cao" (Report) button that sends the result to our
+moderation queue (Guideline 4.7).
+```
+
 ### ⚠️ Vì sao phải dán tay
 
 Khoá API `SW4TM47WHC` **đọc được mọi thứ nhưng KHÔNG ghi được**. Đo thật
