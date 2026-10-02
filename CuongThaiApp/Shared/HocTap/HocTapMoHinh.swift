@@ -27,7 +27,10 @@ struct ViecGonHT: Decodable, Identifiable, Hashable {
     let batDauLuc: String?
     let diem: Double?
     let tuan: Int
+    var gioBatDau: String? = nil
 }
+
+struct NgayHT: Decodable { let ngay: String; let thu: Int; let viec: [ViecGonHT] }
 
 struct MonHT: Decodable, Identifiable, Hashable {
     struct KeTiep: Decodable, Hashable { let id: Int; let tieuDe: String; let hanChot: String; let thoiLuongPhut: Int; let loai: String }
@@ -56,6 +59,7 @@ struct TongQuanHT: Decodable {
     let homNay: [ViecGonHT]
     let quaHan: [ViecGonHT]
     let choCham: [ViecGonHT]
+    let lich: [NgayHT]?
 }
 
 struct BangChungHT: Decodable, Identifiable, Hashable {

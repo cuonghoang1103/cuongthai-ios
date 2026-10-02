@@ -94,6 +94,12 @@ final class CuonVo {
     /// `TrangVo.khoGiayRieng`.
     var khoGiay: String?
 
+    /// VỞ LÀM BÀI (02/10/2026): tắt mọi AI (trợ lý, bút AI, viết lại, vẽ giúp,
+    /// tóm tắt, làm gọn) và không nhận ảnh/PDF — chữ trên trang phải là chữ tự
+    /// viết; có nút 📤 Nộp bài sang Huấn luyện học kỳ. MỘT CHIỀU: bật rồi không
+    /// tắt được (không thì lách được). OPTIONAL để SwiftData tự nâng kho cũ.
+    var voLamBai: Bool?
+
     /// Trang đang đọc dở. Mở lại vở là về đúng chỗ bỏ bút xuống — với cuốn
     /// 200 trang thì quay về trang 1 mỗi lần mở là thứ khiến người ta bỏ app.
     var trangDangDoc: Int = 0

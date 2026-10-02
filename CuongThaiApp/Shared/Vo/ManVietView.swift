@@ -54,6 +54,9 @@ struct ManVietView: View {
     /// Lần lưu "✍️ AI viết lại" gần nhất — còn giữ thì dải Hoàn tác còn hiện.
     @State private var luotVietLai: LuotLuuVietLai?
     @Environment(\.accessibilityReduceMotion) private var giamChuyenDong
+    /// Vở làm bài ⇒ KHÔNG có AI và không nhận ảnh/PDF (chống nhờ AI làm hộ).
+    private var coAI: Bool { cuon.voLamBai != true }
+    @State private var hoiBatVoLamBai = false
 
 
     /// ⚠️ MỘT `.sheet(item:)` cho mọi cửa sổ của màn này. Thêm cửa sổ mới thì
@@ -68,8 +71,11 @@ struct ManVietView: View {
         case lamGon(CGRect?)
         /// ✍️ AI viết lại trang đang mở (xem trước → Hoàn tác / Lưu).
         case vietLai
+        /// 📤 Nộp các trang của Vở làm bài cho một việc trong Huấn luyện học kỳ.
+        case nopBai
         var id: String {
             switch self {
+            case .nopBai: return "nopBai"
             case .vietLai: return "vietLai"
             case .lamGon: return "lamGon"
             case .khoGiay: return "khoGiay"
@@ -193,11 +199,13 @@ struct ManVietView: View {
         // Trợ lý nằm TRÊN cùng, ngoài `khungViet`, để nó không bị khung vẽ
         // nuốt cử chỉ và không bị cuốn/phóng theo trang giấy.
         .overlay {
+            if coAI {
             TroLyTrang(trang: trangHienTai, tenCuon: cuon.ten,
                        xinMo: xinMoTroLy, xinKhoanh: xinKhoanh,
                        vungNgoai: $vungVuaCat,
                        chenHinhVe: { veHinhAI($0) },
                        vietLaiTrang: { moVietLai() })
+            }
         }
         // Nhãn gợi ý của hình AI vừa vẽ: người học TỰ viết vào hình.
         .overlay(alignment: .topLeading) {
@@ -211,15 +219,30 @@ struct ManVietView: View {
         .animation(AppAnimations.quick, value: nhanGoiY)
         // Nút bút AI đứng cạnh bảng công cụ, đúng chỗ người dùng xin.
         .overlay(alignment: .bottomTrailing) {
-            if CaiDatTroLy.chayDuoc && hienTroLy && !dangKhoanhTrang {
+            if coAI && CaiDatTroLy.chayDuoc && hienTroLy && !dangKhoanhTrang {
                 NutButAI(dangBat: dangKhoanhTrang) { batKhoanhTrang() }
                     .padding(.trailing, Spacing.lg)
                     .padding(.bottom, 108)
             }
         }
         .ignoresSafeArea(.keyboard)
+        .alert(T("Biến cuốn này thành Vở làm bài?"), isPresented: $hoiBatVoLamBai) {
+            Button(T("Bật — tắt AI vĩnh viễn")) {
+                cuon.voLamBai = true
+                cuon.suaLuc = Date()
+                try? kho.save()
+                dangKhoanhTrang = false
+                bao(T("🔒 Vở làm bài: không AI, không nhập ảnh/PDF. Viết xong bấm Nộp bài."))
+                Haptics.xong()
+            }
+            Button(T("Huỷ"), role: .cancel) {}
+        } message: {
+            Text(T("Mọi tính năng AI (trợ lý, bút AI, viết lại, tóm tắt, làm gọn) và nhập ảnh/PDF sẽ TẮT cho cuốn này, KHÔNG bật lại được. Bù lại có nút 📤 Nộp bài sang Học kỳ — bài nộp từ vở này được tin là chữ tự viết."))
+        }
         .sheet(item: $cuaSo) { cua in
             switch cua {
+            case .nopBai:
+                NopBaiHocKyView(cuon: cuon, trangs: trangs, luuTruoc: { cauNoiVe.luuNgay() })
             case .doiGiay:      DoiGiayView(trang: trangHienTai, cuon: cuon)
             case .khoGiay:
                 KhoGiayCuonView(cuon: cuon, trang: trangHienTai,
@@ -287,7 +310,10 @@ struct ManVietView: View {
         // Thả PDF hoặc ảnh từ Files / Split View thẳng vào trang đang mở.
         // Trên iPad đây là đường tự nhiên hơn hẳn nút nhập → duyệt thư mục,
         // nhất là khi giáo trình đang mở sẵn ở cửa sổ bên cạnh.
-        .dropDestination(for: URL.self) { ds, _ in nhanTepTha(ds) }
+        .dropDestination(for: URL.self) { ds, _ in
+            guard coAI else { bao(T("Vở làm bài không nhận ảnh/PDF — mọi chữ phải tự viết")); return false }
+            return nhanTepTha(ds)
+        }
         .onAppear {
             // Từ tìm kiếm thì vào thẳng trang đó; không thì về trang đang
             // viết dở, không phải trang 1.
@@ -910,7 +936,15 @@ struct ManVietView: View {
 
             // Khoanh–hỏi phải nằm NGOÀI menu: đây là thao tác giữa giờ học,
             // một chạm rồi khoanh luôn. Bóp Apple Pencil cũng vào đúng đây.
-            if CaiDatTroLy.chayDuoc && hienTroLy {
+            if !coAI {
+                Button { cauNoiVe.luuNgay(); cuaSo = .nopBai } label: {
+                    Label(T("Nộp bài"), systemImage: "paperplane.fill")
+                        .labelStyle(.titleAndIcon)
+                        .foregroundStyle(AppColors.primary)
+                }
+                .accessibilityLabel(T("Nộp các trang cho Huấn luyện học kỳ"))
+            }
+            if coAI && CaiDatTroLy.chayDuoc && hienTroLy {
                 Button {
                     batKhoanhTrang()
                 } label: {
@@ -921,6 +955,18 @@ struct ManVietView: View {
             }
 
             Menu {
+                Section {
+                    if coAI {
+                        Button { hoiBatVoLamBai = true } label: {
+                            Label(T("🔒 Biến thành Vở làm bài (tắt AI)…"), systemImage: "lock.doc")
+                        }
+                    } else {
+                        Button { cauNoiVe.luuNgay(); cuaSo = .nopBai } label: {
+                            Label(T("📤 Nộp bài cho Học kỳ"), systemImage: "paperplane")
+                        }
+                    }
+                }
+                if coAI {
                 Section {
                     Button { moLamGon() } label: {
                         Label(T("Làm gọn chữ"), systemImage: "wand.and.stars")
@@ -933,6 +979,7 @@ struct ManVietView: View {
                     }
                 }
                 .disabled(trangHienTai?.coNet != true)
+                }
 
                 Section {
                     Button { cuaSo = .doiGiay } label: {
@@ -956,6 +1003,7 @@ struct ManVietView: View {
                     }
                 }
 
+                if coAI {
                 Section {
                     Button { cuaSo = .tomTat } label: {
                         Label(T("Tóm tắt cuốn này thành đề cương"), systemImage: "list.bullet.rectangle")
@@ -978,6 +1026,7 @@ struct ManVietView: View {
                         .disabled(!hienTroLy)
                     }
                 }
+                }
 
                 Section {
                     Button {
@@ -990,11 +1039,13 @@ struct ManVietView: View {
                     Button { cuaSo = .xuatPdf(trangs.map(\.id), cuon.ten) } label: {
                         Label(T("Xuất cả cuốn ra PDF"), systemImage: "square.and.arrow.up.on.square")
                     }
+                    if coAI {
                     Button { dangChonPdf = true } label: {
                         Label(T("Nhập PDF để viết đè"), systemImage: "doc.badge.plus")
                     }
                     Button { cuaSo = .quetTaiLieu } label: {
                         Label(T("Quét trang sách bằng camera"), systemImage: "doc.viewfinder")
+                    }
                     }
                     if trangHienTai?.nenPdfTen != nil || trangHienTai?.nenAnhTen != nil {
                         Button(role: .destructive) { goNen() } label: {
@@ -1216,7 +1267,7 @@ struct ManVietView: View {
                    },
                    bopGoiTroLy: {
                        NhatKy.vo.info("vở: dựng BangVe · hienTroLy=\(hienTroLy) bopGoiTroLy=\(bopGoiTroLy)")
-                       return hienTroLy && bopGoiTroLy
+                       return coAI && hienTroLy && bopGoiTroLy
                    }(),
                    khiBopGoiTroLy: { batKhoanhTrang() },
                    cauNoi: cauNoiVe)

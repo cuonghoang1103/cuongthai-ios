@@ -78,6 +78,43 @@ enum XuatPdfVo {
         return url
     }
 
+    /// Một trang ra ẢNH (giấy + nền + nét), chế độ sáng, cạnh dài tối đa `canhMax`.
+    /// Dùng cho 📤 Nộp bài: AI chấm đọc ảnh, không đọc PDF.
+    @MainActor
+    static func anhTrang(_ t: TrangVo, canhMax: CGFloat = 2000) -> UIImage? {
+        let kho = t.khoTrang, khoGoc = t.khoGoc
+        guard kho.width > 0, kho.height > 0 else { return nil }
+        let ty = min(2, canhMax / max(kho.width, kho.height))
+        let fmt = UIGraphicsImageRendererFormat()
+        fmt.scale = ty
+        fmt.opaque = true
+        var ra: UIImage?
+        UITraitCollection(userInterfaceStyle: .light).performAsCurrent {
+            ra = UIGraphicsImageRenderer(size: kho, format: fmt).image { _ in
+                let khung = CGRect(origin: .zero, size: kho)
+                UIColor.white.setFill(); UIRectFill(khung)
+                let giay = GiayNenView(frame: khung)
+                giay.overrideUserInterfaceStyle = .light
+                giay.giay = t.giay
+                giay.khoTrang = kho
+                giay.caoGoc = khoGoc.height
+                giay.tyLe = 1
+                giay.draw(khung)
+                let khungNen = CGRect(origin: .zero, size: khoGoc)
+                if let p = t.nenPdfTen,
+                   let anh = NenTrangView.veTrangPdf(ten: p, trang: t.nenPdfTrang,
+                                                     kho: CGSize(width: khoGoc.width * 2, height: khoGoc.height * 2)) {
+                    anh.draw(in: vuaKhung(anh.size, trong: khungNen))
+                } else if let a = t.nenAnhTen, let anh = UIImage(contentsOfFile: KhoVo.duongDanNen(a).path) {
+                    anh.draw(in: vuaKhung(anh.size, trong: khungNen))
+                }
+                let net = KhoVo.nap(t.id)
+                if !net.bounds.isEmpty { net.image(from: khung, scale: ty).draw(in: khung) }
+            }
+        }
+        return ra
+    }
+
     /// Đặt ảnh vừa khung, giữ tỉ lệ — khớp `scaleAspectFit` của màn viết.
     private static func vuaKhung(_ kt: CGSize, trong k: CGRect) -> CGRect {
         guard kt.width > 0, kt.height > 0 else { return k }
