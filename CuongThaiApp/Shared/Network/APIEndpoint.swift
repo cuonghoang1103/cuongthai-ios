@@ -151,6 +151,14 @@ enum APIEndpoint {
     /// Điểm danh — API do phiên khác dựng (`ClassAttendance`), iOS dùng lại.
     case diemDanhTrongKhoang(tu: String, den: String)
     case chamDiemDanh(id: Int, [String: Any])
+    // Huấn luyện học kỳ (/hoc-tap, 02/10/2026) — AI giao việc, chấm bằng chứng
+    case hocTapTongQuan
+    case hocTapMon(id: Int)
+    case hocTapViec(id: Int)
+    case hocTapBatDau(id: Int)
+    case hocTapNop(id: Int, [String: Any])
+    case hocTapChamLai(bangChungId: Int)
+    case hocTapNhanXet
     // Kỳ học + lịch thi
     case dsHocKy
     case themHocKy([String: Any])
@@ -717,6 +725,13 @@ enum APIEndpoint {
         case .nhapLichHoc: return "/api/v1/class-schedule/bulk"
         case .diemDanhTrongKhoang(let tu, let den): return "/api/v1/class-schedule/attendance?tu=\(tu)&den=\(den)"
         case .chamDiemDanh(let id, _): return "/api/v1/class-schedule/\(id)/attendance"
+        case .hocTapTongQuan: return "/api/v1/hoc-tap/tong-quan"
+        case .hocTapMon(let id): return "/api/v1/hoc-tap/mon/\(id)"
+        case .hocTapViec(let id): return "/api/v1/hoc-tap/viec/\(id)"
+        case .hocTapBatDau(let id): return "/api/v1/hoc-tap/viec/\(id)/bat-dau"
+        case .hocTapNop(let id, _): return "/api/v1/hoc-tap/viec/\(id)/nop"
+        case .hocTapChamLai(let id): return "/api/v1/hoc-tap/bang-chung/\(id)/cham-lai"
+        case .hocTapNhanXet: return "/api/v1/hoc-tap/nhan-xet"
         case .dsHocKy, .themHocKy: return "/api/v1/hoc-ky"
         case .suaHocKy(let id, _): return "/api/v1/hoc-ky/\(id)"
         case .xoaHocKy(let id): return "/api/v1/hoc-ky/\(id)"
@@ -1177,6 +1192,8 @@ enum APIEndpoint {
             return "POST"
         case .themViec, .themBuoiHoc, .nhapLichHoc, .ketThucNgay, .themHocKy, .themBuoiThi:
             return "POST"
+        case .hocTapBatDau, .hocTapNop, .hocTapChamLai, .hocTapNhanXet:
+            return "POST"
         case .suaViec, .suaBuoiHoc, .suaHocKy, .suaBuoiThi:
             return "PATCH"
         case .xoaViec, .xoaBuoiHoc, .xoaHocKy, .xoaBuoiThi:
@@ -1357,6 +1374,7 @@ enum APIEndpoint {
         case .nhapLichHoc(let items, let thayThe): return ["items": items, "thayThe": thayThe]
         case .chamDiemDanh(_, let d): return d
         case .themHocKy(let d): return d
+        case .hocTapNop(_, let d): return d
         case .suaHocKy(_, let d): return d
         case .themBuoiThi(let d): return d
         case .suaBuoiThi(_, let d): return d

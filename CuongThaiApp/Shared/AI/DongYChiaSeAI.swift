@@ -114,6 +114,10 @@ enum DongYChiaSeAI {
         if (path == "/api/v1/vo/han/tra" || path == "/api/v1/vo/so-do/viec") && method == "POST" { return true }
         // Vở · Vẽ giúp → ⚡ Mạch điện: mô tả nối dây đi tới model qua modelapi.vn.
         if path == "/api/v1/vo/mach/viec" && method == "POST" { return true }
+        // Huấn luyện học kỳ: bằng chứng (chữ, ảnh, link) và số liệu học tập đi
+        // tới model chấm/nhận xét (gpt-6-sol qua modelapi.vn).
+        if method == "POST" && path.hasPrefix("/api/v1/hoc-tap/") &&
+            (path.hasSuffix("/nop") || path.hasSuffix("/cham-lai") || path.hasSuffix("/nhan-xet") || path.hasSuffix("/ke-hoach")) { return true }
         guard method != "GET" else { return false }
         // Phỏng vấn thử: câu trả lời được AI chấm (trừ nút báo lỗi câu hỏi).
         if path.hasPrefix("/api/v1/interview/") && !path.hasSuffix("/flag") { return true }

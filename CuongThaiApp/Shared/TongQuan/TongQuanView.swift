@@ -671,6 +671,10 @@ struct TongQuanView: View {
                 .foregroundColor(AppColors.textPrimary)
             LazyVGrid(columns: [GridItem(.flexible(), spacing: Spacing.sm),
                                 GridItem(.flexible(), spacing: Spacing.sm)], spacing: Spacing.sm) {
+                // Huấn luyện học kỳ — AI giao việc, chấm bằng chứng, báo tỷ lệ trượt (02/10/2026).
+                NavigationLink { HuanLuyenHocKyView() } label: {
+                    theNhanh(T("Học kỳ"), T("Việc AI giao, điểm, tỷ lệ trượt"), "target", AppColors.error)
+                }
                 NavigationLink { LichTuanView(vm: vm) } label: {
                     theNhanh(T("Thời khoá biểu"), T("Lịch tuần"), "calendar", AppColors.primary)
                 }
