@@ -303,8 +303,8 @@ struct CTWIssueView: View {
                 Text(CTW.thoiDiem(t.updatedAt)).font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
             }
         }
-        .padding(.horizontal, 12)
-        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(AppColors.backgroundCard))
+        .padding(.horizontal, 14)
+        .ctwThe(14)
     }
 
     private func hangTruong<V: View>(_ ten: String, @ViewBuilder _ gt: () -> V) -> some View {
@@ -449,13 +449,9 @@ struct CTWIssueView: View {
 
     // MARK: Mô tả, thẻ con, liên kết
 
-    private func tieuDeKhoi(_ s: String) -> some View {
-        Text(s).font(.system(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
-    }
-
     private func moTa(_ t: CTWIssueDetail) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            tieuDeKhoi("Description")
+        VStack(alignment: .leading, spacing: 8) {
+            CTWSectionHeader("text.alignleft", "Description")
             let chu = t.descriptionJson?.chuTron ?? ""
             Text(chu.isEmpty ? "No description." : chu)
                 .font(.system(size: 14))
@@ -463,18 +459,15 @@ struct CTWIssueView: View {
                 .textSelection(.enabled)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(12)
-                .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(AppColors.backgroundCard))
+                .padding(14)
+                .ctwThe(12)
         }
     }
 
     private func theCon(_ con: [CTWIssueRef], _ cfg: CTWProjectConfig) -> some View {
         let xong = con.filter { $0.statusId.flatMap(cfg.trangThai)?.category == "DONE" }.count
-        return VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                tieuDeKhoi("Sub-tasks")
-                Text("\(xong)/\(con.count) done").font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
-            }
+        return VStack(alignment: .leading, spacing: 8) {
+            CTWSectionHeader("checklist", "Sub-tasks", count: "\(xong)/\(con.count)")
             VStack(spacing: 0) {
                 ForEach(con) { c in
                     NavigationLink(value: CTWRoute.the(pid: vm.pid, so: c.number)) {
@@ -495,15 +488,15 @@ struct CTWIssueView: View {
                     if c.id != con.last?.id { Divider() }
                 }
             }
-            .padding(.horizontal, 12)
-            .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(AppColors.backgroundCard))
+            .padding(.horizontal, 14)
+            .ctwThe(12)
         }
     }
 
     private func lienKet(_ lk: [CTWIssueLink], _ cfg: CTWProjectConfig) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            tieuDeKhoi("Linked issues")
-            VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 8) {
+            CTWSectionHeader("link", "Linked issues")
+            VStack(alignment: .leading, spacing: 10) {
                 ForEach(lk) { l in
                     HStack(spacing: 8) {
                         Text(tenLienKet(l)).font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
@@ -516,8 +509,8 @@ struct CTWIssueView: View {
                     }
                 }
             }
-            .padding(12)
-            .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(AppColors.backgroundCard))
+            .padding(14)
+            .ctwThe(12)
         }
     }
 
@@ -540,11 +533,8 @@ struct CTWIssueView: View {
             guard let a = c.author?.id else { return true }
             return !kiemDuyet.blockedUserIds.contains(a)
         }
-        return VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                tieuDeKhoi("Comments")
-                Text("\(ds.count)").font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
-            }
+        return VStack(alignment: .leading, spacing: 10) {
+            CTWSectionHeader("bubble.left.and.bubble.right", "Comments", count: "\(ds.count)")
             if ds.isEmpty {
                 Text("No comments yet.").font(.system(size: 13)).foregroundColor(AppColors.textTertiary)
             }
@@ -555,13 +545,19 @@ struct CTWIssueView: View {
                     TextField("Add a comment…", text: $binhLuanNhap, axis: .vertical)
                         .lineLimit(1...6)
                         .textFieldStyle(.roundedBorder)
+                    let trong = binhLuanNhap.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                     Button {
                         let s = binhLuanNhap
                         Task { if await vm.guiBinhLuan(s) { binhLuanNhap = "" } }
                     } label: {
-                        Image(systemName: "paperplane.fill").frame(width: 36, height: 36)
+                        Image(systemName: "arrow.up")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.white)
+                            .frame(width: 36, height: 36)
+                            .background(Circle().fill(trong ? AppColors.textTertiary : AppColors.primary))
                     }
-                    .disabled(binhLuanNhap.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || vm.dangGui)
+                    .buttonStyle(.plain)
+                    .disabled(trong || vm.dangGui)
                     .accessibilityLabel("Send comment")
                 }
                 .padding(.top, 4)
@@ -596,8 +592,8 @@ struct CTWIssueView: View {
             }
             Spacer(minLength: 0)
         }
-        .padding(10)
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(AppColors.backgroundCard))
+        .padding(12)
+        .ctwThe(12)
         .contextMenu {
             if c.author?.id != appState.currentUser?.id {
                 Button(role: .destructive) { baoCao = c } label: {

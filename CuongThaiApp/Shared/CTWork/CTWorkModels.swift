@@ -602,7 +602,13 @@ struct CTWAvatar: View {
                         .font(.system(size: size * 0.4, weight: .semibold))
                         .foregroundColor(AppColors.onPrimary)
                         .frame(width: size, height: size)
-                        .background(Circle().fill(AppColors.primary.opacity(0.85)))
+                        .background(
+                            Circle().fill(
+                                LinearGradient(colors: [AppColors.primaryLight, AppColors.primary],
+                                               startPoint: .topLeading, endPoint: .bottomTrailing)
+                            )
+                        )
+                        .overlay(Circle().strokeBorder(Color.white.opacity(0.18), lineWidth: 0.5))
                 }
             } else {
                 Image(systemName: "person.crop.circle.badge.questionmark")
@@ -644,11 +650,50 @@ struct CTWPriorityIcon: View {
 struct CTWStatusChip: View {
     let status: CTWStatus?
     var body: some View {
-        Text((status?.name ?? "—").uppercased())
-            .font(.system(size: 11, weight: .bold))
-            .foregroundColor(CTW.mauNhom(status?.category))
-            .padding(.horizontal, 8).padding(.vertical, 3)
-            .background(Capsule().fill(CTW.mauNhom(status?.category).opacity(0.14)))
+        let mau = CTW.mauNhom(status?.category)
+        HStack(spacing: 5) {
+            Circle().fill(mau).frame(width: 6, height: 6)
+            Text((status?.name ?? "—").uppercased())
+                .font(.system(size: 11, weight: .bold))
+                .foregroundColor(mau)
+                .lineLimit(1)
+        }
+        .padding(.horizontal, 9).padding(.vertical, 4)
+        .background(Capsule().fill(mau.opacity(0.14)))
+        .overlay(Capsule().strokeBorder(mau.opacity(0.22), lineWidth: 0.5))
+    }
+}
+
+/// Tiêu đề một khối trong màn chi tiết — biểu tượng + chữ + đếm tuỳ chọn.
+/// Một chỗ để các khối (Description, Sub-tasks, Comments…) đồng nhất.
+struct CTWSectionHeader: View {
+    let icon: String
+    let title: String
+    var count: String?
+    var trailing: AnyView?
+
+    init(_ icon: String, _ title: String, count: String? = nil, trailing: AnyView? = nil) {
+        self.icon = icon; self.title = title; self.count = count; self.trailing = trailing
+    }
+
+    var body: some View {
+        HStack(spacing: 7) {
+            Image(systemName: icon)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(AppColors.primary)
+            Text(title)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundColor(AppColors.textPrimary)
+            if let count {
+                Text(count)
+                    .font(.system(size: 12, weight: .semibold).monospacedDigit())
+                    .foregroundColor(AppColors.textTertiary)
+                    .padding(.horizontal, 6).padding(.vertical, 1)
+                    .background(Capsule().fill(AppColors.backgroundTertiary))
+            }
+            Spacer(minLength: 0)
+            if let trailing { trailing }
+        }
     }
 }
 
@@ -675,12 +720,29 @@ struct CTWErrorBanner: View {
                 .accessibilityLabel("Dismiss")
             }
         }
-        .padding(10)
+        .padding(12)
         .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(AppColors.error.opacity(0.10)))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(AppColors.error.opacity(0.22), lineWidth: 0.5))
     }
 }
 
 extension View {
+    /// Mặt thẻ chuẩn của CT Work: nền thẻ, bo góc liền mạch, viền mảnh và một
+    /// lớp bóng rất nhẹ — để mọi thẻ trong module trông cùng một hệ, hợp HIG.
+    /// Bóng đổ gắn THẲNG vào hình nền (không vào nội dung) nên chữ không nhoè.
+    func ctwThe(_ radius: CGFloat = 14) -> some View {
+        self
+            .background(
+                RoundedRectangle(cornerRadius: radius, style: .continuous)
+                    .fill(AppColors.backgroundCard)
+                    .shadow(color: Color.black.opacity(0.05), radius: 6, x: 0, y: 2)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: radius, style: .continuous)
+                    .strokeBorder(AppColors.border, lineWidth: 0.5)
+            )
+    }
+
     /// `insetGrouped` chỉ có trên iOS — macOS dùng `inset`.
     @ViewBuilder
     func ctwKieuDanhSach() -> some View {

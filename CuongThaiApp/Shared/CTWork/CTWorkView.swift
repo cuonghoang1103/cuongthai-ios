@@ -185,10 +185,13 @@ struct CTWMyWorkView: View {
             }
             if vm.duLieu != nil && vm.nhom.isEmpty {
                 VStack(spacing: Spacing.sm) {
-                    Image(systemName: "checkmark.circle")
-                        .font(.system(size: 40)).foregroundColor(AppColors.success)
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 34, weight: .semibold)).foregroundColor(AppColors.success)
+                        .frame(width: 76, height: 76)
+                        .background(Circle().fill(AppColors.success.opacity(0.12)))
+                        .padding(.bottom, 4)
                     Text("Nothing assigned to you")
-                        .font(.system(size: 16, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                        .font(.system(size: 17, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                     Text("Open issues assigned to you in any project show up here.")
                         .font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
                         .multilineTextAlignment(.center)
@@ -222,56 +225,74 @@ struct CTWMyWorkView: View {
 
     private func demSo(_ c: CTWMyWorkCounts) -> some View {
         HStack(spacing: Spacing.sm) {
-            o("Overdue", c.overdue ?? 0, AppColors.error)
-            o("Today", c.dueToday ?? 0, AppColors.warning)
-            o("Soon", c.dueSoon ?? 0, AppColors.accent)
-            o("In progress", c.inProgress ?? 0, Color(hex: 0x2563EB))
+            o("Overdue", "exclamationmark.circle.fill", c.overdue ?? 0, AppColors.error)
+            o("Today", "sun.max.fill", c.dueToday ?? 0, AppColors.warning)
+            o("Soon", "clock.fill", c.dueSoon ?? 0, AppColors.accent)
+            o("In progress", "arrow.triangle.2.circlepath", c.inProgress ?? 0, Color(hex: 0x2563EB))
         }
     }
 
-    private func o(_ ten: String, _ so: Int, _ mau: Color) -> some View {
-        VStack(spacing: 2) {
-            Text("\(so)").font(.system(size: 20, weight: .bold).monospacedDigit())
-                .foregroundColor(so > 0 ? mau : AppColors.textTertiary)
-            Text(ten).font(.system(size: 11)).foregroundColor(AppColors.textSecondary)
-                .lineLimit(1).minimumScaleFactor(0.8)
+    private func o(_ ten: String, _ icon: String, _ so: Int, _ mau: Color) -> some View {
+        let dang = so > 0
+        return VStack(spacing: 5) {
+            Image(systemName: icon)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(dang ? mau : AppColors.textTertiary)
+            Text("\(so)").font(.system(size: 22, weight: .bold).monospacedDigit())
+                .foregroundColor(dang ? mau : AppColors.textTertiary)
+            Text(ten).font(.system(size: 10.5, weight: .medium)).foregroundColor(AppColors.textSecondary)
+                .lineLimit(1).minimumScaleFactor(0.75)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 10)
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(AppColors.backgroundCard))
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(dang ? mau.opacity(0.10) : AppColors.backgroundCard)
+                .shadow(color: Color.black.opacity(0.05), radius: 6, x: 0, y: 2)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(dang ? mau.opacity(0.25) : AppColors.border, lineWidth: 0.5)
+        )
         .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(ten): \(so)")
     }
 
     @ViewBuilder
     private func hang(_ item: CTWMyWorkItem) -> some View {
-        let noiDung = HStack(alignment: .top, spacing: 10) {
+        let noiDung = HStack(alignment: .top, spacing: 11) {
             Image(systemName: CTW.bieuTuongLoai(key: item.type?.key))
                 .font(.system(size: 10, weight: .bold)).foregroundColor(.white)
-                .frame(width: 18, height: 18)
-                .background(RoundedRectangle(cornerRadius: 4).fill(CTW.mau(item.type?.color, macDinh: Color(hex: 0x2563EB))))
-                .padding(.top, 2)
-            VStack(alignment: .leading, spacing: 4) {
+                .frame(width: 20, height: 20)
+                .background(RoundedRectangle(cornerRadius: 5, style: .continuous)
+                    .fill(CTW.mau(item.type?.color, macDinh: Color(hex: 0x2563EB))))
+                .padding(.top, 1)
+            VStack(alignment: .leading, spacing: 6) {
                 Text(item.title)
-                    .font(.system(size: 15)).foregroundColor(AppColors.textPrimary)
+                    .font(.system(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary)
                     .lineLimit(2)
                 HStack(spacing: 8) {
-                    Text(item.key).font(.system(size: 12, weight: .medium).monospaced())
+                    Text(item.key).font(.system(size: 12, weight: .semibold).monospaced())
                         .foregroundColor(AppColors.textSecondary)
                     CTWPriorityIcon(priority: item.priority)
                     if let s = item.status?.name {
-                        Text(s).font(.system(size: 11, weight: .semibold))
-                            .foregroundColor(CTW.mauNhom(item.status?.category))
+                        HStack(spacing: 4) {
+                            Circle().fill(CTW.mauNhom(item.status?.category)).frame(width: 5, height: 5)
+                            Text(s).font(.system(size: 11, weight: .semibold))
+                                .foregroundColor(CTW.mauNhom(item.status?.category))
+                        }
                     }
                     Spacer(minLength: 0)
                     if let d = CTW.ngayNgan(item.dueDate) {
+                        let tre = item.bucket == "overdue"
                         Label(d, systemImage: "calendar")
-                            .font(.system(size: 11))
-                            .foregroundColor(item.bucket == "overdue" ? AppColors.error : AppColors.textSecondary)
+                            .font(.system(size: 11, weight: tre ? .semibold : .regular))
+                            .foregroundColor(tre ? AppColors.error : AppColors.textSecondary)
                     }
                 }
             }
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, 4)
 
         if let slug = item.workspace?.slug, let ma = item.project?.key {
             NavigationLink(value: CTWRoute.theTheoMa(slug: slug, ma: ma, so: item.number)) { noiDung }
@@ -311,10 +332,13 @@ struct CTWWorkspacesView: View {
             }
             if let ds = vm.ds, ds.isEmpty {
                 VStack(spacing: Spacing.sm) {
-                    Image(systemName: "rectangle.3.group")
-                        .font(.system(size: 40)).foregroundColor(AppColors.textTertiary)
+                    Image(systemName: "rectangle.3.group.fill")
+                        .font(.system(size: 32, weight: .semibold)).foregroundColor(AppColors.primary)
+                        .frame(width: 76, height: 76)
+                        .background(Circle().fill(AppColors.primary.opacity(0.12)))
+                        .padding(.bottom, 4)
                     Text("No workspaces yet")
-                        .font(.system(size: 16, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                        .font(.system(size: 17, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                     Text("When a teammate invites you to a CT Work workspace, it appears here.")
                         .font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
                         .multilineTextAlignment(.center)
@@ -326,18 +350,24 @@ struct CTWWorkspacesView: View {
             }
             ForEach(vm.ds ?? []) { ws in
                 NavigationLink(value: CTWRoute.khongGian(slug: ws.slug, ten: ws.name)) {
-                    HStack(spacing: 12) {
+                    HStack(spacing: 13) {
                         Text(String(ws.name.prefix(1)).uppercased())
-                            .font(.system(size: 16, weight: .bold)).foregroundColor(.white)
-                            .frame(width: 36, height: 36)
-                            .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(AppColors.primary))
-                        VStack(alignment: .leading, spacing: 2) {
+                            .font(.system(size: 17, weight: .bold)).foregroundColor(.white)
+                            .frame(width: 40, height: 40)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .fill(LinearGradient(colors: [AppColors.primaryLight, AppColors.primary],
+                                                         startPoint: .topLeading, endPoint: .bottomTrailing))
+                            )
+                            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .strokeBorder(Color.white.opacity(0.15), lineWidth: 0.5))
+                        VStack(alignment: .leading, spacing: 3) {
                             Text(ws.name).font(.system(size: 16, weight: .semibold))
                                 .foregroundColor(AppColors.textPrimary)
                             Text(moTa(ws)).font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
                         }
                     }
-                    .padding(.vertical, 2)
+                    .padding(.vertical, 4)
                 }
             }
         }
@@ -386,15 +416,15 @@ struct CTWWorkspaceView: View {
                             Text(p.key)
                                 .font(.system(size: 11, weight: .bold).monospaced())
                                 .foregroundColor(AppColors.primary)
-                                .padding(.horizontal, 6).padding(.vertical, 4)
-                                .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.primary.opacity(0.12)))
-                            VStack(alignment: .leading, spacing: 2) {
+                                .padding(.horizontal, 7).padding(.vertical, 5)
+                                .background(RoundedRectangle(cornerRadius: 7, style: .continuous).fill(AppColors.primary.opacity(0.12)))
+                            VStack(alignment: .leading, spacing: 3) {
                                 Text(p.name).font(.system(size: 15, weight: .semibold))
                                     .foregroundColor(AppColors.textPrimary)
                                 Text(moTa(p)).font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
                             }
                         }
-                        .padding(.vertical, 2)
+                        .padding(.vertical, 4)
                     }
                 }
             }

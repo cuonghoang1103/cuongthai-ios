@@ -152,22 +152,28 @@ struct CTWBoardView: View {
     }
 
     private func dauBang(_ b: CTWBoardData) -> some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 7) {
             if let s = b.sprint {
-                Image(systemName: "flag.fill").foregroundColor(AppColors.primary)
-                Text(s.name).font(.system(size: 13, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                HStack(spacing: 6) {
+                    Image(systemName: "flag.fill").font(.system(size: 11)).foregroundColor(AppColors.primary)
+                    Text(s.name).font(.system(size: 13, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                        .lineLimit(1)
+                }
+                .padding(.horizontal, 10).padding(.vertical, 5)
+                .background(Capsule().fill(AppColors.primary.opacity(0.12)))
                 if let e = CTW.ngayNgan(s.endAt) {
-                    Text("· ends \(e)").font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                    Label("ends \(e)", systemImage: "calendar")
+                        .font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
                 }
             } else if b.fallback == true {
-                Image(systemName: "info.circle").foregroundColor(AppColors.textTertiary)
+                Image(systemName: "info.circle").font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
                 Text("No active sprint — showing all open issues")
                     .font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
             }
             Spacer(minLength: 0)
         }
         .padding(.horizontal, Spacing.md)
-        .padding(.vertical, 6)
+        .padding(.vertical, 8)
     }
 
     private func menuSprint(_ cfg: CTWProjectConfig) -> some View {
@@ -226,19 +232,23 @@ struct CTWBoardView: View {
     private func cot(_ c: CTWBoardColumn, rongCot: CGFloat, cao: CGFloat) -> some View {
         let ds = vm.the(trongCot: c)
         let vuot = c.wipLimit.map { ds.count > $0 } ?? false
+        let mauCot = CTW.mauNhom(c.category)
         return VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 6) {
+            HStack(spacing: 7) {
+                Circle().fill(mauCot).frame(width: 7, height: 7)
                 Text(c.name.uppercased())
                     .font(.system(size: 12, weight: .bold))
                     .foregroundColor(AppColors.textSecondary)
                     .lineLimit(1)
-                Text(c.wipLimit.map { "\(ds.count)/\($0)" } ?? "\(ds.count)")
-                    .font(.system(size: 12, weight: .semibold).monospacedDigit())
-                    .foregroundColor(vuot ? AppColors.error : AppColors.textTertiary)
                 Spacer(minLength: 0)
+                Text(c.wipLimit.map { "\(ds.count)/\($0)" } ?? "\(ds.count)")
+                    .font(.system(size: 11, weight: .bold).monospacedDigit())
+                    .foregroundColor(vuot ? .white : AppColors.textSecondary)
+                    .padding(.horizontal, 7).padding(.vertical, 2)
+                    .background(Capsule().fill(vuot ? AppColors.error : AppColors.backgroundCard))
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 10)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 11)
 
             ScrollView(.vertical, showsIndicators: false) {
                 LazyVStack(spacing: 8) {
@@ -319,7 +329,7 @@ struct CTWCardView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(the.title)
-                .font(.system(size: 14))
+                .font(.system(size: 14, weight: .medium))
                 .foregroundColor(AppColors.textPrimary)
                 .multilineTextAlignment(.leading)
                 .lineLimit(4)
@@ -365,12 +375,8 @@ struct CTWCardView: View {
                 }
             }
         }
-        .padding(10)
-        .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(AppColors.backgroundCard)
-                .shadow(color: .black.opacity(0.06), radius: 1, y: 1)
-        )
+        .padding(11)
+        .ctwThe(12)
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
     }
