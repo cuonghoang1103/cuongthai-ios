@@ -15,7 +15,7 @@ import SwiftUI
 
 /// Nhóm trên thanh bên iPad / trang dự án iPhone. Thứ tự case = thứ tự hiện.
 enum CTWNhomMoDun: Int, CaseIterable, Identifiable {
-    case duAn, giaoTiep, keHoach, taiLieu, quanTri
+    case duAn, giaoTiep, keHoach, taiLieu, chatLuong, quanLy, quanTri
     var id: Int { rawValue }
     var ten: String {
         switch self {
@@ -23,6 +23,8 @@ enum CTWNhomMoDun: Int, CaseIterable, Identifiable {
         case .giaoTiep: return "Communication"
         case .keHoach: return "Planning"
         case .taiLieu: return "Docs & knowledge"
+        case .chatLuong: return "Requirements & testing"
+        case .quanLy: return "Governance"
         case .quanTri: return "Admin"
         }
     }

@@ -21,6 +21,7 @@ enum XemThuCTW {
     /// Mô-đun mở sẵn trong trang dự án (iPhone) cho màn đang chụp.
     static var moDunMoSan: String? {
         if let m = moDunGiaoTiep { return m }
+        if let m = moDunXem { return m.id }
         switch man?.lowercased() {
         case "board": return "board"
         case "backlog", "list": return "backlog"
@@ -54,6 +55,8 @@ enum XemThuCTW {
         Task { await app.fetchProfile() }
         // Màn của mảng Giao tiếp (chat/họp/hộp thư) — XemThuCTW+GiaoTiep.swift.
         if batGiaoTiep(app) { return }
+        // `mod:<id>[/<màn con>]` — mở thẳng một mô-đun bất kỳ (XemThuCTW+MoDun.swift).
+        if let m = moDunXem { app.muc = .moDun(m.id); UserDefaults.standard.set(man, forKey: "ctw.xemThu.man"); return }
         switch man {
         case "duan": app.muc = .duAn
         // iPhone: khung gộp mô-đun `.trangDuAn` vào tab Projects (trang dự án tự mở
@@ -142,6 +145,8 @@ enum DuLieuGia {
     // swiftlint:disable:next cyclomatic_complexity
     static func route(_ m: String, _ p: String, _ b: [String: Any]) -> Any {
         if let r = DuLieuGiaGiaoTiep.route(m, p, b) { return r }
+        // Dữ liệu mẫu của các mô-đun đặt ở tệp riêng (XemThuCTW+MoDun.swift) — hỏi trước.
+        if let r = DuLieuGiaMoDun.route(m, p, b) { return r }
         switch (m, p) {
         case ("GET", "/profile"):
             return ["id": 1, "username": "alex", "email": "alex@northwind.example", "fullName": "Alex Morgan", "displayName": NSNull(), "avatarUrl": NSNull()]

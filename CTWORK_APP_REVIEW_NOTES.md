@@ -21,7 +21,7 @@ tiền nong… của app chính ⇒ không phải bản sao app CuongThai.
 
 | Guideline | Làm gì | Ở đâu |
 |---|---|---|
-| 3.1.1 / 3.1.3(b) | Không giá, không nút mua/nâng cấp, không link ra trang mua. Không có màn tài chính/CRM. Header `X-Client-Platform: ios` để máy chủ bỏ lời mời mua trong câu lỗi | toàn app (đã grep chuỗi "Pro", "upgrade", "price", "buy", "payment") |
+| 3.1.1 / 3.1.3(b) | Không giá, không nút mua/nâng cấp, không link ra trang mua. Tài chính dự án CHỈ XEM (ngân sách, chi phí, mốc chỉ hiện trạng thái) — không nút/link thanh toán; không CRM. Cổng khách KHÔNG hiện mục thanh toán. Header `X-Client-Platform: ios` để máy chủ bỏ lời mời mua trong câu lỗi | toàn app (đã grep chuỗi "Pro", "upgrade", "price", "buy", "payment") |
 | 4.3 | Mục đích riêng: quản lý công việc nhóm; bundle, biểu tượng, tên riêng | `project.yml` target CTWorkApp |
 | 2.1 | Mọi màn chạy thật, không placeholder; mô-đun chưa làm KHÔNG hiện mục (bảng đăng ký mô-đun) | `Core/CTWDangKyMoDun.swift` |
 | 4.8 | Sign in with Apple (cạnh tài khoản cuongthai.com) | `Modules/Account/DangNhapCTW.swift` + entitlement |
@@ -99,11 +99,22 @@ Sign in with Apple is also offered.
   action items -> "Create issues", transcript, Add to Calendar.
 - Inbox: CT Work notifications (assignments, mentions, replies, approvals,
   alerts). Reply, Approve / Reject and Mark as read right from the inbox.
-- Projects > Docs: read and search project pages.
+- Projects > Docs: read, search, create and edit pages (formatting bar,
+  photos from the camera or Photos, issue links), version history, comments.
+  The editor never overwrites a teammate's newer edit: it shows a conflict
+  screen instead.
+- Projects > Approvals: approve or reject (a comment is required to reject).
+- Projects > Tests: open a test cycle, run a test step by step
+  (Pass / Fail / Blocked), attach a photo as evidence, create a bug from a
+  failed step.
+- Projects > Change requests, RAID, Reviews, Requirements, Service desk,
+  Team, AI agents, Diagrams (pinch to zoom), Finance (read-only).
 
 === USER-GENERATED CONTENT (Guideline 1.2) ===
 - Community rules must be accepted on first launch.
 - Comments: touch and hold > Report comment / Block user.
+- Page comments, approval comments, ticket replies, class stream comments,
+  intake messages and form responses: touch and hold > Report / Block.
 - Chat messages (channels and threads): touch and hold > Report message /
   Block user.
 - Meeting notes: Meetings > open a meeting > ... > Report notes / Block.
@@ -202,11 +213,35 @@ hours after the request (the user can cancel within that window).
   cần đối chiếu hình dạng từng route khi làm (một số trả CSV). Workload/Portfolio cấp không gian:
   kiểm `GET /workspaces/:wsId/...` có cho tài khoản thường không.
 
-**C — Docs/Spec/Phê duyệt/…**
-- Sửa Docs trên app: route `PATCH /pages/:num` nhận `contentJson` TipTap + đồng bộ cộng tác
-  (`collab.service.ts`) — app cần chiến lược khoá/ghi đè (version) rõ ràng.
-- Ảnh trong tài liệu là đường tương đối CẦN token (`/api/v1/work/projects/:pid/images/:id`) —
-  app đã gắn `Authorization`; nếu chuyển sang url ký sẵn thì tốt hơn cho bộ đệm ảnh.
+**C — Tài liệu & quản trị dự án (đã làm 18/10/2026; dưới đây là thứ backend còn thiếu)**
+- *Docs — sửa cùng lúc:* PATCH `/pages/:num` khi trang "đang có collab" BỎ QUA `version` và trộn trên bản CSDL
+  (`pages.service.ts` 419–470) ⇒ app tự làm an toàn: `collab/flush` → GET lại → chỉ ghi khi `version` khớp (hoặc
+  markdown máy chủ không đổi), lệch thì KHÔNG ghi, đưa lựa chọn (lưu bản mình thành trang con / chép / tải bản mới).
+  Còn hở một khe nhỏ giữa flush và PATCH. Cần: PATCH tôn trọng `version` cả khi đi qua collab (409 nếu lệch), hoặc
+  `baseVersion` để máy chủ trộn 3 chiều đúng gốc của client.
+- *Docs — đổi tên khi phòng collab đang mở:* `materializePage` lấy lại `metadata.title` của Y.Doc ⇒ tiêu đề REST có
+  thể bị ghi ngược (web cũng dính). Cần cập nhật `metadata.title` của phòng khi PATCH `title`.
+- *Docs — nội dung markdown không giữ được:* trang có @nhắc tên / chú thích gắn đoạn / ô bảng gộp ⇒ app KHÔNG cho
+  sửa (sửa sẽ làm mất). Cần endpoint sửa theo khối (`PATCH /pages/:num/blocks`) hoặc nhận TipTap kèm `baseVersion`.
+- *Báo cáo nội dung (1.2):* chỉ bình luận THẺ có route báo cáo. Thiếu cho: bình luận trang Docs, bước phê duyệt,
+  mô tả CR/RAID, ghi chú review, bình luận sơ đồ, tin Intake, câu trả lời Form, bảng tin + bình luận lớp học ⇒ app
+  đang đi đường chung `/academy/advisor/report-answer`. Đề xuất MỘT route `POST /work/report {kind,id,reason}` (ghi
+  audit + báo admin + ẩn phía máy chủ cho người báo cáo). Khách cổng chưa gọi được route báo cáo bình luận thẻ
+  (thêm vào danh sách cho phép `permissions.ts` ~467–493).
+- *Bình luận còn thiếu:* CR, RAID, review, use case/rule/screen/feature (hiện chỉ thảo luận qua thẻ liên kết).
+- *Phê duyệt:* không có "chờ tôi" theo dự án (app lọc `/me/approvals`). `APIClient` bỏ `data` của lỗi ⇒ 409
+  `WORK_GATE_OPEN_ISSUES` chưa hiện được danh sách thẻ mở. Mã khoá sửa lúc `WORK_EDIT_LOCKED` lúc `EDIT_LOCKED`.
+- *Kiểm thử:* `PATCH /test-cycles/:id {addNumbers}` chỉ trả `{updated}` (nên trả `runs:[{number,runId}]`); bằng
+  chứng và bug không gắn được với BƯỚC (`/attachments/complete` không nhận `stepResultId`, `WorkTestRunDefect`
+  không lưu bước).
+- *Yêu cầu:* thiếu GET gọn một use case/screen (`/srs/use-cases/:n` vẫn dựng cả SRS), `GET /swr/requirements/:num`.
+- *Sơ đồ:* ảnh chỉ có sau khi đã có người mở trên web (`WORK_DIAGRAM_NOT_RENDERED`) ⇒ bật Kroki
+  (`CTW_MERMAID_RENDER_URL`) hoặc route dựng theo yêu cầu.
+- *Đội/agent:* `agent-leases` chỉ trả `issueId` nội bộ (nên thêm số/mã/tiêu đề thẻ); chưa có link mời cấp DỰ ÁN
+  (`POST /projects/:pid/invite-links`); app chưa đọc `clientView` của cấu hình dự án (lõi `CTWProjectConfig`).
+- *Lớp học/cổng khách:* chưa có route chi tiết một nhóm cho giảng viên; khách không mở được tệp đính kèm của yêu cầu
+  (route URL tệp ngoài danh sách cho phép); chấm điểm rubric (`PUT …/grade`) để web.
+- *Tài chính:* người không có `manageFinance` chỉ thấy cài đặt + bảng công — muốn họ xem % ngân sách cần summary rút gọn.
 
 **D — Tính năng riêng iOS**
 - Widget/Live Activity/Siri cần endpoint gọn, nhẹ, có thể gọi bằng token riêng (App Group):

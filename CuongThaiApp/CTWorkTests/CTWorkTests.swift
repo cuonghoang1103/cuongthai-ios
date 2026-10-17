@@ -71,7 +71,7 @@ final class GiaiMaTests: XCTestCase {
         XCTAssertEqual(p.messages?.first?.laHeThong, true)
         XCTAssertTrue((p.messages ?? []).contains { $0.author?.laAgent == true })
         let tr = try giai(CTWPagesList.self, "/work/projects/7/pages")
-        XCTAssertEqual(tr.pages?.count, 6)
+        XCTAssertEqual(tr.pages?.count, 7, "6 trang + 1 trang lưu trữ (dữ liệu mẫu Docs — XemThuCTW+Docs.swift)")
         let md = try giai(CTWPageMarkdown.self, "/work/projects/7/pages/3/markdown")
         XCTAssertTrue(md.markdown?.hasPrefix("# Release plan") == true)
         let tb = try giai(NotificationsResponse.self, "/social/notifications")

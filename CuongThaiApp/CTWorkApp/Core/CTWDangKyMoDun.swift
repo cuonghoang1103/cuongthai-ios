@@ -8,11 +8,18 @@ import SwiftUI
 
 enum CTWDangKyMoDun {
     static let dangKyMoDun: [CTWModule] = [
+        .desk, .intake, .forms, .portal, .classes, .submit,
         .board,
         .backlog,
         .docs,
+        .kb,
         .chat,
         .meetings,
+        .tests,
+        .requirements,
+        .wiegers,
+        .team, .agents, .assets, .resources, .diagrams, .finance,
+        .approvals, .changes, .raid, .reviews,
     ]
 
     static func moDun(_ id: String) -> CTWModule? { dangKyMoDun.first { $0.id == id } }

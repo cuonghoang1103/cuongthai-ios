@@ -49,7 +49,7 @@ target trong `project.yml` (target KHÔNG kéo cả `Shared` — xem chú thích
 | Khung | `TabView`: My Work · Projects · Chat · Inbox · Account | `NavigationSplitView`: thanh bên theo nhóm |
 | Mô-đun `.trangDuAn` | một dòng trong trang **Projects** (`Modules/Project/TrangDuAnCTW.swift`) | một mục trong nhóm của nó |
 | Mô-đun `.tabRieng` | một TAB riêng (tối đa 1 — hiện là Chat) | một mục trong nhóm |
-| Nhóm thanh bên | — | Project · Communication · Planning · Docs & knowledge · Admin |
+| Nhóm thanh bên | — | Project · Communication · Planning · Docs & knowledge · Requirements & testing · Governance · Admin |
 
 - Mỗi tab/cột là một `CotCTW`: `NavigationStack(path:)` + một `NganXepCTW` (environment
   object). Mô-đun đẩy màn bằng `NavigationLink(value:)` hoặc `nganXep.duong.append(...)`.
@@ -105,6 +105,11 @@ Luật:
 | `CTWXemTep.taiVe` + `.ctwXemTep($url)` | tải url ký sẵn rồi Xem nhanh (QuickLook) |
 | `CTWRung.thanhCong/loi/chon` | haptics |
 | `SafariCTW` (App/…/TaiKhoanCTW.swift) | mở trang web trong app (KHÔNG dùng cho mua bán — 3.1.1) |
+| `CTWChipChu` · `CTWNhanNho` · `CTWMauTrangThai` | chip trạng thái CHUỖI (APPROVED/FAIL/AT_RISK…) · nhãn nhỏ · bảng màu theo trạng thái |
+| `CTWHangTruong` + `CTWKhoiTruong` · `CTWODem` · `CTWThanhPhanDoan` | dòng "trường — giá trị" trong khối thẻ · ô số đếm · thanh tiến độ nhiều màu |
+| `CTWBinhLuanDong` · `CTWHopSoan` · `.ctwMenuBaoCaoChan` | bình luận chung (markdown/TipTap, nhãn AI, ẩn khi đã báo cáo/chặn) · ô soạn · menu Copy/Report/Block (1.2) cho MỌI nội dung người dùng không có route báo cáo riêng (`AnNoiDungChungCTW`, khoá chuỗi `"<loai>-<id>"`) |
+| `CTWOSoanTaiLieu` + `CTWBoSoan` + `CTWThanhDinhDang` | trình soạn tài liệu markdown (UITextView, chèn đúng con trỏ, tự nối danh sách) + thanh định dạng trên bàn phím |
+| `CTWWeb.url(slug:ma:doan:)` | đường web của một màn (mở bằng `SafariCTW` cho phần thiết kế nặng) |
 
 Luật màu: CHỈ `AppColors.*` (tự đổi sáng/tối). Biểu tượng: SF Symbols. Chạm tối thiểu 44pt.
 Chữ trong `ScrollView(.horizontal)` phải `.fixedSize` (bẫy cắt chữ). Một view chỉ MỘT
@@ -152,6 +157,11 @@ docs · trang · chat · kenh · inbox · account · chonduan`. Chế độ tố
 Mảng Giao tiếp (`Debug/XemThuCTW+GiaoTiep.swift`): `chat2 · kenhday · chuoi · ttkenh · taokenh · hop ·
 chitiethop · taohop · hopthu · hopthunhom · caidattb · traloinhanh`.
 
+- **Mô-đun mới không cần sửa `XemThuCTW.swift`:** `CT_XEM_MAN=mod:<id>[/<màn con>]` mở thẳng mô-đun
+  (`Debug/XemThuCTW+MoDun.swift`; mô-đun đọc màn con bằng `XemThuCTW.conCua("<id>")` trong `#if DEBUG`).
+  Dữ liệu mẫu của mảng đặt ở `Debug/XemThuCTW+<Mảng>.swift` (`enum DuLieuGia<Mảng> { static func route… -> Any? }`)
+  rồi nối MỘT dòng vào `DuLieuGiaMoDun.boXuLy` — bộ đó được hỏi TRƯỚC bộ định tuyến lõi.
+  Vd Docs: `mod:docs` · `mod:docs/page` · `mod:docs/edit` · `mod:docs/history` · `mod:docs/new` · `mod:kb`.
 - Máy chủ giả: `MayChuGia` (URLProtocol) chặn mọi `/api/v1/*`, trả `DuLieuGia.route(...)`.
   **Mô-đun mới thêm dữ liệu mẫu** bằng một nhánh trong `route` (đúng HÌNH DẠNG backend — đọc service)
   và một tên màn trong `batNeuCan()`. Dữ liệu mẫu cũng là đầu vào của kiểm thử giải mã.
