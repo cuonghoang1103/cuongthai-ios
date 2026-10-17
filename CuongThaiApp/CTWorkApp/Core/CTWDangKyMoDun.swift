@@ -20,6 +20,9 @@ enum CTWDangKyMoDun {
         .wiegers,
         .team, .agents, .assets, .resources, .diagrams, .finance,
         .approvals, .changes, .raid, .reviews,
+        .sprints, .reports, .dashboards,
+        .time, .poker, .retros, .okrs, .workspace,
+        .timeline, .releases, .stages, .calendar,
     ]
 
     static func moDun(_ id: String) -> CTWModule? { dangKyMoDun.first { $0.id == id } }

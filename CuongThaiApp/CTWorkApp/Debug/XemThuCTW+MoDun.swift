@@ -43,6 +43,7 @@ enum DuLieuGiaMoDun {
         DuLieuGiaGovernance.route,
         DuLieuGiaTests.route,
         DuLieuGiaRequirements.route,
+        DuLieuGiaB.route,
         DuLieuGiaToChuc.route,
     ]
 }
