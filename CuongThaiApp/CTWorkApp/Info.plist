@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Info.plist của app CT WORK riêng (com.cuongthai.ctwork) — KHÔNG dùng chung
+  với app chính.
+
+  Chỉ khai ĐÚNG MỘT quyền: máy ảnh (chụp ảnh đính kèm vào thẻ).
+  · Chọn ảnh dùng `PhotosPicker` — chạy ngoài tiến trình, KHÔNG cần
+    NSPhotoLibraryUsageDescription. Khai thừa = bị trả về (CLAUDE.md A14).
+  · Chọn tệp dùng `fileImporter` — không cần quyền.
+  · Không micro, không vị trí, không nhận giọng nói: app này không dùng.
+-->
+<plist version="1.0">
+<dict>
+    <key>CFBundleDevelopmentRegion</key><string>en</string>
+    <key>CFBundleDisplayName</key><string>CT Work</string>
+    <key>CFBundleExecutable</key><string>$(EXECUTABLE_NAME)</string>
+    <key>CFBundleIdentifier</key><string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+    <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
+    <key>CFBundleName</key><string>$(PRODUCT_NAME)</string>
+    <key>CFBundlePackageType</key><string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
+    <key>CFBundleShortVersionString</key><string>$(MARKETING_VERSION)</string>
+    <key>CFBundleVersion</key><string>$(CURRENT_PROJECT_VERSION)</string>
+    <key>LSRequiresIPhoneOS</key><true/>
+    <key>ITSAppUsesNonExemptEncryption</key><false/>
+    <key>UIApplicationSceneManifest</key>
+    <dict>
+        <key>UIApplicationSupportsMultipleScenes</key><false/>
+    </dict>
+    <!-- Màn khởi động: nền theo chế độ sáng/tối (không phải trắng loá). -->
+    <key>UILaunchScreen</key>
+    <dict>
+        <key>UIColorName</key><string>NenKhoiDong</string>
+    </dict>
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
+    <!-- iPad: ĐỦ 4 hướng, thiếu là gói bị từ chối ở bước kiểm tự động. -->
+    <key>UISupportedInterfaceOrientations~ipad</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationPortraitUpsideDown</string>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
+    <key>NSCameraUsageDescription</key><string>CT Work uses the camera only when you choose "Take Photo" to attach a picture to an issue.</string>
+    <!-- `ctwork://issue/KEY-12`, `ctwork://work/<ws>/<KEY>/issue/12` — app chính
+         (và thông báo) mở thẳng một thẻ. -->
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLName</key><string>com.cuongthai.ctwork</string>
+            <key>CFBundleURLSchemes</key>
+            <array><string>ctwork</string></array>
+        </dict>
+    </array>
+</dict>
+</plist>

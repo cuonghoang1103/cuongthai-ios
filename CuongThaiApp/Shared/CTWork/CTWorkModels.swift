@@ -18,6 +18,12 @@ struct CTWUser: Codable, Hashable, Identifiable {
     var avatarUrl: String?
     /// Vai trò trong dự án — chỉ có ở `members` của cấu hình dự án.
     var role: String?
+    /// `HUMAN` | `AGENT` (PUBLIC_USER ở `services/work/common.ts`). Agent là
+    /// một thành viên AI — mọi chỗ hiện tên phải gắn nhãn "AI agent" (App
+    /// Store 4.7 / 1.2: người dùng phải nhận ra nội dung do AI tạo).
+    var kind: String?
+
+    var laAgent: Bool { kind == "AGENT" }
 
     var ten: String {
         for s in [displayName, fullName, username] {
@@ -130,6 +136,8 @@ struct CTWBoardColumn: Codable, Hashable, Identifiable {
 }
 
 /// Cờ quyền máy chủ gửi để ẨN/HIỆN nút. Chỉ để hiển thị — API vẫn kiểm lại.
+/// `tatCa` giữ MỌI cờ máy chủ gửi (kể cả cờ app chưa khai trường riêng như
+/// `viewFinance`, `editDocs`…) — mô-đun mới đọc bằng `cfg.coQuyen("…")`.
 struct CTWPermissions: Codable, Hashable {
     var editIssues: Bool?
     var createIssues: Bool?
@@ -141,6 +149,54 @@ struct CTWPermissions: Codable, Hashable {
     var settings: Bool?
     var manageMembers: Bool?
     var useAi: Bool?
+    var tatCa: [String: Bool] = [:]
+
+    private struct K: CodingKey {
+        var stringValue: String
+        var intValue: Int? { nil }
+        init?(stringValue: String) { self.stringValue = stringValue }
+        init?(intValue: Int) { nil }
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: K.self)
+        for k in c.allKeys {
+            if let b = try? c.decode(Bool.self, forKey: k) { tatCa[k.stringValue] = b }
+        }
+        editIssues = tatCa["editIssues"]; createIssues = tatCa["createIssues"]
+        transition = tatCa["transition"]; deleteIssues = tatCa["deleteIssues"]
+        comment = tatCa["comment"]; attach = tatCa["attach"]
+        manageSprints = tatCa["manageSprints"]; settings = tatCa["settings"]
+        manageMembers = tatCa["manageMembers"]; useAi = tatCa["useAi"]
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: K.self)
+        for (k, v) in tatCa { if let key = K(stringValue: k) { try c.encode(v, forKey: key) } }
+    }
+}
+
+/// Bảng cờ `{ten: bool}` giải mã KHOAN DUNG: giá trị không phải bool thì bỏ
+/// qua, không làm hỏng cả cấu hình dự án.
+struct CTWBangCo: Codable, Hashable {
+    var tatCa: [String: Bool] = [:]
+    subscript(_ k: String) -> Bool? { tatCa[k] }
+
+    private struct K: CodingKey {
+        var stringValue: String
+        var intValue: Int? { nil }
+        init?(stringValue: String) { self.stringValue = stringValue }
+        init?(intValue: Int) { nil }
+    }
+    init(_ d: [String: Bool] = [:]) { tatCa = d }
+    init(from decoder: Decoder) throws {
+        guard let c = try? decoder.container(keyedBy: K.self) else { return }
+        for k in c.allKeys { if let b = try? c.decode(Bool.self, forKey: k) { tatCa[k.stringValue] = b } }
+    }
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: K.self)
+        for (k, v) in tatCa { if let key = K(stringValue: k) { try c.encode(v, forKey: key) } }
+    }
 }
 
 struct CTWWorkspaceRef: Codable, Hashable {
@@ -166,6 +222,11 @@ struct CTWProjectConfig: Codable {
     var permissions: CTWPermissions?
     var boardColumns: [CTWBoardColumn]?
     var members: [CTWUser]?
+    /// Mô-đun bật/tắt theo dự án (`teams, stages, approvals, docs, meetings,
+    /// finance, reports, serviceDesk…`). Đọc bằng `batMoDun(_:)`.
+    var modules: CTWBangCo?
+    /// PERSONAL | SCHOOL | SOFTWARE | CLIENT
+    var kind: String?
 
     // MARK: Tra cứu
 
@@ -299,6 +360,10 @@ struct CTWIssueDetail: Codable, Identifiable {
     var watcherCount: Int?
     var isWatching: Bool?
     var canDelete: Bool?
+    /// Tệp đính kèm của thẻ (không gồm tệp của bình luận). KHÔNG có url —
+    /// xin url ký sẵn bằng `CTWAPI.urlDinhKem`.
+    var attachments: [CTWAttachment]?
+    var flaggedAt: String?
 }
 
 struct CTWComment: Codable, Identifiable, Hashable {
@@ -308,6 +373,10 @@ struct CTWComment: Codable, Identifiable, Hashable {
     var createdAt: String?
     var editedAt: String?
     var author: CTWUser?
+    var parentId: Int?
+    /// `INTERNAL` | `PUBLIC` (cổng khách).
+    var visibility: String?
+    var attachments: [CTWAttachment]?
 }
 
 // MARK: My work
@@ -358,8 +427,32 @@ struct CTWNode: Codable, Hashable {
     var text: String?
     var nhan: String?
     var content: [CTWNode]?
+    /// Kiểu chữ của nút text: `bold`, `italic`, `code`, `strike`, `link`…
+    /// Chỉ để HIỂN THỊ — `encode` không ghi lại (app chỉ gửi chữ trơn).
+    var marks: [String]?
+    /// `href` của dấu `link`.
+    var href: String?
+    /// `heading.attrs.level`.
+    var level: Int?
+    /// `taskItem.attrs.checked`.
+    var checked: Bool?
+    /// `image.attrs.src`.
+    var src: String?
 
-    private enum CodingKeys: String, CodingKey { case type, text, attrs, content }
+    private enum CodingKeys: String, CodingKey { case type, text, attrs, content, marks }
+    private struct Dau: Decodable {
+        var type: String?
+        var href: String?
+        private enum K: String, CodingKey { case type, attrs }
+        private enum A: String, CodingKey { case href }
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: K.self)
+            type = try? c.decodeIfPresent(String.self, forKey: .type)
+            if let a = try? c.nestedContainer(keyedBy: A.self, forKey: .attrs) {
+                href = try? a.decodeIfPresent(String.self, forKey: .href)
+            }
+        }
+    }
     private struct KhoaDong: CodingKey {
         var stringValue: String
         var intValue: Int? { nil }
@@ -376,8 +469,15 @@ struct CTWNode: Codable, Hashable {
         type = try? c.decodeIfPresent(String.self, forKey: .type)
         text = try? c.decodeIfPresent(String.self, forKey: .text)
         content = (try? c.decodeIfPresent([CTWNode].self, forKey: .content)) ?? nil
+        if let ds = try? c.decodeIfPresent([Dau].self, forKey: .marks) {
+            marks = ds.compactMap(\.type)
+            href = ds.first { $0.type == "link" }?.href
+        }
         // @nhắc tên: lấy `label`, không có thì `id`.
         if let a = try? c.nestedContainer(keyedBy: KhoaDong.self, forKey: .attrs) {
+            if let k = KhoaDong(stringValue: "level") { level = try? a.decode(Int.self, forKey: k) }
+            if let k = KhoaDong(stringValue: "checked") { checked = try? a.decode(Bool.self, forKey: k) }
+            if let k = KhoaDong(stringValue: "src") { src = try? a.decode(String.self, forKey: k) }
             for ten in ["label", "id"] {
                 guard let k = KhoaDong(stringValue: ten) else { continue }
                 if let s = try? a.decode(String.self, forKey: k) { nhan = s; break }
@@ -550,7 +650,10 @@ enum CTW {
             case .decodingError: return "The server sent an unexpected response. Please update the app or try again later."
             case .invalidURL, .noData, .unknown: return "Something went wrong. Please try again."
             case .coMa(let ma, let m):
-                if ma == "WORK_QUOTA" || ma.hasSuffix("QUOTA_EXCEEDED") { return m.isEmpty ? "You've reached your plan limit." : m }
+                // 3.1.1: câu hạn mức của máy chủ có thể mời "nâng cấp" — app iOS không được dẫn đi mua.
+                if ma == "WORK_QUOTA" || ma.hasSuffix("QUOTA_EXCEEDED") || CTW.coLoiMoiMua(m) {
+                    return "You've reached the limit for this action. Please try again later."
+                }
                 return m
             case .serverError(let m):
                 // Không có câu nào từ máy chủ ⇒ APIClient tự dựng "Máy chủ trả lỗi N."
@@ -564,6 +667,7 @@ enum CTW {
                     default: return "Server error (\(so)). Please try again."
                     }
                 }
+                if CTW.coLoiMoiMua(m) { return "This action isn't available right now." }
                 // 404 của tuyến chưa mở trên máy chủ ("Route GET … not found").
                 if m.hasPrefix("Route ") && m.hasSuffix("not found") {
                     return "CT Work isn't available on the server yet."
@@ -573,6 +677,12 @@ enum CTW {
         }
         if e is URLError { return "Can't reach the server. Check your connection and try again." }
         return e.localizedDescription
+    }
+
+    /// Câu có lời mời mua/nâng cấp (App Store 3.1.1) — không hiện nguyên văn trên iOS.
+    static func coLoiMoiMua(_ s: String) -> Bool {
+        let t = s.lowercased()
+        return ["upgrade", "nâng cấp", "/pro", "pricing", "subscribe", "mua gói", "buy "].contains { t.contains($0) }
     }
 
     /// Lỗi 409 (có người vừa sửa thẻ) — nơi gọi nạp lại thay vì chỉ báo.
@@ -586,180 +696,4 @@ enum CTW {
     }
 }
 
-// MARK: - Vòng tròn người
-
-struct CTWAvatar: View {
-    let user: CTWUser?
-    var size: CGFloat = 24
-
-    var body: some View {
-        Group {
-            if let u = user {
-                if let url = u.avatarUrl, !url.isEmpty {
-                    UserAvatarView(url: url, size: size)
-                } else {
-                    Text(u.kyTuDau)
-                        .font(.system(size: size * 0.4, weight: .semibold))
-                        .foregroundColor(AppColors.onPrimary)
-                        .frame(width: size, height: size)
-                        .background(
-                            Circle().fill(
-                                LinearGradient(colors: [AppColors.primaryLight, AppColors.primary],
-                                               startPoint: .topLeading, endPoint: .bottomTrailing)
-                            )
-                        )
-                        .overlay(Circle().strokeBorder(Color.white.opacity(0.18), lineWidth: 0.5))
-                }
-            } else {
-                Image(systemName: "person.crop.circle.badge.questionmark")
-                    .font(.system(size: size * 0.75))
-                    .foregroundColor(AppColors.textTertiary)
-                    .frame(width: size, height: size)
-            }
-        }
-        .accessibilityLabel(user?.ten ?? "Unassigned")
-    }
-}
-
-struct CTWTypeIcon: View {
-    let type: CTWIssueType?
-    var size: CGFloat = 14
-
-    var body: some View {
-        Image(systemName: CTW.bieuTuongLoai(type))
-            .font(.system(size: size * 0.7, weight: .bold))
-            .foregroundColor(.white)
-            .frame(width: size + 4, height: size + 4)
-            .background(RoundedRectangle(cornerRadius: 4, style: .continuous)
-                .fill(CTW.mau(type?.color, macDinh: Color(hex: 0x2563EB))))
-            .accessibilityLabel(type?.name ?? "Issue")
-    }
-}
-
-struct CTWPriorityIcon: View {
-    let priority: Int?
-    var body: some View {
-        let p = CTW.uuTien(priority)
-        Image(systemName: p.bieuTuong)
-            .font(.system(size: 11, weight: .bold))
-            .foregroundColor(p.mau)
-            .accessibilityLabel("\(p.ten) priority")
-    }
-}
-
-struct CTWStatusChip: View {
-    let status: CTWStatus?
-    var body: some View {
-        let mau = CTW.mauNhom(status?.category)
-        HStack(spacing: 5) {
-            Circle().fill(mau).frame(width: 6, height: 6)
-            Text((status?.name ?? "—").uppercased())
-                .font(.system(size: 11, weight: .bold))
-                .foregroundColor(mau)
-                .lineLimit(1)
-        }
-        .padding(.horizontal, 9).padding(.vertical, 4)
-        .background(Capsule().fill(mau.opacity(0.14)))
-        .overlay(Capsule().strokeBorder(mau.opacity(0.22), lineWidth: 0.5))
-    }
-}
-
-/// Tiêu đề một khối trong màn chi tiết — biểu tượng + chữ + đếm tuỳ chọn.
-/// Một chỗ để các khối (Description, Sub-tasks, Comments…) đồng nhất.
-struct CTWSectionHeader: View {
-    let icon: String
-    let title: String
-    var count: String?
-    var trailing: AnyView?
-
-    init(_ icon: String, _ title: String, count: String? = nil, trailing: AnyView? = nil) {
-        self.icon = icon; self.title = title; self.count = count; self.trailing = trailing
-    }
-
-    var body: some View {
-        HStack(spacing: 7) {
-            Image(systemName: icon)
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(AppColors.primary)
-            Text(title)
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundColor(AppColors.textPrimary)
-            if let count {
-                Text(count)
-                    .font(.system(size: 12, weight: .semibold).monospacedDigit())
-                    .foregroundColor(AppColors.textTertiary)
-                    .padding(.horizontal, 6).padding(.vertical, 1)
-                    .background(Capsule().fill(AppColors.backgroundTertiary))
-            }
-            Spacer(minLength: 0)
-            if let trailing { trailing }
-        }
-    }
-}
-
-/// Dải lỗi nhỏ đặt trên đầu màn — lỗi nói tại chỗ, không bật hộp thoại.
-struct CTWErrorBanner: View {
-    let text: String
-    var onDismiss: (() -> Void)?
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 8) {
-            Image(systemName: "exclamationmark.triangle.fill").foregroundColor(AppColors.error)
-            Text(text)
-                .font(.system(size: 13))
-                .foregroundColor(AppColors.textPrimary)
-                .fixedSize(horizontal: false, vertical: true)
-            Spacer(minLength: 0)
-            if let onDismiss {
-                Button(action: onDismiss) {
-                    Image(systemName: "xmark").font(.system(size: 12, weight: .semibold))
-                        .foregroundColor(AppColors.textTertiary)
-                        .frame(width: 28, height: 28)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Dismiss")
-            }
-        }
-        .padding(12)
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(AppColors.error.opacity(0.10)))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(AppColors.error.opacity(0.22), lineWidth: 0.5))
-    }
-}
-
-extension View {
-    /// Mặt thẻ chuẩn của CT Work: nền thẻ, bo góc liền mạch, viền mảnh và một
-    /// lớp bóng rất nhẹ — để mọi thẻ trong module trông cùng một hệ, hợp HIG.
-    /// Bóng đổ gắn THẲNG vào hình nền (không vào nội dung) nên chữ không nhoè.
-    func ctwThe(_ radius: CGFloat = 14) -> some View {
-        self
-            .background(
-                RoundedRectangle(cornerRadius: radius, style: .continuous)
-                    .fill(AppColors.backgroundCard)
-                    .shadow(color: Color.black.opacity(0.05), radius: 6, x: 0, y: 2)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: radius, style: .continuous)
-                    .strokeBorder(AppColors.border, lineWidth: 0.5)
-            )
-    }
-
-    /// `insetGrouped` chỉ có trên iOS — macOS dùng `inset`.
-    @ViewBuilder
-    func ctwKieuDanhSach() -> some View {
-        #if os(iOS)
-        self.listStyle(.insetGrouped)
-        #else
-        self.listStyle(.inset)
-        #endif
-    }
-
-    /// Tiêu đề nhỏ (inline) — chỉ iOS có khái niệm này.
-    @ViewBuilder
-    func ctwTieuDeNho() -> some View {
-        #if os(iOS)
-        self.navigationBarTitleDisplayMode(.inline)
-        #else
-        self
-        #endif
-    }
-}
+// Thành phần giao diện (avatar, chip, thẻ…) chuyển sang `CTWUI/CTWThanhPhan.swift` (17/10/2026).

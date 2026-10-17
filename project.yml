@@ -246,6 +246,119 @@ targets:
         TARGETED_DEVICE_FAMILY: "2"
         ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES: YES
 
+  # ─── App CT WORK riêng (nộp App Store, iPhone + iPad) — 17/10/2026 ──────
+  #
+  # Bundle riêng `com.cuongthai.ctwork`, biểu tượng riêng, Info.plist riêng,
+  # bản khai quyền riêng tư riêng. Dùng lại tầng mạng + module `Shared/CTWork`
+  # của app chính, nhưng CHỈ kéo đúng những tệp cần — KHÔNG kéo cả `Shared`:
+  #   · kéo cả `Shared` là kéo theo WebRTC/micro/vị trí/nhận giọng nói… ⇒ Apple
+  #     quét nhị phân thấy API quyền riêng tư mà Info.plist không khai chuỗi
+  #     mục đích (ITMS-90683), và reviewer thấy một app "nhân bản" app chính (4.3).
+  #   · `AppState` của app này là lớp RIÊNG (`CTWorkApp/App/AppStateCTW.swift`) cùng
+  #     tên và cùng các thành viên mà `Shared/CTWork` đọc (`currentUser`,
+  #     `ctWorkDich`) — tệp `ViewModels/AppState.swift` của app chính KHÔNG vào đây.
+  # ⚠️ Không khai `group:` (xem chú thích ở CuongThaiAdmin).
+  # ⚠️ Thêm tệp `Shared` mới mà `Shared/CTWork` cần ⇒ thêm vào danh sách dưới,
+  #    không thì lỗi hiện ra dạng "cannot find X in scope".
+  CTWorkApp:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: CuongThaiApp/CTWorkApp
+        # Tài liệu kiến trúc KHÔNG được chép vào gói app.
+        excludes: ["**/*.md"]
+      - path: CuongThaiApp/Shared/CTWork
+      - path: CuongThaiApp/Shared/Network
+      - path: CuongThaiApp/Shared/Models
+      - path: CuongThaiApp/Shared/Storage/KeychainStore.swift
+      - path: CuongThaiApp/Shared/Storage/StorageManager.swift
+      - path: CuongThaiApp/Shared/Theme.swift
+      - path: CuongThaiApp/Shared/Extensions/TimeFormatter.swift
+      - path: CuongThaiApp/Shared/NgoaiTuyen/KhoNgoaiTuyen.swift
+      - path: CuongThaiApp/Shared/Services/ModerationStore.swift
+      - path: CuongThaiApp/Shared/Auth/AppleSignIn.swift
+      - path: CuongThaiApp/Shared/Components/UserAvatarView.swift
+      # Máy ảnh (UIImagePickerController) — tự đứng, chỉ UIKit.
+      - path: CuongThaiApp/Shared/Views/MayAnh.swift
+    settings:
+      configs:
+        Debug:
+          # ⚠️ Chỉ ở Debug — xem chú thích ở target CuongThaiApp (cờ DEBUG lọt
+          # vào Release làm push đi nhầm máy chủ APNs thử nghiệm).
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: $(inherited) DEBUG
+        Release:
+          CODE_SIGN_STYLE: Automatic
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.cuongthai.ctwork
+        PRODUCT_NAME: CTWork
+        INFOPLIST_FILE: CuongThaiApp/CTWorkApp/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        MARKETING_VERSION: "1.0.0"
+        CURRENT_PROJECT_VERSION: "1"
+        # iPhone + iPad. iPad có bố cục RIÊNG (NavigationSplitView thanh bên theo nhóm ở
+        # `CTWorkApp/App/KhungCTW.swift`), Info.plist khai đủ 4 hướng cho iPad.
+        TARGETED_DEVICE_FAMILY: "1,2"
+        ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES: YES
+    dependencies:
+      - package: Kingfisher
+      - package: SocketIO
+        product: SocketIO
+    entitlements:
+      path: CuongThaiApp/CTWorkApp/CTWorkApp.entitlements
+      properties:
+        # 4.8: bắt buộc bật "Sign in with Apple" cho App ID com.cuongthai.ctwork
+        # trong Developer portal, không thì bước ký hồ sơ trượt.
+        com.apple.developer.applesignin: [Default]
+        # Thông báo đẩy — Apple tự đổi sang production khi đóng gói TestFlight.
+        aps-environment: development
+        # Universal Link https://cuongthai.com/work/... — chỉ có tác dụng khi
+        # máy chủ phục vụ apple-app-site-association có appID của app này
+        # (xem CTWORK_APP_REVIEW_NOTES.md, phần backend còn thiếu).
+        com.apple.developer.associated-domains: ["applinks:cuongthai.com"]
+
+  # Kiểm thử của app CT Work: đơn vị (giải mã dữ liệu mẫu đúng hình dạng
+  # backend, bộ tách đường dẫn, markdown, bảng đăng ký mô-đun) + giao diện
+  # (bấm thật trên máy mô phỏng với máy chủ giả `CT_XEM_MAN`).
+  CTWorkAppTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: CuongThaiApp/CTWorkTests
+    dependencies:
+      - target: CTWorkApp
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.cuongthai.ctwork.tests
+        GENERATE_INFOPLIST_FILE: YES
+        # PRODUCT_NAME của app là `CTWork` (không phải tên target) ⇒ khai tay.
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/CTWork.app/CTWork
+        BUNDLE_LOADER: $(TEST_HOST)
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: "UR32PFUQ38"
+      configs:
+        Debug:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: $(inherited) DEBUG
+
+  CTWorkAppUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: CuongThaiApp/CTWorkUITests
+    dependencies:
+      - target: CTWorkApp
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.cuongthai.ctwork.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: "UR32PFUQ38"
+        TEST_TARGET_NAME: CTWorkApp
+
   CuongThaiAppMac:
     type: application
     platform: macOS
@@ -291,6 +404,24 @@ schemes:
       storeKitConfiguration: CuongThaiApp/Pro.storekit
     test:
       config: Debug
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release
+
+  CTWorkApp:
+    build:
+      targets:
+        CTWorkApp: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - CTWorkAppTests
+        - CTWorkAppUITests
     profile:
       config: Release
     analyze:

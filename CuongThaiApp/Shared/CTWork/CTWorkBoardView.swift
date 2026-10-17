@@ -62,10 +62,12 @@ final class CTWBoardVM: ObservableObject {
         if let v = the.version { than["version"] = v }
         do {
             try await APIClient.shared.send(.workChuyenThe(pid: pid, so: the.number, than: than))
+            CTWRung.thanhCong()
             await napBang()   // lấy `version`/`rank` mới
         } catch {
             bang?.issues = cu
             loi = CTW.loi(error)
+            CTWRung.loi()
             if CTW.laXungDot(error) { await napBang() }
         }
     }
@@ -89,7 +91,11 @@ struct CTWBoardView: View {
     let ten: String
 
     @StateObject private var vm: CTWBoardVM
+    @EnvironmentObject private var appState: AppState
     @State private var moTao = false
+    /// Lọc nhanh trên bảng (chỉ phía máy — bảng đã nạp đủ thẻ của sprint).
+    @State private var chiCuaToi = false
+    @State private var timChu = ""
     #if os(iOS)
     @Environment(\.horizontalSizeClass) private var beRong
     #endif
@@ -127,10 +133,15 @@ struct CTWBoardView: View {
             }
         }
         .background(AppColors.backgroundPrimary)
+        .searchable(text: $timChu, placement: .toolbar, prompt: "Filter issues")
         .navigationTitle(vm.cauHinh?.name ?? ten)
         .ctwTieuDeNho()
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
+                Button { chiCuaToi.toggle() } label: {
+                    Image(systemName: chiCuaToi ? "person.crop.circle.fill.badge.checkmark" : "person.crop.circle.badge.checkmark")
+                }
+                .accessibilityLabel(chiCuaToi ? "Show all issues" : "Only my issues")
                 if let cfg = vm.cauHinh, cfg.type != "KANBAN" {
                     menuSprint(cfg)
                 }
@@ -229,8 +240,16 @@ struct CTWBoardView: View {
         }
     }
 
+    private func loc(_ t: CTWIssueCard) -> Bool {
+        if chiCuaToi && t.assigneeId != appState.currentUser?.id { return false }
+        let q = timChu.trimmingCharacters(in: .whitespaces)
+        if q.isEmpty { return true }
+        let ma = "\(vm.cauHinh?.key ?? "")-\(t.number)"
+        return t.title.localizedCaseInsensitiveContains(q) || ma.localizedCaseInsensitiveContains(q)
+    }
+
     private func cot(_ c: CTWBoardColumn, rongCot: CGFloat, cao: CGFloat) -> some View {
-        let ds = vm.the(trongCot: c)
+        let ds = vm.the(trongCot: c).filter(loc)
         let vuot = c.wipLimit.map { ds.count > $0 } ?? false
         let mauCot = CTW.mauNhom(c.category)
         return VStack(alignment: .leading, spacing: 0) {

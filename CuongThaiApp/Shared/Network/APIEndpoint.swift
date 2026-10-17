@@ -621,6 +621,11 @@ enum APIEndpoint {
     case workDsBinhLuan(pid: Int, so: Int)
     case workThemBinhLuan(pid: Int, so: Int, than: [String: Any])
     case workBaoCaoBinhLuan(pid: Int, so: Int, cid: Int, lyDo: String)
+    /// Mọi đường CT Work còn lại (app CT Work riêng — 17/10/2026). `duong` TƯƠNG
+    /// ĐỐI với `/api/v1/work`. ⚠️ Đừng gọi thẳng case này: dùng các hàm có kiểu
+    /// trong `Shared/CTWork/CTWorkAPI.swift` — đường dẫn chỉ gõ MỘT chỗ ở đó, nơi
+    /// gọi thì được trình biên dịch kiểm tên hàm + kiểu tham số.
+    case workGoi(duong: String, phuongThuc: String, than: [String: Any]?, query: [String: Any]?)
 
     // ── CV Builder ────────────────────────────────────────────
     //
@@ -686,6 +691,7 @@ enum APIEndpoint {
     var path: String {
         switch self {
         case .tuyChinh(let duong, _, _): return duong
+        case .workGoi(let duong, _, _, _): return "/api/v1/work" + duong
         case .voLayCay: return "/api/v1/vo"
         case .voDongBoCay: return "/api/v1/vo/sync"
         case .voXinDuongNen: return "/api/v1/vo/nen/duong-day"
@@ -1154,6 +1160,7 @@ enum APIEndpoint {
              .tienXoaTietKiem, .tienXoaMucTieuTietKiem, .tienXoaDauTu:
             return "DELETE"
         case .tuyChinh(_, let pt, _): return pt
+        case .workGoi(_, let pt, _, _): return pt
         case .voLayCay, .voVeXem, .voVietLaiXem, .voSoDoXem, .voMachXem: return "GET"
         case .voDongBoCay, .voXinDuongDay, .voXacNhanNet, .voXoaTrang, .voXoaCuon,
              .voXinDuongNen, .voVe, .voVeViec, .voVietLai,
@@ -1240,6 +1247,7 @@ enum APIEndpoint {
         case .tienAIHoi(let c): return ["cauHoi": c]
         case .tienHuyTraKy: return [:]
         case .tuyChinh(_, _, let than): return than
+        case .workGoi(_, _, let than, _): return than
         case .voLayCay: return nil
         case .voDongBoCay(let mons): return ["mons": mons]
         case .voXinDuongNen(let sha, let duoi, let soByte):
@@ -1623,6 +1631,8 @@ enum APIEndpoint {
             return m
         case .workBang(_, let sid):
             return sid.map { ["sprintId": $0] }
+        case .workGoi(_, _, _, let q):
+            return q
         case .timTuVung(_, let q):
             return ["q": q]
         case .hoiThoai(_, let p, let l), .baiDoc(_, let p, let l), .hoiDap(_, let p, let l),

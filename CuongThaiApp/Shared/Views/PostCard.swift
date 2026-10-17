@@ -366,39 +366,8 @@ struct PostCard: View {
 }
 
 // MARK: - User Avatar
-struct UserAvatarView: View {
-    let url: String?
-    let size: CGFloat
-
-    var body: some View {
-        Group {
-            #if canImport(Kingfisher)
-            if let urlString = url, let imageURL = URL(string: urlString) {
-                KFImage(imageURL)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: size, height: size)
-                    .clipShape(Circle())
-            } else {
-                avatarPlaceholder
-            }
-            #else
-            avatarPlaceholder
-            #endif
-        }
-    }
-
-    private var avatarPlaceholder: some View {
-        Circle()
-            .fill(AppColors.backgroundTertiary)
-            .frame(width: size, height: size)
-            .overlay(
-                Image(systemName: "person.fill")
-                    .foregroundColor(AppColors.textSecondary)
-                    .font(.system(size: size * 0.5))
-            )
-    }
-}
+// `UserAvatarView` chuyển sang `Shared/Components/UserAvatarView.swift` (17/10/2026)
+// để app CT Work riêng dùng chung mà không kéo theo cả PostCard.
 
 // MARK: - Media Grid
 struct MediaGridView: View {
