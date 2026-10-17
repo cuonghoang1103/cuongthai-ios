@@ -84,6 +84,13 @@
             <key>NSPrivacyCollectedDataTypeTracking</key><false/>
             <key>NSPrivacyCollectedDataTypePurposes</key><array><string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string></array>
         </dict>
+        <dict>
+            <!-- Voice note trong chat: lưu cho người trong kênh + phiên âm (Groq) — người dùng đồng ý trước lần ghi đầu. -->
+            <key>NSPrivacyCollectedDataType</key><string>NSPrivacyCollectedDataTypeAudioData</string>
+            <key>NSPrivacyCollectedDataTypeLinked</key><true/>
+            <key>NSPrivacyCollectedDataTypeTracking</key><false/>
+            <key>NSPrivacyCollectedDataTypePurposes</key><array><string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string></array>
+        </dict>
     </array>
 </dict>
 </plist>

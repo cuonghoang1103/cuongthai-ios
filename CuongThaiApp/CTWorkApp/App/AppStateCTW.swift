@@ -117,6 +117,9 @@ final class AppState: ObservableObject {
         RealtimeCTW.shared.ngat()
         ModerationStore.shared.reset()
         AnNoiDungCTW.shared.xoaHet()
+        HangChoGuiCTW.shared.xoaHet()
+        AnNoiDungHopCTW.shared.xoaHet()
+        TrinhPhatGiongNoiCTW.shared.dung()
         isAuthenticated = false
         currentUser = nil
         luaChon = nil
@@ -163,15 +166,28 @@ final class AppState: ObservableObject {
         }
     }
 
-    /// Đếm chưa đọc: chat (một lời gọi) + hộp thư (trang đầu thông báo, chỉ
-    /// đếm loại WORK_* — máy chủ chưa có bộ lọc theo loại, xem ghi chú backend).
+    /// Đếm chưa đọc: chat (một lời gọi) + hộp thư (chỉ loại WORK_* — máy chủ chưa có
+    /// bộ lọc theo loại ⇒ đọc tối đa 4 trang 50 mới nhất, dừng khi trang không còn
+    /// thông báo chưa đọc nào).
+    /// Huy hiệu biểu tượng = SỐ THÔNG BÁO WORK_* CHƯA ĐỌC — đúng con số máy chủ gắn
+    /// vào gói APNs cho app này (`notification.service.ts → soCtw`). Cộng thêm số tin
+    /// chat chưa đọc như trước làm số nhảy qua lại mỗi lần có đẩy.
     func taiSoChuaDoc() async {
         if let u: CTWChatUnread = try? await APIClient.shared.request(CTWAPI.chatChuaDoc()) {
             chatChuaDoc = u.total ?? 0
         }
-        if let r: NotificationsResponse = try? await APIClient.shared.request(.getNotifications(cursor: nil, limit: 50)) {
-            hopThuChuaDoc = r.items.filter { $0.type.hasPrefix("WORK_") && !$0.isRead }.count
+        var so = 0
+        var cursor: Int?
+        var docDuoc = false
+        for _ in 0..<4 {
+            guard let r: NotificationsResponse = try? await APIClient.shared.request(.getNotifications(cursor: cursor, limit: 50)) else { break }
+            docDuoc = true
+            let moi = r.items.filter { $0.type.hasPrefix("WORK_") && !$0.isRead }.count
+            so += moi
+            guard r.pagination.hasNextPage, let c = r.pagination.nextCursor, r.items.contains(where: { !$0.isRead }) else { break }
+            cursor = c
         }
-        DayCTW.datHuyHieu(hopThuChuaDoc + chatChuaDoc)
+        if docDuoc { hopThuChuaDoc = so }
+        DayCTW.datHuyHieu(hopThuChuaDoc)
     }
 }

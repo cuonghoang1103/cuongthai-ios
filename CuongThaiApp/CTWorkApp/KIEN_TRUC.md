@@ -18,7 +18,7 @@ CuongThaiApp/
 │  │   CTWAPI+<Ten>.swift           đường API của mô-đun
 │  │   CTWModels+<Ten>.swift        model Codable của mô-đun
 │  │   <Ten>CTW.swift …             màn
-│  │   (hiện có: MyWork · Project · Board · Backlog · Docs · Chat · Inbox · Account)
+│  │   (hiện có: MyWork · Project · Board · Backlog · Docs · Chat · Meetings · Inbox · Account …)
 │  ├─ Debug/XemThuCTW.swift         máy chủ GIẢ + dữ liệu mẫu (chỉ #if DEBUG)
 │  ├─ Info.plist · PrivacyInfo.xcprivacy · CTWorkApp.entitlements (xcodegen sinh) · Assets.xcassets
 │  └─ KIEN_TRUC.md                  (tệp này — bị loại khỏi gói, xem project.yml `excludes`)
@@ -149,6 +149,8 @@ sleep 5 && xcrun simctl io $U screenshot board.png
 ```
 Tên màn: `dongy · dangnhap · mywork · duan · board · backlog · list · issue · binhluan · lichsu ·
 docs · trang · chat · kenh · inbox · account · chonduan`. Chế độ tối: `xcrun simctl ui $U appearance dark`.
+Mảng Giao tiếp (`Debug/XemThuCTW+GiaoTiep.swift`): `chat2 · kenhday · chuoi · ttkenh · taokenh · hop ·
+chitiethop · taohop · hopthu · hopthunhom · caidattb · traloinhanh`.
 
 - Máy chủ giả: `MayChuGia` (URLProtocol) chặn mọi `/api/v1/*`, trả `DuLieuGia.route(...)`.
   **Mô-đun mới thêm dữ liệu mẫu** bằng một nhánh trong `route` (đúng HÌNH DẠNG backend — đọc service)

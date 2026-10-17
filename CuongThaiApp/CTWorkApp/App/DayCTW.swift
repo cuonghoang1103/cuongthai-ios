@@ -26,6 +26,8 @@ final class DayCTW: NSObject, ObservableObject, UNUserNotificationCenterDelegate
 
     func khoiDong() {
         UNUserNotificationCenter.current().delegate = self
+        // Nút ngay trên thông báo (Reply / Mark as Read / Approve / Reject) — Modules/Inbox.
+        NutThongBaoCTW.dangKy()
     }
 
     func xinQuyenVaDangKy() async {
@@ -96,6 +98,18 @@ final class DayCTW: NSObject, ObservableObject, UNUserNotificationCenterDelegate
                                             didReceive response: UNNotificationResponse,
                                             withCompletionHandler completionHandler: @escaping () -> Void) {
         let info = response.notification.request.content.userInfo
+        // Nút hành động (trả lời / đã đọc / duyệt) chạy NỀN, không mở màn — xong mới báo hệ thống.
+        if NutThongBaoCTW.laNutCuaCTW(response.actionIdentifier) {
+            let nut = response.actionIdentifier
+            let chu = (response as? UNTextInputNotificationResponse)?.userText
+            let id = (info["thongBaoId"] as? Int) ?? Int("\(info["thongBaoId"] ?? "")")
+            let duongDan = info["duongDan"] as? String
+            let aid = info["approvalId"] as? Int
+            DispatchQueue.main.async {
+                NutThongBaoCTW.xuLy(nut: nut, thongBaoId: id, duongDan: duongDan, approvalId: aid, chu: chu, xong: completionHandler)
+            }
+            return
+        }
         let duong = info["duongDan"] as? String
         let maThe = info["maThe"] as? String
         completionHandler()

@@ -63,8 +63,10 @@ struct TrangPhapLyView: View {
         Section {
             muc("We store your account (username, email, name, avatar) and the work you create: issues, comments, attachments, chat messages and documents.")
             muc("Photos and files are uploaded only when you choose to attach them. The camera is used only when you tap “Take Photo”.")
+            muc("The microphone is used only while you record a voice note in chat. Voice notes are stored for the people in that channel and sent to Groq, a third-party speech-to-text service, to create a transcript — the app asks for your consent before your first voice note.")
+            muc("Video meetings open in Google Meet, Zoom, Microsoft Teams or Jitsi (or Safari). CT Work itself does not use your camera or microphone for calls.")
             muc("If you allow notifications, we store your device's push token to deliver CT Work notifications.")
-            muc("This app does not send your data to third-party AI services. AI agents that a workspace admin adds can read the project they are members of, like any other member.")
+            muc("Apart from voice-note transcription, this app does not send your data to third-party AI services. AI agents that a workspace admin adds can read the project they are members of, like any other member; AI-drafted meeting minutes are labelled “AI-generated”.")
             muc("No tracking, no advertising, no data sale.")
         } header: { Text("Summary") }
         Section {
@@ -74,7 +76,7 @@ struct TrangPhapLyView: View {
 
     @ViewBuilder private var troGiup: some View {
         Section {
-            muc("To report a comment or chat message, touch and hold it, then choose Report. To stop seeing someone, choose Block.")
+            muc("To report a comment or chat message, touch and hold it, then choose Report. To report meeting notes, open the meeting and choose ••• › Report notes. To stop seeing someone, choose Block.")
             muc("Blocked users and hidden content are managed in Account › Blocked users.")
             muc("Our moderators review every report within 24 hours.")
         } header: { Text("Safety") }

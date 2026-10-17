@@ -10,8 +10,11 @@ Kiến trúc mã: `CuongThaiApp/CTWorkApp/KIEN_TRUC.md`.
 
 App quản lý công việc nhóm: My Work, bảng kéo thả, backlog/sprint, danh sách có lọc,
 chi tiết thẻ (sửa trạng thái/người làm/ưu tiên/hạn, bình luận, đính kèm, lịch sử, thẻ con,
-liên kết), tạo thẻ nhanh, hộp thư thông báo, chat nhóm theo kênh (realtime), đọc + tìm tài
-liệu dự án, deep link `ctwork://` + thông báo đẩy. Không có mạng xã hội, khoá học, nhạc,
+liên kết), tạo thẻ nhanh, hộp thư thông báo (lọc/gộp theo thẻ-kênh, trả lời + duyệt ngay,
+nút hành động trên thông báo), chat nhóm theo kênh + nhóm riêng (realtime, ảnh/tệp/voice
+note, cảm xúc, @nhắc, ghim, tìm, chuỗi trả lời, "đang gõ", hàng chờ ngoại tuyến), cuộc họp
+(lịch, vào họp Meet/Zoom/Teams/Jitsi, RSVP, chương trình, biên bản, quyết định, việc ⇒ thẻ,
+bản ghi lời, thêm vào Lịch), đọc + tìm tài liệu dự án, deep link `ctwork://` + thông báo đẩy. Không có mạng xã hội, khoá học, nhạc,
 tiền nong… của app chính ⇒ không phải bản sao app CuongThai.
 
 ## 2. Luật Apple đã đáp ứng
@@ -23,10 +26,10 @@ tiền nong… của app chính ⇒ không phải bản sao app CuongThai.
 | 2.1 | Mọi màn chạy thật, không placeholder; mô-đun chưa làm KHÔNG hiện mục (bảng đăng ký mô-đun) | `Core/CTWDangKyMoDun.swift` |
 | 4.8 | Sign in with Apple (cạnh tài khoản cuongthai.com) | `Modules/Account/DangNhapCTW.swift` + entitlement |
 | 5.1.1(v) | Xoá tài khoản trong app: Account → Delete account (cùng luồng máy chủ với app chính, 72 giờ, rút lại được) | `Modules/Account/TaiKhoanCTW.swift` |
-| 1.2 | (1) đồng ý quy tắc cộng đồng lần đầu; (2) báo cáo bình luận + tin chat; (3) chặn người dùng (ẩn mọi bình luận/tin/thông báo của họ); (4) liên hệ: Account → Help & contact; nội dung đã báo cáo ẩn ngay | `DongYQuyTacCTW`, `CTWKiemDuyet.swift`, `ChatCTW.swift`, `CTWorkIssueView.swift` |
-| 4.7 / 1.2 (AI) | Thành viên AI agent luôn có nhãn "AI agent" + ✦ trên avatar ở bình luận, chat, người làm, lịch sử, bộ chọn người; bình luận AI soạn có nhãn "AI-drafted"; báo cáo được như mọi nội dung | `CTWNhanAI`, `CTWAvatar` |
-| 5.1.2(i) | App KHÔNG gửi dữ liệu cho AI bên thứ ba (không có tính năng AI trong app). Agent do admin workspace thêm trên web, đọc dự án như một thành viên — ghi rõ ở Privacy + chọn người làm | `TrangPhapLyView` |
-| 5.1.1 / 5.1.2 | `PrivacyInfo.xcprivacy` riêng (UserDefaults CA92.1, FileTimestamp C617.1; dữ liệu thu: email, tên, user ID, device ID, ảnh/tệp, tin nhắn, nội dung khác — đều Linked, không tracking). Chỉ MỘT chuỗi quyền: máy ảnh (chụp ảnh đính kèm). Chọn ảnh = PhotosPicker (không cần quyền), chọn tệp = fileImporter | `CTWorkApp/PrivacyInfo.xcprivacy`, `Info.plist` |
+| 1.2 | (1) đồng ý quy tắc cộng đồng lần đầu; (2) báo cáo bình luận, tin chat (kênh + chuỗi), ghi chú/biên bản cuộc họp; (3) chặn người dùng (ẩn mọi bình luận/tin/thông báo/ghi chú họp của họ); (4) liên hệ: Account → Help & contact; nội dung đã báo cáo ẩn ngay | `DongYQuyTacCTW`, `CTWKiemDuyet.swift`, `Modules/Chat/KenhChatCTW.swift` + `ChuoiTraLoiCTW.swift`, `Modules/Meetings/ChiTietHopCTW.swift`, `CTWorkIssueView.swift` |
+| 4.7 / 1.2 (AI) | Thành viên AI agent luôn có nhãn "AI agent" + ✦ trên avatar ở bình luận, chat, người làm, lịch sử, bộ chọn người, gợi ý @nhắc, thành viên kênh, người dự họp, hộp thư; bình luận AI soạn có nhãn "AI-drafted"; bản nháp biên bản họp do AI đề xuất có nhãn "AI-generated" + câu "check before applying"; bản phiên âm voice note có nhãn "Auto transcript"; báo cáo được như mọi nội dung | `CTWNhanAI`, `CTWAvatar`, `ChiTietHopCTW.banNhapAI`, `GiongNoiChatCTW` |
+| 5.1.2(i) | App không gọi AI. NGOẠI LỆ DUY NHẤT: voice note trong chat — máy chủ gửi âm thanh cho **Groq** (chuyển giọng nói thành chữ) để đồng đội đọc được. Trước lần ghi ĐẦU TIÊN app hiện hộp "Voice notes are transcribed" nói rõ tên Groq và mục đích; chỉ ghi khi người dùng bấm "Allow and record". App KHÔNG gọi "đề xuất biên bản AI" / "gợi ý việc AI" (các nút đó chỉ có trên web). Agent do admin workspace thêm trên web — ghi rõ ở Privacy + chọn người làm. ⚠️ Chủ app: thêm Groq vào Privacy Policy (mục bên thứ ba) | `Modules/Chat/GhiAmCTW.swift` (`CongBoGiongNoiCTW`), `SoanTinCTW.swift`, `TrangPhapLyView` |
+| 5.1.1 / 5.1.2 | `PrivacyInfo.xcprivacy` riêng (UserDefaults CA92.1, FileTimestamp C617.1; dữ liệu thu: email, tên, user ID, device ID, ảnh/tệp, **âm thanh (voice note)**, tin nhắn, nội dung khác — đều Linked, không tracking). HAI chuỗi quyền: máy ảnh (chụp ảnh đính kèm thẻ/tin chat) và **micro (chỉ khi ghi voice note chat)**. Chọn ảnh = PhotosPicker (không cần quyền), chọn tệp = fileImporter. Họp video mở app Meet/Zoom/Teams/Jitsi (hoặc Safari) bằng hệ thống ⇒ KHÔNG camera/micro cho cuộc gọi, KHÔNG VoIP/CallKit, KHÔNG background mode. "Add to Calendar" = EventKitUI ngoài tiến trình ⇒ KHÔNG quyền Lịch | `CTWorkApp/PrivacyInfo.xcprivacy`, `Info.plist` |
 | ITSAppUsesNonExemptEncryption | `false` | `Info.plist` |
 | 2.3 / A6 | Cửa xem màn `CT_XEM_MAN` + máy chủ giả CHỈ trong `#if DEBUG` — đo bản Release: `grep -a -c CT_XEM_MAN` = 0 | `Debug/XemThuCTW.swift` |
 | 4.2 | Ứng dụng gốc SwiftUI (bảng kéo thả, chat realtime, Xem nhanh tệp, thông báo đẩy). Chỉ một lối "Open project on the web" (SFSafariViewController) cho công cụ nặng — không dùng để mua |  |
@@ -88,14 +91,22 @@ Sign in with Apple is also offered.
 - Projects > Backlog & issues: sprints, backlog, and "All issues" with filters.
 - Open any issue: change status / assignee / priority / due date, add a
   comment, attach a photo or file (+ next to Attachments), see History.
-- Chat tab: team channels, send a message (real-time).
-- Inbox: CT Work notifications (assignments, mentions, comments).
+- Chat tab: team channels and private groups. Send a message, a photo, a
+  file or a voice note; react, pin, search, reply in a thread. Messages
+  typed while offline are queued and sent when the connection returns.
+- Projects > Meetings: upcoming meetings, RSVP, "Join with Google Meet /
+  Zoom / Teams / Jitsi" (opens that app or Safari), notes, decisions,
+  action items -> "Create issues", transcript, Add to Calendar.
+- Inbox: CT Work notifications (assignments, mentions, replies, approvals,
+  alerts). Reply, Approve / Reject and Mark as read right from the inbox.
 - Projects > Docs: read and search project pages.
 
 === USER-GENERATED CONTENT (Guideline 1.2) ===
 - Community rules must be accepted on first launch.
 - Comments: touch and hold > Report comment / Block user.
-- Chat messages: touch and hold > Report message / Block user.
+- Chat messages (channels and threads): touch and hold > Report message /
+  Block user.
+- Meeting notes: Meetings > open a meeting > ... > Report notes / Block.
 - Reported content is hidden for the reporter immediately; reports reach our
   moderation queue and are reviewed within 24 hours.
 - Blocked users: Account > Blocked users & hidden content.
@@ -115,7 +126,15 @@ hours after the request (the user can cancel within that window).
 - No purchases, prices or external purchase links anywhere in the app.
   Accounts are free.
 - Camera permission is requested only when the user taps "Take Photo" to
-  attach a picture to an issue. Photo Library uses the system picker.
+  attach a picture to an issue or chat message. Photo Library uses the
+  system picker.
+- Microphone permission is requested only when the user taps the microphone
+  to record a voice note in chat. Before the first recording the app asks
+  for consent: voice notes are transcribed by Groq (a third-party
+  speech-to-text service). Video meetings open in Google Meet / Zoom /
+  Teams / Jitsi (or Safari); the app itself does not access the camera or
+  microphone for calls.
+- Add to Calendar uses the system event editor; no calendar permission.
 - Push notifications: assignments, mentions and comments.
 - iPad uses a dedicated split-view layout.
 ```
@@ -136,17 +155,47 @@ hours after the request (the user can cancel within that window).
   chữ ký JWKS Apple, `aud` ∈ {`com.cuongthai.app`, `com.cuongthai.ctwork`}.
 - Push app CT Work: phiên chính đang làm trường `app` ở `/devices` + topic theo app (chưa deploy).
 
-**A — Chat / Họp / Thông báo**
-- Không có route BÁO CÁO tin chat ⇒ app dùng đường chung `/academy/advisor/report-answer`.
-  Đề xuất `POST /projects/:pid/chat/channels/:cid/messages/:mid/report` (như report bình luận:
-  audit + WORK_ALERT cho admin) + ẩn tin cho người báo cáo phía máy chủ.
-- Chặn người dùng (`/messages/blocks`) chưa áp vào chat/bình luận/thông báo CT Work phía máy chủ
-  (app lọc phía máy).
-- Tin chat thường (không @, không trả lời) không có push — chỉ socket `work:chat:notify`.
-  Cần push "tin mới trong kênh" theo cài đặt `notify` của kênh nếu muốn báo khi app tắt.
-- Họp video: cần endpoint cấp phòng/token (TURN) cho WebRTC native; hiện họp là link ngoài.
-- Thông báo có hành động (Trả lời/Duyệt ngay trên thông báo) cần route trả lời gọn
-  (vd `POST /work/notifications/:id/reply`) + `category` trong gói APNs.
+**A — Chat / Họp / Thông báo** (cập nhật 18/10/2026 — app ĐÃ làm phần của mình, chờ máy chủ)
+1. **Nút trên thông báo đẩy (cần nhất).** App đã đăng ký 3 category + xử lý nền
+   (`Modules/Inbox/HanhDongThongBaoCTW.swift`). Máy chủ chỉ cần thêm vào gói APNs
+   (`push/apns.ts` `NoiDungDay` + `notification.service.ts → dayRaNgoaiApp`):
+   - `aps.category`: `CTW_REPLY` cho WORK_COMMENT / WORK_MENTION có `url`; `CTW_APPROVAL`
+     cho WORK_ALERT có `payload.approvalId` mà người nhận là người duyệt đang chờ;
+     `CTW_DEFAULT` cho WORK_* còn lại.
+   - `approvalId` ở cấp ngoài cùng của `duLieu` (cạnh `thongBaoId`, `duongDan`) — thiếu thì app
+     tự lục 4 trang thông báo để tìm, chậm hơn.
+   - `thread-id`: `ctw-<issueKey>` / `ctw-<projectKey>-chat-<cid>` thay cho `xh-WORK_*` ⇒ iOS
+     xếp chồng theo thẻ/kênh như hộp thư gộp của app.
+   Không cần route mới: Trả lời dùng `POST …/issues/:n/comments {bodyJson, parentId}` hoặc
+   `POST …/chat/channels/:cid/messages {body, parentId, clientKey}`; Duyệt dùng
+   `POST /projects/:pid/approvals/:aid/decide {decision}`; Đã đọc dùng `PATCH /social/notifications {ids}`.
+2. **Lọc thông báo theo bề mặt:** `GET /social/notifications?surface=work` (+ `GET …/unread-count?surface=work`
+   ⇒ `{unreadCount}`) — app đang tải tối đa 4–6 trang rồi tự lọc `WORK_*` để đếm huy hiệu.
+3. **Báo cáo tin chat:** `POST /projects/:pid/chat/channels/:cid/messages/:mid/report {reason, detail?}` ⇒
+   `{reported: true}` (audit + WORK_ALERT cho admin dự án, ẩn tin cho người báo cáo). Hiện đi đường chung
+   `/academy/advisor/report-answer` (`BaoCaoTinCTW.swift` — đổi MỘT chỗ).
+4. **Báo cáo ghi chú cuộc họp:** `POST /projects/:pid/meetings/:num/report {reason, detail?}` ⇒ `{reported: true}`.
+   Hiện cũng đi đường chung (`ChiTietHopCTW.guiBaoCao`).
+5. **Chặn áp phía máy chủ:** `/messages/blocks` chưa áp vào chat/bình luận/ghi chú họp/thông báo CT Work
+   (app lọc phía máy).
+6. **Push tin chat thường:** kênh đặt `notify = ALL` mà tin không @/không trả lời ⇒ hiện chỉ có socket
+   `work:chat:notify`, KHÔNG có push khi app tắt. Đề xuất push-only (không thêm dòng hộp thư) với
+   `duongDan = chatUrl`, `category = CTW_REPLY`, tôn trọng mute/giờ im lặng như `alert` của socket.
+7. **Cài đặt thông báo theo loại (push):** `GET|PUT /work/me/notify-settings` thêm
+   `push: {assign, comment, mention, alert, approval, chatAll}: boolean` ⇒ lọc trong `dayRaNgoaiApp`.
+   App hiện có: email (INSTANT/DIGEST/OFF), giờ im lặng, chat ALL/MENTIONS, tạm dừng, email tóm tắt,
+   chỉnh từng kênh — đủ những gì máy chủ có.
+8. **Giờ im lặng theo múi giờ người dùng:** máy chủ cố định `Asia/Ho_Chi_Minh` — app ghi rõ "Vietnam time".
+   Đề xuất trường `timezone` trong notify-settings.
+9. **Nhắn riêng 1-1:** CT Work chỉ có kênh/nhóm riêng (tên 2–40 ký tự). Đề xuất
+   `POST /projects/:pid/chat/dm {userId}` ⇒ `{id, kind: 'DM', name}` (trả kênh cũ nếu đã có).
+10. **Họp video trong app (tuỳ chọn, chưa cần):** họp hiện là link Meet/Zoom/Teams/Jitsi — app mở bằng
+    hệ thống (Universal Link vào app của họ) nên không cần WebRTC/CallKit/quyền camera. Muốn gọi ngay
+    trong app: `POST /projects/:pid/meetings/:num/room-token` ⇒ `{provider, url, token, expiresAt, iceServers}`
+    (Jitsi tự host có JWT, hoặc LiveKit) + push VoIP riêng nếu muốn đổ chuông.
+11. **Nhắc họp có nút "Join":** nhắc trước giờ họp (`reminderMinutes`) nên là push WORK_ALERT kèm
+    `meetingUrl` + `category = CTW_MEETING` (app sẽ thêm nút Join khi máy chủ gửi).
+12. **Chính sách bảo mật web** (`/chinh-sach-bao-mat`): thêm Groq (phiên âm voice note) vào mục bên thứ ba.
 
 **B — Kế hoạch / Báo cáo**
 - Đã có burndown/velocity/sprint/epics/contributions/timeline/capacity/okrs/poker/retros trên web;

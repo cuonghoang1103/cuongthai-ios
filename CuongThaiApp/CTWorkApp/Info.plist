@@ -4,11 +4,16 @@
   Info.plist của app CT WORK riêng (com.cuongthai.ctwork) — KHÔNG dùng chung
   với app chính.
 
-  Chỉ khai ĐÚNG MỘT quyền: máy ảnh (chụp ảnh đính kèm vào thẻ).
+  Khai ĐÚNG HAI quyền: máy ảnh (chụp ảnh đính kèm vào thẻ / tin chat) và micro
+  (ghi voice note gửi vào kênh chat — chỉ xin khi chạm nút micro lần đầu; trước lần
+  ghi đầu app hỏi đồng ý việc máy chủ gửi âm thanh cho Groq để phiên âm, 5.1.2(i)).
+  Họp video mở Meet/Zoom/Teams/Jitsi bằng hệ thống ⇒ app KHÔNG cần quyền camera/micro
+  cho cuộc gọi, không VoIP/CallKit, không chế độ nền.
   · Chọn ảnh dùng `PhotosPicker` — chạy ngoài tiến trình, KHÔNG cần
     NSPhotoLibraryUsageDescription. Khai thừa = bị trả về (CLAUDE.md A14).
   · Chọn tệp dùng `fileImporter` — không cần quyền.
-  · Không micro, không vị trí, không nhận giọng nói: app này không dùng.
+  · Không vị trí, không nhận giọng nói trên máy: app này không dùng.
+  · "Add to Calendar" dùng EventKitUI chạy ngoài tiến trình (iOS 17) ⇒ KHÔNG cần quyền Lịch.
 -->
 <plist version="1.0">
 <dict>
@@ -46,7 +51,8 @@
         <string>UIInterfaceOrientationLandscapeLeft</string>
         <string>UIInterfaceOrientationLandscapeRight</string>
     </array>
-    <key>NSCameraUsageDescription</key><string>CT Work uses the camera only when you choose "Take Photo" to attach a picture to an issue.</string>
+    <key>NSCameraUsageDescription</key><string>CT Work uses the camera only when you choose "Take Photo" to attach a picture to an issue or a chat message.</string>
+    <key>NSMicrophoneUsageDescription</key><string>CT Work uses the microphone only while you record a voice note to send in a team chat channel.</string>
     <!-- `ctwork://issue/KEY-12`, `ctwork://work/<ws>/<KEY>/issue/12` — app chính
          (và thông báo) mở thẳng một thẻ. -->
     <key>CFBundleURLTypes</key>

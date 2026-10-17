@@ -12,6 +12,7 @@ enum CTWDangKyMoDun {
         .backlog,
         .docs,
         .chat,
+        .meetings,
     ]
 
     static func moDun(_ id: String) -> CTWModule? { dangKyMoDun.first { $0.id == id } }

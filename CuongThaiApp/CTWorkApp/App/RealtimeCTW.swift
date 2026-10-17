@@ -28,6 +28,8 @@ final class RealtimeCTW: ObservableObject {
     static let shared = RealtimeCTW()
 
     let suKienChat = PassthroughSubject<SuKienChatCTW, Never>()
+    /// "Đang gõ…" trong kênh đã vào (`work:chat:typing`) — mô-đun Chat.
+    let suKienGo = PassthroughSubject<SuKienGoCTW, Never>()
     @Published private(set) var daNoi = false
 
     private var manager: SocketManager?
@@ -56,6 +58,8 @@ final class RealtimeCTW: ObservableObject {
                 guard let self else { return }
                 self.daNoi = true
                 for p in self.phong { self.vaoPhong(pid: p[0], cid: p[1]) }
+                // Nối lại ⇒ gửi các tin đang chờ trong hàng chờ ngoại tuyến.
+                await HangChoGuiCTW.shared.xa()
             }
         }
         s.on(clientEvent: .disconnect) { [weak self] _, _ in
@@ -73,7 +77,22 @@ final class RealtimeCTW: ObservableObject {
                                    messageId: d["messageId"] as? Int, parentId: d["parentId"] as? Int, message: msg)
             Task { @MainActor in self?.suKienChat.send(sk) }
         }
+        s.on("work:chat:typing") { [weak self] data, _ in
+            guard let d = data.first as? [String: Any],
+                  let pid = d["projectId"] as? Int, let cid = d["channelId"] as? Int else { return }
+            var u: CTWUser?
+            if let x = d["user"], let j = try? JSONSerialization.data(withJSONObject: x) {
+                u = try? JSONDecoder().decode(CTWUser.self, from: j)
+            }
+            let sk = SuKienGoCTW(projectId: pid, channelId: cid, threadId: d["threadId"] as? Int,
+                                 dangGo: (d["typing"] as? Bool) ?? true, user: u)
+            Task { @MainActor in self?.suKienGo.send(sk) }
+        }
         s.on("work:chat:notify") { _, _ in
+            Task { @MainActor in await AppState.shared.taiSoChuaDoc() }
+        }
+        // Đã đọc ở thiết bị khác (web/desktop) ⇒ huy hiệu theo kịp.
+        s.on("work:chat:read") { _, _ in
             Task { @MainActor in await AppState.shared.taiSoChuaDoc() }
         }
         s.on("social:notification") { _, _ in
@@ -101,6 +120,14 @@ final class RealtimeCTW: ObservableObject {
     func roiKenh(pid: Int, cid: Int) {
         phong.remove([pid, cid])
         socket?.emit("work:chat:leave", ["projectId": pid, "channelId": cid])
+    }
+
+    /// Báo "đang gõ" (máy chủ chỉ phát lại trong phòng kênh socket đã vào; có trần nhịp).
+    func baoDangGo(pid: Int, cid: Int, chuoi: Int?, dangGo: Bool) {
+        guard let socket, socket.status == .connected else { return }
+        var d: [String: Any] = ["projectId": pid, "channelId": cid, "typing": dangGo]
+        if let chuoi { d["threadId"] = chuoi }
+        socket.emit("work:chat:typing", d)
     }
 
     private func vaoPhong(pid: Int, cid: Int) {

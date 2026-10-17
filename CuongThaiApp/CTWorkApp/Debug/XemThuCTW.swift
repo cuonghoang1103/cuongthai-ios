@@ -20,6 +20,7 @@ enum XemThuCTW {
 
     /// Mô-đun mở sẵn trong trang dự án (iPhone) cho màn đang chụp.
     static var moDunMoSan: String? {
+        if let m = moDunGiaoTiep { return m }
         switch man?.lowercased() {
         case "board": return "board"
         case "backlog", "list": return "backlog"
@@ -51,6 +52,8 @@ enum XemThuCTW {
         app.isAuthenticated = true
         app.luaChon = LuaChonCTW(slug: "northwind", tenKhongGian: "Northwind Studio", pid: 7, maDuAn: "NW", tenDuAn: "Mobile App Launch")
         Task { await app.fetchProfile() }
+        // Màn của mảng Giao tiếp (chat/họp/hộp thư) — XemThuCTW+GiaoTiep.swift.
+        if batGiaoTiep(app) { return }
         switch man {
         case "duan": app.muc = .duAn
         // iPhone: khung gộp mô-đun `.trangDuAn` vào tab Projects (trang dự án tự mở
@@ -138,6 +141,7 @@ enum DuLieuGia {
 
     // swiftlint:disable:next cyclomatic_complexity
     static func route(_ m: String, _ p: String, _ b: [String: Any]) -> Any {
+        if let r = DuLieuGiaGiaoTiep.route(m, p, b) { return r }
         switch (m, p) {
         case ("GET", "/profile"):
             return ["id": 1, "username": "alex", "email": "alex@northwind.example", "fullName": "Alex Morgan", "displayName": NSNull(), "avatarUrl": NSNull()]
