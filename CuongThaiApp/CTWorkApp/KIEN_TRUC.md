@@ -31,6 +31,12 @@ CuongThaiApp/
 │  ├─ CTWKiemDuyet.swift            ẩn nội dung đã báo cáo + lý do báo cáo (1.2)
 │  ├─ CTWorkBoardView / CTWorkIssueView / CTWorkCreateIssueView / CTWorkView.swift
 │  └─ CTWUI/                        THƯ VIỆN GIAO DIỆN (mục 4)
+├─ CTWorkShared/                    ← app + CTWorkWidget (+ CTWorkShare chỉ NhomCTW.swift) cùng biên dịch
+│  ├─ NhomCTW.swift                 App Group `group.com.cuongthai.ctwork` (ảnh chụp JSON: việc hôm nay, đồng hồ,
+│  │                                dự án, thẻ đã xem) + Keychain chia sẻ token cho Share Extension
+│  └─ DongHoActivityCTW.swift       `CTWDongHoAttributes` (Live Activity) + `NutDongHoLiveIntent` (nút Pause/Stop)
+├─ CTWorkWidget/                    target CTWorkWidget (com.cuongthai.ctwork.widget): "My work today", "Timer", Live Activity
+├─ CTWorkShare/                     target CTWorkShare (com.cuongthai.ctwork.share): ảnh/link/chữ ⇒ thẻ mới hoặc bình luận
 ├─ CTWorkTests/                     kiểm thử đơn vị (target CTWorkAppTests)
 └─ CTWorkUITests/                   kiểm thử giao diện (target CTWorkAppUITests)
 ```
@@ -187,3 +193,24 @@ xcodebuild test -project CuongThaiApp.xcodeproj -scheme CTWorkApp -destination '
 - Chữ hiện cho người dùng: TIẾNG ANH. Chú thích: tiếng Việt, giải thích VÌ SAO.
 - Model API: `var` + optional; ngày `String` (đọc bằng `CTW.ngay`, `CTW.thoiDiem`, `CTWChatThoiGian`).
 - Nhật ký chẩn đoán: chỉ trong `#if DEBUG`.
+
+## 10. Mảng D — widget · Live Activity · Siri · Share · Spotlight · Face ID (18/10/2026)
+
+- **Một chiều dữ liệu:** APP ghi vùng chung (`App/ChiaSeNhomCTW.swift` → `CTWorkShared/NhomCTW.swift`), widget/extension
+  chỉ ĐỌC. Widget không gọi mạng, không cầm token. App ghi lại khi: ra tiền cảnh (`lamMoiViecHomNay`, `DongHoCTW.taiLai`,
+  `dongBoToken`), mở My Work → Agenda, đồng hồ đổi (`DongHoCTW.khiDoi` → `LiveActivityDongHoCTW.capNhat`), mở một thẻ
+  (`CTWIssueView(khiMo:)` → Spotlight + "thẻ gần đây"), chọn dự án. Đăng xuất ⇒ `donKhiDangXuat` xoá hết.
+- ⚠️ Hàm gọi từ `didSet` của `AppState` KHÔNG được đọc `AppState.shared` (lúc khởi tạo ⇒ `dispatch_once` gọi lại chính nó
+  ⇒ SIGTRAP khi mở app — đã dính 18/10). Bản DEBUG nhận ra máy chủ giả bằng `XemThuCTW.man`, không bằng `AppState`.
+- **Live Activity:** cục bộ (`pushType: nil`). Nút trên nó là `LiveActivityIntent` ⇒ `perform()` chạy trong tiến trình APP
+  (`NutDongHoLiveIntent.thucThi` gắn ở `AppDelegateCTW`). Info.plist: `NSSupportsLiveActivities`.
+- **Siri/App Intents:** `Intents/YDinhCTW.swift` (trong target app ⇒ dùng `APIClient`). Không cần capability Siri.
+- **Share Extension:** tự gọi API (`MangChiaSe`), token từ Keychain chia sẻ `<TEAM>.com.cuongthai.ctwork.shared`
+  (Info.plist `CTWNhomKeychain`, entitlement `keychain-access-groups` — nhóm ĐẦU của app giữ bằng App ID để token cũ đọc được).
+- **Face ID:** `Modules/Account/KhoaAppCTW.swift`, mặc định TẮT, `.deviceOwnerAuthentication` (lùi mật mã).
+- **3.1.1:** web cuongthai.com mở bằng `TrinhDuyetCuongThaiCTW` (chặn + ẩn `/pro`, `/pricing`, cổng thanh toán).
+  Đừng dùng SFSafariViewController cho trang của cuongthai.com nữa (không chặn được điều hướng).
+- **Số phiên bản:** `PhienBanCTW.xcconfig` cho cả 3 target (ITMS-90473). KHÔNG khai MARKETING_VERSION ở target trong project.yml.
+- **Phát hành:** `bash scripts/phat-hanh-ctwork.sh` (xem CTWORK_APP_REVIEW_NOTES.md mục 8).
+- **Màn thử mới:** `agenda` (My Work → Agenda) · `khoa` (màn khoá Face ID). Tuyến máy chủ giả mới: `Debug/XemThuCTW+D.swift`.
+- **Bản khai quyền riêng tư:** mỗi extension có `PrivacyInfo.xcprivacy` riêng (không nhóm API nào).
