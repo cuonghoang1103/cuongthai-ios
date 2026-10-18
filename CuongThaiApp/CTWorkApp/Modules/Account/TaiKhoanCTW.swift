@@ -67,6 +67,8 @@ struct TrangPhapLyView: View {
             muc("Video meetings open in Google Meet, Zoom, Microsoft Teams or Jitsi (or Safari). CT Work itself does not use your camera or microphone for calls.")
             muc("If you allow notifications, we store your device's push token to deliver CT Work notifications.")
             muc("Apart from voice-note transcription, this app does not send your data to third-party AI services. AI agents that a workspace admin adds can read the project they are members of, like any other member; AI-drafted meeting minutes are labelled “AI-generated”.")
+            muc("Widgets, Siri and Spotlight use a copy of your own data kept on this device only (today's work, your timer, issues you opened recently). Signing out deletes it.")
+            muc("Face ID lock is optional and off by default. Face ID is handled by iOS; the app never sees your face data.")
             muc("No tracking, no advertising, no data sale.")
         } header: { Text("Summary") }
         Section {
@@ -84,7 +86,6 @@ struct TrangPhapLyView: View {
             Link(destination: URL(string: "mailto:\(LienHeCTW.email)?subject=CT%20Work%20support")!) {
                 Label(LienHeCTW.email, systemImage: "envelope")
             }
-            Button { web = LienHeCTW.web } label: { Label("CT Work on the web", systemImage: "safari") }
         } header: { Text("Contact us") }
     }
 
@@ -97,9 +98,9 @@ struct TrangPhapLyView: View {
 
 struct URLCoID: Identifiable { let url: URL; var id: String { url.absoluteString } }
 
-/// "Mở trên web" ngay trong app (SFSafariViewController) — chỉ dùng cho trang
-/// đọc/pháp lý/tính năng nặng không có trên điện thoại. KHÔNG dùng để mua gì.
-struct SafariCTW: UIViewControllerRepresentable {
+/// Trình duyệt hệ thống cho trang NGOÀI cuongthai.com (link người dùng dán, EULA của Apple).
+/// Trang của cuongthai.com đi qua `SafariCTW` → `TrinhDuyetCuongThaiCTW` (có chốt 3.1.1).
+struct SafariGocCTW: UIViewControllerRepresentable {
     let url: URL
     func makeUIViewController(context: Context) -> SFSafariViewController {
         let c = SFSafariViewController(url: url)
@@ -159,17 +160,19 @@ struct TaiKhoanCTW: View {
                                 .foregroundColor(AppColors.textSecondary).lineLimit(1)
                         }
                     }
-                    Button { tamPhu = .web(LienHeCTW.web) } label: {
-                        Label("Open CT Work on the web", systemImage: "safari")
-                    }
-                } header: { Text("Workspace") } footer: {
-                    Text("Opens cuongthai.com in a secure in-app browser.")
-                }
+                } header: { Text("Workspace") }
 
                 Section("Notifications") {
+                    NavigationLink { CaiDatThongBaoCTW() } label: { Label("What to notify me about", systemImage: "slider.horizontal.3") }
                     Button {
                         if let u = URL(string: UIApplication.openNotificationSettingsURLString) { UIApplication.shared.open(u) }
                     } label: { Label("Notification settings", systemImage: "bell.badge") }
+                }
+
+                Section {
+                    KhoaAppCongTacCTW()
+                } header: { Text("Security") } footer: {
+                    Text("When on, CT Work asks for \(KhoaAppCTW.tenSinhTracHoc) (or your passcode) every time you return to the app. Widgets and notifications still show on your Lock Screen.")
                 }
 
                 Section("Safety") {

@@ -61,6 +61,7 @@ final class AppState: ObservableObject {
     @Published var luaChon: LuaChonCTW? {
         didSet {
             luuLuaChon()
+            CTWChiaSeNhom.ghiDuAnDangChon(luaChon)
             if oldValue?.pid != luaChon?.pid { cauHinhDuAn = nil; Task { await napCauHinhDuAn() } }
         }
     }
@@ -107,12 +108,14 @@ final class AppState: ObservableObject {
     func login(token: String, refreshToken: String? = nil) {
         storage.saveAuthToken(token, refreshToken: refreshToken)
         isAuthenticated = true
+        CTWChiaSeNhom.dongBoToken()
         RealtimeCTW.shared.noiLai()
         Task { await fetchProfile() }
     }
 
     func logout() {
         DayCTW.shared.goTheKhiDangXuat()
+        CTWChiaSeNhom.donKhiDangXuat()
         storage.clearAll()
         RealtimeCTW.shared.ngat()
         ModerationStore.shared.reset()
@@ -166,9 +169,7 @@ final class AppState: ObservableObject {
         }
     }
 
-    /// Đếm chưa đọc: chat (một lời gọi) + hộp thư (chỉ loại WORK_* — máy chủ chưa có
-    /// bộ lọc theo loại ⇒ đọc tối đa 4 trang 50 mới nhất, dừng khi trang không còn
-    /// thông báo chưa đọc nào).
+    /// Đếm chưa đọc: chat (một lời gọi) + hộp thư (`unread-count?surface=work` — chỉ WORK_*).
     /// Huy hiệu biểu tượng = SỐ THÔNG BÁO WORK_* CHƯA ĐỌC — đúng con số máy chủ gắn
     /// vào gói APNs cho app này (`notification.service.ts → soCtw`). Cộng thêm số tin
     /// chat chưa đọc như trước làm số nhảy qua lại mỗi lần có đẩy.
@@ -176,16 +177,22 @@ final class AppState: ObservableObject {
         if let u: CTWChatUnread = try? await APIClient.shared.request(CTWAPI.chatChuaDoc()) {
             chatChuaDoc = u.total ?? 0
         }
+        // Máy chủ đếm sẵn theo bề mặt (`?surface=work`, 18/10/2026) — MỘT lời gọi.
         var so = 0
-        var cursor: Int?
         var docDuoc = false
-        for _ in 0..<4 {
-            guard let r: NotificationsResponse = try? await APIClient.shared.request(.getNotifications(cursor: cursor, limit: 50)) else { break }
+        if let r: CTWSoChuaDoc = try? await APIClient.shared.request(CTWAPI.tbSoChuaDoc()), let n = r.unreadCount {
+            so = n
             docDuoc = true
-            let moi = r.items.filter { $0.type.hasPrefix("WORK_") && !$0.isRead }.count
-            so += moi
-            guard r.pagination.hasNextPage, let c = r.pagination.nextCursor, r.items.contains(where: { !$0.isRead }) else { break }
-            cursor = c
+        } else {
+            // Lối lùi (máy chủ cũ / lỗi tạm): đọc tối đa 4 trang 50 mới nhất rồi tự đếm WORK_*.
+            var cursor: Int?
+            for _ in 0..<4 {
+                guard let r: NotificationsResponse = try? await APIClient.shared.request(.getNotifications(cursor: cursor, limit: 50)) else { break }
+                docDuoc = true
+                so += r.items.filter { $0.type.hasPrefix("WORK_") && !$0.isRead }.count
+                guard r.pagination.hasNextPage, let c = r.pagination.nextCursor, r.items.contains(where: { !$0.isRead }) else { break }
+                cursor = c
+            }
         }
         if docDuoc { hopThuChuaDoc = so }
         DayCTW.datHuyHieu(hopThuChuaDoc)

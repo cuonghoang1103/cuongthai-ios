@@ -238,8 +238,12 @@ struct CTWIssueView: View {
         var id: String { rawValue }
     }
 
-    init(pid: Int, so: Int) {
+    /// Gọi MỘT lần khi thẻ tải xong (app CT Work: ghi "thẻ đã xem" cho Spotlight/Share Extension).
+    private let khiMo: ((CTWIssueDetail, CTWProjectConfig) -> Void)?
+
+    init(pid: Int, so: Int, khiMo: ((CTWIssueDetail, CTWProjectConfig) -> Void)? = nil) {
         _vm = StateObject(wrappedValue: CTWIssueVM(pid: pid, so: so))
+        self.khiMo = khiMo
     }
 
     var body: some View {
@@ -266,6 +270,9 @@ struct CTWIssueView: View {
             }
         }
         .task { if vm.the == nil { await vm.tai() } }
+        .onChange(of: vm.the != nil && vm.cauHinh != nil) { _, xong in
+            if xong, let t = vm.the, let c = vm.cauHinh { khiMo?(t, c) }
+        }
         .confirmationDialog(
             "Block \(hoiChan?.ten ?? "this user")?",
             isPresented: Binding(get: { hoiChan != nil }, set: { if !$0 { hoiChan = nil } }),

@@ -19,6 +19,8 @@ enum DinhTuyenCTW {
     @MainActor
     static func mo(url: URL) {
         if url.scheme == "ctwork" {
+            // Widget "My work today" / "Timer" khi không có thẻ cụ thể.
+            if url.host == "mywork" { AppState.shared.muc = .viecCuaToi; return }
             if url.host == "issue" {
                 let khoa = url.pathComponents.dropFirst().first ?? ""
                 Task { await moTheoKhoa(khoa) }

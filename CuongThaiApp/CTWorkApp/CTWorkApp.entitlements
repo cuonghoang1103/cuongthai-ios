@@ -12,5 +12,14 @@
 	<array>
 		<string>applinks:cuongthai.com</string>
 	</array>
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.com.cuongthai.ctwork</string>
+	</array>
+	<key>keychain-access-groups</key>
+	<array>
+		<string>$(AppIdentifierPrefix)com.cuongthai.ctwork</string>
+		<string>$(AppIdentifierPrefix)com.cuongthai.ctwork.shared</string>
+	</array>
 </dict>
 </plist>

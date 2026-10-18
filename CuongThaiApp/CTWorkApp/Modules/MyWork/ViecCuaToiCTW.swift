@@ -6,13 +6,23 @@ struct ViecCuaToiCTW: View {
     @EnvironmentObject private var app: AppState
     @EnvironmentObject private var nganXep: NganXepCTW
     @State private var tim = ""
+    /// 0 = Issues (My Work của lõi) · 1 = Agenda (`/me/agenda`, xuyên dự án).
+    @AppStorage("ctw.myWork.che") private var che = 0
 
     var body: some View {
         Group {
             if tim.trimmingCharacters(in: .whitespaces).count >= 2 {
                 TimKiemCTW(q: tim)
             } else {
-                CTWMyWorkView()
+                VStack(spacing: 0) {
+                    Picker("View", selection: $che) {
+                        Text("Issues").tag(0)
+                        Text("Agenda").tag(1)
+                    }
+                    .pickerStyle(.segmented)
+                    .padding(.horizontal, Spacing.md).padding(.vertical, 8)
+                    if che == 1 { AgendaCuaToiCTW() } else { CTWMyWorkView() }
+                }
             }
         }
         .background(AppColors.backgroundPrimary)

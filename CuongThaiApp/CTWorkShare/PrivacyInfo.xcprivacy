@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  BẢN KHAI QUYỀN RIÊNG TƯ của Share Extension CT Work (CTWorkShare).
+  Soát 18/10/2026: extension đọc JSON trong App Group (`Data(contentsOf:)`) + token trong Keychain chia sẻ,
+  (`CTWorkShared/NhomCTW.swift`) — KHÔNG UserDefaults, file timestamp, disk space, boot time,
+  active keyboards. Gọi API CT Work (tạo thẻ / bình luận / đính kèm) — dữ liệu thu thập đã khai ở app chứa. Thêm mã chạm nhóm API nào ⇒ bổ sung ở đây.
+-->
+<plist version="1.0">
+<dict>
+    <key>NSPrivacyTracking</key>
+    <false/>
+    <key>NSPrivacyTrackingDomains</key>
+    <array/>
+    <key>NSPrivacyAccessedAPITypes</key>
+    <array/>
+    <key>NSPrivacyCollectedDataTypes</key>
+    <array/>
+</dict>
+</plist>

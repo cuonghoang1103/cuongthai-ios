@@ -14,6 +14,9 @@
   · Chọn tệp dùng `fileImporter` — không cần quyền.
   · Không vị trí, không nhận giọng nói trên máy: app này không dùng.
   · "Add to Calendar" dùng EventKitUI chạy ngoài tiến trình (iOS 17) ⇒ KHÔNG cần quyền Lịch.
+  · Mảng D (18/10/2026): NSFaceIDUsageDescription — khoá app bằng Face ID (TUỲ CHỌN, mặc định tắt,
+    Account → Security; `Modules/Account/KhoaAppCTW.swift`). NSSupportsLiveActivities — đồng hồ bấm giờ
+    trên Màn hình khoá / Dynamic Island. CTWNhomKeychain — nhóm Keychain chia token cho Share Extension.
 -->
 <plist version="1.0">
 <dict>
@@ -52,6 +55,9 @@
         <string>UIInterfaceOrientationLandscapeRight</string>
     </array>
     <key>NSCameraUsageDescription</key><string>CT Work uses the camera only when you choose "Take Photo" to attach a picture to an issue or a chat message.</string>
+    <key>NSFaceIDUsageDescription</key><string>If you turn on Face ID lock in Account › Security, CT Work asks for Face ID when you open the app.</string>
+    <key>NSSupportsLiveActivities</key><true/>
+    <key>CTWNhomKeychain</key><string>$(AppIdentifierPrefix)com.cuongthai.ctwork.shared</string>
     <key>NSMicrophoneUsageDescription</key><string>CT Work uses the microphone only while you record a voice note to send in a team chat channel.</string>
     <!-- `ctwork://issue/KEY-12`, `ctwork://work/<ws>/<KEY>/issue/12` — app chính
          (và thông báo) mở thẳng một thẻ. -->

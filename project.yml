@@ -264,10 +264,16 @@ targets:
     type: application
     platform: iOS
     deploymentTarget: "17.0"
+    # Số phiên bản chung với widget + Share Extension (ITMS-90473) — CuongThaiApp/CTWorkApp/PhienBanCTW.xcconfig.
+    configFiles:
+      Debug: CuongThaiApp/CTWorkApp/PhienBanCTW.xcconfig
+      Release: CuongThaiApp/CTWorkApp/PhienBanCTW.xcconfig
     sources:
       - path: CuongThaiApp/CTWorkApp
-        # Tài liệu kiến trúc KHÔNG được chép vào gói app.
-        excludes: ["**/*.md"]
+        # Tài liệu kiến trúc + xcconfig KHÔNG được chép vào gói app.
+        excludes: ["**/*.md", "**/*.xcconfig"]
+      # Kiểu dùng chung với widget + Share Extension (App Group, Keychain chia sẻ, Live Activity).
+      - path: CuongThaiApp/CTWorkShared
       - path: CuongThaiApp/Shared/CTWork
       - path: CuongThaiApp/Shared/Network
       - path: CuongThaiApp/Shared/Models
@@ -296,19 +302,30 @@ targets:
         GENERATE_INFOPLIST_FILE: NO
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
-        MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "1"
+        # ⚠️ KHÔNG khai MARKETING_VERSION / CURRENT_PROJECT_VERSION ở đây: khai ở target sẽ ĐÈ xcconfig
+        # và app lệch số với extension. Sửa ở PhienBanCTW.xcconfig.
         # iPhone + iPad. iPad có bố cục RIÊNG (NavigationSplitView thanh bên theo nhóm ở
         # `CTWorkApp/App/KhungCTW.swift`), Info.plist khai đủ 4 hướng cho iPad.
         TARGETED_DEVICE_FAMILY: "1,2"
         ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES: YES
     dependencies:
+      # ⚠️ MỘT khối `dependencies:` duy nhất (khai hai khối ⇒ YAML nuốt khối trước, app ra lò thiếu PlugIns).
+      - target: CTWorkWidget
+        embed: true
+      - target: CTWorkShare
+        embed: true
       - package: Kingfisher
       - package: SocketIO
         product: SocketIO
     entitlements:
       path: CuongThaiApp/CTWorkApp/CTWorkApp.entitlements
       properties:
+        # Mảng D: vùng chung với widget + Share Extension. Chuỗi TRÙNG KHÍT `NhomCTW.appGroup`
+        # và entitlements của hai extension dưới. Bật "App Groups" cho cả ba App ID ở Developer portal.
+        com.apple.security.application-groups: ["group.com.cuongthai.ctwork"]
+        # Keychain: nhóm ĐẦU = nhóm mặc định (giữ bằng App ID như trước để token cũ vẫn đọc được);
+        # nhóm thứ hai chia token cho Share Extension (`TokenNhomCTW`, Info.plist `CTWNhomKeychain`).
+        keychain-access-groups: ["$(AppIdentifierPrefix)com.cuongthai.ctwork", "$(AppIdentifierPrefix)com.cuongthai.ctwork.shared"]
         # 4.8: bắt buộc bật "Sign in with Apple" cho App ID com.cuongthai.ctwork
         # trong Developer portal, không thì bước ký hồ sơ trượt.
         com.apple.developer.applesignin: [Default]
@@ -318,6 +335,63 @@ targets:
         # máy chủ phục vụ apple-app-site-association có appID của app này
         # (xem CTWORK_APP_REVIEW_NOTES.md, phần backend còn thiếu).
         com.apple.developer.associated-domains: ["applinks:cuongthai.com"]
+
+  # ─── Widget + Live Activity của app CT Work (mảng D, 18/10/2026) ───────
+  # "My work today", "Timer", Live Activity đồng hồ (Lock Screen + Dynamic Island).
+  # ⚠️ CHỈ `CTWorkShared/` — KHÔNG kéo `Shared/` (socket/Kingfisher… ⇒ vượt bộ nhớ extension, widget trống câm).
+  # Widget không gọi mạng, không cầm token: đọc ảnh chụp JSON app ghi vào App Group.
+  CTWorkWidget:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "17.0"
+    configFiles:
+      Debug: CuongThaiApp/CTWorkApp/PhienBanCTW.xcconfig
+      Release: CuongThaiApp/CTWorkApp/PhienBanCTW.xcconfig
+    sources:
+      - path: CuongThaiApp/CTWorkWidget
+      - path: CuongThaiApp/CTWorkShared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.cuongthai.ctwork.widget
+        INFOPLIST_FILE: CuongThaiApp/CTWorkWidget/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        SKIP_INSTALL: YES
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: "UR32PFUQ38"
+        TARGETED_DEVICE_FAMILY: "1,2"
+    entitlements:
+      path: CuongThaiApp/CTWorkWidget/CTWorkWidget.entitlements
+      properties:
+        com.apple.security.application-groups: ["group.com.cuongthai.ctwork"]
+
+  # ─── Share Extension của app CT Work (mảng D) ─────────────────────────
+  # Ảnh / link / chữ từ app khác ⇒ tạo thẻ hoặc bình luận vào thẻ đã xem gần đây. TỰ gọi API bằng token
+  # trong Keychain chia sẻ. ⚠️ Không kéo `Shared/`.
+  CTWorkShare:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "17.0"
+    configFiles:
+      Debug: CuongThaiApp/CTWorkApp/PhienBanCTW.xcconfig
+      Release: CuongThaiApp/CTWorkApp/PhienBanCTW.xcconfig
+    sources:
+      - path: CuongThaiApp/CTWorkShare
+      # Chỉ tệp App Group/Keychain — tệp Live Activity (ActivityKit/AppIntents) không cần ở đây.
+      - path: CuongThaiApp/CTWorkShared/NhomCTW.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.cuongthai.ctwork.share
+        INFOPLIST_FILE: CuongThaiApp/CTWorkShare/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        SKIP_INSTALL: YES
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: "UR32PFUQ38"
+        TARGETED_DEVICE_FAMILY: "1,2"
+    entitlements:
+      path: CuongThaiApp/CTWorkShare/CTWorkShare.entitlements
+      properties:
+        com.apple.security.application-groups: ["group.com.cuongthai.ctwork"]
+        keychain-access-groups: ["$(AppIdentifierPrefix)com.cuongthai.ctwork.shared"]
 
   # Kiểm thử của app CT Work: đơn vị (giải mã dữ liệu mẫu đúng hình dạng
   # backend, bộ tách đường dẫn, markdown, bảng đăng ký mô-đun) + giao diện

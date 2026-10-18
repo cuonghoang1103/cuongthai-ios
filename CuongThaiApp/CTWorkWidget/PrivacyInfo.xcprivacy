@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  BẢN KHAI QUYỀN RIÊNG TƯ của widget CT Work (CTWorkWidget).
+  Soát 18/10/2026: widget chỉ đọc tệp JSON trong App Group bằng `Data(contentsOf:)`
+  (`CTWorkShared/NhomCTW.swift`) — KHÔNG UserDefaults, file timestamp, disk space, boot time,
+  active keyboards. Không gọi mạng, không cầm token. Thêm mã chạm nhóm API nào ⇒ bổ sung ở đây.
+-->
+<plist version="1.0">
+<dict>
+    <key>NSPrivacyTracking</key>
+    <false/>
+    <key>NSPrivacyTrackingDomains</key>
+    <array/>
+    <key>NSPrivacyAccessedAPITypes</key>
+    <array/>
+    <key>NSPrivacyCollectedDataTypes</key>
+    <array/>
+</dict>
+</plist>

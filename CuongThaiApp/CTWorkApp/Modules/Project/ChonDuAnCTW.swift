@@ -29,6 +29,7 @@ final class ChonDuAnVM: ObservableObject {
                 }
             }
             nhom = kq.map { (ws: $0.0, duAn: $0.1) }
+            CTWChiaSeNhom.ghiDuAn(nhom, macDinh: AppState.shared.luaChon?.pid)
             loi = nil
         } catch {
             loi = CTW.loi(error)

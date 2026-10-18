@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import CoreSpotlight
 
 /// Thông báo đẩy BẮT BUỘC qua `UIApplicationDelegate`. Delegate thông báo đặt
 /// NGAY ở `didFinishLaunching` — chạm thông báo lúc app tắt thì iOS giao cú
@@ -9,6 +10,8 @@ final class AppDelegateCTW: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         DayCTW.shared.khoiDong()
+        // Mảng D: Live Activity + widget đồng hồ nghe `DongHoCTW`; nút trên Live Activity chạy ở đây.
+        LiveActivityDongHoCTW.khoiDong()
         return true
     }
 
@@ -39,16 +42,31 @@ struct CTWorkApp: App {
         WindowGroup {
             GocCTW()
                 .environmentObject(appState)
+                // Khoá Face ID (tuỳ chọn, mặc định TẮT — Account → Security).
+                .overlay { KhoaAppCTW() }
                 .tint(AppColors.primary)
                 .onOpenURL { DinhTuyenCTW.mo(url: $0) }
                 // Universal Link https://cuongthai.com/work/... (cần AASA ở máy chủ).
                 .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { act in
                     if let u = act.webpageURL { DinhTuyenCTW.mo(url: u) }
                 }
+                // Spotlight: chạm một thẻ đã xem gần đây.
+                .onContinueUserActivity(CSSearchableItemActionType) { act in
+                    if let id = act.userInfo?[CSSearchableItemActivityIdentifier] as? String,
+                       let d = CTWChiaSeNhom.duongDanTuSpotlight(id) { DinhTuyenCTW.mo(duongDan: d) }
+                }
                 .onChange(of: scenePhase) { _, moi in
-                    guard moi == .active, appState.isAuthenticated else { return }
+                    KhoaAppCTW.doiPha(moi)
+                    guard appState.isAuthenticated else { return }
+                    if moi == .background { CTWChiaSeNhom.dongBoToken() }
+                    guard moi == .active else { return }
                     DayCTW.apDung()
-                    Task { await appState.taiSoChuaDoc() }
+                    CTWChiaSeNhom.dongBoToken()
+                    Task {
+                        await appState.taiSoChuaDoc()
+                        await DongHoCTW.shared.taiLai()
+                        await CTWChiaSeNhom.lamMoiViecHomNay()
+                    }
                 }
         }
     }

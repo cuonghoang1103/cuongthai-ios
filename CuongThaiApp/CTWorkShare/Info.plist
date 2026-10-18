@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Share Extension của app CT Work (com.cuongthai.ctwork.share): ảnh / link / chữ ⇒ tạo thẻ hoặc bình luận.
+     ⚠️ CFBundleExecutable phải tự khai (Info.plist viết tay). Phiên bản PHẢI trùng app chứa.
+     CTWNhomKeychain = nhóm Keychain chung với app (đọc token) — trùng `keychain-access-groups` trong project.yml. -->
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key><string>en</string>
+	<key>CFBundleDisplayName</key><string>CT Work</string>
+	<key>CFBundleExecutable</key><string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key><string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
+	<key>CFBundleName</key><string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key><string>XPC!</string>
+	<key>CFBundleShortVersionString</key><string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key><string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>CTWNhomKeychain</key><string>$(AppIdentifierPrefix)com.cuongthai.ctwork.shared</string>
+	<key>NSExtension</key>
+	<dict>
+		<key>NSExtensionPointIdentifier</key><string>com.apple.share-services</string>
+		<key>NSExtensionPrincipalClass</key><string>$(PRODUCT_MODULE_NAME).ChiaSeCTWController</string>
+		<key>NSExtensionAttributes</key>
+		<dict>
+			<key>NSExtensionActivationRule</key>
+			<dict>
+				<key>NSExtensionActivationSupportsImageWithMaxCount</key><integer>4</integer>
+				<key>NSExtensionActivationSupportsWebURLWithMaxCount</key><integer>1</integer>
+				<key>NSExtensionActivationSupportsText</key><true/>
+			</dict>
+		</dict>
+	</dict>
+</dict>
+</plist>
