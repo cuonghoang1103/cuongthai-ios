@@ -367,7 +367,8 @@ struct SoDoChiTietCTW: View {
                 thoiDiem: c.createdAt,
                 nhanPhu: c.resolved == true ? "Resolved" : (c.versionNumber.map { "v\($0)" }),
                 nguCanh: "\(app.luaChon?.maDuAn ?? "") · \(d.key ?? "diagram") \(d.title)",
-                themMuc: c.mine == true ? AnyView(Button(role: .destructive) { Task { await xoa(c) } } label: { Label("Delete", systemImage: "trash") }) : nil)
+                themMuc: c.mine == true ? AnyView(Button(role: .destructive) { Task { await xoa(c) } } label: { Label("Delete", systemImage: "trash") }) : nil,
+                dich: CTWDichBaoCao("diagram_comment", c.id))
         }
         if d.canComment == true {
             CTWHopSoan(goiY: "Comment on v\(ban ?? d.banMacDinh ?? 1)…") { chu in await gui(chu) }

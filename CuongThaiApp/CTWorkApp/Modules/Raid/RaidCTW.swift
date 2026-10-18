@@ -321,7 +321,8 @@ struct ChiTietRaidCTW: View {
             Text(r.title).font(.system(size: 22, weight: .bold)).foregroundColor(AppColors.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityAddTraits(.isHeader)
-                .ctwMenuBaoCaoChan(khoa: "raid-\(pid)-\(r.number)", noiDung: r.title, nguCanh: "RAID \(r.nhanKhoa)", tacGia: r.createdBy, laCuaToi: cuaToi)
+                .ctwMenuBaoCaoChan(khoa: "raid-\(pid)-\(r.number)", noiDung: r.title, nguCanh: "RAID \(r.nhanKhoa)", tacGia: r.createdBy, laCuaToi: cuaToi,
+                                   dich: CTWDichBaoCao("raid_item", r.id))
         }
         if r.type == "RISK" && r.canEdit == true { thangDiem(r) }
         CTWKhoiTruong {
@@ -352,7 +353,7 @@ struct ChiTietRaidCTW: View {
                 CTWMarkdownView(markdown: t, coChu: 15)
                     .padding(14).frame(maxWidth: .infinity, alignment: .leading).ctwThe(14)
                     .ctwMenuBaoCaoChan(khoa: "raid-\(m.0.lowercased())-\(pid)-\(r.number)", noiDung: t, nguCanh: "RAID \(r.nhanKhoa)",
-                                       tacGia: r.createdBy, laCuaToi: cuaToi)
+                                       tacGia: r.createdBy, laCuaToi: cuaToi, dich: CTWDichBaoCao("raid_item", r.id))
             }
         }
         lienKet(r)

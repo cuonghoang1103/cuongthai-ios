@@ -17,6 +17,16 @@ final class LichVM: ObservableObject {
     init(pid: Int) { self.pid = pid }
 
     func tai(cfg: CTWProjectConfig?) async {
+        // Đường chính: MỘT lời gọi `/me/agenda` cho 30 ngày trước → 89 ngày sau (trần máy chủ 120 ngày).
+        let hn = Date()
+        let (tu, den) = CTWAgendaKhoang.cat(tu: NgayCTW.ymd(NgayCTW.cong(hn, ngay: -30)), den: NgayCTW.ymd(NgayCTW.cong(hn, ngay: 89)))
+        if let a: CTWAgenda = try? await APIClient.shared.request(CTWAPI.lichCuaToi(tu: tu, den: den)) {
+            link = try? await APIClient.shared.request(CTWAPI.linkLich())
+            coHop = true
+            trangThai = .xong(GopLichCTW.tuAgenda(a.items ?? []))
+            CTWChiaSeNhom.ghiViecHomNay(agenda: a.items ?? [])
+            return
+        }
         async let m: TLMocCTW? = try? APIClient.shared.request(CTWAPI.mocThoiGian(pid: pid))
         async let h: DsHopLichCTW? = try? APIClient.shared.request(CTWAPI.hopSapToi(pid: pid))
         async let l: LinkLichCTW? = try? APIClient.shared.request(CTWAPI.linkLich())

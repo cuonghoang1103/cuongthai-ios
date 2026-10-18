@@ -395,7 +395,8 @@ struct TrangTaiLieuCTW: View {
                 nguCanh: "Page \(app.luaChon?.maDuAn ?? "")-DOC-\(so) · \(c.title)",
                 themMuc: b.canDelete == true ? AnyView(Button(role: .destructive) { Task { await vm.xoaBinhLuan(b) } } label: {
                     Label("Delete", systemImage: "trash")
-                }) : nil)
+                }) : nil,
+                dich: CTWDichBaoCao("page_comment", b.id))
         }
         if c.canComment == true {
             CTWHopSoan(goiY: "Comment on this page…") { await vm.guiBinhLuan($0) }

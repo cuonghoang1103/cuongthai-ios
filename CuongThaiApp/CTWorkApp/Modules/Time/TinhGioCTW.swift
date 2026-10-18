@@ -23,6 +23,32 @@ enum TinhGioCTW {
         return bayNgay(tuThuHai: thuHai).map { Ngay(ngay: $0, phut: cong[$0] ?? 0) }
     }
 
+    /// Bảng giờ CỦA TÔI xuyên dự án (`/me/timesheet`) ⇒ 7 ô theo ngày.
+    static func theoNgay(_ bg: CTWBangGioCuaToi, tuThuHai thuHai: String) -> [Ngay] {
+        let d = bg.byDay ?? [:]
+        return bayNgay(tuThuHai: thuHai).map { Ngay(ngay: $0, phut: d[$0] ?? 0) }
+    }
+
+    /// Một dòng "thẻ" của bảng giờ (có dự án — bảng giờ cá nhân trải nhiều dự án).
+    struct DongThe: Hashable, Identifiable {
+        var pid: Int?
+        var ma: String
+        var so: Int?
+        var tieuDe: String
+        var phut: Int
+        var id: String { ma }
+    }
+
+    static func dongThe(_ bg: CTWBangGioCuaToi) -> [DongThe] {
+        var kq: [DongThe] = []
+        for p in bg.projects ?? [] {
+            for t in p.issues ?? [] {
+                kq.append(DongThe(pid: p.project?.id, ma: t.key ?? "#\(t.number ?? 0)", so: t.number, tieuDe: t.title ?? "", phut: t.totalMin ?? 0))
+            }
+        }
+        return kq.sorted { ($0.phut, $1.ma) > ($1.phut, $0.ma) }
+    }
+
     /// Tổng phút của tuần (chỉ tính 7 ngày của tuần, bỏ ngày lạc ngoài khoảng).
     static func tongTuan(_ ngay: [Ngay]) -> Int { ngay.reduce(0) { $0 + $1.phut } }
 

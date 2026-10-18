@@ -2,9 +2,9 @@ import SwiftUI
 
 // MARK: - Hộp thư (thông báo CT Work)
 //
-// `GET /api/v1/social/notifications` trả MỌI loại thông báo của tài khoản (cả mạng xã
-// hội của app chính) và CHƯA có bộ lọc theo loại ⇒ app giữ lại đúng `WORK_*` và tự tải
-// thêm trang cho tới khi đủ một màn. Đề xuất backend: `?surface=work`.
+// `GET /api/v1/social/notifications?surface=work` — máy chủ chỉ trả `WORK_*` (18/10/2026), nên
+// một trang = một trang thật; app vẫn lọc `laCTW` thêm một lớp phòng máy chủ cũ bỏ qua tham số.
+// "Read all" = `PATCH {all:true, surface:'work'}` (không đụng thông báo mạng xã hội của app chính).
 //
 // Hơn bản web: lọc theo loại (chip), GỘP theo thẻ / kênh, trả lời NGAY (bình luận thẻ hoặc
 // chuỗi chat), Duyệt / Từ chối yêu cầu phê duyệt ngay trong hộp thư, vuốt để đánh dấu đã đọc.
@@ -29,7 +29,8 @@ final class HopThuVM: ObservableObject {
         daTai = true
     }
 
-    /// Tải tới khi có thêm ≥ `toiThieu` thông báo CT Work (tối đa 6 trang/lượt).
+    /// Tải tới khi có thêm ≥ `toiThieu` thông báo CT Work (tối đa 3 trang/lượt — có `surface=work`
+    /// thì thường một trang là đủ).
     func taiThem(toiThieu: Int = 15) async {
         guard conNua, !dangTai else { return }
         dangTai = true
@@ -37,9 +38,9 @@ final class HopThuVM: ObservableObject {
         var them = 0
         var lan = 0
         do {
-            while conNua && them < toiThieu && lan < 6 {
+            while conNua && them < toiThieu && lan < 3 {
                 lan += 1
-                let r: CTWTrangThongBao = try await APIClient.shared.request(.getNotifications(cursor: conTro, limit: 50))
+                let r: CTWTrangThongBao = try await APIClient.shared.request(CTWAPI.tbDanhSach(cursor: conTro, limit: 50))
                 let co = Set(ds.map(\.id))
                 let moi = r.items.filter { $0.laCTW && !co.contains($0.id) }
                 ds += moi
@@ -58,6 +59,16 @@ final class HopThuVM: ObservableObject {
         do {
             try await HanhDongThongBaoCTW.daDoc(ids)
             for i in ds.indices where ids.contains(ds[i].id) { ds[i].isRead = true }
+            await AppState.shared.taiSoChuaDoc()
+        } catch { loi = CTW.loi(error) }
+    }
+
+    /// Đánh dấu đọc MỌI thông báo CT Work (cả những trang chưa tải) bằng một lời gọi.
+    func docHet() async {
+        do {
+            try await APIClient.shared.send(CTWAPI.tbDocHet())
+            for i in ds.indices { ds[i].isRead = true }
+            CTWRung.chon()
             await AppState.shared.taiSoChuaDoc()
         } catch { loi = CTW.loi(error) }
     }
@@ -184,7 +195,7 @@ struct HopThuCTW: View {
             }
             ToolbarItem(placement: .primaryAction) {
                 Button("Read all") {
-                    Task { await vm.danhDauDaDoc(vm.ds.filter { !$0.isRead }.map(\.id)) }
+                    Task { await vm.docHet() }
                 }
                 .disabled(!vm.ds.contains { !$0.isRead })
             }
@@ -260,6 +271,7 @@ struct HangThongBaoCTW: View {
     let tb: CTWThongBao
     var daQuyet: Bool?
     var bam: (HanhDong) -> Void = { _ in }
+    @Environment(\.openURL) private var moURL
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
@@ -302,6 +314,11 @@ struct HangThongBaoCTW: View {
                         }
                         .padding(.top, 2)
                     }
+                } else if let u = tb.linkVaoHop {
+                    // Nhắc họp: mở Meet/Zoom/Teams/Jitsi bằng hệ thống (Universal Link vào app của họ).
+                    Button { moURL(u) } label: { Label("Join meeting", systemImage: "video.fill").font(.system(size: 13, weight: .semibold)) }
+                        .buttonStyle(.borderedProminent).controlSize(.small)
+                        .padding(.top, 2)
                 } else if tb.traLoiDuoc {
                     Button { bam(.traLoi) } label: { Label("Reply", systemImage: "arrowshape.turn.up.left").font(.system(size: 13, weight: .semibold)) }
                         .buttonStyle(.bordered).controlSize(.small)

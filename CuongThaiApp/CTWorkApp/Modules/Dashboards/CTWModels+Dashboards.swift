@@ -33,6 +33,8 @@ struct CTWDashboardDb: Codable, Hashable, Identifiable {
     var ownerId: Int?
     var widgets: [CTWWidgetDb]?
     var updatedAt: String?
+    /// Chỉ có ở `GET /dashboards/:id`.
+    var canEdit: Bool?
 }
 
 /// `GET /me/timer` → `{timer}` — chỉ các trường widget cần (mô-đun Time có model đầy đủ riêng).

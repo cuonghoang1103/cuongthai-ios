@@ -68,7 +68,9 @@ final class GiaiMaTests: XCTestCase {
         let k = try giai(CTWChannelList.self, "/work/projects/7/chat/channels")
         XCTAssertEqual(k.channels?.first?.name, "general")
         let p = try giai(CTWChatPage.self, "/work/projects/7/chat/channels/1/messages")
-        XCTAssertEqual(p.messages?.first?.laHeThong, true)
+        // Dữ liệu kênh #general do mảng Giao tiếp phục vụ (`XemThuCTW+GiaoTiep.swift`, hỏi TRƯỚC bộ lõi):
+        // tin hệ thống có nhưng không nhất thiết là tin đầu.
+        XCTAssertTrue((p.messages ?? []).contains { $0.laHeThong })
         XCTAssertTrue((p.messages ?? []).contains { $0.author?.laAgent == true })
         let tr = try giai(CTWPagesList.self, "/work/projects/7/pages")
         XCTAssertEqual(tr.pages?.count, 7, "6 trang + 1 trang lưu trữ (dữ liệu mẫu Docs — XemThuCTW+Docs.swift)")

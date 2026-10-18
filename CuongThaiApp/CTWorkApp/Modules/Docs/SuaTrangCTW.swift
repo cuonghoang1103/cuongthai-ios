@@ -69,26 +69,13 @@ final class SuaTrangVM: ObservableObject {
         dangLuu = true
         defer { dangLuu = false }
         do {
-            // Bước 2: chốt Yjs xuống CSDL rồi so phiên bản.
-            _ = try? await APIClient.shared.send(CTWAPI.xaCollab(pid: pid, so: so))
-            let (moi, _) = try await taiTrang()
-            let kq = try await CTWSuaTrang.kiemTruocKhiGhi(v0: v0, vNay: moi.version, md0: md0) {
-                let m: CTWPageMarkdown = try await APIClient.shared.request(CTWAPI.trangMarkdown(pid: self.pid, so: self.so))
-                return m.markdown ?? ""
-            }
-            if kq == .xungDot {
-                let m: CTWPageMarkdown? = try? await APIClient.shared.request(CTWAPI.trangMarkdown(pid: pid, so: so))
-                xungDot = XungDot(nguoi: moi.lastEditedBy?.ten, banMoi: m?.markdown ?? "")
-                CTWRung.loi()
-                return false
-            }
-            let _: CTWPageDetail = try await APIClient.shared.request(CTWAPI.suaTrang(
-                pid: pid, so: so, phienBan: moi.version,
+            // Bước 2: PATCH kèm `baseVersion` — máy chủ tự chốt Yjs rồi so, lệch ⇒ 409.
+            let sau: CTWPageDetail = try await APIClient.shared.request(CTWAPI.suaTrang(
+                pid: pid, so: so, phienBan: v0,
                 tieuDe: td != tieuDe0 ? td : nil,
                 markdown: noiDung != noiDung0 ? noiDung : nil))
-            // Bước 3: mốc mới = trạng thái máy chủ SAU khi lưu (kể cả khi đi qua collab).
-            _ = try? await APIClient.shared.send(CTWAPI.xaCollab(pid: pid, so: so))
-            if let (sau, _) = try? await taiTrang() { v0 = sau.version }
+            // Mốc mới = trạng thái máy chủ SAU khi lưu.
+            v0 = sau.version ?? v0.map { $0 + 1 }
             if let m: CTWPageMarkdown = try? await APIClient.shared.request(CTWAPI.trangMarkdown(pid: pid, so: so)) {
                 md0 = m.markdown ?? md0
             }
@@ -98,18 +85,26 @@ final class SuaTrangVM: ObservableObject {
             CTWRung.thanhCong()
             return true
         } catch {
-            if case APIError.coMa(let ma, _) = error {
-                if ma == "WORK_PAGE_CONFLICT" || ma == "CONFLICT" {
-                    let m: CTWPageMarkdown? = try? await APIClient.shared.request(CTWAPI.trangMarkdown(pid: pid, so: so))
-                    xungDot = XungDot(nguoi: nil, banMoi: m?.markdown ?? "")
-                    return false
-                }
-                if ma == "WORK_EDIT_LOCKED" || ma == "EDIT_LOCKED" { khoaSua = true }
+            if CTWSuaTrang.laXungDotTrang(error) {
+                // Trang đã đổi trên máy chủ: lấy bản mới + người sửa để hiện "reload / compare".
+                let moi: CTWPageDetail? = try? await APIClient.shared.request(CTWAPI.trang(pid: pid, so: so))
+                let m: CTWPageMarkdown? = try? await APIClient.shared.request(CTWAPI.trangMarkdown(pid: pid, so: so))
+                xungDot = XungDot(nguoi: moi?.lastEditedBy?.ten,
+                                  banMoi: CTWSuaTrang.boTieuDe(m?.markdown ?? "", tieuDe: moi?.title ?? tieuDe))
+                CTWRung.loi()
+                return false
             }
+            if case APIError.coMa(let ma, _) = error, ma == "WORK_EDIT_LOCKED" { khoaSua = true }
             loi = CTW.loi(error)
             CTWRung.loi()
             return false
         }
+    }
+
+    /// "Tải lại": bỏ bản của mình, nạp bản mới nhất của máy chủ làm mốc mới.
+    func taiLaiBanMoi() async {
+        xungDot = nil
+        await tai()
     }
 
     func moKhoa() async {
@@ -267,10 +262,7 @@ struct SuaTrangCTW: View {
                                 luuTrangCon: {
                                     if await vm.luuThanhTrangCon() != nil { xong?(); dong() }
                                 },
-                                taiLai: {
-                                    vm.xungDot = nil
-                                    Task { await vm.tai() }
-                                })
+                                taiLai: { Task { await vm.taiLaiBanMoi() } })
             }
         }
     }
@@ -343,6 +335,49 @@ struct SuaTrangCTW: View {
     }
 }
 
+// MARK: - So sánh theo dòng (bản của tôi ⇄ bản mới)
+
+struct SoSanhTrangCTW: View {
+    let dong: [CTWSuaTrang.DongSoSanh]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 14) {
+                Label("Only in yours", systemImage: "minus.square.fill").foregroundColor(AppColors.error)
+                Label("Only in latest", systemImage: "plus.square.fill").foregroundColor(AppColors.success)
+            }
+            .font(.system(size: 12, weight: .semibold))
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(Array(dong.enumerated()), id: \.offset) { _, d in hang(d) }
+            }
+            .padding(10)
+            .ctwThe(12)
+        }
+        .accessibilityElement(children: .contain)
+    }
+
+    @ViewBuilder private func hang(_ d: CTWSuaTrang.DongSoSanh) -> some View {
+        switch d {
+        case .giong(let t): dongChu(" ", t, nen: .clear, mau: AppColors.textSecondary)
+        case .chiCuaToi(let t): dongChu("−", t, nen: AppColors.error.opacity(0.12), mau: AppColors.textPrimary)
+            .accessibilityLabel("Only in yours: \(t)")
+        case .chiBanMoi(let t): dongChu("+", t, nen: AppColors.success.opacity(0.12), mau: AppColors.textPrimary)
+            .accessibilityLabel("Only in latest: \(t)")
+        }
+    }
+
+    private func dongChu(_ dau: String, _ t: String, nen: Color, mau: Color) -> some View {
+        HStack(alignment: .top, spacing: 6) {
+            Text(dau).font(.system(size: 13, weight: .bold).monospaced()).foregroundColor(mau).frame(width: 12)
+            Text(t.isEmpty ? " " : t).font(.system(size: 13).monospaced()).foregroundColor(mau)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, 2).padding(.horizontal, 4)
+        .background(nen)
+    }
+}
+
 // MARK: - Xung đột: người khác vừa sửa trang
 
 struct XungDotTrangCTW: View {
@@ -353,6 +388,8 @@ struct XungDotTrangCTW: View {
     @Environment(\.dismiss) private var dong
     @State private var dangLuu = false
     @State private var daChep = false
+    /// "Latest" = xem bản mới · "Compare" = so dòng của mình với bản mới.
+    @State private var cheDo = 0
 
     var body: some View {
         NavigationStack {
@@ -364,10 +401,10 @@ struct XungDotTrangCTW: View {
                             .frame(width: 44, height: 44)
                             .background(Circle().fill(AppColors.warning.opacity(0.14)))
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("\(xungDot.nguoi ?? "Someone") changed this page while you were editing")
+                            Text("This page changed while you were editing")
                                 .font(.system(size: 17, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                                 .fixedSize(horizontal: false, vertical: true)
-                            Text("Your changes were NOT saved, so nothing of theirs was overwritten. Choose what to do with your text.")
+                            Text("\(xungDot.nguoi.map { "\($0) saved a newer version. " } ?? "Someone saved a newer version. ")Your changes were NOT saved, so nothing of theirs was overwritten. Reload the latest version or compare it with yours.")
                                 .font(.system(size: 14)).foregroundColor(AppColors.textSecondary)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
@@ -380,13 +417,22 @@ struct XungDotTrangCTW: View {
                         nut(daChep ? "checkmark" : "doc.on.doc", daChep ? "Copied" : "Copy my text", "Paste it anywhere, then reload.") {
                             CTW.chepVaoBoNho(banCuaToi); daChep = true; CTWRung.thanhCong()
                         }
-                        nut("arrow.clockwise", "Discard mine and load the latest", "Start again from their version.", nguyHiem: true) {
+                        nut("arrow.clockwise", "Reload the latest version", "Discards your changes and starts from theirs.", nguyHiem: true) {
                             dong(); taiLai()
                         }
                     }
-                    CTWSectionHeader("doc.text", "Latest version on the server").padding(.top, 6)
-                    CTWMarkdownView(markdown: xungDot.banMoi.isEmpty ? "_Empty page_" : xungDot.banMoi, coChu: 14)
-                        .padding(14).ctwThe(12)
+                    Picker("View", selection: $cheDo) {
+                        Text("Latest version").tag(0)
+                        Text("Compare").tag(1)
+                    }
+                    .pickerStyle(.segmented)
+                    .padding(.top, 6)
+                    if cheDo == 0 {
+                        CTWMarkdownView(markdown: xungDot.banMoi.isEmpty ? "_Empty page_" : xungDot.banMoi, coChu: 14)
+                            .padding(14).ctwThe(12)
+                    } else {
+                        SoSanhTrangCTW(dong: CTWSuaTrang.soSanhDong(cuaToi: banCuaToi, banMoi: xungDot.banMoi))
+                    }
                 }
                 .padding(Spacing.md)
                 .frame(maxWidth: 680)

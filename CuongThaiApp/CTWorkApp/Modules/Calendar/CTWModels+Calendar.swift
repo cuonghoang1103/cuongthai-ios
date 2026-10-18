@@ -3,8 +3,9 @@ import SwiftUI
 
 // MARK: - Model Lịch (Calendar)
 //
-// Máy chủ KHÔNG có endpoint JSON "lịch/agenda" cho dự án hay người dùng (chỉ có lịch lớp học và
-// tệp .ics). App tự gộp từ:
+// NGUỒN CHÍNH (18/10/2026): `GET /me/agenda?from&to` — hạn thẻ của tôi, sprint, phát hành, giai đoạn, họp
+// của MỌI dự án tôi tham gia trong MỘT lời gọi (`meAgenda.service.ts`, ngày đã cắt theo giờ VN). Xem
+// `GopLichCTW.tuAgenda`. Máy chủ cũ / lỗi ⇒ lùi về cách gộp tay cũ:
 //   · `GET /me/work`                         — hạn thẻ của tôi ở MỌI dự án (YMD)
 //   · `GET /projects/:pid/timeline/markers`  — sprint · version · stage (YMD, sprint có thể lệch UTC)
 //   · `GET /projects/:pid/meetings?scope=upcoming` — họp (ISO thật; `meetings.service.ts:44-84`)
@@ -180,6 +181,55 @@ enum GopLichCTW {
             kq.append(SuKienLichCTW(id: "hop-\(h.id)", loai: .hop, tieuDe: h.title ?? "Meeting",
                                     phu: [gio, h.location].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · "),
                                     batDau: a, ketThuc: b, caNgay: false, hop: h))
+        }
+        return kq
+    }
+
+    /// Dựng sự kiện từ `/me/agenda`. Sprint ⇒ hai sự kiện (bắt đầu `date`, kết thúc `end`).
+    static func tuAgenda(_ ds: [CTWAgendaItem], homNay: Date = Date()) -> [SuKienLichCTW] {
+        let hn = NgayCTW.ymd(homNay)
+        var kq: [SuKienLichCTW] = []
+        for i in ds {
+            let p = i.project
+            switch i.type {
+            case "due":
+                guard let d = NgayCTW.ngay(i.date) else { continue }
+                kq.append(SuKienLichCTW(id: "han-\(i.key ?? "\(i.id)")", loai: .han, tieuDe: i.title ?? "Issue",
+                                        phu: [i.key, i.status?.name].compactMap { $0 }.joined(separator: " · "),
+                                        batDau: d, caNgay: true, slug: p?.workspaceSlug, maDuAn: p?.key, so: i.number,
+                                        quaHan: i.date < hn))
+            case "sprint":
+                if let a = NgayCTW.ngay(i.date) {
+                    kq.append(SuKienLichCTW(id: "sp-\(i.id)-a", loai: .sprint, tieuDe: "\(i.title ?? "Sprint") starts",
+                                            phu: [p?.key, i.goal].compactMap { $0 }.joined(separator: " · "), batDau: a, caNgay: true))
+                }
+                if let b = NgayCTW.ngay(i.end) {
+                    kq.append(SuKienLichCTW(id: "sp-\(i.id)-b", loai: .sprint, tieuDe: "\(i.title ?? "Sprint") ends",
+                                            phu: [p?.key, i.goal].compactMap { $0 }.joined(separator: " · "), batDau: b, caNgay: true))
+                }
+            case "release":
+                guard let r = NgayCTW.ngay(i.date) else { continue }
+                kq.append(SuKienLichCTW(id: "pb-\(i.id)", loai: .phatHanh, tieuDe: "Release \(i.title ?? "")",
+                                        phu: [p?.key, i.statusText == "RELEASED" ? "Released" : "Planned release"].compactMap { $0 }.joined(separator: " · "),
+                                        batDau: r, caNgay: true, idPhienBan: i.id))
+            case "stage":
+                guard let d = NgayCTW.ngay(i.date) else { continue }
+                kq.append(SuKienLichCTW(id: "gd-\(i.id)-\(i.event ?? "")", loai: .giaiDoan,
+                                        tieuDe: "Stage \(i.n ?? 0) \(i.event == "completed" ? "completed" : "started") · \(i.title ?? "")",
+                                        phu: p?.key, batDau: d, caNgay: true))
+            case "meeting":
+                guard i.statusText != "CANCELLED", let a = NgayCTW.thoiDiem(i.startsAt) else { continue }
+                let b = NgayCTW.thoiDiem(i.endsAt)
+                let gio = b.map { "\(NgayCTW.gio(a)) – \(NgayCTW.gio($0))" } ?? NgayCTW.gio(a)
+                let hop = HopLichCTW(id: i.id, number: i.number, title: i.title, type: i.meetingType, status: i.statusText,
+                                     startsAt: i.startsAt, endsAt: i.endsAt, timezone: i.timezone, location: i.location,
+                                     meetingUrl: i.meetingUrl, key: i.number.map { "M-\($0)" })
+                kq.append(SuKienLichCTW(id: "hop-\(i.id)", loai: .hop, tieuDe: i.title ?? "Meeting",
+                                        phu: [gio, p?.key, i.location].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · "),
+                                        batDau: a, ketThuc: b, caNgay: false, hop: hop))
+            default:
+                continue
+            }
         }
         return kq
     }

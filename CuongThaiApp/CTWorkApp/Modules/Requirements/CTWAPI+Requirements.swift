@@ -19,6 +19,9 @@ extension CTWAPI {
 
     // MARK: Wiegers
     static func swrYeuCau(pid: Int) -> APIEndpoint { get("/projects/\(pid)/swr/requirements") }
+    /// MỘT yêu cầu (`work.ios.routes.ts → getRequirement`, cùng hình dạng một phần tử của danh sách) — 404 nếu
+    /// thẻ không phải REQUIREMENT. Mở từ deep link/thông báo không phải dựng cả danh sách.
+    static func swrMotYeuCau(pid: Int, so: Int) -> APIEndpoint { get("/projects/\(pid)/swr/requirements/\(so)") }
     static func swrLichSu(pid: Int, so: Int) -> APIEndpoint { get("/projects/\(pid)/swr/requirements/\(so)/history") }
     static func swrVongDoi(pid: Int, so: Int, den: String, ghiChu: String?) -> APIEndpoint {
         goi("/projects/\(pid)/swr/requirements/\(so)/lifecycle", "POST", ["to": den, "note": ghiChu.map { $0 as Any } ?? NSNull()])

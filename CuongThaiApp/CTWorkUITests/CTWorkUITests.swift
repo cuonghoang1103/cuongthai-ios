@@ -21,6 +21,20 @@ final class CTWorkUITests: XCTestCase {
         app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", chu)).firstMatch
     }
 
+    /// Mục thanh bên iPad. Thanh bên giờ có hàng chục mô-đun (mọi mảng đăng ký) ⇒ mục cần tìm có thể nằm
+    /// ngoài màn — danh sách lười không tạo phần tử cho tới khi cuộn tới. Cuộn xuống rồi cuộn lên tìm.
+    private func mucBen(_ app: XCUIApplication, _ chu: String) -> XCUIElement {
+        let b = nut(app, chu)
+        // Kéo trong VÙNG thanh bên (mép trái) — `collectionViews.firstMatch` có thể là danh sách ở cột nội dung.
+        func keo(_ tu: CGFloat, _ den: CGFloat) {
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: tu))
+                .press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: den)))
+        }
+        for _ in 0..<8 where !(b.exists && b.isHittable) { keo(0.85, 0.35) }
+        for _ in 0..<10 where !(b.exists && b.isHittable) { keo(0.3, 0.8) }
+        return b
+    }
+
     private var laIPad: Bool { UIDevice.current.userInterfaceIdiom == .pad }
 
     func testTabVaTrangDuAn() throws {
@@ -57,6 +71,12 @@ final class CTWorkUITests: XCTestCase {
         let app = mo("kenh")
         let tin = app.staticTexts["Nice catch. @alex can you take a look after standup?"]
         XCTAssertTrue(tin.waitForExistence(timeout: 8))
+        // Dữ liệu kênh #general của mảng Giao tiếp dài hơn bản lõi ⇒ tin có thể nằm DƯỚI mép màn. Nhấn giữ
+        // phần tử ngoài màn = nhấn trúng tin khác (đã dính 18/10). Cuộn cho tới khi chạm được.
+        let day = app.windows.firstMatch.frame.maxY - 140   // trên ô soạn tin
+        for _ in 0..<6 {
+            if tin.frame.maxY > day { app.swipeUp() } else if tin.frame.minY < 120 { app.swipeDown() } else { break }
+        }
         tin.press(forDuration: 1.2)
         XCTAssertTrue(app.buttons["Report message"].waitForExistence(timeout: 5))
         app.buttons["Report message"].tap()
@@ -120,13 +140,13 @@ final class CTWorkUITests: XCTestCase {
         try XCTSkipUnless(laIPad)
         let app = mo("mywork")
         XCTAssertTrue(app.staticTexts["Fix sign-in token refresh loop"].waitForExistence(timeout: 8))
-        nut(app, "Docs").tap()
+        mucBen(app, "Docs").tap()
         XCTAssertTrue(app.staticTexts["Release plan — v1.0"].waitForExistence(timeout: 5))
-        nut(app, "Inbox").tap()
+        mucBen(app, "Inbox").tap()
         XCTAssertTrue(app.buttons["Read all"].waitForExistence(timeout: 5))
-        nut(app, "Board").tap()
+        mucBen(app, "Board").tap()
         XCTAssertTrue(app.staticTexts["TO DO"].waitForExistence(timeout: 5))
-        nut(app, "Chat").tap()
+        mucBen(app, "Chat").tap()
         XCTAssertTrue(app.staticTexts["general"].waitForExistence(timeout: 5))
     }
 }

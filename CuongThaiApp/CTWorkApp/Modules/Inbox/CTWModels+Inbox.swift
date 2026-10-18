@@ -18,8 +18,11 @@ struct CTWTaiTrong: Codable, Hashable {
     var chat: Bool?
     var reply: Bool?
     var approvalId: Int?
+    /// Nhắc họp (`reminder: true`) có link vào họp ⇒ nút "Join" (cùng khoá với gói đẩy `CTW_MEETING`).
+    var meetingUrl: String?
+    var reminder: Bool?
 
-    private enum CodingKeys: String, CodingKey { case url, issueKey, title, excerpt, message, workspaceName, chat, reply, approvalId }
+    private enum CodingKeys: String, CodingKey { case url, issueKey, title, excerpt, message, workspaceName, chat, reply, approvalId, meetingUrl, reminder }
     init() {}
     /// Không bao giờ ném: payload là JSON tự do — một khoá sai kiểu không được làm hỏng cả hộp thư.
     init(from decoder: Decoder) throws {
@@ -33,6 +36,8 @@ struct CTWTaiTrong: Codable, Hashable {
         chat = try? c.decodeIfPresent(Bool.self, forKey: .chat)
         reply = try? c.decodeIfPresent(Bool.self, forKey: .reply)
         approvalId = try? c.decodeIfPresent(Int.self, forKey: .approvalId)
+        meetingUrl = try? c.decodeIfPresent(String.self, forKey: .meetingUrl)
+        reminder = try? c.decodeIfPresent(Bool.self, forKey: .reminder)
     }
 }
 
@@ -75,6 +80,12 @@ struct CTWThongBao: Codable, Hashable, Identifiable {
     var laCTW: Bool { type.hasPrefix("WORK_") }
     var laChat: Bool { payload?.chat == true }
     var laPheDuyet: Bool { payload?.approvalId != nil && type == "WORK_ALERT" && (payload?.message ?? "").localizedCaseInsensitiveContains("approval is requested") }
+    /// Nhắc họp có link vào họp (http/https) ⇒ nút Join.
+    var linkVaoHop: URL? {
+        guard type == "WORK_ALERT", let s = payload?.meetingUrl, let u = URL(string: s),
+              let sc = u.scheme?.lowercased(), sc == "https" || sc == "http" else { return nil }
+        return u
+    }
     /// Trả lời được ngay (bình luận / nhắc / trả lời trong chat hoặc thẻ).
     var traLoiDuoc: Bool { (type == "WORK_COMMENT" || type == "WORK_MENTION") && payload?.url != nil }
 
@@ -132,10 +143,25 @@ struct CTWTrangThongBao: Codable {
     var unreadCount: Int?
 }
 
-/// `GET|PUT /api/v1/work/me/notify-settings` — email theo thông báo + giờ im lặng.
+/// `GET|PUT /api/v1/work/me/notify-settings` — email theo thông báo + giờ im lặng + đẩy theo loại + múi giờ.
 struct CTWCaiDatBao: Codable, Hashable {
+    /// Công tắc đẩy theo loại (`goiDayCtw.ts → PUSH_KEYS`). Thiếu khoá = BẬT (máy chủ cũng hiểu vậy).
+    struct Day: Codable, Hashable {
+        var assign: Bool?
+        var comment: Bool?
+        var mention: Bool?
+        var alert: Bool?
+        var approval: Bool?
+        var chatAll: Bool?
+    }
     /// INSTANT | DIGEST | OFF
     var emailMode: String?
     var quietStart: Int?
     var quietEnd: Int?
+    var push: Day?
+    /// Tên IANA; `nil` = máy chủ dùng Asia/Ho_Chi_Minh.
+    var timezone: String?
 }
+
+/// `GET /social/notifications/unread-count?surface=work`.
+struct CTWSoChuaDoc: Codable { var unreadCount: Int? }

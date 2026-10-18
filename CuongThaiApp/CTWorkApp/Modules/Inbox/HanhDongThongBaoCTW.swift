@@ -12,8 +12,10 @@ import UserNotifications
 //   · Duyệt / Từ chối — `POST /projects/:pid/approvals/:aid/decide` (`approvalId` trong payload)
 // `pid` lấy bằng `GET /work/resolve/<ws>/<KEY>` (không đổi dự án đang chọn của người dùng).
 //
-// Nút trên thông báo đẩy (UNNotificationCategory) chỉ HIỆN khi gói APNs mang `aps.category`
-// (máy chủ CHƯA gửi — xem danh sách "backend cần"). App đã đăng ký đủ category + xử lý.
+// Nút trên thông báo đẩy (UNNotificationCategory) HIỆN theo `aps.category` máy chủ gửi
+// (`api-backend/src/services/push/goiDayCtw.ts`, 18/10/2026): CTW_REPLY · CTW_APPROVAL (+ `approvalId`
+// ở cấp ngoài cùng — chỉ khi người nhận đang tới lượt duyệt) · CTW_MEETING (+ `meetingUrl`) · CTW_DEFAULT.
+// `thread-id` = `ctw-<issueKey>` / `ctw-<KEY>-chat-<cid>` ⇒ iOS tự xếp chồng theo thẻ/kênh.
 
 enum HanhDongThongBaoCTW {
     enum Loi: LocalizedError {
@@ -60,12 +62,12 @@ enum HanhDongThongBaoCTW {
         try await APIClient.shared.send(CTWAPI.tbPheDuyet(pid: pid, aid: approvalId, dongY: dongY))
     }
 
-    /// Thông báo đẩy chỉ mang `thongBaoId` + `duongDan` ⇒ tìm lại thông báo đầy đủ
-    /// (để lấy `approvalId`) trong vài trang mới nhất.
+    /// Lối lùi khi gói đẩy KHÔNG mang `approvalId` (máy chủ cũ): tìm lại thông báo đầy đủ trong
+    /// vài trang CT Work mới nhất (`surface=work` ⇒ không phải lội qua thông báo mạng xã hội).
     static func timThongBao(id: Int) async -> CTWThongBao? {
         var cursor: Int?
-        for _ in 0..<4 {
-            guard let r: CTWTrangThongBao = try? await APIClient.shared.request(.getNotifications(cursor: cursor, limit: 50)) else { return nil }
+        for _ in 0..<2 {
+            guard let r: CTWTrangThongBao = try? await APIClient.shared.request(CTWAPI.tbDanhSach(cursor: cursor, limit: 50)) else { return nil }
             if let n = r.items.first(where: { $0.id == id }) { return n }
             guard r.pagination?.hasNextPage == true, let c = r.pagination?.nextCursor else { return nil }
             cursor = c
@@ -79,16 +81,19 @@ enum HanhDongThongBaoCTW {
 enum NutThongBaoCTW {
     static let traLoi = "CTW_REPLY"
     static let pheDuyet = "CTW_APPROVAL"
+    static let hop = "CTW_MEETING"
     static let thuong = "CTW_DEFAULT"
 
     static let nutTraLoi = "ctw.reply"
     static let nutDaDoc = "ctw.read"
     static let nutDuyet = "ctw.approve"
     static let nutTuChoi = "ctw.reject"
+    static let nutVaoHop = "ctw.join"
 
-    /// Đăng ký 3 category. Máy chủ chọn bằng `aps.category`:
-    ///   CTW_REPLY    — WORK_COMMENT / WORK_MENTION (thẻ + chat): Reply (ô nhập) · Mark as read
+    /// Đăng ký 4 category. Máy chủ chọn bằng `aps.category`:
+    ///   CTW_REPLY    — WORK_COMMENT / WORK_MENTION (thẻ + chat) + tin chat kênh ALL: Reply (ô nhập) · Mark as read
     ///   CTW_APPROVAL — WORK_ALERT có `approvalId` đang chờ mình: Approve · Reject · Mark as read
+    ///   CTW_MEETING  — nhắc họp có `meetingUrl`: Join (mở app ra tiền cảnh) · Mark as read
     ///   CTW_DEFAULT  — còn lại: Mark as read
     static func dangKy() {
         let daDoc = UNNotificationAction(identifier: nutDaDoc, title: "Mark as Read", options: [], icon: UNNotificationActionIcon(systemImageName: "checkmark.circle"))
@@ -99,14 +104,27 @@ enum NutThongBaoCTW {
                                          icon: UNNotificationActionIcon(systemImageName: "checkmark.seal"))
         let tuChoi = UNNotificationAction(identifier: nutTuChoi, title: "Reject", options: [.authenticationRequired, .destructive],
                                           icon: UNNotificationActionIcon(systemImageName: "xmark.seal"))
+        // Join cần MỞ app (`.foreground`) — mở link Meet/Zoom phải có giao diện; không cần mở khoá
+        // riêng vì app sẽ mở và iOS tự đòi mở khoá máy.
+        let vaoHop = UNNotificationAction(identifier: nutVaoHop, title: "Join", options: [.foreground],
+                                          icon: UNNotificationActionIcon(systemImageName: "video.fill"))
         UNUserNotificationCenter.current().setNotificationCategories([
+            UNNotificationCategory(identifier: Self.hop, actions: [vaoHop, daDoc], intentIdentifiers: [], options: []),
             UNNotificationCategory(identifier: Self.traLoi, actions: [traLoi, daDoc], intentIdentifiers: [], options: []),
             UNNotificationCategory(identifier: Self.pheDuyet, actions: [duyet, tuChoi, daDoc], intentIdentifiers: [], options: []),
             UNNotificationCategory(identifier: Self.thuong, actions: [daDoc], intentIdentifiers: [], options: []),
         ])
     }
 
+    /// Nút chạy NỀN (không mở màn). `nutVaoHop` KHÔNG thuộc nhóm này — nó mở app rồi mở link.
     static func laNutCuaCTW(_ id: String) -> Bool { [nutTraLoi, nutDaDoc, nutDuyet, nutTuChoi].contains(id) }
+
+    /// Link vào họp hợp lệ trong gói đẩy (chỉ http/https — không mở scheme lạ từ máy chủ).
+    static func linkHop(_ info: [AnyHashable: Any]) -> URL? {
+        guard let s = info["meetingUrl"] as? String, let u = URL(string: s),
+              let sc = u.scheme?.lowercased(), sc == "https" || sc == "http" else { return nil }
+        return u
+    }
 
     /// Xử lý một nút (app có thể đang chạy NỀN — không mở giao diện). Gọi `xong` khi
     /// mọi lời gọi mạng kết thúc (iOS cho ~30 giây). Hỏng ⇒ đăng một thông báo cục bộ

@@ -56,6 +56,9 @@ final class GiaoTiepUITests: XCTestCase {
         let app = mo("chitiethop")
         XCTAssertTrue(app.staticTexts["Sprint 6 review & demo"].waitForExistence(timeout: 10))
         XCTAssertTrue(nut(app, "Join with Google Meet").exists)
+        // Giờ họp mẫu tính theo "bây giờ" ⇒ có lúc hiện thêm nhãn "Now"/chương trình dài, đẩy khối AI xuống dưới thanh tab.
+        let nhanAI = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "AI-generated")).firstMatch
+        for _ in 0..<4 where !nhanAI.exists || nhanAI.frame.maxY > app.windows.firstMatch.frame.maxY - 120 { app.swipeUp() }
         XCTAssertTrue(app.staticTexts["AI-generated"].exists || app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "AI-generated")).firstMatch.exists,
                       "bản nháp biên bản AI phải có nhãn (4.7)")
         let tao = nut(app, "Create issues for 2 open items")
@@ -89,7 +92,13 @@ final class GiaoTiepUITests: XCTestCase {
     /// Cài đặt thông báo đọc được từ máy chủ.
     func testCaiDatThongBao() throws {
         let app = mo("caidattb")
-        XCTAssertTrue(app.staticTexts["Quiet hours"].waitForExistence(timeout: 10) || app.switches["Quiet hours"].waitForExistence(timeout: 2))
-        XCTAssertTrue(app.staticTexts["Notify me about"].exists || app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Notify me about")).firstMatch.exists)
+        // Từ 18/10 có thêm khối "Push me about" (6 công tắc) ở trên ⇒ khối Chat/Quiet hours nằm dưới mép màn.
+        XCTAssertTrue(app.switches.matching(NSPredicate(format: "label CONTAINS %@", "Mentions")).firstMatch.waitForExistence(timeout: 10))
+        let chat = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Notify me about")).firstMatch
+        for _ in 0..<4 where !(chat.exists || app.staticTexts["Notify me about"].exists) { app.swipeUp() }
+        XCTAssertTrue(app.staticTexts["Notify me about"].exists || chat.exists)
+        let im = app.switches["Quiet hours"]
+        for _ in 0..<4 where !im.exists { app.swipeUp() }
+        XCTAssertTrue(im.exists || app.staticTexts["Quiet hours"].exists)
     }
 }

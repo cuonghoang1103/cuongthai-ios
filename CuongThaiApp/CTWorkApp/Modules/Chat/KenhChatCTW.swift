@@ -116,7 +116,7 @@ struct KenhChatCTW: View {
             oNhap
         }
         .background(AppColors.backgroundPrimary)
-        .navigationTitle("#\(kenh.name)")
+        .navigationTitle(kenh.laRieng ? kenh.name : "#\(kenh.name)")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { thanhCongCu }
         // Kênh chat cần chỗ cho ô nhập + bàn phím ⇒ ẩn thanh tab (CHỈ iPhone —
@@ -247,7 +247,7 @@ struct KenhChatCTW: View {
             Image(systemName: kenh.bieuTuong).font(.system(size: 20, weight: .semibold)).foregroundColor(AppColors.primary)
                 .frame(width: 46, height: 46)
                 .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(AppColors.primary.opacity(0.12)))
-            Text("This is the start of #\(kenh.name)").font(.system(size: 17, weight: .bold)).foregroundColor(AppColors.textPrimary)
+            Text(kenh.laDM ? "This is the start of your conversation with \(kenh.name)" : (kenh.laRieng ? "This is the start of \(kenh.name)" : "This is the start of #\(kenh.name)")).font(.system(size: 17, weight: .bold)).foregroundColor(AppColors.textPrimary)
             if let t = kenh.topic, !t.isEmpty { Text(t).font(.system(size: 13)).foregroundColor(AppColors.textSecondary) }
         }
         .padding(.vertical, 16)

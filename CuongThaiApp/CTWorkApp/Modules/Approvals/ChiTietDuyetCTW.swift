@@ -254,7 +254,8 @@ struct ChiTietDuyetCTW: View {
                     }
                     if let c = b.comment?.trimmingCharacters(in: .whitespacesAndNewlines), !c.isEmpty {
                         CTWBinhLuanDong(khoa: "approval-step-\(b.id)", tacGia: b.approver, noiDung: c, thoiDiem: b.decidedAt,
-                                        nguCanh: "Approval \(a.nhanDoiTuong) — \(a.title ?? "")")
+                                        nguCanh: "Approval \(a.nhanDoiTuong) — \(a.title ?? "")",
+                                        dich: CTWDichBaoCao("approval_step", b.id))
                     }
                 }
                 .padding(12)

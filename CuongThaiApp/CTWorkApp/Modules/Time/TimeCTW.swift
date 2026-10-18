@@ -3,9 +3,9 @@ import Charts
 
 // MARK: - Màn Time tracking: đồng hồ đang chạy + ghi giờ + "My week" (bảng giờ của TÔI theo tuần)
 //
-// Bảng giờ lấy từ `GET /projects/:pid/reports/time?userId=<tôi>` (chỉ cần quyền xem dự án).
-// Backend KHÔNG có bảng giờ cá nhân xuyên dự án ⇒ tuần hiện theo dự án đang chọn.
-// Module Finance bật ⇒ thêm trạng thái phiếu giờ tuần (SUBMITTED/APPROVED…); 403 ⇒ bỏ qua.
+// Bảng giờ CỦA TÔI xuyên MỌI dự án: `GET /me/timesheet?week=` (18/10/2026, `meAgenda.service.ts`) —
+// mỗi dự án kèm trạng thái phiếu giờ tuần. Máy chủ cũ / lỗi ⇒ lùi về `GET /projects/:pid/reports/time?userId=<tôi>`
+// (chỉ dự án đang chọn) + phiếu giờ của Finance (403 ⇒ bỏ qua).
 
 /// Hoạt động chuẩn của worklog (`TL_ACTIVITIES`, `fptReports.ts:277`).
 let hoatDongCTW = ["Training", "Analyzing", "Designing", "Coding", "Testing", "Deploying"]
@@ -19,12 +19,29 @@ final class TuanGioVM: ObservableObject {
     @Published var thuHai: String = NgayCTW.ymd(NgayCTW.dauTuan(Date()))
     @Published var baoCao: TaiCTW<CTWBaoCaoGio> = .dangTai
     @Published var phieu: CTWBangGioTuan?
+    /// Bảng giờ cá nhân xuyên dự án (đường chính). nil ⇒ đang dùng đường lùi theo dự án.
+    @Published var cuaToi: CTWBangGioCuaToi?
 
     init(pid: Int) { self.pid = pid }
 
-    var ngay: [TinhGioCTW.Ngay] { TinhGioCTW.theoNgay(baoCao.giaTri?.people ?? [], tuThuHai: thuHai) }
+    var ngay: [TinhGioCTW.Ngay] {
+        if let c = cuaToi { return TinhGioCTW.theoNgay(c, tuThuHai: thuHai) }
+        return TinhGioCTW.theoNgay(baoCao.giaTri?.people ?? [], tuThuHai: thuHai)
+    }
     var tong: Int { TinhGioCTW.tongTuan(ngay) }
     var the: [CTWBaoCaoGio.The] { TinhGioCTW.theoThe(baoCao.giaTri?.people ?? []) }
+    /// Dòng thẻ để vẽ (cả hai đường).
+    func dongThe(maDuAn: String) -> [TinhGioCTW.DongThe] {
+        if let c = cuaToi { return TinhGioCTW.dongThe(c) }
+        return the.compactMap { t in
+            t.number.map { TinhGioCTW.DongThe(pid: pid, ma: "\(maDuAn)-\($0)", so: $0, tieuDe: t.title ?? "", phut: t.minutes ?? 0) }
+        }
+    }
+    /// Trạng thái phiếu giờ: đường chính lấy của dự án đang chọn trong bảng cá nhân.
+    var trangThaiPhieu: String? {
+        if let c = cuaToi { return c.projects?.first { $0.project?.id == pid }?.timesheetStatus }
+        return phieu?.timesheet?.status
+    }
     var laTuanNay: Bool { thuHai == NgayCTW.ymd(NgayCTW.dauTuan(Date())) }
 
     func doiTuan(_ n: Int) {
@@ -35,6 +52,13 @@ final class TuanGioVM: ObservableObject {
     func tai(toi: Int?) async {
         let cn = TinhGioCTW.bayNgay(tuThuHai: thuHai).last ?? thuHai
         if baoCao.giaTri == nil { baoCao = .dangTai }
+        if let c: CTWBangGioCuaToi = try? await APIClient.shared.request(CTWAPI.gioCuaToi(tuan: thuHai)) {
+            cuaToi = c
+            baoCao = .xong(CTWBaoCaoGio(from: c.weekStart, to: c.weekEnd, totalMin: c.totalMin))
+            phieu = try? await APIClient.shared.request(CTWAPI.bangGioTuan(pid: pid, tuan: thuHai))
+            return
+        }
+        cuaToi = nil
         do {
             let r: CTWBaoCaoGio = try await APIClient.shared.request(CTWAPI.baoCaoGio(pid: pid, tu: thuHai, den: cn, userId: toi))
             // Máy chủ lọc theo userId; phòng khi bản cũ bỏ qua tham số ⇒ tự lọc lại.
@@ -135,7 +159,7 @@ struct TimeCTW: View {
     private var nhanTuan: String {
         let ds = TinhGioCTW.bayNgay(tuThuHai: vm.thuHai)
         guard let a = NgayCTW.nganTu(ds.first), let b = NgayCTW.nganTu(ds.last) else { return "" }
-        return "\(a) – \(b)" + (vm.laTuanNay ? " · This week" : "") + " · \(nguCanh.maDuAn)"
+        return "\(a) – \(b)" + (vm.laTuanNay ? " · This week" : "") + (vm.cuaToi != nil ? " · All projects" : " · \(nguCanh.maDuAn)")
     }
 
     @ViewBuilder private var noiDungTuan: some View {
@@ -145,12 +169,12 @@ struct TimeCTW: View {
             CTWTheChiSo(nhan: vm.laTuanNay ? "Today" : "Daily average",
                         giaTri: TinhGioCTW.chuPhut(vm.laTuanNay ? (homNay ?? 0) : vm.tong / 7),
                         bieuTuong: "sun.max", mau: CTWMauChuoi.mau(1))
-            if let p = vm.phieu?.timesheet?.status {
+            if let p = vm.trangThaiPhieu {
                 CTWTheChiSo(nhan: "Timesheet", giaTri: p.capitalized, phu: vm.phieu?.locked == true ? "Week is locked" : nil,
                             bieuTuong: p == "APPROVED" ? "checkmark.seal" : "doc.text", mau: p == "APPROVED" ? AppColors.success : AppColors.warning)
             }
         }
-        CTWKhungBieuDo(tieuDe: "Hours per day", phu: "Your worklogs in \(nguCanh.maDuAn)",
+        CTWKhungBieuDo(tieuDe: "Hours per day", phu: vm.cuaToi != nil ? "Your worklogs in every project" : "Your worklogs in \(nguCanh.maDuAn)",
                        cot: ["Day", "Logged"],
                        hang: vm.ngay.map { CTWHangBang(nhan: NgayCTW.ngay($0.ngay).map(NgayCTW.thuNgay) ?? $0.ngay, giaTri: [TinhGioCTW.chuPhut($0.phut)]) },
                        cao: 180) {
@@ -174,26 +198,27 @@ struct TimeCTW: View {
         VStack(alignment: .leading, spacing: 0) {
             Text("Issues").font(.system(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                 .padding(.bottom, 8)
-            if vm.the.isEmpty {
+            let ds = vm.dongThe(maDuAn: nguCanh.maDuAn)
+            if ds.isEmpty {
                 Text("No time logged this week. Start a timer or log time on an issue.")
                     .font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
             }
-            ForEach(Array(vm.the.enumerated()), id: \.offset) { i, t in
-                if let so = t.number {
-                    NavigationLink(value: RouteWorklogCTW(pid: nguCanh.pid, so: so, tieuDe: t.title ?? "")) {
+            ForEach(Array(ds.enumerated()), id: \.element.id) { i, t in
+                if let so = t.so, let pid = t.pid {
+                    NavigationLink(value: RouteWorklogCTW(pid: pid, so: so, tieuDe: t.tieuDe)) {
                         HStack(spacing: 10) {
-                            Text("\(nguCanh.maDuAn)-\(so)").font(.system(size: 12, weight: .semibold).monospaced())
+                            Text(t.ma).font(.system(size: 12, weight: .semibold).monospaced())
                                 .foregroundColor(AppColors.textSecondary)
-                            Text(t.title ?? "").font(.system(size: 14)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                            Text(t.tieuDe).font(.system(size: 14)).foregroundColor(AppColors.textPrimary).lineLimit(1)
                             Spacer(minLength: 6)
-                            Text(TinhGioCTW.chuPhut(t.minutes ?? 0)).font(.system(size: 13, weight: .semibold).monospacedDigit())
+                            Text(TinhGioCTW.chuPhut(t.phut)).font(.system(size: 13, weight: .semibold).monospacedDigit())
                                 .foregroundColor(AppColors.textPrimary)
                             Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)).foregroundColor(AppColors.textTertiary)
                         }
                         .frame(minHeight: 44)
                     }
                     .buttonStyle(.plain)
-                    if i < vm.the.count - 1 { Divider() }
+                    if i < ds.count - 1 { Divider() }
                 }
             }
         }

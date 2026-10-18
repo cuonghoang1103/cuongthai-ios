@@ -27,13 +27,6 @@ struct TrangDuAnCTW: View {
                             }
                         }
                     }
-                    Section {
-                        Button { tamPhu = .web } label: {
-                            Label("Open project on the web", systemImage: "safari")
-                        }
-                    } footer: {
-                        Text("Opens cuongthai.com in a secure in-app browser.")
-                    }
                 }
                 .listStyle(.insetGrouped)
                 .refreshable { await app.napCauHinhDuAn() }

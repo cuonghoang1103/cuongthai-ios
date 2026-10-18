@@ -406,7 +406,8 @@ struct BaiDangLopCTW: View {
                 if c.canDelete == true || c.mine == true {
                     Button(role: .destructive) { Task { await xoa(c) } } label: { Label("Delete", systemImage: "trash") }
                 }
-            }))
+            }),
+            dich: CTWDichBaoCao("class_comment", c.id))
     }
 
     private func an(_ c: CTWBaiDangLop.BinhLuan, an: Bool) async {

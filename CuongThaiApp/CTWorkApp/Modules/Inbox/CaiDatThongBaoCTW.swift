@@ -7,7 +7,10 @@ import UserNotifications
 // · Chat (`GET|PUT /work/chat/prefs`): báo mọi tin / chỉ khi được nhắc & trả lời; tạm dừng
 //   (30m … đến khi bật lại); email tóm tắt tin chưa đọc. Từng kênh chỉnh ở màn kênh.
 // · Email theo thông báo (`GET|PUT /work/me/notify-settings`): ngay / thư gộp 08:00 / tắt.
-// · Giờ im lặng: tính theo GIỜ VIỆT NAM (máy chủ dùng `Asia/Ho_Chi_Minh`) — ghi rõ.
+// · Đẩy theo loại (`push: {assign, comment, mention, alert, approval, chatAll}`) — máy chủ lọc trong
+//   `dayRaNgoaiApp` nên tắt ở đây là tắt THẬT trên mọi máy của người này (không chỉ máy này).
+// · Giờ im lặng theo `timezone` (IANA) của người dùng; `null` ⇒ máy chủ dùng Asia/Ho_Chi_Minh.
+//   App mặc định đề xuất múi giờ của máy; người dùng bật/tắt được.
 
 struct CaiDatThongBaoCTW: View {
     @Environment(\.dismiss) private var dong
@@ -43,7 +46,20 @@ struct CaiDatThongBaoCTW: View {
                     }
                 }
             } footer: {
-                Text("Assignments, mentions, replies, approvals and alerts. Long-press a notification to reply, approve or mark it as read without opening the app.")
+                Text("Long-press a notification to reply, approve, join a meeting or mark it as read without opening the app.")
+            }
+
+            if let e = email {
+                Section {
+                    congTac("Assigned to me", "person.fill.checkmark", \.assign, "assign", e)
+                    congTac("Comments & replies", "text.bubble", \.comment, "comment", e)
+                    congTac("Mentions", "at", \.mention, "mention", e)
+                    congTac("Approvals waiting for me", "checkmark.seal", \.approval, "approval", e)
+                    congTac("Alerts & meeting reminders", "exclamationmark.circle", \.alert, "alert", e)
+                    congTac("Every new chat message", "bubble.left.and.bubble.right", \.chatAll, "chatAll", e)
+                } header: { Text("Push me about") } footer: {
+                    Text("Applies to every device you're signed in on. The inbox keeps everything either way. \"Every new chat message\" only matters for channels set to all messages.")
+                }
             }
 
             if let c = chat {
@@ -97,8 +113,16 @@ struct CaiDatThongBaoCTW: View {
                         Picker("To", selection: $imDen) { ForEach(0..<24, id: \.self) { Text(gio($0)).tag($0) } }
                             .onChange(of: imDen) { _, v in guard daNap else { return }; Task { await luuEmail(["quietStart": imTu, "quietEnd": v]) } }
                     }
+                    Toggle(isOn: Binding(get: { e.timezone != nil }, set: { v in
+                        Task { await luuEmail(["timezone": v ? TimeZone.current.identifier : NSNull()]) }
+                    })) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Use this device's time zone")
+                            Text(e.timezone ?? TimeZone.current.identifier).font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                        }
+                    }
                 } header: { Text("Quiet hours") } footer: {
-                    Text("During quiet hours, emails wait for the next digest and chat stays silent. Hours are Vietnam time (GMT+7).")
+                    Text("During quiet hours, emails wait for the next digest and chat stays silent. " + chuMuiGio(e))
                 }
             }
         }
@@ -123,6 +147,24 @@ struct CaiDatThongBaoCTW: View {
     private func dangDung(_ c: CTWChatPrefs) -> Bool { c.mutedForever == true || c.mutedUntil != nil }
 
     private func gio(_ h: Int) -> String { String(format: "%02d:00", h) }
+
+    private func chuMuiGio(_ e: CTWCaiDatBao) -> String {
+        if let tz = e.timezone { return "Hours follow \(TimeZone(identifier: tz)?.localizedName(for: .generic, locale: Locale(identifier: "en_US")) ?? tz)." }
+        return "Hours are Vietnam time (GMT+7) until you choose your own time zone."
+    }
+
+    /// Một công tắc đẩy theo loại — gửi MỘT khoá (máy chủ gộp với phần còn lại).
+    private func congTac(_ ten: String, _ icon: String, _ kp: WritableKeyPath<CTWCaiDatBao.Day, Bool?>, _ khoa: String,
+                         _ e: CTWCaiDatBao) -> some View {
+        Toggle(isOn: Binding(get: { e.push?[keyPath: kp] ?? true }, set: { v in
+            var moi = e
+            var p = moi.push ?? CTWCaiDatBao.Day()
+            p[keyPath: kp] = v
+            moi.push = p
+            email = moi    // phản hồi ngay, máy chủ trả lại bản thật
+            Task { await luuEmail(["push": [khoa: v]]) }
+        })) { Label(ten, systemImage: icon) }
+    }
 
     private func napQuyen() async {
         quyen = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus

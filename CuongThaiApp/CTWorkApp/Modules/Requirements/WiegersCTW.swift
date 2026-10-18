@@ -261,7 +261,9 @@ struct WYeuCauChiTietCTW: View {
         _kho = ObservedObject(wrappedValue: KhoYeuCauCTW.cua(pid))
     }
 
-    private var r: CTWSwrRequirement? { kho.swr?.requirements?.first { $0.number == so } }
+    /// Bản tải riêng (`GET /swr/requirements/:num`) — mới hơn danh sách, và có cả khi danh sách chưa nạp.
+    @State private var motMuc: CTWSwrRequirement?
+    private var r: CTWSwrRequirement? { motMuc ?? kho.swr?.requirements?.first { $0.number == so } }
 
     var body: some View {
         ScrollView {
@@ -319,8 +321,9 @@ struct WYeuCauChiTietCTW: View {
         .background(AppColors.backgroundPrimary)
         .navigationTitle(r?.key ?? "Requirement")
         .navigationBarTitleDisplayMode(.inline)
-        .refreshable { await kho.taiSwr(); await taiLichSu() }
+        .refreshable { await taiMotMuc(); await kho.taiSwr(); await taiLichSu() }
         .task {
+            await taiMotMuc()
             if kho.swr == nil { await kho.taiSwr() }
             if lichSu == nil { await taiLichSu() }
         }
@@ -411,6 +414,10 @@ struct WYeuCauChiTietCTW: View {
         lichSu = try? await APIClient.shared.request(CTWAPI.swrLichSu(pid: pid, so: so))
     }
 
+    private func taiMotMuc() async {
+        if let m: CTWSwrRequirement = try? await APIClient.shared.request(CTWAPI.swrMotYeuCau(pid: pid, so: so)) { motMuc = m }
+    }
+
     private func doi(_ den: String) async {
         dangDoi = true
         defer { dangDoi = false; ghiChu = "" }
@@ -418,6 +425,7 @@ struct WYeuCauChiTietCTW: View {
         do {
             _ = try await APIClient.shared.send(CTWAPI.swrVongDoi(pid: pid, so: so, den: den, ghiChu: note.isEmpty ? nil : note))
             CTWRung.thanhCong()
+            await taiMotMuc()
             await kho.taiSwr()
             await taiLichSu()
         } catch { loi = CTW.loi(error); CTWRung.loi() }

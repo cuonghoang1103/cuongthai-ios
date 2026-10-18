@@ -351,6 +351,8 @@ struct CTWNhanAI: View {
         .foregroundColor(AppColors.primary)
         .padding(.horizontal, 6).padding(.vertical, 2)
         .background(Capsule().fill(AppColors.primary.opacity(0.12)))
-        .accessibilityLabel("AI agent")
+        // Đọc ĐÚNG chữ đang hiện ("AI agent", "AI-generated", "AI-drafted"…) — trước đây luôn đọc "AI agent",
+        // VoiceOver nói sai với nhãn bản nháp AI (và kiểm thử 4.7 không tìm thấy nhãn).
+        .accessibilityLabel(chu)
     }
 }

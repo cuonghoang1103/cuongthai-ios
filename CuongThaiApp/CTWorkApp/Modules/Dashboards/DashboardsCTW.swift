@@ -85,9 +85,15 @@ struct DashboardsCTW: View {
             guard let d = app.dichCho, d.moDun == "dashboards" else { return }
             defer { app.dichCho = nil }
             if ds.giaTri == nil { await tai() }
-            if let id = d.duongDan.tham["d"].flatMap(Int.init) ?? d.duongDan.phanCon.first.flatMap(Int.init),
-               let db = ds.giaTri?.first(where: { $0.id == id }) {
-                nganXep.duong.append(RouteDashboardCTW(pid: pid, dashboard: db))
+            if let id = d.duongDan.tham["d"].flatMap(Int.init) ?? d.duongDan.phanCon.first.flatMap(Int.init) {
+                // Dashboard riêng của người khác được chia sẻ có thể KHÔNG nằm trong danh sách ⇒ hỏi thẳng một mục.
+                if let db = ds.giaTri?.first(where: { $0.id == id }) {
+                    nganXep.duong.append(RouteDashboardCTW(pid: pid, dashboard: db))
+                } else if let db: CTWDashboardDb = try? await APIClient.shared.request(CTWAPI.motDashboard(pid: pid, id: id)) {
+                    nganXep.duong.append(RouteDashboardCTW(pid: pid, dashboard: db))
+                } else {
+                    loi = "That dashboard isn't available to you."
+                }
             }
         }
         #if DEBUG

@@ -151,7 +151,7 @@ struct DeXuatCTW: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(14).ctwThe(12)
                         .ctwMenuBaoCaoChan(khoa: "intake-\(dx.id)", noiDung: b, nguCanh: "Intake · \(CTWIntake.tenNguon(dx.source)) · \(dx.nguoiGui)",
-                                           tacGia: nil, laCuaToi: false)
+                                           tacGia: nil, laCuaToi: false, dich: CTWDichBaoCao("intake_message", dx.id))
                     Text("Touch and hold the message to report it.").font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
                 }
                 if let so = dx.issue?.number {

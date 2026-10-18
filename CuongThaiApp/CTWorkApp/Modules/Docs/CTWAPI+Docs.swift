@@ -27,11 +27,13 @@ extension CTWAPI {
         return goi("/projects/\(pid)/pages", "POST", t)
     }
 
-    /// PATCH có `version` ⇒ máy chủ chỉ ghi khi phiên bản khớp (409 `WORK_PAGE_CONFLICT` nếu lệch).
+    /// PATCH có `baseVersion` (18/10/2026): máy chủ ghi phòng đồng soạn Yjs xuống CSDL rồi MỚI so —
+    /// lệch ⇒ 409 `WORK_PAGE_CONFLICT`, khớp ⇒ gộp ba chiều đúng gốc (cả khi phòng collab đang mở).
+    /// Hết khe "flush → PATCH" của cách cũ. `phienBan` = phiên bản app đã mở ra để sửa.
     static func suaTrang(pid: Int, so: Int, phienBan: Int?, tieuDe: String? = nil, markdown: String? = nil,
                          trangThai: String? = nil) -> APIEndpoint {
         var t: [String: Any] = [:]
-        if let phienBan { t["version"] = phienBan }
+        if let phienBan { t["baseVersion"] = phienBan }
         if let tieuDe { t["title"] = tieuDe }
         if let markdown { t["markdown"] = markdown }
         if let trangThai { t["status"] = trangThai }

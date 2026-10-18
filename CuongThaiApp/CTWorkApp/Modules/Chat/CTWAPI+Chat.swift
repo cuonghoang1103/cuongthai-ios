@@ -25,6 +25,9 @@ extension CTWAPI {
     static func suaKenh(pid: Int, cid: Int, _ than: [String: Any]) -> APIEndpoint {
         goi("/projects/\(pid)/chat/channels/\(cid)", "PATCH", than)
     }
+    /// Nhắn riêng 1-1 (18/10/2026) — trả kênh cũ nếu đã có. Một bên đã chặn ⇒ 403 `USER_BLOCKED`;
+    /// khách cổng ⇒ `CLIENT_PORTAL_ONLY`; nhắn chính mình ⇒ 400.
+    static func moDM(pid: Int, userId: Int) -> APIEndpoint { goi("/projects/\(pid)/chat/dm", "POST", ["userId": userId]) }
     static func thanhVienKenh(pid: Int, cid: Int) -> APIEndpoint { get("/projects/\(pid)/chat/channels/\(cid)/members") }
     static func doiThanhVienKenh(pid: Int, cid: Int, them: [Int], bot: [Int]) -> APIEndpoint {
         goi("/projects/\(pid)/chat/channels/\(cid)/members", "PUT", ["add": them, "remove": bot])

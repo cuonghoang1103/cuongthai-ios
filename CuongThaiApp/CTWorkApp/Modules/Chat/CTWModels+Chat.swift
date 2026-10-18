@@ -41,10 +41,21 @@ struct CTWChannel: Codable, Hashable, Identifiable {
     var canPost: Bool?
     var canManage: Bool?
     var call: CTWCallInfo?
+    /// Nhắn riêng 1-1: id NGƯỜI KIA (app tự điền ở danh sách kênh — máy chủ không gửi).
+    var dmVoi: Int?
 
     var laRieng: Bool { kind == "PRIVATE" }
+    var laDM: Bool { dmVoi != nil }
+
+    /// Kênh `dm-<a>-<b>` (`chat.service.ts → openDm`: kênh PRIVATE hai thành viên) ⇒ id người kia.
+    func idNguoiKiaDM(toi: Int?) -> Int? {
+        guard kind == "PRIVATE", let toi else { return nil }
+        let p = name.split(separator: "-")
+        guard p.count == 3, p[0] == "dm", let a = Int(p[1]), let b = Int(p[2]), a == toi || b == toi else { return nil }
+        return a == toi ? b : a
+    }
     var laKhach: Bool { kind == "CLIENT" }
-    var bieuTuong: String { laRieng ? "lock.fill" : (laKhach ? "person.2.fill" : "number") }
+    var bieuTuong: String { laDM ? "person.fill" : (laRieng ? "lock.fill" : (laKhach ? "person.2.fill" : "number")) }
 }
 
 struct CTWChatMe: Codable, Hashable {
@@ -75,6 +86,17 @@ struct CTWChannelMember: Codable, Hashable, Identifiable {
         CTWUser(id: id, username: username, fullName: fullName, displayName: displayName,
                 avatarUrl: avatarUrl, role: role, kind: kind)
     }
+}
+
+/// `POST /projects/:pid/chat/dm {userId}` ⇒ 201 tạo mới / 200 kênh cũ (tự bỏ lưu trữ).
+struct CTWKenhDM: Codable {
+    struct Voi: Codable, Hashable { var id: Int; var username: String? }
+    var id: Int
+    var kind: String?
+    var channelKind: String?
+    var name: String?
+    var with: Voi?
+    var created: Bool?
 }
 
 /// `POST /chat/channels` ⇒ `{ id, name, kind }`.
@@ -172,7 +194,8 @@ struct CTWChatMeta: Codable, Hashable {
     private enum CodingKeys: String, CodingKey { case type, url, key, number, title }
     init(type: String? = nil, url: String? = nil) { self.type = type; self.url = url }
     init(from decoder: Decoder) throws {
-        guard let c = try? decoder.container(keyedBy: CodingKeys.self) else { return }
+        // `meta` không phải object (chuỗi rác…) ⇒ NÉM để bên gọi (`try?`) nhận nil, không ra một meta rỗng.
+        let c = try decoder.container(keyedBy: CodingKeys.self)
         type = try? c.decodeIfPresent(String.self, forKey: .type)
         url = try? c.decodeIfPresent(String.self, forKey: .url)
         key = try? c.decodeIfPresent(String.self, forKey: .key)

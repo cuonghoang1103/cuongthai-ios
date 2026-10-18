@@ -382,11 +382,10 @@ struct BangRetroCTW: View {
     }
 
     private func baoCaoThe(_ t: CTWRetroThe, lyDo l: (ma: String, nhan: String, chung: ReportReason)) async {
-        let tacGia = t.author.map { "user #\($0.id)\($0.laAgent ? " (AI agent)" : "")" } ?? "anonymous"
         do {
-            try await ModerationStore.shared.baoCaoNoiDung(
-                nhan: "CT WORK RETRO CARD #\(t.id) · \(tacGia)", noiDung: t.body ?? "",
-                ngucanh: "\(app.luaChon?.maDuAn ?? "") · retro #\(rid)", lyDo: l.chung, chiTiet: l.nhan)
+            // `POST /work/report {kind:"retro_card"}` — retro ẩn danh: máy chủ ẩn tác giả với admin dự án.
+            let _: CTWKetQuaBaoCao = try await APIClient.shared.request(
+                CTWAPI.baoCaoNoiDung(CTWDichBaoCao("retro_card", t.id), lyDo: l.ma))
             RetroAnCTW.shared.anThe(t.id)
             CTWRung.thanhCong()
         } catch { vm.loi = CTW.loi(error) }

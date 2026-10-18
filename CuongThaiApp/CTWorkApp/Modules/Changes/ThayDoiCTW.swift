@@ -242,7 +242,8 @@ struct ChiTietCrCTW: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityAddTraits(.isHeader)
                 .ctwMenuBaoCaoChan(khoa: "cr-\(pid)-\(c.number)", noiDung: c.title, nguCanh: "Change request \(c.nhanKhoa)",
-                                   tacGia: c.createdBy ?? c.requester, laCuaToi: (c.createdBy ?? c.requester)?.id == app.currentUser?.id)
+                                   tacGia: c.createdBy ?? c.requester, laCuaToi: (c.createdBy ?? c.requester)?.id == app.currentUser?.id,
+                                   dich: CTWDichBaoCao("change_request", c.id))
         }
     }
 
@@ -328,7 +329,7 @@ struct ChiTietCrCTW: View {
             CTWTipTapView(doc: d, coChu: 15)
                 .padding(14).frame(maxWidth: .infinity, alignment: .leading).ctwThe(14)
                 .ctwMenuBaoCaoChan(khoa: "cr-desc-\(pid)-\(c.number)", noiDung: d.chuTron, nguCanh: "Change request \(c.nhanKhoa)",
-                                   tacGia: tacGia, laCuaToi: cuaToi)
+                                   tacGia: tacGia, laCuaToi: cuaToi, dich: CTWDichBaoCao("change_request", c.id))
         }
         ForEach([("Reason", "questionmark.bubble", c.reason), ("Impact on scope", "square.dashed", c.impactScope),
                  ("Risk", "exclamationmark.shield", c.impactRisk), ("Alternatives considered", "arrow.triangle.swap", c.alternatives)],
@@ -338,7 +339,8 @@ struct ChiTietCrCTW: View {
                 CTWMarkdownView(markdown: t, coChu: 15)
                     .padding(14).frame(maxWidth: .infinity, alignment: .leading).ctwThe(14)
                     .ctwMenuBaoCaoChan(khoa: "cr-\(m.0.lowercased())-\(pid)-\(c.number)", noiDung: t,
-                                       nguCanh: "Change request \(c.nhanKhoa)", tacGia: tacGia, laCuaToi: cuaToi)
+                                       nguCanh: "Change request \(c.nhanKhoa)", tacGia: tacGia, laCuaToi: cuaToi,
+                                       dich: CTWDichBaoCao("change_request", c.id))
             }
         }
     }

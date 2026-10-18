@@ -259,7 +259,8 @@ struct FormCTW: View {
                 .padding(14)
                 .ctwThe(14)
                 .ctwMenuBaoCaoChan(khoa: "form-response-\(r.id)", noiDung: chu,
-                                   nguCanh: "\(app.cauHinhDuAn?.key ?? "") form \(form.key ?? "")", tacGia: nil, laCuaToi: false)
+                                   nguCanh: "\(app.cauHinhDuAn?.key ?? "") form \(form.key ?? "")", tacGia: nil, laCuaToi: false,
+                                   dich: CTWDichBaoCao("form_answer", r.id))
             }
             if (tl?.total ?? 0) > ds.count {
                 Text("Showing the latest \(ds.count) of \(tl?.total ?? 0).").font(.system(size: 12)).foregroundColor(AppColors.textTertiary)

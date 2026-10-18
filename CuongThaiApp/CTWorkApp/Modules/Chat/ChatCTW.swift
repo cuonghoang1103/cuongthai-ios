@@ -6,7 +6,8 @@ import Combine
 // Backend: `work.ctwk3.routes.ts` + `services/work/chat.service.ts`.
 //   · `GET /projects/:pid/chat/channels[?archived=1]` ⇒ `{channels, total, me}`
 //   · Kênh công khai / khách (`PUBLIC`/`CLIENT`) và NHÓM RIÊNG (`PRIVATE`, có danh sách
-//     thành viên) — CT Work không có tin nhắn 1-1 riêng: "nhắn riêng" = nhóm riêng 2 người.
+//     thành viên) + NHẮN RIÊNG 1-1 (`POST /chat/dm` ⇒ kênh PRIVATE `dm-<a>-<b>`; app đổi tên hiển
+//     thành tên người kia và xếp vào mục "Direct messages").
 //   · Tạo kênh / nhóm riêng (`me.canCreate`), đánh dấu đã đọc cả dự án, cuộc gọi đang mở.
 // Màn một kênh: `KenhChatCTW.swift`. Tin + tệp + voice: `TinChatCTW.swift`.
 
@@ -20,6 +21,7 @@ struct ChatCTW: View {
     @State private var tamPhu: TamPhuDS?
     @State private var tim = ""
     @State private var coLuuTru = false
+    @State private var chonDM: Set<Int> = []
 
     private func loc(_ ds: [CTWChannel]) -> [CTWChannel] {
         ds.filter { (coLuuTru || $0.archived != true) && (tim.isEmpty || $0.name.localizedCaseInsensitiveContains(tim) || ($0.topic ?? "").localizedCaseInsensitiveContains(tim)) }
@@ -37,7 +39,8 @@ struct ChatCTW: View {
             if let ds = dsKenh?.channels {
                 let tatCa = loc(ds)
                 let kenh = tatCa.filter { !$0.laRieng }
-                let nhom = tatCa.filter(\.laRieng)
+                let nhom = tatCa.filter { $0.laRieng && !$0.laDM }
+                let dm = tatCa.filter(\.laDM)
                 let dangGoi = tatCa.filter { $0.call != nil }
                 if tatCa.isEmpty {
                     CTWOTrong(bieuTuong: "number", tieuDe: tim.isEmpty ? "No channels yet" : "No matching channels",
@@ -58,6 +61,9 @@ struct ChatCTW: View {
                 }
                 if !kenh.isEmpty {
                     Section { ForEach(kenh) { k in dong(k) } } header: { Text("Channels") }
+                }
+                if !dm.isEmpty {
+                    Section { ForEach(dm) { k in dong(k) } } header: { Text("Direct messages") }
                 }
                 if !nhom.isEmpty {
                     Section { ForEach(nhom) { k in dong(k) } } header: { Text("Private groups") }
@@ -84,8 +90,9 @@ struct ChatCTW: View {
                     if dsKenh?.me?.canCreate == true {
                         Button { tamPhu = .tao(false) } label: { Label("New channel", systemImage: "number") }
                         Button { tamPhu = .tao(true) } label: { Label("New private group", systemImage: "lock") }
-                        Divider()
                     }
+                    Button { tamPhu = .dm } label: { Label("New direct message", systemImage: "person.crop.circle.badge.plus") }
+                    Divider()
                     Button { Task { await docTatCa() } } label: { Label("Mark all as read", systemImage: "checkmark.circle") }
                         .disabled((dsKenh?.total ?? 0) == 0)
                     Toggle(isOn: $coLuuTru) { Label("Show archived", systemImage: "archivebox") }
@@ -96,6 +103,11 @@ struct ChatCTW: View {
         .sheet(item: $tamPhu) { t in
             switch t {
             case .chonDuAn: ChonDuAnCTW()
+            case .dm:
+                CTWChonNguoiView(ds: (app.cauHinhDuAn?.dsThanhVien ?? []).filter { $0.id != app.currentUser?.id && !$0.laAgent },
+                                 toi: app.currentUser?.id, choPhepTrong: false, chon: $chonDM) {
+                    if let u = chonDM.first { Task { await moDM(u) } }
+                }
             case .tao(let rieng):
                 TaoKenhCTW(pid: nguCanh.pid, rieng: rieng) { k in
                     Task {
@@ -109,6 +121,12 @@ struct ChatCTW: View {
             }
         }
         .onChange(of: coLuuTru) { _, _ in Task { await tai() } }
+        // Thành viên dự án nạp SAU danh sách kênh ⇒ đặt lại tên các kênh nhắn riêng.
+        .onChange(of: "\(app.cauHinhDuAn?.dsThanhVien.count ?? 0)-\(app.currentUser?.id ?? 0)") { _, _ in
+            guard var d = dsKenh else { return }
+            d.channels = d.channels.map { ChatCTW.gianDM($0, toi: app.currentUser?.id, thanhVien: app.cauHinhDuAn?.dsThanhVien ?? []) }
+            dsKenh = d
+        }
         .onReceive(RealtimeCTW.shared.suKienChat.filter { [pid = nguCanh.pid] in $0.projectId == pid && $0.type != "reaction" }
             .debounce(for: .milliseconds(400), scheduler: RunLoop.main)) { _ in
             Task { await tai() }
@@ -123,10 +141,11 @@ struct ChatCTW: View {
     }
 
     enum TamPhuDS: Identifiable {
-        case chonDuAn, tao(Bool)
+        case chonDuAn, tao(Bool), dm
         var id: String {
             switch self {
             case .chonDuAn: return "chon"
+            case .dm: return "dm"
             case .tao(let r): return r ? "rieng" : "kenh"
             }
         }
@@ -157,7 +176,9 @@ struct ChatCTW: View {
 
     private func tai() async {
         do {
-            dsKenh = try await APIClient.shared.request(CTWAPI.dsKenh(pid: nguCanh.pid, coLuuTru: coLuuTru))
+            var r: CTWChannelList = try await APIClient.shared.request(CTWAPI.dsKenh(pid: nguCanh.pid, coLuuTru: coLuuTru))
+            r.channels = r.channels.map { ChatCTW.gianDM($0, toi: app.currentUser?.id, thanhVien: app.cauHinhDuAn?.dsThanhVien ?? []) }
+            dsKenh = r
             loi = nil
         } catch {
             if case APIError.coMa(let ma, _) = error, ma == "MODULE_DISABLED" {
@@ -165,6 +186,32 @@ struct ChatCTW: View {
             } else {
                 loi = CTW.loi(error)
             }
+        }
+    }
+
+    /// Kênh `dm-<a>-<b>` ⇒ tên hiển thị = tên người kia (không có trong dự án nữa ⇒ "Direct message").
+    static func gianDM(_ ds: [CTWChannel], toi: Int?, thanhVien: [CTWUser]) -> [CTWChannel] {
+        ds.map { k in
+            guard let ai = k.dmVoi ?? k.idNguoiKiaDM(toi: toi) else { return k }
+            var c = k
+            c.dmVoi = ai
+            c.name = thanhVien.first { $0.id == ai }?.ten ?? "Direct message"
+            return c
+        }
+    }
+
+    private func moDM(_ userId: Int) async {
+        chonDM = []
+        do {
+            let k: CTWKenhDM = try await APIClient.shared.request(CTWAPI.moDM(pid: nguCanh.pid, userId: userId))
+            await tai()
+            if let c = dsKenh?.channels?.first(where: { $0.id == k.id }) {
+                nganXep.duong.append(RouteKenhCTW(pid: nguCanh.pid, kenh: c, tenDuAn: nguCanh.tenDuAn))
+            }
+        } catch {
+            if case APIError.coMa(let ma, _) = error, ma == "USER_BLOCKED" {
+                loi = "You can't message this person because one of you has blocked the other."
+            } else { loi = CTW.loi(error) }
         }
     }
 

@@ -11,9 +11,13 @@ struct DashboardCTW: View {
     let dashboard: CTWDashboardDb
     @Environment(\.horizontalSizeClass) private var beRong
     @State private var lamMoi = 0
+    /// Bản mới nhất từ `GET /dashboards/:id` (widget có thể vừa được sửa trên web).
+    @State private var moi: CTWDashboardDb?
+
+    private var db: CTWDashboardDb { moi ?? dashboard }
 
     var body: some View {
-        let ws = dashboard.widgets ?? []
+        let ws = db.widgets ?? []
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
                 if ws.isEmpty {
@@ -34,10 +38,17 @@ struct DashboardCTW: View {
             .frame(maxWidth: 1100)
             .frame(maxWidth: .infinity)
         }
-        .refreshable { lamMoi += 1 }
+        .refreshable { await napMoi(); lamMoi += 1 }
+        .task { await napMoi() }
         .background(AppColors.backgroundPrimary)
-        .navigationTitle(dashboard.name ?? "Dashboard")
+        .navigationTitle(db.name ?? "Dashboard")
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func napMoi() async {
+        if let d: CTWDashboardDb = try? await APIClient.shared.request(CTWAPI.motDashboard(pid: pid, id: dashboard.id)), d != moi {
+            moi = d
+        }
     }
 
     /// Chia widget thành hàng: iPad ghép hai widget "half" liền nhau; iPhone mỗi hàng một widget.

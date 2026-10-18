@@ -19,7 +19,12 @@ final class GiaoTiepTests: XCTestCase {
     func testDanhSachKenh() throws {
         let ds = try giai(CTWChannelList.self, "/work/projects/7/chat/channels")
         let k = try XCTUnwrap(ds.channels)
-        XCTAssertEqual(k.filter(\.laRieng).map(\.name), ["leads", "alex-linh"])
+        XCTAssertEqual(k.filter(\.laRieng).map(\.name), ["dm-1-2", "leads", "alex-linh"])
+        // Nhắn riêng 1-1 (`POST /chat/dm` ⇒ kênh PRIVATE `dm-<a>-<b>`): app đổi tên thành người kia.
+        let gian = ChatCTW.gianDM(k, toi: 1, thanhVien: [CTWUser(id: 2, username: "linh", fullName: "Linh Tran")])
+        XCTAssertEqual(gian.first { $0.id == 7 }?.name, "Linh Tran")
+        XCTAssertEqual(gian.first { $0.id == 7 }?.laDM, true)
+        XCTAssertEqual(gian.filter(\.laDM).count, 1, "nhóm riêng thường không bị nhận nhầm là DM")
         XCTAssertNotNil(k.first { $0.name == "ios-dev" }?.call?.url, "kênh có cuộc gọi đang mở")
         XCTAssertEqual(k.first { $0.name == "client-acme" }?.laKhach, true)
         XCTAssertEqual(ds.me?.canCreate, true)

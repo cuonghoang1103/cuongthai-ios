@@ -3,6 +3,10 @@ import Foundation
 // MARK: - CTWAPI — cuộc họp (`work.governance.routes.ts` mục "Cuộc họp" + `work.ctwk2.routes.ts` phòng họp)
 
 extension CTWAPI {
+    /// Báo cáo ghi chú cuộc họp (1.2) — `POST /projects/:pid/meetings/:num/report {reason}` ⇒ `{reported, duplicate}`.
+    static func baoCaoHop(pid: Int, so: Int, lyDo: String) -> APIEndpoint {
+        goi("/projects/\(pid)/meetings/\(so)/report", "POST", ["reason": lyDo])
+    }
     /// `scope`: upcoming | past | all
     static func dsHop(pid: Int, pham: String = "all") -> APIEndpoint { get("/projects/\(pid)/meetings", ["scope": pham]) }
     static func motHop(pid: Int, so: Int) -> APIEndpoint { get("/projects/\(pid)/meetings/\(so)") }

@@ -62,12 +62,17 @@ enum DuLieuGiaGiaoTiep {
         let pr = "/work/projects/7"
         switch (m, p) {
         case ("GET", "/social/notifications"): return thongBao
+        case ("GET", "/social/notifications/unread-count"): return ["unreadCount": thongBao["unreadCount"] ?? 0]
         case ("PATCH", "/social/notifications"): return ["updated": 1]
         case ("GET", "/work/chat/prefs"), ("PUT", "/work/chat/prefs"):
             return ["mutedUntil": NSNull(), "mutedForever": false, "notify": b["notify"] ?? "ALL", "sound": true, "desktop": true,
                     "emailDigest": b["emailDigest"] ?? false, "quietStart": 22, "quietEnd": 7, "quietNow": false]
         case ("GET", "/work/me/notify-settings"), ("PUT", "/work/me/notify-settings"):
-            return ["emailMode": b["emailMode"] ?? "DIGEST", "quietStart": 22, "quietEnd": 7]
+            // Hình dạng `notify.ts → getNotifySettings` (18/10/2026): push theo loại + timezone.
+            var push: [String: Any] = ["assign": true, "comment": true, "mention": true, "alert": true, "approval": true, "chatAll": false]
+            if let bp = b["push"] as? [String: Any] { push.merge(bp) { $1 } }
+            return ["emailMode": b["emailMode"] ?? "DIGEST", "quietStart": 22, "quietEnd": 7, "push": push,
+                    "timezone": b["timezone"] ?? "Asia/Ho_Chi_Minh"]
         default: break
         }
         guard p.hasPrefix(pr + "/") else { return nil }
@@ -131,6 +136,8 @@ enum DuLieuGiaGiaoTiep {
             ["id": 2, "name": "ios-dev", "topic": "Builds, TestFlight, crashes", "kind": "PUBLIC", "unread": 1, "mentions": 0, "badge": 1,
              "lastMessageAt": D.iso(0, gio: -1), "canPost": true, "call": ["url": "https://meet.jit.si/ctwork-demo4k2p9x", "startedAt": D.iso(0, gio: -0.3)]],
             ["id": 3, "name": "design", "topic": "Figma links and reviews", "kind": "PUBLIC", "unread": 0, "badge": 0, "lastMessageAt": D.iso(-1), "canPost": true],
+            ["id": 7, "name": "dm-1-2", "topic": NSNull(), "kind": "PRIVATE", "unread": 1, "mentions": 0, "badge": 1,
+             "lastMessageAt": D.iso(0, gio: -0.5), "canPost": true, "member": true],
             ["id": 5, "name": "client-acme", "topic": "Shared with Acme Corp", "kind": "CLIENT", "unread": 0, "badge": 0, "lastMessageAt": D.iso(-3), "canPost": true],
             ["id": 4, "name": "leads", "topic": "Planning (private)", "kind": "PRIVATE", "unread": 0, "badge": 0, "muted": true, "mutedForever": true,
              "lastMessageAt": D.iso(-2), "canPost": true, "canManage": true],
@@ -279,13 +286,15 @@ enum DuLieuGiaGiaoTiep {
                                          "url": "/work/northwind/NW/chat?c=1&m=406"], doc: false, -2.5),
             n(10, "WORK_COMMENT", D.scout, ["chat": true, "reply": true, "issueKey": "#general", "title": "NW · Mobile App Launch",
                                             "excerpt": "Converting to JPEG before upload fixes it in my test build.", "url": "/work/northwind/NW/chat?c=1&m=421&t=404"], doc: false, -2.7),
+            n(9, "WORK_ALERT", nil, ["issueKey": "NW · M-4", "title": "Daily stand-up", "message": "Daily stand-up starts in 10 minutes",
+                                     "url": "/work/northwind/NW/meetings/4", "reminder": true, "meetingUrl": "https://meet.google.com/abc-defg-hij"], doc: false, -0.1),
             n(8, "WORK_ASSIGN", D.linh, ["issueKey": "NW-12", "title": "Push notifications open the right issue", "url": "/work/northwind/NW/issue/12"], doc: false, -5),
             n(7, "WORK_COMMENT", D.minh, ["issueKey": "NW-12", "title": "Push notifications open the right issue", "excerpt": "Cold start works on my device too.",
                                           "url": "/work/northwind/NW/issue/12?comment=3"], doc: true, -29),
             n(6, "WORK_ALERT", nil, ["issueKey": "NW-21", "message": "is overdue", "url": "/work/northwind/NW/issue/21"], doc: true, -30),
             n(5, "WORK_ALERT", D.minh, ["issueKey": "NW · M-3", "title": "Sprint 6 review & demo", "message": "Minh Pham replied Maybe", "url": "/work/northwind/NW/meetings/3"], doc: true, -40),
             n(4, "WORK_INVITE", D.linh, ["workspaceName": "Northwind Studio", "url": "/work/northwind"], doc: true, -200),
-        ], "pagination": ["nextCursor": NSNull(), "hasNextPage": false, "limit": 50], "unreadCount": 4]
+        ], "pagination": ["nextCursor": NSNull(), "hasNextPage": false, "limit": 50], "unreadCount": 5]
     }
 }
 #endif

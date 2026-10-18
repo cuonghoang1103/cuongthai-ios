@@ -717,15 +717,11 @@ struct ChiTietHopCTW: View {
     }
 
     private func guiBaoCao(_ ma: String) async {
-        guard let h = vm.hop else { return }
+        guard vm.hop != nil else { return }
         let l = CTWBaoCao.lyDo.first { $0.ma == ma } ?? CTWBaoCao.lyDo[5]
-        let noiDung = [h.title, h.agendaJson?.chuTron ?? "", h.minutesJson?.chuTron ?? "", (h.decisions ?? []).joined(separator: "\n"),
-                       (h.actions ?? []).map(\.text).joined(separator: "\n")]
-            .filter { !$0.isEmpty }.joined(separator: "\n\n")
         do {
-            try await ModerationStore.shared.baoCaoNoiDung(
-                nhan: "CT WORK MEETING \(h.key ?? "M-\(h.number)") · user #\(h.organizer?.id ?? 0)",
-                noiDung: noiDung, ngucanh: "\(app.luaChon?.tenDuAn ?? "") · project #\(pid)", lyDo: l.chung, chiTiet: l.nhan)
+            // `POST /projects/:pid/meetings/:num/report` — máy chủ tự trích tiêu đề + biên bản vào hàng chờ.
+            let _: CTWKetQuaBaoCao = try await APIClient.shared.request(CTWAPI.baoCaoHop(pid: pid, so: so, lyDo: l.ma))
             an.an(pid: pid, so: so)
             thongBao = "Thanks — our moderators will review it within 24 hours. The notes are hidden for you."
         } catch { vm.loi = CTW.loi(error) }

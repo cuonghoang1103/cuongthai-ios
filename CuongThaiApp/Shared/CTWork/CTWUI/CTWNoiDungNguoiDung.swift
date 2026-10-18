@@ -7,9 +7,11 @@ import SwiftUI
 //   1. lọc   — ẩn ngay thứ mình báo cáo (`AnNoiDungChungCTW`, khoá chuỗi
 //              "<loai>-<id>" để id của các bảng khác nhau không đụng nhau)
 //              + ẩn mọi nội dung của người đã chặn (`ModerationStore`)
-//   2. báo cáo — các bảng này CHƯA có route báo cáo riêng ở backend ⇒ đi đường
-//              chung `ModerationStore.baoCaoNoiDung` (hàng chờ kiểm duyệt của
-//              quản trị). Có route riêng thì đổi MỘT chỗ `CTWBaoCaoChung.guiDi`.
+//   2. báo cáo — `POST /work/report {kind, id, reason, detail?}` (18/10/2026,
+//              `contentReport.service.ts`): hàng chờ BAO_CAO của quản trị + audit
+//              `content.report` + báo ADMIN dự án; chống trùng theo người. Nơi gọi
+//              truyền `dich: CTWDichBaoCao(kind:id:)`; KHÔNG có `dich` (loại máy chủ
+//              chưa nhận, vd ticket/bài nộp) ⇒ lùi về đường chung `ModerationStore.baoCaoNoiDung`.
 //   3. chặn  — `ModerationStore.block`
 //   4. liên hệ — Account → Help & contact (có sẵn)
 // Nội dung của AI agent luôn gắn nhãn (`CTWNhanAI`, ✦ trên avatar).
@@ -29,16 +31,51 @@ final class AnNoiDungChungCTW: ObservableObject {
     func xoaHet() { daAn = []; d.removeObject(forKey: k) }
 }
 
+/// Đích báo cáo ở máy chủ. `kind` ∈ `REPORT_KINDS` của `contentReport.service.ts`:
+/// chat_message · issue_comment · page_comment · meeting_note (id = id cuộc họp) · retro_card ·
+/// change_request · raid_item · review_item · approval_step (id bước) · intake_message ·
+/// form_answer · class_post · class_comment · diagram_comment. `id` = id NỘI BỘ của dòng.
+struct CTWDichBaoCao: Hashable {
+    var kind: String
+    var id: Int
+    static let cacLoai: Set<String> = [
+        "chat_message", "issue_comment", "page_comment", "meeting_note", "retro_card", "change_request", "raid_item",
+        "review_item", "approval_step", "intake_message", "form_answer", "class_post", "class_comment", "diagram_comment",
+    ]
+    init(_ kind: String, _ id: Int) {
+        assert(Self.cacLoai.contains(kind), "kind báo cáo lạ: \(kind)")
+        self.kind = kind; self.id = id
+    }
+}
+
+/// `POST /report` ⇒ `{reported, duplicate}`.
+struct CTWKetQuaBaoCao: Codable { var reported: Bool?; var duplicate: Bool? }
+
+extension CTWAPI {
+    /// Báo cáo nội dung (1.2) — một cửa cho mọi loại. Tự báo ⇒ 400 `WORK_REPORT_SELF`; không thấy ⇒ 404.
+    static func baoCaoNoiDung(_ d: CTWDichBaoCao, lyDo: String, chiTiet: String? = nil) -> APIEndpoint {
+        var t: [String: Any] = ["kind": d.kind, "id": d.id, "reason": lyDo]
+        if let chiTiet, !chiTiet.isEmpty { t["detail"] = String(chiTiet.prefix(1000)) }
+        return goi("/report", "POST", t)
+    }
+}
+
 enum CTWBaoCaoChung {
     /// Báo cáo một nội dung rồi ẩn ngay cho người báo cáo.
-    /// - khoa: "cr-comment-12", "ticket-reply-5"… (cũng là nhãn trong hàng chờ)
+    /// - khoa: "cr-comment-12", "ticket-reply-5"… (khoá ẩn tại chỗ + nhãn ở đường lùi)
+    /// - dich: đích ở máy chủ (`POST /work/report`). `nil` ⇒ đường chung cũ.
     @MainActor
-    static func guiDi(khoa: String, noiDung: String, nguCanh: String, tacGia: CTWUser?, lyDoMa: String) async throws {
+    static func guiDi(khoa: String, noiDung: String, nguCanh: String, tacGia: CTWUser?, lyDoMa: String,
+                      dich: CTWDichBaoCao? = nil) async throws {
         let l = CTWBaoCao.lyDo.first { $0.ma == lyDoMa } ?? CTWBaoCao.lyDo[CTWBaoCao.lyDo.count - 1]
-        let ai = tacGia.map { "user #\($0.id)\($0.laAgent ? " (AI agent)" : "")" } ?? "unknown"
-        try await ModerationStore.shared.baoCaoNoiDung(
-            nhan: "CT WORK \(khoa.uppercased()) · \(ai)",
-            noiDung: noiDung, ngucanh: nguCanh, lyDo: l.chung, chiTiet: l.nhan)
+        if let dich {
+            let _: CTWKetQuaBaoCao = try await APIClient.shared.request(CTWAPI.baoCaoNoiDung(dich, lyDo: l.ma))
+        } else {
+            let ai = tacGia.map { "user #\($0.id)\($0.laAgent ? " (AI agent)" : "")" } ?? "unknown"
+            try await ModerationStore.shared.baoCaoNoiDung(
+                nhan: "CT WORK \(khoa.uppercased()) · \(ai)",
+                noiDung: noiDung, ngucanh: nguCanh, lyDo: l.chung, chiTiet: l.nhan)
+        }
         AnNoiDungChungCTW.shared.an(khoa)
     }
 }
@@ -52,6 +89,7 @@ private struct MenuBaoCaoChan: ViewModifier {
     let tacGia: CTWUser?
     let laCuaToi: Bool
     var themMuc: AnyView?
+    var dich: CTWDichBaoCao?
 
     @State private var hoiBaoCao = false
     @State private var hoiChan = false
@@ -74,7 +112,7 @@ private struct MenuBaoCaoChan: ViewModifier {
                     Button(l.nhan, role: .destructive) {
                         Task {
                             do {
-                                try await CTWBaoCaoChung.guiDi(khoa: khoa, noiDung: noiDung, nguCanh: nguCanh, tacGia: tacGia, lyDoMa: l.ma)
+                                try await CTWBaoCaoChung.guiDi(khoa: khoa, noiDung: noiDung, nguCanh: nguCanh, tacGia: tacGia, lyDoMa: l.ma, dich: dich)
                                 CTWRung.thanhCong()
                                 thongBao = "Thanks — our moderators will review it within 24 hours. It's hidden for you now."
                             } catch { thongBao = CTW.loi(error) }
@@ -99,10 +137,11 @@ private struct MenuBaoCaoChan: ViewModifier {
 
 extension View {
     /// Nhấn giữ ⇒ Copy · Report · Block. `themMuc` = mục riêng của mô-đun (Edit, Delete…).
+    /// `dich` = đích báo cáo ở máy chủ (`POST /work/report`); bỏ trống ⇒ đường chung cũ.
     func ctwMenuBaoCaoChan(khoa: String, noiDung: String, nguCanh: String, tacGia: CTWUser?,
-                           laCuaToi: Bool, themMuc: AnyView? = nil) -> some View {
+                           laCuaToi: Bool, themMuc: AnyView? = nil, dich: CTWDichBaoCao? = nil) -> some View {
         modifier(MenuBaoCaoChan(khoa: khoa, noiDung: noiDung, nguCanh: nguCanh, tacGia: tacGia,
-                                laCuaToi: laCuaToi, themMuc: themMuc))
+                                laCuaToi: laCuaToi, themMuc: themMuc, dich: dich))
     }
 }
 
@@ -122,6 +161,8 @@ struct CTWBinhLuanDong: View {
     var laAI = false
     /// Mục riêng trong menu nhấn giữ (Delete…).
     var themMuc: AnyView? = nil
+    /// Đích báo cáo ở máy chủ (`POST /work/report`).
+    var dich: CTWDichBaoCao? = nil
 
     @EnvironmentObject private var appState: AppState
     @ObservedObject private var an = AnNoiDungChungCTW.shared
@@ -152,7 +193,7 @@ struct CTWBinhLuanDong: View {
             .padding(12)
             .ctwThe(12)
             .ctwMenuBaoCaoChan(khoa: khoa, noiDung: noiDung, nguCanh: nguCanh, tacGia: tacGia,
-                               laCuaToi: tacGia?.id != nil && tacGia?.id == appState.currentUser?.id, themMuc: themMuc)
+                               laCuaToi: tacGia?.id != nil && tacGia?.id == appState.currentUser?.id, themMuc: themMuc, dich: dich)
         }
     }
 }

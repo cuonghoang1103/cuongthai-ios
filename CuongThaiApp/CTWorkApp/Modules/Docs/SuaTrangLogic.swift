@@ -5,20 +5,15 @@ import UIKit
 
 // MARK: - Docs — logic SỬA TRANG an toàn (thuần, có kiểm thử: `DocsCTWTests`)
 //
-// VÌ SAO phải cẩn thận (đọc `pages.service.ts` 419–470 + `collabRules.ts`):
-// web sửa trang bằng Yjs (Hocuspocus). PATCH REST vẫn được nhận, NHƯNG khi trang
-// "đang có collab" (gần như mọi trang đã mở trên web) máy chủ BỎ QUA kiểm `version`
-// và trộn nội dung gửi lên với bản trong CSDL ⇒ một máy sửa trên bản CŨ sẽ ghi đè
-// những gì người khác vừa lưu. App không nói Yjs, nên tự giữ an toàn:
+// Giao thức (18/10/2026, `pages.service.ts → updatePage` nhận `baseVersion`):
 //   1. Mở: nhớ `version` V0 + markdown chuẩn M0 của máy chủ.
-//   2. Lưu: `collab/flush` (đẩy trạng thái Yjs đang sống xuống CSDL) → GET lại.
-//      · V == V0 ⇒ chưa ai sửa ⇒ PATCH kèm `version: V0` (đường không-collab còn
-//        được chính máy chủ chặn 409 thêm một lớp).
-//      · V != V0 nhưng markdown máy chủ vẫn == M0 ⇒ chỉ là bộ đếm nhích (vd lần lưu
-//        trước của CHÍNH mình vừa chốt xuống) ⇒ coi như khớp.
-//      · khác ⇒ XUNG ĐỘT: KHÔNG ghi. Người dùng chọn xem bản mới / lưu bản của mình
-//        thành trang con / chép chữ của mình.
-//   3. Sau khi lưu xong: flush + GET lại để lấy V0/M0 mới.
+//   2. Lưu: PATCH kèm `baseVersion: V0`. Máy chủ tự ghi phòng đồng soạn Yjs (nếu đang mở trên web)
+//      xuống CSDL rồi so:
+//      · khớp ⇒ ghi (gộp ba chiều đúng gốc), trả trang mới ⇒ V0 = version mới.
+//      · lệch ⇒ 409 `WORK_PAGE_CONFLICT` — KHÔNG ghi gì. App hiện "This page changed — reload /
+//        compare": xem bản mới, SO SÁNH với bản của mình (`soSanhDong`), lưu bản mình thành trang
+//        con, hoặc bỏ bản mình và tải lại.
+//   (Trước đây app phải tự `collab/flush` → GET → so tay, còn hở một khe giữa flush và PATCH.)
 // Trang chứa thứ markdown không giữ được (nhắc tên @, chú thích gắn đoạn, ô bảng
 // gộp…) ⇒ KHÔNG cho sửa trên máy (sửa sẽ làm mất chúng) — nói rõ lý do.
 
@@ -80,9 +75,45 @@ enum CTWSuaTrang {
         return gon(a) == gon(b)
     }
 
+    /// Lỗi 409 của PATCH trang (`WORK_PAGE_CONFLICT`; `CONFLICT` là mã chung cũ).
+    static func laXungDotTrang(_ e: Error) -> Bool {
+        if case APIError.coMa(let ma, _) = e { return ma == "WORK_PAGE_CONFLICT" || ma == "CONFLICT" }
+        return false
+    }
+
+    /// Một dòng của phép so sánh hai bản (diff theo DÒNG, thuật toán LCS — trang tài liệu ngắn).
+    enum DongSoSanh: Hashable {
+        case giong(String), chiCuaToi(String), chiBanMoi(String)
+    }
+
+    /// So "bản của tôi" với "bản mới trên máy chủ" theo dòng. Trần 600×600 dòng (vượt ⇒ coi mọi dòng
+    /// là khác — đủ để người dùng thấy, không treo máy).
+    static func soSanhDong(cuaToi: String, banMoi: String) -> [DongSoSanh] {
+        let a = cuaToi.replacingOccurrences(of: "\r", with: "").components(separatedBy: "\n")
+        let b = banMoi.replacingOccurrences(of: "\r", with: "").components(separatedBy: "\n")
+        guard a.count <= 600, b.count <= 600 else { return a.map { .chiCuaToi($0) } + b.map { .chiBanMoi($0) } }
+        let n = a.count, m = b.count
+        var l = Array(repeating: Array(repeating: 0, count: m + 1), count: n + 1)
+        for i in stride(from: n - 1, through: 0, by: -1) {
+            for j in stride(from: m - 1, through: 0, by: -1) {
+                l[i][j] = a[i] == b[j] ? l[i + 1][j + 1] + 1 : max(l[i + 1][j], l[i][j + 1])
+            }
+        }
+        var kq: [DongSoSanh] = []
+        var i = 0, j = 0
+        while i < n && j < m {
+            if a[i] == b[j] { kq.append(.giong(a[i])); i += 1; j += 1 }
+            else if l[i + 1][j] >= l[i][j + 1] { kq.append(.chiCuaToi(a[i])); i += 1 }
+            else { kq.append(.chiBanMoi(b[j])); j += 1 }
+        }
+        while i < n { kq.append(.chiCuaToi(a[i])); i += 1 }
+        while j < m { kq.append(.chiBanMoi(b[j])); j += 1 }
+        return kq
+    }
+
     enum KetQuaKiem: Equatable { case ghiDuoc, xungDot }
 
-    /// Bước 2 của giao thức (xem đầu tệp).
+    /// Giao thức cũ (trước `baseVersion`) — giữ cho kiểm thử/so sánh; app không còn gọi.
     static func kiemTruocKhiGhi(v0: Int?, vNay: Int?, md0: String, mdNay: () async throws -> String) async rethrows -> KetQuaKiem {
         if v0 == vNay { return .ghiDuoc }
         return giongNhau(try await mdNay(), md0) ? .ghiDuoc : .xungDot

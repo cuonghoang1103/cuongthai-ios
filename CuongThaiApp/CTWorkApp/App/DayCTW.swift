@@ -104,7 +104,7 @@ final class DayCTW: NSObject, ObservableObject, UNUserNotificationCenterDelegate
             let chu = (response as? UNTextInputNotificationResponse)?.userText
             let id = (info["thongBaoId"] as? Int) ?? Int("\(info["thongBaoId"] ?? "")")
             let duongDan = info["duongDan"] as? String
-            let aid = info["approvalId"] as? Int
+            let aid = (info["approvalId"] as? Int) ?? Int("\(info["approvalId"] ?? "")")
             DispatchQueue.main.async {
                 NutThongBaoCTW.xuLy(nut: nut, thongBaoId: id, duongDan: duongDan, approvalId: aid, chu: chu, xong: completionHandler)
             }
@@ -112,6 +112,16 @@ final class DayCTW: NSObject, ObservableObject, UNUserNotificationCenterDelegate
         }
         let duong = info["duongDan"] as? String
         let maThe = info["maThe"] as? String
+        // Nút "Join" của CTW_MEETING: app đã ra tiền cảnh ⇒ mở link họp, đánh dấu đã đọc.
+        if response.actionIdentifier == NutThongBaoCTW.nutVaoHop, let link = NutThongBaoCTW.linkHop(info) {
+            let id = (info["thongBaoId"] as? Int) ?? Int("\(info["thongBaoId"] ?? "")")
+            completionHandler()
+            DispatchQueue.main.async {
+                UIApplication.shared.open(link)
+                if let id { Task { try? await HanhDongThongBaoCTW.daDoc([id]); await AppState.shared.taiSoChuaDoc() } }
+            }
+            return
+        }
         completionHandler()
         // Có `duongDan` thì theo nó (mở cả kênh chat); chỉ có `maThe` thì tìm thẻ theo mã.
         guard let duong = duong ?? maThe.map({ "ctwork://issue/" + $0 }) else { return }
