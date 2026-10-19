@@ -171,21 +171,21 @@ struct ChiTietPhienBanCTW: View {
             HStack(alignment: .top, spacing: 14) {
                 CTWVongTienDo(tiLe: td.tiLe, co: 64, mau: v.overdue == true ? AppColors.error : AppColors.success)
                 VStack(alignment: .leading, spacing: 5) {
-                    Label(tt.ten, systemImage: tt.bieuTuong).font(.system(size: 12, weight: .semibold)).foregroundColor(tt.mau)
-                    Text(v.name).font(.system(size: 20, weight: .bold)).foregroundColor(AppColors.textPrimary)
+                    Label(tt.ten, systemImage: tt.bieuTuong).font(.ctw(size: 12, weight: .semibold)).foregroundColor(tt.mau)
+                    Text(v.name).font(.ctw(size: 20, weight: .bold)).foregroundColor(AppColors.textPrimary)
                     HStack(spacing: 4) {
                         if v.overdue == true { Image(systemName: "exclamationmark.circle.fill") }
                         Text(PhienBanChuCTW.dongNgay(v))
                     }
-                    .font(.system(size: 13)).foregroundColor(v.overdue == true ? AppColors.error : AppColors.textSecondary)
+                    .font(.ctw(size: 13)).foregroundColor(v.overdue == true ? AppColors.error : AppColors.textSecondary)
                     if let s = NgayCTW.ngay(v.startDate) {
-                        Text("Started \(NgayCTW.day(s))").font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
+                        Text("Started \(NgayCTW.day(s))").font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
                     }
                 }
                 Spacer(minLength: 0)
             }
             if let m = v.description, !m.isEmpty {
-                Text(m).font(.system(size: 14)).foregroundColor(AppColors.textSecondary).fixedSize(horizontal: false, vertical: true)
+                Text(m).font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary).fixedSize(horizontal: false, vertical: true)
             }
             CTWThanhTienDo(doan: [CTWDoanTienDo(ten: "Done", giaTri: Double(td.xong), mau: AppColors.success),
                                   CTWDoanTienDo(ten: "In progress", giaTri: Double(td.dangLam), mau: CTWMauChuoi.mau(0)),
@@ -204,8 +204,8 @@ struct ChiTietPhienBanCTW: View {
     private func demNhom(_ t: String, _ n: Int, _ m: Color) -> some View {
         HStack(spacing: 5) {
             RoundedRectangle(cornerRadius: 2).fill(m).frame(width: 9, height: 9)
-            Text("\(n)").font(.system(size: 13, weight: .bold).monospacedDigit()).foregroundColor(AppColors.textPrimary)
-            Text(t).font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+            Text("\(n)").font(.ctw(size: 13, weight: .bold).monospacedDigit()).foregroundColor(AppColors.textPrimary)
+            Text(t).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
         }
         .accessibilityElement(children: .combine)
     }
@@ -237,7 +237,7 @@ struct ChiTietPhienBanCTW: View {
                 .onChange(of: vm.theoSoThe) { _, _ in Task { await vm.taiBurnup() } }
                 if diem.isEmpty {
                     Text(b == nil ? "Loading…" : "No burnup data yet. It appears once the version has issues and a start date.")
-                        .font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
+                        .font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     Chart {
@@ -273,14 +273,14 @@ struct ChiTietPhienBanCTW: View {
     private func ghiChu(_ v: PhienBanCTW) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             CTWSectionHeader("doc.richtext", "Release notes", trailing: quanLy ? AnyView(
-                Button("Edit") { tamPhu = .ghiChu }.font(.system(size: 14, weight: .semibold))
+                Button("Edit") { tamPhu = .ghiChu }.font(.ctw(size: 14, weight: .semibold))
             ) : nil)
             if let n = v.releaseNotes, !n.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 CTWMarkdownView(markdown: n, coChu: 14)
             } else {
                 Text(quanLy ? "No release notes yet. Tap Edit to write what's new in this version."
                             : "No release notes have been written for this version.")
-                    .font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
+                    .font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -300,24 +300,24 @@ struct ChiTietPhienBanCTW: View {
         return VStack(alignment: .leading, spacing: 12) {
             CTWSectionHeader("list.bullet.rectangle", "Issues", count: "\(the.count)")
             if the.isEmpty {
-                Text("No issues are assigned to this version.").font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
+                Text("No issues are assigned to this version.").font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
             }
             ForEach(nhom.filter { !$0.2.isEmpty }, id: \.0) { n in
                 VStack(alignment: .leading, spacing: 0) {
-                    Label("\(n.0) · \(n.2.count)", systemImage: n.1).font(.system(size: 12, weight: .semibold))
+                    Label("\(n.0) · \(n.2.count)", systemImage: n.1).font(.ctw(size: 12, weight: .semibold))
                         .foregroundColor(AppColors.textSecondary).padding(.bottom, 4)
                     ForEach(n.2) { t in
                         NavigationLink(value: CTWRoute.the(pid: route.pid, so: t.number)) {
                             HStack(spacing: 9) {
                                 CTWTypeIcon(type: cfg?.loai(t.typeId), size: 13)
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(t.title).font(.system(size: 14)).foregroundColor(AppColors.textPrimary).lineLimit(2)
-                                    Text("\(cfg?.key ?? "#")-\(t.number)").font(.system(size: 11).monospaced())
+                                    Text(t.title).font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary).lineLimit(2)
+                                    Text("\(cfg?.key ?? "#")-\(t.number)").font(.ctw(size: 11).monospaced())
                                         .foregroundColor(AppColors.textTertiary).strikethrough(t.resolvedAt != nil)
                                 }
                                 Spacer(minLength: 0)
                                 if let a = t.assigneeId { CTWAvatar(user: cfg?.thanhVien(a) ?? CTWUser(id: a), size: 22) }
-                                Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)).foregroundColor(AppColors.textTertiary)
+                                Image(systemName: "chevron.right").font(.ctw(size: 11, weight: .semibold)).foregroundColor(AppColors.textTertiary)
                             }
                             .padding(.vertical, 7)
                             .contentShape(Rectangle())
