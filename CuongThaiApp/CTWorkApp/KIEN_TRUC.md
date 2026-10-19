@@ -214,3 +214,33 @@ xcodebuild test -project CuongThaiApp.xcodeproj -scheme CTWorkApp -destination '
 - **Phát hành:** `bash scripts/phat-hanh-ctwork.sh` (xem CTWORK_APP_REVIEW_NOTES.md mục 8).
 - **Màn thử mới:** `agenda` (My Work → Agenda) · `khoa` (màn khoá Face ID). Tuyến máy chủ giả mới: `Debug/XemThuCTW+D.swift`.
 - **Bản khai quyền riêng tư:** mỗi extension có `PrivacyInfo.xcprivacy` riêng (không nhóm API nào).
+
+## 11. Bản nộp App Store đầu (19/10/2026) — Code · AI assistant · Dynamic Type
+
+- **Code** (`Modules/Code/`): `MoDunCode` hiện khi `AppState.codeDaNoi == true` (nạp `GET /code/status` cùng cấu hình dự án,
+  bỏ qua với khách cổng). Route con `RouteCodeCTW` (thư mục · tệp · lịch sử · commit). Chip mã thẻ là `Button` đẩy
+  `CTWRoute.the` — ⚠️ KHÔNG dùng NavigationLink trong hàng List có nhiều đích (cả hàng thành một link). Thông báo Git
+  (`payload.git`) có chip "Code" trong Hộp thư; deep link `/code?tab=pulls&pr=N`.
+- **AI assistant** (`Modules/AI/`): đồng ý 5.1.2(i) bằng `@AppStorage("com.cuongthai.ctwork.ai.dongY")` (Account › Privacy
+  rút lại; đăng xuất xoá). Câu lỗi qua `TroLyAICTW.loi` (không lọt lời mời mua). Link trong câu trả lời: `OpenURLAction`
+  của màn — `/work/.../issue/n` đẩy thẻ trong ngăn xếp hiện tại; `/work/...` khác ⇒ `DinhTuyenCTW`; trang mua ⇒ chặn.
+  `APIEndpoint.thoiGianCho` = 180 s cho `/ai/chat` + `/retry`.
+- **Cỡ chữ:** dùng `.ctw(size:weight:design:)` (Shared/CTWork/CTWUI/CTWCoChu.swift) thay `.system(size:)` — nhân theo
+  Dynamic Type, trần 1,4×. Gốc app `.id(dynamicTypeSize)` để dựng lại khi đổi cỡ chữ.
+- **Màu:** `AppColors.info` (xanh "đang làm") thay `Color(hex: 0x2563EB)` cố định; `textTertiary`/`success`/`warning`
+  bản sáng đã đậm lại cho đạt ≥ 4,5:1.
+- **Máy chủ giả:** tuyến trả `LoiGiaCTW(trangThai:ma:thongDiep:)` ⇒ phong bì lỗi thật (502/409/429…);
+  `CT_XEM_LOI_MANG=<đoạn đường>` (hoặc `*`) ⇒ giả mất mạng; query của GET được đưa vào `body` của tuyến giả.
+  Màn thử: `mod:code[/branches|/pulls|/source]` · `mod:ai[/thread|/loi|/dongy]`; câu hỏi chứa `#fail` ⇒ 502.
+- **Kiểm thử:** `CTWorkTests/CodeAITests.swift`; `CTWorkUITests/ToanBoMoDunUITests.swift` (mở MỌI mô-đun có/không mạng,
+  luồng Code, AI đồng ý → hỏi → link → 502 → Ask again → Report, công tắc + thông báo Git).
+- **"Hiện dần" (phản hồi "nhiều nút, rối"):** trang Projects (iPhone) và thanh bên (iPad) chỉ hiện mô-đun ĐÃ GHIM —
+  mặc định `GhimMoDunCTW.macDinh` = AI · Board · Backlog · Chat · Docs · Meetings · Calendar · Code (Code tự ẩn khi chưa
+  nối repo). Mọi mô-đun khác ở **More tools** (`Modules/Project/ThemMoDunCTW.swift`: lưới theo nhóm, ô tìm, nút ghim
+  44 pt + nhấn giữ). Ghim lưu theo user id (UserDefaults `com.cuongthai.ctwork.ghimMoDun`). `MucCTW.them` (iPad) /
+  `RouteThemCTW` (iPhone). Mô-đun mới vẫn chỉ cần đăng ký — nó tự vào More tools; muốn mặc định hiện thì thêm id vào
+  `macDinh`. Bảng (Board): một nút chính (+), "Only my issues" + chọn sprint vào menu "…". Account: 6 khối theo chủ đề;
+  Thông báo: email/giờ im lặng/múi giờ thu vào "Advanced".
+- ⛔ **iPad — màn được ĐẨY không thấy environmentObject của cột detail** (SIGTRAP khi đọc `NganXepCTW`, đo 19/10: Docs ›
+  trang › Version history, Code › Source). Ngăn xếp detail do `KhungRongCTW` giữ và gắn `.environmentObject` ở CẢ
+  NavigationSplitView. Thêm environmentObject mới cho màn con ⇒ gắn ở cấp split view, không ở cột.

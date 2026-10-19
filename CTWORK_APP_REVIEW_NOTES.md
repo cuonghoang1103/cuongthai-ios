@@ -20,6 +20,14 @@ Mảng D (18/10/2026) — thứ CHỈ app gốc làm được: widget "My work t
 Live Activity đồng hồ bấm giờ (Dynamic Island, nút Pause/Stop), Siri/Shortcuts ("What's on my plate in CT Work",
 "Start a CT Work timer on NW-12", "Stop my CT Work timer"), Share Extension (ảnh/link/chữ ⇒ tạo thẻ hoặc bình luận),
 Spotlight (thẻ đã xem gần đây), khoá Face ID (tuỳ chọn, mặc định tắt).
+Bản nộp đầu (19/10/2026, **1.0.0** — chủ app gọi là "bản 1.1"): thêm **Code** (hoạt động Git, nhánh, PR, mã nguồn
+có tô màu + số dòng, diff commit; chỉ hiện khi dự án nối GitHub/GitLab, khách cổng không thấy) và **AI assistant**
+(trợ lý mentor của dự án: trả lời Markdown có link mở thẳng thẻ/trang trong app, 3 câu mẫu, "Ask again" khi AI hỏng,
+đề xuất thay đổi chỉ chạy khi bấm Apply); thông báo Git (công tắc "Git activity", chạm ⇒ mở màn Code);
+cỡ chữ theo Dynamic Type (trần 1,4×) + tương phản chữ phụ ≥ 4,5:1 ở cả sáng/tối.
+Gọn kiểu "hiện dần" (phản hồi người dùng "rối"): Projects/thanh bên chỉ còn mô-đun cốt lõi đã ghim, còn lại trong
+"More tools" (tìm + ghim, nhớ theo người dùng). Sửa sập iPad có từ trước: màn được đẩy trong cột detail đọc
+`NganXepCTW` ⇒ SIGTRAP (Docs › Version history, Code › Source…).
 
 ## 2. Luật Apple đã đáp ứng
 
@@ -32,7 +40,8 @@ Spotlight (thẻ đã xem gần đây), khoá Face ID (tuỳ chọn, mặc đị
 | 5.1.1(v) | Xoá tài khoản trong app: Account → Delete account (cùng luồng máy chủ với app chính, 72 giờ, rút lại được) | `Modules/Account/TaiKhoanCTW.swift` |
 | 1.2 | (1) đồng ý quy tắc cộng đồng lần đầu; (2) báo cáo bình luận, tin chat (kênh + chuỗi), ghi chú/biên bản cuộc họp; (3) chặn người dùng (ẩn mọi bình luận/tin/thông báo/ghi chú họp của họ); (4) liên hệ: Account → Help & contact; nội dung đã báo cáo ẩn ngay | `DongYQuyTacCTW`, `CTWKiemDuyet.swift`, `Modules/Chat/KenhChatCTW.swift` + `ChuoiTraLoiCTW.swift`, `Modules/Meetings/ChiTietHopCTW.swift`, `CTWorkIssueView.swift` |
 | 4.7 / 1.2 (AI) | Thành viên AI agent luôn có nhãn "AI agent" + ✦ trên avatar ở bình luận, chat, người làm, lịch sử, bộ chọn người, gợi ý @nhắc, thành viên kênh, người dự họp, hộp thư; bình luận AI soạn có nhãn "AI-drafted"; bản nháp biên bản họp do AI đề xuất có nhãn "AI-generated" + câu "check before applying"; bản phiên âm voice note có nhãn "Auto transcript"; báo cáo được như mọi nội dung | `CTWNhanAI`, `CTWAvatar`, `ChiTietHopCTW.banNhapAI`, `GiongNoiChatCTW` |
-| 5.1.2(i) | App không gọi AI. NGOẠI LỆ DUY NHẤT: voice note trong chat — máy chủ gửi âm thanh cho **Groq** (chuyển giọng nói thành chữ) để đồng đội đọc được. Trước lần ghi ĐẦU TIÊN app hiện hộp "Voice notes are transcribed" nói rõ tên Groq và mục đích; chỉ ghi khi người dùng bấm "Allow and record". App KHÔNG gọi "đề xuất biên bản AI" / "gợi ý việc AI" (các nút đó chỉ có trên web). Agent do admin workspace thêm trên web — ghi rõ ở Privacy + chọn người làm. ⚠️ Chủ app: thêm Groq vào Privacy Policy (mục bên thứ ba) | `Modules/Chat/GhiAmCTW.swift` (`CongBoGiongNoiCTW`), `SoanTinCTW.swift`, `TrangPhapLyView` |
+| 5.1.2(i) — AI assistant (19/10) | Trước câu hỏi ĐẦU TIÊN hiện hộp "Questions are answered by AI": nói rõ gửi gì (câu hỏi + thẻ/bình luận/Docs/tệp/link trong dự án mà người dùng vốn xem được), gửi cho ai (nhà cung cấp mô hình AI bên thứ ba — Anthropic Claude / OpenAI GPT qua cổng AI), để làm gì; chỉ gửi khi bấm "Allow and ask". Rút lại: Account › Privacy. Đăng xuất ⇒ xoá đồng ý. Dải "CT Work AI · AI" luôn ở đầu khung; mọi câu trả lời nhãn "AI-generated" + nút Report (ẩn ngay) + Copy; câu hỏi của đồng đội: nhấn giữ ⇒ Report/Block. Hết hạn mức ⇒ câu riêng của app, KHÔNG lọt "Upgrade to Pro" (3.1.1); link trong câu trả lời trỏ trang mua bị chặn. ⚠️ Chủ app: Privacy Policy web thêm mục "AI assistant" (nhà cung cấp mô hình) | `Modules/AI/TroLyAICTW.swift` (`DongYAICTW`, `CongBoAI`), `TaiKhoanCTW.swift` |
+| 5.1.2(i) | Voice note trong chat — máy chủ gửi âm thanh cho **Groq** (chuyển giọng nói thành chữ) để đồng đội đọc được. Trước lần ghi ĐẦU TIÊN app hiện hộp "Voice notes are transcribed" nói rõ tên Groq và mục đích; chỉ ghi khi người dùng bấm "Allow and record". App KHÔNG gọi "đề xuất biên bản AI" / "gợi ý việc AI" (các nút đó chỉ có trên web). Agent do admin workspace thêm trên web — ghi rõ ở Privacy + chọn người làm. ⚠️ Chủ app: thêm Groq vào Privacy Policy (mục bên thứ ba) | `Modules/Chat/GhiAmCTW.swift` (`CongBoGiongNoiCTW`), `SoanTinCTW.swift`, `TrangPhapLyView` |
 | 5.1.1 / 5.1.2 | `PrivacyInfo.xcprivacy` riêng (UserDefaults CA92.1, FileTimestamp C617.1; dữ liệu thu: email, tên, user ID, device ID, ảnh/tệp, **âm thanh (voice note)**, tin nhắn, nội dung khác — đều Linked, không tracking). HAI chuỗi quyền: máy ảnh (chụp ảnh đính kèm thẻ/tin chat) và **micro (chỉ khi ghi voice note chat)**. Chọn ảnh = PhotosPicker (không cần quyền), chọn tệp = fileImporter. Họp video mở app Meet/Zoom/Teams/Jitsi (hoặc Safari) bằng hệ thống ⇒ KHÔNG camera/micro cho cuộc gọi, KHÔNG VoIP/CallKit, KHÔNG background mode. "Add to Calendar" = EventKitUI ngoài tiến trình ⇒ KHÔNG quyền Lịch | `CTWorkApp/PrivacyInfo.xcprivacy`, `Info.plist` |
 | 3.1.1 (web trong app) | Lối "Open CT Work on the web" chung ĐÃ GỠ (Account, Help, trang Projects). Lối web còn lại (trình soạn Docs đầy đủ, sơ đồ, SRS, Wiegers, dashboard) mở bằng `TrinhDuyetCuongThaiCTW` (WKWebView) — CHẶN điều hướng tới `/pro`, `/pricing`, `/checkout`, `/nang-cap`, cổng thanh toán, và ẨN mọi link trỏ tới đó (web CT Work có nút "Upgrade to Pro" ở bảng AI/agent/báo cáo tuần). Không câu nào bảo "mua trên web" | `Modules/Account/TrinhDuyetCTW.swift` |
 | 5.1.1 Face ID | `NSFaceIDUsageDescription` — CHỈ vì khoá Face ID tuỳ chọn (Account → Security, mặc định TẮT, lùi về mật mã máy) | `Modules/Account/KhoaAppCTW.swift` |
@@ -113,11 +122,11 @@ Sign in with Apple is also offered.
   photos from the camera or Photos, issue links), version history, comments.
   The editor never overwrites a teammate's newer edit: it shows a conflict
   screen instead.
-- Projects > Approvals: approve or reject (a comment is required to reject).
-- Projects > Tests: open a test cycle, run a test step by step
+- Projects > More tools > Approvals: approve or reject (a comment is required to reject).
+- Projects > More tools > Tests: open a test cycle, run a test step by step
   (Pass / Fail / Blocked), attach a photo as evidence, create a bug from a
   failed step.
-- Projects > Change requests, RAID, Reviews, Requirements, Service desk,
+- Projects > More tools > Change requests, RAID, Reviews, Requirements, Service desk,
   Team, AI agents, Diagrams (pinch to zoom), Finance (read-only).
 - My Work > Agenda: today and the next two weeks across all projects
   (due dates, meetings with a Join button, sprint and release dates).
@@ -130,6 +139,15 @@ Sign in with Apple is also offered.
   create an issue or comment on a recent issue.
 - Spotlight: issues you opened recently can be found from Home Screen search.
 - Account > Security: optional Face ID lock (off by default).
+- Projects shows the core tools; every other tool (sprints, reports, OKRs,
+  approvals, tests, service desk, etc.) is under Projects > More tools, where
+  it can be searched and pinned.
+- Projects > Code (projects connected to GitHub/GitLab): Git activity
+  timeline (tap an issue key to open the issue), branches, pull requests,
+  and the source browser (folders, files with line numbers, commit diffs).
+- Projects > AI assistant: tap one of the sample questions. The answer links
+  to the issues and docs it mentions (tap to open them in the app). Suggested
+  changes only run when someone taps Apply.
 
 === USER-GENERATED CONTENT (Guideline 1.2) ===
 - Community rules must be accepted on first launch.
@@ -144,11 +162,17 @@ Sign in with Apple is also offered.
 - Blocked users: Account > Blocked users & hidden content.
 - Contact: Account > Help & contact (cuongthaihnhe176322@gmail.com).
 
-=== AI AGENTS (Guideline 4.7) ===
-Workspace admins can add AI agents as members on the web. Anything an agent
-writes is labelled "AI agent" (and a sparkle badge on its avatar) everywhere
-in the app, and can be reported like any other content. The app itself does
-not send user data to any third-party AI service.
+=== AI (Guidelines 4.7 and 5.1.2) ===
+- AI assistant: before the first question the app explains that the question
+  and the project content needed to answer it are sent to a third-party AI
+  model provider, and asks for permission ("Allow and ask"). The permission
+  can be withdrawn in Account > Privacy. Every answer is labelled
+  "AI-generated" and has a Report button (the answer is hidden for the
+  reporter immediately and reviewed within 24 hours).
+- AI agents: workspace admins can add AI agents as members on the web.
+  Anything an agent writes is labelled "AI agent" (and a sparkle badge on its
+  avatar) everywhere in the app, and can be reported like any other content.
+- Voice notes are transcribed by Groq after a separate consent.
 
 === ACCOUNT DELETION (Guideline 5.1.1(v)) ===
 Account tab > Delete account. The account and personal data are erased 72
@@ -381,6 +405,10 @@ app, with a different audience, purpose and feature set:
    - A Share Extension that turns a photo, link or text from any app into a
      new issue or a comment on an issue.
    - Spotlight search for recently opened issues.
+   - A Code view for teams that connect GitHub or GitLab: activity, branches,
+     pull requests and a source browser with commit diffs.
+   - A project AI assistant that answers with links into the app's own issue
+     and document screens.
    - Actionable notifications: reply to a comment, approve or reject a
      request, or join a meeting directly from the notification.
    - A client portal view, so a project's clients can follow shared issues,
