@@ -46,6 +46,7 @@ enum DuLieuGiaMoDun {
         DuLieuGiaB.route,
         DuLieuGiaToChuc.route,
         DuLieuGiaD.route,
+        DuLieuGiaCode.route,
     ]
 }
 #endif

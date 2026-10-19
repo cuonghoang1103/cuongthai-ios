@@ -289,6 +289,10 @@ enum DuLieuGiaGiaoTiep {
             n(9, "WORK_ALERT", nil, ["issueKey": "NW · M-4", "title": "Daily stand-up", "message": "Daily stand-up starts in 10 minutes",
                                      "url": "/work/northwind/NW/meetings/4", "reminder": true, "meetingUrl": "https://meet.google.com/abc-defg-hij"], doc: false, -0.1),
             n(8, "WORK_ASSIGN", D.linh, ["issueKey": "NW-12", "title": "Push notifications open the right issue", "url": "/work/northwind/NW/issue/12"], doc: false, -5),
+            // Thông báo Git (trang Code, `code.service.ts → notifyGit`): payload.git + url màn Code.
+            n(13, "WORK_ALERT", D.linh, ["issueKey": "NW-12", "title": "NW-12: open the right issue from a notification", "git": true, "gitKind": "REVIEW_REQUESTED",
+                                         "message": "linhtran requested your review on PR #48", "actor": "Linh Tran", "provider": "GITHUB",
+                                         "url": "/work/northwind/NW/code?tab=pulls&pr=48"], doc: false, -6),
             n(7, "WORK_COMMENT", D.minh, ["issueKey": "NW-12", "title": "Push notifications open the right issue", "excerpt": "Cold start works on my device too.",
                                           "url": "/work/northwind/NW/issue/12?comment=3"], doc: true, -29),
             n(6, "WORK_ALERT", nil, ["issueKey": "NW-21", "message": "is overdue", "url": "/work/northwind/NW/issue/21"], doc: true, -30),

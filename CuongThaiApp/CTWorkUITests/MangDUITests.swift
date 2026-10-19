@@ -25,6 +25,9 @@ final class MangDUITests: XCTestCase {
     func testHopThuJoinVaCaiDatDay() throws {
         let app = mo("caidattb")
         XCTAssertTrue(app.switches.matching(NSPredicate(format: "label CONTAINS %@", "Mentions")).firstMatch.waitForExistence(timeout: 8))
+        let nc = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Email & quiet hours")).firstMatch
+        for _ in 0..<6 where !(nc.exists && nc.isHittable) { app.swipeUp() }
+        nc.tap()
         let muiGio = app.switches.matching(NSPredicate(format: "label CONTAINS %@", "time zone")).firstMatch
         for _ in 0..<6 where !muiGio.exists { app.swipeUp() }
         XCTAssertTrue(muiGio.exists)

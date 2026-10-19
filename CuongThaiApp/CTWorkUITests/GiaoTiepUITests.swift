@@ -97,6 +97,10 @@ final class GiaoTiepUITests: XCTestCase {
         let chat = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Notify me about")).firstMatch
         for _ in 0..<4 where !(chat.exists || app.staticTexts["Notify me about"].exists) { app.swipeUp() }
         XCTAssertTrue(app.staticTexts["Notify me about"].exists || chat.exists)
+        // 19/10: email + giờ im lặng nằm trong nhóm "Advanced" thu gọn ⇒ mở ra trước.
+        let nc = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Email & quiet hours")).firstMatch
+        for _ in 0..<4 where !(nc.exists && nc.isHittable) { app.swipeUp() }
+        nc.tap()
         let im = app.switches["Quiet hours"]
         for _ in 0..<4 where !im.exists { app.swipeUp() }
         XCTAssertTrue(im.exists || app.staticTexts["Quiet hours"].exists)

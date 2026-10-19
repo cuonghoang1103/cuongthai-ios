@@ -38,6 +38,7 @@ enum XemThuCTW {
         app.cheDoXemThu = true
         // Mỗi lượt xem thử bắt đầu sạch: nội dung đã ẩn ở lượt trước không ẩn tiếp.
         AnNoiDungCTW.shared.xoaHet()
+        AnNoiDungChungCTW.shared.xoaHet()
         switch man {
         case "dongy":
             app.daDongYDieuKhoan = false
@@ -70,6 +71,7 @@ enum XemThuCTW {
             app.muc = .moDun("chat")
             app.dichCho = DichMoDunCTW(moDun: "chat", pid: 7, duongDan: DuongDanCTW.tach("/work/northwind/NW/chat?c=1")!)
         case "inbox": app.muc = .hopThu
+        case "them": app.muc = .them
         case "account", "chonduan": app.muc = .taiKhoan
         default: app.muc = .viecCuaToi
         }
@@ -87,10 +89,26 @@ final class MayChuGia: URLProtocol {
 
     override func startLoading() {
         let u = request.url!
-        let data = DuLieuGia.traLoi(method: request.httpMethod ?? "GET", path: u.path, body: Self.than(request))
-        let res = HTTPURLResponse(url: u, statusCode: 200, httpVersion: "HTTP/1.1",
+        // `CT_XEM_LOI_MANG=<đoạn đường>` (vd `/work/projects/7/code`): giả MẤT MẠNG cho mọi đường chứa đoạn đó —
+        // kiểm trạng thái lỗi mạng / bản lưu ngoại tuyến của từng mô-đun mà không phải tắt mạng máy.
+        if let mat = ProcessInfo.processInfo.environment["CT_XEM_LOI_MANG"], !mat.isEmpty,
+           mat == "*" || u.path.contains(mat) {
+            DispatchQueue.global().asyncAfter(deadline: .now() + 0.15) {
+                self.client?.urlProtocol(self, didFailWithError: URLError(.notConnectedToInternet))
+            }
+            return
+        }
+        // GET không có thân ⇒ đưa tham số query vào `body` cho tuyến giả cần (cây thư mục theo `path`, tệp…).
+        var than = Self.than(request)
+        if than.isEmpty, let q = URLComponents(url: u, resolvingAgainstBaseURL: false)?.queryItems {
+            for i in q { than[i.name] = i.value ?? "" }
+        }
+        let (ma, data) = DuLieuGia.traLoiCoMa(method: request.httpMethod ?? "GET", path: u.path, body: than)
+        let res = HTTPURLResponse(url: u, statusCode: ma, httpVersion: "HTTP/1.1",
                                   headerFields: ["Content-Type": "application/json"])!
-        DispatchQueue.global().asyncAfter(deadline: .now() + 0.15) {
+        // Trợ lý AI "nghĩ" lâu hơn ⇒ thấy được trạng thái chờ khi chụp/kiểm.
+        let cho = u.path.hasSuffix("/ai/chat") || u.path.hasSuffix("/retry") ? 1.2 : 0.15
+        DispatchQueue.global().asyncAfter(deadline: .now() + cho) {
             self.client?.urlProtocol(self, didReceive: res, cacheStoragePolicy: .notAllowed)
             self.client?.urlProtocol(self, didLoad: data)
             self.client?.urlProtocolDidFinishLoading(self)
@@ -138,10 +156,20 @@ enum DuLieuGia {
     static let scout = nguoi(9, "scout", "Scout", agent: true)
 
     static func traLoi(method: String, path: String, body: [String: Any]) -> Data {
+        traLoiCoMa(method: method, path: path, body: body).1
+    }
+
+    /// Như `traLoi` nhưng kèm mã HTTP: tuyến trả `LoiGiaCTW` ⇒ phong bì lỗi THẬT của máy chủ
+    /// (`{success:false, message, code}`) với mã 4xx/5xx — kiểm nhánh lỗi (502 AI, 409, 429…).
+    static func traLoiCoMa(method: String, path: String, body: [String: Any]) -> (Int, Data) {
         let p = path.replacingOccurrences(of: "/api/v1", with: "")
         let data: Any = route(method, p, body)
+        if let l = data as? LoiGiaCTW {
+            let goi: [String: Any] = ["success": false, "message": l.thongDiep, "code": l.ma]
+            return (l.trangThai, (try? JSONSerialization.data(withJSONObject: goi)) ?? Data())
+        }
         let goi: [String: Any] = ["success": true, "data": data]
-        return (try? JSONSerialization.data(withJSONObject: goi)) ?? Data("{\"success\":true}".utf8)
+        return (200, (try? JSONSerialization.data(withJSONObject: goi)) ?? Data("{\"success\":true}".utf8))
     }
 
     // swiftlint:disable:next cyclomatic_complexity
@@ -227,7 +255,7 @@ enum DuLieuGia {
         "workspace": ["id": 1, "name": "Northwind Studio", "slug": "northwind"],
         "role": "ADMIN", "workspaceRole": "ADMIN",
         "permissions": ["editIssues": true, "createIssues": true, "transition": true, "deleteIssues": true, "comment": true,
-                        "attach": true, "manageSprints": true, "settings": true],
+                        "attach": true, "manageSprints": true, "settings": true, "useAi": true],
         "workflows": [["id": 1, "name": "Default", "isDefault": true, "transitions": [Any](), "statuses": [
             ["id": 1, "name": "To Do", "category": "TODO", "position": 0],
             ["id": 2, "name": "In Progress", "category": "IN_PROGRESS", "position": 1],
