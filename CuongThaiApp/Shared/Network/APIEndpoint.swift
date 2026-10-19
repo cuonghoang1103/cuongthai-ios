@@ -1130,6 +1130,10 @@ enum APIEndpoint {
         case .voVietLai: return 120
         // Tra chữ gọi model một lượt (đo 29/09: 4–20 giây).
         case .voHanTra: return 75
+        // Trợ lý AI CT Work (mentor, 18/10/2026): đọc thẻ/Docs/tệp tới 3 vòng rồi mới trả lời — mỗi lượt model
+        // tới 90 s ở máy chủ. 60 s mặc định là app bỏ cuộc trong khi câu trả lời vẫn được lưu ở máy chủ.
+        case .workGoi(let d, let m, _, _) where m == "POST" && (d.hasSuffix("/ai/chat") || (d.contains("/ai/messages/") && d.hasSuffix("/retry"))):
+            return 180
         default: return nil
         }
     }

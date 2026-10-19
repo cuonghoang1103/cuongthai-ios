@@ -7,7 +7,7 @@ import UserNotifications
 // · Chat (`GET|PUT /work/chat/prefs`): báo mọi tin / chỉ khi được nhắc & trả lời; tạm dừng
 //   (30m … đến khi bật lại); email tóm tắt tin chưa đọc. Từng kênh chỉnh ở màn kênh.
 // · Email theo thông báo (`GET|PUT /work/me/notify-settings`): ngay / thư gộp 08:00 / tắt.
-// · Đẩy theo loại (`push: {assign, comment, mention, alert, approval, chatAll}`) — máy chủ lọc trong
+// · Đẩy theo loại (`push: {assign, comment, mention, alert, approval, chatAll, git}`) — máy chủ lọc trong
 //   `dayRaNgoaiApp` nên tắt ở đây là tắt THẬT trên mọi máy của người này (không chỉ máy này).
 // · Giờ im lặng theo `timezone` (IANA) của người dùng; `null` ⇒ máy chủ dùng Asia/Ho_Chi_Minh.
 //   App mặc định đề xuất múi giờ của máy; người dùng bật/tắt được.
@@ -18,6 +18,7 @@ struct CaiDatThongBaoCTW: View {
     @State private var quyen: UNAuthorizationStatus?
     @State private var chat: CTWChatPrefs?
     @State private var email: CTWCaiDatBao?
+    @State private var nangCao = false
     @State private var coIm = false
     @State private var imTu = 22
     @State private var imDen = 7
@@ -57,6 +58,7 @@ struct CaiDatThongBaoCTW: View {
                     congTac("Approvals waiting for me", "checkmark.seal", \.approval, "approval", e)
                     congTac("Alerts & meeting reminders", "exclamationmark.circle", \.alert, "alert", e)
                     congTac("Every new chat message", "bubble.left.and.bubble.right", \.chatAll, "chatAll", e)
+                    congTac("Git activity (pushes, pull requests, reviews)", "chevron.left.forwardslash.chevron.right", \.git, "git", e)
                 } header: { Text("Push me about") } footer: {
                     Text("Applies to every device you're signed in on. The inbox keeps everything either way. \"Every new chat message\" only matters for channels set to all messages.")
                 }
@@ -79,7 +81,7 @@ struct CaiDatThongBaoCTW: View {
                             Spacer()
                             if dangDung(c) {
                                 Text(c.mutedForever == true ? "Until resumed" : (c.mutedUntil.map { "Until \(CTWChatThoiGian.gio($0))" } ?? ""))
-                                    .font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
+                                    .font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
                             }
                         }
                     }
@@ -93,15 +95,14 @@ struct CaiDatThongBaoCTW: View {
             }
 
             if let e = email {
+                // "Hiện dần" (19/10/2026): email + giờ im lặng + múi giờ là mục NÂNG CAO — thu gọn mặc định.
                 Section {
+                    DisclosureGroup(isExpanded: $nangCao) {
                     Picker("Email for notifications", selection: Binding(get: { e.emailMode ?? "INSTANT" }, set: { v in Task { await luuEmail(["emailMode": v]) } })) {
                         Text("Right away").tag("INSTANT")
                         Text("Daily digest at 08:00").tag("DIGEST")
                         Text("Off").tag("OFF")
                     }
-                } header: { Text("Email") }
-
-                Section {
                     Toggle("Quiet hours", isOn: $coIm)
                         .onChange(of: coIm) { _, v in
                             guard daNap else { return }
@@ -118,12 +119,16 @@ struct CaiDatThongBaoCTW: View {
                     })) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Use this device's time zone")
-                            Text(e.timezone ?? TimeZone.current.identifier).font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                            Text(e.timezone ?? TimeZone.current.identifier).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                         }
                     }
-                } header: { Text("Quiet hours") } footer: {
-                    Text("During quiet hours, emails wait for the next digest and chat stays silent. " + chuMuiGio(e))
-                }
+                        Text("During quiet hours, emails wait for the next digest and chat stays silent. " + chuMuiGio(e))
+                            .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
+                    } label: {
+                        Label("Email & quiet hours", systemImage: "envelope.badge")
+                    }
+                    .accessibilityIdentifier("settings.advanced")
+                } header: { Text("Advanced") }
             }
         }
         .navigationTitle("Notifications")

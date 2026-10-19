@@ -21,8 +21,12 @@ struct CTWTaiTrong: Codable, Hashable {
     /// Nhắc họp (`reminder: true`) có link vào họp ⇒ nút "Join" (cùng khoá với gói đẩy `CTW_MEETING`).
     var meetingUrl: String?
     var reminder: Bool?
+    /// Hoạt động Git (trang Code, 18/10/2026 — `code.service.ts → notifyGit`): `git: true`, `gitKind` (PUSH · PR_OPENED ·
+    /// PR_MERGED · REVIEW_REQUESTED…), `url` = `/work/<ws>/<KEY>/code?tab=pulls&pr=12` hoặc `?tab=activity&event=…`.
+    var git: Bool?
+    var gitKind: String?
 
-    private enum CodingKeys: String, CodingKey { case url, issueKey, title, excerpt, message, workspaceName, chat, reply, approvalId, meetingUrl, reminder }
+    private enum CodingKeys: String, CodingKey { case url, issueKey, title, excerpt, message, workspaceName, chat, reply, approvalId, meetingUrl, reminder, git, gitKind }
     init() {}
     /// Không bao giờ ném: payload là JSON tự do — một khoá sai kiểu không được làm hỏng cả hộp thư.
     init(from decoder: Decoder) throws {
@@ -38,6 +42,8 @@ struct CTWTaiTrong: Codable, Hashable {
         approvalId = try? c.decodeIfPresent(Int.self, forKey: .approvalId)
         meetingUrl = try? c.decodeIfPresent(String.self, forKey: .meetingUrl)
         reminder = try? c.decodeIfPresent(Bool.self, forKey: .reminder)
+        git = try? c.decodeIfPresent(Bool.self, forKey: .git)
+        gitKind = try? c.decodeIfPresent(String.self, forKey: .gitKind)
     }
 }
 
@@ -79,6 +85,8 @@ struct CTWThongBao: Codable, Hashable, Identifiable {
 
     var laCTW: Bool { type.hasPrefix("WORK_") }
     var laChat: Bool { payload?.chat == true }
+    /// Thông báo hoạt động Git (push, PR, yêu cầu review) — mở thẳng màn Code.
+    var laGit: Bool { type == "WORK_ALERT" && payload?.git == true }
     var laPheDuyet: Bool { payload?.approvalId != nil && type == "WORK_ALERT" && (payload?.message ?? "").localizedCaseInsensitiveContains("approval is requested") }
     /// Nhắc họp có link vào họp (http/https) ⇒ nút Join.
     var linkVaoHop: URL? {
@@ -99,6 +107,7 @@ struct CTWThongBao: Codable, Hashable, Identifiable {
     /// Bộ lọc chip.
     var loai: String {
         if laPheDuyet { return "approvals" }
+        if laGit { return "code" }
         switch type {
         case "WORK_MENTION": return "mentions"
         case "WORK_ASSIGN": return "assigned"
@@ -110,6 +119,14 @@ struct CTWThongBao: Codable, Hashable, Identifiable {
 
     var bieuTuong: String {
         if laPheDuyet { return "checkmark.seal.fill" }
+        if laGit {
+            switch payload?.gitKind {
+            case "PR_MERGED": return "arrow.triangle.merge"
+            case "PR_OPENED", "PR_REOPENED", "PR_CLOSED": return "arrow.triangle.pull"
+            case "REVIEW_REQUESTED": return "eye.fill"
+            default: return "arrow.up.circle.fill"
+            }
+        }
         switch type {
         case "WORK_ASSIGN": return "person.fill.checkmark"
         case "WORK_COMMENT": return laChat ? "bubble.left.fill" : "text.bubble.fill"
@@ -153,6 +170,8 @@ struct CTWCaiDatBao: Codable, Hashable {
         var alert: Bool?
         var approval: Bool?
         var chatAll: Bool?
+        /// Hoạt động Git: push, PR mở/merge, yêu cầu review (18/10/2026).
+        var git: Bool?
     }
     /// INSTANT | DIGEST | OFF
     var emailMode: String?

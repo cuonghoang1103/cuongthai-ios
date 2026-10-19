@@ -9,8 +9,10 @@ import SwiftUI
 enum CTWDangKyMoDun {
     static let dangKyMoDun: [CTWModule] = [
         .desk, .intake, .forms, .portal, .classes, .submit,
+        .ai,
         .board,
         .backlog,
+        .code,
         .docs,
         .kb,
         .chat,
@@ -67,6 +69,7 @@ extension View {
                     }
                 }
                 .navigationDestination(for: RouteMoDunCTW.self) { r in ManMoDunCTW(id: r.id) }
+                .navigationDestination(for: RouteThemCTW.self) { _ in ManThemCTW() }
         )
         return CTWDangKyMoDun.dangKyMoDun.reduce(goc) { v, m in m.dichDen?(v) ?? v }
     }

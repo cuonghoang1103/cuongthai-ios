@@ -14,6 +14,8 @@ import SwiftUI
 /// iPhone: thanh tab (mô-đun `.trangDuAn` gộp vào tab Projects); iPad: thanh bên.
 enum MucCTW: Hashable {
     case viecCuaToi, duAn, hopThu, taiKhoan
+    /// iPad: "More tools" — lưới mọi mô-đun chưa ghim (`ThemMoDunCTW.swift`).
+    case them
     case moDun(String)
 
     var ten: String {
@@ -22,6 +24,7 @@ enum MucCTW: Hashable {
         case .duAn: return "Projects"
         case .hopThu: return "Inbox"
         case .taiKhoan: return "Account"
+        case .them: return "More tools"
         case .moDun(let id): return CTWDangKyMoDun.moDun(id)?.ten ?? id
         }
     }
@@ -31,6 +34,7 @@ enum MucCTW: Hashable {
         case .duAn: return "rectangle.3.group"
         case .hopThu: return "bell"
         case .taiKhoan: return "person.crop.circle"
+        case .them: return "square.grid.2x2"
         case .moDun(let id): return CTWDangKyMoDun.moDun(id)?.bieuTuong ?? "square.grid.2x2"
         }
     }
@@ -62,12 +66,14 @@ final class AppState: ObservableObject {
         didSet {
             luuLuaChon()
             CTWChiaSeNhom.ghiDuAnDangChon(luaChon)
-            if oldValue?.pid != luaChon?.pid { cauHinhDuAn = nil; Task { await napCauHinhDuAn() } }
+            if oldValue?.pid != luaChon?.pid { cauHinhDuAn = nil; codeDaNoi = nil; Task { await napCauHinhDuAn() } }
         }
     }
     /// Cấu hình dự án đang chọn (quyền, mô-đun bật/tắt, thành viên…) — khung
     /// dùng để ẩn/hiện mô-đun; mô-đun dùng lại thay vì tự gọi `GET /projects/:pid`.
     @Published var cauHinhDuAn: CTWProjectConfig?
+    /// Dự án đang chọn đã nối GitHub/GitLab chưa (`GET /code/status`) — mục "Code" chỉ hiện khi `true`.
+    @Published var codeDaNoi: Bool?
     /// Số thông báo CT Work chưa đọc (chỉ loại WORK_*), cho huy hiệu tab Inbox.
     @Published var hopThuChuaDoc = 0
     @Published var chatChuaDoc = 0
@@ -130,6 +136,9 @@ final class AppState: ObservableObject {
         chatChuaDoc = 0
         muc = .viecCuaToi
         cauHinhDuAn = nil
+        codeDaNoi = nil
+        // Đồng ý gửi câu hỏi cho AI (5.1.2(i)) là của NGƯỜI vừa đăng xuất — người sau phải tự đồng ý lại.
+        UserDefaults.standard.removeObject(forKey: "com.cuongthai.ctwork.ai.dongY")
         DayCTW.datHuyHieu(0)
     }
 
@@ -160,6 +169,11 @@ final class AppState: ObservableObject {
         guard let pid = luaChon?.pid, isAuthenticated else { return }
         if let c: CTWProjectConfig = try? await APIClient.shared.request(.workDuAn(pid: pid)), luaChon?.pid == pid {
             cauHinhDuAn = c
+            // Trang Code (18/10/2026): khách cổng không có (máy chủ 403) ⇒ không hỏi.
+            if c.role != "CLIENT", let st: CTWCodeTrangThai = try? await APIClient.shared.request(CTWAPI.codeTrangThai(pid: pid)),
+               luaChon?.pid == pid {
+                codeDaNoi = st.connected == true
+            }
             // Tên dự án/không gian có thể đã đổi trên web — cập nhật bản nhớ.
             if var l = luaChon, l.tenDuAn != c.name || l.maDuAn != c.key {
                 l.tenDuAn = c.name; l.maDuAn = c.key

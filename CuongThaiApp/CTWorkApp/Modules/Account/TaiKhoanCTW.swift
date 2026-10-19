@@ -66,7 +66,8 @@ struct TrangPhapLyView: View {
             muc("The microphone is used only while you record a voice note in chat. Voice notes are stored for the people in that channel and sent to Groq, a third-party speech-to-text service, to create a transcript — the app asks for your consent before your first voice note.")
             muc("Video meetings open in Google Meet, Zoom, Microsoft Teams or Jitsi (or Safari). CT Work itself does not use your camera or microphone for calls.")
             muc("If you allow notifications, we store your device's push token to deliver CT Work notifications.")
-            muc("Apart from voice-note transcription, this app does not send your data to third-party AI services. AI agents that a workspace admin adds can read the project they are members of, like any other member; AI-drafted meeting minutes are labelled “AI-generated”.")
+            muc("AI assistant: when you ask it a question, your question and the project content needed to answer it (issues, comments, Docs pages, attached files and links you can already see) are sent to a third-party AI model provider (large language models such as Anthropic Claude and OpenAI GPT, through our AI gateway). The app asks for your consent before your first question; you can withdraw it in Account › Privacy. Answers are labelled “AI-generated” and can be reported.")
+            muc("Apart from the AI assistant and voice-note transcription, this app does not send your data to third-party AI services. AI agents that a workspace admin adds can read the project they are members of, like any other member; AI-drafted meeting minutes are labelled “AI-generated”.")
             muc("Widgets, Siri and Spotlight use a copy of your own data kept on this device only (today's work, your timer, issues you opened recently). Signing out deletes it.")
             muc("Face ID lock is optional and off by default. Face ID is handled by iOS; the app never sees your face data.")
             muc("No tracking, no advertising, no data sale.")
@@ -90,7 +91,7 @@ struct TrangPhapLyView: View {
     }
 
     private func muc(_ s: String) -> some View {
-        Text(s).font(.system(size: 14)).foregroundColor(AppColors.textPrimary)
+        Text(s).font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary)
             .fixedSize(horizontal: false, vertical: true)
             .padding(.vertical, 2)
     }
@@ -116,6 +117,8 @@ struct TaiKhoanCTW: View {
     @EnvironmentObject private var app: AppState
     @State private var tamPhu: TamPhu?
     @State private var hoiDangXuat = false
+    /// 5.1.2(i): đồng ý gửi câu hỏi + nội dung dự án cho nhà cung cấp AI (Modules/AI/TroLyAICTW.swift).
+    @AppStorage("com.cuongthai.ctwork.ai.dongY") private var aiDongY = false
 
     enum TamPhu: Identifiable {
         case phapLy(TrangPhapLyCTW), chonDuAn, web(URL)
@@ -140,11 +143,11 @@ struct TaiKhoanCTW: View {
                         }, size: 54)
                         VStack(alignment: .leading, spacing: 3) {
                             Text(app.currentUser?.displayName ?? app.currentUser?.fullName ?? app.currentUser?.username ?? "—")
-                                .font(.system(size: 18, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                                .font(.ctw(size: 18, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                             Text("@\(app.currentUser?.username ?? "")")
-                                .font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
+                                .font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
                             if let e = app.currentUser?.email {
-                                Text(e).font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
+                                Text(e).font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
                             }
                         }
                     }
@@ -169,18 +172,18 @@ struct TaiKhoanCTW: View {
                     } label: { Label("Notification settings", systemImage: "bell.badge") }
                 }
 
+                // 19/10/2026 — gom theo chủ đề (8 khối ⇒ 6): Quyền riêng tư & bảo mật · Trợ giúp & pháp lý.
                 Section {
                     KhoaAppCongTacCTW()
-                } header: { Text("Security") } footer: {
-                    Text("When on, CT Work asks for \(KhoaAppCTW.tenSinhTracHoc) (or your passcode) every time you return to the app. Widgets and notifications still show on your Lock Screen.")
-                }
-
-                Section("Safety") {
+                    Toggle(isOn: $aiDongY) { Label("AI assistant may use project content", systemImage: "sparkles") }
+                        .accessibilityIdentifier("account.aiConsent")
                     NavigationLink { DanhSachChanCTW() } label: { Label("Blocked users & hidden content", systemImage: "hand.raised") }
-                    Button { tamPhu = .phapLy(.troGiup) } label: { Label("Help & contact", systemImage: "questionmark.circle") }
+                } header: { Text("Privacy & security") } footer: {
+                    Text("App lock asks for \(KhoaAppCTW.tenSinhTracHoc) (or your passcode) when you return to CT Work. The AI assistant sends your question and the project content it needs to a third-party AI model provider; turn it off to be asked again before your next question.")
                 }
 
-                Section("Legal") {
+                Section("Help & legal") {
+                    Button { tamPhu = .phapLy(.troGiup) } label: { Label("Help & contact", systemImage: "questionmark.circle") }
                     Button { tamPhu = .phapLy(.dieuKhoan) } label: { Label("Terms of Use", systemImage: "doc.text") }
                     Button { tamPhu = .phapLy(.baoMat) } label: { Label("Privacy Policy", systemImage: "lock.shield") }
                 }
@@ -331,7 +334,7 @@ struct XoaTaiKhoanCTW: View {
     }
 
     private func dong(_ s: String) -> some View {
-        Label { Text(s).font(.system(size: 14)) } icon: { Image(systemName: "circle.fill").font(.system(size: 6)) }
+        Label { Text(s).font(.ctw(size: 14)) } icon: { Image(systemName: "circle.fill").font(.ctw(size: 6)) }
     }
 
     private func han(_ r: YeuCauXoa) -> String {

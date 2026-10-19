@@ -137,14 +137,18 @@ struct CTWBoardView: View {
         .navigationTitle(vm.cauHinh?.name ?? ten)
         .ctwTieuDeNho()
         .toolbar {
+            // "Hiện dần" (19/10/2026): MỘT hành động chính nổi bật (+ tạo thẻ); lọc "chỉ việc của tôi" và chọn sprint
+            // vào menu "…" (biểu tượng đổi khi đang lọc để người dùng biết bảng đang bị lọc).
             ToolbarItemGroup(placement: .primaryAction) {
-                Button { chiCuaToi.toggle() } label: {
-                    Image(systemName: chiCuaToi ? "person.crop.circle.fill.badge.checkmark" : "person.crop.circle.badge.checkmark")
+                Menu {
+                    Toggle(isOn: $chiCuaToi) { Label("Only my issues", systemImage: "person.crop.circle.badge.checkmark") }
+                    if let cfg = vm.cauHinh, cfg.type != "KANBAN" {
+                        menuSprint(cfg)
+                    }
+                } label: {
+                    Image(systemName: chiCuaToi || vm.sprintId != nil ? "line.3.horizontal.decrease.circle.fill" : "ellipsis.circle")
                 }
-                .accessibilityLabel(chiCuaToi ? "Show all issues" : "Only my issues")
-                if let cfg = vm.cauHinh, cfg.type != "KANBAN" {
-                    menuSprint(cfg)
-                }
+                .accessibilityLabel(chiCuaToi || vm.sprintId != nil ? "View options, filtered" : "View options")
                 if vm.cauHinh?.coTheTao == true {
                     Button { moTao = true } label: { Image(systemName: "plus") }
                         .accessibilityLabel("Create issue")
@@ -166,20 +170,20 @@ struct CTWBoardView: View {
         HStack(spacing: 7) {
             if let s = b.sprint {
                 HStack(spacing: 6) {
-                    Image(systemName: "flag.fill").font(.system(size: 11)).foregroundColor(AppColors.primary)
-                    Text(s.name).font(.system(size: 13, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                    Image(systemName: "flag.fill").font(.ctw(size: 11)).foregroundColor(AppColors.primary)
+                    Text(s.name).font(.ctw(size: 13, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                         .lineLimit(1)
                 }
                 .padding(.horizontal, 10).padding(.vertical, 5)
                 .background(Capsule().fill(AppColors.primary.opacity(0.12)))
                 if let e = CTW.ngayNgan(s.endAt) {
                     Label("ends \(e)", systemImage: "calendar")
-                        .font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                        .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                 }
             } else if b.fallback == true {
-                Image(systemName: "info.circle").font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
+                Image(systemName: "info.circle").font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
                 Text("No active sprint — showing all open issues")
-                    .font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                    .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
             }
             Spacer(minLength: 0)
         }
@@ -206,7 +210,7 @@ struct CTWBoardView: View {
                 }
             }
         } label: {
-            Image(systemName: "flag")
+            Label("Sprint", systemImage: "flag")
         }
         .accessibilityLabel("Choose sprint")
         .disabled(ds.isEmpty)
@@ -234,7 +238,7 @@ struct CTWBoardView: View {
             .overlay {
                 if vm.cot.isEmpty {
                     Text("This project has no board columns.")
-                        .font(.system(size: 14)).foregroundColor(AppColors.textSecondary)
+                        .font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary)
                 }
             }
         }
@@ -256,12 +260,12 @@ struct CTWBoardView: View {
             HStack(spacing: 7) {
                 Circle().fill(mauCot).frame(width: 7, height: 7)
                 Text(c.name.uppercased())
-                    .font(.system(size: 12, weight: .bold))
+                    .font(.ctw(size: 12, weight: .bold))
                     .foregroundColor(AppColors.textSecondary)
                     .lineLimit(1)
                 Spacer(minLength: 0)
                 Text(c.wipLimit.map { "\(ds.count)/\($0)" } ?? "\(ds.count)")
-                    .font(.system(size: 11, weight: .bold).monospacedDigit())
+                    .font(.ctw(size: 11, weight: .bold).monospacedDigit())
                     .foregroundColor(vuot ? .white : AppColors.textSecondary)
                     .padding(.horizontal, 7).padding(.vertical, 2)
                     .background(Capsule().fill(vuot ? AppColors.error : AppColors.backgroundCard))
@@ -276,7 +280,7 @@ struct CTWBoardView: View {
                     }
                     if ds.isEmpty {
                         Text("No issues")
-                            .font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
+                            .font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
                             .frame(maxWidth: .infinity, minHeight: 60)
                     }
                 }
@@ -348,7 +352,7 @@ struct CTWCardView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(the.title)
-                .font(.system(size: 14, weight: .medium))
+                .font(.ctw(size: 14, weight: .medium))
                 .foregroundColor(AppColors.textPrimary)
                 .multilineTextAlignment(.leading)
                 .lineLimit(4)
@@ -358,7 +362,7 @@ struct CTWCardView: View {
                 HStack(spacing: 4) {
                     ForEach(nhan.prefix(3)) { l in
                         Text(l.name)
-                            .font(.system(size: 10, weight: .semibold))
+                            .font(.ctw(size: 10, weight: .semibold))
                             .foregroundColor(CTW.mau(l.color, macDinh: AppColors.textSecondary))
                             .padding(.horizontal, 5).padding(.vertical, 2)
                             .background(Capsule().fill(CTW.mau(l.color, macDinh: AppColors.textSecondary).opacity(0.14)))
@@ -370,19 +374,19 @@ struct CTWCardView: View {
             HStack(spacing: 6) {
                 CTWTypeIcon(type: cauHinh.loai(the.typeId), size: 12)
                 Text("\(cauHinh.key)-\(the.number)")
-                    .font(.system(size: 11, weight: .medium).monospaced())
+                    .font(.ctw(size: 11, weight: .medium).monospaced())
                     .foregroundColor(the.resolvedAt != nil ? AppColors.textTertiary : AppColors.textSecondary)
                     .strikethrough(the.resolvedAt != nil)
                 CTWPriorityIcon(priority: the.priority)
                 if let d = CTW.ngayNgan(the.dueDate) {
                     Text(d)
-                        .font(.system(size: 10, weight: .medium))
+                        .font(.ctw(size: 10, weight: .medium))
                         .foregroundColor(the.resolvedAt == nil && CTW.quaHan(the.dueDate) ? AppColors.error : AppColors.textTertiary)
                 }
                 Spacer(minLength: 0)
                 if let sp = the.storyPoints {
                     Text(sp == sp.rounded() ? String(Int(sp)) : String(format: "%.1f", sp))
-                        .font(.system(size: 10, weight: .bold))
+                        .font(.ctw(size: 10, weight: .bold))
                         .foregroundColor(AppColors.textSecondary)
                         .padding(.horizontal, 5).padding(.vertical, 1)
                         .background(Capsule().fill(AppColors.backgroundTertiary))

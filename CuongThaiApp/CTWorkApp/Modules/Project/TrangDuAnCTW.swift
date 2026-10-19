@@ -2,9 +2,9 @@ import SwiftUI
 
 // MARK: - Trang dự án (tab Projects trên iPhone)
 //
-// Đầu trang: dự án đang chọn + nút đổi dự án. Dưới: mọi mô-đun `.trangDuAn`
-// đã đăng ký (Core/CTWDangKyMoDun.swift), chia theo nhóm, ẩn mô-đun mà dự án
-// tắt. Thêm mô-đun mới KHÔNG phải sửa tệp này.
+// Đầu trang: dự án đang chọn + nút đổi dự án. Dưới: các mô-đun ĐÃ GHIM (mặc định = cốt lõi, xem
+// `ThemMoDunCTW.swift`) + "More tools" (lưới mọi mô-đun còn lại, có tìm + ghim). Ẩn mô-đun mà dự án tắt.
+// Thêm mô-đun mới KHÔNG phải sửa tệp này.
 
 struct TrangDuAnCTW: View {
     @EnvironmentObject private var app: AppState
@@ -20,12 +20,25 @@ struct TrangDuAnCTW: View {
                     Section { dau(l) }
                         .listRowInsets(EdgeInsets())
                         .listRowBackground(Color.clear)
-                    ForEach(nhom, id: \.nhom) { n in
-                        Section(n.nhom.ten) {
-                            ForEach(n.ds) { m in
-                                NavigationLink(value: RouteMoDunCTW(id: m.id)) { hang(m) }
-                            }
+                    // "Hiện dần" (19/10/2026): chỉ mô-đun ĐÃ GHIM (mặc định = cốt lõi); còn lại trong "More tools".
+                    Section {
+                        ForEach(ghimDuoc) { m in
+                            NavigationLink(value: RouteMoDunCTW(id: m.id)) { hang(m) }
                         }
+                        NavigationLink(value: RouteThemCTW()) {
+                            HStack(spacing: 13) {
+                                Image(systemName: "square.grid.2x2")
+                                    .font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textSecondary)
+                                    .frame(width: 34, height: 34)
+                                    .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(AppColors.backgroundTertiary))
+                                Text("More tools").font(.ctw(size: 16, weight: .medium)).foregroundColor(AppColors.textPrimary)
+                                Spacer(minLength: 0)
+                                let n = CTWDangKyMoDun.soConLai(app.cauHinhDuAn)
+                                if n > 0 { Text("\(n)").font(.ctw(size: 14).monospacedDigit()).foregroundColor(AppColors.textTertiary) }
+                            }
+                            .padding(.vertical, 3)
+                        }
+                        .accessibilityIdentifier("project.more")
                     }
                 }
                 .listStyle(.insetGrouped)
@@ -55,36 +68,37 @@ struct TrangDuAnCTW: View {
         #if DEBUG
         .onAppear {
             if let id = XemThuCTW.moDunMoSan, nganXep.duong.isEmpty { nganXep.duong.append(RouteMoDunCTW(id: id)) }
+            if XemThuCTW.man == "them", nganXep.duong.isEmpty { nganXep.duong.append(RouteThemCTW()) }
         }
         #endif
     }
 
-    private var nhom: [(nhom: CTWNhomMoDun, ds: [CTWModule])] {
-        CTWDangKyMoDun.theoNhom(app.cauHinhDuAn).compactMap { n in
-            let ds = n.ds.filter { $0.viTriIPhone == .trangDuAn }
-            return ds.isEmpty ? nil : (nhom: n.nhom, ds: ds)
-        }
+    @ObservedObject private var ghim = GhimMoDunCTW.shared
+
+    /// Mô-đun đã ghim, thuộc trang dự án (Chat là tab riêng trên iPhone).
+    private var ghimDuoc: [CTWModule] {
+        CTWDangKyMoDun.daGhim(app.cauHinhDuAn).filter { $0.viTriIPhone == .trangDuAn }
     }
 
     private func dau(_ l: LuaChonCTW) -> some View {
         HStack(spacing: 14) {
             Text(l.maDuAn)
-                .font(.system(size: 15, weight: .heavy).monospaced())
+                .font(.ctw(size: 15, weight: .heavy).monospaced())
                 .foregroundColor(AppColors.onPrimary)
                 .lineLimit(1).minimumScaleFactor(0.6)
                 .frame(width: 56, height: 56)
                 .background(RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .fill(LinearGradient(colors: [AppColors.primaryLight, AppColors.primary], startPoint: .topLeading, endPoint: .bottomTrailing)))
             VStack(alignment: .leading, spacing: 3) {
-                Text(l.tenDuAn).font(.system(size: 19, weight: .bold)).foregroundColor(AppColors.textPrimary)
+                Text(l.tenDuAn).font(.ctw(size: 19, weight: .bold)).foregroundColor(AppColors.textPrimary)
                     .lineLimit(2).fixedSize(horizontal: false, vertical: true)
-                Text(moTaDuAn(l)).font(.system(size: 13)).foregroundColor(AppColors.textSecondary).lineLimit(1)
+                Text(moTaDuAn(l)).font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary).lineLimit(1)
             }
             .layoutPriority(1)
             Spacer(minLength: 0)
             Button { tamPhu = .chonDuAn } label: {
                 Image(systemName: "arrow.left.arrow.right")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.ctw(size: 15, weight: .semibold))
                     .frame(width: 40, height: 40)
                     .background(Circle().fill(AppColors.primary.opacity(0.12)))
             }
@@ -107,13 +121,13 @@ struct TrangDuAnCTW: View {
     private func hang(_ m: CTWModule) -> some View {
         HStack(spacing: 13) {
             Image(systemName: m.bieuTuong)
-                .font(.system(size: 15, weight: .semibold)).foregroundColor(AppColors.primary)
+                .font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.primary)
                 .frame(width: 34, height: 34)
                 .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(AppColors.primary.opacity(0.12)))
             VStack(alignment: .leading, spacing: 2) {
-                Text(m.ten).font(.system(size: 16, weight: .medium)).foregroundColor(AppColors.textPrimary)
+                Text(m.ten).font(.ctw(size: 16, weight: .medium)).foregroundColor(AppColors.textPrimary)
                 if !m.moTa.isEmpty {
-                    Text(m.moTa).font(.system(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1)
+                    Text(m.moTa).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1)
                 }
             }
         }

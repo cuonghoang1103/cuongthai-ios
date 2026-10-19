@@ -4,6 +4,8 @@ import SwiftUI
 
 struct GocCTW: View {
     @EnvironmentObject private var app: AppState
+    /// Cỡ chữ hệ thống — đổi lúc app đang mở ⇒ dựng lại cả cây để `.ctw(size:)` đọc tỉ lệ mới (CTWUI/CTWCoChu.swift).
+    @Environment(\.dynamicTypeSize) private var coChuHeThong
 
     var body: some View {
         Group {
@@ -15,6 +17,7 @@ struct GocCTW: View {
                 KhungCTW()
             }
         }
+        .id(coChuHeThong)
         .animation(.easeInOut(duration: 0.2), value: app.isAuthenticated)
         .animation(.easeInOut(duration: 0.2), value: app.daDongYDieuKhoan)
     }
@@ -49,6 +52,7 @@ struct KhungTabCTW: View {
         Binding(
             get: {
                 if case .moDun(let id) = app.muc, CTWDangKyMoDun.moDun(id)?.viTriIPhone != .tabRieng { return .duAn }
+                if app.muc == .them { return .duAn }
                 return app.muc
             },
             set: { app.muc = $0 })
@@ -78,7 +82,9 @@ struct KhungTabCTW: View {
 /// `List(selection:)` chết câm trên iOS (bài học app chính 16/09/2026).
 struct KhungRongCTW: View {
     @EnvironmentObject private var app: AppState
+    @ObservedObject private var ghim = GhimMoDunCTW.shared
     @State private var moChon = false
+    @StateObject private var nganXepChiTiet = NganXepCTW()
 
     var body: some View {
         NavigationSplitView {
@@ -87,43 +93,42 @@ struct KhungRongCTW: View {
                     Button { moChon = true } label: {
                         HStack(spacing: 10) {
                             Text(app.luaChon?.maDuAn ?? "—")
-                                .font(.system(size: 12, weight: .bold).monospaced()).foregroundColor(AppColors.onPrimary)
+                                .font(.ctw(size: 12, weight: .bold).monospaced()).foregroundColor(AppColors.onPrimary)
                                 .frame(minWidth: 40, minHeight: 32)
                                 .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(AppColors.primary))
                             VStack(alignment: .leading, spacing: 1) {
-                                Text(app.luaChon?.tenDuAn ?? "Choose a project").font(.system(size: 15, weight: .semibold))
+                                Text(app.luaChon?.tenDuAn ?? "Choose a project").font(.ctw(size: 15, weight: .semibold))
                                     .foregroundColor(AppColors.textPrimary).lineLimit(1)
-                                Text(app.luaChon?.tenKhongGian ?? "No project selected").font(.system(size: 12))
+                                Text(app.luaChon?.tenKhongGian ?? "No project selected").font(.ctw(size: 12))
                                     .foregroundColor(AppColors.textSecondary).lineLimit(1)
                             }
                             Spacer(minLength: 0)
-                            Image(systemName: "chevron.up.chevron.down").font(.system(size: 11, weight: .semibold))
+                            Image(systemName: "chevron.up.chevron.down").font(.ctw(size: 11, weight: .semibold))
                                 .foregroundColor(AppColors.textTertiary)
                         }
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Switch project")
                     muc(.viecCuaToi)
+                    muc(.hopThu)
                 }
-                ForEach(CTWDangKyMoDun.theoNhom(app.cauHinhDuAn), id: \.nhom) { n in
-                    Section(n.nhom.ten) {
-                        if n.nhom == .giaoTiep { muc(.hopThu) }
-                        ForEach(n.ds) { m in muc(.moDun(m.id)) }
-                        if n.nhom == .quanTri { muc(.taiKhoan) }
-                    }
+                // "Hiện dần" (19/10/2026): chỉ mô-đun ĐÃ GHIM (mặc định = cốt lõi); còn lại trong "More tools".
+                Section("Project") {
+                    ForEach(CTWDangKyMoDun.daGhim(app.cauHinhDuAn)) { m in muc(.moDun(m.id)) }
+                    muc(.them)
                 }
-                if !CTWDangKyMoDun.theoNhom(app.cauHinhDuAn).contains(where: { $0.nhom == .giaoTiep }) {
-                    Section(CTWNhomMoDun.giaoTiep.ten) { muc(.hopThu) }
-                }
-                if !CTWDangKyMoDun.theoNhom(app.cauHinhDuAn).contains(where: { $0.nhom == .quanTri }) {
-                    Section(CTWNhomMoDun.quanTri.ten) { muc(.taiKhoan) }
-                }
+                Section { muc(.taiKhoan) }
             }
             .navigationTitle("CT Work")
             .navigationSplitViewColumnWidth(min: 240, ideal: 280)
         } detail: {
-            CotCTW(muc: app.muc == .duAn ? .viecCuaToi : app.muc).id(app.muc)
+            CotCTW(muc: app.muc == .duAn ? .viecCuaToi : app.muc, nganXepNgoai: nganXepChiTiet).id(app.muc)
         }
+        // ⚠️ iPad: màn được ĐẨY trong cột detail (navigationDestination) lấy environment từ NavigationSplitView, KHÔNG
+        // từ NavigationStack của cột ⇒ `NganXepCTW` gắn ở cột không tới ⇒ màn con đọc nó là SIGTRAP (đo 19/10/2026:
+        // Docs › trang › Version history, Code › Source › thư mục). Ngăn xếp detail vì thế do khung giữ và gắn ở đây.
+        .environmentObject(nganXepChiTiet)
+        .onChange(of: app.muc) { _, _ in nganXepChiTiet.veDau() }
         .sheet(isPresented: $moChon) { ChonDuAnCTW() }
     }
 
@@ -138,8 +143,18 @@ struct KhungRongCTW: View {
 /// Một cột/tab: NavigationStack riêng + ngăn xếp cho mô-đun đẩy màn.
 struct CotCTW: View {
     let muc: MucCTW
-    @StateObject private var nganXep = NganXepCTW()
-    @EnvironmentObject private var app: AppState
+    /// iPad: ngăn xếp do `KhungRongCTW` giữ và gắn vào CẢ NavigationSplitView (xem dưới). iPhone: nil ⇒ cột tự giữ.
+    var nganXepNgoai: NganXepCTW? = nil
+    @StateObject private var rieng = NganXepCTW()
+
+    var body: some View {
+        CotNganXepCTW(muc: muc, nganXep: nganXepNgoai ?? rieng)
+    }
+}
+
+private struct CotNganXepCTW: View {
+    let muc: MucCTW
+    @ObservedObject var nganXep: NganXepCTW
 
     var body: some View {
         NavigationStack(path: $nganXep.duong) {
@@ -155,6 +170,7 @@ struct CotCTW: View {
         case .duAn: TrangDuAnCTW()
         case .hopThu: HopThuCTW()
         case .taiKhoan: TaiKhoanCTW()
+        case .them: ManThemCTW()
         case .moDun(let id): ManMoDunCTW(id: id)
         }
     }

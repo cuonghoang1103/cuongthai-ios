@@ -160,12 +160,12 @@ struct HopThuCTW: View {
                         ForEach(g.ds) { n in hang(n) }
                     } header: {
                         HStack {
-                            Text(g.khoa).font(.system(size: 13, weight: .semibold)).textCase(nil)
+                            Text(g.khoa).font(.ctw(size: 13, weight: .semibold)).textCase(nil)
                             Spacer()
                             let chua = g.ds.filter { !$0.isRead }
                             if !chua.isEmpty {
                                 Button("Mark \(chua.count) read") { Task { await vm.danhDauDaDoc(chua.map(\.id)) } }
-                                    .font(.system(size: 12, weight: .semibold)).textCase(nil)
+                                    .font(.ctw(size: 12, weight: .semibold)).textCase(nil)
                             }
                         }
                     }
@@ -225,6 +225,8 @@ struct HopThuCTW: View {
     private var chip: [CTWChipLoc] {
         let ds: [(String, String, String)] = [("all", "All", "tray"), ("mentions", "Mentions", "at"), ("assigned", "Assigned", "person.fill.checkmark"),
                                              ("comments", "Replies", "text.bubble"), ("approvals", "Approvals", "checkmark.seal"), ("alerts", "Alerts", "exclamationmark.circle")]
+            // Chip "Code" chỉ khi có thông báo Git (dự án nối GitHub/GitLab) — không làm rối hộp thư của nhóm không dùng.
+            + (vm.ds.contains { $0.laGit } ? [("code", "Code", "chevron.left.forwardslash.chevron.right")] : [])
         return ds.map { x in
             let so = x.0 == "all" ? 0 : vm.ds.filter { $0.loai == x.0 && !$0.isRead }.count
             return CTWChipLoc(id: x.0, nhan: so > 0 ? "\(x.1) \(so)" : x.1, bieuTuong: x.2, bat: loai == x.0)
@@ -284,43 +286,43 @@ struct HangThongBaoCTW: View {
                         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                         .accessibilityLabel("CT Work")
                 }
-                Image(systemName: tb.bieuTuong).font(.system(size: 10, weight: .bold)).foregroundColor(.white)
+                Image(systemName: tb.bieuTuong).font(.ctw(size: 10, weight: .bold)).foregroundColor(.white)
                     .frame(width: 20, height: 20).background(Circle().fill(mau))
                     .overlay(Circle().strokeBorder(AppColors.backgroundCard, lineWidth: 1.5))
                     .offset(x: 4, y: 4)
             }
             VStack(alignment: .leading, spacing: 5) {
                 HStack(spacing: 5) {
-                    Text(tb.sender?.nguoi.ten ?? "CT Work").font(.system(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                    Text(tb.sender?.nguoi.ten ?? "CT Work").font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                     if tb.sender?.kind == "AGENT" { CTWNhanAI() }
                     Spacer(minLength: 0)
-                    Text(CTWChatThoiGian.gio(tb.createdAt)).font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+                    Text(CTWChatThoiGian.gio(tb.createdAt)).font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
                 }
-                Text(tb.cau).font(.system(size: 14)).foregroundColor(AppColors.textPrimary)
+                Text(tb.cau).font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary)
                     .lineLimit(3).fixedSize(horizontal: false, vertical: true)
                 if let t = tb.payload?.title, tb.type != "WORK_ASSIGN" {
-                    Text(t).font(.system(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1)
+                    Text(t).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1)
                 }
                 if tb.laPheDuyet {
                     if let q = daQuyet {
                         Label(q ? "You approved" : "You rejected", systemImage: q ? "checkmark.seal.fill" : "xmark.seal.fill")
-                            .font(.system(size: 12, weight: .semibold)).foregroundColor(q ? AppColors.success : AppColors.error)
+                            .font(.ctw(size: 12, weight: .semibold)).foregroundColor(q ? AppColors.success : AppColors.error)
                     } else {
                         HStack(spacing: 8) {
-                            Button { bam(.duyet) } label: { Label("Approve", systemImage: "checkmark").font(.system(size: 13, weight: .semibold)) }
+                            Button { bam(.duyet) } label: { Label("Approve", systemImage: "checkmark").font(.ctw(size: 13, weight: .semibold)) }
                                 .buttonStyle(.borderedProminent).tint(AppColors.success).controlSize(.small)
-                            Button { bam(.tuChoi) } label: { Label("Reject", systemImage: "xmark").font(.system(size: 13, weight: .semibold)) }
+                            Button { bam(.tuChoi) } label: { Label("Reject", systemImage: "xmark").font(.ctw(size: 13, weight: .semibold)) }
                                 .buttonStyle(.bordered).tint(AppColors.error).controlSize(.small)
                         }
                         .padding(.top, 2)
                     }
                 } else if let u = tb.linkVaoHop {
                     // Nhắc họp: mở Meet/Zoom/Teams/Jitsi bằng hệ thống (Universal Link vào app của họ).
-                    Button { moURL(u) } label: { Label("Join meeting", systemImage: "video.fill").font(.system(size: 13, weight: .semibold)) }
+                    Button { moURL(u) } label: { Label("Join meeting", systemImage: "video.fill").font(.ctw(size: 13, weight: .semibold)) }
                         .buttonStyle(.borderedProminent).controlSize(.small)
                         .padding(.top, 2)
                 } else if tb.traLoiDuoc {
-                    Button { bam(.traLoi) } label: { Label("Reply", systemImage: "arrowshape.turn.up.left").font(.system(size: 13, weight: .semibold)) }
+                    Button { bam(.traLoi) } label: { Label("Reply", systemImage: "arrowshape.turn.up.left").font(.ctw(size: 13, weight: .semibold)) }
                         .buttonStyle(.bordered).controlSize(.small)
                         .padding(.top, 2)
                 }
@@ -362,17 +364,17 @@ struct TraLoiNhanhCTW: View {
                     CTWAvatar(user: tb.sender?.nguoi, size: 32)
                     VStack(alignment: .leading, spacing: 3) {
                         HStack(spacing: 5) {
-                            Text(tb.sender?.nguoi.ten ?? "CT Work").font(.system(size: 14, weight: .semibold))
+                            Text(tb.sender?.nguoi.ten ?? "CT Work").font(.ctw(size: 14, weight: .semibold))
                             if tb.sender?.kind == "AGENT" { CTWNhanAI() }
                         }
-                        Text(tb.payload?.excerpt ?? tb.payload?.title ?? "").font(.system(size: 14)).foregroundColor(AppColors.textSecondary)
+                        Text(tb.payload?.excerpt ?? tb.payload?.title ?? "").font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary)
                     }
                 }
                 .padding(12)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .ctwThe(12)
                 Text(tb.laChat ? "Replies in the chat thread \(tb.payload?.issueKey ?? "")." : "Replies on \(tb.payload?.issueKey ?? "the issue") as a threaded comment.")
-                    .font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
+                    .font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
                 TextField("Write a reply…", text: $chu, axis: .vertical)
                     .lineLimit(3...8)
                     .focused($tieuDiem)
