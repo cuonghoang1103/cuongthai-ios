@@ -115,7 +115,7 @@ struct DongBinhLuanTheCTW: View {
                 CTWAvatar(user: c.author, size: 30)
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 6) {
-                        Text(c.author?.ten ?? "Someone").font(.system(size: 13, weight: .semibold))
+                        Text(c.author?.ten ?? "Someone").font(.ctw(size: 13, weight: .semibold))
                             .foregroundColor(AppColors.textPrimary).lineLimit(1)
                         if c.author?.laAgent == true { CTWNhanAI() } else if c.isAi == true { CTWNhanAI(chu: "AI-drafted") }
                         if let nhanPhu {
@@ -123,12 +123,12 @@ struct DongBinhLuanTheCTW: View {
                                        mau: noiBo ? AppColors.warning : AppColors.success)
                         }
                         Spacer(minLength: 0)
-                        Text(CTW.thoiDiem(c.createdAt)).font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+                        Text(CTW.thoiDiem(c.createdAt)).font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
                     }
                     CTWTipTapView(doc: c.bodyJson, coChu: 14)
                     ForEach(c.attachments ?? []) { a in
                         Label(a.fileName ?? "File", systemImage: a.bieuTuong)
-                            .font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                            .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                     }
                 }
             }
@@ -203,7 +203,7 @@ struct DaiXemThuKhach: View {
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: "eye.fill")
-            Text(chu).font(.system(size: 13, weight: .semibold))
+            Text(chu).font(.ctw(size: 13, weight: .semibold))
             Spacer(minLength: 0)
         }
         .foregroundColor(AppColors.primary)

@@ -84,7 +84,7 @@ struct TeamCTW: View {
                 Section {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), spacing: 10)], spacing: 10) {
                         CTWODem(so: "\(t.members ?? thanhVien.count)", nhan: "Members", bieuTuong: "person.2.fill")
-                        CTWODem(so: "\(t.inProgress ?? 0)", nhan: "In progress", bieuTuong: "play.circle.fill", mau: Color(hex: 0x2563EB))
+                        CTWODem(so: "\(t.inProgress ?? 0)", nhan: "In progress", bieuTuong: "play.circle.fill", mau: AppColors.info)
                         CTWODem(so: "\(t.overdue ?? 0)", nhan: "Overdue", bieuTuong: "clock.badge.exclamationmark.fill",
                                 mau: (t.overdue ?? 0) > 0 ? AppColors.error : AppColors.textSecondary)
                         CTWODem(so: "\(t.reviews ?? 0)", nhan: "Waiting for review", bieuTuong: "eye.fill", mau: AppColors.warning)
@@ -171,15 +171,15 @@ struct TeamCTW: View {
             CTWAvatar(user: u, size: 36)
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
-                    Text(u.ten).font(.system(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(1)
-                    if laToi { Text("You").font(.system(size: 11, weight: .semibold)).foregroundColor(AppColors.textTertiary) }
+                    Text(u.ten).font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                    if laToi { Text("You").font(.ctw(size: 11, weight: .semibold)).foregroundColor(AppColors.textTertiary) }
                     if u.laAgent { CTWNhanAI() }
                 }
                 if let p = nguoiTongQuan(u) {
-                    Text(khoiLuong(p)).font(.system(size: 12)).foregroundColor((p.overdue ?? 0) > 0 ? AppColors.error : AppColors.textSecondary)
+                    Text(khoiLuong(p)).font(.ctw(size: 12)).foregroundColor((p.overdue ?? 0) > 0 ? AppColors.error : AppColors.textSecondary)
                         .lineLimit(1)
                 } else if let un = u.username {
-                    Text("@\(un)").font(.system(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1)
+                    Text("@\(un)").font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1)
                 }
             }
             Spacer(minLength: 6)
@@ -219,18 +219,18 @@ struct TeamCTW: View {
         let ds = n.members ?? []
         return HStack(spacing: 12) {
             Text(n.key ?? String(n.name.prefix(2)).uppercased())
-                .font(.system(size: 12, weight: .heavy).monospaced())
+                .font(.ctw(size: 12, weight: .heavy).monospaced())
                 .foregroundColor(.white)
                 .lineLimit(1).minimumScaleFactor(0.6)
                 .frame(width: 36, height: 36)
                 .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(CTW.mau(n.color, macDinh: AppColors.primary)))
             VStack(alignment: .leading, spacing: 3) {
-                Text(n.name).font(.system(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                Text(n.name).font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(1)
                 let lead = ds.filter { $0.teamRole == "LEAD" || (n.leadIds ?? []).contains($0.id) }.map { $0.nguoi.ten }
                 Text([ "\(ds.count) member\(ds.count == 1 ? "" : "s")",
                        lead.isEmpty ? nil : "Lead: \(lead.joined(separator: ", "))",
                        (n.openIssues ?? 0) > 0 ? "\(n.openIssues!) open" : nil ].compactMap { $0 }.joined(separator: " · "))
-                    .font(.system(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1)
+                    .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1)
             }
             Spacer(minLength: 4)
             HStack(spacing: -8) {
@@ -269,8 +269,8 @@ struct MoiBangLinkCTW: View {
                     Section {
                         VStack(alignment: .leading, spacing: 10) {
                             Label("Invite link created", systemImage: "checkmark.circle.fill")
-                                .font(.system(size: 16, weight: .semibold)).foregroundColor(AppColors.success)
-                            Text(k.url).font(.system(size: 13, design: .monospaced)).foregroundColor(AppColors.textPrimary)
+                                .font(.ctw(size: 16, weight: .semibold)).foregroundColor(AppColors.success)
+                            Text(k.url).font(.ctw(size: 13, design: .monospaced)).foregroundColor(AppColors.textPrimary)
                                 .textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
                             HStack(spacing: 10) {
                                 if let u = URL(string: k.url) {
@@ -311,7 +311,7 @@ struct MoiBangLinkCTW: View {
                         Stepper("Expires in \(soNgay) day\(soNgay == 1 ? "" : "s")", value: $soNgay, in: 1...30)
                     }
                     if let loi {
-                        Section { Text(loi).foregroundColor(AppColors.error).font(.system(size: 14)) }
+                        Section { Text(loi).foregroundColor(AppColors.error).font(.ctw(size: 14)) }
                     }
                 }
             }

@@ -71,7 +71,7 @@ struct HangChoCTW: View {
                             }
                             if vm.du?.truncated == true {
                                 Text("Showing the first 500 tickets. Narrow the view or search to see more.")
-                                    .font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
+                                    .font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
                             }
                         }
                     } else if vm.loi == nil {
@@ -130,8 +130,8 @@ struct HangTicketCTW: View {
         VStack(alignment: .leading, spacing: 9) {
             HStack(spacing: 7) {
                 Image(systemName: CTWDesk.bieuTuongLoai(t.requestType))
-                    .font(.system(size: 12, weight: .semibold)).foregroundColor(AppColors.primary)
-                Text(t.key ?? "#\(t.number)").font(.system(size: 12, weight: .semibold).monospacedDigit())
+                    .font(.ctw(size: 12, weight: .semibold)).foregroundColor(AppColors.primary)
+                Text(t.key ?? "#\(t.number)").font(.ctw(size: 12, weight: .semibold).monospacedDigit())
                     .foregroundColor(AppColors.textSecondary)
                 if let p = t.priority { CTWNhanNho(chu: p, mau: CTWDesk.mauUuTien(p)) }
                 if t.channel == "PORTAL" { CTWNhanNho(chu: "Portal", bieuTuong: "globe") }
@@ -140,7 +140,7 @@ struct HangTicketCTW: View {
                     CTWChipChu(chu: s.name, mau: s.color.map { CTW.mau($0) } ?? CTW.mauNhom(s.category))
                 }
             }
-            Text(t.title).font(.system(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+            Text(t.title).font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                 .lineLimit(2).fixedSize(horizontal: false, vertical: true)
             HStack(spacing: 6) {
                 VienSla(ten: "Response", s: t.firstResponse)
@@ -148,7 +148,7 @@ struct HangTicketCTW: View {
                 Spacer(minLength: 0)
                 if t.waiting == true { Image(systemName: "pause.circle.fill").foregroundColor(AppColors.textSecondary).accessibilityLabel("Waiting on customer") }
                 CTWAvatar(user: t.requester, size: 22)
-                Image(systemName: "arrow.right").font(.system(size: 9)).foregroundColor(AppColors.textTertiary)
+                Image(systemName: "arrow.right").font(.ctw(size: 9)).foregroundColor(AppColors.textTertiary)
                 CTWAvatar(user: t.assignee, size: 22)
             }
         }
@@ -167,8 +167,8 @@ struct VienSla: View {
         let m = CTWDesk.mauSla(s)
         HStack(spacing: 4) {
             Image(systemName: s?.paused == true ? "pause.fill" : (s?.status == "MET" ? "checkmark" : "clock"))
-                .font(.system(size: 9, weight: .bold))
-            Text("\(ten) · \(CTWDesk.nhanSla(s))").font(.system(size: 11, weight: .semibold)).lineLimit(1).fixedSize()
+                .font(.ctw(size: 9, weight: .bold))
+            Text("\(ten) · \(CTWDesk.nhanSla(s))").font(.ctw(size: 11, weight: .semibold)).lineLimit(1).fixedSize()
         }
         .foregroundColor(m)
         .padding(.horizontal, 7).padding(.vertical, 4)

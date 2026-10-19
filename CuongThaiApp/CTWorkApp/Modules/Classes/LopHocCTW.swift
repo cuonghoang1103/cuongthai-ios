@@ -107,7 +107,7 @@ struct LopHocCTW: View {
     private func theLop(_ l: CTWLop) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
-                Text(l.subject ?? "Class").font(.system(size: 11, weight: .heavy).monospaced())
+                Text(l.subject ?? "Class").font(.ctw(size: 11, weight: .heavy).monospaced())
                     .foregroundColor(AppColors.onPrimary)
                     .padding(.horizontal, 8).padding(.vertical, 4)
                     .background(Capsule().fill(LinearGradient(colors: [AppColors.primaryLight, AppColors.primary],
@@ -116,15 +116,15 @@ struct LopHocCTW: View {
                 Spacer(minLength: 0)
                 CTWNhanNho(chu: CTWMauTrangThai.nhan(l.role))
             }
-            Text(l.name).font(.system(size: 16, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(2)
+            Text(l.name).font(.ctw(size: 16, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(2)
             Text([l.classCode, l.term].compactMap { $0 }.joined(separator: " · "))
-                .font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
+                .font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
             HStack(spacing: 12) {
                 if let g = l.groups { Label("\(g) groups", systemImage: "person.3") }
                 if let s = l.students { Label("\(s) students", systemImage: "person") }
                 if let my = l.group?.name { Label(my, systemImage: "person.3.fill") }
             }
-            .font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
+            .font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -194,10 +194,10 @@ struct LopCTW: View {
             }
             HStack(spacing: 8) {
                 CTWAvatar(user: l.teacher ?? l.owner, size: 24)
-                Text("Teacher: \((l.teacher ?? l.owner)?.ten ?? "—")").font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
+                Text("Teacher: \((l.teacher ?? l.owner)?.ten ?? "—")").font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
             }
             if l.manage == true, let code = l.joinCodeDisplay {
-                Text("Join code: \(code)").font(.system(size: 13, weight: .semibold).monospaced()).foregroundColor(AppColors.textPrimary)
+                Text("Join code: \(code)").font(.ctw(size: 13, weight: .semibold).monospaced()).foregroundColor(AppColors.textPrimary)
                     .textSelection(.enabled)
             }
         }
@@ -248,21 +248,21 @@ struct LopCTW: View {
     private func hangBaiTap(_ a: CTWBaiTap, quanLy: Bool) -> some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: a.kind == "GROUP" ? "person.3.fill" : "doc.text.fill")
-                .font(.system(size: 15)).foregroundColor(AppColors.primary)
+                .font(.ctw(size: 15)).foregroundColor(AppColors.primary)
                 .frame(width: 36, height: 36)
                 .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(AppColors.primary.opacity(0.12)))
             VStack(alignment: .leading, spacing: 4) {
-                Text(a.title).font(.system(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(2)
+                Text(a.title).font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(2)
                 HStack(spacing: 6) {
                     if let d = a.dueAt {
-                        Text("Due \(CTW.thoiDiem(d))").font(.system(size: 12))
+                        Text("Due \(CTW.thoiDiem(d))").font(.ctw(size: 12))
                             .foregroundColor(DichVuLoi.daQua(d) && a.my?.state == "ASSIGNED" ? AppColors.error : AppColors.textSecondary)
-                    } else { Text("No due date").font(.system(size: 12)).foregroundColor(AppColors.textSecondary) }
-                    if let p = a.maxPoints { Text("· \(CTWLopNhan.diem(p)) pts").font(.system(size: 12)).foregroundColor(AppColors.textTertiary) }
+                    } else { Text("No due date").font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary) }
+                    if let p = a.maxPoints { Text("· \(CTWLopNhan.diem(p)) pts").font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary) }
                 }
                 if quanLy, let c = a.counts {
                     Text("\(c.turnedIn ?? 0) turned in · \(c.late ?? 0) late · \(c.missing ?? 0) missing · \(c.returned ?? 0) returned")
-                        .font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
+                        .font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
                 }
             }
             Spacer(minLength: 0)
@@ -270,7 +270,7 @@ struct LopCTW: View {
                 VStack(alignment: .trailing, spacing: 4) {
                     CTWChipChu(chu: CTWLopNhan.trangThaiNop(my.state), mau: CTWMauTrangThai.mau(CTWLopNhan.mauNop(my.state)))
                     if let g = my.grade?.points {
-                        Text("\(CTWLopNhan.diem(g))/\(CTWLopNhan.diem(a.maxPoints))").font(.system(size: 13, weight: .bold).monospacedDigit())
+                        Text("\(CTWLopNhan.diem(g))/\(CTWLopNhan.diem(a.maxPoints))").font(.ctw(size: 13, weight: .bold).monospacedDigit())
                             .foregroundColor(AppColors.success)
                     }
                 }
@@ -285,22 +285,22 @@ struct LopCTW: View {
             if gs.isEmpty { CTWOTrong(bieuTuong: "person.3", tieuDe: "No groups yet") }
             ForEach(gs) { g in
                 HStack(spacing: 12) {
-                    Text("\(g.number ?? 0)").font(.system(size: 14, weight: .bold).monospacedDigit())
+                    Text("\(g.number ?? 0)").font(.ctw(size: 14, weight: .bold).monospacedDigit())
                         .foregroundColor(AppColors.primary)
                         .frame(width: 34, height: 34)
                         .background(Circle().fill(AppColors.primary.opacity(0.12)))
                     VStack(alignment: .leading, spacing: 2) {
                         HStack(spacing: 6) {
-                            Text(g.name).font(.system(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                            Text(g.name).font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                             if lop?.me?.groupId == g.id { CTWNhanNho(chu: "Your group", mau: AppColors.success) }
                         }
                         Text("\(g.members ?? 0) members" + (g.project?.key.map { " · project \($0)" } ?? ""))
-                            .font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                            .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                     }
                     Spacer(minLength: 0)
                     if let href = g.project?.href {
                         Button { DinhTuyenCTW.mo(duongDan: href) } label: {
-                            Text("Open").font(.system(size: 13, weight: .semibold)).padding(.horizontal, 12).frame(minHeight: 36)
+                            Text("Open").font(.ctw(size: 13, weight: .semibold)).padding(.horizontal, 12).frame(minHeight: 36)
                         }
                         .buttonStyle(.bordered)
                         .accessibilityLabel("Open project \(g.project?.key ?? "")")
@@ -334,37 +334,37 @@ struct BaiDangLopCTW: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 10) {
-                Image(systemName: bieuTuong).font(.system(size: 14)).foregroundColor(AppColors.onPrimary)
+                Image(systemName: bieuTuong).font(.ctw(size: 14)).foregroundColor(AppColors.onPrimary)
                     .frame(width: 32, height: 32).background(Circle().fill(AppColors.primary))
                 VStack(alignment: .leading, spacing: 1) {
                     HStack(spacing: 5) {
-                        Text(p.author?.ten ?? "Teacher").font(.system(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                        Text(p.author?.ten ?? "Teacher").font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                         if p.author?.laAgent == true { CTWNhanAI() }
                     }
-                    Text(CTW.thoiDiem(p.publishAt ?? p.createdAt)).font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+                    Text(CTW.thoiDiem(p.publishAt ?? p.createdAt)).font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
                 }
                 Spacer(minLength: 0)
                 if p.pinned == true { Image(systemName: "pin.fill").foregroundColor(AppColors.warning).accessibilityLabel("Pinned") }
             }
             if let t = p.title, !t.isEmpty {
-                Text(t).font(.system(size: 16, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                Text(t).font(.ctw(size: 16, weight: .semibold)).foregroundColor(AppColors.textPrimary)
             }
             if let b = p.bodyJson { CTWTipTapView(doc: b, coChu: 14.5) }
             ForEach(Array((p.links ?? []).enumerated()), id: \.offset) { _, l in
                 if let u = URL(string: l.url) {
                     Link(destination: u) {
-                        Label(l.title ?? l.url, systemImage: "link").font(.system(size: 13)).lineLimit(1)
+                        Label(l.title ?? l.url, systemImage: "link").font(.ctw(size: 13)).lineLimit(1)
                     }
                 }
             }
             if let f = p.files, !f.isEmpty {
                 ForEach(f) { t in TepLopDong(lop: lop, t: t) }
             }
-            if let l = loi { Text(l).font(.system(size: 12)).foregroundColor(AppColors.error) }
+            if let l = loi { Text(l).font(.ctw(size: 12)).foregroundColor(AppColors.error) }
             Divider()
             Button { withAnimation { moBinhLuan.toggle() } } label: {
                 Label("\(p.commentCount ?? p.comments?.count ?? 0) class comments", systemImage: "bubble.left.and.bubble.right")
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.ctw(size: 13, weight: .medium))
                     .frame(maxWidth: .infinity, minHeight: 32, alignment: .leading)
             }
             .buttonStyle(.plain)
@@ -385,7 +385,7 @@ struct BaiDangLopCTW: View {
                         } catch { loi = DichVuLoi.cau(error); return false }
                     }
                 } else if p.commentsOff == true {
-                    Text("Comments are turned off for this post.").font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
+                    Text("Comments are turned off for this post.").font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
                 }
             }
         }
@@ -445,10 +445,10 @@ struct TepLopDong: View {
             Image(systemName: (t.mime ?? "").hasPrefix("image/") ? "photo" : ((t.mime ?? "").contains("pdf") ? "doc.richtext" : "doc"))
                 .foregroundColor(AppColors.primary).frame(width: 22)
             VStack(alignment: .leading, spacing: 1) {
-                Text(t.fileName ?? "File").font(.system(size: 14)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                Text(t.fileName ?? "File").font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary).lineLimit(1)
                 if let s = t.size {
                     Text(ByteCountFormatter.string(fromByteCount: Int64(s), countStyle: .file))
-                        .font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+                        .font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
                 }
             }
             Spacer(minLength: 0)

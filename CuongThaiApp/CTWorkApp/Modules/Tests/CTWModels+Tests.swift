@@ -203,7 +203,7 @@ enum CTWLuatTest {
         case "PASS": return AppColors.success
         case "FAIL": return AppColors.error
         case "BLOCKED": return AppColors.warning
-        case "IN_PROGRESS", "RETEST": return Color(hex: 0x2563EB)
+        case "IN_PROGRESS", "RETEST": return AppColors.info
         case "SKIP": return AppColors.textSecondary
         default: return AppColors.textTertiary
         }

@@ -58,14 +58,14 @@ struct NopSanPhamCTW: View {
         let bat = d.gate?.enabled == true
         return HStack(alignment: .top, spacing: 10) {
             Image(systemName: bat ? (d.gate?.mode == "hard" ? "lock.shield.fill" : "exclamationmark.shield.fill") : "shield")
-                .font(.system(size: 18)).foregroundColor(bat ? AppColors.primary : AppColors.textTertiary)
+                .font(.ctw(size: 18)).foregroundColor(bat ? AppColors.primary : AppColors.textTertiary)
             VStack(alignment: .leading, spacing: 3) {
                 Text(bat ? (d.gate?.mode == "hard" ? "Files required to finish" : "Files recommended") : "No submission rule")
-                    .font(.system(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                    .font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                 Text(bat
                      ? "Each issue\(d.gate?.typeKeys.map { " (\($0.joined(separator: ", ")))" } ?? "") needs at least \(d.gate?.minAttachments ?? 1) attached file\((d.gate?.minAttachments ?? 1) == 1 ? "" : "s")\(d.gate?.mode == "hard" ? " before it can move to Done." : ".")"
                      : "Issues can be finished without attaching files.")
-                    .font(.system(size: 12)).foregroundColor(AppColors.textSecondary).fixedSize(horizontal: false, vertical: true)
+                    .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 0)
         }
@@ -82,15 +82,15 @@ struct NopSanPhamCTW: View {
                     CTWAvatar(user: CTWUser(id: 0, username: m.username, fullName: m.name, kind: m.kind), size: 30)
                     VStack(alignment: .leading, spacing: 2) {
                         HStack(spacing: 5) {
-                            Text(m.name ?? m.username ?? "Member").font(.system(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                            Text(m.name ?? m.username ?? "Member").font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                             if m.kind == "AGENT" { CTWNhanAI() }
                         }
                         Text("\(m.submitted ?? 0)/\(m.total ?? 0) submitted · \(m.onTime ?? 0)/\(m.onTimeOf ?? 0) on time")
-                            .font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                            .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                     }
                     Spacer(minLength: 0)
                     if (m.overdue ?? 0) > 0 { CTWNhanNho(chu: "\(m.overdue ?? 0) overdue", mau: AppColors.error) }
-                    Image(systemName: "chevron.down").font(.system(size: 12, weight: .semibold)).foregroundColor(AppColors.textTertiary)
+                    Image(systemName: "chevron.down").font(.ctw(size: 12, weight: .semibold)).foregroundColor(AppColors.textTertiary)
                         .rotationEffect(.degrees(dangMo ? 180 : 0))
                 }
                 .padding(12)
@@ -108,12 +108,12 @@ struct NopSanPhamCTW: View {
                             Image(systemName: it.submitted == true ? "checkmark.circle.fill" : "circle")
                                 .foregroundColor(it.submitted == true ? AppColors.success : AppColors.textTertiary)
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(it.title).font(.system(size: 14)).foregroundColor(AppColors.textPrimary).lineLimit(2)
+                                Text(it.title).font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary).lineLimit(2)
                                 Text([it.key, it.status, it.dueDate.flatMap(CTW.ngayNgan).map { "due \($0)" }].compactMap { $0 }.joined(separator: " · "))
-                                    .font(.system(size: 11)).foregroundColor(it.overdue == true ? AppColors.error : AppColors.textTertiary)
+                                    .font(.ctw(size: 11)).foregroundColor(it.overdue == true ? AppColors.error : AppColors.textTertiary)
                             }
                             Spacer(minLength: 0)
-                            Label("\(it.attachmentCount ?? 0)", systemImage: "paperclip").font(.system(size: 12))
+                            Label("\(it.attachmentCount ?? 0)", systemImage: "paperclip").font(.ctw(size: 12))
                                 .foregroundColor(AppColors.textSecondary)
                                 .accessibilityLabel("\(it.attachmentCount ?? 0) files")
                         }

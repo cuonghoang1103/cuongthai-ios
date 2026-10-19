@@ -128,16 +128,16 @@ struct GovHangDuyet: View {
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: a.bieuTuong)
-                .font(.system(size: 15, weight: .semibold)).foregroundColor(AppColors.primary)
+                .font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.primary)
                 .frame(width: 34, height: 34)
                 .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(AppColors.primary.opacity(0.12)))
             VStack(alignment: .leading, spacing: 5) {
                 HStack(spacing: 6) {
-                    Text(a.nhanDoiTuong).font(.system(size: 12, weight: .semibold).monospaced())
+                    Text(a.nhanDoiTuong).font(.ctw(size: 12, weight: .semibold).monospaced())
                         .foregroundColor(AppColors.textSecondary).lineLimit(1)
-                    if let p = a.project?.key, a.project?.id != a.projectId { Text(p).font(.system(size: 11)).foregroundColor(AppColors.textTertiary) }
+                    if let p = a.project?.key, a.project?.id != a.projectId { Text(p).font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary) }
                 }
-                Text(a.title ?? "Approval").font(.system(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                Text(a.title ?? "Approval").font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                     .lineLimit(2).fixedSize(horizontal: false, vertical: true)
                 HStack(spacing: 6) {
                     CTWChipChu(chu: a.status)
@@ -146,13 +146,13 @@ struct GovHangDuyet: View {
                 }
                 HStack(spacing: 8) {
                     GovChongAvatar(users: a.dsBuoc.compactMap(\.approver), size: 20)
-                    Text("\(a.soDaDuyet)/\(a.dsBuoc.count) approved").font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                    Text("\(a.soDaDuyet)/\(a.dsBuoc.count) approved").font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                     Spacer(minLength: 0)
                     if a.dangCho, let han = CTW.ngayNgan(a.dueAt) {
-                        Label("Due \(han)", systemImage: "calendar").font(.system(size: 12, weight: a.quaHan ? .semibold : .regular))
+                        Label("Due \(han)", systemImage: "calendar").font(.ctw(size: 12, weight: a.quaHan ? .semibold : .regular))
                             .foregroundColor(a.quaHan ? AppColors.error : AppColors.textSecondary).labelStyle(.titleAndIcon)
                     } else if let t = GovNgay.tuongDoi(a.decidedAt ?? a.createdAt) {
-                        Text(t).font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
+                        Text(t).font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
                     }
                 }
             }

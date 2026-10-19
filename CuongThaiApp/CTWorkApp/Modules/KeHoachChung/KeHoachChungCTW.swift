@@ -145,8 +145,8 @@ struct ThanhTabCTW<ID: Hashable>: View {
                             withAnimation(.easeInOut(duration: 0.15)) { chon = t.id }
                         } label: {
                             HStack(spacing: 5) {
-                                if let b = t.bieuTuong { Image(systemName: b).font(.system(size: 11, weight: .semibold)) }
-                                Text(t.ten).font(.system(size: 13, weight: .semibold)).fixedSize()
+                                if let b = t.bieuTuong { Image(systemName: b).font(.ctw(size: 11, weight: .semibold)) }
+                                Text(t.ten).font(.ctw(size: 13, weight: .semibold)).fixedSize()
                             }
                             .foregroundColor(bat ? AppColors.onPrimary : AppColors.textPrimary)
                             .padding(.horizontal, 12).padding(.vertical, 7)
@@ -185,7 +185,7 @@ extension AppState {
 struct NhanTuKhaiCTW: View {
     var body: some View {
         Label("self-reported", systemImage: "info.circle")
-            .font(.system(size: 10, weight: .semibold))
+            .font(.ctw(size: 10, weight: .semibold))
             .foregroundColor(AppColors.textSecondary)
             .padding(.horizontal, 6).padding(.vertical, 2)
             .background(Capsule().fill(AppColors.backgroundTertiary))

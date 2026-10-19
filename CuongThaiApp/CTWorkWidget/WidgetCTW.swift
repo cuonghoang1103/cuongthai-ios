@@ -92,10 +92,11 @@ struct ViecHomNayView: View {
         }
     }
 
-    private var soDong: Int { co == .systemLarge ? 8 : (co == .systemMedium ? 4 : 3) }
+    // Cỡ vừa chỉ cao ~158 pt: 4 dòng + "+N more" tràn và WidgetKit cắt mất ĐẦU (tiêu đề) — đo 19/10 trên iPhone 17 Pro Max.
+    private var soDong: Int { co == .systemLarge ? 8 : 3 }
 
     @ViewBuilder private var noiDung: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: co == .systemLarge ? 6 : 4) {
             HStack(spacing: 6) {
                 Image(systemName: "checklist").font(.caption.weight(.bold)).foregroundStyle(MauW.chinh)
                 Text(co == .systemSmall ? "Today" : "My work today").font(.caption.weight(.bold))
@@ -113,12 +114,14 @@ struct ViecHomNayView: View {
             } else {
                 ForEach(viec.prefix(soDong)) { v in dong(v) }
                 Spacer(minLength: 0)
-                if viec.count > soDong { Text("+\(viec.count - soDong) more").font(.caption2).foregroundStyle(.secondary) }
+                if viec.count > soDong && co == .systemLarge { Text("+\(viec.count - soDong) more").font(.caption2).foregroundStyle(.secondary) }
             }
-            if cu && moc.anh?.daDangNhap == true {
+            if cu && moc.anh?.daDangNhap == true && co != .systemMedium {
                 Text("Open CT Work to refresh").font(.caption2).foregroundStyle(.secondary)
             }
         }
+        // Tràn thì cắt ĐUÔI, không cắt tiêu đề.
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .widgetURL(URL(string: "ctwork://mywork"))
     }
 

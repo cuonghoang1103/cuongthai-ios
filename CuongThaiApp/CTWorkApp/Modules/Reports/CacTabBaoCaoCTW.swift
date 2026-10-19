@@ -48,10 +48,10 @@ struct SucKhoeDuAnCTW: View {
             let coKhoi = khoi.filter { !$0.3.isEmpty }
             if coKhoi.isEmpty && (i.overloaded ?? []).isEmpty {
                 HStack(spacing: 10) {
-                    Image(systemName: "checkmark.seal.fill").foregroundColor(AppColors.success).font(.system(size: 22))
+                    Image(systemName: "checkmark.seal.fill").foregroundColor(AppColors.success).font(.ctw(size: 22))
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Looking healthy").font(.system(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
-                        Text("Nothing overdue, stale or overloaded right now.").font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
+                        Text("Looking healthy").font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                        Text("Nothing overdue, stale or overloaded right now.").font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
                     }
                 }
                 .padding(14).frame(maxWidth: .infinity, alignment: .leading).ctwThe(14)
@@ -68,13 +68,13 @@ struct SucKhoeDuAnCTW: View {
         return VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 Image(systemName: r.atRisk == true ? "exclamationmark.triangle.fill" : "speedometer").foregroundColor(mau)
-                Text(r.sprint ?? "Sprint").font(.system(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                Text(r.sprint ?? "Sprint").font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                 Spacer()
-                Text(HangKpiCTW.nhanNhipTinh(r.status).uppercased()).font(.system(size: 10, weight: .bold)).foregroundColor(mau)
+                Text(HangKpiCTW.nhanNhipTinh(r.status).uppercased()).font(.ctw(size: 10, weight: .bold)).foregroundColor(mau)
                     .padding(.horizontal, 8).padding(.vertical, 3).background(Capsule().fill(mau.opacity(0.12)))
             }
             if let s = r.summary, !s.isEmpty {
-                Text(s).font(.system(size: 13)).foregroundColor(AppColors.textSecondary).fixedSize(horizontal: false, vertical: true)
+                Text(s).font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary).fixedSize(horizontal: false, vertical: true)
             }
             if let need = r.neededPerDay, let recent = r.recentPerDay {
                 HStack(spacing: 16) {
@@ -89,8 +89,8 @@ struct SucKhoeDuAnCTW: View {
 
     private func nhan(_ a: String, _ b: String) -> some View {
         VStack(alignment: .leading, spacing: 1) {
-            Text(b).font(.system(size: 16, weight: .bold).monospacedDigit()).foregroundColor(AppColors.textPrimary)
-            Text(a).font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+            Text(b).font(.ctw(size: 16, weight: .bold).monospacedDigit()).foregroundColor(AppColors.textPrimary)
+            Text(a).font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
         }
         .accessibilityElement(children: .combine)
     }
@@ -98,19 +98,19 @@ struct SucKhoeDuAnCTW: View {
     private func danhSach(_ tieuDe: String, _ bt: String, _ mau: Color, _ ds: [CTWInsightThe]) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
-                Image(systemName: bt).foregroundColor(mau).font(.system(size: 13, weight: .semibold))
-                Text(tieuDe).font(.system(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
-                Text("\(ds.count)").font(.system(size: 12, weight: .semibold)).foregroundColor(AppColors.textTertiary)
+                Image(systemName: bt).foregroundColor(mau).font(.ctw(size: 13, weight: .semibold))
+                Text(tieuDe).font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                Text("\(ds.count)").font(.ctw(size: 12, weight: .semibold)).foregroundColor(AppColors.textTertiary)
             }
             ForEach(Array(ds.prefix(6).enumerated()), id: \.offset) { _, t in
                 if let so = t.number {
                     NavigationLink(value: CTWRoute.the(pid: pid, so: so)) {
                         HStack(spacing: 8) {
-                            Text(t.key ?? "\(maDuAn)-\(so)").font(.system(size: 11, weight: .medium).monospaced()).foregroundColor(AppColors.textSecondary)
-                            Text(t.title ?? "").font(.system(size: 13)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                            Text(t.key ?? "\(maDuAn)-\(so)").font(.ctw(size: 11, weight: .medium).monospaced()).foregroundColor(AppColors.textSecondary)
+                            Text(t.title ?? "").font(.ctw(size: 13)).foregroundColor(AppColors.textPrimary).lineLimit(1)
                             Spacer(minLength: 0)
-                            if let d = t.idleDays { Text("\(d)d idle").font(.system(size: 11)).foregroundColor(AppColors.textTertiary) }
-                            else if let d = NgayCTW.nganTu(t.dueDate) { Text(d).font(.system(size: 11)).foregroundColor(AppColors.textTertiary) }
+                            if let d = t.idleDays { Text("\(d)d idle").font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary) }
+                            else if let d = NgayCTW.nganTu(t.dueDate) { Text(d).font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary) }
                         }
                         .frame(minHeight: 32)
                         .contentShape(Rectangle())
@@ -118,7 +118,7 @@ struct SucKhoeDuAnCTW: View {
                     .buttonStyle(.plain)
                 }
             }
-            if ds.count > 6 { Text("+\(ds.count - 6) more").font(.system(size: 12)).foregroundColor(AppColors.textTertiary) }
+            if ds.count > 6 { Text("+\(ds.count - 6) more").font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary) }
         }
         .padding(14).frame(maxWidth: .infinity, alignment: .leading).ctwThe(14)
     }
@@ -126,15 +126,15 @@ struct SucKhoeDuAnCTW: View {
     private func quaTai(_ ds: [CTWInsightTai]) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
-                Image(systemName: "person.fill.badge.plus").foregroundColor(AppColors.warning).font(.system(size: 13, weight: .semibold))
-                Text("Overloaded").font(.system(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                Image(systemName: "person.fill.badge.plus").foregroundColor(AppColors.warning).font(.ctw(size: 13, weight: .semibold))
+                Text("Overloaded").font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
             }
             ForEach(Array(ds.enumerated()), id: \.offset) { _, l in
                 HStack {
-                    Text("@\(l.username ?? "")").font(.system(size: 13)).foregroundColor(AppColors.textPrimary)
+                    Text("@\(l.username ?? "")").font(.ctw(size: 13)).foregroundColor(AppColors.textPrimary)
                     Spacer()
                     Text("\(CTWSo.gon(l.points ?? 0)) \(l.unit ?? "points")" + (l.capacity.map { " / \(CTWSo.gon($0))" } ?? ""))
-                        .font(.system(size: 12).monospacedDigit()).foregroundColor(AppColors.textSecondary)
+                        .font(.ctw(size: 12).monospacedDigit()).foregroundColor(AppColors.textSecondary)
                 }
             }
         }
@@ -193,11 +193,11 @@ struct NoiDungBurndownCTW: View {
                 }
                 if let g = bd.sprint?.goal, !g.isEmpty {
                     Label { Text(g).fixedSize(horizontal: false, vertical: true) } icon: { Image(systemName: "target").foregroundColor(AppColors.primary) }
-                        .font(.system(size: 14)).foregroundColor(AppColors.textPrimary)
+                        .font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary)
                 }
             }
             if diem.isEmpty {
-                Text("This sprint hasn't started yet.").font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
+                Text("This sprint hasn't started yet.").font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
             } else if rong && !gon {
                 HStack(alignment: .top, spacing: 14) {
                     BieuDoBurndownCTW(diem: diem, unit: bd.unit)
@@ -258,7 +258,7 @@ struct TabFlowBaoCaoCTW: View {
                 }
             }
             Text("Flow reports count top-level issues only (no epics, sub-tasks or test cases).")
-                .font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+                .font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
         }
     }
 }
@@ -308,7 +308,7 @@ struct TabPhanBoBaoCaoCTW: View {
                     Text("Points").tag(true)
                 }
                 .pickerStyle(.segmented).frame(maxWidth: 200)
-                Toggle("Open only", isOn: $chiMo).toggleStyle(.button).font(.system(size: 13, weight: .semibold))
+                Toggle("Open only", isOn: $chiMo).toggleStyle(.button).font(.ctw(size: 13, weight: .semibold))
             }
             let jql = chiMo ? "statusCategory != Done" : ""
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 14, alignment: .top), count: rong ? 2 : 1), spacing: 14) {
@@ -351,21 +351,21 @@ struct TabEpicsBaoCaoCTW: View {
         let tong = ep.total ?? 0, xong = ep.completed ?? 0
         return VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
-                Image(systemName: "bolt.fill").font(.system(size: 11, weight: .bold)).foregroundColor(.white)
+                Image(systemName: "bolt.fill").font(.ctw(size: 11, weight: .bold)).foregroundColor(.white)
                     .frame(width: 22, height: 22).background(RoundedRectangle(cornerRadius: 5).fill(CTWMauChuoi.mau(6)))
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(ep.title ?? "").font(.system(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(2)
+                    Text(ep.title ?? "").font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(2)
                     Text("\(app.cauHinhDuAn?.key ?? "")-\(ep.number ?? 0)" + (NgayCTW.nganTu(ep.dueDate).map { " · due \($0)" } ?? ""))
-                        .font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+                        .font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
                 }
                 Spacer()
-                Text("\(Int((ep.percent ?? 0).rounded()))%").font(.system(size: 16, weight: .bold).monospacedDigit())
+                Text("\(Int((ep.percent ?? 0).rounded()))%").font(.ctw(size: 16, weight: .bold).monospacedDigit())
                     .foregroundColor(ep.resolved == true ? AppColors.success : AppColors.textPrimary)
             }
             CTWThanhTienDo(doan: [CTWDoanTienDo(ten: "Done", giaTri: Double(xong), mau: AppColors.success),
                                  CTWDoanTienDo(ten: "Open", giaTri: Double(max(tong - xong, 0)), mau: CTWMauChuoi.khac)])
             Text("\(xong) of \(tong) issues · \(CTWSo.gon(ep.pointsDone ?? 0)) / \(CTWSo.gon(ep.points ?? 0)) \(DonViSprintCTW.ten(unit))")
-                .font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
         }
         .padding(14).ctwThe(14)
     }
@@ -418,20 +418,20 @@ struct NoiDungThoiGianCTW: View {
             }
             VStack(alignment: .leading, spacing: 10) {
                 CTWSectionHeader("person.2", "By person", count: "\(ds.count)")
-                if ds.isEmpty { Text("No time logged in this range.").font(.system(size: 13)).foregroundColor(AppColors.textSecondary) }
+                if ds.isEmpty { Text("No time logged in this range.").font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary) }
                 ForEach(Array(ds.enumerated()), id: \.offset) { _, p in
                     HStack(spacing: 10) {
                         CTWAvatar(user: p.user, size: 28)
                         VStack(alignment: .leading, spacing: 2) {
                             HStack(spacing: 6) {
-                                Text(p.user?.ten ?? p.name ?? "—").font(.system(size: 14, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                                Text(p.user?.ten ?? p.name ?? "—").font(.ctw(size: 14, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(1)
                                 if p.userKind == "AGENT" || p.user?.laAgent == true { CTWNhanAI() }
                             }
                             Text("\((p.issues ?? []).count) issue\((p.issues ?? []).count == 1 ? "" : "s")" + ((p.autoMin ?? 0) > 0 ? " · \(CTWSo.gio(giay: (p.autoMin ?? 0) * 60)) auto-logged" : ""))
-                                .font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                                .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                         }
                         Spacer()
-                        Text(CTWSo.gio(giay: (p.totalMin ?? 0) * 60)).font(.system(size: 14, weight: .semibold).monospacedDigit()).foregroundColor(AppColors.textPrimary)
+                        Text(CTWSo.gio(giay: (p.totalMin ?? 0) * 60)).font(.ctw(size: 14, weight: .semibold).monospacedDigit()).foregroundColor(AppColors.textPrimary)
                     }
                     .frame(minHeight: 40)
                 }
@@ -484,10 +484,10 @@ struct NoiDungNguoiVsAgentCTW: View {
                 Chart {
                     BarMark(x: .value("Resolved", th?.issuesResolved ?? 0), y: .value("Who", "People"))
                         .foregroundStyle(CTWMauChuoi.mau(0)).cornerRadius(4)
-                        .annotation(position: .trailing) { Text("\(th?.issuesResolved ?? 0)").font(.system(size: 11, weight: .semibold)).foregroundColor(AppColors.textPrimary) }
+                        .annotation(position: .trailing) { Text("\(th?.issuesResolved ?? 0)").font(.ctw(size: 11, weight: .semibold)).foregroundColor(AppColors.textPrimary) }
                     BarMark(x: .value("Resolved", ta?.issuesResolved ?? 0), y: .value("Who", "AI agents"))
                         .foregroundStyle(CTWMauChuoi.mau(6)).cornerRadius(4)
-                        .annotation(position: .trailing) { Text("\(ta?.issuesResolved ?? 0)").font(.system(size: 11, weight: .semibold)).foregroundColor(AppColors.textPrimary) }
+                        .annotation(position: .trailing) { Text("\(ta?.issuesResolved ?? 0)").font(.ctw(size: 11, weight: .semibold)).foregroundColor(AppColors.textPrimary) }
                 }
                 .chartXAxis(.hidden)
             }
@@ -501,7 +501,7 @@ struct NoiDungNguoiVsAgentCTW: View {
             ghiChuChiPhi(ta?.costSource)
             VStack(alignment: .leading, spacing: 10) {
                 CTWSectionHeader("sparkles", "AI agents", count: "\((r.agents ?? []).count)")
-                if (r.agents ?? []).isEmpty { Text("No agent activity in this range.").font(.system(size: 13)).foregroundColor(AppColors.textSecondary) }
+                if (r.agents ?? []).isEmpty { Text("No agent activity in this range.").font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary) }
                 ForEach(Array((r.agents ?? []).enumerated()), id: \.offset) { _, a in hangAgent(a) }
             }
             .padding(14).ctwThe(14)
@@ -510,11 +510,11 @@ struct NoiDungNguoiVsAgentCTW: View {
                 ForEach(Array((r.humans ?? []).enumerated()), id: \.offset) { _, h in
                     HStack(spacing: 10) {
                         CTWAvatar(user: h.user, size: 28)
-                        Text(h.user?.ten ?? "—").font(.system(size: 14, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                        Text(h.user?.ten ?? "—").font(.ctw(size: 14, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(1)
                         Spacer()
                         VStack(alignment: .trailing, spacing: 1) {
-                            Text("\(h.issuesResolved ?? 0) resolved · \(CTWSo.gon(h.hours ?? 0))h").font(.system(size: 12).monospacedDigit()).foregroundColor(AppColors.textSecondary)
-                            if let c = h.cost { Text("\(CTWSo.gon(c)) \(r.currency ?? "")").font(.system(size: 11)).foregroundColor(AppColors.textTertiary) }
+                            Text("\(h.issuesResolved ?? 0) resolved · \(CTWSo.gon(h.hours ?? 0))h").font(.ctw(size: 12).monospacedDigit()).foregroundColor(AppColors.textSecondary)
+                            if let c = h.cost { Text("\(CTWSo.gon(c)) \(r.currency ?? "")").font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary) }
                         }
                     }
                     .frame(minHeight: 40)
@@ -529,7 +529,7 @@ struct NoiDungNguoiVsAgentCTW: View {
         HStack(alignment: .top, spacing: 8) {
             NhanTuKhaiCTW()
             Text("Agent cost is an estimate in USD. \(CTWSo.usd(n?.reported ?? 0)) was self-reported by the agents; \(CTWSo.usd(n?.gateway ?? 0)) was measured by CT Work. Treat it as a guide, not a bill.")
-                .font(.system(size: 12)).foregroundColor(AppColors.textSecondary).fixedSize(horizontal: false, vertical: true)
+                .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).fixedSize(horizontal: false, vertical: true)
         }
         .padding(12)
         .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(AppColors.backgroundTertiary.opacity(0.6)))
@@ -542,16 +542,16 @@ struct NoiDungNguoiVsAgentCTW: View {
                 CTWAvatar(user: u, size: 30)
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 6) {
-                        Text(a.agent?.displayName ?? a.agent?.username ?? "Agent").font(.system(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                        Text(a.agent?.displayName ?? a.agent?.username ?? "Agent").font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(1)
                         CTWNhanAI()
                     }
                     Text([a.agent?.model, a.agent?.owner.map { "owner \($0.ten)" }, a.agent?.status?.capitalized].compactMap { $0 }.joined(separator: " · "))
-                        .font(.system(size: 11)).foregroundColor(AppColors.textTertiary).lineLimit(1)
+                        .font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary).lineLimit(1)
                 }
                 Spacer()
                 VStack(alignment: .trailing, spacing: 2) {
-                    Text(CTWSo.usd(a.costUsd ?? 0)).font(.system(size: 14, weight: .semibold).monospacedDigit()).foregroundColor(AppColors.textPrimary)
-                    Text("est.").font(.system(size: 10)).foregroundColor(AppColors.textTertiary)
+                    Text(CTWSo.usd(a.costUsd ?? 0)).font(.ctw(size: 14, weight: .semibold).monospacedDigit()).foregroundColor(AppColors.textPrimary)
+                    Text("est.").font(.ctw(size: 10)).foregroundColor(AppColors.textTertiary)
                 }
             }
             HStack(spacing: 14) {
@@ -566,8 +566,8 @@ struct NoiDungNguoiVsAgentCTW: View {
 
     private func so(_ a: String, _ b: String) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(b).font(.system(size: 13, weight: .semibold).monospacedDigit()).foregroundColor(AppColors.textPrimary)
-            Text(a).font(.system(size: 10)).foregroundColor(AppColors.textTertiary)
+            Text(b).font(.ctw(size: 13, weight: .semibold).monospacedDigit()).foregroundColor(AppColors.textPrimary)
+            Text(a).font(.ctw(size: 10)).foregroundColor(AppColors.textTertiary)
         }
         .accessibilityElement(children: .combine)
     }

@@ -114,19 +114,19 @@ struct AgentsCTW: View {
             CTWAvatar(user: a.user, size: 40)
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
-                    Text(a.ten).font(.system(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                    Text(a.ten).font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(1)
                     CTWNhanAI()
                 }
                 Text([a.roleText, a.model].compactMap { $0 }.joined(separator: " · "))
-                    .font(.system(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1)
+                    .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1)
                 HStack(spacing: 8) {
                     CTWChipChu(chu: a.status, mau: CTWAgentHienThi.mauTrangThai(a.status))
                     let n = (a.activeLeases ?? []).count
                     if n > 0 {
-                        Text("\(n) active").font(.system(size: 11, weight: .semibold)).foregroundColor(AppColors.primary)
+                        Text("\(n) active").font(.ctw(size: 11, weight: .semibold)).foregroundColor(AppColors.primary)
                     }
                     if let t = CTWAgentHienThi.truoc(a.lastSeenAt) {
-                        Text("Seen \(t)").font(.system(size: 11)).foregroundColor(AppColors.textTertiary).lineLimit(1)
+                        Text("Seen \(t)").font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary).lineLimit(1)
                     }
                 }
             }
@@ -144,7 +144,7 @@ struct AgentsCTW: View {
         let noiDung = VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 8) {
                 CTWAvatar(user: u, size: 26)
-                Text(u?.ten ?? "Agent").font(.system(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                Text(u?.ten ?? "Agent").font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(1)
                 CTWNhanAI()
                 Spacer(minLength: 4)
                 CTWNhanNho(chu: ch.chu, bieuTuong: ch.ket ? "exclamationmark.triangle.fill" : "bolt.fill",
@@ -152,10 +152,10 @@ struct AgentsCTW: View {
             }
             if let the {
                 Text([the.key, the.title].compactMap { $0 }.joined(separator: "  "))
-                    .font(.system(size: 13, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(2)
+                    .font(.ctw(size: 13, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(2)
             }
             if let p = c.progress, !p.isEmpty {
-                Text(p).font(.system(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(2)
+                Text(p).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(2)
             }
             if let pct = c.progressPct, !ch.ket {
                 ProgressView(value: min(max(pct, 0), 100), total: 100).tint(AppColors.primary)
@@ -220,7 +220,7 @@ struct AgentChiTietCTW: View {
                     let dangLamDs = lease.filter { $0.status == "ACTIVE" }
                     CTWSectionHeader("bolt.fill", "Current work", count: "\(dangLamDs.count)")
                     if dangLamDs.isEmpty {
-                        Text("Not working on anything right now.").font(.system(size: 14)).foregroundColor(AppColors.textSecondary)
+                        Text("Not working on anything right now.").font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary)
                     } else {
                         VStack(spacing: 8) { ForEach(dangLamDs) { hangLease($0) } }
                     }
@@ -274,11 +274,11 @@ struct AgentChiTietCTW: View {
             CTWAvatar(user: a.user, size: 56)
             VStack(alignment: .leading, spacing: 5) {
                 HStack(spacing: 6) {
-                    Text(a.ten).font(.system(size: 20, weight: .bold)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                    Text(a.ten).font(.ctw(size: 20, weight: .bold)).foregroundColor(AppColors.textPrimary).lineLimit(1)
                     CTWNhanAI()
                 }
                 if let rt = a.roleText, !rt.isEmpty {
-                    Text(rt).font(.system(size: 14)).foregroundColor(AppColors.textSecondary).lineLimit(2)
+                    Text(rt).font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary).lineLimit(2)
                 }
                 CTWChipChu(chu: a.status, mau: CTWAgentHienThi.mauTrangThai(a.status))
             }
@@ -308,19 +308,19 @@ struct AgentChiTietCTW: View {
         let noiDung = VStack(alignment: .leading, spacing: 5) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 if let k = l.issue?.key {
-                    Text(k).font(.system(size: 12, weight: .bold).monospaced()).foregroundColor(AppColors.primary)
+                    Text(k).font(.ctw(size: 12, weight: .bold).monospaced()).foregroundColor(AppColors.primary)
                 }
-                Text(l.issue?.title ?? "Issue").font(.system(size: 14, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(2)
+                Text(l.issue?.title ?? "Issue").font(.ctw(size: 14, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(2)
                 Spacer(minLength: 4)
                 CTWNhanNho(chu: ch.chu, mau: ch.ket ? AppColors.error : (l.status == "ACTIVE" ? AppColors.primary : AppColors.textSecondary))
             }
             if let p = l.progress, !p.isEmpty {
-                Text(p).font(.system(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(3)
+                Text(p).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(3)
             }
             Text(l.status == "ACTIVE"
                  ? "Claimed \(CTWAgentHienThi.truoc(l.claimedAt) ?? "—") · heartbeat \(CTWAgentHienThi.truoc(l.heartbeatAt) ?? "—")"
                  : "Claimed \(CTW.thoiDiem(l.claimedAt))\(l.releasedAt.map { " · released \(CTW.thoiDiem($0))" } ?? "")")
-                .font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+                .font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)

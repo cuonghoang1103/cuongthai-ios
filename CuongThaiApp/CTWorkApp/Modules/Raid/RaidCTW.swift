@@ -107,9 +107,9 @@ struct RaidCTW: View {
                         if let o { Text("Probability \(o.p) × Impact \(o.i)") } else { Text(hienLoai.first { $0.ma == loai }?.ten ?? "") }
                         Spacer()
                         if o != nil {
-                            Button("Clear filter") { o = nil }.font(.system(size: 13)).textCase(nil)
+                            Button("Clear filter") { o = nil }.font(.ctw(size: 13)).textCase(nil)
                         } else {
-                            Button(anDong ? "Show closed" : "Hide closed") { anDong.toggle() }.font(.system(size: 13)).textCase(nil)
+                            Button(anDong ? "Show closed" : "Hide closed") { anDong.toggle() }.font(.ctw(size: 13)).textCase(nil)
                         }
                     }
                 }
@@ -156,7 +156,7 @@ struct RaidCTW: View {
         HStack(spacing: 10) {
             CTWODem(so: "\(ds.highRisks ?? 0)", nhan: "High risks", bieuTuong: "exclamationmark.triangle.fill", mau: AppColors.error)
             CTWODem(so: "\(ds.counts?["RISK"]?.open ?? 0)", nhan: "Open risks", bieuTuong: "shield.lefthalf.filled", mau: AppColors.warning)
-            CTWODem(so: "\(ds.reviewDue ?? 0)", nhan: "Review due", bieuTuong: "calendar.badge.exclamationmark", mau: Color(hex: 0x2563EB))
+            CTWODem(so: "\(ds.reviewDue ?? 0)", nhan: "Review due", bieuTuong: "calendar.badge.exclamationmark", mau: AppColors.info)
         }
         .padding(.horizontal, Spacing.md)
     }
@@ -178,22 +178,22 @@ struct MaTranRuiRoCTW: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .center, spacing: 4) {
-                Text("Probability").font(.system(size: 10, weight: .semibold)).foregroundColor(AppColors.textTertiary)
+                Text("Probability").font(.ctw(size: 10, weight: .semibold)).foregroundColor(AppColors.textTertiary)
                     .rotationEffect(.degrees(-90)).fixedSize().frame(width: 14)
                 VStack(spacing: 4) {
                     ForEach((1...5).reversed(), id: \.self) { p in
                         HStack(spacing: 4) {
-                            Text("\(p)").font(.system(size: 10, weight: .semibold).monospacedDigit()).foregroundColor(AppColors.textTertiary).frame(width: 12)
+                            Text("\(p)").font(.ctw(size: 10, weight: .semibold).monospacedDigit()).foregroundColor(AppColors.textTertiary).frame(width: 12)
                             ForEach(1...5, id: \.self) { i in o(p, i) }
                         }
                     }
                     HStack(spacing: 4) {
                         Spacer().frame(width: 12)
                         ForEach(1...5, id: \.self) { i in
-                            Text("\(i)").font(.system(size: 10, weight: .semibold).monospacedDigit()).foregroundColor(AppColors.textTertiary).frame(maxWidth: .infinity)
+                            Text("\(i)").font(.ctw(size: 10, weight: .semibold).monospacedDigit()).foregroundColor(AppColors.textTertiary).frame(maxWidth: .infinity)
                         }
                     }
-                    Text("Impact").font(.system(size: 10, weight: .semibold)).foregroundColor(AppColors.textTertiary)
+                    Text("Impact").font(.ctw(size: 10, weight: .semibold)).foregroundColor(AppColors.textTertiary)
                 }
             }
         }
@@ -210,7 +210,7 @@ struct MaTranRuiRoCTW: View {
         let dangChon = chon.map { $0.0 == p && $0.1 == i } ?? false
         return Button { bam(p, i) } label: {
             Text(n > 0 ? "\(n)" : "")
-                .font(.system(size: 14, weight: .bold).monospacedDigit())
+                .font(.ctw(size: 14, weight: .bold).monospacedDigit())
                 .foregroundColor(n > 0 ? .white : .clear)
                 .frame(maxWidth: .infinity, minHeight: 38)
                 .background(RoundedRectangle(cornerRadius: 7, style: .continuous).fill(mau.opacity(n > 0 ? 0.85 : 0.14)))
@@ -227,30 +227,30 @@ struct GovHangRaid: View {
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
             if let s = r.score {
-                Text("\(s)").font(.system(size: 14, weight: .bold).monospacedDigit()).foregroundColor(.white)
+                Text("\(s)").font(.ctw(size: 14, weight: .bold).monospacedDigit()).foregroundColor(.white)
                     .frame(width: 34, height: 34)
                     .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(CTWRaidLuat.mauMuc(r.level ?? CTWRaidLuat.muc(s))))
                     .accessibilityLabel("Score \(s)")
             } else {
                 Image(systemName: CTWRaidLuat.loai.first { $0.ma == r.type }?.bieuTuong ?? "circle")
-                    .font(.system(size: 14, weight: .semibold)).foregroundColor(AppColors.primary)
+                    .font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.primary)
                     .frame(width: 34, height: 34)
                     .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(AppColors.primary.opacity(0.12)))
             }
             VStack(alignment: .leading, spacing: 5) {
                 HStack(spacing: 6) {
-                    Text(r.nhanKhoa).font(.system(size: 12, weight: .semibold).monospaced()).foregroundColor(AppColors.textSecondary)
+                    Text(r.nhanKhoa).font(.ctw(size: 12, weight: .semibold).monospaced()).foregroundColor(AppColors.textSecondary)
                     CTWChipChu(chu: r.status)
                     if r.reviewDue == true { CTWNhanNho(chu: "Review due", bieuTuong: "calendar.badge.exclamationmark", mau: AppColors.warning) }
                 }
-                Text(r.title).font(.system(size: 15, weight: .medium)).foregroundColor(r.closed == true ? AppColors.textSecondary : AppColors.textPrimary)
+                Text(r.title).font(.ctw(size: 15, weight: .medium)).foregroundColor(r.closed == true ? AppColors.textSecondary : AppColors.textPrimary)
                     .strikethrough(r.closed == true).lineLimit(2)
                 HStack(spacing: 10) {
                     if let o = r.owner { HStack(spacing: 4) { CTWAvatar(user: o, size: 18); Text(o.ten).lineLimit(1) } }
                     if let d = CTW.ngayNgan(r.reviewDate) { Label(d, systemImage: "calendar") }
                     if let n = r.linkCount, n > 0 { Label("\(n)", systemImage: "link") }
                 }
-                .font(.system(size: 12)).foregroundColor(AppColors.textSecondary).labelStyle(.titleAndIcon)
+                .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).labelStyle(.titleAndIcon)
             }
         }
         .padding(.vertical, 3)
@@ -309,7 +309,7 @@ struct ChiTietRaidCTW: View {
                             }
                         }
                     } label: {
-                        HStack(spacing: 3) { CTWChipChu(chu: r.status); Image(systemName: "chevron.down").font(.system(size: 9, weight: .bold)).foregroundColor(AppColors.textTertiary) }
+                        HStack(spacing: 3) { CTWChipChu(chu: r.status); Image(systemName: "chevron.down").font(.ctw(size: 9, weight: .bold)).foregroundColor(AppColors.textTertiary) }
                             .frame(minHeight: 32)
                     }
                     .accessibilityLabel("Status: \(CTWMauTrangThai.nhan(r.status)). Change")
@@ -318,7 +318,7 @@ struct ChiTietRaidCTW: View {
                 }
                 if let l = r.level { CTWNhanNho(chu: "\(CTWMauTrangThai.nhan(l)) · \(r.score ?? 0)", bieuTuong: "gauge.with.dots.needle.67percent", mau: CTWRaidLuat.mauMuc(l)) }
             }
-            Text(r.title).font(.system(size: 22, weight: .bold)).foregroundColor(AppColors.textPrimary)
+            Text(r.title).font(.ctw(size: 22, weight: .bold)).foregroundColor(AppColors.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityAddTraits(.isHeader)
                 .ctwMenuBaoCaoChan(khoa: "raid-\(pid)-\(r.number)", noiDung: r.title, nguCanh: "RAID \(r.nhanKhoa)", tacGia: r.createdBy, laCuaToi: cuaToi,
@@ -372,10 +372,10 @@ struct ChiTietRaidCTW: View {
 
     private func buoc(_ ten: String, _ gt: Int?, _ dat: @escaping (Int?) -> Void) -> some View {
         HStack(spacing: 6) {
-            Text(ten).font(.system(size: 14)).foregroundColor(AppColors.textSecondary).frame(width: 86, alignment: .leading)
+            Text(ten).font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary).frame(width: 86, alignment: .leading)
             ForEach(1...5, id: \.self) { v in
                 Button { CTWRung.chon(); dat(gt == v ? nil : v) } label: {
-                    Text("\(v)").font(.system(size: 15, weight: .semibold).monospacedDigit())
+                    Text("\(v)").font(.ctw(size: 15, weight: .semibold).monospacedDigit())
                         .foregroundColor(gt == v ? AppColors.onPrimary : AppColors.textPrimary)
                         .frame(maxWidth: .infinity, minHeight: 40)
                         .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(gt == v ? AppColors.primary : AppColors.backgroundTertiary))
@@ -414,8 +414,8 @@ struct ChiTietRaidCTW: View {
     private func hang(_ icon: String, _ k: String, _ t: String) -> some View {
         HStack(spacing: 8) {
             Image(systemName: icon).foregroundColor(AppColors.primary).frame(width: 18)
-            Text(k).font(.system(size: 12, weight: .semibold).monospaced()).foregroundColor(AppColors.textSecondary)
-            Text(t).font(.system(size: 14)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+            Text(k).font(.ctw(size: 12, weight: .semibold).monospaced()).foregroundColor(AppColors.textSecondary)
+            Text(t).font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary).lineLimit(1)
             Spacer(minLength: 0)
         }
         .frame(minHeight: 44).contentShape(Rectangle())
@@ -432,11 +432,11 @@ struct ChiTietRaidCTW: View {
                         CTWAvatar(user: h.actor, size: 22)
                         VStack(alignment: .leading, spacing: 2) {
                             HStack(spacing: 5) {
-                                Text(h.actor?.ten ?? "Someone").font(.system(size: 13, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                                Text(h.actor?.ten ?? "Someone").font(.ctw(size: 13, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                                 if h.actor?.laAgent == true { CTWNhanAI() }
                             }
-                            Text(moTa(h)).font(.system(size: 13)).foregroundColor(AppColors.textSecondary).fixedSize(horizontal: false, vertical: true)
-                            Text(CTW.thoiDiem(h.createdAt)).font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+                            Text(moTa(h)).font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary).fixedSize(horizontal: false, vertical: true)
+                            Text(CTW.thoiDiem(h.createdAt)).font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
                         }
                     }
                 }

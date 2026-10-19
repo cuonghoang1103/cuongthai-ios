@@ -94,11 +94,11 @@ struct KhoaAppCTW: View {
                     Image("LogoCTWork").resizable().scaledToFit().frame(width: 72, height: 72)
                         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
                         .accessibilityHidden(true)
-                    Text("CT Work is locked").font(.system(size: 20, weight: .semibold)).foregroundColor(AppColors.textPrimary)
-                    if let l = vm.loi { Text(l).font(.system(size: 14)).foregroundColor(AppColors.textSecondary).multilineTextAlignment(.center) }
+                    Text("CT Work is locked").font(.ctw(size: 20, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                    if let l = vm.loi { Text(l).font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary).multilineTextAlignment(.center) }
                     Button { Task { await vm.moKhoa() } } label: {
                         Label("Unlock with \(Self.tenSinhTracHoc)", systemImage: Self.tenSinhTracHoc == "Touch ID" ? "touchid" : "faceid")
-                            .font(.system(size: 16, weight: .semibold)).frame(minWidth: 220, minHeight: 48)
+                            .font(.ctw(size: 16, weight: .semibold)).frame(minWidth: 220, minHeight: 48)
                     }
                     .buttonStyle(.borderedProminent)
                 }
@@ -119,7 +119,7 @@ struct KhoaAppCongTacCTW: View {
             Label("Require \(KhoaAppCTW.tenSinhTracHoc)", systemImage: "faceid")
         }
         if let l = vm.loi, !vm.dangKhoa {
-            Text(l).font(.system(size: 12)).foregroundColor(AppColors.error)
+            Text(l).font(.ctw(size: 12)).foregroundColor(AppColors.error)
         }
     }
 }

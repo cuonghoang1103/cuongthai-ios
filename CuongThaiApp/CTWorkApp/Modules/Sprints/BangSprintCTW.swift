@@ -110,7 +110,7 @@ struct BangSprintCTW: View {
                 HStack(spacing: 8) {
                     ForEach([1, 2, 3, 4], id: \.self) { tuan in
                         Button("\(tuan) wk") { ketThuc = NgayCTW.cong(batDau, ngay: tuan * 7) }
-                            .buttonStyle(.bordered).font(.system(size: 13, weight: .semibold))
+                            .buttonStyle(.bordered).font(.ctw(size: 13, weight: .semibold))
                     }
                 }
             } header: { Text("Duration") } footer: {

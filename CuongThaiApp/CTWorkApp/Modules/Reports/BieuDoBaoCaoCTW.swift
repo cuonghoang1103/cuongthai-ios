@@ -27,7 +27,7 @@ struct BieuDoVelocityCTW: View {
             cao: cao
         ) {
             if ds.isEmpty {
-                Text("Complete a sprint to see velocity.").font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
+                Text("Complete a sprint to see velocity.").font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 Chart {
@@ -53,7 +53,7 @@ struct BieuDoVelocityCTW: View {
                 }
                 .chartForegroundStyleScale(["Committed": CTWMauChuoi.khac, "Completed": CTWMauChuoi.mau(0)])
                 .chartLegend(.hidden)
-                .chartXAxis { AxisMarks { _ in AxisValueLabel().font(.system(size: 9)) } }
+                .chartXAxis { AxisMarks { _ in AxisValueLabel().font(.ctw(size: 9)) } }
                 .chartYAxis { AxisMarks(position: .leading) { _ in AxisGridLine().foregroundStyle(AppColors.divider); AxisValueLabel() } }
             }
         }
@@ -143,7 +143,7 @@ struct BieuDoThroughputCTW: View {
                         .foregroundStyle(AppColors.textSecondary)
                         .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 3]))
                         .annotation(position: .top, alignment: .trailing) {
-                            Text("avg \(CTWSo.gon(a))").font(.system(size: 9, weight: .semibold)).foregroundColor(AppColors.textSecondary)
+                            Text("avg \(CTWSo.gon(a))").font(.ctw(size: 9, weight: .semibold)).foregroundColor(AppColors.textSecondary)
                         }
                 }
             }
@@ -159,9 +159,9 @@ struct TheCycleTimeCTW: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Cycle & lead time").font(.system(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+            Text("Cycle & lead time").font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
             Text("Days from start (cycle) or creation (lead) to done · last \(c.days ?? 90) days · \(c.cycle?.n ?? 0) issues")
-                .font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
             HStack(spacing: 10) {
                 CTWTheChiSo(nhan: "Cycle P50", giaTri: ngay(c.cycle?.p50), phu: "half finish faster", bieuTuong: "timer", mau: CTWMauChuoi.mau(0))
                 CTWTheChiSo(nhan: "Cycle P85", giaTri: ngay(c.cycle?.p85), phu: "85% finish within", bieuTuong: "timer", mau: CTWMauChuoi.mau(0))
@@ -223,22 +223,22 @@ struct BieuDoPhanBoCTW: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(tieuDe).font(.system(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
-                    Text(phu ?? "\(CTWSo.gon(tong)) \(donVi) in total").font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                    Text(tieuDe).font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                    Text(phu ?? "\(CTWSo.gon(tong)) \(donVi) in total").font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                 }
                 Spacer()
             }
             if thanh.isEmpty {
-                Text("No data yet.").font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
+                Text("No data yet.").font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
             }
             ForEach(thanh) { t in
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
                         if mauTrangThai { Circle().fill(mau(t)).frame(width: 7, height: 7) }
-                        Text(t.nhan).font(.system(size: 13)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                        Text(t.nhan).font(.ctw(size: 13)).foregroundColor(AppColors.textPrimary).lineLimit(1)
                         Spacer(minLength: 8)
-                        Text(CTWSo.gon(t.giaTri)).font(.system(size: 13, weight: .semibold).monospacedDigit()).foregroundColor(AppColors.textPrimary)
-                        Text("\(Int((t.tiLe * 100).rounded()))%").font(.system(size: 12).monospacedDigit())
+                        Text(CTWSo.gon(t.giaTri)).font(.ctw(size: 13, weight: .semibold).monospacedDigit()).foregroundColor(AppColors.textPrimary)
+                        Text("\(Int((t.tiLe * 100).rounded()))%").font(.ctw(size: 12).monospacedDigit())
                             .foregroundColor(AppColors.textTertiary).frame(width: 38, alignment: .trailing)
                     }
                     GeometryReader { g in
@@ -315,22 +315,22 @@ struct BieuDoTaiNguoiCTW: View {
         let ds = t.people ?? []
         let maxTong = max(ds.map { $0.total ?? 0 }.max() ?? 1, 1)
         VStack(alignment: .leading, spacing: 10) {
-            Text("Workload").font(.system(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+            Text("Workload").font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
             CTWChuGiai(muc: [CTWMucChuGiai(ten: "In progress", mau: CTWMauChuoi.mau(0)), CTWMucChuGiai(ten: "To do", mau: CTWMauChuoi.khac)])
             ForEach(Array(ds.enumerated()), id: \.offset) { _, p in
                 HStack(spacing: 10) {
                     if let u = p.user { CTWAvatar(user: u, size: 26) } else {
-                        Image(systemName: "person.crop.circle.badge.questionmark").font(.system(size: 20)).foregroundColor(AppColors.textTertiary).frame(width: 26)
+                        Image(systemName: "person.crop.circle.badge.questionmark").font(.ctw(size: 20)).foregroundColor(AppColors.textTertiary).frame(width: 26)
                     }
                     VStack(alignment: .leading, spacing: 4) {
                         HStack(spacing: 6) {
-                            Text(p.user?.ten ?? "Unassigned").font(.system(size: 13, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                            Text(p.user?.ten ?? "Unassigned").font(.ctw(size: 13, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(1)
                             if p.user?.laAgent == true { CTWNhanAI() }
                             Spacer(minLength: 4)
                             if (p.overdue ?? 0) > 0 {
-                                Text("\(p.overdue ?? 0) overdue").font(.system(size: 11, weight: .semibold)).foregroundColor(AppColors.error)
+                                Text("\(p.overdue ?? 0) overdue").font(.ctw(size: 11, weight: .semibold)).foregroundColor(AppColors.error)
                             }
-                            Text("\(p.total ?? 0)").font(.system(size: 13, weight: .semibold).monospacedDigit()).foregroundColor(AppColors.textPrimary)
+                            Text("\(p.total ?? 0)").font(.ctw(size: 13, weight: .semibold).monospacedDigit()).foregroundColor(AppColors.textPrimary)
                         }
                         GeometryReader { g in
                             CTWThanhTienDo(doan: [CTWDoanTienDo(ten: "In progress", giaTri: Double(p.inProgress ?? 0), mau: CTWMauChuoi.mau(0)),

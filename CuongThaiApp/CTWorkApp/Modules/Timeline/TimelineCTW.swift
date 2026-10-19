@@ -175,8 +175,8 @@ struct TimelineCTW: View {
 
     private func chip(_ icon: String, _ chu: String, _ mau: Color) -> some View {
         HStack(spacing: 4) {
-            Image(systemName: icon).font(.system(size: 10, weight: .semibold)).foregroundColor(mau)
-            Text(chu).font(.system(size: 12, weight: .medium)).foregroundColor(AppColors.textSecondary).fixedSize()
+            Image(systemName: icon).font(.ctw(size: 10, weight: .semibold)).foregroundColor(mau)
+            Text(chu).font(.ctw(size: 12, weight: .medium)).foregroundColor(AppColors.textSecondary).fixedSize()
         }
         .padding(.horizontal, 9).padding(.vertical, 5)
         .background(Capsule().fill(AppColors.backgroundCard))
@@ -228,7 +228,7 @@ struct TimelineCTW: View {
                         Spacer()
                         Text("\(n.ds.count)").foregroundColor(AppColors.textTertiary)
                     }
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.ctw(size: 13, weight: .semibold))
                 }
             }
         }
@@ -248,13 +248,13 @@ struct HangTLCTW: View {
         HStack(alignment: .top, spacing: 10) {
             CTWTypeIcon(type: muc.typeId.flatMap { cfg?.loai($0) }, size: 14).padding(.top, 2)
             VStack(alignment: .leading, spacing: 5) {
-                Text(muc.title).font(.system(size: 15, weight: muc.laEpic ? .semibold : .regular))
+                Text(muc.title).font(.ctw(size: 15, weight: muc.laEpic ? .semibold : .regular))
                     .foregroundColor(AppColors.textPrimary).lineLimit(2)
                 HStack(spacing: 6) {
-                    Text("\(cfg?.key ?? "#")-\(muc.number)").font(.system(size: 11, weight: .medium).monospaced())
+                    Text("\(cfg?.key ?? "#")-\(muc.number)").font(.ctw(size: 11, weight: .medium).monospaced())
                         .foregroundColor(AppColors.textSecondary).strikethrough(muc.done == true)
                     if let tenEpic {
-                        Text(tenEpic).font(.system(size: 11)).foregroundColor(AppColors.textTertiary).lineLimit(1)
+                        Text(tenEpic).font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary).lineLimit(1)
                     }
                 }
                 HStack(spacing: 8) {
@@ -264,7 +264,7 @@ struct HangTLCTW: View {
                                               CTWDoanTienDo(ten: "Remaining", giaTri: max(1 - (muc.progress ?? 0), 0), mau: AppColors.backgroundTertiary)],
                                        cao: 5)
                             .frame(maxWidth: 90)
-                        Text("\(Int(((muc.progress ?? 0) * 100).rounded()))%").font(.system(size: 11).monospacedDigit())
+                        Text("\(Int(((muc.progress ?? 0) * 100).rounded()))%").font(.ctw(size: 11).monospacedDigit())
                             .foregroundColor(AppColors.textTertiary)
                     }
                 }
@@ -294,8 +294,8 @@ struct HangTLCTW: View {
             }
         }()
         HStack(spacing: 3) {
-            if quaHan { Image(systemName: "exclamationmark.circle.fill").font(.system(size: 9, weight: .bold)) }
-            Text(chu).font(.system(size: 11, weight: .semibold)).fixedSize()
+            if quaHan { Image(systemName: "exclamationmark.circle.fill").font(.ctw(size: 9, weight: .bold)) }
+            Text(chu).font(.ctw(size: 11, weight: .semibold)).fixedSize()
         }
         .foregroundColor(quaHan ? AppColors.error : (muc.done == true ? AppColors.success : AppColors.textSecondary))
         .padding(.horizontal, 7).padding(.vertical, 2)

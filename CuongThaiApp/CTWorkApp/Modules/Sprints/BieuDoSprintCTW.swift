@@ -49,7 +49,7 @@ struct BieuDoBurndownCTW: View {
                         .foregroundStyle(AppColors.primary.opacity(0.5))
                         .lineStyle(StrokeStyle(lineWidth: 1, dash: [2, 3]))
                         .annotation(position: .top, alignment: .leading) {
-                            Text("Today").font(.system(size: 9, weight: .semibold)).foregroundColor(AppColors.textSecondary)
+                            Text("Today").font(.ctw(size: 9, weight: .semibold)).foregroundColor(AppColors.textSecondary)
                         }
                 }
             }

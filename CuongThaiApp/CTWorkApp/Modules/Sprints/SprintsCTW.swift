@@ -150,7 +150,7 @@ struct SprintsCTW: View {
                     } else {
                         Button { withAnimation { hienDaDong = true } } label: {
                             Label("Show \(daDong.count) completed sprint\(daDong.count == 1 ? "" : "s")", systemImage: "chevron.down")
-                                .font(.system(size: 14, weight: .medium))
+                                .font(.ctw(size: 14, weight: .medium))
                         }
                     }
                 } header: { tieuDe("Completed", "checkmark.seal", daDong.count) }
@@ -166,24 +166,24 @@ struct SprintsCTW: View {
             Text(t)
             if let n { Text("\(n)").foregroundColor(AppColors.textTertiary) }
         }
-        .font(.system(size: 13, weight: .semibold))
+        .font(.ctw(size: 13, weight: .semibold))
     }
 
     private func hang(_ s: CTWSprintDu) -> some View {
         NavigationLink(value: RouteSprintCTW(pid: pid, sid: s.id)) {
             HStack(spacing: 12) {
                 Image(systemName: s.daDong ? "checkmark.circle.fill" : "flag")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.ctw(size: 15, weight: .semibold))
                     .foregroundColor(s.daDong ? AppColors.success : AppColors.textSecondary)
                     .frame(width: 28)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(s.ten).font(.system(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(1)
-                    Text(phu(s)).font(.system(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1)
+                    Text(s.ten).font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                    Text(phu(s)).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1)
                 }
                 Spacer(minLength: 0)
                 if s.daDong, let c = s.committedPoints, c > 0 {
                     Text("\(CTWSo.gon(s.completedPoints ?? 0))/\(CTWSo.gon(c))")
-                        .font(.system(size: 12, weight: .semibold).monospacedDigit())
+                        .font(.ctw(size: 12, weight: .semibold).monospacedDigit())
                         .foregroundColor(AppColors.textSecondary)
                 }
             }
@@ -230,37 +230,37 @@ struct TheSprintChayCTW: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(sprint.ten).font(.system(size: 18, weight: .bold)).foregroundColor(AppColors.textPrimary)
+                    Text(sprint.ten).font(.ctw(size: 18, weight: .bold)).foregroundColor(AppColors.textPrimary)
                     if let a = NgayCTW.ngayCua(sprint.startAt).flatMap(NgayCTW.nganTu),
                        let b = NgayCTW.ngayCua(sprint.endAt).flatMap(NgayCTW.nganTu) {
-                        Text("\(a) – \(b)").font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
+                        Text("\(a) – \(b)").font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
                     }
                 }
                 Spacer()
                 if let con {
                     VStack(alignment: .trailing, spacing: 0) {
-                        Text("\(abs(con))").font(.system(size: 24, weight: .bold).monospacedDigit())
+                        Text("\(abs(con))").font(.ctw(size: 24, weight: .bold).monospacedDigit())
                             .foregroundColor(con < 0 ? AppColors.error : AppColors.textPrimary)
                         Text(con < 0 ? "days over" : (con == 1 ? "day left" : "days left"))
-                            .font(.system(size: 11, weight: .medium)).foregroundColor(AppColors.textSecondary)
+                            .font(.ctw(size: 11, weight: .medium)).foregroundColor(AppColors.textSecondary)
                     }
                     .accessibilityElement(children: .combine)
                 }
             }
             if let g = sprint.goal, !g.isEmpty {
                 HStack(alignment: .top, spacing: 6) {
-                    Image(systemName: "target").foregroundColor(AppColors.primary).font(.system(size: 13, weight: .semibold))
-                    Text(g).font(.system(size: 14)).foregroundColor(AppColors.textPrimary).fixedSize(horizontal: false, vertical: true)
+                    Image(systemName: "target").foregroundColor(AppColors.primary).font(.ctw(size: 13, weight: .semibold))
+                    Text(g).font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary).fixedSize(horizontal: false, vertical: true)
                 }
             }
             VStack(alignment: .leading, spacing: 4) {
                 ProgressView(value: troi).tint(con.map { $0 < 0 } == true ? AppColors.error : AppColors.primary)
                 Text("\(Int((troi * 100).rounded()))% of the time elapsed")
-                    .font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+                    .font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
             }
             HStack {
-                Text("View burndown & progress").font(.system(size: 13, weight: .semibold)).foregroundColor(AppColors.primary)
-                Image(systemName: "chevron.right").font(.system(size: 11, weight: .bold)).foregroundColor(AppColors.primary)
+                Text("View burndown & progress").font(.ctw(size: 13, weight: .semibold)).foregroundColor(AppColors.primary)
+                Image(systemName: "chevron.right").font(.ctw(size: 11, weight: .bold)).foregroundColor(AppColors.primary)
             }
         }
         .padding(16)

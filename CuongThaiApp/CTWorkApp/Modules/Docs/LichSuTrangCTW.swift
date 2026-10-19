@@ -45,22 +45,22 @@ struct LichSuTrangCTW: View {
             CTWAvatar(user: v.author, size: 30)
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
-                    Text("v\(v.n)").font(.system(size: 14, weight: .bold).monospacedDigit()).foregroundColor(AppColors.textPrimary)
+                    Text("v\(v.n)").font(.ctw(size: 14, weight: .bold).monospacedDigit()).foregroundColor(AppColors.textPrimary)
                     CTWNhanNho(chu: Self.nhanKieu(v.kind), bieuTuong: Self.bieuTuongKieu(v.kind))
                     if laMoiNhat { CTWNhanNho(chu: "Latest", mau: AppColors.success) }
                 }
                 HStack(spacing: 4) {
-                    Text(v.author?.ten ?? "Someone").font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
+                    Text(v.author?.ten ?? "Someone").font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
                     if v.author?.laAgent == true { CTWNhanAI() }
-                    Text("· \(CTW.thoiDiem(v.updatedAt ?? v.createdAt))").font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
+                    Text("· \(CTW.thoiDiem(v.updatedAt ?? v.createdAt))").font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
                 }
                 if let n = v.note, !n.isEmpty {
-                    Text(n).font(.system(size: 13)).foregroundColor(AppColors.textPrimary).lineLimit(2)
+                    Text(n).font(.ctw(size: 13)).foregroundColor(AppColors.textPrimary).lineLimit(2)
                 }
             }
             Spacer(minLength: 0)
             if let c = v.chars {
-                Text("\(c) chars").font(.system(size: 11).monospacedDigit()).foregroundColor(AppColors.textTertiary)
+                Text("\(c) chars").font(.ctw(size: 11).monospacedDigit()).foregroundColor(AppColors.textTertiary)
             }
         }
         .padding(.vertical, 3)
@@ -116,13 +116,13 @@ struct PhienBanTrangCTW: View {
                 if let v {
                     HStack(spacing: 8) {
                         CTWAvatar(user: v.author, size: 22)
-                        Text(v.author?.ten ?? "Someone").font(.system(size: 13, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                        Text(v.author?.ten ?? "Someone").font(.ctw(size: 13, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                         if v.author?.laAgent == true { CTWNhanAI() }
                         Spacer()
-                        Text(CTW.thoiDiem(v.updatedAt ?? v.createdAt)).font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
+                        Text(CTW.thoiDiem(v.updatedAt ?? v.createdAt)).font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
                     }
                     if cheDo == 0 {
-                        Text(v.title ?? "").font(.system(size: 22, weight: .bold)).foregroundColor(AppColors.textPrimary)
+                        Text(v.title ?? "").font(.ctw(size: 22, weight: .bold)).foregroundColor(AppColors.textPrimary)
                         CTWTipTapView(doc: v.contentJson, coChu: 15)
                     } else {
                         khoiSoSanh
@@ -161,7 +161,7 @@ struct PhienBanTrangCTW: View {
                 Label("\(s.added ?? 0) added", systemImage: "plus").foregroundColor(AppColors.success)
                 Label("\(s.removed ?? 0) removed", systemImage: "minus").foregroundColor(AppColors.error)
             }
-            .font(.system(size: 13, weight: .semibold))
+            .font(.ctw(size: 13, weight: .semibold))
             let dong = s.lines ?? []
             if dong.allSatisfy({ $0.op == "eq" }) {
                 Text("No differences — this version matches the current page.").foregroundColor(AppColors.textSecondary)
@@ -170,11 +170,11 @@ struct PhienBanTrangCTW: View {
                 ForEach(Array(dong.enumerated()), id: \.offset) { _, d in
                     HStack(alignment: .top, spacing: 6) {
                         Text(d.op == "add" ? "+" : (d.op == "del" ? "−" : " "))
-                            .font(.system(size: 13, weight: .bold, design: .monospaced))
+                            .font(.ctw(size: 13, weight: .bold, design: .monospaced))
                             .foregroundColor(d.op == "add" ? AppColors.success : (d.op == "del" ? AppColors.error : AppColors.textTertiary))
                             .frame(width: 12)
                         Text(d.text.isEmpty ? " " : d.text)
-                            .font(.system(size: 13, design: .monospaced))
+                            .font(.ctw(size: 13, design: .monospaced))
                             .foregroundColor(d.op == "eq" ? AppColors.textSecondary : AppColors.textPrimary)
                             .strikethrough(d.op == "del")
                             .fixedSize(horizontal: false, vertical: true)

@@ -99,18 +99,18 @@ struct PortalCTW: View {
 
     private func dau(_ t: CTWPortalTongQuan) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(t.project?.organization ?? t.project?.workspaceName ?? "").font(.system(size: 12, weight: .semibold))
+            Text(t.project?.organization ?? t.project?.workspaceName ?? "").font(.ctw(size: 12, weight: .semibold))
                 .foregroundColor(AppColors.textSecondary)
-            Text(t.project?.name ?? "Project").font(.system(size: 24, weight: .bold)).foregroundColor(AppColors.textPrimary)
+            Text(t.project?.name ?? "Project").font(.ctw(size: 24, weight: .bold)).foregroundColor(AppColors.textPrimary)
             if let d = t.project?.description, !d.isEmpty {
-                Text(d).font(.system(size: 14)).foregroundColor(AppColors.textSecondary).lineLimit(3)
+                Text(d).font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary).lineLimit(3)
             }
             if let p = t.overallPercent {
                 VStack(alignment: .leading, spacing: 5) {
                     HStack {
-                        Text("Overall progress").font(.system(size: 12, weight: .semibold)).foregroundColor(AppColors.textSecondary)
+                        Text("Overall progress").font(.ctw(size: 12, weight: .semibold)).foregroundColor(AppColors.textSecondary)
                         Spacer()
-                        Text("\(Int(p.rounded()))%").font(.system(size: 13, weight: .bold).monospacedDigit()).foregroundColor(AppColors.primary)
+                        Text("\(Int(p.rounded()))%").font(.ctw(size: 13, weight: .bold).monospacedDigit()).foregroundColor(AppColors.primary)
                     }
                     CTWThanhPhanDoan(doan: [(Int(p.rounded()), AppColors.primary), (100 - Int(p.rounded()), Color.clear)], cao: 8)
                 }
@@ -139,19 +139,19 @@ struct PortalCTW: View {
     private func dong(_ icon: String, _ ten: String, _ phu: String, _ r: RoutePortalCTW, dem: Int? = nil) -> some View {
         NavigationLink(value: r) {
             HStack(spacing: 12) {
-                Image(systemName: icon).font(.system(size: 15, weight: .semibold)).foregroundColor(AppColors.primary)
+                Image(systemName: icon).font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.primary)
                     .frame(width: 32, height: 32)
                     .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(AppColors.primary.opacity(0.12)))
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(ten).font(.system(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
-                    Text(phu).font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                    Text(ten).font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                    Text(phu).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                 }
                 Spacer(minLength: 0)
                 if let dem, dem > 0 {
-                    Text("\(dem)").font(.system(size: 12, weight: .bold)).foregroundColor(AppColors.onPrimary)
+                    Text("\(dem)").font(.ctw(size: 12, weight: .bold)).foregroundColor(AppColors.onPrimary)
                         .padding(.horizontal, 7).padding(.vertical, 2).background(Capsule().fill(AppColors.error))
                 }
-                Image(systemName: "chevron.right").font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
+                Image(systemName: "chevron.right").font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
             }
             .padding(.horizontal, 12).frame(minHeight: 56)
             .contentShape(Rectangle())
@@ -167,12 +167,12 @@ struct PortalCTW: View {
                     HStack(spacing: 10) {
                         Image(systemName: x.kind == "UAT" ? "checklist.checked" : "signature").foregroundColor(AppColors.warning)
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(x.title ?? "Approval").font(.system(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
-                            Text(x.kind == "UAT" ? "Acceptance test" : "Approval").font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                            Text(x.title ?? "Approval").font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                            Text(x.kind == "UAT" ? "Acceptance test" : "Approval").font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                         }
                         Spacer(minLength: 0)
                         if let d = x.dueAt {
-                            Text("Due \(CTW.ngayNgan(d) ?? "")").font(.system(size: 12, weight: .semibold))
+                            Text("Due \(CTW.ngayNgan(d) ?? "")").font(.ctw(size: 12, weight: .semibold))
                                 .foregroundColor(DichVuLoi.daQua(d) ? AppColors.error : AppColors.textSecondary)
                         }
                     }
@@ -192,12 +192,12 @@ struct PortalCTW: View {
                         ZStack {
                             Circle().fill(g.status == "DONE" ? AppColors.success : (g.status == "NOT_STARTED" ? AppColors.backgroundTertiary : AppColors.primary))
                                 .frame(width: 28, height: 28)
-                            if g.status == "DONE" { Image(systemName: "checkmark").font(.system(size: 12, weight: .bold)).foregroundColor(.white) }
-                            else { Text("\(g.n ?? 0)").font(.system(size: 12, weight: .bold)).foregroundColor(g.status == "NOT_STARTED" ? AppColors.textSecondary : .white) }
+                            if g.status == "DONE" { Image(systemName: "checkmark").font(.ctw(size: 12, weight: .bold)).foregroundColor(.white) }
+                            else { Text("\(g.n ?? 0)").font(.ctw(size: 12, weight: .bold)).foregroundColor(g.status == "NOT_STARTED" ? AppColors.textSecondary : .white) }
                         }
                         VStack(alignment: .leading, spacing: 4) {
                             HStack {
-                                Text(g.name ?? "Stage").font(.system(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                                Text(g.name ?? "Stage").font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                                 Spacer()
                                 CTWChipChu(chu: g.status)
                             }
@@ -223,9 +223,9 @@ struct PortalCTW: View {
                 ForEach(m) { x in
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(x.name ?? "Release").font(.system(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                            Text(x.name ?? "Release").font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                             Text("\(x.done ?? 0) of \(x.items ?? 0) items done" + (x.releaseDate.flatMap(CTW.ngayNgan).map { " · \($0)" } ?? ""))
-                                .font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                                .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                         }
                         Spacer()
                         CTWChipChu(chu: x.status)
@@ -287,13 +287,13 @@ struct PortalYeuCauCTW: View {
         VStack(alignment: .leading, spacing: 7) {
             HStack(spacing: 6) {
                 Image(systemName: CTW.bieuTuongLoai(key: r.type?.icon ?? r.type?.key))
-                    .font(.system(size: 11, weight: .bold)).foregroundColor(CTW.mau(r.type?.color, macDinh: AppColors.primary))
-                Text(r.key ?? "#\(r.number)").font(.system(size: 12, weight: .semibold).monospacedDigit()).foregroundColor(AppColors.textSecondary)
+                    .font(.ctw(size: 11, weight: .bold)).foregroundColor(CTW.mau(r.type?.color, macDinh: AppColors.primary))
+                Text(r.key ?? "#\(r.number)").font(.ctw(size: 12, weight: .semibold).monospacedDigit()).foregroundColor(AppColors.textSecondary)
                 if r.fromClient == true { CTWNhanNho(chu: r.mine == true ? "Yours" : "From client", bieuTuong: "person") }
                 Spacer(minLength: 0)
                 CTWChipChu(chu: r.status?.name, mau: r.status?.color.map { CTW.mau($0) } ?? CTW.mauNhom(r.status?.category))
             }
-            Text(r.title).font(.system(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(2)
+            Text(r.title).font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(2)
             HStack(spacing: 12) {
                 Label("\(r.replies ?? 0)", systemImage: "bubble.left").accessibilityLabel("\(r.replies ?? 0) replies")
                 Label("\(r.files ?? 0)", systemImage: "paperclip").accessibilityLabel("\(r.files ?? 0) files")
@@ -301,7 +301,7 @@ struct PortalYeuCauCTW: View {
                 Spacer(minLength: 0)
                 Text("Updated \(CTW.ngayNgan(r.updatedAt) ?? "")")
             }
-            .font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
+            .font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
         }
         .padding(14).ctwThe(14).contentShape(Rectangle())
     }
@@ -322,11 +322,11 @@ struct PortalYeuCauCTCTW: View {
                 if let loi { CTWErrorBanner(text: loi) { self.loi = nil } }
                 if let c = ct {
                     HStack(spacing: 6) {
-                        Text(c.key ?? "#\(c.number)").font(.system(size: 13, weight: .semibold).monospacedDigit()).foregroundColor(AppColors.textSecondary)
+                        Text(c.key ?? "#\(c.number)").font(.ctw(size: 13, weight: .semibold).monospacedDigit()).foregroundColor(AppColors.textSecondary)
                         Spacer()
                         CTWChipChu(chu: c.status?.name, mau: c.status?.color.map { CTW.mau($0) } ?? CTW.mauNhom(c.status?.category))
                     }
-                    Text(c.title).font(.system(size: 21, weight: .bold)).foregroundColor(AppColors.textPrimary)
+                    Text(c.title).font(.ctw(size: 21, weight: .bold)).foregroundColor(AppColors.textPrimary)
                         .fixedSize(horizontal: false, vertical: true)
                     CTWKhoiTruong {
                         CTWHangTruong("Type", c.type?.name, bieuTuong: "tag")
@@ -347,7 +347,7 @@ struct PortalYeuCauCTCTW: View {
                             ForEach(f) { a in
                                 HStack(spacing: 10) {
                                     Image(systemName: a.bieuTuong).foregroundColor(AppColors.primary).frame(width: 22)
-                                    Text(a.fileName ?? "File").font(.system(size: 14)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                                    Text(a.fileName ?? "File").font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary).lineLimit(1)
                                     Spacer(minLength: 0)
                                     if a.deliverable == true { CTWNhanNho(chu: "Deliverable", mau: AppColors.success) }
                                 }
@@ -360,7 +360,7 @@ struct PortalYeuCauCTCTW: View {
                     CTWSectionHeader("bubble.left.and.bubble.right", "Conversation", count: "\(c.comments?.count ?? 0)")
                     ForEach(c.comments ?? []) { b in DongBinhLuanTheCTW(pid: pid, so: so, c: b) }
                     if (c.comments ?? []).isEmpty {
-                        Text("No replies yet.").font(.system(size: 14)).foregroundColor(AppColors.textSecondary)
+                        Text("No replies yet.").font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary)
                     }
                     if !xemThu {
                         CTWHopSoan(goiY: "Write a reply…", nutGui: "Send reply") { chu in
@@ -439,13 +439,13 @@ struct PortalDuyetCTW: View {
                 Spacer(minLength: 0)
                 CTWChipChu(chu: d.status)
             }
-            Text(d.title ?? "Approval").font(.system(size: 16, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+            Text(d.title ?? "Approval").font(.ctw(size: 16, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
             if let m = d.description, !m.isEmpty {
-                Text(m).font(.system(size: 13)).foregroundColor(AppColors.textSecondary).lineLimit(4)
+                Text(m).font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary).lineLimit(4)
             }
             if let n = d.clientNote, !n.isEmpty {
-                Text(n).font(.system(size: 13)).foregroundColor(AppColors.textPrimary)
+                Text(n).font(.ctw(size: 13)).foregroundColor(AppColors.textPrimary)
                     .padding(10).frame(maxWidth: .infinity, alignment: .leading)
                     .background(RoundedRectangle(cornerRadius: 10).fill(AppColors.primary.opacity(0.07)))
             }
@@ -453,19 +453,19 @@ struct PortalDuyetCTW: View {
                 ForEach(d.steps ?? []) { b in
                     HStack(spacing: 8) {
                         CTWAvatar(user: b.approver, size: 22)
-                        Text(b.approver?.ten ?? "Approver").font(.system(size: 13)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                        Text(b.approver?.ten ?? "Approver").font(.ctw(size: 13)).foregroundColor(AppColors.textPrimary).lineLimit(1)
                         if b.isClient == true { CTWNhanNho(chu: "Client") }
                         Spacer(minLength: 0)
                         CTWChipChu(chu: b.decision)
                     }
                     if let c = b.comment, !c.isEmpty {
-                        Text("“\(c)”").font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                        Text("“\(c)”").font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                             .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, 30)
                     }
                 }
             }
             if let dd = d.dueAt {
-                Text("Due \(CTW.ngayNgan(dd) ?? "")").font(.system(size: 12, weight: .semibold))
+                Text("Due \(CTW.ngayNgan(dd) ?? "")").font(.ctw(size: 12, weight: .semibold))
                     .foregroundColor(DichVuLoi.daQua(dd) && d.status == "PENDING" ? AppColors.error : AppColors.textTertiary)
             }
             if d.canDecide == true && !xemThu {
@@ -555,7 +555,7 @@ struct PortalTaiLieuCTW: View {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(p.title).foregroundColor(AppColors.textPrimary)
                                     Text("\(CTWMauTrangThai.nhan(p.status)) · Updated \(CTW.ngayNgan(p.updatedAt) ?? "")")
-                                        .font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                                        .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                                 }
                             }
                         }
@@ -570,7 +570,7 @@ struct PortalTaiLieuCTW: View {
                                 Text(f.fileName ?? "File").foregroundColor(AppColors.textPrimary).lineLimit(1)
                                 Text([f.issue?.key, f.size.map { ByteCountFormatter.string(fromByteCount: Int64($0), countStyle: .file) }]
                                     .compactMap { $0 }.joined(separator: " · "))
-                                    .font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                                    .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                             }
                         }
                     }
@@ -603,10 +603,10 @@ struct PortalTrangCTW: View {
             VStack(alignment: .leading, spacing: Spacing.md) {
                 if let loi { CTWErrorBanner(text: loi) }
                 if let t {
-                    Text(t.title).font(.system(size: 24, weight: .bold)).foregroundColor(AppColors.textPrimary)
+                    Text(t.title).font(.ctw(size: 24, weight: .bold)).foregroundColor(AppColors.textPrimary)
                     HStack(spacing: 6) {
                         CTWChipChu(chu: t.status)
-                        Text("Updated \(CTW.ngayNgan(t.updatedAt) ?? "")").font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
+                        Text("Updated \(CTW.ngayNgan(t.updatedAt) ?? "")").font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
                     }
                     CTWTipTapView(doc: t.contentJson, coChu: 15.5)
                 } else if loi == nil { ProgressView().frame(maxWidth: .infinity).padding(.top, 40) }

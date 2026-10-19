@@ -126,7 +126,7 @@ struct TicketCTW: View {
                     if let ev = ticket?.events, !ev.isEmpty { suKien(ev) }
                     NavigationLink(value: CTWRoute.the(pid: pid, so: so)) {
                         Label("Open full issue", systemImage: "arrow.up.right.square")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(.ctw(size: 15, weight: .semibold))
                             .frame(maxWidth: .infinity, minHeight: 44)
                     }
                     .buttonStyle(.bordered)
@@ -174,7 +174,7 @@ struct TicketCTW: View {
                 Spacer(minLength: 0)
                 CTWStatusChip(status: cfg?.trangThai(t.statusId))
             }
-            Text(t.title).font(.system(size: 21, weight: .bold)).foregroundColor(AppColors.textPrimary)
+            Text(t.title).font(.ctw(size: 21, weight: .bold)).foregroundColor(AppColors.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityAddTraits(.isHeader)
             if let d = t.descriptionJson, !(d.chuTron.isEmpty) {
@@ -199,12 +199,12 @@ struct TicketCTW: View {
         return VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 5) {
                 Circle().fill(m).frame(width: 8, height: 8)
-                Text(ten).font(.system(size: 12, weight: .semibold)).foregroundColor(AppColors.textSecondary)
+                Text(ten).font(.ctw(size: 12, weight: .semibold)).foregroundColor(AppColors.textSecondary)
             }
-            Text(CTWDesk.nhanSla(s)).font(.system(size: 19, weight: .bold)).foregroundColor(m)
+            Text(CTWDesk.nhanSla(s)).font(.ctw(size: 19, weight: .bold)).foregroundColor(m)
                 .lineLimit(1).minimumScaleFactor(0.7)
             Text(phu ?? (s?.dueAt.flatMap(DichVuLoi.luc).map { "Due \($0)" } ?? (s?.stopped == true ? "Stopped" : "No due time")))
-                .font(.system(size: 11)).foregroundColor(AppColors.textTertiary).lineLimit(1)
+                .font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary).lineLimit(1)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
@@ -256,8 +256,8 @@ struct TicketCTW: View {
 
     private func nut(_ icon: String, _ chu: String) -> some View {
         HStack(spacing: 6) {
-            Image(systemName: icon).font(.system(size: 13, weight: .semibold))
-            Text(chu).font(.system(size: 13, weight: .semibold)).lineLimit(1).fixedSize()
+            Image(systemName: icon).font(.ctw(size: 13, weight: .semibold))
+            Text(chu).font(.ctw(size: 13, weight: .semibold)).lineLimit(1).fixedSize()
         }
         .foregroundColor(AppColors.primary)
         .padding(.horizontal, 12).frame(minHeight: 40)
@@ -299,7 +299,7 @@ struct TicketCTW: View {
                         if let r = cs.rating {
                             HStack(spacing: 2) {
                                 ForEach(1...5, id: \.self) { i in
-                                    Image(systemName: i <= r ? "star.fill" : "star").foregroundColor(AppColors.warning).font(.system(size: 12))
+                                    Image(systemName: i <= r ? "star.fill" : "star").foregroundColor(AppColors.warning).font(.ctw(size: 12))
                                 }
                             }
                             .accessibilityLabel("\(r) of 5 stars")
@@ -308,7 +308,7 @@ struct TicketCTW: View {
                 }
             }
             if let c = k.csat?.comment, !c.isEmpty {
-                Text("“\(c)”").font(.system(size: 14)).italic().foregroundColor(AppColors.textSecondary)
+                Text("“\(c)”").font(.ctw(size: 14)).italic().foregroundColor(AppColors.textSecondary)
                     .padding(.horizontal, 4)
             }
         }
@@ -319,7 +319,7 @@ struct TicketCTW: View {
             CTWSectionHeader("bubble.left.and.bubble.right", "Conversation", count: vm.binhLuan.map { "\($0.count)" })
             if let ds = vm.binhLuan {
                 if ds.isEmpty {
-                    Text("No replies yet.").font(.system(size: 14)).foregroundColor(AppColors.textSecondary)
+                    Text("No replies yet.").font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary)
                 }
                 ForEach(ds) { c in
                     let noiBo = (c.visibility ?? "INTERNAL") != "PUBLIC"
@@ -354,12 +354,12 @@ struct TicketCTW: View {
                 ForEach(ev) { e in
                     let (ten, icon) = CTWDesk.nhanSuKien(e.kind)
                     HStack(alignment: .top, spacing: 10) {
-                        Image(systemName: icon).font(.system(size: 13)).foregroundColor(AppColors.primary).frame(width: 20)
+                        Image(systemName: icon).font(.ctw(size: 13)).foregroundColor(AppColors.primary).frame(width: 20)
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(ten + (e.value.map { " · \($0)" } ?? "")).font(.system(size: 13, weight: .medium))
+                            Text(ten + (e.value.map { " · \($0)" } ?? "")).font(.ctw(size: 13, weight: .medium))
                                 .foregroundColor(AppColors.textPrimary)
                             Text([e.actor, DichVuLoi.luc(e.at), e.note].compactMap { $0 }.joined(separator: " · "))
-                                .font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+                                .font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
                         }
                         Spacer(minLength: 0)
                     }

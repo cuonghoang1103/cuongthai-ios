@@ -20,7 +20,7 @@ enum CTWMauTrangThai {
              "WAITING_ON_CUSTOMER", "CHANGES_REQUESTED", "LATE", "DUE_SOON", "ESCALATED":
             return AppColors.warning
         case "IN_PROGRESS", "EXECUTING", "OPEN", "NEW", "ANALYSIS", "UNDER_REVIEW", "SCHEDULED", "RUNNING", "ASSIGNED":
-            return Color(hex: 0x2563EB)
+            return AppColors.info
         default:
             return AppColors.textSecondary
         }
@@ -43,7 +43,7 @@ struct CTWChipChu: View {
         HStack(spacing: 5) {
             Circle().fill(m).frame(width: 6, height: 6)
             Text(CTWMauTrangThai.nhan(chu).uppercased())
-                .font(.system(size: 10.5, weight: .bold)).foregroundColor(m).lineLimit(1).fixedSize()
+                .font(.ctw(size: 10.5, weight: .bold)).foregroundColor(m).lineLimit(1).fixedSize()
         }
         .padding(.horizontal, 8).padding(.vertical, 3.5)
         .background(Capsule().fill(m.opacity(0.14)))
@@ -59,8 +59,8 @@ struct CTWNhanNho: View {
     var mau: Color = AppColors.textSecondary
     var body: some View {
         HStack(spacing: 4) {
-            if let bieuTuong { Image(systemName: bieuTuong).font(.system(size: 9.5, weight: .bold)) }
-            Text(chu).font(.system(size: 11, weight: .semibold)).lineLimit(1).fixedSize()
+            if let bieuTuong { Image(systemName: bieuTuong).font(.ctw(size: 9.5, weight: .bold)) }
+            Text(chu).font(.ctw(size: 11, weight: .semibold)).lineLimit(1).fixedSize()
         }
         .foregroundColor(mau)
         .padding(.horizontal, 7).padding(.vertical, 3)
@@ -78,14 +78,14 @@ struct CTWHangTruong<GiaTri: View>: View {
         HStack(alignment: .firstTextBaseline, spacing: 10) {
             HStack(spacing: 6) {
                 if let bieuTuong {
-                    Image(systemName: bieuTuong).font(.system(size: 12)).foregroundColor(AppColors.textTertiary).frame(width: 16)
+                    Image(systemName: bieuTuong).font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary).frame(width: 16)
                 }
-                Text(nhan).font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
+                Text(nhan).font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
             }
             .frame(minWidth: 110, alignment: .leading)
             Spacer(minLength: 8)
             giaTri()
-                .font(.system(size: 14))
+                .font(.ctw(size: 14))
                 .foregroundColor(AppColors.textPrimary)
                 .multilineTextAlignment(.trailing)
         }
@@ -122,12 +122,12 @@ struct CTWODem: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Image(systemName: bieuTuong).font(.system(size: 13, weight: .semibold)).foregroundColor(mau)
+            Image(systemName: bieuTuong).font(.ctw(size: 13, weight: .semibold)).foregroundColor(mau)
                 .frame(width: 28, height: 28)
                 .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(mau.opacity(0.13)))
-            Text(so).font(.system(size: 22, weight: .bold).monospacedDigit()).foregroundColor(AppColors.textPrimary)
+            Text(so).font(.ctw(size: 22, weight: .bold).monospacedDigit()).foregroundColor(AppColors.textPrimary)
                 .lineLimit(1).minimumScaleFactor(0.6)
-            Text(nhan).font(.system(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(2)
+            Text(nhan).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(2)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)

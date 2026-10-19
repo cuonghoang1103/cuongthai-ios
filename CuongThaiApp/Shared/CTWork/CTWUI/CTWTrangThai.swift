@@ -16,20 +16,20 @@ struct CTWOTrong: View {
     var body: some View {
         VStack(spacing: Spacing.sm) {
             Image(systemName: bieuTuong)
-                .font(.system(size: 30, weight: .semibold)).foregroundColor(AppColors.primary)
+                .font(.ctw(size: 30, weight: .semibold)).foregroundColor(AppColors.primary)
                 .frame(width: 76, height: 76)
                 .background(Circle().fill(AppColors.primary.opacity(0.12)))
                 .padding(.bottom, 4)
                 .accessibilityHidden(true)
-            Text(tieuDe).font(.system(size: 17, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+            Text(tieuDe).font(.ctw(size: 17, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                 .multilineTextAlignment(.center)
             if !moTa.isEmpty {
-                Text(moTa).font(.system(size: 14)).foregroundColor(AppColors.textSecondary)
+                Text(moTa).font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary)
                     .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
             }
             if let nut, let hanhDong {
                 Button(action: hanhDong) {
-                    Text(nut).font(.system(size: 15, weight: .semibold)).padding(.horizontal, 18).padding(.vertical, 9)
+                    Text(nut).font(.ctw(size: 15, weight: .semibold)).padding(.horizontal, 18).padding(.vertical, 9)
                 }
                 .buttonStyle(.borderedProminent)
                 .padding(.top, 6)
@@ -127,8 +127,8 @@ struct CTWThanhLoc: View {
                 ForEach(chip) { c in
                     Button { CTWRung.chon(); bam(c) } label: {
                         HStack(spacing: 5) {
-                            if let b = c.bieuTuong { Image(systemName: b).font(.system(size: 11, weight: .semibold)) }
-                            Text(c.nhan).font(.system(size: 13, weight: .semibold)).fixedSize()
+                            if let b = c.bieuTuong { Image(systemName: b).font(.ctw(size: 11, weight: .semibold)) }
+                            Text(c.nhan).font(.ctw(size: 13, weight: .semibold)).fixedSize()
                         }
                         .foregroundColor(c.bat ? AppColors.onPrimary : AppColors.textPrimary)
                         .padding(.horizontal, 12).padding(.vertical, 7)

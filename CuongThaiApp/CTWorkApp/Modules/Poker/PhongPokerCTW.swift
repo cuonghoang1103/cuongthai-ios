@@ -133,25 +133,25 @@ struct PhongPokerCTW: View {
         HStack(spacing: 10) {
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
-                    Text(p.deck == "TSHIRT" ? "T-shirt sizes" : "Fibonacci").font(.system(size: 12, weight: .semibold))
+                    Text(p.deck == "TSHIRT" ? "T-shirt sizes" : "Fibonacci").font(.ctw(size: 12, weight: .semibold))
                         .foregroundColor(AppColors.textSecondary)
-                    if let s = p.sprint?.name { Text("· \(s)").font(.system(size: 12)).foregroundColor(AppColors.textSecondary) }
+                    if let s = p.sprint?.name { Text("· \(s)").font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary) }
                 }
                 if let f = p.facilitator {
                     HStack(spacing: 5) {
                         CTWAvatar(user: f, size: 18)
-                        Text("Facilitator: \(f.ten)").font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
+                        Text("Facilitator: \(f.ten)").font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
                     }
                 }
             }
             Spacer()
             if p.daDong {
-                Label("Closed", systemImage: "lock.fill").font(.system(size: 12, weight: .bold)).foregroundColor(AppColors.textSecondary)
+                Label("Closed", systemImage: "lock.fill").font(.ctw(size: 12, weight: .bold)).foregroundColor(AppColors.textSecondary)
             } else if p.mucHienTai?.state == "VOTING", p.timerEndsAt != nil {
                 TimelineView(.periodic(from: .now, by: 1)) { ctx in
                     let con = PokerTinh.giayConLai(ketThuc: p.timerEndsAt, serverNow: p.serverNow, taiLuc: vm.taiLuc, bayGio: ctx.date) ?? 0
                     Label(CTWSo.dongHo(giay: con), systemImage: "timer")
-                        .font(.system(size: 15, weight: .bold).monospacedDigit())
+                        .font(.ctw(size: 15, weight: .bold).monospacedDigit())
                         .foregroundColor(con <= 10 ? AppColors.error : AppColors.primary)
                         .padding(.horizontal, 10).padding(.vertical, 5)
                         .background(Capsule().fill((con <= 10 ? AppColors.error : AppColors.primary).opacity(0.12)))
@@ -168,27 +168,27 @@ struct PhongPokerCTW: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 if let t = m.issue?.type {
-                    Image(systemName: CTW.bieuTuongLoai(key: t.key)).font(.system(size: 10, weight: .bold)).foregroundColor(.white)
+                    Image(systemName: CTW.bieuTuongLoai(key: t.key)).font(.ctw(size: 10, weight: .bold)).foregroundColor(.white)
                         .frame(width: 20, height: 20)
-                        .background(RoundedRectangle(cornerRadius: 5, style: .continuous).fill(CTW.mau(t.color, macDinh: Color(hex: 0x2563EB))))
+                        .background(RoundedRectangle(cornerRadius: 5, style: .continuous).fill(CTW.mau(t.color, macDinh: AppColors.info)))
                 }
-                Text("\(app.luaChon?.maDuAn ?? "")-\(m.issue?.number ?? 0)").font(.system(size: 12, weight: .semibold).monospaced())
+                Text("\(app.luaChon?.maDuAn ?? "")-\(m.issue?.number ?? 0)").font(.ctw(size: 12, weight: .semibold).monospaced())
                     .foregroundColor(AppColors.textSecondary)
                 nhanTrangThai(m)
                 Spacer()
-                if (m.round ?? 1) > 1 { Text("Round \(m.round ?? 1)").font(.system(size: 11, weight: .semibold)).foregroundColor(AppColors.textTertiary) }
+                if (m.round ?? 1) > 1 { Text("Round \(m.round ?? 1)").font(.ctw(size: 11, weight: .semibold)).foregroundColor(AppColors.textTertiary) }
             }
-            Text(m.issue?.title ?? "").font(.system(size: 19, weight: .bold)).foregroundColor(AppColors.textPrimary)
+            Text(m.issue?.title ?? "").font(.ctw(size: 19, weight: .bold)).foregroundColor(AppColors.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
             if let d = m.issue?.description, !d.isEmpty {
-                Text(d).font(.system(size: 14)).foregroundColor(AppColors.textSecondary).lineLimit(5)
+                Text(d).font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary).lineLimit(5)
             }
             if let sp = m.previousPoints ?? m.issue?.storyPoints {
-                Text("Current estimate: \(CTWSo.gon(sp)) pts").font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
+                Text("Current estimate: \(CTWSo.gon(sp)) pts").font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
             }
             if let issue = m.issue {
                 NavigationLink(value: CTWRoute.the(pid: pid, so: issue.number)) {
-                    Label("Open issue", systemImage: "arrow.up.forward.square").font(.system(size: 13, weight: .semibold))
+                    Label("Open issue", systemImage: "arrow.up.forward.square").font(.ctw(size: 13, weight: .semibold))
                 }
             }
         }
@@ -206,7 +206,7 @@ struct PhongPokerCTW: View {
             default: return ("PENDING", AppColors.textTertiary)
             }
         }()
-        return Text(chu).font(.system(size: 10, weight: .bold)).foregroundColor(mau)
+        return Text(chu).font(.ctw(size: 10, weight: .bold)).foregroundColor(mau)
             .padding(.horizontal, 7).padding(.vertical, 2)
             .background(Capsule().fill(mau.opacity(0.12)))
     }
@@ -217,7 +217,7 @@ struct PhongPokerCTW: View {
         let daBau = Set(m.voted ?? [])
         let ds = p.voters ?? []
         return VStack(alignment: .leading, spacing: 8) {
-            Text("\(daBau.count) of \(ds.count) voted").font(.system(size: 13, weight: .semibold)).foregroundColor(AppColors.textSecondary)
+            Text("\(daBau.count) of \(ds.count) voted").font(.ctw(size: 13, weight: .semibold)).foregroundColor(AppColors.textSecondary)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
                     ForEach(ds) { u in
@@ -225,13 +225,13 @@ struct PhongPokerCTW: View {
                             CTWAvatar(user: u, size: 34)
                                 .overlay(alignment: .topTrailing) {
                                     if daBau.contains(u.id) {
-                                        Image(systemName: "checkmark.circle.fill").font(.system(size: 14))
+                                        Image(systemName: "checkmark.circle.fill").font(.ctw(size: 14))
                                             .foregroundStyle(.white, AppColors.success).offset(x: 5, y: -4)
                                     }
                                 }
                                 .opacity(daBau.contains(u.id) ? 1 : 0.45)
                             Text(u.ten.split(separator: " ").first.map(String.init) ?? u.ten)
-                                .font(.system(size: 11)).foregroundColor(AppColors.textSecondary).fixedSize()
+                                .font(.ctw(size: 11)).foregroundColor(AppColors.textSecondary).fixedSize()
                         }
                         .accessibilityElement(children: .ignore)
                         .accessibilityLabel("\(u.ten), \(daBau.contains(u.id) ? "voted" : "not voted yet")")
@@ -248,7 +248,7 @@ struct PhongPokerCTW: View {
         let duocBau = p.me?.canVote == true && m.state == "VOTING" && !p.daDong
         return VStack(alignment: .leading, spacing: 10) {
             Text(duocBau ? "Pick your card" : (m.state == "VOTING" ? "Voting in progress" : "Voting hasn't started"))
-                .font(.system(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                .font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 64), spacing: 10)], spacing: 10) {
                 ForEach(PokerTinh.boBai(p), id: \.self) { la in
                     let chon = m.myVote == la
@@ -256,7 +256,7 @@ struct PhongPokerCTW: View {
                         CTWRung.chon()
                         Task { await vm.lam(CTWAPI.boPhieuPoker(pid: pid, sid: sid, iid: m.id, giaTri: chon ? nil : la)) }
                     } label: {
-                        Text(la).font(.system(size: 24, weight: .bold, design: .rounded))
+                        Text(la).font(.ctw(size: 24, weight: .bold, design: .rounded))
                             .frame(maxWidth: .infinity, minHeight: 84)
                             .foregroundColor(chon ? AppColors.onPrimary : AppColors.textPrimary)
                             .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -275,7 +275,7 @@ struct PhongPokerCTW: View {
             }
             if duocBau && m.myVote != nil {
                 Text("Tap your card again to withdraw it. Cards stay hidden until the facilitator reveals them.")
-                    .font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
+                    .font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
             }
         }
         .padding(14)
@@ -289,12 +289,12 @@ struct PhongPokerCTW: View {
         let dem = d?.counts ?? []
         return VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("Results").font(.system(size: 15, weight: .semibold))
+                Text("Results").font(.ctw(size: 15, weight: .semibold))
                 Spacer()
                 if d?.consensus == true {
-                    Label("Consensus", systemImage: "checkmark.seal.fill").font(.system(size: 12, weight: .bold)).foregroundColor(AppColors.success)
+                    Label("Consensus", systemImage: "checkmark.seal.fill").font(.ctw(size: 12, weight: .bold)).foregroundColor(AppColors.success)
                 } else {
-                    Label("No consensus", systemImage: "arrow.left.and.right").font(.system(size: 12, weight: .semibold)).foregroundColor(AppColors.warning)
+                    Label("No consensus", systemImage: "arrow.left.and.right").font(.ctw(size: 12, weight: .semibold)).foregroundColor(AppColors.warning)
                 }
             }
             CTWLuoiChiSo {
@@ -312,7 +312,7 @@ struct PhongPokerCTW: View {
                         .foregroundStyle(c.value == d?.mode ? AppColors.primary : CTWMauChuoi.mau(0))
                         .clipShape(UnevenRoundedRectangle(topLeadingRadius: 4, topTrailingRadius: 4))
                         .annotation(position: .top) {
-                            Text("\(c.count)").font(.system(size: 11, weight: .semibold)).foregroundColor(AppColors.textSecondary)
+                            Text("\(c.count)").font(.ctw(size: 11, weight: .semibold)).foregroundColor(AppColors.textSecondary)
                         }
                 }
                 .chartYAxis(.hidden)
@@ -324,9 +324,9 @@ struct PhongPokerCTW: View {
                     ForEach(Array(v.enumerated()), id: \.offset) { _, x in
                         HStack(spacing: 6) {
                             CTWAvatar(user: x.user, size: 22)
-                            Text(x.user?.ten ?? "—").font(.system(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1)
+                            Text(x.user?.ten ?? "—").font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1)
                             Spacer(minLength: 2)
-                            Text(x.value).font(.system(size: 14, weight: .bold, design: .rounded)).foregroundColor(AppColors.textPrimary)
+                            Text(x.value).font(.ctw(size: 14, weight: .bold, design: .rounded)).foregroundColor(AppColors.textPrimary)
                         }
                         .padding(.horizontal, 8).padding(.vertical, 6)
                         .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(AppColors.backgroundTertiary))
@@ -344,7 +344,7 @@ struct PhongPokerCTW: View {
     private func dieuPhoi(_ p: CTWPokerPhong, _ m: CTWPokerMuc) -> some View {
         if p.me?.canFacilitate == true && !p.daDong {
             VStack(alignment: .leading, spacing: 10) {
-                Text("Facilitator").font(.system(size: 13, weight: .semibold)).foregroundColor(AppColors.textSecondary)
+                Text("Facilitator").font(.ctw(size: 13, weight: .semibold)).foregroundColor(AppColors.textSecondary)
                 if m.state == "VOTING" {
                     HStack(spacing: 8) {
                         nut("Reveal cards", "eye.fill", chinh: true) { await vm.lam(CTWAPI.lenhMucPoker(pid: pid, sid: sid, iid: m.id, lenh: "reveal")) }
@@ -359,7 +359,7 @@ struct PhongPokerCTW: View {
                         }
                     } label: {
                         Label(m.state == "ESTIMATED" ? "Change final estimate" : "Save estimate…", systemImage: "checkmark.circle.fill")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(.ctw(size: 15, weight: .semibold))
                             .frame(maxWidth: .infinity, minHeight: 44)
                             .foregroundColor(AppColors.onPrimary)
                             .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(AppColors.primary))
@@ -388,7 +388,7 @@ struct PhongPokerCTW: View {
 
     private func nut(_ chu: String, _ bieuTuong: String, chinh: Bool = false, _ f: @escaping () async -> Void) -> some View {
         Button { Task { await f() } } label: {
-            Label(chu, systemImage: bieuTuong).font(.system(size: 15, weight: .semibold)).frame(maxWidth: .infinity, minHeight: 44)
+            Label(chu, systemImage: bieuTuong).font(.ctw(size: 15, weight: .semibold)).frame(maxWidth: .infinity, minHeight: 44)
         }
         .buttonStyle(.bordered)
         .tint(chinh ? AppColors.primary : AppColors.textSecondary)
@@ -409,15 +409,15 @@ struct PhongPokerCTW: View {
                 } label: {
                     HStack(spacing: 10) {
                         Image(systemName: m.id == p.currentItemId ? "arrowtriangle.right.fill" : (m.state == "ESTIMATED" ? "checkmark.circle.fill" : (m.state == "SKIPPED" ? "forward.circle" : "circle")))
-                            .font(.system(size: 13))
+                            .font(.ctw(size: 13))
                             .foregroundColor(m.state == "ESTIMATED" ? AppColors.success : (m.id == p.currentItemId ? AppColors.primary : AppColors.textTertiary))
                             .frame(width: 18)
-                        Text("\(app.luaChon?.maDuAn ?? "")-\(m.issue?.number ?? 0)").font(.system(size: 12, weight: .medium).monospaced())
+                        Text("\(app.luaChon?.maDuAn ?? "")-\(m.issue?.number ?? 0)").font(.ctw(size: 12, weight: .medium).monospaced())
                             .foregroundColor(AppColors.textSecondary)
-                        Text(m.issue?.title ?? "").font(.system(size: 14)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                        Text(m.issue?.title ?? "").font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary).lineLimit(1)
                         Spacer(minLength: 6)
                         if let f = m.finalValue {
-                            Text(f).font(.system(size: 13, weight: .bold, design: .rounded)).foregroundColor(AppColors.textPrimary)
+                            Text(f).font(.ctw(size: 13, weight: .bold, design: .rounded)).foregroundColor(AppColors.textPrimary)
                                 .padding(.horizontal, 8).padding(.vertical, 2)
                                 .background(Capsule().fill(AppColors.success.opacity(0.14)))
                         }

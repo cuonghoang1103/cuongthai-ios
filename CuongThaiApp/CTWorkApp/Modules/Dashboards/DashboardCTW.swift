@@ -143,7 +143,7 @@ struct WidgetDbCTW: View {
     }
 
     private func khung(_ t: String) -> some View {
-        Text(t).font(.system(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+        Text(t).font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
     }
 
     // MARK: JQL
@@ -159,10 +159,10 @@ struct WidgetDbCTW: View {
     private var demJql: some View {
         NapBaoCaoCTW(khoa: k, diemCuoi: { CTWAPI.timJql(pid: pid, jql: jql, limit: 1) }, soHang: 1) { (r: CTWKetQuaJql) in
             VStack(alignment: .leading, spacing: 4) {
-                Text(tieuDe).font(.system(size: 13, weight: .medium)).foregroundColor(AppColors.textSecondary)
-                Text("\(r.total ?? 0)").font(.system(size: 34, weight: .bold).monospacedDigit()).foregroundColor(AppColors.textPrimary)
+                Text(tieuDe).font(.ctw(size: 13, weight: .medium)).foregroundColor(AppColors.textSecondary)
+                Text("\(r.total ?? 0)").font(.ctw(size: 34, weight: .bold).monospacedDigit()).foregroundColor(AppColors.textPrimary)
                 if !jql.isEmpty {
-                    Text(jql).font(.system(size: 11).monospaced()).foregroundColor(AppColors.textTertiary).lineLimit(2)
+                    Text(jql).font(.ctw(size: 11).monospaced()).foregroundColor(AppColors.textTertiary).lineLimit(2)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -176,21 +176,21 @@ struct WidgetDbCTW: View {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     khung(tieuDe)
-                    Text("\(r.total ?? 0)").font(.system(size: 12, weight: .semibold)).foregroundColor(AppColors.textTertiary)
+                    Text("\(r.total ?? 0)").font(.ctw(size: 12, weight: .semibold)).foregroundColor(AppColors.textTertiary)
                         .padding(.horizontal, 6).padding(.vertical, 1).background(Capsule().fill(AppColors.backgroundTertiary))
                 }
                 if (r.items ?? []).isEmpty {
-                    Text(w.kind == "overdue" ? "Nothing overdue. 🎉" : "No issues.").font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
+                    Text(w.kind == "overdue" ? "Nothing overdue. 🎉" : "No issues.").font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
                 }
                 ForEach(r.items ?? []) { t in
                     NavigationLink(value: CTWRoute.the(pid: pid, so: t.number)) {
                         HStack(spacing: 8) {
                             CTWTypeIcon(type: cfg?.loai(t.typeId), size: 12)
-                            Text("\(cfg?.key ?? "")-\(t.number)").font(.system(size: 11, weight: .medium).monospaced()).foregroundColor(AppColors.textSecondary)
-                            Text(t.title).font(.system(size: 13)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                            Text("\(cfg?.key ?? "")-\(t.number)").font(.ctw(size: 11, weight: .medium).monospaced()).foregroundColor(AppColors.textSecondary)
+                            Text(t.title).font(.ctw(size: 13)).foregroundColor(AppColors.textPrimary).lineLimit(1)
                             Spacer(minLength: 0)
                             if let d = CTW.ngayNgan(t.dueDate) {
-                                Text(d).font(.system(size: 11)).foregroundColor(CTW.quaHan(t.dueDate) ? AppColors.error : AppColors.textTertiary)
+                                Text(d).font(.ctw(size: 11)).foregroundColor(CTW.quaHan(t.dueDate) ? AppColors.error : AppColors.textTertiary)
                             }
                             if t.assigneeId != nil { CTWAvatar(user: cfg?.thanhVien(t.assigneeId) ?? CTWUser(id: t.assigneeId ?? 0), size: 20) }
                         }
@@ -200,7 +200,7 @@ struct WidgetDbCTW: View {
                     .buttonStyle(.plain)
                 }
                 if (r.total ?? 0) > (r.items ?? []).count {
-                    Text("+\((r.total ?? 0) - (r.items ?? []).count) more").font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
+                    Text("+\((r.total ?? 0) - (r.items ?? []).count) more").font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
                 }
             }
             .padding(14).frame(maxWidth: .infinity, alignment: .leading).ctwThe(14)
@@ -229,7 +229,7 @@ struct WidgetDbCTW: View {
         if let sid {
             NapBaoCaoCTW(khoa: "\(k)-\(sid)", diemCuoi: { CTWAPI.burndown(pid: pid, sid: sid) }) { (bd: CTWBurndown) in
                 VStack(alignment: .leading, spacing: 8) {
-                    if let n = bd.sprint?.name { Text(n).font(.system(size: 12, weight: .semibold)).foregroundColor(AppColors.textSecondary) }
+                    if let n = bd.sprint?.name { Text(n).font(.ctw(size: 12, weight: .semibold)).foregroundColor(AppColors.textSecondary) }
                     NoiDungBurndownCTW(bd: bd, gon: true)
                 }
             }
@@ -255,16 +255,16 @@ struct WidgetDbCTW: View {
                 if let t = g.timer {
                     HStack(spacing: 10) {
                         Image(systemName: t.running == true ? "timer" : "pause.circle")
-                            .font(.system(size: 20, weight: .semibold)).foregroundColor(t.running == true ? AppColors.success : AppColors.warning)
+                            .font(.ctw(size: 20, weight: .semibold)).foregroundColor(t.running == true ? AppColors.success : AppColors.warning)
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(t.issueKey ?? "").font(.system(size: 12, weight: .semibold).monospaced()).foregroundColor(AppColors.textSecondary)
-                            Text(t.issueTitle ?? "").font(.system(size: 14)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                            Text(t.issueKey ?? "").font(.ctw(size: 12, weight: .semibold).monospaced()).foregroundColor(AppColors.textSecondary)
+                            Text(t.issueTitle ?? "").font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary).lineLimit(1)
                         }
                         Spacer()
-                        Text(CTWSo.dongHo(giay: t.elapsedSec ?? 0)).font(.system(size: 18, weight: .bold).monospacedDigit()).foregroundColor(AppColors.textPrimary)
+                        Text(CTWSo.dongHo(giay: t.elapsedSec ?? 0)).font(.ctw(size: 18, weight: .bold).monospacedDigit()).foregroundColor(AppColors.textPrimary)
                     }
                 } else {
-                    Text("No timer running.").font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
+                    Text("No timer running.").font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
                 }
                 NapBaoCaoCTW(khoa: "\(k)-mt", diemCuoi: { CTWAPI.gioCuaToiDb(pid: pid) }, soHang: 1) { (m: CTWGioCuaToiDb) in
                     HStack(spacing: 10) {
@@ -281,14 +281,14 @@ struct WidgetDbCTW: View {
 
     private var chiCoTrenWeb: some View {
         HStack(spacing: 12) {
-            Image(systemName: bieuTuongWeb).font(.system(size: 16, weight: .semibold)).foregroundColor(AppColors.primary)
+            Image(systemName: bieuTuongWeb).font(.ctw(size: 16, weight: .semibold)).foregroundColor(AppColors.primary)
                 .frame(width: 36, height: 36).background(Circle().fill(AppColors.primary.opacity(0.12)))
             VStack(alignment: .leading, spacing: 2) {
-                Text(tieuDe).font(.system(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
-                Text("Shown in full on the web dashboard.").font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                Text(tieuDe).font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                Text("Shown in full on the web dashboard.").font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
             }
             Spacer(minLength: 0)
-            Button("Open") { moWeb = true }.buttonStyle(.bordered).font(.system(size: 13, weight: .semibold))
+            Button("Open") { moWeb = true }.buttonStyle(.bordered).font(.ctw(size: 13, weight: .semibold))
         }
         .padding(14).frame(maxWidth: .infinity, alignment: .leading).ctwThe(14)
     }
@@ -308,7 +308,7 @@ struct WidgetDbCTW: View {
     private func thongDiep(_ t: String, _ m: String, _ b: String) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             khung(t)
-            Label(m, systemImage: b).font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
+            Label(m, systemImage: b).font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
         }
         .padding(14).frame(maxWidth: .infinity, alignment: .leading).ctwThe(14)
     }
@@ -334,8 +334,8 @@ struct BieuDoTronDbCTW: View {
             }
             .chartBackground { _ in
                 VStack(spacing: 0) {
-                    Text("\(tong)").font(.system(size: 22, weight: .bold).monospacedDigit()).foregroundColor(AppColors.textPrimary)
-                    Text("issues").font(.system(size: 11)).foregroundColor(AppColors.textSecondary)
+                    Text("\(tong)").font(.ctw(size: 22, weight: .bold).monospacedDigit()).foregroundColor(AppColors.textPrimary)
+                    Text("issues").font(.ctw(size: 11)).foregroundColor(AppColors.textSecondary)
                 }
             }
         }

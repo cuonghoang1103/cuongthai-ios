@@ -91,7 +91,7 @@ struct ResourcesCTW: View {
                 }
                 if let b = du.broken, b > 0 {
                     Label("\(b) link\(b == 1 ? "" : "s") looked broken at the last check.", systemImage: "exclamationmark.triangle.fill")
-                        .font(.system(size: 13)).foregroundColor(AppColors.warning)
+                        .font(.ctw(size: 13)).foregroundColor(AppColors.warning)
                         .listRowBackground(Color.clear)
                 }
                 if (du.items ?? []).isEmpty {
@@ -139,19 +139,19 @@ struct ResourcesCTW: View {
     private func hang(_ r: CTWNguonLuc) -> some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: CTWNguonLucHienThi.bieuTuong(r.kind))
-                .font(.system(size: 15, weight: .semibold)).foregroundColor(AppColors.primary)
+                .font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.primary)
                 .frame(width: 36, height: 36)
                 .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(AppColors.primary.opacity(0.12)))
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
-                    Text(r.tenHien).font(.system(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                    Text(r.tenHien).font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(1)
                     if r.linkStatus == "BROKEN" {
                         CTWNhanNho(chu: "Broken", bieuTuong: "exclamationmark.triangle.fill", mau: AppColors.error)
                     }
                 }
-                Text(URL(string: r.url)?.host ?? r.url).font(.system(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1)
+                Text(URL(string: r.url)?.host ?? r.url).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1)
                 if let d = r.github?.description ?? r.description, !d.isEmpty {
-                    Text(d).font(.system(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(2)
+                    Text(d).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(2)
                 }
                 let tags = r.tags ?? []
                 if !tags.isEmpty || r.github?.stars != nil {
@@ -163,7 +163,7 @@ struct ResourcesCTW: View {
                 }
             }
             Spacer(minLength: 0)
-            Image(systemName: "arrow.up.right").font(.system(size: 12, weight: .semibold)).foregroundColor(AppColors.textTertiary)
+            Image(systemName: "arrow.up.right").font(.ctw(size: 12, weight: .semibold)).foregroundColor(AppColors.textTertiary)
                 .padding(.top, 4)
         }
         .padding(.vertical, 3)

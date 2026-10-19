@@ -176,16 +176,16 @@ struct CTWBinhLuanDong: View {
                 CTWAvatar(user: tacGia, size: 30)
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 6) {
-                        Text(tacGia?.ten ?? "Someone").font(.system(size: 13, weight: .semibold))
+                        Text(tacGia?.ten ?? "Someone").font(.ctw(size: 13, weight: .semibold))
                             .foregroundColor(AppColors.textPrimary).lineLimit(1)
                         if tacGia?.laAgent == true { CTWNhanAI() } else if laAI { CTWNhanAI(chu: "AI-drafted") }
                         if let nhanPhu {
-                            Text(nhanPhu).font(.system(size: 10, weight: .bold)).foregroundColor(AppColors.textSecondary)
+                            Text(nhanPhu).font(.ctw(size: 10, weight: .bold)).foregroundColor(AppColors.textSecondary)
                                 .padding(.horizontal, 6).padding(.vertical, 2)
                                 .background(Capsule().fill(AppColors.backgroundTertiary))
                         }
                         Spacer(minLength: 0)
-                        Text(CTW.thoiDiem(thoiDiem)).font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+                        Text(CTW.thoiDiem(thoiDiem)).font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
                     }
                     if let doc { CTWTipTapView(doc: doc, coChu: 14) } else { CTWMarkdownView(markdown: noiDung, coChu: 14) }
                 }
@@ -212,7 +212,7 @@ struct CTWHopSoan: View {
         HStack(alignment: .bottom, spacing: 8) {
             TextField(goiY, text: $chu, axis: .vertical)
                 .lineLimit(1...6)
-                .font(.system(size: 15))
+                .font(.ctw(size: 15))
                 .focused($dangGo)
                 .padding(.horizontal, 12).padding(.vertical, 9)
                 .ctwThe(18)
@@ -227,7 +227,7 @@ struct CTWHopSoan: View {
             } label: {
                 Group {
                     if dangGui { ProgressView().tint(AppColors.onPrimary) }
-                    else { Image(systemName: "arrow.up").font(.system(size: 15, weight: .bold)) }
+                    else { Image(systemName: "arrow.up").font(.ctw(size: 15, weight: .bold)) }
                 }
                 .foregroundColor(AppColors.onPrimary)
                 .frame(width: 36, height: 36)

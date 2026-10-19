@@ -20,7 +20,7 @@ struct CTWAvatar: View {
                     UserAvatarView(url: url, size: size)
                 } else {
                     Text(u.kyTuDau)
-                        .font(.system(size: size * 0.4, weight: .semibold))
+                        .font(.ctw(size: size * 0.4, weight: .semibold))
                         .foregroundColor(AppColors.onPrimary)
                         .frame(width: size, height: size)
                         .background(
@@ -33,7 +33,7 @@ struct CTWAvatar: View {
                 }
             } else {
                 Image(systemName: "person.crop.circle.badge.questionmark")
-                    .font(.system(size: size * 0.75))
+                    .font(.ctw(size: size * 0.75))
                     .foregroundColor(AppColors.textTertiary)
                     .frame(width: size, height: size)
             }
@@ -43,7 +43,7 @@ struct CTWAvatar: View {
         .overlay(alignment: .bottomTrailing) {
             if user?.laAgent == true {
                 Image(systemName: "sparkles")
-                    .font(.system(size: max(7, size * 0.3), weight: .bold))
+                    .font(.ctw(size: max(7, size * 0.3), weight: .bold))
                     .foregroundColor(.white)
                     .padding(max(1.5, size * 0.06))
                     .background(Circle().fill(AppColors.primary))
@@ -61,11 +61,11 @@ struct CTWTypeIcon: View {
 
     var body: some View {
         Image(systemName: CTW.bieuTuongLoai(type))
-            .font(.system(size: size * 0.7, weight: .bold))
+            .font(.ctw(size: size * 0.7, weight: .bold))
             .foregroundColor(.white)
             .frame(width: size + 4, height: size + 4)
             .background(RoundedRectangle(cornerRadius: 4, style: .continuous)
-                .fill(CTW.mau(type?.color, macDinh: Color(hex: 0x2563EB))))
+                .fill(CTW.mau(type?.color, macDinh: AppColors.info)))
             .accessibilityLabel(type?.name ?? "Issue")
     }
 }
@@ -75,7 +75,7 @@ struct CTWPriorityIcon: View {
     var body: some View {
         let p = CTW.uuTien(priority)
         Image(systemName: p.bieuTuong)
-            .font(.system(size: 11, weight: .bold))
+            .font(.ctw(size: 11, weight: .bold))
             .foregroundColor(p.mau)
             .accessibilityLabel("\(p.ten) priority")
     }
@@ -88,7 +88,7 @@ struct CTWStatusChip: View {
         HStack(spacing: 5) {
             Circle().fill(mau).frame(width: 6, height: 6)
             Text((status?.name ?? "—").uppercased())
-                .font(.system(size: 11, weight: .bold))
+                .font(.ctw(size: 11, weight: .bold))
                 .foregroundColor(mau)
                 .lineLimit(1)
         }
@@ -113,14 +113,14 @@ struct CTWSectionHeader: View {
     var body: some View {
         HStack(spacing: 7) {
             Image(systemName: icon)
-                .font(.system(size: 13, weight: .semibold))
+                .font(.ctw(size: 13, weight: .semibold))
                 .foregroundColor(AppColors.primary)
             Text(title)
-                .font(.system(size: 15, weight: .semibold))
+                .font(.ctw(size: 15, weight: .semibold))
                 .foregroundColor(AppColors.textPrimary)
             if let count {
                 Text(count)
-                    .font(.system(size: 12, weight: .semibold).monospacedDigit())
+                    .font(.ctw(size: 12, weight: .semibold).monospacedDigit())
                     .foregroundColor(AppColors.textTertiary)
                     .padding(.horizontal, 6).padding(.vertical, 1)
                     .background(Capsule().fill(AppColors.backgroundTertiary))
@@ -140,13 +140,13 @@ struct CTWErrorBanner: View {
         HStack(alignment: .top, spacing: 8) {
             Image(systemName: "exclamationmark.triangle.fill").foregroundColor(AppColors.error)
             Text(text)
-                .font(.system(size: 13))
+                .font(.ctw(size: 13))
                 .foregroundColor(AppColors.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
             if let onDismiss {
                 Button(action: onDismiss) {
-                    Image(systemName: "xmark").font(.system(size: 12, weight: .semibold))
+                    Image(systemName: "xmark").font(.ctw(size: 12, weight: .semibold))
                         .foregroundColor(AppColors.textTertiary)
                         .frame(width: 28, height: 28)
                 }

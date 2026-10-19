@@ -75,8 +75,8 @@ struct HangNhomGiangDay: View {
             HStack(spacing: 8) {
                 Circle().fill(mauSK(g.health?.status)).frame(width: 10, height: 10)
                     .accessibilityLabel("Health: \(g.health?.status ?? "green")")
-                Text(g.key ?? "").font(.system(size: 12, weight: .bold).monospaced()).foregroundColor(AppColors.textSecondary)
-                Text(g.name ?? "Group").font(.system(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                Text(g.key ?? "").font(.ctw(size: 12, weight: .bold).monospaced()).foregroundColor(AppColors.textSecondary)
+                Text(g.name ?? "Group").font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(1)
                 Spacer(minLength: 0)
                 if let c = g.classCode { CTWNhanNho(chu: c) }
             }
@@ -86,13 +86,13 @@ struct HangNhomGiangDay: View {
                     .foregroundColor((g.issues?.overdue ?? 0) > 0 ? AppColors.error : AppColors.textTertiary)
                 Label("\(g.docsSubmitted ?? 0)/\(g.docsExpected ?? 0) docs", systemImage: "doc.text")
             }
-            .font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
+            .font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
             if let s = g.sprint {
                 HStack(spacing: 8) {
-                    Text(s.name ?? "Sprint").font(.system(size: 12, weight: .medium)).foregroundColor(AppColors.textSecondary).lineLimit(1)
+                    Text(s.name ?? "Sprint").font(.ctw(size: 12, weight: .medium)).foregroundColor(AppColors.textSecondary).lineLimit(1)
                     CTWThanhPhanDoan(doan: [(s.done ?? 0, s.atRisk == true ? AppColors.warning : AppColors.primary),
                                             (max(0, (s.total ?? 0) - (s.done ?? 0)), Color.clear)], cao: 5)
-                    Text("\(s.done ?? 0)/\(s.total ?? 0)").font(.system(size: 11, weight: .semibold).monospacedDigit()).foregroundColor(AppColors.textSecondary)
+                    Text("\(s.done ?? 0)/\(s.total ?? 0)").font(.ctw(size: 11, weight: .semibold).monospacedDigit()).foregroundColor(AppColors.textSecondary)
                 }
             }
             if let r = g.health?.reasons, !r.isEmpty {
@@ -137,12 +137,12 @@ struct NhomGiangDayCTW: View {
                     if let c = n.classCode { CTWNhanNho(chu: c) }
                     if let t = n.term { CTWNhanNho(chu: t) }
                 }
-                Text(n.name ?? "Group").font(.system(size: 22, weight: .bold)).foregroundColor(AppColors.textPrimary)
+                Text(n.name ?? "Group").font(.ctw(size: 22, weight: .bold)).foregroundColor(AppColors.textPrimary)
                 if let r = n.health?.reasons, !r.isEmpty {
                     VStack(alignment: .leading, spacing: 4) {
                         ForEach(Array(r.enumerated()), id: \.offset) { _, x in
                             Label(CTWNhomNhan.lyDo(x.code, n: x.n), systemImage: "exclamationmark.circle.fill")
-                                .font(.system(size: 13)).foregroundColor(x.level == "red" ? AppColors.error : AppColors.warning)
+                                .font(.ctw(size: 13)).foregroundColor(x.level == "red" ? AppColors.error : AppColors.warning)
                         }
                     }
                 }
@@ -175,8 +175,8 @@ struct NhomGiangDayCTW: View {
                         ForEach(d.keys.sorted(), id: \.self) { k in
                             let s = d[k] ?? "NA"
                             VStack(spacing: 3) {
-                                Text(k).font(.system(size: 13, weight: .bold).monospaced()).foregroundColor(AppColors.textPrimary)
-                                Text(s == "NA" ? "N/A" : CTWMauTrangThai.nhan(s)).font(.system(size: 10, weight: .semibold))
+                                Text(k).font(.ctw(size: 13, weight: .bold).monospaced()).foregroundColor(AppColors.textPrimary)
+                                Text(s == "NA" ? "N/A" : CTWMauTrangThai.nhan(s)).font(.ctw(size: 10, weight: .semibold))
                                     .foregroundColor(s == "SUBMITTED" ? AppColors.success : (s == "MISSING" ? AppColors.error : AppColors.textSecondary))
                             }
                             .frame(maxWidth: .infinity, minHeight: 50)
@@ -192,10 +192,10 @@ struct NhomGiangDayCTW: View {
                             HStack(spacing: 10) {
                                 CTWAvatar(user: CTWUser(id: m.id, username: m.username, fullName: m.name), size: 28)
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(m.name ?? m.username ?? "Member").font(.system(size: 14, weight: .medium)).foregroundColor(AppColors.textPrimary)
+                                    Text(m.name ?? m.username ?? "Member").font(.ctw(size: 14, weight: .medium)).foregroundColor(AppColors.textPrimary)
                                     if let sg = m.signals, !sg.isEmpty {
                                         Text(sg.map { CTWMauTrangThai.nhan($0) }.joined(separator: " · "))
-                                            .font(.system(size: 11)).foregroundColor(AppColors.warning)
+                                            .font(.ctw(size: 11)).foregroundColor(AppColors.warning)
                                     }
                                 }
                                 Spacer(minLength: 0)

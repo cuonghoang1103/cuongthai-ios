@@ -249,12 +249,12 @@ struct YeuCauCTW: View {
                 ForEach(ds) { s in
                     NavigationLink(value: RouteYeuCauCTW.man(pid: pid, id: s.id)) {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(s.name ?? "Screen").font(.system(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary)
+                            Text(s.name ?? "Screen").font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary)
                             HStack(spacing: 6) {
                                 if let f = s.feature, !f.isEmpty { CTWNhanNho(chu: f, bieuTuong: "square.stack.3d.up") }
                                 let a = d.actorsCho(screen: s.id).count
                                 Text("\(a) actor\(a == 1 ? "" : "s") · \(d.diToi(tu: s.id).count) links")
-                                    .font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                                    .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                             }
                         }
                         .padding(.vertical, 2)
@@ -270,12 +270,12 @@ struct YeuCauCTW: View {
                 ForEach(ds) { f in
                     VStack(alignment: .leading, spacing: 4) {
                         HStack(spacing: 6) {
-                            Text(f.name ?? "Function").font(.system(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary)
+                            Text(f.name ?? "Function").font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary)
                             Spacer(minLength: 0)
                             if let fe = f.feature, !fe.isEmpty { CTWNhanNho(chu: fe) }
                         }
                         if let m = f.description, !m.isEmpty {
-                            Text(m).font(.system(size: 13)).foregroundColor(AppColors.textSecondary).fixedSize(horizontal: false, vertical: true)
+                            Text(m).font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary).fixedSize(horizontal: false, vertical: true)
                         }
                     }
                     .padding(.vertical, 3)
@@ -292,20 +292,20 @@ struct YeuCauCTW: View {
         let chinh = (d.useCases ?? []).filter { $0.primaryActorId == a.id }
         return HStack(alignment: .top, spacing: 12) {
             Image(systemName: a.kind == "SYSTEM" ? "server.rack" : "person.fill")
-                .font(.system(size: 14, weight: .semibold)).foregroundColor(AppColors.primary)
+                .font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.primary)
                 .frame(width: 32, height: 32)
                 .background(Circle().fill(AppColors.primary.opacity(0.12)))
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
-                    Text(a.name ?? "Actor").font(.system(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary)
+                    Text(a.name ?? "Actor").font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary)
                     CTWNhanNho(chu: a.kind == "SYSTEM" ? "System" : "Person")
                 }
                 if let m = a.description, !m.isEmpty {
-                    Text(m).font(.system(size: 13)).foregroundColor(AppColors.textSecondary).fixedSize(horizontal: false, vertical: true)
+                    Text(m).font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary).fixedSize(horizontal: false, vertical: true)
                 }
                 if !chinh.isEmpty {
                     Text("Primary actor in " + chinh.map(\.ma).joined(separator: ", "))
-                        .font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
+                        .font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
                 }
             }
         }
@@ -327,8 +327,8 @@ struct HangUCCTW: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack(spacing: 6) {
-                Text(uc.ma).font(.system(size: 12, weight: .bold).monospaced()).foregroundColor(AppColors.primary)
-                Text(uc.name ?? "Use case").font(.system(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary)
+                Text(uc.ma).font(.ctw(size: 12, weight: .bold).monospaced()).foregroundColor(AppColors.primary)
+                Text(uc.name ?? "Use case").font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary)
                     .lineLimit(2)
             }
             HStack(spacing: 6) {
@@ -338,12 +338,12 @@ struct HangUCCTW: View {
                 }
                 if uc.aiModel != nil { CTWNhanAI(chu: "AI-drafted") }
                 if let a = d.actor(uc.primaryActorId)?.name {
-                    Text(a).font(.system(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1)
+                    Text(a).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1)
                 }
             }
             if let m = uc.missing, !m.isEmpty {
                 Label("Missing: " + m.joined(separator: ", "), systemImage: "exclamationmark.triangle.fill")
-                    .font(.system(size: 11.5)).foregroundColor(AppColors.warning).lineLimit(2)
+                    .font(.ctw(size: 11.5)).foregroundColor(AppColors.warning).lineLimit(2)
             }
         }
         .padding(.vertical, 3)
@@ -363,18 +363,18 @@ struct HangQuyTacCTW: View {
         DisclosureGroup(isExpanded: $mo) {
             VStack(alignment: .leading, spacing: 8) {
                 Text(r.definition?.isEmpty == false ? r.definition! : "No definition yet.")
-                    .font(.system(size: 14)).foregroundColor(AppColors.textPrimary).fixedSize(horizontal: false, vertical: true)
+                    .font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary).fixedSize(horizontal: false, vertical: true)
                     .textSelection(.enabled)
                 if let u = r.usedIn, !u.isEmpty {
-                    Text("Used in " + u.joined(separator: ", ")).font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                    Text("Used in " + u.joined(separator: ", ")).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                 }
-                if let loi { Text(loi).font(.system(size: 12)).foregroundColor(AppColors.error) }
+                if let loi { Text(loi).font(.ctw(size: 12)).foregroundColor(AppColors.error) }
                 if d.canApprove == true, r.status != "APPROVED" {
                     Button {
                         Task { await doi(r.status == "PROPOSED" ? "DRAFT" : "APPROVED") }
                     } label: {
                         Label(r.status == "PROPOSED" ? "Accept proposal" : "Approve", systemImage: "checkmark.seal")
-                            .font(.system(size: 13, weight: .semibold))
+                            .font(.ctw(size: 13, weight: .semibold))
                     }
                     .buttonStyle(.bordered)
                     .tint(AppColors.success)
@@ -384,8 +384,8 @@ struct HangQuyTacCTW: View {
         } label: {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
-                    Text(r.ma).font(.system(size: 12, weight: .bold).monospaced()).foregroundColor(AppColors.secondary)
-                    Text(r.name ?? "Rule").font(.system(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(2)
+                    Text(r.ma).font(.ctw(size: 12, weight: .bold).monospaced()).foregroundColor(AppColors.secondary)
+                    Text(r.name ?? "Rule").font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(2)
                 }
                 HStack(spacing: 6) {
                     CTWChipChu(chu: r.status ?? "DRAFT", mau: CTWNhanYeuCau.mauUC(r.status))
@@ -460,8 +460,8 @@ struct TruyVetCTW: View {
     private func hang(_ row: CTWRtmRow, _ r: CTWRtmData) -> some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack(spacing: 6) {
-                Text(row.reqId).font(.system(size: 12, weight: .bold).monospaced()).foregroundColor(AppColors.primary)
-                Text(row.requirement ?? "").font(.system(size: 14.5, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(2)
+                Text(row.reqId).font(.ctw(size: 12, weight: .bold).monospaced()).foregroundColor(AppColors.primary)
+                Text(row.requirement ?? "").font(.ctw(size: 14.5, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(2)
             }
             HStack(spacing: 6) {
                 CTWChipChu(chu: row.status ?? "Planned", mau: mauTrangThai(row.status))
@@ -488,7 +488,7 @@ struct TruyVetCTW: View {
     private func mauTrangThai(_ s: String?) -> Color {
         switch s {
         case "Tested": return AppColors.success
-        case "Coded": return Color(hex: 0x2563EB)
+        case "Coded": return AppColors.info
         case "Designed", "Analyzed": return AppColors.secondary
         default: return AppColors.textSecondary
         }

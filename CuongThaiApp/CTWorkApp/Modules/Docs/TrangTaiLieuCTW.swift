@@ -141,7 +141,7 @@ struct TrangTaiLieuCTW: View {
                 if let md = vm.md {
                     if md.isEmpty {
                         Text(suaDuoc ? "This page is empty. Tap Edit to start writing." : "This page is empty.")
-                            .font(.system(size: 15)).foregroundColor(AppColors.textSecondary).padding(.vertical, 8)
+                            .font(.ctw(size: 15)).foregroundColor(AppColors.textSecondary).padding(.vertical, 8)
                     } else {
                         CTWMarkdownView(markdown: md, coChu: 15.5)
                     }
@@ -259,15 +259,15 @@ struct TrangTaiLieuCTW: View {
                 HStack(spacing: 4) {
                     ForEach(anc) { a in
                         Button { nganXep.duong.append(RouteTaiLieuCTW(pid: pid, so: a.number, ten: a.title)) } label: {
-                            Text(a.title).font(.system(size: 12)).foregroundColor(AppColors.textTertiary).fixedSize()
+                            Text(a.title).font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary).fixedSize()
                         }
                         .buttonStyle(.plain)
-                        Image(systemName: "chevron.right").font(.system(size: 9)).foregroundColor(AppColors.textTertiary)
+                        Image(systemName: "chevron.right").font(.ctw(size: 9)).foregroundColor(AppColors.textTertiary)
                     }
                 }
             }
         }
-        Text(c.title).font(.system(size: 26, weight: .bold)).foregroundColor(AppColors.textPrimary)
+        Text(c.title).font(.ctw(size: 26, weight: .bold)).foregroundColor(AppColors.textPrimary)
             .fixedSize(horizontal: false, vertical: true)
             .accessibilityAddTraits(.isHeader)
         HStack(spacing: 8) {
@@ -276,11 +276,11 @@ struct TrangTaiLieuCTW: View {
             if c.aiAssisted == true { CTWNhanAI(chu: "AI-assisted") }
             if let u = c.lastEditedBy ?? c.owner {
                 CTWAvatar(user: u, size: 18)
-                Text(u.ten).font(.system(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1)
+                Text(u.ten).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1)
                 if u.laAgent { CTWNhanAI() }
             }
             if let d = CTW.ngayNgan(c.updatedAt) {
-                Text("· \(d)").font(.system(size: 12)).foregroundColor(AppColors.textTertiary).lineLimit(1)
+                Text("· \(d)").font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary).lineLimit(1)
             }
         }
         if let a = c.approval {
@@ -289,11 +289,11 @@ struct TrangTaiLieuCTW: View {
                     .foregroundColor(CTWMauTrangThai.mau(a.status))
                 VStack(alignment: .leading, spacing: 2) {
                     Text(a.status == "PENDING" ? "Waiting for approval" : "Approval \(CTWMauTrangThai.nhan(a.status).lowercased())")
-                        .font(.system(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                        .font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                     if a.contentChanged == true {
-                        Text("The page changed after it was signed.").font(.system(size: 12)).foregroundColor(AppColors.warning)
+                        Text("The page changed after it was signed.").font(.ctw(size: 12)).foregroundColor(AppColors.warning)
                     } else if let d = CTW.ngayNgan(a.decidedAt ?? a.createdAt) {
-                        Text(d).font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                        Text(d).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                     }
                 }
                 Spacer(minLength: 0)
@@ -316,7 +316,7 @@ struct TrangTaiLieuCTW: View {
                             Image(systemName: "doc.text").foregroundColor(AppColors.primary)
                             Text(r.title).foregroundColor(AppColors.textPrimary).lineLimit(1)
                             Spacer()
-                            Image(systemName: "chevron.right").font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
+                            Image(systemName: "chevron.right").font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
                         }
                         .padding(.vertical, 11)
                         .contentShape(Rectangle())
@@ -336,27 +336,27 @@ struct TrangTaiLieuCTW: View {
         if !ds.isEmpty || suaDuoc {
             CTWSectionHeader("link", "Linked issues", count: ds.isEmpty ? nil : "\(ds.count)",
                              trailing: suaDuoc ? AnyView(Button { tamPhu = .chonThe } label: {
-                                 Image(systemName: "plus.circle.fill").font(.system(size: 20))
+                                 Image(systemName: "plus.circle.fill").font(.ctw(size: 20))
                              }.accessibilityLabel("Link an issue")) : nil)
                 .padding(.top, 8)
             if ds.isEmpty {
                 Text("Link the issues this page specifies or decides.")
-                    .font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
+                    .font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
             } else {
                 VStack(spacing: 0) {
                     ForEach(ds) { t in
                         Button { nganXep.duong.append(CTWRoute.the(pid: pid, so: t.number)) } label: {
                             HStack(spacing: 10) {
                                 Image(systemName: CTW.bieuTuongLoai(key: t.type?.icon ?? t.type?.key))
-                                    .font(.system(size: 10, weight: .bold)).foregroundColor(.white)
+                                    .font(.ctw(size: 10, weight: .bold)).foregroundColor(.white)
                                     .frame(width: 18, height: 18)
-                                    .background(RoundedRectangle(cornerRadius: 4).fill(CTW.mau(t.type?.color, macDinh: Color(hex: 0x2563EB))))
-                                Text(t.key ?? "#\(t.number)").font(.system(size: 12, weight: .semibold).monospaced())
+                                    .background(RoundedRectangle(cornerRadius: 4).fill(CTW.mau(t.type?.color, macDinh: AppColors.info)))
+                                Text(t.key ?? "#\(t.number)").font(.ctw(size: 12, weight: .semibold).monospaced())
                                     .foregroundColor(AppColors.textSecondary)
                                 Text(t.title).foregroundColor(AppColors.textPrimary).lineLimit(1)
                                     .strikethrough(t.resolvedAt != nil)
                                 Spacer(minLength: 4)
-                                Text(t.status?.name ?? "").font(.system(size: 11, weight: .semibold))
+                                Text(t.status?.name ?? "").font(.ctw(size: 11, weight: .semibold))
                                     .foregroundColor(CTW.mauNhom(t.status?.category)).lineLimit(1)
                             }
                             .padding(.vertical, 10)
@@ -384,7 +384,7 @@ struct TrangTaiLieuCTW: View {
         let ds = vm.binhLuan ?? []
         CTWSectionHeader("bubble.left.and.bubble.right", "Comments", count: ds.isEmpty ? nil : "\(ds.count)").padding(.top, 8)
         if ds.isEmpty && vm.binhLuan != nil {
-            Text("No comments yet.").font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
+            Text("No comments yet.").font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
         }
         ForEach(ds) { b in
             CTWBinhLuanDong(
@@ -462,15 +462,15 @@ struct XinDuyetTrangCTW: View {
                                 CTWAvatar(user: u, size: 30)
                                 VStack(alignment: .leading, spacing: 1) {
                                     Text(u.ten).foregroundColor(AppColors.textPrimary)
-                                    if let r = u.role { Text(r.capitalized).font(.system(size: 12)).foregroundColor(AppColors.textSecondary) }
+                                    if let r = u.role { Text(r.capitalized).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary) }
                                 }
                                 Spacer()
                                 if let i = chon.firstIndex(of: u.id) {
                                     Text(tuanTu ? "\(i + 1)" : "")
-                                        .font(.system(size: 12, weight: .bold)).foregroundColor(AppColors.onPrimary)
+                                        .font(.ctw(size: 12, weight: .bold)).foregroundColor(AppColors.onPrimary)
                                         .frame(width: 24, height: 24)
                                         .background(Circle().fill(AppColors.primary))
-                                        .overlay { if !tuanTu { Image(systemName: "checkmark").font(.system(size: 11, weight: .bold)).foregroundColor(.white) } }
+                                        .overlay { if !tuanTu { Image(systemName: "checkmark").font(.ctw(size: 11, weight: .bold)).foregroundColor(.white) } }
                                 } else {
                                     Circle().strokeBorder(AppColors.border, lineWidth: 1.5).frame(width: 24, height: 24)
                                 }

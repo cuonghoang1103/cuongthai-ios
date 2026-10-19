@@ -128,15 +128,15 @@ struct WiegersCTW: View {
         NavigationLink(value: r) {
             HStack(spacing: 13) {
                 Image(systemName: icon)
-                    .font(.system(size: 15, weight: .semibold)).foregroundColor(AppColors.primary)
+                    .font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.primary)
                     .frame(width: 34, height: 34)
                     .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(AppColors.primary.opacity(0.12)))
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(ten).font(.system(size: 16, weight: .medium)).foregroundColor(AppColors.textPrimary)
-                    Text(moTa).font(.system(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(2)
+                    Text(ten).font(.ctw(size: 16, weight: .medium)).foregroundColor(AppColors.textPrimary)
+                    Text(moTa).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(2)
                 }
                 Spacer(minLength: 0)
-                if let dem { Text("\(dem)").font(.system(size: 13, weight: .semibold).monospacedDigit()).foregroundColor(AppColors.textTertiary) }
+                if let dem { Text("\(dem)").font(.ctw(size: 13, weight: .semibold).monospacedDigit()).foregroundColor(AppColors.textTertiary) }
             }
             .padding(.vertical, 3)
         }
@@ -217,8 +217,8 @@ struct HangYeuCauCTW: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack(spacing: 6) {
-                Text(r.key ?? "#\(r.number)").font(.system(size: 12, weight: .bold).monospaced()).foregroundColor(AppColors.primary)
-                Text(r.title ?? "").font(.system(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(2)
+                Text(r.key ?? "#\(r.number)").font(.ctw(size: 12, weight: .bold).monospaced()).foregroundColor(AppColors.primary)
+                Text(r.title ?? "").font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(2)
             }
             HStack(spacing: 6) {
                 CTWChipChu(chu: r.lifecycle ?? "PROPOSED", mau: mauVongDoi(r.lifecycle))
@@ -228,7 +228,7 @@ struct HangYeuCauCTW: View {
                 }
             }
             if let t = r.text, !t.isEmpty {
-                Text(t).font(.system(size: 12.5)).foregroundColor(AppColors.textSecondary).lineLimit(2)
+                Text(t).font(.ctw(size: 12.5)).foregroundColor(AppColors.textSecondary).lineLimit(2)
             }
         }
         .padding(.vertical, 3)
@@ -238,7 +238,7 @@ struct HangYeuCauCTW: View {
 func mauVongDoi(_ s: String?) -> Color {
     switch s {
     case "APPROVED", "VERIFIED": return AppColors.success
-    case "IMPLEMENTED": return Color(hex: 0x2563EB)
+    case "IMPLEMENTED": return AppColors.info
     case "REJECTED", "DELETED": return AppColors.error
     default: return AppColors.primary
     }
@@ -274,7 +274,7 @@ struct WYeuCauChiTietCTW: View {
                     hanhDong(r)
                     if let t = r.text, !t.isEmpty {
                         CTWSectionHeader("text.alignleft", "Requirement")
-                        Text(t).font(.system(size: 15)).foregroundColor(AppColors.textPrimary)
+                        Text(t).font(.ctw(size: 15)).foregroundColor(AppColors.textPrimary)
                             .textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
                             .padding(14).frame(maxWidth: .infinity, alignment: .leading).ctwThe(14)
                     }
@@ -294,12 +294,12 @@ struct WYeuCauChiTietCTW: View {
                     }
                     if let ra = r.rationale, !ra.isEmpty {
                         CTWSectionHeader("lightbulb", "Rationale")
-                        Text(ra).font(.system(size: 14)).foregroundColor(AppColors.textPrimary).fixedSize(horizontal: false, vertical: true)
+                        Text(ra).font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary).fixedSize(horizontal: false, vertical: true)
                             .padding(14).frame(maxWidth: .infinity, alignment: .leading).ctwThe(14)
                     }
                     NavigationLink(value: CTWRoute.the(pid: pid, so: r.number)) {
                         Label("Open issue \(r.key ?? "#\(r.number)")", systemImage: "arrow.up.forward.square")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(.ctw(size: 14, weight: .semibold))
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(12).ctwThe(12)
                     }
@@ -341,8 +341,8 @@ struct WYeuCauChiTietCTW: View {
 
     private func dau(_ r: CTWSwrRequirement) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(r.key ?? "#\(r.number)").font(.system(size: 13, weight: .bold).monospaced()).foregroundColor(AppColors.primary)
-            Text(r.title ?? "").font(.system(size: 23, weight: .bold)).foregroundColor(AppColors.textPrimary)
+            Text(r.key ?? "#\(r.number)").font(.ctw(size: 13, weight: .bold).monospaced()).foregroundColor(AppColors.primary)
+            Text(r.title ?? "").font(.ctw(size: 23, weight: .bold)).foregroundColor(AppColors.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityAddTraits(.isHeader)
             HStack(spacing: 6) {
@@ -350,7 +350,7 @@ struct WYeuCauChiTietCTW: View {
                 if let p = CTWNhanYeuCau.nhanUuTien(r.priority) {
                     CTWNhanNho(chu: "\(p) priority", bieuTuong: "flag.fill", mau: CTWNhanYeuCau.mauUuTien(r.priority))
                 }
-                if let u = CTW.ngayNgan(r.updatedAt) { Text("Updated \(u)").font(.system(size: 12)).foregroundColor(AppColors.textTertiary) }
+                if let u = CTW.ngayNgan(r.updatedAt) { Text("Updated \(u)").font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary) }
             }
         }
     }
@@ -363,7 +363,7 @@ struct WYeuCauChiTietCTW: View {
                 HStack(spacing: 8) {
                     ForEach(nut, id: \.self) { den in
                         Button { ghiChu = ""; hoi = den } label: {
-                            Text(CTWVongDoiYeuCau.nhanHanhDong(den)).font(.system(size: 14, weight: .semibold)).fixedSize()
+                            Text(CTWVongDoiYeuCau.nhanHanhDong(den)).font(.ctw(size: 14, weight: .semibold)).fixedSize()
                                 .padding(.horizontal, 4)
                         }
                         .buttonStyle(.bordered)
@@ -382,11 +382,11 @@ struct WYeuCauChiTietCTW: View {
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(ls.prefix(20)) { h in
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
-                        Image(systemName: "circle.fill").font(.system(size: 6)).foregroundColor(AppColors.textTertiary)
+                        Image(systemName: "circle.fill").font(.ctw(size: 6)).foregroundColor(AppColors.textTertiary)
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(moTa(h)).font(.system(size: 13)).foregroundColor(AppColors.textPrimary).fixedSize(horizontal: false, vertical: true)
+                            Text(moTa(h)).font(.ctw(size: 13)).foregroundColor(AppColors.textPrimary).fixedSize(horizontal: false, vertical: true)
                             HStack(spacing: 4) {
-                                Text("\(h.actor ?? "Someone") · \(CTW.thoiDiem(h.at))").font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+                                Text("\(h.actor ?? "Someone") · \(CTW.thoiDiem(h.at))").font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
                                 if h.actorKind == "AGENT" { CTWNhanAI() }
                             }
                         }

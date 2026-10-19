@@ -164,7 +164,7 @@ struct KiemThuCTW: View {
         NavigationLink(value: RouteChuKyCTW(pid: pid, id: c.id, ten: c.name)) {
             VStack(alignment: .leading, spacing: 8) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text(c.name).font(.system(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                    Text(c.name).font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                         .lineLimit(2)
                     Spacer(minLength: 4)
                     CTWChipChu(chu: c.state)
@@ -175,7 +175,7 @@ struct KiemThuCTW: View {
                     if let p = c.plan?.name { CTWNhanNho(chu: p, bieuTuong: "list.bullet.rectangle") }
                 }
                 CTWThanhTienDoTest(counts: c.counts ?? [:])
-                Text(moTaTienDo(c)).font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                Text(moTaTienDo(c)).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
             }
             .padding(.vertical, 4)
         }
@@ -213,17 +213,17 @@ struct KiemThuCTW: View {
     private func hangCa(_ t: CTWTestCase) -> some View {
         HStack(alignment: .top, spacing: 11) {
             Image(systemName: CTWLuatTest.bieuTuong(t.lastRun?.status))
-                .font(.system(size: 18)).foregroundColor(CTWLuatTest.mau(t.lastRun?.status))
+                .font(.ctw(size: 18)).foregroundColor(CTWLuatTest.mau(t.lastRun?.status))
                 .frame(width: 24)
                 .accessibilityLabel("Last run: \(CTWLuatTest.nhan(t.lastRun?.status))")
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
-                    Text("\(maDuAn)-\(t.number)").font(.system(size: 12, weight: .medium).monospaced())
+                    Text("\(maDuAn)-\(t.number)").font(.ctw(size: 12, weight: .medium).monospaced())
                         .foregroundColor(AppColors.textSecondary)
                     CTWPriorityIcon(priority: t.priority)
                     if t.kind == "GHERKIN" { CTWNhanNho(chu: "Gherkin") }
                 }
-                Text(t.title).font(.system(size: 15)).foregroundColor(AppColors.textPrimary).lineLimit(2)
+                Text(t.title).font(.ctw(size: 15)).foregroundColor(AppColors.textPrimary).lineLimit(2)
                 HStack(spacing: 8) {
                     Label("\(t.stepCount ?? 0) steps", systemImage: "list.number")
                     if let r = t.requirements, !r.isEmpty { Label("\(r.count) req", systemImage: "link") }
@@ -234,7 +234,7 @@ struct KiemThuCTW: View {
                         Text("Never run")
                     }
                 }
-                .font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+                .font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
                 .labelStyle(.titleAndIcon)
             }
         }
@@ -298,7 +298,7 @@ struct ChuKyCTW: View {
                 let ds = (c.runs ?? []).filter(khop)
                 Section {
                     if ds.isEmpty {
-                        Text("No runs in this filter.").font(.system(size: 14)).foregroundColor(AppColors.textSecondary)
+                        Text("No runs in this filter.").font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary)
                     }
                     ForEach(ds) { r in
                         NavigationLink(value: RouteLuotChayCTW(pid: pid, id: r.id)) { hang(r) }
@@ -358,17 +358,17 @@ struct ChuKyCTW: View {
         let key = app.cauHinhDuAn?.key ?? app.luaChon?.maDuAn ?? ""
         return HStack(alignment: .top, spacing: 11) {
             Image(systemName: CTWLuatTest.bieuTuong(r.status))
-                .font(.system(size: 19)).foregroundColor(CTWLuatTest.mau(r.status)).frame(width: 24)
+                .font(.ctw(size: 19)).foregroundColor(CTWLuatTest.mau(r.status)).frame(width: 24)
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
-                    Text("\(key)-\(r.test?.number ?? 0)").font(.system(size: 12, weight: .medium).monospaced())
+                    Text("\(key)-\(r.test?.number ?? 0)").font(.ctw(size: 12, weight: .medium).monospaced())
                         .foregroundColor(AppColors.textSecondary)
                     CTWPriorityIcon(priority: r.test?.priority)
                     if r.outdated == true {
                         CTWNhanNho(chu: "Outdated", bieuTuong: "exclamationmark.arrow.circlepath", mau: AppColors.warning)
                     }
                 }
-                Text(r.test?.title ?? "Test").font(.system(size: 15)).foregroundColor(AppColors.textPrimary).lineLimit(2)
+                Text(r.test?.title ?? "Test").font(.ctw(size: 15)).foregroundColor(AppColors.textPrimary).lineLimit(2)
                 HStack(spacing: 6) {
                     Text(CTWLuatTest.nhan(r.status)).foregroundColor(CTWLuatTest.mau(r.status))
                     Text("· \(r.stepCount ?? 0) steps")
@@ -381,7 +381,7 @@ struct ChuKyCTW: View {
                         if u.laAgent { CTWNhanAI() }
                     }
                 }
-                .font(.system(size: 11, weight: .medium)).foregroundColor(AppColors.textTertiary)
+                .font(.ctw(size: 11, weight: .medium)).foregroundColor(AppColors.textTertiary)
             }
         }
         .padding(.vertical, 2)
@@ -468,7 +468,7 @@ struct TestChiTietCTW: View {
     }
 
     @ViewBuilder private func noiDung(_ t: CTWTestDetail) -> some View {
-        Text(t.title).font(.system(size: 24, weight: .bold)).foregroundColor(AppColors.textPrimary)
+        Text(t.title).font(.ctw(size: 24, weight: .bold)).foregroundColor(AppColors.textPrimary)
             .fixedSize(horizontal: false, vertical: true)
             .accessibilityAddTraits(.isHeader)
         HStack(spacing: 6) {
@@ -477,7 +477,7 @@ struct TestChiTietCTW: View {
         }
         if let p = t.preconditions, !p.isEmpty {
             CTWSectionHeader("flag", "Preconditions")
-            Text(p).font(.system(size: 15)).foregroundColor(AppColors.textPrimary)
+            Text(p).font(.ctw(size: 15)).foregroundColor(AppColors.textPrimary)
                 .frame(maxWidth: .infinity, alignment: .leading).padding(12).ctwThe(12)
         }
         if let g = t.gherkin, !g.isEmpty {
@@ -496,7 +496,7 @@ struct TestChiTietCTW: View {
         let luot = t.runs ?? []
         CTWSectionHeader("clock.arrow.circlepath", "Recent runs", count: luot.isEmpty ? nil : "\(luot.count)")
         if luot.isEmpty {
-            Text("This test hasn't been run yet.").font(.system(size: 13)).foregroundColor(AppColors.textTertiary)
+            Text("This test hasn't been run yet.").font(.ctw(size: 13)).foregroundColor(AppColors.textTertiary)
         } else {
             VStack(spacing: 0) {
                 ForEach(luot) { r in
@@ -504,15 +504,15 @@ struct TestChiTietCTW: View {
                         HStack(spacing: 10) {
                             Image(systemName: CTWLuatTest.bieuTuong(r.status)).foregroundColor(CTWLuatTest.mau(r.status))
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(r.cycle?.name ?? "Cycle").font(.system(size: 14, weight: .medium))
+                                Text(r.cycle?.name ?? "Cycle").font(.ctw(size: 14, weight: .medium))
                                     .foregroundColor(AppColors.textPrimary).lineLimit(1)
                                 Text([CTWLuatTest.nhan(r.status), r.cycle?.environment, r.executedAt.map { CTW.thoiDiem($0) }]
                                     .compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · "))
-                                    .font(.system(size: 11)).foregroundColor(AppColors.textSecondary).lineLimit(1)
+                                    .font(.ctw(size: 11)).foregroundColor(AppColors.textSecondary).lineLimit(1)
                             }
                             Spacer(minLength: 0)
                             if let u = r.executedBy { CTWAvatar(user: u, size: 22) }
-                            Image(systemName: "chevron.right").font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
+                            Image(systemName: "chevron.right").font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
                         }
                         .padding(.vertical, 10)
                         .contentShape(Rectangle())
@@ -539,13 +539,13 @@ struct CTWBuocTestView<Duoi: View>: View {
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             Text("\(so)")
-                .font(.system(size: 13, weight: .bold).monospacedDigit())
+                .font(.ctw(size: 13, weight: .bold).monospacedDigit())
                 .foregroundColor(trangThai == nil || trangThai == "TODO" ? AppColors.primary : .white)
                 .frame(width: 28, height: 28)
                 .background(Circle().fill(nenSo))
                 .accessibilityLabel("Step \(so)")
             VStack(alignment: .leading, spacing: 8) {
-                Text(action ?? "—").font(.system(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary)
+                Text(action ?? "—").font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary)
                     .fixedSize(horizontal: false, vertical: true)
                 if let d = data, !d.isEmpty {
                     nhan("Data", d, mono: true)
@@ -568,8 +568,8 @@ struct CTWBuocTestView<Duoi: View>: View {
 
     private func nhan(_ ten: String, _ gt: String, mono: Bool) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(ten.uppercased()).font(.system(size: 10, weight: .bold)).foregroundColor(AppColors.textTertiary)
-            Text(gt).font(mono ? .system(size: 13, design: .monospaced) : .system(size: 14))
+            Text(ten.uppercased()).font(.ctw(size: 10, weight: .bold)).foregroundColor(AppColors.textTertiary)
+            Text(gt).font(mono ? .ctw(size: 13, design: .monospaced) : .ctw(size: 14))
                 .foregroundColor(AppColors.textSecondary).textSelection(.enabled)
                 .fixedSize(horizontal: false, vertical: true)
         }

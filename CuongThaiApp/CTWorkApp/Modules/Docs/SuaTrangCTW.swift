@@ -284,16 +284,16 @@ struct SuaTrangCTW: View {
                     HStack(spacing: 10) {
                         Image(systemName: "lock.fill").foregroundColor(AppColors.warning)
                         Text("Editing is locked for this project on your account.")
-                            .font(.system(size: 13)).foregroundColor(AppColors.textPrimary)
+                            .font(.ctw(size: 13)).foregroundColor(AppColors.textPrimary)
                         Spacer(minLength: 0)
-                        Button("Unlock") { Task { await vm.moKhoa() } }.font(.system(size: 13, weight: .semibold))
+                        Button("Unlock") { Task { await vm.moKhoa() } }.font(.ctw(size: 13, weight: .semibold))
                     }
                     .padding(12)
                     .background(AppColors.warning.opacity(0.12))
                 }
                 if let l = vm.loi { CTWErrorBanner(text: l) { vm.loi = nil }.padding(.horizontal, 12).padding(.top, 8) }
                 TextField("Untitled", text: $vm.tieuDe, axis: .vertical)
-                    .font(.system(size: 24, weight: .bold))
+                    .font(.ctw(size: 24, weight: .bold))
                     .foregroundColor(AppColors.textPrimary)
                     .padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 6)
                     .disabled(xemTruoc)
@@ -318,7 +318,7 @@ struct SuaTrangCTW: View {
             }
             .overlay {
                 if vm.dangTaiAnh {
-                    HStack(spacing: 8) { ProgressView(); Text("Uploading image…").font(.system(size: 13, weight: .medium)) }
+                    HStack(spacing: 8) { ProgressView(); Text("Uploading image…").font(.ctw(size: 13, weight: .medium)) }
                         .padding(.horizontal, 14).padding(.vertical, 10)
                         .background(.regularMaterial, in: Capsule())
                 }
@@ -346,7 +346,7 @@ struct SoSanhTrangCTW: View {
                 Label("Only in yours", systemImage: "minus.square.fill").foregroundColor(AppColors.error)
                 Label("Only in latest", systemImage: "plus.square.fill").foregroundColor(AppColors.success)
             }
-            .font(.system(size: 12, weight: .semibold))
+            .font(.ctw(size: 12, weight: .semibold))
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(Array(dong.enumerated()), id: \.offset) { _, d in hang(d) }
             }
@@ -368,8 +368,8 @@ struct SoSanhTrangCTW: View {
 
     private func dongChu(_ dau: String, _ t: String, nen: Color, mau: Color) -> some View {
         HStack(alignment: .top, spacing: 6) {
-            Text(dau).font(.system(size: 13, weight: .bold).monospaced()).foregroundColor(mau).frame(width: 12)
-            Text(t.isEmpty ? " " : t).font(.system(size: 13).monospaced()).foregroundColor(mau)
+            Text(dau).font(.ctw(size: 13, weight: .bold).monospaced()).foregroundColor(mau).frame(width: 12)
+            Text(t.isEmpty ? " " : t).font(.ctw(size: 13).monospaced()).foregroundColor(mau)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
         }
@@ -397,15 +397,15 @@ struct XungDotTrangCTW: View {
                 VStack(alignment: .leading, spacing: Spacing.md) {
                     HStack(alignment: .top, spacing: 12) {
                         Image(systemName: "person.2.badge.gearshape.fill")
-                            .font(.system(size: 22)).foregroundColor(AppColors.warning)
+                            .font(.ctw(size: 22)).foregroundColor(AppColors.warning)
                             .frame(width: 44, height: 44)
                             .background(Circle().fill(AppColors.warning.opacity(0.14)))
                         VStack(alignment: .leading, spacing: 4) {
                             Text("This page changed while you were editing")
-                                .font(.system(size: 17, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                                .font(.ctw(size: 17, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                                 .fixedSize(horizontal: false, vertical: true)
                             Text("\(xungDot.nguoi.map { "\($0) saved a newer version. " } ?? "Someone saved a newer version. ")Your changes were NOT saved, so nothing of theirs was overwritten. Reload the latest version or compare it with yours.")
-                                .font(.system(size: 14)).foregroundColor(AppColors.textSecondary)
+                                .font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                     }
@@ -450,14 +450,14 @@ struct XungDotTrangCTW: View {
                      _ lam: @escaping () -> Void) -> some View {
         Button(action: lam) {
             HStack(spacing: 12) {
-                Image(systemName: icon).font(.system(size: 16, weight: .semibold))
+                Image(systemName: icon).font(.ctw(size: 16, weight: .semibold))
                     .foregroundColor(chinh ? AppColors.onPrimary : (nguyHiem ? AppColors.error : AppColors.primary))
                     .frame(width: 36, height: 36)
                     .background(Circle().fill(chinh ? AppColors.primary : (nguyHiem ? AppColors.error : AppColors.primary).opacity(0.12)))
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(ten).font(.system(size: 15, weight: .semibold))
+                    Text(ten).font(.ctw(size: 15, weight: .semibold))
                         .foregroundColor(nguyHiem ? AppColors.error : AppColors.textPrimary)
-                    Text(phu).font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                    Text(phu).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                 }
                 Spacer(minLength: 0)
             }
@@ -489,7 +489,7 @@ struct ChonTheCTW: View {
                     ForEach(kq) { t in
                         Button { chon(t); CTWRung.chon(); dong() } label: {
                             HStack(spacing: 10) {
-                                Text("#\(t.number)").font(.system(size: 13, weight: .semibold).monospacedDigit())
+                                Text("#\(t.number)").font(.ctw(size: 13, weight: .semibold).monospacedDigit())
                                     .foregroundColor(AppColors.textSecondary)
                                 Text(t.title).foregroundColor(AppColors.textPrimary).lineLimit(2)
                             }

@@ -132,7 +132,7 @@ struct TimeCTW: View {
             }
             .buttonStyle(.bordered)
         }
-        .font(.system(size: 15, weight: .semibold))
+        .font(.ctw(size: 15, weight: .semibold))
     }
 
     // MARK: Tuần
@@ -147,7 +147,7 @@ struct TimeCTW: View {
                     .disabled(vm.laTuanNay)
                     .accessibilityLabel("Next week")
             }
-            Text(nhanTuan).font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
+            Text(nhanTuan).font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
             switch vm.baoCao {
             case .dangTai: CTWKhungTai(soHang: 3, coAvatar: false)
             case .loi(let l): CTWErrorBanner(text: l)
@@ -185,7 +185,7 @@ struct TimeCTW: View {
                     .clipShape(UnevenRoundedRectangle(topLeadingRadius: 4, topTrailingRadius: 4))
                     .annotation(position: .top) {
                         if n.phut > 0 {
-                            Text(CTWSo.gioThapPhan(giay: n.phut * 60)).font(.system(size: 10, weight: .medium))
+                            Text(CTWSo.gioThapPhan(giay: n.phut * 60)).font(.ctw(size: 10, weight: .medium))
                                 .foregroundColor(AppColors.textSecondary)
                         }
                     }
@@ -196,24 +196,24 @@ struct TimeCTW: View {
             } }
         }
         VStack(alignment: .leading, spacing: 0) {
-            Text("Issues").font(.system(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+            Text("Issues").font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                 .padding(.bottom, 8)
             let ds = vm.dongThe(maDuAn: nguCanh.maDuAn)
             if ds.isEmpty {
                 Text("No time logged this week. Start a timer or log time on an issue.")
-                    .font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
+                    .font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
             }
             ForEach(Array(ds.enumerated()), id: \.element.id) { i, t in
                 if let so = t.so, let pid = t.pid {
                     NavigationLink(value: RouteWorklogCTW(pid: pid, so: so, tieuDe: t.tieuDe)) {
                         HStack(spacing: 10) {
-                            Text(t.ma).font(.system(size: 12, weight: .semibold).monospaced())
+                            Text(t.ma).font(.ctw(size: 12, weight: .semibold).monospaced())
                                 .foregroundColor(AppColors.textSecondary)
-                            Text(t.tieuDe).font(.system(size: 14)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                            Text(t.tieuDe).font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary).lineLimit(1)
                             Spacer(minLength: 6)
-                            Text(TinhGioCTW.chuPhut(t.phut)).font(.system(size: 13, weight: .semibold).monospacedDigit())
+                            Text(TinhGioCTW.chuPhut(t.phut)).font(.ctw(size: 13, weight: .semibold).monospacedDigit())
                                 .foregroundColor(AppColors.textPrimary)
-                            Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)).foregroundColor(AppColors.textTertiary)
+                            Image(systemName: "chevron.right").font(.ctw(size: 11, weight: .semibold)).foregroundColor(AppColors.textTertiary)
                         }
                         .frame(minHeight: 44)
                     }
@@ -241,33 +241,33 @@ struct TheDongHoCTW: View {
             if let d = dongHo.dongHo {
                 HStack(spacing: 8) {
                     Circle().fill(d.dangChay ? AppColors.success : AppColors.warning).frame(width: 8, height: 8)
-                    Text(d.dangChay ? "RUNNING" : "PAUSED").font(.system(size: 11, weight: .bold))
+                    Text(d.dangChay ? "RUNNING" : "PAUSED").font(.ctw(size: 11, weight: .bold))
                         .foregroundColor(d.dangChay ? AppColors.success : AppColors.warning)
                     if d.overdue == true {
                         Label("Running for a long time", systemImage: "exclamationmark.triangle.fill")
-                            .font(.system(size: 11, weight: .semibold)).foregroundColor(AppColors.warning)
+                            .font(.ctw(size: 11, weight: .semibold)).foregroundColor(AppColors.warning)
                     }
                     Spacer()
                     if let a = d.activity {
-                        Text(a).font(.system(size: 11, weight: .semibold)).foregroundColor(AppColors.textSecondary)
+                        Text(a).font(.ctw(size: 11, weight: .semibold)).foregroundColor(AppColors.textSecondary)
                             .padding(.horizontal, 8).padding(.vertical, 3)
                             .background(Capsule().fill(AppColors.backgroundTertiary))
                     }
                 }
                 TimelineView(.periodic(from: .now, by: 1)) { ctx in
                     Text(CTWSo.dongHo(giay: dongHo.giay(ctx.date)))
-                        .font(.system(size: 52, weight: .semibold, design: .rounded).monospacedDigit())
+                        .font(.ctw(size: 52, weight: .semibold, design: .rounded).monospacedDigit())
                         .foregroundColor(AppColors.textPrimary)
                         .minimumScaleFactor(0.6).lineLimit(1)
                         .accessibilityLabel("Elapsed \(CTWSo.gio(giay: dongHo.giay(ctx.date)))")
                 }
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(d.issueKey ?? "").font(.system(size: 12, weight: .semibold).monospaced()).foregroundColor(AppColors.primary)
-                    Text(d.issueTitle ?? "").font(.system(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(2)
+                    Text(d.issueKey ?? "").font(.ctw(size: 12, weight: .semibold).monospaced()).foregroundColor(AppColors.primary)
+                    Text(d.issueTitle ?? "").font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(2)
                     if let n = d.note, !n.isEmpty {
-                        Text(n).font(.system(size: 13)).foregroundColor(AppColors.textSecondary).lineLimit(2)
+                        Text(n).font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary).lineLimit(2)
                     }
-                    if let p = d.projectName { Text(p).font(.system(size: 12)).foregroundColor(AppColors.textTertiary) }
+                    if let p = d.projectName { Text(p).font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary) }
                 }
                 HStack(spacing: 8) {
                     Button { Task { await lam { d.dangChay ? try await dongHo.tamDung() : try await dongHo.tiepTuc() } } } label: {
@@ -288,16 +288,16 @@ struct TheDongHoCTW: View {
                     }
                     .accessibilityLabel("More timer actions")
                 }
-                .font(.system(size: 15, weight: .semibold))
+                .font(.ctw(size: 15, weight: .semibold))
                 .disabled(dangLam)
             } else if dongHo.daTai {
                 HStack(spacing: 12) {
-                    Image(systemName: "stopwatch").font(.system(size: 26, weight: .semibold)).foregroundColor(AppColors.primary)
+                    Image(systemName: "stopwatch").font(.ctw(size: 26, weight: .semibold)).foregroundColor(AppColors.primary)
                         .frame(width: 54, height: 54).background(Circle().fill(AppColors.primary.opacity(0.12)))
                     VStack(alignment: .leading, spacing: 3) {
-                        Text("No timer running").font(.system(size: 16, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                        Text("No timer running").font(.ctw(size: 16, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                         Text("Start a timer on an issue — it keeps running on the web and desktop too.")
-                            .font(.system(size: 13)).foregroundColor(AppColors.textSecondary).fixedSize(horizontal: false, vertical: true)
+                            .font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary).fixedSize(horizontal: false, vertical: true)
                     }
                 }
             } else {
@@ -387,9 +387,9 @@ struct ChonTheB3CTW<Dich: View>: View {
             ForEach(ds) { t in
                 NavigationLink { dich(t.number, t.title) } label: {
                     HStack(spacing: 10) {
-                        Text("\(maDuAn)-\(t.number)").font(.system(size: 12, weight: .semibold).monospaced())
+                        Text("\(maDuAn)-\(t.number)").font(.ctw(size: 12, weight: .semibold).monospaced())
                             .foregroundColor(AppColors.textSecondary)
-                        Text(t.title).font(.system(size: 15)).foregroundColor(AppColors.textPrimary).lineLimit(2)
+                        Text(t.title).font(.ctw(size: 15)).foregroundColor(AppColors.textPrimary).lineLimit(2)
                     }
                     .frame(minHeight: 36)
                 }
@@ -453,8 +453,8 @@ struct BatDauDongHoCTW: View {
         Form {
             Section {
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("\(maDuAn)-\(so)").font(.system(size: 12, weight: .semibold).monospaced()).foregroundColor(AppColors.primary)
-                    Text(tieuDe).font(.system(size: 15, weight: .medium))
+                    Text("\(maDuAn)-\(so)").font(.ctw(size: 12, weight: .semibold).monospaced()).foregroundColor(AppColors.primary)
+                    Text(tieuDe).font(.ctw(size: 15, weight: .medium))
                 }
             }
             Section("Activity") {
@@ -520,8 +520,8 @@ struct GhiGioCTW: View {
         Form {
             Section {
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("\(maDuAn)-\(so)").font(.system(size: 12, weight: .semibold).monospaced()).foregroundColor(AppColors.primary)
-                    Text(tieuDe).font(.system(size: 15, weight: .medium))
+                    Text("\(maDuAn)-\(so)").font(.ctw(size: 12, weight: .semibold).monospaced()).foregroundColor(AppColors.primary)
+                    Text(tieuDe).font(.ctw(size: 15, weight: .medium))
                 }
             }
             Section {
@@ -536,13 +536,13 @@ struct GhiGioCTW: View {
                 }
                 Stepper(value: Binding(get: { phut }, set: { phut = min(max($0, 1), 1440); chuPhut = TinhGioCTW.chuPhut(phut) }),
                         in: 1...1440, step: 15) {
-                    Text(TinhGioCTW.chuPhut(phut)).font(.system(size: 15, weight: .semibold).monospacedDigit())
+                    Text(TinhGioCTW.chuPhut(phut)).font(.ctw(size: 15, weight: .semibold).monospacedDigit())
                 }
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
                         ForEach([15, 30, 60, 90, 120, 240], id: \.self) { p in
                             Button { phut = p; chuPhut = TinhGioCTW.chuPhut(p) } label: {
-                                Text(TinhGioCTW.chuPhut(p)).font(.system(size: 13, weight: .semibold)).fixedSize()
+                                Text(TinhGioCTW.chuPhut(p)).font(.ctw(size: 13, weight: .semibold)).fixedSize()
                                     .padding(.horizontal, 12).padding(.vertical, 7)
                                     .background(Capsule().fill(p == phut ? AppColors.primary : AppColors.backgroundTertiary))
                                     .foregroundColor(p == phut ? AppColors.onPrimary : AppColors.textPrimary)
@@ -617,13 +617,13 @@ struct DungDongHoCTW: View {
                                            : "Under 30 seconds — nothing was logged.",
                           systemImage: k.worklog != nil ? "checkmark.circle.fill" : "info.circle")
                         .foregroundColor(k.worklog != nil ? AppColors.success : AppColors.textSecondary)
-                    if k.capped == true { Text("Capped at 24 hours.").font(.system(size: 13)).foregroundColor(AppColors.warning) }
+                    if k.capped == true { Text("Capped at 24 hours.").font(.ctw(size: 13)).foregroundColor(AppColors.warning) }
                 }
             } else if let d = dongHo.dongHo {
                 Section {
                     VStack(alignment: .leading, spacing: 3) {
-                        Text(d.issueKey ?? "").font(.system(size: 12, weight: .semibold).monospaced()).foregroundColor(AppColors.primary)
-                        Text(d.issueTitle ?? "").font(.system(size: 15, weight: .medium))
+                        Text(d.issueKey ?? "").font(.ctw(size: 12, weight: .semibold).monospaced()).foregroundColor(AppColors.primary)
+                        Text(d.issueTitle ?? "").font(.ctw(size: 15, weight: .medium))
                     }
                     TimelineView(.periodic(from: .now, by: 1)) { ctx in
                         LabeledContent("Elapsed", value: CTWSo.dongHo(giay: dongHo.giay(ctx.date)))
@@ -634,7 +634,7 @@ struct DungDongHoCTW: View {
                     Toggle("Change logged time", isOn: $suaPhut)
                     if suaPhut {
                         Stepper(value: $phut, in: 1...1440, step: 5) {
-                            Text(TinhGioCTW.chuPhut(phut)).font(.system(size: 15, weight: .semibold).monospacedDigit())
+                            Text(TinhGioCTW.chuPhut(phut)).font(.ctw(size: 15, weight: .semibold).monospacedDigit())
                         }
                     }
                 } footer: {
@@ -777,17 +777,17 @@ struct DsWorklogTheCTW: View {
             CTWAvatar(user: w.user, size: 30)
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
-                    Text(w.user?.ten ?? "Someone").font(.system(size: 14, weight: .semibold))
+                    Text(w.user?.ten ?? "Someone").font(.ctw(size: 14, weight: .semibold))
                     if w.user?.laAgent == true { CTWNhanAI() }
-                    if w.source == "AGENT_AUTO" { Text("auto").font(.system(size: 10, weight: .semibold)).foregroundColor(AppColors.textTertiary) }
+                    if w.source == "AGENT_AUTO" { Text("auto").font(.ctw(size: 10, weight: .semibold)).foregroundColor(AppColors.textTertiary) }
                     Spacer()
-                    Text(TinhGioCTW.chuPhut(w.minutes ?? 0)).font(.system(size: 14, weight: .semibold).monospacedDigit())
+                    Text(TinhGioCTW.chuPhut(w.minutes ?? 0)).font(.ctw(size: 14, weight: .semibold).monospacedDigit())
                 }
                 HStack(spacing: 6) {
-                    Text(CTW.thoiDiem(w.startedAt)).font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
-                    if let a = w.activity { Text("· \(a)").font(.system(size: 12)).foregroundColor(AppColors.textSecondary) }
+                    Text(CTW.thoiDiem(w.startedAt)).font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
+                    if let a = w.activity { Text("· \(a)").font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary) }
                 }
-                if let n = w.note, !n.isEmpty { Text(n).font(.system(size: 13)).foregroundColor(AppColors.textSecondary) }
+                if let n = w.note, !n.isEmpty { Text(n).font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary) }
             }
         }
         .padding(.vertical, 2)
@@ -834,7 +834,7 @@ struct NutGhiGioTheCTW: View {
                 if dongHo.laThe(pid: pid, so: so), let d = dongHo.dongHo {
                     TimelineView(.periodic(from: .now, by: 1)) { ctx in
                         Label(CTWSo.dongHo(giay: dongHo.giay(ctx.date)), systemImage: d.dangChay ? "record.circle" : "pause.circle")
-                            .font(.system(size: 15, weight: .semibold).monospacedDigit())
+                            .font(.ctw(size: 15, weight: .semibold).monospacedDigit())
                             .foregroundColor(d.dangChay ? AppColors.success : AppColors.warning)
                     }
                     Spacer()
@@ -851,8 +851,8 @@ struct NutGhiGioTheCTW: View {
                 }
                 .buttonStyle(.bordered)
             }
-            .font(.system(size: 14, weight: .semibold))
-            if let loi { Text(loi).font(.system(size: 12)).foregroundColor(AppColors.error) }
+            .font(.ctw(size: 14, weight: .semibold))
+            if let loi { Text(loi).font(.ctw(size: 12)).foregroundColor(AppColors.error) }
         }
         .task { if !dongHo.daTai { await dongHo.taiLai() } }
         .confirmationDialog("A timer is already running on \(dongHo.dongHo?.issueKey ?? "another issue").",

@@ -63,20 +63,20 @@ struct TimKiemCTW: View {
                     NavigationLink(value: CTWRoute.theTheoMa(slug: slug, ma: ma, so: i.number)) {
                         HStack(alignment: .top, spacing: 10) {
                             Image(systemName: CTW.bieuTuongLoai(key: i.type?.key))
-                                .font(.system(size: 10, weight: .bold)).foregroundColor(.white)
+                                .font(.ctw(size: 10, weight: .bold)).foregroundColor(.white)
                                 .frame(width: 20, height: 20)
                                 .background(RoundedRectangle(cornerRadius: 5, style: .continuous)
-                                    .fill(CTW.mau(i.type?.color, macDinh: Color(hex: 0x2563EB))))
+                                    .fill(CTW.mau(i.type?.color, macDinh: AppColors.info)))
                             VStack(alignment: .leading, spacing: 4) {
-                                Text(i.title).font(.system(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(2)
+                                Text(i.title).font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(2)
                                 HStack(spacing: 8) {
-                                    Text(i.key ?? "").font(.system(size: 12, weight: .semibold).monospaced())
+                                    Text(i.key ?? "").font(.ctw(size: 12, weight: .semibold).monospaced())
                                         .foregroundColor(AppColors.textSecondary)
                                     if let s = i.status?.name {
-                                        Text(s).font(.system(size: 11, weight: .semibold))
+                                        Text(s).font(.ctw(size: 11, weight: .semibold))
                                             .foregroundColor(CTW.mauNhom(i.status?.category))
                                     }
-                                    Text(i.project?.name ?? "").font(.system(size: 11)).foregroundColor(AppColors.textTertiary).lineLimit(1)
+                                    Text(i.project?.name ?? "").font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary).lineLimit(1)
                                 }
                             }
                         }

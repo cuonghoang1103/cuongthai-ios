@@ -86,7 +86,7 @@ struct SoanHopCTW: View {
                                 Spacer()
                                 ChongAvatarCTW(ds: (app.cauHinhDuAn?.dsThanhVien ?? []).filter { nguoi.contains($0.id) })
                                 Text(nguoi.isEmpty ? "None" : "\(nguoi.count)").foregroundColor(AppColors.textSecondary)
-                                Image(systemName: "chevron.right").font(.system(size: 12, weight: .semibold)).foregroundColor(AppColors.textTertiary)
+                                Image(systemName: "chevron.right").font(.ctw(size: 12, weight: .semibold)).foregroundColor(AppColors.textTertiary)
                             }
                         }
                         Toggle("Email calendar invites", isOn: $guiMoi)
@@ -194,13 +194,13 @@ struct BanGhiLoiHopCTW: View {
                 }
                 ForEach(ds, id: \.1.id) { _, l in
                     HStack(alignment: .top, spacing: 10) {
-                        Text(l.at ?? "").font(.system(size: 11, weight: .semibold).monospacedDigit()).foregroundColor(AppColors.textTertiary)
+                        Text(l.at ?? "").font(.ctw(size: 11, weight: .semibold).monospacedDigit()).foregroundColor(AppColors.textTertiary)
                             .frame(width: 44, alignment: .leading)
                         VStack(alignment: .leading, spacing: 2) {
                             if let s = l.speakerId, let u = kq?.speakers?.first(where: { $0.id == s }) {
-                                Text(u.ten).font(.system(size: 12, weight: .semibold)).foregroundColor(AppColors.primary)
+                                Text(u.ten).font(.ctw(size: 12, weight: .semibold)).foregroundColor(AppColors.primary)
                             }
-                            Text(l.text ?? "").font(.system(size: 14)).foregroundColor(AppColors.textPrimary).textSelection(.enabled)
+                            Text(l.text ?? "").font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary).textSelection(.enabled)
                         }
                     }
                     .accessibilityElement(children: .combine)

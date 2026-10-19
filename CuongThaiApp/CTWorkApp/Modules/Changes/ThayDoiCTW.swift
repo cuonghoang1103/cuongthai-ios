@@ -129,7 +129,7 @@ struct ThayDoiCTW: View {
             }
             HStack(spacing: 10) {
                 CTWODem(so: (t?.approvedDays ?? 0) == 0 ? "0" : "\((t?.approvedDays ?? 0) > 0 ? "+" : "")\(t?.approvedDays ?? 0)d",
-                        nhan: "Approved schedule impact", bieuTuong: "calendar.badge.clock", mau: Color(hex: 0x2563EB))
+                        nhan: "Approved schedule impact", bieuTuong: "calendar.badge.clock", mau: AppColors.info)
                 CTWODem(so: tien.isEmpty ? "0" : tien, nhan: "Approved cost impact", bieuTuong: "banknote", mau: AppColors.primary)
             }
             CTWThanhLoc(chip: chips) { c in
@@ -145,13 +145,13 @@ struct GovHangCr: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
-                Text(c.nhanKhoa).font(.system(size: 12, weight: .semibold).monospaced()).foregroundColor(AppColors.textSecondary)
+                Text(c.nhanKhoa).font(.ctw(size: 12, weight: .semibold).monospaced()).foregroundColor(AppColors.textSecondary)
                 CTWChipChu(chu: c.status)
                 if let u = c.urgency { CTWNhanNho(chu: CTWMauTrangThai.nhan(u), bieuTuong: "flame", mau: CTWMauTrangThai.mau(u)) }
                 Spacer(minLength: 0)
-                if c.clientVisible == true { Image(systemName: "person.crop.rectangle").font(.system(size: 11)).foregroundColor(AppColors.textTertiary).accessibilityLabel("Shared with client") }
+                if c.clientVisible == true { Image(systemName: "person.crop.rectangle").font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary).accessibilityLabel("Shared with client") }
             }
-            Text(c.title).font(.system(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(2)
+            Text(c.title).font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(2)
             HStack(spacing: 10) {
                 if let o = c.owner {
                     HStack(spacing: 4) { CTWAvatar(user: o, size: 18); Text(o.ten).lineLimit(1) }
@@ -160,7 +160,7 @@ struct GovHangCr: View {
                 if let t = c.nhanChiPhi { Label(t, systemImage: "banknote") }
                 if let w = c.waitingDays, c.pendingApprovalId != nil { Label("\(w)d waiting", systemImage: "hourglass") }
             }
-            .font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+            .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
             .labelStyle(.titleAndIcon)
         }
         .padding(.vertical, 4)
@@ -238,7 +238,7 @@ struct ChiTietCrCTW: View {
                 if let u = c.urgency { CTWNhanNho(chu: "\(CTWMauTrangThai.nhan(u)) urgency", bieuTuong: "flame", mau: CTWMauTrangThai.mau(u)) }
                 if c.clientVisible == true { CTWNhanNho(chu: "Shared with client", bieuTuong: "person.crop.rectangle") }
             }
-            Text(c.title).font(.system(size: 22, weight: .bold)).foregroundColor(AppColors.textPrimary)
+            Text(c.title).font(.ctw(size: 22, weight: .bold)).foregroundColor(AppColors.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityAddTraits(.isHeader)
                 .ctwMenuBaoCaoChan(khoa: "cr-\(pid)-\(c.number)", noiDung: c.title, nguCanh: "Change request \(c.nhanKhoa)",
@@ -256,12 +256,12 @@ struct ChiTietCrCTW: View {
                 HStack(spacing: 10) {
                     Image(systemName: "hourglass").foregroundColor(AppColors.warning)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Approval in progress").font(.system(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                        Text("Approval in progress").font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                         Text(c.waitingDays.map { "Waiting \($0) day\($0 == 1 ? "" : "s")" } ?? "Tap to see who still needs to sign")
-                            .font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                            .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                     }
                     Spacer()
-                    Image(systemName: "chevron.right").font(.system(size: 12, weight: .semibold)).foregroundColor(AppColors.textTertiary)
+                    Image(systemName: "chevron.right").font(.ctw(size: 12, weight: .semibold)).foregroundColor(AppColors.textTertiary)
                 }
                 .padding(12).ctwThe(12)
             }
@@ -387,10 +387,10 @@ struct ChiTietCrCTW: View {
     private func hangLienKet(_ icon: String, _ khoa: String, _ ten: String, _ vai: String?) -> some View {
         HStack(spacing: 8) {
             Image(systemName: icon).foregroundColor(AppColors.primary).frame(width: 18)
-            Text(khoa).font(.system(size: 12, weight: .semibold).monospaced()).foregroundColor(AppColors.textSecondary)
-            Text(ten).font(.system(size: 14)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+            Text(khoa).font(.ctw(size: 12, weight: .semibold).monospaced()).foregroundColor(AppColors.textSecondary)
+            Text(ten).font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary).lineLimit(1)
             Spacer(minLength: 0)
-            if let vai { Text(CTWMauTrangThai.nhan(vai)).font(.system(size: 11)).foregroundColor(AppColors.textTertiary) }
+            if let vai { Text(CTWMauTrangThai.nhan(vai)).font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary) }
         }
         .frame(minHeight: 44)
         .contentShape(Rectangle())

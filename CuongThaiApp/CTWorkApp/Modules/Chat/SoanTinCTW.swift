@@ -84,9 +84,9 @@ struct SoanTinCTW: View {
             if let loi {
                 HStack {
                     Image(systemName: "exclamationmark.triangle.fill").foregroundColor(AppColors.error)
-                    Text(loi).font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                    Text(loi).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                     Spacer()
-                    Button { self.loi = nil } label: { Image(systemName: "xmark").font(.system(size: 11, weight: .bold)) }
+                    Button { self.loi = nil } label: { Image(systemName: "xmark").font(.ctw(size: 11, weight: .bold)) }
                         .accessibilityLabel("Dismiss")
                 }
                 .padding(.horizontal, Spacing.md).padding(.top, 8)
@@ -119,9 +119,9 @@ struct SoanTinCTW: View {
                                     .overlay(Circle().strokeBorder(AppColors.backgroundSecondary, lineWidth: 1.5))
                             }
                         }
-                        Text(m.nguoi.ten).font(.system(size: 14, weight: .medium)).foregroundColor(AppColors.textPrimary)
+                        Text(m.nguoi.ten).font(.ctw(size: 14, weight: .medium)).foregroundColor(AppColors.textPrimary)
                         if m.nguoi.laAgent { CTWNhanAI() }
-                        Text("@\(m.username ?? "")").font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                        Text("@\(m.username ?? "")").font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                         Spacer()
                     }
                     .padding(.horizontal, Spacing.md).padding(.vertical, 7)
@@ -145,7 +145,7 @@ struct SoanTinCTW: View {
                         case .xong: Image(systemName: t.laAnh ? "photo" : "doc").foregroundColor(AppColors.primary)
                         case .loi: Image(systemName: "exclamationmark.triangle.fill").foregroundColor(AppColors.error)
                         }
-                        Text(t.ten).font(.system(size: 12, weight: .medium)).foregroundColor(AppColors.textPrimary)
+                        Text(t.ten).font(.ctw(size: 12, weight: .medium)).foregroundColor(AppColors.textPrimary)
                             .lineLimit(1).fixedSize()
                         Button { bo(t) } label: {
                             Image(systemName: "xmark.circle.fill").foregroundColor(AppColors.textTertiary)
@@ -175,7 +175,7 @@ struct SoanTinCTW: View {
                 Button {
                     if GhiAmCTW.daDongYPhienAm { Task { await ghi.batDau() } } else { hoiDongY = true }
                 } label: {
-                    Image(systemName: "mic.fill").font(.system(size: 16, weight: .semibold)).foregroundColor(AppColors.primary)
+                    Image(systemName: "mic.fill").font(.ctw(size: 16, weight: .semibold)).foregroundColor(AppColors.primary)
                         .frame(width: 40, height: 40)
                         .background(Circle().fill(AppColors.primary.opacity(0.12)))
                 }
@@ -187,7 +187,7 @@ struct SoanTinCTW: View {
                 } message: { Text("Allow CT Work to use the microphone in Settings to record voice notes.") }
             } else {
                 Button { Task { await bamGui() } } label: {
-                    Image(systemName: "arrow.up").font(.system(size: 16, weight: .bold)).foregroundColor(.white)
+                    Image(systemName: "arrow.up").font(.ctw(size: 16, weight: .bold)).foregroundColor(.white)
                         .frame(width: 40, height: 40)
                         .background(Circle().fill(trong || dangTaiTep ? AppColors.textTertiary : AppColors.primary))
                 }
@@ -207,7 +207,7 @@ struct SoanTinCTW: View {
             Button { moThuVien = true } label: { Label("Photo Library", systemImage: "photo.on.rectangle") }
             Button { moChonTep = true } label: { Label("Choose File", systemImage: "folder") }
         } label: {
-            Image(systemName: "plus").font(.system(size: 17, weight: .semibold)).foregroundColor(AppColors.primary)
+            Image(systemName: "plus").font(.ctw(size: 17, weight: .semibold)).foregroundColor(AppColors.primary)
                 .frame(width: 40, height: 40)
                 .background(Circle().fill(AppColors.primary.opacity(0.12)))
         }
@@ -253,13 +253,13 @@ struct SoanTinCTW: View {
     private var hangGhiAm: some View {
         HStack(spacing: 12) {
             Button { ghi.huy() } label: {
-                Image(systemName: "trash").font(.system(size: 16, weight: .semibold)).foregroundColor(AppColors.error)
+                Image(systemName: "trash").font(.ctw(size: 16, weight: .semibold)).foregroundColor(AppColors.error)
                     .frame(width: 40, height: 40)
             }
             .accessibilityLabel("Cancel recording")
             Circle().fill(AppColors.error).frame(width: 9, height: 9)
             Text(String(format: "%d:%02d", Int(ghi.giay) / 60, Int(ghi.giay) % 60))
-                .font(.system(size: 15, weight: .semibold).monospacedDigit()).foregroundColor(AppColors.textPrimary)
+                .font(.ctw(size: 15, weight: .semibold).monospacedDigit()).foregroundColor(AppColors.textPrimary)
             HStack(alignment: .center, spacing: 2) {
                 ForEach(Array(ghi.muc.enumerated()), id: \.offset) { _, m in
                     Capsule().fill(AppColors.primary.opacity(0.7)).frame(width: 3, height: max(4, 26 * m))
@@ -270,7 +270,7 @@ struct SoanTinCTW: View {
             Button {
                 if let kq = ghi.dung() { Task { await guiGhiAm(kq.0, kq.1) } }
             } label: {
-                Image(systemName: "arrow.up").font(.system(size: 16, weight: .bold)).foregroundColor(.white)
+                Image(systemName: "arrow.up").font(.ctw(size: 16, weight: .bold)).foregroundColor(.white)
                     .frame(width: 40, height: 40).background(Circle().fill(AppColors.primary))
             }
             .accessibilityLabel("Send voice note")

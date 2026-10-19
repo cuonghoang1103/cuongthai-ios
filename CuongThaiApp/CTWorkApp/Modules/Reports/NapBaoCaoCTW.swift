@@ -21,7 +21,7 @@ struct NapBaoCaoCTW<T: Decodable, C: View>: View {
             case .loi(let l):
                 VStack(spacing: 8) {
                     CTWErrorBanner(text: l)
-                    Button("Try again") { Task { await tai() } }.font(.system(size: 14, weight: .semibold))
+                    Button("Try again") { Task { await tai() } }.font(.ctw(size: 14, weight: .semibold))
                 }
             case .xong(let v):
                 noiDung(v)
@@ -55,7 +55,7 @@ struct ChonKhoangNgayCTW: View {
             ForEach(lua, id: \.self) { n in
                 let bat = n == ngay
                 Button { CTWRung.chon(); ngay = n } label: {
-                    Text("\(n)d").font(.system(size: 13, weight: .semibold)).fixedSize()
+                    Text("\(n)d").font(.ctw(size: 13, weight: .semibold)).fixedSize()
                         .foregroundColor(bat ? AppColors.onPrimary : AppColors.textPrimary)
                         .padding(.horizontal, 12).frame(minHeight: 32)
                         .background(Capsule().fill(bat ? AppColors.primary : AppColors.backgroundCard))
@@ -88,9 +88,9 @@ struct ChonSprintBaoCaoCTW: View {
                 Image(systemName: "flag.checkered")
                 Text(ds.first { $0.id == chon }.map(nhan) ?? (choPhepTatCa ? "Any sprint" : "Choose sprint"))
                     .lineLimit(1)
-                Image(systemName: "chevron.down").font(.system(size: 10, weight: .bold))
+                Image(systemName: "chevron.down").font(.ctw(size: 10, weight: .bold))
             }
-            .font(.system(size: 13, weight: .semibold))
+            .font(.ctw(size: 13, weight: .semibold))
             .foregroundColor(AppColors.textPrimary)
             .padding(.horizontal, 12).frame(minHeight: 32)
             .background(Capsule().fill(AppColors.backgroundCard))

@@ -122,7 +122,7 @@ struct ReleasesCTW: View {
             Spacer()
             Text("\(n)").foregroundColor(AppColors.textTertiary)
         }
-        .font(.system(size: 13, weight: .semibold))
+        .font(.ctw(size: 13, weight: .semibold))
     }
 
     /// Thẻ "phát hành kế tiếp" ở đầu danh sách — câu hỏi hay gặp nhất khi đang ở ngoài.
@@ -131,13 +131,13 @@ struct ReleasesCTW: View {
             HStack(spacing: 14) {
                 CTWVongTienDo(tiLe: v.tiLe, co: 58, mau: v.overdue == true ? AppColors.error : AppColors.primary)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("NEXT RELEASE").font(.system(size: 10, weight: .bold)).foregroundColor(AppColors.textTertiary)
-                    Text(v.name).font(.system(size: 18, weight: .bold)).foregroundColor(AppColors.textPrimary).lineLimit(1)
-                    Text(dongNgay(v)).font(.system(size: 13)).foregroundColor(v.overdue == true ? AppColors.error : AppColors.textSecondary)
-                    Text("\(v.done ?? 0) of \(v.total ?? 0) issues done").font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
+                    Text("NEXT RELEASE").font(.ctw(size: 10, weight: .bold)).foregroundColor(AppColors.textTertiary)
+                    Text(v.name).font(.ctw(size: 18, weight: .bold)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                    Text(dongNgay(v)).font(.ctw(size: 13)).foregroundColor(v.overdue == true ? AppColors.error : AppColors.textSecondary)
+                    Text("\(v.done ?? 0) of \(v.total ?? 0) issues done").font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
                 }
                 Spacer(minLength: 0)
-                Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundColor(AppColors.textTertiary)
+                Image(systemName: "chevron.right").font(.ctw(size: 13, weight: .semibold)).foregroundColor(AppColors.textTertiary)
             }
             .padding(16)
             .ctwThe(16)
@@ -182,25 +182,25 @@ struct HangPhienBanCTW: View {
         let tt = PhienBanChuCTW.trangThai(v.status)
         VStack(alignment: .leading, spacing: 7) {
             HStack(spacing: 8) {
-                Image(systemName: tt.bieuTuong).font(.system(size: 14, weight: .semibold)).foregroundColor(tt.mau)
+                Image(systemName: tt.bieuTuong).font(.ctw(size: 14, weight: .semibold)).foregroundColor(tt.mau)
                     .frame(width: 28, height: 28)
                     .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(tt.mau.opacity(0.12)))
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(v.name).font(.system(size: 16, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                    Text(v.name).font(.ctw(size: 16, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(1)
                     HStack(spacing: 4) {
-                        if v.overdue == true { Image(systemName: "exclamationmark.circle.fill").font(.system(size: 10, weight: .bold)) }
-                        Text(PhienBanChuCTW.dongNgay(v)).font(.system(size: 12))
+                        if v.overdue == true { Image(systemName: "exclamationmark.circle.fill").font(.ctw(size: 10, weight: .bold)) }
+                        Text(PhienBanChuCTW.dongNgay(v)).font(.ctw(size: 12))
                     }
                     .foregroundColor(v.overdue == true ? AppColors.error : AppColors.textSecondary)
                 }
                 Spacer(minLength: 0)
-                Text(tt.ten).font(.system(size: 11, weight: .semibold)).foregroundColor(tt.mau)
+                Text(tt.ten).font(.ctw(size: 11, weight: .semibold)).foregroundColor(tt.mau)
             }
             HStack(spacing: 8) {
                 CTWThanhTienDo(doan: [CTWDoanTienDo(ten: "Done", giaTri: Double(v.done ?? 0), mau: AppColors.success),
                                       CTWDoanTienDo(ten: "Not done", giaTri: Double(max((v.total ?? 0) - (v.done ?? 0), 0)), mau: AppColors.backgroundTertiary)],
                                cao: 6)
-                Text("\(v.done ?? 0)/\(v.total ?? 0)").font(.system(size: 11, weight: .semibold).monospacedDigit())
+                Text("\(v.done ?? 0)/\(v.total ?? 0)").font(.ctw(size: 11, weight: .semibold).monospacedDigit())
                     .foregroundColor(AppColors.textSecondary)
             }
         }

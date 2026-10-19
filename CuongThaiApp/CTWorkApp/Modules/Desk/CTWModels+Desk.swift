@@ -128,7 +128,7 @@ enum CTWDesk {
         switch p {
         case "P1": return AppColors.error
         case "P2": return Color(hex: 0xEA580C)
-        case "P3": return Color(hex: 0x2563EB)
+        case "P3": return AppColors.info
         default: return AppColors.textSecondary
         }
     }
@@ -141,7 +141,7 @@ enum CTWDesk {
         case "MET": return AppColors.success
         case "BREACHED": return AppColors.error
         case "AT_RISK": return AppColors.warning
-        default: return Color(hex: 0x2563EB)
+        default: return AppColors.info
         }
     }
 

@@ -87,9 +87,9 @@ struct ChiTietDuyetCTW: View {
             HStack(spacing: 6) {
                 CTWChipChu(chu: a.status)
                 CTWNhanNho(chu: a.tuanTu ? "Sequential" : "Parallel", bieuTuong: a.tuanTu ? "arrow.down" : "arrow.left.and.right")
-                Text("\(a.soDaDuyet) of \(a.dsBuoc.count) approved").font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                Text("\(a.soDaDuyet) of \(a.dsBuoc.count) approved").font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
             }
-            Text(a.title ?? "Approval").font(.system(size: 22, weight: .bold)).foregroundColor(AppColors.textPrimary)
+            Text(a.title ?? "Approval").font(.ctw(size: 22, weight: .bold)).foregroundColor(AppColors.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityAddTraits(.isHeader)
             CTWThanhPhanDoan(doan: [
@@ -106,7 +106,7 @@ struct ChiTietDuyetCTW: View {
             Text(a.dangCho
                  ? "The content changed after this request was sent. Check the latest version before you sign."
                  : "The content changed after it was signed. The signature covers the earlier version.")
-                .font(.system(size: 13)).foregroundColor(AppColors.textPrimary).fixedSize(horizontal: false, vertical: true)
+                .font(.ctw(size: 13)).foregroundColor(AppColors.textPrimary).fixedSize(horizontal: false, vertical: true)
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -144,7 +144,7 @@ struct ChiTietDuyetCTW: View {
         }
         if let n = a.clientNote?.trimmingCharacters(in: .whitespacesAndNewlines), !n.isEmpty {
             CTWSectionHeader("person.crop.rectangle", "Note for the client")
-            Text(n).font(.system(size: 14)).foregroundColor(AppColors.textPrimary)
+            Text(n).font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary)
                 .frame(maxWidth: .infinity, alignment: .leading).padding(14).ctwThe(14)
         }
     }
@@ -180,9 +180,9 @@ struct ChiTietDuyetCTW: View {
                 HStack(alignment: .top, spacing: 8) {
                     Image(systemName: c.done == true ? "checkmark.circle.fill" : "circle").foregroundColor(c.done == true ? AppColors.success : AppColors.textTertiary)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Exit criteria · \(c.key ?? "")").font(.system(size: 12, weight: .semibold)).foregroundColor(AppColors.textSecondary)
-                        Text(c.title ?? "").font(.system(size: 14)).foregroundColor(AppColors.textPrimary)
-                        if let t = c.text, !t.isEmpty { Text(t).font(.system(size: 13)).foregroundColor(AppColors.textSecondary).lineLimit(6) }
+                        Text("Exit criteria · \(c.key ?? "")").font(.ctw(size: 12, weight: .semibold)).foregroundColor(AppColors.textSecondary)
+                        Text(c.title ?? "").font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary)
+                        if let t = c.text, !t.isEmpty { Text(t).font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary).lineLimit(6) }
                     }
                 }
                 Divider()
@@ -195,10 +195,10 @@ struct ChiTietDuyetCTW: View {
                     HStack(spacing: 8) {
                         Image(systemName: i.done == true ? "checkmark.circle.fill" : "circle.dashed")
                             .foregroundColor(i.done == true ? AppColors.success : AppColors.warning)
-                        Text(i.key ?? "#\(i.number)").font(.system(size: 12, weight: .semibold).monospaced()).foregroundColor(AppColors.textSecondary)
-                        Text(i.title ?? "").font(.system(size: 14)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                        Text(i.key ?? "#\(i.number)").font(.ctw(size: 12, weight: .semibold).monospaced()).foregroundColor(AppColors.textSecondary)
+                        Text(i.title ?? "").font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary).lineLimit(1)
                         Spacer(minLength: 0)
-                        if i.pinned == true { Image(systemName: "pin.fill").font(.system(size: 10)).foregroundColor(AppColors.textTertiary) }
+                        if i.pinned == true { Image(systemName: "pin.fill").font(.ctw(size: 10)).foregroundColor(AppColors.textTertiary) }
                     }
                     .frame(minHeight: 32)
                 }
@@ -206,17 +206,17 @@ struct ChiTietDuyetCTW: View {
             }
             ForEach(ev.pages ?? [], id: \.number) { p in
                 NavigationLink(value: RouteTaiLieuCTW(pid: pid, so: p.number, ten: p.title ?? "Page")) {
-                    Label(p.title ?? "Page", systemImage: "doc.text").font(.system(size: 14)).foregroundColor(AppColors.textPrimary)
+                    Label(p.title ?? "Page", systemImage: "doc.text").font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary)
                         .frame(maxWidth: .infinity, minHeight: 32, alignment: .leading)
                 }
                 .buttonStyle(.plain)
             }
             ForEach(ev.files ?? []) { f in
-                Label(f.fileName ?? "File", systemImage: "paperclip").font(.system(size: 14)).foregroundColor(AppColors.textSecondary)
+                Label(f.fileName ?? "File", systemImage: "paperclip").font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary)
             }
             if let o = ev.openAtRequest, o > 0 {
                 Text("\(o) issue\(o == 1 ? "" : "s") still open when requested\(ev.openReason.map { " — “\($0)”" } ?? "").")
-                    .font(.system(size: 12)).foregroundColor(AppColors.warning)
+                    .font(.ctw(size: 12)).foregroundColor(AppColors.warning)
             }
         }
         .padding(14)
@@ -231,18 +231,18 @@ struct ChiTietDuyetCTW: View {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 10) {
                         if a.tuanTu {
-                            Text("\(i + 1)").font(.system(size: 12, weight: .bold)).foregroundColor(AppColors.textSecondary)
+                            Text("\(i + 1)").font(.ctw(size: 12, weight: .bold)).foregroundColor(AppColors.textSecondary)
                                 .frame(width: 22, height: 22).background(Circle().fill(AppColors.backgroundTertiary))
                         }
                         CTWAvatar(user: b.approver, size: 28)
                         VStack(alignment: .leading, spacing: 2) {
                             HStack(spacing: 5) {
-                                Text(b.approver?.ten ?? "Approver").font(.system(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
-                                if b.approverId == app.currentUser?.id { Text("(you)").font(.system(size: 12)).foregroundColor(AppColors.textSecondary) }
+                                Text(b.approver?.ten ?? "Approver").font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                                if b.approverId == app.currentUser?.id { Text("(you)").font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary) }
                             }
                             if let d = b.decidedAt {
                                 Text(CTW.thoiDiem(d) + (CTWDuyet.bamNgan(b.contentHash).map { " · #\($0)" } ?? ""))
-                                    .font(.system(size: 11).monospacedDigit()).foregroundColor(AppColors.textTertiary)
+                                    .font(.ctw(size: 11).monospacedDigit()).foregroundColor(AppColors.textTertiary)
                             }
                         }
                         Spacer(minLength: 0)
@@ -270,7 +270,7 @@ struct ChiTietDuyetCTW: View {
             TextField("Comment (required to reject)", text: $yKien, axis: .vertical)
                 .lineLimit(2...6)
                 .focused($dangGo)
-                .font(.system(size: 15))
+                .font(.ctw(size: 15))
                 .padding(12)
                 .ctwThe(12)
             HStack(spacing: 10) {

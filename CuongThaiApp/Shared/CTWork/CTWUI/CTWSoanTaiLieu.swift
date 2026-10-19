@@ -234,7 +234,7 @@ struct CTWThanhDinhDang: View {
     private var vach: some View { Divider().frame(height: 22).padding(.horizontal, 4) }
 
     private func o(_ icon: String, _ ten: String) -> some View {
-        Image(systemName: icon).font(.system(size: 16, weight: .medium))
+        Image(systemName: icon).font(.ctw(size: 16, weight: .medium))
             .frame(width: 42, height: 44).contentShape(Rectangle())
             .accessibilityLabel(ten)
     }

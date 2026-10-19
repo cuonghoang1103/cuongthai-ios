@@ -140,13 +140,13 @@ struct ChiTietSprintCTW: View {
                 chipTrangThai(s)
                 if let a = NgayCTW.ngayCua(s.startAt).flatMap(NgayCTW.nganTu),
                    let b = NgayCTW.ngayCua(s.endAt).flatMap(NgayCTW.nganTu) {
-                    Label("\(a) – \(b)", systemImage: "calendar").font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
+                    Label("\(a) – \(b)", systemImage: "calendar").font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
                 }
             }
             if let g = s.goal, !g.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
-                    Label("Sprint goal", systemImage: "target").font(.system(size: 12, weight: .semibold)).foregroundColor(AppColors.primary)
-                    Text(g).font(.system(size: 15)).foregroundColor(AppColors.textPrimary).fixedSize(horizontal: false, vertical: true)
+                    Label("Sprint goal", systemImage: "target").font(.ctw(size: 12, weight: .semibold)).foregroundColor(AppColors.primary)
+                    Text(g).font(.ctw(size: 15)).foregroundColor(AppColors.textPrimary).fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(12)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -157,7 +157,7 @@ struct ChiTietSprintCTW: View {
 
     private func chipTrangThai(_ s: CTWSprintDu) -> some View {
         let (chu, mau): (String, Color) = s.dangChay ? ("ACTIVE", AppColors.primary) : (s.daDong ? ("COMPLETED", AppColors.success) : ("PLANNED", AppColors.textSecondary))
-        return Text(chu).font(.system(size: 10, weight: .bold)).foregroundColor(mau)
+        return Text(chu).font(.ctw(size: 10, weight: .bold)).foregroundColor(mau)
             .padding(.horizontal, 8).padding(.vertical, 3)
             .background(Capsule().fill(mau.opacity(0.12)))
     }
@@ -222,9 +222,9 @@ struct ChiTietSprintCTW: View {
     private func dongTienDo(tieuDe: String, phai: String, doan: [CTWDoanTienDo]) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text(tieuDe).font(.system(size: 13, weight: .medium)).foregroundColor(AppColors.textSecondary)
+                Text(tieuDe).font(.ctw(size: 13, weight: .medium)).foregroundColor(AppColors.textSecondary)
                 Spacer()
-                Text(phai).font(.system(size: 13, weight: .semibold).monospacedDigit()).foregroundColor(AppColors.textPrimary)
+                Text(phai).font(.ctw(size: 13, weight: .semibold).monospacedDigit()).foregroundColor(AppColors.textPrimary)
             }
             CTWThanhTienDo(doan: doan, cao: 10)
         }
@@ -242,11 +242,11 @@ struct ChiTietSprintCTW: View {
                 o("Removed", "−\(bc.removed?.count ?? 0)", CTWMauChuoi.khac)
             }
             if !(bc.added ?? []).isEmpty || !(bc.removed ?? []).isEmpty {
-                Text(thayDoiPhamVi(bc)).font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                Text(thayDoiPhamVi(bc)).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             if !(bc.incomplete ?? []).isEmpty {
-                Text("Not done").font(.system(size: 12, weight: .semibold)).foregroundColor(AppColors.textTertiary).padding(.top, 4)
+                Text("Not done").font(.ctw(size: 12, weight: .semibold)).foregroundColor(AppColors.textTertiary).padding(.top, 4)
                 ForEach(bc.incomplete ?? []) { i in hangBaoCao(i, unit) }
             }
         }
@@ -264,10 +264,10 @@ struct ChiTietSprintCTW: View {
 
     private func o(_ nhan: String, _ v: String, _ mau: Color) -> some View {
         VStack(spacing: 2) {
-            Text(v).font(.system(size: 18, weight: .bold).monospacedDigit()).foregroundColor(AppColors.textPrimary)
+            Text(v).font(.ctw(size: 18, weight: .bold).monospacedDigit()).foregroundColor(AppColors.textPrimary)
             HStack(spacing: 4) {
                 Circle().fill(mau).frame(width: 6, height: 6)
-                Text(nhan).font(.system(size: 11)).foregroundColor(AppColors.textSecondary).lineLimit(1).minimumScaleFactor(0.8)
+                Text(nhan).font(.ctw(size: 11)).foregroundColor(AppColors.textSecondary).lineLimit(1).minimumScaleFactor(0.8)
             }
         }
         .frame(maxWidth: .infinity)
@@ -281,11 +281,11 @@ struct ChiTietSprintCTW: View {
             if let so = i.number {
                 NavigationLink(value: CTWRoute.the(pid: pid, so: so)) {
                     HStack {
-                        Text("\(cfg?.key ?? "")-\(so)").font(.system(size: 12, weight: .medium).monospaced()).foregroundColor(AppColors.textSecondary)
-                        Text(i.title ?? "").font(.system(size: 14)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                        Text("\(cfg?.key ?? "")-\(so)").font(.ctw(size: 12, weight: .medium).monospaced()).foregroundColor(AppColors.textSecondary)
+                        Text(i.title ?? "").font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary).lineLimit(1)
                         Spacer(minLength: 0)
-                        if let p = i.points, p > 0 { Text(DonViSprintCTW.so(p, unit)).font(.system(size: 12)).foregroundColor(AppColors.textTertiary) }
-                        Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)).foregroundColor(AppColors.textTertiary)
+                        if let p = i.points, p > 0 { Text(DonViSprintCTW.so(p, unit)).font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary) }
+                        Image(systemName: "chevron.right").font(.ctw(size: 11, weight: .semibold)).foregroundColor(AppColors.textTertiary)
                     }
                     .frame(minHeight: 36)
                 }
@@ -305,14 +305,14 @@ struct ChiTietSprintCTW: View {
         return VStack(alignment: .leading, spacing: 10) {
             CTWSectionHeader("list.bullet.rectangle", "Issues", count: "\(vm.the.count)")
             if vm.the.isEmpty {
-                Text("No issues in this sprint yet.").font(.system(size: 14)).foregroundColor(AppColors.textSecondary)
+                Text("No issues in this sprint yet.").font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary)
             }
             ForEach(nhom, id: \.1) { n in
                 if !n.2.isEmpty {
                     HStack(spacing: 6) {
                         Circle().fill(CTWMauChuoi.nhom(n.1)).frame(width: 7, height: 7)
-                        Text(n.0).font(.system(size: 12, weight: .semibold)).foregroundColor(AppColors.textSecondary)
-                        Text("\(n.2.count)").font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
+                        Text(n.0).font(.ctw(size: 12, weight: .semibold)).foregroundColor(AppColors.textSecondary)
+                        Text("\(n.2.count)").font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
                     }
                     .padding(.top, 4)
                     ForEach(n.2) { t in hangThe(t) }
@@ -328,13 +328,13 @@ struct ChiTietSprintCTW: View {
             HStack(spacing: 10) {
                 CTWTypeIcon(type: cfg?.loai(t.typeId), size: 14)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(t.title).font(.system(size: 14)).foregroundColor(AppColors.textPrimary).lineLimit(2)
+                    Text(t.title).font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary).lineLimit(2)
                         .strikethrough(t.resolvedAt != nil, color: AppColors.textTertiary)
-                    Text("\(cfg?.key ?? "")-\(t.number)").font(.system(size: 11, weight: .medium).monospaced()).foregroundColor(AppColors.textTertiary)
+                    Text("\(cfg?.key ?? "")-\(t.number)").font(.ctw(size: 11, weight: .medium).monospaced()).foregroundColor(AppColors.textTertiary)
                 }
                 Spacer(minLength: 0)
                 if let sp = t.storyPoints {
-                    Text(CTWSo.gon(sp)).font(.system(size: 11, weight: .bold)).foregroundColor(AppColors.textSecondary)
+                    Text(CTWSo.gon(sp)).font(.ctw(size: 11, weight: .bold)).foregroundColor(AppColors.textSecondary)
                         .padding(.horizontal, 6).padding(.vertical, 2)
                         .background(Capsule().fill(AppColors.backgroundTertiary))
                 }

@@ -76,28 +76,28 @@ struct DsFormCTW: View {
     private func hang(_ f: CTWForm) -> some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: "list.bullet.rectangle.portrait")
-                .font(.system(size: 15, weight: .semibold)).foregroundColor(AppColors.primary)
+                .font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.primary)
                 .frame(width: 36, height: 36)
                 .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(AppColors.primary.opacity(0.12)))
             VStack(alignment: .leading, spacing: 5) {
                 HStack(spacing: 6) {
-                    Text(f.key ?? "F-\(f.number ?? f.id)").font(.system(size: 12, weight: .semibold).monospacedDigit())
+                    Text(f.key ?? "F-\(f.number ?? f.id)").font(.ctw(size: 12, weight: .semibold).monospacedDigit())
                         .foregroundColor(AppColors.textSecondary)
                     CTWChipChu(chu: f.status)
                     if f.access == "PUBLIC" { CTWNhanNho(chu: "Public", bieuTuong: "globe") }
                     else { CTWNhanNho(chu: "Members", bieuTuong: "person.2") }
                 }
-                Text(f.title).font(.system(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(2)
+                Text(f.title).font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(2)
                 HStack(spacing: 8) {
-                    Label("\(f.responses ?? 0) responses", systemImage: "tray.full").font(.system(size: 12))
+                    Label("\(f.responses ?? 0) responses", systemImage: "tray.full").font(.ctw(size: 12))
                         .foregroundColor(AppColors.textSecondary)
                     if let l = CTWFormNhan.lyDoDong(f.closed) {
-                        Text(l).font(.system(size: 12, weight: .medium)).foregroundColor(AppColors.warning)
+                        Text(l).font(.ctw(size: 12, weight: .medium)).foregroundColor(AppColors.warning)
                     }
                 }
             }
             Spacer(minLength: 0)
-            Image(systemName: "chevron.right").font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
+            Image(systemName: "chevron.right").font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
         }
         .padding(14)
         .ctwThe(14)
@@ -164,10 +164,10 @@ struct FormCTW: View {
                 CTWNhanNho(chu: form.access == "PUBLIC" ? "Anyone with the link" : "Signed-in members", bieuTuong: form.access == "PUBLIC" ? "globe" : "lock")
                 if let l = CTWFormNhan.lyDoDong(form.closed) { CTWNhanNho(chu: l, mau: AppColors.warning) }
             }
-            Text(form.title).font(.system(size: 22, weight: .bold)).foregroundColor(AppColors.textPrimary)
+            Text(form.title).font(.ctw(size: 22, weight: .bold)).foregroundColor(AppColors.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
             if let d = form.description, !d.isEmpty {
-                Text(d).font(.system(size: 14)).foregroundColor(AppColors.textSecondary).fixedSize(horizontal: false, vertical: true)
+                Text(d).font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary).fixedSize(horizontal: false, vertical: true)
             }
             HStack(spacing: 10) {
                 CTWODem(so: "\(tl?.total ?? form.responses ?? 0)", nhan: "Responses", bieuTuong: "tray.full")
@@ -184,19 +184,19 @@ struct FormCTW: View {
             ForEach(ds) { s in
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 6) {
-                        Image(systemName: CTWFormNhan.bieuTuong(s.kind)).foregroundColor(AppColors.primary).font(.system(size: 12))
-                        Text(s.label ?? "Question").font(.system(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                        Image(systemName: CTWFormNhan.bieuTuong(s.kind)).foregroundColor(AppColors.primary).font(.ctw(size: 12))
+                        Text(s.label ?? "Question").font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                         Spacer(minLength: 0)
-                        Text("\(s.answered ?? 0) answered").font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+                        Text("\(s.answered ?? 0) answered").font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
                     }
                     if let c = s.counts, !c.isEmpty {
                         let tong = max(1, c.reduce(0) { $0 + ($1.n ?? 0) })
                         ForEach(Array(c.enumerated()), id: \.offset) { _, d in
                             VStack(alignment: .leading, spacing: 3) {
                                 HStack {
-                                    Text(d.option ?? "—").font(.system(size: 13)).foregroundColor(AppColors.textPrimary).lineLimit(2)
+                                    Text(d.option ?? "—").font(.ctw(size: 13)).foregroundColor(AppColors.textPrimary).lineLimit(2)
                                     Spacer()
-                                    Text("\(d.n ?? 0)").font(.system(size: 12, weight: .semibold).monospacedDigit())
+                                    Text("\(d.n ?? 0)").font(.ctw(size: 12, weight: .semibold).monospacedDigit())
                                         .foregroundColor(AppColors.textSecondary)
                                 }
                                 CTWThanhPhanDoan(doan: [(d.n ?? 0, AppColors.primary), (tong - (d.n ?? 0), Color.clear)], cao: 6)
@@ -206,13 +206,13 @@ struct FormCTW: View {
                     } else if let a = s.average {
                         Text("Average \(String(format: "%.1f", a))" + (s.min.map { " · min \(CTWGiaTri.so($0).hienThi)" } ?? "")
                              + (s.max.map { " · max \(CTWGiaTri.so($0).hienThi)" } ?? ""))
-                            .font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
+                            .font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
                     } else if let e = s.earliest {
                         Text("From \(CTW.ngayNgan(e) ?? e) to \(CTW.ngayNgan(s.latest) ?? s.latest ?? "")")
-                            .font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
+                            .font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
                     } else if let m = s.samples, !m.isEmpty {
                         ForEach(Array(m.prefix(3).enumerated()), id: \.offset) { _, t in
-                            Text("“\(t)”").font(.system(size: 13)).foregroundColor(AppColors.textSecondary).lineLimit(3)
+                            Text("“\(t)”").font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary).lineLimit(3)
                         }
                     }
                 }
@@ -233,17 +233,17 @@ struct FormCTW: View {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 6) {
                         Image(systemName: "person.crop.circle").foregroundColor(AppColors.textSecondary)
-                        Text(r.respondent ?? r.email ?? "Anonymous").font(.system(size: 13, weight: .semibold))
+                        Text(r.respondent ?? r.email ?? "Anonymous").font(.ctw(size: 13, weight: .semibold))
                             .foregroundColor(AppColors.textPrimary).lineLimit(1)
                         Spacer(minLength: 0)
-                        Text(CTW.thoiDiem(r.createdAt)).font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+                        Text(CTW.thoiDiem(r.createdAt)).font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
                     }
                     ForEach(truong) { t in
                         let gt = r.answers?[t.id]?.hienThi ?? ""
                         if !gt.isEmpty {
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(t.label ?? t.id).font(.system(size: 11, weight: .semibold)).foregroundColor(AppColors.textTertiary)
-                                Text(gt).font(.system(size: 14)).foregroundColor(AppColors.textPrimary)
+                                Text(t.label ?? t.id).font(.ctw(size: 11, weight: .semibold)).foregroundColor(AppColors.textTertiary)
+                                Text(gt).font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary)
                                     .fixedSize(horizontal: false, vertical: true)
                             }
                         }
@@ -251,7 +251,7 @@ struct FormCTW: View {
                     if let so = r.issue?.number {
                         NavigationLink(value: CTWRoute.the(pid: pid, so: so)) {
                             Label(r.issue?.key ?? "Issue #\(so)", systemImage: "arrow.up.right.square")
-                                .font(.system(size: 13, weight: .semibold))
+                                .font(.ctw(size: 13, weight: .semibold))
                                 .frame(minHeight: 32)
                         }
                     }
@@ -263,7 +263,7 @@ struct FormCTW: View {
                                    dich: CTWDichBaoCao("form_answer", r.id))
             }
             if (tl?.total ?? 0) > ds.count {
-                Text("Showing the latest \(ds.count) of \(tl?.total ?? 0).").font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
+                Text("Showing the latest \(ds.count) of \(tl?.total ?? 0).").font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
             }
         } else if loi == nil {
             ProgressView().frame(maxWidth: .infinity).padding(.top, 30)
@@ -274,22 +274,22 @@ struct FormCTW: View {
         VStack(spacing: 0) {
             ForEach(Array(truong.enumerated()), id: \.element.id) { i, t in
                 HStack(alignment: .top, spacing: 10) {
-                    Text("\(i + 1)").font(.system(size: 12, weight: .bold).monospacedDigit())
+                    Text("\(i + 1)").font(.ctw(size: 12, weight: .bold).monospacedDigit())
                         .foregroundColor(AppColors.primary)
                         .frame(width: 24, height: 24)
                         .background(Circle().fill(AppColors.primary.opacity(0.12)))
                     VStack(alignment: .leading, spacing: 3) {
                         HStack(spacing: 4) {
-                            Text(t.label ?? t.id).font(.system(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                            Text(t.label ?? t.id).font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                             if t.required == true { Text("*").foregroundColor(AppColors.error) }
                         }
-                        if let h = t.help, !h.isEmpty { Text(h).font(.system(size: 12)).foregroundColor(AppColors.textSecondary) }
+                        if let h = t.help, !h.isEmpty { Text(h).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary) }
                         if let o = t.options, !o.isEmpty {
-                            Text(o.joined(separator: " · ")).font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
+                            Text(o.joined(separator: " · ")).font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
                         }
                     }
                     Spacer(minLength: 0)
-                    Image(systemName: CTWFormNhan.bieuTuong(t.kind)).foregroundColor(AppColors.textTertiary).font(.system(size: 12))
+                    Image(systemName: CTWFormNhan.bieuTuong(t.kind)).foregroundColor(AppColors.textTertiary).font(.ctw(size: 12))
                 }
                 .padding(.vertical, 10)
                 if t.id != truong.last?.id { Divider() }

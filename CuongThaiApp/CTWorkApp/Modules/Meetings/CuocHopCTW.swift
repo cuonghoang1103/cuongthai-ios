@@ -136,32 +136,32 @@ struct HangHopCTW: View {
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             VStack(spacing: 2) {
-                Text(gio(hop.batDau)).font(.system(size: 14, weight: .semibold).monospacedDigit()).foregroundColor(AppColors.textPrimary)
-                Text(gio(hop.ketThuc)).font(.system(size: 11).monospacedDigit()).foregroundColor(AppColors.textTertiary)
+                Text(gio(hop.batDau)).font(.ctw(size: 14, weight: .semibold).monospacedDigit()).foregroundColor(AppColors.textPrimary)
+                Text(gio(hop.ketThuc)).font(.ctw(size: 11).monospacedDigit()).foregroundColor(AppColors.textTertiary)
             }
             .frame(width: 48)
             RoundedRectangle(cornerRadius: 2).fill(mauLoaiHopCTW(hop.type)).frame(width: 3)
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
-                    Text(hop.title).font(.system(size: 15, weight: .semibold)).foregroundColor(hop.daHuy ? AppColors.textTertiary : AppColors.textPrimary)
+                    Text(hop.title).font(.ctw(size: 15, weight: .semibold)).foregroundColor(hop.daHuy ? AppColors.textTertiary : AppColors.textPrimary)
                         .strikethrough(hop.daHuy).lineLimit(2)
                 }
                 HStack(spacing: 6) {
-                    Text(hop.typeLabel ?? "Meeting").font(.system(size: 11, weight: .semibold)).foregroundColor(mauLoaiHopCTW(hop.type))
+                    Text(hop.typeLabel ?? "Meeting").font(.ctw(size: 11, weight: .semibold)).foregroundColor(mauLoaiHopCTW(hop.type))
                         .padding(.horizontal, 6).padding(.vertical, 2)
                         .background(Capsule().fill(mauLoaiHopCTW(hop.type).opacity(0.12)))
                         .fixedSize()
-                    if hop.daHuy { Text("Cancelled").font(.system(size: 11, weight: .semibold)).foregroundColor(AppColors.error) }
+                    if hop.daHuy { Text("Cancelled").font(.ctw(size: 11, weight: .semibold)).foregroundColor(AppColors.error) }
                     if hop.urlHop != nil {
-                        Label(hop.tenNhaCungCap, systemImage: "video.fill").font(.system(size: 11)).foregroundColor(AppColors.textSecondary).lineLimit(1)
+                        Label(hop.tenNhaCungCap, systemImage: "video.fill").font(.ctw(size: 11)).foregroundColor(AppColors.textSecondary).lineLimit(1)
                     } else if let l = hop.location, !l.isEmpty {
-                        Label(l, systemImage: "mappin.and.ellipse").font(.system(size: 11)).foregroundColor(AppColors.textSecondary).lineLimit(1)
+                        Label(l, systemImage: "mappin.and.ellipse").font(.ctw(size: 11)).foregroundColor(AppColors.textSecondary).lineLimit(1)
                     }
                 }
                 HStack(spacing: 8) {
                     ChongAvatarCTW(ds: (hop.attendees ?? []).map(\.nguoi))
                     if let n = hop.actionsOpen, n > 0 {
-                        Label("\(n) open", systemImage: "checklist").font(.system(size: 11)).foregroundColor(AppColors.textSecondary)
+                        Label("\(n) open", systemImage: "checklist").font(.ctw(size: 11)).foregroundColor(AppColors.textSecondary)
                             .lineLimit(1).fixedSize()
                     }
                 }
@@ -169,7 +169,7 @@ struct HangHopCTW: View {
             Spacer(minLength: 0)
             if hop.sapHoacDangHop, let u = hop.urlHop, let vao {
                 Button { vao(u) } label: {
-                    Text("Join").font(.system(size: 13, weight: .bold)).foregroundColor(.white)
+                    Text("Join").font(.ctw(size: 13, weight: .bold)).foregroundColor(.white)
                         .padding(.horizontal, 14).padding(.vertical, 7).background(Capsule().fill(AppColors.success))
                 }
                 .buttonStyle(.borderless)
@@ -210,7 +210,7 @@ struct ChongAvatarCTW: View {
                 CTWAvatar(user: u, size: co).overlay(Circle().strokeBorder(AppColors.backgroundCard, lineWidth: 1.5))
             }
             if ds.count > 5 {
-                Text("+\(ds.count - 5)").font(.system(size: 10, weight: .bold)).foregroundColor(AppColors.textSecondary)
+                Text("+\(ds.count - 5)").font(.ctw(size: 10, weight: .bold)).foregroundColor(AppColors.textSecondary)
                     .frame(width: co, height: co).background(Circle().fill(AppColors.backgroundTertiary))
             }
         }
@@ -241,8 +241,8 @@ struct DaiLichHopCTW: View {
                         chon = dangChon ? nil : d
                     } label: {
                         VStack(spacing: 4) {
-                            Text(thu(d)).font(.system(size: 11, weight: .medium)).foregroundColor(dangChon ? .white : AppColors.textSecondary)
-                            Text(ngaySo(d)).font(.system(size: 17, weight: .bold).monospacedDigit())
+                            Text(thu(d)).font(.ctw(size: 11, weight: .medium)).foregroundColor(dangChon ? .white : AppColors.textSecondary)
+                            Text(ngaySo(d)).font(.ctw(size: 17, weight: .bold).monospacedDigit())
                                 .foregroundColor(dangChon ? .white : (Calendar.current.isDateInToday(d) ? AppColors.primary : AppColors.textPrimary))
                             HStack(spacing: 2) {
                                 ForEach(0..<min(so, 3), id: \.self) { _ in

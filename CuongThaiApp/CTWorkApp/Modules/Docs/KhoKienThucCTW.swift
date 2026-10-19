@@ -21,7 +21,7 @@ struct KhoKienThucCTW: View {
                         LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 10)], spacing: 10) {
                             CTWODem(so: "\(t.articles ?? 0)", nhan: "Articles", bieuTuong: "doc.richtext")
                             CTWODem(so: "\(t.forClients ?? 0)", nhan: "Visible to clients", bieuTuong: "person.2.wave.2", mau: AppColors.secondary)
-                            CTWODem(so: "\(t.views ?? 0)", nhan: "Views", bieuTuong: "eye", mau: Color(hex: 0x2563EB))
+                            CTWODem(so: "\(t.views ?? 0)", nhan: "Views", bieuTuong: "eye", mau: AppColors.info)
                             CTWODem(so: "\(t.deflected ?? 0)", nhan: "Questions answered by an article", bieuTuong: "checkmark.bubble", mau: AppColors.success)
                         }
                         .listRowInsets(EdgeInsets()).listRowBackground(Color.clear)
@@ -71,20 +71,20 @@ struct KhoKienThucCTW: View {
     private func hang(_ a: CTWKb.BaiViet) -> some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack(spacing: 6) {
-                Text(a.title ?? "Untitled").font(.system(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(2)
+                Text(a.title ?? "Untitled").font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(2)
                 Spacer(minLength: 4)
                 if a.published != true { CTWNhanNho(chu: "Unpublished", mau: AppColors.warning) }
             }
             if let e = a.excerpt, !e.isEmpty {
-                Text(e).font(.system(size: 13)).foregroundColor(AppColors.textSecondary).lineLimit(2)
+                Text(e).font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary).lineLimit(2)
             }
             HStack(spacing: 8) {
                 if let c = a.category?.name { CTWNhanNho(chu: c, bieuTuong: "folder") }
                 CTWNhanNho(chu: a.audience == "CLIENT" ? "Clients" : "Team", bieuTuong: a.audience == "CLIENT" ? "person.2.wave.2" : "person.3",
                            mau: a.audience == "CLIENT" ? AppColors.secondary : AppColors.textSecondary)
-                Label("\(a.views ?? 0)", systemImage: "eye").font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+                Label("\(a.views ?? 0)", systemImage: "eye").font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
                 if let h = a.helpfulPercent {
-                    Label("\(h)%", systemImage: "hand.thumbsup").font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+                    Label("\(h)%", systemImage: "hand.thumbsup").font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
                 }
             }
         }

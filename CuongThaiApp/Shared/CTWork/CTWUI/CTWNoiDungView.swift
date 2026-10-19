@@ -40,21 +40,21 @@ struct CTWKhoiView: View {
     private func mot(_ k: CTWKhoi) -> some View {
         switch k {
         case .doan(let a):
-            Text(a).font(.system(size: coChu)).foregroundColor(AppColors.textPrimary)
+            Text(a).font(.ctw(size: coChu)).foregroundColor(AppColors.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
                 .textSelection(.enabled)
         case .tieuDe(let a, let cap):
             Text(a)
-                .font(.system(size: cap <= 1 ? coChu + 7 : (cap == 2 ? coChu + 4 : coChu + 2), weight: .bold))
+                .font(.ctw(size: cap <= 1 ? coChu + 7 : (cap == 2 ? coChu + 4 : coChu + 2), weight: .bold))
                 .foregroundColor(AppColors.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, cap <= 2 ? 6 : 2)
                 .accessibilityAddTraits(.isHeader)
         case .muc(let a, let nhan, let cap):
             HStack(alignment: .firstTextBaseline, spacing: 7) {
-                Text(nhan).font(.system(size: coChu, weight: .semibold)).foregroundColor(AppColors.textSecondary)
+                Text(nhan).font(.ctw(size: coChu, weight: .semibold)).foregroundColor(AppColors.textSecondary)
                     .frame(minWidth: 14, alignment: .trailing)
-                Text(a).font(.system(size: coChu)).foregroundColor(AppColors.textPrimary)
+                Text(a).font(.ctw(size: coChu)).foregroundColor(AppColors.textPrimary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .padding(.leading, CGFloat(cap) * 16)
@@ -62,7 +62,7 @@ struct CTWKhoiView: View {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Image(systemName: xong ? "checkmark.square.fill" : "square")
                     .foregroundColor(xong ? AppColors.success : AppColors.textTertiary)
-                Text(a).font(.system(size: coChu))
+                Text(a).font(.ctw(size: coChu))
                     .foregroundColor(xong ? AppColors.textSecondary : AppColors.textPrimary)
                     .strikethrough(xong)
                     .fixedSize(horizontal: false, vertical: true)
@@ -74,7 +74,7 @@ struct CTWKhoiView: View {
             // ⚠️ `fixedSize(horizontal: true)` BẮT BUỘC — thiếu là dòng dài
             // bị cắt cụt trong khi trông như cuộn được (bẫy SwiftUI đã dính).
             ScrollView(.horizontal, showsIndicators: false) {
-                Text(s).font(.system(size: coChu - 2, design: .monospaced))
+                Text(s).font(.ctw(size: coChu - 2, design: .monospaced))
                     .foregroundColor(AppColors.textPrimary)
                     .fixedSize(horizontal: true, vertical: false)
                     .textSelection(.enabled)
@@ -98,7 +98,7 @@ struct CTWKhoiView: View {
                         GridRow {
                             ForEach(Array(h.enumerated()), id: \.offset) { _, o in
                                 Text(Self.dong(o))
-                                    .font(.system(size: coChu - 1, weight: i == 0 ? .semibold : .regular))
+                                    .font(.ctw(size: coChu - 1, weight: i == 0 ? .semibold : .regular))
                                     .foregroundColor(AppColors.textPrimary)
                                     .fixedSize(horizontal: true, vertical: false)
                             }
@@ -345,8 +345,8 @@ struct CTWNhanAI: View {
     var chu = "AI agent"
     var body: some View {
         HStack(spacing: 3) {
-            Image(systemName: "sparkles").font(.system(size: 9, weight: .bold))
-            Text(chu).font(.system(size: 10, weight: .bold))
+            Image(systemName: "sparkles").font(.ctw(size: 9, weight: .bold))
+            Text(chu).font(.ctw(size: 10, weight: .bold))
         }
         .foregroundColor(AppColors.primary)
         .padding(.horizontal, 6).padding(.vertical, 2)

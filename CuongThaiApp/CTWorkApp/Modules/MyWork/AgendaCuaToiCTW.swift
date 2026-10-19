@@ -79,12 +79,12 @@ struct AgendaCuaToiCTW: View {
 
     @ViewBuilder private func hang(_ i: CTWAgendaItem) -> some View {
         let noiDung = HStack(alignment: .top, spacing: 12) {
-            Image(systemName: bieuTuong(i)).font(.system(size: 14, weight: .semibold))
+            Image(systemName: bieuTuong(i)).font(.ctw(size: 14, weight: .semibold))
                 .foregroundColor(mau(i)).frame(width: 30, height: 30)
                 .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(mau(i).opacity(0.13)))
             VStack(alignment: .leading, spacing: 3) {
-                Text(tieuDe(i)).font(.system(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(2)
-                Text(phu(i)).font(.system(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1)
+                Text(tieuDe(i)).font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(2)
+                Text(phu(i)).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1)
             }
             Spacer(minLength: 4)
             if i.type == "meeting", let s = i.meetingUrl, let u = URL(string: s), ["https", "http"].contains(u.scheme?.lowercased() ?? "") {

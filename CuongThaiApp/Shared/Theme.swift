@@ -74,7 +74,8 @@ struct AppColors {
     // Text Colors
     static let textPrimary = Color.theoCheDo(sang: Color(hex: 0x14141C), toi: Color(hex: 0xFFFFFF))
     static let textSecondary = Color.theoCheDo(sang: Color(hex: 0x56565F), toi: Color(hex: 0x9999A6))
-    static let textTertiary = Color.theoCheDo(sang: Color(hex: 0x81818C), toi: Color(hex: 0x737380))
+    // 19/10/2026: 0x81818C/0x737380 chỉ đạt 3,3–4,2:1 trên nền ⇒ dưới ngưỡng WCAG AA 4,5:1 cho chữ nhỏ.
+    static let textTertiary = Color.theoCheDo(sang: Color(hex: 0x6A6A75), toi: Color(hex: 0x8E8E9C))
 
     /// Chữ/biểu tượng đặt TRÊN nền thương hiệu (nút tím, huy hiệu đỏ, lớp phủ
     /// đen trên ảnh). Luôn trắng ở cả hai chế độ — đừng thay bằng textPrimary,
@@ -82,9 +83,13 @@ struct AppColors {
     static let onPrimary = Color.white
 
     // Status Colors
-    static let success = Color.theoCheDo(sang: Color(hex: 0x1A8F35), toi: Color(hex: 0x33C759))
+    // 19/10/2026: bản sáng 0x1A8F35 = 3,6–4,2:1 ⇒ đậm lại cho đạt 4,5:1 (chữ "Done", chip trạng thái).
+    static let success = Color.theoCheDo(sang: Color(hex: 0x157A33), toi: Color(hex: 0x33C759))
     static let error = Color.theoCheDo(sang: Color(hex: 0xD32F2F), toi: Color(hex: 0xEE4444))
-    static let warning = Color.theoCheDo(sang: Color(hex: 0xB47600), toi: Color(hex: 0xFAD129))
+    // 19/10/2026: bản sáng 0xB47600 = 3,3–3,8:1 ⇒ đậm lại (≥ 5:1).
+    static let warning = Color.theoCheDo(sang: Color(hex: 0x8A5A00), toi: Color(hex: 0xFAD129))
+    /// Xanh "đang làm / thông tin" — 0x2563EB cố định chỉ đạt 3,3–3,8:1 trên nền tối ⇒ bản tối sáng hơn.
+    static let info = Color.theoCheDo(sang: Color(hex: 0x2563EB), toi: Color(hex: 0x5B8DEF))
 
     // UI Elements
     static let divider = Color.theoCheDo(sang: Color.black.opacity(0.10), toi: Color.white.opacity(0.12))

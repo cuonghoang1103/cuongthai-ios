@@ -534,7 +534,7 @@ enum CTW {
         (1, "Highest", "chevron.up.2", Color(hex: 0xDC2626)),
         (2, "High", "chevron.up", Color(hex: 0xEA580C)),
         (3, "Medium", "equal", Color(hex: 0xCA8A04)),
-        (4, "Low", "chevron.down", Color(hex: 0x2563EB)),
+        (4, "Low", "chevron.down", AppColors.info),
         (5, "Lowest", "chevron.down.2", Color(hex: 0x64748B)),
     ]
 
@@ -573,7 +573,7 @@ enum CTW {
     static func mauNhom(_ category: String?) -> Color {
         switch category {
         case "DONE": return AppColors.success
-        case "IN_PROGRESS": return Color(hex: 0x2563EB)
+        case "IN_PROGRESS": return AppColors.info
         default: return AppColors.textTertiary
         }
     }

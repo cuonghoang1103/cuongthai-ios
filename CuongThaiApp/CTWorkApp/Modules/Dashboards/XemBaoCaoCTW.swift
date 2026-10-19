@@ -21,7 +21,7 @@ struct XemBaoCaoCTW: View {
                     dau(bc)
                     ForEach(bc.blocks ?? []) { k in khoi(k) }
                     Text("Generated \(CTW.thoiDiem(bc.generatedAt)) from live project data.")
-                        .font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+                        .font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
                 }
                 .padding(Spacing.md)
                 .frame(maxWidth: 900)
@@ -46,11 +46,11 @@ struct XemBaoCaoCTW: View {
 
     private func dau(_ bc: CTWBaoCaoDungDb) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(bc.title ?? ten).font(.system(size: 24, weight: .bold)).foregroundColor(AppColors.textPrimary)
+            Text(bc.title ?? ten).font(.ctw(size: 24, weight: .bold)).foregroundColor(AppColors.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
-            if let s = bc.subtitle, !s.isEmpty { Text(s).font(.system(size: 15)).foregroundColor(AppColors.textSecondary) }
+            if let s = bc.subtitle, !s.isEmpty { Text(s).font(.ctw(size: 15)).foregroundColor(AppColors.textSecondary) }
             if let a = NgayCTW.nganTu(bc.period?.from), let b = NgayCTW.nganTu(bc.period?.to) {
-                Label("\(a) – \(b)", systemImage: "calendar").font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
+                Label("\(a) – \(b)", systemImage: "calendar").font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
             }
             Rectangle().fill(CTW.mau(bc.accent, macDinh: AppColors.primary)).frame(width: 48, height: 3).padding(.top, 4)
         }
@@ -60,7 +60,7 @@ struct XemBaoCaoCTW: View {
     private func khoi(_ k: CTWKhoiBaoCaoDb) -> some View {
         switch k.type {
         case "heading":
-            Text(k.text ?? "").font(.system(size: (k.level ?? 1) == 1 ? 20 : ((k.level ?? 1) == 2 ? 17 : 15), weight: .bold))
+            Text(k.text ?? "").font(.ctw(size: (k.level ?? 1) == 1 ? 20 : ((k.level ?? 1) == 2 ? 17 : 15), weight: .bold))
                 .foregroundColor(AppColors.textPrimary).padding(.top, 6)
         case "text":
             CTWMarkdownView(markdown: k.text ?? "", coChu: 15)
@@ -90,16 +90,16 @@ struct XemBaoCaoCTW: View {
         case "risks":
             VStack(alignment: .leading, spacing: 8) {
                 tieuDeKhoi(k.title ?? "Risks")
-                if (k.items ?? []).isEmpty { Text(k.note ?? "No open risks.").font(.system(size: 13)).foregroundColor(AppColors.textSecondary) }
+                if (k.items ?? []).isEmpty { Text(k.note ?? "No open risks.").font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary) }
                 ForEach(Array((k.items ?? []).enumerated()), id: \.offset) { _, r in
                     VStack(alignment: .leading, spacing: 3) {
                         HStack {
-                            Text(r.key ?? "").font(.system(size: 11, weight: .semibold).monospaced()).foregroundColor(AppColors.textSecondary)
-                            Text(r.title ?? "").font(.system(size: 14, weight: .medium)).foregroundColor(AppColors.textPrimary)
+                            Text(r.key ?? "").font(.ctw(size: 11, weight: .semibold).monospaced()).foregroundColor(AppColors.textSecondary)
+                            Text(r.title ?? "").font(.ctw(size: 14, weight: .medium)).foregroundColor(AppColors.textPrimary)
                             Spacer()
-                            if let l = r.level { Text(l).font(.system(size: 10, weight: .bold)).foregroundColor(AppColors.warning) }
+                            if let l = r.level { Text(l).font(.ctw(size: 10, weight: .bold)).foregroundColor(AppColors.warning) }
                         }
-                        if let m = r.mitigation, !m.isEmpty { Text(m).font(.system(size: 12)).foregroundColor(AppColors.textSecondary) }
+                        if let m = r.mitigation, !m.isEmpty { Text(m).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary) }
                     }
                     .padding(10).frame(maxWidth: .infinity, alignment: .leading).ctwThe(10)
                 }
@@ -111,7 +111,7 @@ struct XemBaoCaoCTW: View {
                     CTWNhanAI(chu: "AI-drafted")
                 }
                 CTWMarkdownView(markdown: k.text ?? "", coChu: 14)
-                if let n = k.note, !n.isEmpty { Text(n).font(.system(size: 11)).foregroundColor(AppColors.textTertiary) }
+                if let n = k.note, !n.isEmpty { Text(n).font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary) }
             }
             .padding(12).ctwThe(12)
         case "error":
@@ -127,7 +127,7 @@ struct XemBaoCaoCTW: View {
     }
 
     private func tieuDeKhoi(_ t: String) -> some View {
-        Text(t).font(.system(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+        Text(t).font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
     }
 
     private func bangThe(_ k: CTWKhoiBaoCaoDb) -> some View {
@@ -139,14 +139,14 @@ struct XemBaoCaoCTW: View {
                 Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 6) {
                     GridRow {
                         ForEach(Array(cot.enumerated()), id: \.offset) { _, c in
-                            Text(c).font(.system(size: 11, weight: .semibold)).foregroundColor(AppColors.textTertiary).fixedSize()
+                            Text(c).font(.ctw(size: 11, weight: .semibold)).foregroundColor(AppColors.textTertiary).fixedSize()
                         }
                     }
                     Divider()
                     ForEach(Array(hang.enumerated()), id: \.offset) { _, h in
                         GridRow {
                             ForEach(Array(h.enumerated()), id: \.offset) { i, o in
-                                Text(o).font(.system(size: 12)).foregroundColor(i == 0 ? AppColors.textSecondary : AppColors.textPrimary)
+                                Text(o).font(.ctw(size: 12)).foregroundColor(i == 0 ? AppColors.textSecondary : AppColors.textPrimary)
                                     .lineLimit(2).frame(maxWidth: (khoaCot(k, i) == "title") ? 260 : nil, alignment: .leading)
                                     .fixedSize(horizontal: khoaCot(k, i) != "title", vertical: false)
                             }
@@ -157,7 +157,7 @@ struct XemBaoCaoCTW: View {
             }
             .ctwThe(12)
             if let t = k.total, t > hang.count {
-                Text("Showing \(hang.count) of \(t)").font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+                Text("Showing \(hang.count) of \(t)").font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
             }
         }
     }

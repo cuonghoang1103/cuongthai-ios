@@ -119,18 +119,18 @@ struct DiagramsCTW: View {
     private func hang(_ d: CTWSoDo) -> some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: CTWSoDoHienThi.bieuTuong(d.type))
-                .font(.system(size: 15, weight: .semibold)).foregroundColor(AppColors.primary)
+                .font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.primary)
                 .frame(width: 36, height: 36)
                 .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(AppColors.primary.opacity(0.12)))
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
-                    if let k = d.key { Text(k).font(.system(size: 11, weight: .bold).monospaced()).foregroundColor(AppColors.textTertiary) }
-                    Text(d.title).font(.system(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(2)
+                    if let k = d.key { Text(k).font(.ctw(size: 11, weight: .bold).monospaced()).foregroundColor(AppColors.textTertiary) }
+                    Text(d.title).font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(2)
                 }
                 HStack(spacing: 6) {
                     CTWChipChu(chu: d.status)
-                    if let t = d.typeLabel { Text(t).font(.system(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1) }
-                    if let v = d.currentVersion { Text("v\(v)").font(.system(size: 12).monospacedDigit()).foregroundColor(AppColors.textTertiary) }
+                    if let t = d.typeLabel { Text(t).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1) }
+                    if let v = d.currentVersion { Text("v\(v)").font(.ctw(size: 12).monospacedDigit()).foregroundColor(AppColors.textTertiary) }
                     if d.aiModel != nil || d.updatedBy?.isAgent == true { CTWNhanAI(chu: "AI") }
                 }
                 let lk = [d.useCase?.key, d.issue?.key, d.page.map { _ in "Doc" }].compactMap { $0 }
@@ -225,7 +225,7 @@ struct SoDoChiTietCTW: View {
 
     private func dau(_ d: CTWSoDoChiTiet) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(d.title).font(.system(size: 22, weight: .bold)).foregroundColor(AppColors.textPrimary)
+            Text(d.title).font(.ctw(size: 22, weight: .bold)).foregroundColor(AppColors.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityAddTraits(.isHeader)
             HStack(spacing: 6) {
@@ -236,9 +236,9 @@ struct SoDoChiTietCTW: View {
             if let u = d.updatedBy {
                 HStack(spacing: 6) {
                     CTWAvatar(user: u.nguoi, size: 18)
-                    Text("Updated by \(u.name ?? "someone")").font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                    Text("Updated by \(u.name ?? "someone")").font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                     if u.isAgent == true { CTWNhanAI() }
-                    if let t = d.updatedAt { Text("· \(CTW.thoiDiem(t))").font(.system(size: 12)).foregroundColor(AppColors.textTertiary) }
+                    if let t = d.updatedAt { Text("· \(CTW.thoiDiem(t))").font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary) }
                 }
             }
         }
@@ -255,7 +255,7 @@ struct SoDoChiTietCTW: View {
                     .overlay(alignment: .topTrailing) {
                         Button { tamPhu = .toanMan(anh) } label: {
                             Image(systemName: "arrow.up.left.and.arrow.down.right")
-                                .font(.system(size: 14, weight: .semibold)).foregroundColor(.white)
+                                .font(.ctw(size: 14, weight: .semibold)).foregroundColor(.white)
                                 .frame(width: 40, height: 40)
                                 .background(Circle().fill(Color.black.opacity(0.55)))
                         }
@@ -265,8 +265,8 @@ struct SoDoChiTietCTW: View {
             } else if let loiAnh {
                 VStack(spacing: 10) {
                     Image(systemName: loiAnh == .khongPhaiMermaid ? "scribble.variable" : "photo.badge.exclamationmark")
-                        .font(.system(size: 30)).foregroundColor(AppColors.textTertiary)
-                    Text(loiAnh.errorDescription ?? "").font(.system(size: 14)).foregroundColor(AppColors.textSecondary)
+                        .font(.ctw(size: 30)).foregroundColor(AppColors.textTertiary)
+                    Text(loiAnh.errorDescription ?? "").font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary)
                         .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
                     if let u = CTWWeb.url(slug: app.luaChon?.slug ?? "", ma: app.luaChon?.maDuAn ?? "", doan: "diagrams/\(d.number)") {
                         Button { tamPhu = .web(u) } label: { Label("Open in CT Work web", systemImage: "safari") }
@@ -320,22 +320,22 @@ struct SoDoChiTietCTW: View {
                     if i > 0 { Divider() }
                     Button { doiBan(v.number) } label: {
                         HStack(spacing: 10) {
-                            Text("v\(v.number)").font(.system(size: 13, weight: .bold).monospacedDigit())
+                            Text("v\(v.number)").font(.ctw(size: 13, weight: .bold).monospacedDigit())
                                 .foregroundColor((ban ?? d.banMacDinh) == v.number ? AppColors.primary : AppColors.textPrimary)
                                 .frame(width: 36, alignment: .leading)
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(v.note?.isEmpty == false ? v.note! : "No note").font(.system(size: 14))
+                                Text(v.note?.isEmpty == false ? v.note! : "No note").font(.ctw(size: 14))
                                     .foregroundColor(v.note?.isEmpty == false ? AppColors.textPrimary : AppColors.textTertiary).lineLimit(2)
                                 HStack(spacing: 4) {
                                     Text(v.author?.name ?? "—")
                                     if v.author?.isAgent == true || v.aiModel != nil { CTWNhanAI(chu: "AI") }
                                     Text("· \(CTW.thoiDiem(v.createdAt))")
                                 }
-                                .font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+                                .font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
                             }
                             Spacer(minLength: 4)
                             if v.number == d.approvedVersion { CTWNhanNho(chu: "Approved", mau: AppColors.success) }
-                            if (ban ?? d.banMacDinh) == v.number { Image(systemName: "eye.fill").foregroundColor(AppColors.primary).font(.system(size: 12)) }
+                            if (ban ?? d.banMacDinh) == v.number { Image(systemName: "eye.fill").foregroundColor(AppColors.primary).font(.ctw(size: 12)) }
                         }
                         .padding(.vertical, 10)
                         .contentShape(Rectangle())
@@ -346,7 +346,7 @@ struct SoDoChiTietCTW: View {
                 if vs.count > 4 {
                     Divider()
                     Button(xemHetPhienBan ? "Show fewer" : "Show all \(vs.count) versions") { xemHetPhienBan.toggle() }
-                        .font(.system(size: 13, weight: .semibold)).padding(.vertical, 10)
+                        .font(.ctw(size: 13, weight: .semibold)).padding(.vertical, 10)
                 }
             }
             .padding(.horizontal, 14)
@@ -359,7 +359,7 @@ struct SoDoChiTietCTW: View {
         let ds = (d.comments ?? []).sorted { ($0.createdAt ?? "") < ($1.createdAt ?? "") }
         CTWSectionHeader("bubble.left.and.bubble.right", "Comments", count: "\(ds.count)")
         if ds.isEmpty {
-            Text("No comments yet.").font(.system(size: 14)).foregroundColor(AppColors.textSecondary)
+            Text("No comments yet.").font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary)
         }
         ForEach(ds) { c in
             CTWBinhLuanDong(
@@ -433,15 +433,15 @@ struct ToanManSoDoCTW: View {
                 .padding(.top, 56)
             HStack {
                 Button { dong() } label: {
-                    Image(systemName: "xmark").font(.system(size: 16, weight: .bold)).foregroundColor(.white)
+                    Image(systemName: "xmark").font(.ctw(size: 16, weight: .bold)).foregroundColor(.white)
                         .frame(width: 44, height: 44).background(Circle().fill(Color.white.opacity(0.18)))
                 }
                 .accessibilityLabel("Close")
                 Spacer()
-                Text(tieuDe).font(.system(size: 15, weight: .semibold)).foregroundColor(.white).lineLimit(1)
+                Text(tieuDe).font(.ctw(size: 15, weight: .semibold)).foregroundColor(.white).lineLimit(1)
                 Spacer()
                 ShareLink(item: Image(uiImage: anh), preview: SharePreview(tieuDe, image: Image(uiImage: anh))) {
-                    Image(systemName: "square.and.arrow.up").font(.system(size: 16, weight: .bold)).foregroundColor(.white)
+                    Image(systemName: "square.and.arrow.up").font(.ctw(size: 16, weight: .bold)).foregroundColor(.white)
                         .frame(width: 44, height: 44).background(Circle().fill(Color.white.opacity(0.18)))
                 }
                 .accessibilityLabel("Share image")

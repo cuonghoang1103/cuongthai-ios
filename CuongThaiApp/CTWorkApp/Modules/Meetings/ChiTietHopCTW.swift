@@ -245,13 +245,13 @@ struct ChiTietHopCTW: View {
     private func dau(_ h: CTWMeeting) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 6) {
-                Text(h.typeLabel ?? "Meeting").font(.system(size: 12, weight: .semibold)).foregroundColor(mauLoaiHopCTW(h.type))
+                Text(h.typeLabel ?? "Meeting").font(.ctw(size: 12, weight: .semibold)).foregroundColor(mauLoaiHopCTW(h.type))
                     .padding(.horizontal, 8).padding(.vertical, 3).background(Capsule().fill(mauLoaiHopCTW(h.type).opacity(0.12)))
                 ChipTrangThaiHopCTW(trangThai: h.status)
-                if h.seriesId != nil { Label("Recurring", systemImage: "repeat").font(.system(size: 11)).foregroundColor(AppColors.textSecondary) }
-                if h.hasClients == true { Label("Client", systemImage: "person.2").font(.system(size: 11)).foregroundColor(AppColors.textSecondary) }
+                if h.seriesId != nil { Label("Recurring", systemImage: "repeat").font(.ctw(size: 11)).foregroundColor(AppColors.textSecondary) }
+                if h.hasClients == true { Label("Client", systemImage: "person.2").font(.ctw(size: 11)).foregroundColor(AppColors.textSecondary) }
             }
-            Text(h.title).font(.system(size: 22, weight: .bold)).foregroundColor(AppColors.textPrimary)
+            Text(h.title).font(.ctw(size: 22, weight: .bold)).foregroundColor(AppColors.textPrimary)
                 .strikethrough(h.daHuy)
                 .fixedSize(horizontal: false, vertical: true)
             VStack(alignment: .leading, spacing: 6) {
@@ -266,7 +266,7 @@ struct ChiTietHopCTW: View {
                     }
                 }
             }
-            .font(.system(size: 14))
+            .font(.ctw(size: 14))
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -300,7 +300,7 @@ struct ChiTietHopCTW: View {
                         Image(systemName: "video.fill")
                         Text("Join with \(h.tenNhaCungCap)").fontWeight(.semibold)
                         Spacer()
-                        if h.sapHoacDangHop { Text(h.batDau.map { $0 > Date() ? "Starting soon" : "Now" } ?? "").font(.system(size: 12, weight: .bold)) }
+                        if h.sapHoacDangHop { Text(h.batDau.map { $0 > Date() ? "Starting soon" : "Now" } ?? "").font(.ctw(size: 12, weight: .bold)) }
                     }
                     .foregroundColor(.white)
                     .padding(.horizontal, 16).frame(height: 50)
@@ -313,16 +313,16 @@ struct ChiTietHopCTW: View {
                     ShareLink(item: u, subject: Text(h.title)) { Label("Share", systemImage: "square.and.arrow.up") }
                     Button { tamPhu = .lich } label: { Label("Add to Calendar", systemImage: "calendar.badge.plus") }
                 }
-                .font(.system(size: 13, weight: .medium))
+                .font(.ctw(size: 13, weight: .medium))
             }
         } else if !h.daHuy {
             HStack(spacing: 12) {
                 Image(systemName: "video.slash").foregroundColor(AppColors.textTertiary)
-                Text("No video link").font(.system(size: 14)).foregroundColor(AppColors.textSecondary)
+                Text("No video link").font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary)
                 Spacer()
                 if suaDuoc {
                     Button("Add video room") { Task { _ = await vm.sua(["meetingUrl": "jitsi"]) } }
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.ctw(size: 13, weight: .semibold))
                 }
                 Button { tamPhu = .lich } label: { Image(systemName: "calendar.badge.plus") }
                     .accessibilityLabel("Add to Calendar")
@@ -334,12 +334,12 @@ struct ChiTietHopCTW: View {
 
     private func rsvp(_ me: CTWHopToi) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Going?").font(.system(size: 13, weight: .semibold)).foregroundColor(AppColors.textSecondary)
+            Text("Going?").font(.ctw(size: 13, weight: .semibold)).foregroundColor(AppColors.textSecondary)
             HStack(spacing: 8) {
                 ForEach([("YES", "Yes", "checkmark"), ("MAYBE", "Maybe", "questionmark"), ("NO", "No", "xmark")], id: \.0) { r in
                     let chon = me.rsvp == r.0
                     Button { Task { await vm.traLoiMoi(r.0) } } label: {
-                        Label(r.1, systemImage: r.2).font(.system(size: 14, weight: .semibold))
+                        Label(r.1, systemImage: r.2).font(.ctw(size: 14, weight: .semibold))
                             .frame(maxWidth: .infinity).frame(height: 40)
                             .foregroundColor(chon ? .white : AppColors.textPrimary)
                             .background(RoundedRectangle(cornerRadius: 11, style: .continuous).fill(chon ? AppColors.primary : AppColors.backgroundCard))
@@ -363,14 +363,14 @@ struct ChiTietHopCTW: View {
                 VStack(alignment: .leading, spacing: 10) {
                     ForEach(Array(ds.enumerated()), id: \.element.id) { i, a in
                         HStack(alignment: .top, spacing: 10) {
-                            Text("\(i + 1)").font(.system(size: 12, weight: .bold).monospacedDigit()).foregroundColor(AppColors.primary)
+                            Text("\(i + 1)").font(.ctw(size: 12, weight: .bold).monospacedDigit()).foregroundColor(AppColors.primary)
                                 .frame(width: 22, height: 22).background(Circle().fill(AppColors.primary.opacity(0.12)))
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(a.title).font(.system(size: 14)).foregroundColor(AppColors.textPrimary)
+                                Text(a.title).font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary)
                                 let nguoi = a.presenterId.flatMap { id in h.attendees?.first { $0.id == id }?.nguoi.ten }
                                 if nguoi != nil || a.minutes != nil {
                                     Text([nguoi, a.minutes.map { "\($0) min" }].compactMap { $0 }.joined(separator: " · "))
-                                        .font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                                        .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                                 }
                             }
                         }
@@ -387,7 +387,7 @@ struct ChiTietHopCTW: View {
     private func bienBan(_ h: CTWMeeting) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             CTWSectionHeader("doc.text", "Notes", trailing: suaDuoc ? AnyView(
-                Button { tamPhu = .ghiChu } label: { Label("Add", systemImage: "plus.circle.fill").labelStyle(.iconOnly).font(.system(size: 20)) }
+                Button { tamPhu = .ghiChu } label: { Label("Add", systemImage: "plus.circle.fill").labelStyle(.iconOnly).font(.ctw(size: 20)) }
                     .frame(width: 44, height: 32)
                     .accessibilityLabel("Add to notes")) : nil)
             Group {
@@ -395,7 +395,7 @@ struct ChiTietHopCTW: View {
                     CTWTipTapView(doc: h.minutesJson, coChu: 14)
                 } else {
                     Text(suaDuoc ? "No notes yet. Tap + to write the minutes." : "No notes yet.")
-                        .font(.system(size: 13)).foregroundColor(AppColors.textTertiary)
+                        .font(.ctw(size: 13)).foregroundColor(AppColors.textTertiary)
                 }
             }
             .padding(14)
@@ -414,8 +414,8 @@ struct ChiTietHopCTW: View {
                 }
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Drafted by AI from the meeting transcript. Check it before applying — it can be wrong.")
-                        .font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
-                    if let s = c.summary, !s.isEmpty { Text(s).font(.system(size: 14)).foregroundColor(AppColors.textPrimary) }
+                        .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
+                    if let s = c.summary, !s.isEmpty { Text(s).font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary) }
                     nhomDeXuat("Decisions", c.decisions ?? [])
                     nhomDeXuat("Action items", c.actions ?? [])
                     nhomDeXuat("Open questions", c.openIssues ?? [])
@@ -440,15 +440,15 @@ struct ChiTietHopCTW: View {
     private func nhomDeXuat(_ ten: String, _ ds: [CTWHopDeXuat]) -> some View {
         if !ds.isEmpty {
             VStack(alignment: .leading, spacing: 4) {
-                Text(ten).font(.system(size: 12, weight: .semibold)).foregroundColor(AppColors.textSecondary)
+                Text(ten).font(.ctw(size: 12, weight: .semibold)).foregroundColor(AppColors.textSecondary)
                 ForEach(Array(ds.enumerated()), id: \.offset) { _, x in
                     HStack(alignment: .top, spacing: 6) {
                         Text("•").foregroundColor(AppColors.textTertiary)
                         VStack(alignment: .leading, spacing: 1) {
-                            Text(x.text ?? "").font(.system(size: 13)).foregroundColor(AppColors.textPrimary)
+                            Text(x.text ?? "").font(.ctw(size: 13)).foregroundColor(AppColors.textPrimary)
                             let phu = [x.ownerName, x.due, x.unsupported == true ? "Not found in transcript" : nil].compactMap { $0 }
                             if !phu.isEmpty {
-                                Text(phu.joined(separator: " · ")).font(.system(size: 11))
+                                Text(phu.joined(separator: " · ")).font(.ctw(size: 11))
                                     .foregroundColor(x.unsupported == true ? AppColors.warning : AppColors.textTertiary)
                             }
                         }
@@ -464,16 +464,16 @@ struct ChiTietHopCTW: View {
         if !ds.isEmpty || suaDuoc {
             VStack(alignment: .leading, spacing: 8) {
                 CTWSectionHeader("checkmark.seal", "Decisions", count: ds.isEmpty ? nil : "\(ds.count)", trailing: suaDuoc ? AnyView(
-                    Button { themQuyetDinh = true } label: { Image(systemName: "plus.circle.fill").font(.system(size: 20)) }
+                    Button { themQuyetDinh = true } label: { Image(systemName: "plus.circle.fill").font(.ctw(size: 20)) }
                         .frame(width: 44, height: 32).accessibilityLabel("Add decision")) : nil)
                 VStack(alignment: .leading, spacing: 0) {
                     if ds.isEmpty {
-                        Text("No decisions recorded.").font(.system(size: 13)).foregroundColor(AppColors.textTertiary).padding(.vertical, 6)
+                        Text("No decisions recorded.").font(.ctw(size: 13)).foregroundColor(AppColors.textTertiary).padding(.vertical, 6)
                     }
                     ForEach(Array(ds.enumerated()), id: \.offset) { i, d in
                         HStack(alignment: .top, spacing: 8) {
-                            Image(systemName: "checkmark.circle.fill").foregroundColor(AppColors.success).font(.system(size: 14))
-                            Text(d).font(.system(size: 14)).foregroundColor(AppColors.textPrimary).fixedSize(horizontal: false, vertical: true)
+                            Image(systemName: "checkmark.circle.fill").foregroundColor(AppColors.success).font(.ctw(size: 14))
+                            Text(d).font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary).fixedSize(horizontal: false, vertical: true)
                             Spacer(minLength: 0)
                         }
                         .padding(.vertical, 7)
@@ -500,11 +500,11 @@ struct ChiTietHopCTW: View {
         let mo = ds.filter { $0.issue == nil }
         return VStack(alignment: .leading, spacing: 8) {
             CTWSectionHeader("checklist", "Action items", count: ds.isEmpty ? nil : "\(ds.count)", trailing: suaDuoc ? AnyView(
-                Button { tamPhu = .viec(nil) } label: { Image(systemName: "plus.circle.fill").font(.system(size: 20)) }
+                Button { tamPhu = .viec(nil) } label: { Image(systemName: "plus.circle.fill").font(.ctw(size: 20)) }
                     .frame(width: 44, height: 32).accessibilityLabel("Add action item")) : nil)
             VStack(alignment: .leading, spacing: 0) {
                 if ds.isEmpty {
-                    Text("No action items.").font(.system(size: 13)).foregroundColor(AppColors.textTertiary).padding(.vertical, 8)
+                    Text("No action items.").font(.ctw(size: 13)).foregroundColor(AppColors.textTertiary).padding(.vertical, 8)
                 }
                 ForEach(ds) { v in
                     HangViecHopCTW(viec: v, chon: chonViec.contains(v.id), choChon: h.canCreateIssues == true && v.issue == nil) {
@@ -535,7 +535,7 @@ struct ChiTietHopCTW: View {
                 } label: {
                     Label(chonViec.isEmpty ? "Create issues for \(mo.count) open item\(mo.count == 1 ? "" : "s")" : "Create \(chonViec.count) issue\(chonViec.count == 1 ? "" : "s")",
                           systemImage: "checkmark.square.fill")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.ctw(size: 14, weight: .semibold))
                         .frame(maxWidth: .infinity).frame(height: 42)
                 }
                 .buttonStyle(.bordered)
@@ -549,7 +549,7 @@ struct ChiTietHopCTW: View {
         let ds = h.attendees ?? []
         return VStack(alignment: .leading, spacing: 8) {
             CTWSectionHeader("person.2", "Attendees", count: "\(ds.count)", trailing: suaDuoc ? AnyView(
-                Button { chonMoi = Set(ds.map(\.id)); tamPhu = .moi } label: { Image(systemName: "person.badge.plus").font(.system(size: 17)) }
+                Button { chonMoi = Set(ds.map(\.id)); tamPhu = .moi } label: { Image(systemName: "person.badge.plus").font(.ctw(size: 17)) }
                     .frame(width: 44, height: 32).accessibilityLabel("Invite people")) : nil)
             VStack(spacing: 0) {
                 ForEach(ds) { a in
@@ -558,11 +558,11 @@ struct ChiTietHopCTW: View {
                         CTWAvatar(user: a.nguoi, size: 30)
                         VStack(alignment: .leading, spacing: 1) {
                             HStack(spacing: 5) {
-                                Text(a.nguoi.ten).font(.system(size: 14)).foregroundColor(AppColors.textPrimary)
+                                Text(a.nguoi.ten).font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary)
                                 if a.nguoi.laAgent { CTWNhanAI() }
-                                if a.isClient == true { Text("Client").font(.system(size: 10, weight: .semibold)).foregroundColor(AppColors.brandPink) }
+                                if a.isClient == true { Text("Client").font(.ctw(size: 10, weight: .semibold)).foregroundColor(AppColors.brandPink) }
                             }
-                            if let s = moTaNguoi(p) { Text(s).font(.system(size: 12)).foregroundColor(AppColors.textSecondary) }
+                            if let s = moTaNguoi(p) { Text(s).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary) }
                         }
                         Spacer()
                         Image(systemName: bieuTuongRsvp(p?.rsvp)).foregroundColor(mauRsvp(p?.rsvp))
@@ -572,7 +572,7 @@ struct ChiTietHopCTW: View {
                     .accessibilityElement(children: .combine)
                     if a.id != ds.last?.id { Divider() }
                 }
-                if ds.isEmpty { Text("No one invited yet.").font(.system(size: 13)).foregroundColor(AppColors.textTertiary).padding(.vertical, 8) }
+                if ds.isEmpty { Text("No one invited yet.").font(.ctw(size: 13)).foregroundColor(AppColors.textTertiary).padding(.vertical, 8) }
             }
             .padding(.horizontal, 14).padding(.vertical, 4)
             .ctwThe()
@@ -632,10 +632,10 @@ struct ChiTietHopCTW: View {
     private func hangLienKet(_ icon: String, _ ten: String, _ phu: String?) -> some View {
         HStack(spacing: 10) {
             Image(systemName: icon).foregroundColor(AppColors.primary).frame(width: 24)
-            Text(ten).font(.system(size: 14)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+            Text(ten).font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary).lineLimit(1)
             Spacer()
-            if let phu { Text(phu).font(.system(size: 12)).foregroundColor(AppColors.textSecondary) }
-            Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)).foregroundColor(AppColors.textTertiary)
+            if let phu { Text(phu).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary) }
+            Image(systemName: "chevron.right").font(.ctw(size: 11, weight: .semibold)).foregroundColor(AppColors.textTertiary)
         }
         .padding(.vertical, 12)
         .contentShape(Rectangle())
@@ -742,7 +742,7 @@ struct ChipTrangThaiHopCTW: View {
         }()
         HStack(spacing: 4) {
             Circle().fill(mau).frame(width: 6, height: 6)
-            Text(ten).font(.system(size: 11, weight: .semibold)).foregroundColor(mau)
+            Text(ten).font(.ctw(size: 11, weight: .semibold)).foregroundColor(mau)
         }
         .padding(.horizontal, 7).padding(.vertical, 3)
         .background(Capsule().fill(mau.opacity(0.12)))
@@ -760,29 +760,29 @@ struct HangViecHopCTW: View {
         HStack(alignment: .top, spacing: 10) {
             if choChon {
                 Button(action: bamChon) {
-                    Image(systemName: chon ? "checkmark.circle.fill" : "circle").font(.system(size: 18))
+                    Image(systemName: chon ? "checkmark.circle.fill" : "circle").font(.ctw(size: 18))
                         .foregroundColor(chon ? AppColors.primary : AppColors.textTertiary)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(chon ? "Selected" : "Select for issue creation")
             } else {
-                Image(systemName: viec.issue?.done == true ? "checkmark.square.fill" : "square").font(.system(size: 17))
+                Image(systemName: viec.issue?.done == true ? "checkmark.square.fill" : "square").font(.ctw(size: 17))
                     .foregroundColor(viec.issue?.done == true ? AppColors.success : AppColors.textTertiary)
             }
             VStack(alignment: .leading, spacing: 4) {
-                Text(viec.text).font(.system(size: 14)).foregroundColor(AppColors.textPrimary).fixedSize(horizontal: false, vertical: true)
+                Text(viec.text).font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary).fixedSize(horizontal: false, vertical: true)
                 HStack(spacing: 8) {
                     if let a = viec.assignee {
-                        HStack(spacing: 4) { CTWAvatar(user: a, size: 16); Text(a.ten).font(.system(size: 12)) }
+                        HStack(spacing: 4) { CTWAvatar(user: a, size: 16); Text(a.ten).font(.ctw(size: 12)) }
                             .foregroundColor(AppColors.textSecondary)
                     }
                     if let d = CTW.ngayNgan(viec.dueDate) {
-                        Label(d, systemImage: "calendar").font(.system(size: 12))
+                        Label(d, systemImage: "calendar").font(.ctw(size: 12))
                             .foregroundColor(CTW.quaHan(viec.dueDate) && viec.issue?.done != true ? AppColors.error : AppColors.textSecondary)
                     }
                     if let k = viec.issue {
                         Button { moThe(k) } label: {
-                            Text(k.key ?? "").font(.system(size: 11, weight: .semibold).monospaced())
+                            Text(k.key ?? "").font(.ctw(size: 11, weight: .semibold).monospaced())
                                 .padding(.horizontal, 6).padding(.vertical, 2)
                                 .background(Capsule().fill(AppColors.primary.opacity(0.12)))
                                 .foregroundColor(AppColors.primary)
@@ -811,7 +811,7 @@ struct GhiChuHopCTW: View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Your notes are added to the end of the meeting minutes. Formatting written on the web is kept.")
-                    .font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                    .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                 TextEditor(text: $chu)
                     .focused($tieuDiem)
                     .scrollContentBackground(.hidden)

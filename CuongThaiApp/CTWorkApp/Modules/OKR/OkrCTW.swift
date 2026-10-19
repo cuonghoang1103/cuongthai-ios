@@ -103,7 +103,7 @@ struct OkrCTW: View {
         if let c = v.cycle {
             Text("\(c.name ?? "Cycle") · \(NgayCTW.nganTu(c.startDate) ?? "") – \(NgayCTW.nganTu(c.endDate) ?? "")"
                  + (c.status == "CLOSED" ? " · Closed" : ""))
-                .font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
+                .font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
         }
         if let d = v.dashboard { bangTong(d) }
         let cay = OkrTinh.cay(v.objectives ?? [])
@@ -120,7 +120,7 @@ struct OkrCTW: View {
                         theMucTieu(n.goc, laCon: false)
                         ForEach(n.con) { c in
                             HStack(alignment: .top, spacing: 8) {
-                                Image(systemName: "arrow.turn.down.right").font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
+                                Image(systemName: "arrow.turn.down.right").font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
                                     .padding(.top, 14)
                                 theMucTieu(c, laCon: true)
                             }
@@ -190,16 +190,16 @@ struct OkrCTW: View {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 6) {
                         if let k = o.project?.key {
-                            Text(k).font(.system(size: 10, weight: .bold).monospaced()).foregroundColor(AppColors.primary)
+                            Text(k).font(.ctw(size: 10, weight: .bold).monospaced()).foregroundColor(AppColors.primary)
                                 .padding(.horizontal, 6).padding(.vertical, 2)
                                 .background(Capsule().fill(AppColors.primary.opacity(0.12)))
                         } else {
-                            Text("WORKSPACE").font(.system(size: 10, weight: .bold)).foregroundColor(AppColors.textSecondary)
+                            Text("WORKSPACE").font(.ctw(size: 10, weight: .bold)).foregroundColor(AppColors.textSecondary)
                         }
                         Label(OkrTinh.tenTrangThai(o.status), systemImage: OkrTinh.bieuTuong(o.status))
-                            .font(.system(size: 11, weight: .semibold)).foregroundColor(mau)
+                            .font(.ctw(size: 11, weight: .semibold)).foregroundColor(mau)
                     }
-                    Text(o.title ?? "").font(.system(size: laCon ? 15 : 17, weight: .bold)).foregroundColor(AppColors.textPrimary)
+                    Text(o.title ?? "").font(.ctw(size: laCon ? 15 : 17, weight: .bold)).foregroundColor(AppColors.textPrimary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer(minLength: 8)
@@ -208,11 +208,11 @@ struct OkrCTW: View {
             if let owner = o.owner {
                 HStack(spacing: 5) {
                     CTWAvatar(user: owner, size: 18)
-                    Text(owner.ten).font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                    Text(owner.ten).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                     if owner.laAgent { CTWNhanAI() }
                     Spacer()
                     if let s = o.score {
-                        Text("Score \(String(format: "%.1f", s))").font(.system(size: 11, weight: .bold))
+                        Text("Score \(String(format: "%.1f", s))").font(.ctw(size: 11, weight: .bold))
                             .foregroundColor(o.scoreBand == "GREEN" ? AppColors.success : (o.scoreBand == "RED" ? AppColors.error : AppColors.warning))
                     }
                 }
@@ -244,24 +244,24 @@ struct OkrCTW: View {
             HStack(spacing: 10) {
                 CTWVongTienDo(tiLe: k.progress ?? 0, co: 34, net: 4, mau: CTWMauChuoi.mau(0))
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(k.title ?? "").font(.system(size: 14)).foregroundColor(AppColors.textPrimary).lineLimit(2)
+                    Text(k.title ?? "").font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary).lineLimit(2)
                         .multilineTextAlignment(.leading)
                     HStack(spacing: 6) {
-                        Text(OkrTinh.giaTri(k)).font(.system(size: 11, weight: .semibold).monospacedDigit()).foregroundColor(AppColors.textSecondary)
+                        Text(OkrTinh.giaTri(k)).font(.ctw(size: 11, weight: .semibold).monospacedDigit()).foregroundColor(AppColors.textSecondary)
                         if k.tuDong {
                             Label(k.source == "POINTS" ? "from points" : "from issues", systemImage: "link")
-                                .font(.system(size: 10)).foregroundColor(AppColors.textTertiary)
+                                .font(.ctw(size: 10)).foregroundColor(AppColors.textTertiary)
                         }
                         if let c = k.confidence {
                             Label("\(CTWSo.gon(c))/10", systemImage: "gauge.with.dots.needle.50percent")
-                                .font(.system(size: 10, weight: .medium)).foregroundColor(c <= 4 ? AppColors.warning : AppColors.textTertiary)
+                                .font(.ctw(size: 10, weight: .medium)).foregroundColor(c <= 4 ? AppColors.warning : AppColors.textTertiary)
                         }
                     }
                 }
                 Spacer(minLength: 4)
                 if k.canCheckin == true {
                     Button { checkin = k } label: {
-                        Text("Check in").font(.system(size: 12, weight: .semibold)).padding(.horizontal, 10).frame(minHeight: 32)
+                        Text("Check in").font(.ctw(size: 12, weight: .semibold)).padding(.horizontal, 10).frame(minHeight: 32)
                             .background(Capsule().fill(AppColors.primary.opacity(0.12)))
                     }
                     .buttonStyle(.plain)
@@ -296,16 +296,16 @@ struct ChiTietKRCTW: View {
             List {
                 Section {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text(kr.title ?? "").font(.system(size: 17, weight: .semibold))
+                        Text(kr.title ?? "").font(.ctw(size: 17, weight: .semibold))
                         HStack {
                             CTWVongTienDo(tiLe: kr.progress ?? 0, co: 56)
                             VStack(alignment: .leading, spacing: 3) {
-                                Text(OkrTinh.giaTri(kr)).font(.system(size: 15, weight: .semibold).monospacedDigit())
+                                Text(OkrTinh.giaTri(kr)).font(.ctw(size: 15, weight: .semibold).monospacedDigit())
                                 Text("Started at \(CTWSo.gon(kr.startValue ?? 0))\(kr.unit.map { $0 == "%" ? "%" : " \($0)" } ?? "")")
-                                    .font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                                    .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                                 if let l = kr.linkSummary {
                                     Text("\(CTWSo.gon(l.done ?? 0)) of \(CTWSo.gon(l.total ?? 0)) \(l.unit ?? "") done (linked work)")
-                                        .font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                                        .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                                 }
                             }
                         }
@@ -332,16 +332,16 @@ struct ChiTietKRCTW: View {
                     ForEach(ds) { c in
                         VStack(alignment: .leading, spacing: 4) {
                             HStack {
-                                Text("Week of \(NgayCTW.nganTu(c.weekStart) ?? "")").font(.system(size: 13, weight: .semibold))
+                                Text("Week of \(NgayCTW.nganTu(c.weekStart) ?? "")").font(.ctw(size: 13, weight: .semibold))
                                 Spacer()
                                 Text("\(CTWSo.gon(c.value ?? 0)) · \(Int(((c.progress ?? 0) * 100).rounded()))%")
-                                    .font(.system(size: 13).monospacedDigit())
+                                    .font(.ctw(size: 13).monospacedDigit())
                             }
                             HStack(spacing: 6) {
-                                if let u = c.user { CTWAvatar(user: u, size: 16); Text(u.ten).font(.system(size: 11)).foregroundColor(AppColors.textSecondary) }
-                                Text("Confidence \(CTWSo.gon(c.confidence ?? 0))/10").font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+                                if let u = c.user { CTWAvatar(user: u, size: 16); Text(u.ten).font(.ctw(size: 11)).foregroundColor(AppColors.textSecondary) }
+                                Text("Confidence \(CTWSo.gon(c.confidence ?? 0))/10").font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
                             }
-                            if let n = c.note, !n.isEmpty { Text(n).font(.system(size: 13)).foregroundColor(AppColors.textSecondary) }
+                            if let n = c.note, !n.isEmpty { Text(n).font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary) }
                         }
                         .padding(.vertical, 2)
                     }
@@ -377,7 +377,7 @@ struct CheckinKRCTW: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section { Text(kr.title ?? "").font(.system(size: 15, weight: .semibold)) }
+                Section { Text(kr.title ?? "").font(.ctw(size: 15, weight: .semibold)) }
                 if !kr.tuDong {
                     Section {
                         if kr.metric == "BOOLEAN" {
@@ -393,7 +393,7 @@ struct CheckinKRCTW: View {
                     }
                 } else {
                     Section { Text("This key result updates itself from linked issues. Just record how confident you are.")
-                        .font(.system(size: 13)).foregroundColor(AppColors.textSecondary) }
+                        .font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary) }
                 }
                 Section {
                     VStack(alignment: .leading) {

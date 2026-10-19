@@ -194,8 +194,8 @@ struct BangRetroCTW: View {
     private func dau(_ r: CTWRetro) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
-                Text(RetroCot.tenTemplate(r.template)).font(.system(size: 12, weight: .semibold)).foregroundColor(AppColors.textSecondary)
-                if let s = r.sprint?.name { Text("· \(s)").font(.system(size: 12)).foregroundColor(AppColors.textSecondary) }
+                Text(RetroCot.tenTemplate(r.template)).font(.ctw(size: 12, weight: .semibold)).foregroundColor(AppColors.textSecondary)
+                if let s = r.sprint?.name { Text("· \(s)").font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary) }
                 Spacer()
                 if r.anonymous == true { nhan("Anonymous", "eye.slash", AppColors.textSecondary) }
                 if r.locked == true { nhan("Locked", "lock.fill", AppColors.warning) }
@@ -205,18 +205,18 @@ struct BangRetroCTW: View {
                     ForEach(0..<moi, id: \.self) { i in
                         Circle().fill(i < con ? AppColors.primary : AppColors.backgroundTertiary).frame(width: 9, height: 9)
                     }
-                    Text("\(con) of \(moi) votes left").font(.system(size: 12, weight: .medium)).foregroundColor(AppColors.textSecondary)
+                    Text("\(con) of \(moi) votes left").font(.ctw(size: 12, weight: .medium)).foregroundColor(AppColors.textSecondary)
                 }
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("\(con) of \(moi) votes left")
             } else if r.locked == true {
-                Text("This retro is read-only. Action items can still be added.").font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
+                Text("This retro is read-only. Action items can still be added.").font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
             }
         }
     }
 
     private func nhan(_ chu: String, _ bt: String, _ mau: Color) -> some View {
-        Label(chu, systemImage: bt).font(.system(size: 11, weight: .bold)).foregroundColor(mau)
+        Label(chu, systemImage: bt).font(.ctw(size: 11, weight: .bold)).foregroundColor(mau)
             .padding(.horizontal, 8).padding(.vertical, 3)
             .background(Capsule().fill(mau.opacity(0.12)))
     }
@@ -229,8 +229,8 @@ struct BangRetroCTW: View {
         return VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 6) {
                 Image(systemName: RetroCot.bieuTuong(c)).foregroundColor(AppColors.primary)
-                Text(RetroCot.ten(c)).font(.system(size: 15, weight: .semibold))
-                Text("\(ds.count)").font(.system(size: 12, weight: .semibold).monospacedDigit()).foregroundColor(AppColors.textTertiary)
+                Text(RetroCot.ten(c)).font(.ctw(size: 15, weight: .semibold))
+                Text("\(ds.count)").font(.ctw(size: 12, weight: .semibold).monospacedDigit()).foregroundColor(AppColors.textTertiary)
                 Spacer()
                 if viet {
                     Button { tamPhu = .themThe(c) } label: { Image(systemName: "plus").frame(width: 36, height: 36) }
@@ -239,13 +239,13 @@ struct BangRetroCTW: View {
             }
             if ds.isEmpty {
                 Text(viet ? "No cards yet. Tap + to add one." : "No cards.")
-                    .font(.system(size: 13)).foregroundColor(AppColors.textTertiary)
+                    .font(.ctw(size: 13)).foregroundColor(AppColors.textTertiary)
                     .frame(maxWidth: .infinity, minHeight: 60)
             }
             ForEach(ds, id: \.the.id) { x in theRetro(r, x.the).padding(.leading, x.con ? 18 : 0) }
             if viet && !ds.isEmpty {
                 Button { tamPhu = .themThe(c) } label: {
-                    Label("Add card", systemImage: "plus").font(.system(size: 14, weight: .semibold))
+                    Label("Add card", systemImage: "plus").font(.ctw(size: 14, weight: .semibold))
                         .frame(maxWidth: .infinity, minHeight: 44)
                 }
                 .buttonStyle(.bordered)
@@ -259,17 +259,17 @@ struct BangRetroCTW: View {
         let viet = r.me?.canWrite == true && r.locked != true
         let cuaToi = t.mine == true
         return VStack(alignment: .leading, spacing: 8) {
-            Text(t.body ?? "").font(.system(size: 15)).foregroundColor(AppColors.textPrimary)
+            Text(t.body ?? "").font(.ctw(size: 15)).foregroundColor(AppColors.textPrimary)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .fixedSize(horizontal: false, vertical: true)
             HStack(spacing: 6) {
                 if let a = t.author {
                     CTWAvatar(user: a, size: 18)
-                    Text(a.ten).font(.system(size: 11)).foregroundColor(AppColors.textSecondary).lineLimit(1)
+                    Text(a.ten).font(.ctw(size: 11)).foregroundColor(AppColors.textSecondary).lineLimit(1)
                     if a.laAgent { CTWNhanAI() }
                 } else if r.anonymous == true {
-                    Image(systemName: "person.fill.questionmark").font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
-                    Text(cuaToi ? "You (anonymous)" : "Anonymous").font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+                    Image(systemName: "person.fill.questionmark").font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
+                    Text(cuaToi ? "You (anonymous)" : "Anonymous").font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
                 }
                 Spacer()
                 Button {
@@ -278,9 +278,9 @@ struct BangRetroCTW: View {
                     HStack(spacing: 4) {
                         Image(systemName: (t.myVotes ?? 0) > 0 ? "hand.thumbsup.fill" : "hand.thumbsup")
                         Text("\(t.votes ?? 0)").monospacedDigit()
-                        if (t.myVotes ?? 0) > 0 { Text("(\(t.myVotes ?? 0) mine)").font(.system(size: 10)) }
+                        if (t.myVotes ?? 0) > 0 { Text("(\(t.myVotes ?? 0) mine)").font(.ctw(size: 10)) }
                     }
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.ctw(size: 12, weight: .semibold))
                     .foregroundColor((t.myVotes ?? 0) > 0 ? AppColors.primary : AppColors.textSecondary)
                     .padding(.horizontal, 10).frame(minHeight: 32)
                     .background(Capsule().fill(((t.myVotes ?? 0) > 0 ? AppColors.primary : AppColors.textSecondary).opacity(0.10)))
@@ -330,17 +330,17 @@ struct BangRetroCTW: View {
                 .padding(.bottom, 6)
             if ds.isEmpty {
                 Text("Turn the top-voted cards into action items so they don't get lost.")
-                    .font(.system(size: 13)).foregroundColor(AppColors.textTertiary)
+                    .font(.ctw(size: 13)).foregroundColor(AppColors.textTertiary)
             }
             ForEach(Array(ds.enumerated()), id: \.element.id) { i, a in
                 HStack(spacing: 10) {
                     Image(systemName: a.issue?.status?.category == "DONE" ? "checkmark.circle.fill" : "circle")
                         .foregroundColor(a.issue?.status?.category == "DONE" ? AppColors.success : AppColors.textTertiary)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(a.title ?? "").font(.system(size: 14)).foregroundColor(AppColors.textPrimary)
+                        Text(a.title ?? "").font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary)
                         if let so = a.issue?.number {
                             Text("\(app.luaChon?.maDuAn ?? "")-\(so) · \(a.issue?.status?.name ?? "")")
-                                .font(.system(size: 11, weight: .medium).monospaced()).foregroundColor(AppColors.textSecondary)
+                                .font(.ctw(size: 11, weight: .medium).monospaced()).foregroundColor(AppColors.textSecondary)
                         }
                     }
                     Spacer()
@@ -368,14 +368,14 @@ struct BangRetroCTW: View {
     private func tomTatAI(_ s: String, _ luc: String?) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
-                Text("Summary").font(.system(size: 15, weight: .semibold))
+                Text("Summary").font(.ctw(size: 15, weight: .semibold))
                 CTWNhanAI(chu: "AI summary")
                 Spacer()
-                if let luc { Text(CTW.thoiDiem(luc)).font(.system(size: 11)).foregroundColor(AppColors.textTertiary) }
+                if let luc { Text(CTW.thoiDiem(luc)).font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary) }
             }
             CTWMarkdownView(markdown: s)
             Text("Generated by AI on the web. It can be inaccurate — check it against the cards.")
-                .font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+                .font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
         }
         .padding(14)
         .ctwThe(14)

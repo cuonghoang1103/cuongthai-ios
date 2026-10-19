@@ -298,26 +298,26 @@ struct ChayTestCTW: View {
                 if let e = r.cycle?.environment, !e.isEmpty { CTWNhanNho(chu: e, bieuTuong: "desktopcomputer") }
                 if let b = r.cycle?.build, !b.isEmpty { CTWNhanNho(chu: b, bieuTuong: "shippingbox") }
             }
-            Text(r.testCase?.issue?.title ?? "Test").font(.system(size: 22, weight: .bold))
+            Text(r.testCase?.issue?.title ?? "Test").font(.ctw(size: 22, weight: .bold))
                 .foregroundColor(AppColors.textPrimary).fixedSize(horizontal: false, vertical: true)
                 .accessibilityAddTraits(.isHeader)
             HStack(spacing: 12) {
                 Image(systemName: CTWLuatTest.bieuTuong(r.status))
-                    .font(.system(size: 26)).foregroundColor(CTWLuatTest.mau(r.status))
+                    .font(.ctw(size: 26)).foregroundColor(CTWLuatTest.mau(r.status))
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(CTWLuatTest.nhan(r.status)).font(.system(size: 17, weight: .bold))
+                    Text(CTWLuatTest.nhan(r.status)).font(.ctw(size: 17, weight: .bold))
                         .foregroundColor(CTWLuatTest.mau(r.status))
-                    Text("\(xong) of \(buoc.count) steps recorded").font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                    Text("\(xong) of \(buoc.count) steps recorded").font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                 }
                 Spacer(minLength: 0)
                 if let u = r.executedBy {
                     VStack(alignment: .trailing, spacing: 3) {
                         HStack(spacing: 5) {
                             CTWAvatar(user: u, size: 20)
-                            Text(u.ten).font(.system(size: 12, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                            Text(u.ten).font(.ctw(size: 12, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(1)
                         }
                         if u.laAgent { CTWNhanAI() }
-                        if let t = r.executedAt { Text(CTW.thoiDiem(t)).font(.system(size: 11)).foregroundColor(AppColors.textTertiary) }
+                        if let t = r.executedAt { Text(CTW.thoiDiem(t)).font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary) }
                     }
                 }
             }
@@ -328,12 +328,12 @@ struct ChayTestCTW: View {
             if let v = r.testCaseVersion, let hienTai = r.testCase?.version, v < hienTai {
                 Label("This run uses version \(v) of the test; the test is now at version \(hienTai). Reset the run to pick up the new steps.",
                       systemImage: "exclamationmark.arrow.circlepath")
-                    .font(.system(size: 12)).foregroundColor(AppColors.warning)
+                    .font(.ctw(size: 12)).foregroundColor(AppColors.warning)
                     .fixedSize(horizontal: false, vertical: true)
             }
             if !coTheChay && !vm.biKhoa {
                 Label("You can view this run but not record results.", systemImage: "eye")
-                    .font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                    .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
             }
         }
         .padding(16)
@@ -345,7 +345,7 @@ struct ChayTestCTW: View {
     @ViewBuilder private func cacBuoc(_ r: CTWRunDetail) -> some View {
         if let p = r.testCase?.preconditions, !p.isEmpty {
             CTWSectionHeader("flag", "Preconditions")
-            Text(p).font(.system(size: 15)).foregroundColor(AppColors.textPrimary)
+            Text(p).font(.ctw(size: 15)).foregroundColor(AppColors.textPrimary)
                 .frame(maxWidth: .infinity, alignment: .leading).padding(12).ctwThe(12)
         }
         if let g = r.gherkin, !g.isEmpty {
@@ -356,7 +356,7 @@ struct ChayTestCTW: View {
         CTWSectionHeader("list.number", "Steps", count: "\(buoc.count)")
         if buoc.isEmpty {
             Text("This test has no steps. Set the overall result from the web, or add steps to the test.")
-                .font(.system(size: 13)).foregroundColor(AppColors.textTertiary)
+                .font(.ctw(size: 13)).foregroundColor(AppColors.textTertiary)
         }
         ForEach(Array(buoc.enumerated()), id: \.element.id) { i, s in
             CTWBuocTestView(so: i + 1, action: s.action, data: s.data, expected: s.expected, trangThai: s.status) {
@@ -378,7 +378,7 @@ struct ChayTestCTW: View {
                 get: { nhap[s.id] ?? s.actual ?? "" },
                 set: { nhap[s.id] = $0 }), axis: .vertical)
                 .lineLimit(1...5)
-                .font(.system(size: 14))
+                .font(.ctw(size: 14))
                 .focused($dangGo, equals: s.id)
                 .submitLabel(.done)
                 .padding(.horizontal, 10).padding(.vertical, 8)
@@ -386,17 +386,17 @@ struct ChayTestCTW: View {
         } else {
             HStack(spacing: 6) {
                 Image(systemName: CTWLuatTest.bieuTuong(s.status)).foregroundColor(CTWLuatTest.mau(s.status))
-                Text(CTWLuatTest.nhan(s.status)).font(.system(size: 13, weight: .semibold)).foregroundColor(CTWLuatTest.mau(s.status))
+                Text(CTWLuatTest.nhan(s.status)).font(.ctw(size: 13, weight: .semibold)).foregroundColor(CTWLuatTest.mau(s.status))
             }
             if let a = s.actual, !a.isEmpty {
-                Text("Actual: \(a)").font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
+                Text("Actual: \(a)").font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
         if (s.status == "FAIL" || s.status == "BLOCKED") && coTheTaoLoi {
             Button { tamPhu = .taoLoi(s) } label: {
                 Label("Log a bug for this step", systemImage: "ladybug")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.ctw(size: 13, weight: .semibold))
                     .frame(minHeight: 36)
             }
             .buttonStyle(.bordered)
@@ -412,8 +412,8 @@ struct ChayTestCTW: View {
             Task { await vm.danhDau(s, k) }
         } label: {
             VStack(spacing: 3) {
-                Image(systemName: CTWLuatTest.bieuTuong(k)).font(.system(size: 15, weight: .semibold))
-                Text(ngan).font(.system(size: 11, weight: .semibold)).lineLimit(1).minimumScaleFactor(0.8)
+                Image(systemName: CTWLuatTest.bieuTuong(k)).font(.ctw(size: 15, weight: .semibold))
+                Text(ngan).font(.ctw(size: 11, weight: .semibold)).lineLimit(1).minimumScaleFactor(0.8)
             }
             .frame(maxWidth: .infinity, minHeight: 48)
             .foregroundColor(chon ? .white : mau)
@@ -446,7 +446,7 @@ struct ChayTestCTW: View {
                 Button { moChonTep = true } label: { Label("Choose File", systemImage: "folder") }
             } label: {
                 if vm.dangTaiLen { ProgressView().frame(width: 44, height: 32) }
-                else { Image(systemName: "plus.circle.fill").font(.system(size: 20)).frame(width: 44, height: 32) }
+                else { Image(systemName: "plus.circle.fill").font(.ctw(size: 20)).frame(width: 44, height: 32) }
             }
             .disabled(vm.dangTaiLen)
             .accessibilityLabel("Add evidence")
@@ -465,7 +465,7 @@ struct ChayTestCTW: View {
                 }
             if ds.isEmpty {
                 Text(coTheDinhKem ? "Tap + to take a photo or attach a screenshot of what you saw." : "No evidence yet.")
-                    .font(.system(size: 13)).foregroundColor(AppColors.textTertiary)
+                    .font(.ctw(size: 13)).foregroundColor(AppColors.textTertiary)
                     .fixedSize(horizontal: false, vertical: true)
             } else {
                 VStack(spacing: 0) {
@@ -475,18 +475,18 @@ struct ChayTestCTW: View {
                         } label: {
                             HStack(spacing: 11) {
                                 Image(systemName: a.bieuTuong)
-                                    .font(.system(size: 16, weight: .medium)).foregroundColor(AppColors.primary)
+                                    .font(.ctw(size: 16, weight: .medium)).foregroundColor(AppColors.primary)
                                     .frame(width: 36, height: 36)
                                     .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(AppColors.primary.opacity(0.12)))
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(a.fileName ?? "File").font(.system(size: 14, weight: .medium))
+                                    Text(a.fileName ?? "File").font(.ctw(size: 14, weight: .medium))
                                         .foregroundColor(AppColors.textPrimary).lineLimit(1)
                                     Text([a.coChu, a.uploader?.ten, CTW.thoiDiem(a.createdAt)]
                                         .compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · "))
-                                        .font(.system(size: 11)).foregroundColor(AppColors.textSecondary).lineLimit(1)
+                                        .font(.ctw(size: 11)).foregroundColor(AppColors.textSecondary).lineLimit(1)
                                 }
                                 Spacer(minLength: 0)
-                                Image(systemName: "eye").font(.system(size: 13)).foregroundColor(AppColors.textTertiary)
+                                Image(systemName: "eye").font(.ctw(size: 13)).foregroundColor(AppColors.textTertiary)
                             }
                             .padding(.vertical, 8)
                             .contentShape(Rectangle())
@@ -522,19 +522,19 @@ struct ChayTestCTW: View {
                 CTWSectionHeader("ladybug", "Bugs", count: ds.isEmpty ? nil : "\(ds.count)",
                                  trailing: coTheTaoLoi ? AnyView(
                                     Button { tamPhu = .taoLoi(nil) } label: {
-                                        Image(systemName: "plus.circle.fill").font(.system(size: 20)).frame(width: 44, height: 32)
+                                        Image(systemName: "plus.circle.fill").font(.ctw(size: 20)).frame(width: 44, height: 32)
                                     }.accessibilityLabel("Log a bug")) : nil)
                 if ds.isEmpty {
-                    Text("No bugs linked to this run.").font(.system(size: 13)).foregroundColor(AppColors.textTertiary)
+                    Text("No bugs linked to this run.").font(.ctw(size: 13)).foregroundColor(AppColors.textTertiary)
                 } else {
                     VStack(spacing: 0) {
                         ForEach(ds) { d in
                             NavigationLink(value: CTWRoute.the(pid: pid, so: d.number)) {
                                 HStack(spacing: 9) {
                                     Image(systemName: "ladybug.fill").foregroundColor(AppColors.error).frame(width: 20)
-                                    Text("\(maDuAn)-\(d.number)").font(.system(size: 12, weight: .medium).monospaced())
+                                    Text("\(maDuAn)-\(d.number)").font(.ctw(size: 12, weight: .medium).monospaced())
                                         .foregroundColor(AppColors.textSecondary)
-                                    Text(d.title ?? "Bug").font(.system(size: 14)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                                    Text(d.title ?? "Bug").font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary).lineLimit(1)
                                     Spacer(minLength: 0)
                                     if let st = d.statusId.flatMap({ cfg?.trangThai($0) }) { CTWStatusChip(status: st) }
                                 }
@@ -559,7 +559,7 @@ struct ChayTestCTW: View {
                 if coTheChay {
                     TextField("Environment details, data used, anything worth knowing…", text: $ghiChu, axis: .vertical)
                         .lineLimit(2...8)
-                        .font(.system(size: 14))
+                        .font(.ctw(size: 14))
                         .padding(12)
                         .ctwThe(12)
                     if ghiChu.trimmingCharacters(in: .whitespacesAndNewlines) != (r.comment ?? "") {
@@ -570,7 +570,7 @@ struct ChayTestCTW: View {
                         }
                     }
                 } else if let c = r.comment {
-                    Text(c).font(.system(size: 14)).foregroundColor(AppColors.textPrimary)
+                    Text(c).font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary)
                         .frame(maxWidth: .infinity, alignment: .leading).padding(12).ctwThe(12)
                 }
             }
@@ -609,7 +609,7 @@ struct TaoLoiTestView: View {
                 Section {
                     Label("The description is filled in for you: cycle, environment and build, preconditions, steps to reproduce, expected and actual result.",
                           systemImage: "wand.and.stars")
-                        .font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
+                        .font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
                 }
             }
             .navigationTitle("Log a bug")

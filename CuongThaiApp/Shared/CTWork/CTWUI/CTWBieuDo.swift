@@ -59,15 +59,15 @@ struct CTWTheChiSo: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 5) {
                 if let bieuTuong {
-                    Image(systemName: bieuTuong).font(.system(size: 11, weight: .semibold)).foregroundColor(mau)
+                    Image(systemName: bieuTuong).font(.ctw(size: 11, weight: .semibold)).foregroundColor(mau)
                 }
-                Text(nhan).font(.system(size: 12, weight: .medium)).foregroundColor(AppColors.textSecondary)
+                Text(nhan).font(.ctw(size: 12, weight: .medium)).foregroundColor(AppColors.textSecondary)
                     .lineLimit(1).minimumScaleFactor(0.8)
             }
-            Text(giaTri).font(.system(size: 22, weight: .bold).monospacedDigit()).foregroundColor(AppColors.textPrimary)
+            Text(giaTri).font(.ctw(size: 22, weight: .bold).monospacedDigit()).foregroundColor(AppColors.textPrimary)
                 .lineLimit(1).minimumScaleFactor(0.6)
             if let phu {
-                Text(phu).font(.system(size: 11)).foregroundColor(AppColors.textTertiary).lineLimit(2)
+                Text(phu).font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary).lineLimit(2)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -109,7 +109,7 @@ struct CTWChuGiai: View {
                         } else {
                             RoundedRectangle(cornerRadius: 2).fill(m.mau).frame(width: 10, height: 10)
                         }
-                        Text(m.ten).font(.system(size: 11, weight: .medium)).foregroundColor(AppColors.textSecondary).fixedSize()
+                        Text(m.ten).font(.ctw(size: 11, weight: .medium)).foregroundColor(AppColors.textSecondary).fixedSize()
                     }
                 }
             }
@@ -144,9 +144,9 @@ struct CTWKhungBieuDo<C: View>: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(tieuDe).font(.system(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                    Text(tieuDe).font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                     if let phu {
-                        Text(phu).font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                        Text(phu).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
@@ -154,7 +154,7 @@ struct CTWKhungBieuDo<C: View>: View {
                 if !hang.isEmpty {
                     Button { withAnimation(.easeInOut(duration: 0.15)) { xemBang.toggle() } } label: {
                         Image(systemName: xemBang ? "chart.xyaxis.line" : "tablecells")
-                            .font(.system(size: 13, weight: .semibold))
+                            .font(.ctw(size: 13, weight: .semibold))
                             .frame(width: 32, height: 32)
                             .background(Circle().fill(AppColors.backgroundTertiary))
                     }
@@ -184,7 +184,7 @@ struct CTWBangSoLieu: View {
         VStack(spacing: 0) {
             HStack {
                 ForEach(Array(cot.enumerated()), id: \.offset) { i, c in
-                    Text(c).font(.system(size: 11, weight: .semibold)).foregroundColor(AppColors.textTertiary)
+                    Text(c).font(.ctw(size: 11, weight: .semibold)).foregroundColor(AppColors.textTertiary)
                         .frame(maxWidth: .infinity, alignment: i == 0 ? .leading : .trailing)
                 }
             }
@@ -192,10 +192,10 @@ struct CTWBangSoLieu: View {
             Divider()
             ForEach(hang) { h in
                 HStack {
-                    Text(h.nhan).font(.system(size: 12)).foregroundColor(AppColors.textPrimary)
+                    Text(h.nhan).font(.ctw(size: 12)).foregroundColor(AppColors.textPrimary)
                         .frame(maxWidth: .infinity, alignment: .leading).lineLimit(1)
                     ForEach(Array(h.giaTri.enumerated()), id: \.offset) { _, v in
-                        Text(v).font(.system(size: 12).monospacedDigit()).foregroundColor(AppColors.textSecondary)
+                        Text(v).font(.ctw(size: 12).monospacedDigit()).foregroundColor(AppColors.textSecondary)
                             .frame(maxWidth: .infinity, alignment: .trailing)
                     }
                 }
@@ -262,7 +262,7 @@ struct CTWVongTienDo: View {
                 .stroke(mau, style: StrokeStyle(lineWidth: net, lineCap: .round))
                 .rotationEffect(.degrees(-90))
             Text(chu ?? "\(Int((t * 100).rounded()))%")
-                .font(.system(size: co * 0.24, weight: .bold).monospacedDigit())
+                .font(.ctw(size: co * 0.24, weight: .bold).monospacedDigit())
                 .foregroundColor(AppColors.textPrimary)
                 .minimumScaleFactor(0.6)
         }

@@ -90,7 +90,7 @@ struct AssetsCTW: View {
                     }
                     if let c = s.annualCost, !c.isEmpty {
                         Text("Yearly running cost: " + c.sorted { $0.key < $1.key }.map { CTWTien.dinhDang($0.value, $0.key) }.joined(separator: " + "))
-                            .font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                            .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                             .padding(.top, 2)
                             .listRowSeparator(.hidden)
                     }
@@ -135,21 +135,21 @@ struct AssetsCTW: View {
         let h = CTWTaiSanHienThi.nhanHan(a.expiry)
         return HStack(spacing: 12) {
             Image(systemName: CTWTaiSanHienThi.bieuTuong(a.category))
-                .font(.system(size: 15, weight: .semibold)).foregroundColor(AppColors.primary)
+                .font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.primary)
                 .frame(width: 36, height: 36)
                 .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(AppColors.primary.opacity(0.12)))
             VStack(alignment: .leading, spacing: 4) {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    if let k = a.key { Text(k).font(.system(size: 11, weight: .bold).monospaced()).foregroundColor(AppColors.textTertiary) }
-                    Text(a.name).font(.system(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(2)
+                    if let k = a.key { Text(k).font(.ctw(size: 11, weight: .bold).monospaced()).foregroundColor(AppColors.textTertiary) }
+                    Text(a.name).font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(2)
                 }
                 if a.expiry?.state != nil && a.expiry?.state != "NONE" { CTWNhanNho(chu: h.chu, mau: h.mau) }
                 HStack(spacing: 6) {
                     if let l = a.licenseLabel ?? a.licenseName {
-                        Text(l).font(.system(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1)
+                        Text(l).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1)
                     }
                     if a.attributionRequired == true {
-                        Image(systemName: "quote.bubble").font(.system(size: 10)).foregroundColor(AppColors.primary)
+                        Image(systemName: "quote.bubble").font(.ctw(size: 10)).foregroundColor(AppColors.primary)
                             .accessibilityLabel("Needs a credit line")
                     }
                 }
@@ -202,12 +202,12 @@ struct TaiSanChiTietCTW: View {
                         CTWSectionHeader("quote.bubble", "Credit line")
                         VStack(alignment: .leading, spacing: 8) {
                             Text(a.attribution?.isEmpty == false ? a.attribution! : "This license requires a credit line, but none has been written yet.")
-                                .font(.system(size: 14, design: a.attribution == nil ? .default : .monospaced))
+                                .font(.ctw(size: 14, design: a.attribution == nil ? .default : .monospaced))
                                 .foregroundColor(a.attribution == nil ? AppColors.warning : AppColors.textPrimary)
                                 .textSelection(.enabled)
                             if let t = a.attribution, !t.isEmpty {
                                 Button { CTW.chepVaoBoNho(t); CTWRung.thanhCong() } label: { Label("Copy credit line", systemImage: "doc.on.doc") }
-                                    .font(.system(size: 13, weight: .semibold))
+                                    .font(.ctw(size: 13, weight: .semibold))
                             }
                         }
                         .padding(14).frame(maxWidth: .infinity, alignment: .leading).ctwThe(12)
@@ -259,11 +259,11 @@ struct TaiSanChiTietCTW: View {
         let h = CTWTaiSanHienThi.nhanHan(a.expiry)
         return HStack(spacing: 14) {
             Image(systemName: CTWTaiSanHienThi.bieuTuong(a.category))
-                .font(.system(size: 22, weight: .semibold)).foregroundColor(AppColors.primary)
+                .font(.ctw(size: 22, weight: .semibold)).foregroundColor(AppColors.primary)
                 .frame(width: 54, height: 54)
                 .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(AppColors.primary.opacity(0.12)))
             VStack(alignment: .leading, spacing: 6) {
-                Text(a.name).font(.system(size: 20, weight: .bold)).foregroundColor(AppColors.textPrimary)
+                Text(a.name).font(.ctw(size: 20, weight: .bold)).foregroundColor(AppColors.textPrimary)
                     .fixedSize(horizontal: false, vertical: true)
                 HStack(spacing: 6) {
                     CTWChipChu(chu: a.status)
@@ -279,12 +279,12 @@ struct TaiSanChiTietCTW: View {
     private func lienKet(_ l: CTWTaiSan.LienKet) -> some View {
         let hang = HStack(spacing: 10) {
             Image(systemName: l.kind == "PAGE" ? "doc.text" : "checkmark.square").foregroundColor(AppColors.primary).frame(width: 20)
-            if let k = l.key { Text(k).font(.system(size: 12, weight: .bold).monospaced()).foregroundColor(AppColors.textSecondary) }
+            if let k = l.key { Text(k).font(.ctw(size: 12, weight: .bold).monospaced()).foregroundColor(AppColors.textSecondary) }
             Text(l.title ?? "—").foregroundColor(AppColors.textPrimary).lineLimit(1)
             Spacer()
-            Image(systemName: "chevron.right").font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
+            Image(systemName: "chevron.right").font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
         }
-        .font(.system(size: 14))
+        .font(.ctw(size: 14))
         .padding(.vertical, 11)
         .contentShape(Rectangle())
         if l.kind == "PAGE", let so = l.number {

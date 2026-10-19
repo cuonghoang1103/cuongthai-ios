@@ -94,7 +94,7 @@ struct CTWChonTrangThaiMenu: View {
         } label: {
             HStack(spacing: 4) {
                 CTWStatusChip(status: cauHinh.trangThai(hienTai))
-                Image(systemName: "chevron.up.chevron.down").font(.system(size: 10)).foregroundColor(AppColors.textTertiary)
+                Image(systemName: "chevron.up.chevron.down").font(.ctw(size: 10)).foregroundColor(AppColors.textTertiary)
             }
         }
         .accessibilityLabel("Status: \(cauHinh.trangThai(hienTai)?.name ?? "")")
@@ -115,7 +115,7 @@ struct CTWChonUuTienMenu: View {
         } label: {
             HStack(spacing: 6) {
                 CTWPriorityIcon(priority: hienTai)
-                Text(p.ten).font(.system(size: 14)).foregroundColor(AppColors.textPrimary)
+                Text(p.ten).font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary)
             }
         }
     }
@@ -157,7 +157,7 @@ struct CTWSoanMarkdown: View {
             } else {
                 TextField(goiY, text: $chu, axis: .vertical)
                     .lineLimit(dongToiThieu...16)
-                    .font(.system(size: 15))
+                    .font(.ctw(size: 15))
                     .padding(12)
                     .ctwThe(10)
             }

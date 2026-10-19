@@ -14,12 +14,12 @@ struct DongYQuyTacCTW: View {
                     .padding(.top, Spacing.xl)
                     .accessibilityHidden(true)
                 VStack(spacing: 6) {
-                    Text("Welcome to CT Work").font(.system(size: 26, weight: .bold)).foregroundColor(AppColors.textPrimary)
+                    Text("Welcome to CT Work").font(.ctw(size: 26, weight: .bold)).foregroundColor(AppColors.textPrimary)
                     Text("Plan, track and discuss your team's work.")
-                        .font(.system(size: 15)).foregroundColor(AppColors.textSecondary)
+                        .font(.ctw(size: 15)).foregroundColor(AppColors.textSecondary)
                 }
                 VStack(alignment: .leading, spacing: 14) {
-                    Text("Community rules").font(.system(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                    Text("Community rules").font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                     dong("hand.raised.fill", "No harassment, threats, hate speech or sexual content in comments, chat or files.")
                     dong("flag.fill", "Every comment and message can be reported. Reported content is hidden for you right away and reviewed by moderators within 24 hours.")
                     dong("person.crop.circle.badge.xmark", "You can block any user — you won't see their comments or messages anymore.")
@@ -35,7 +35,7 @@ struct DongYQuyTacCTW: View {
                 }
                 .font(.footnote)
                 Button(action: dongY) {
-                    Text("I agree").font(.system(size: 17, weight: .semibold))
+                    Text("I agree").font(.ctw(size: 17, weight: .semibold))
                         .frame(maxWidth: .infinity).padding(.vertical, 14)
                 }
                 .buttonStyle(.borderedProminent)
@@ -52,9 +52,9 @@ struct DongYQuyTacCTW: View {
 
     private func dong(_ icon: String, _ chu: String) -> some View {
         HStack(alignment: .top, spacing: 12) {
-            Image(systemName: icon).font(.system(size: 15, weight: .semibold)).foregroundColor(AppColors.primary)
+            Image(systemName: icon).font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.primary)
                 .frame(width: 24)
-            Text(chu).font(.system(size: 14)).foregroundColor(AppColors.textPrimary)
+            Text(chu).font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }
@@ -92,9 +92,9 @@ struct DangNhapCTW: View {
                 VStack(spacing: 10) {
                     Image("LogoCTWork").resizable().scaledToFit().frame(width: 76, height: 76)
                         .accessibilityHidden(true)
-                    Text("CT Work").font(.system(size: 30, weight: .bold)).foregroundColor(AppColors.textPrimary)
+                    Text("CT Work").font(.ctw(size: 30, weight: .bold)).foregroundColor(AppColors.textPrimary)
                     Text("Sign in with your cuongthai.com account")
-                        .font(.system(size: 14)).foregroundColor(AppColors.textSecondary)
+                        .font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary)
                 }
                 .padding(.top, Spacing.xl)
 
@@ -132,7 +132,7 @@ struct DangNhapCTW: View {
                     Group {
                         if dangGui { ProgressView().tint(.white) } else { Text(cheDoForm.rawValue) }
                     }
-                    .font(.system(size: 17, weight: .semibold))
+                    .font(.ctw(size: 17, weight: .semibold))
                     .frame(maxWidth: .infinity).padding(.vertical, 14)
                 }
                 .buttonStyle(.borderedProminent)
@@ -141,7 +141,7 @@ struct DangNhapCTW: View {
 
                 if cheDoForm == .dangKy {
                     Text("Password: at least 12 characters with an uppercase letter, a lowercase letter, a number and a symbol.")
-                        .font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
+                        .font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 } else {
                     Button("Forgot password?") {
@@ -152,7 +152,7 @@ struct DangNhapCTW: View {
 
                 HStack {
                     Rectangle().fill(AppColors.divider).frame(height: 0.5)
-                    Text("or").font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
+                    Text("or").font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
                     Rectangle().fill(AppColors.divider).frame(height: 0.5)
                 }
 
@@ -169,7 +169,7 @@ struct DangNhapCTW: View {
                 Text(cheDoForm == .dangKy
                      ? "By creating an account you agree to the Terms of Use and Privacy Policy."
                      : "New here? Create an account, or continue with Apple.")
-                    .font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
+                    .font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
                     .multilineTextAlignment(.center)
                 HStack(spacing: Spacing.md) {
                     Button("Terms of Use") { tamPhu = .dieuKhoan }
@@ -301,7 +301,7 @@ struct XacThucEmailCTW: View {
             Form {
                 Section {
                     Text("We emailed a 6-digit code to verify your address. Enter it below to finish.")
-                        .font(.system(size: 14)).foregroundColor(AppColors.textSecondary)
+                        .font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary)
                 }
                 if let loi { Section { CTWErrorBanner(text: loi) } }
                 Section {
@@ -310,7 +310,7 @@ struct XacThucEmailCTW: View {
                         .textContentType(.emailAddress)
                     TextField("6-digit code", text: $ma)
                         .keyboardType(.numberPad).textContentType(.oneTimeCode)
-                        .font(.system(size: 20, weight: .semibold, design: .monospaced))
+                        .font(.ctw(size: 20, weight: .semibold, design: .monospaced))
                 } footer: {
                     if let thongBao { Text(thongBao) }
                 }

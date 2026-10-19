@@ -116,13 +116,13 @@ struct PokerCTW: View {
         NavigationLink(value: RoutePokerCTW(pid: nguCanh.pid, sid: p.id, ten: p.title ?? "Poker")) {
             HStack(spacing: 12) {
                 Image(systemName: p.deck == "TSHIRT" ? "tshirt" : "suit.spade.fill")
-                    .font(.system(size: 15, weight: .semibold)).foregroundColor(AppColors.primary)
+                    .font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.primary)
                     .frame(width: 36, height: 36)
                     .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(AppColors.primary.opacity(0.12)))
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(p.title ?? "Poker").font(.system(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                    Text(p.title ?? "Poker").font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                     Text([p.sprint?.name, PokerTinh.tomTat(p)].compactMap { $0 }.joined(separator: " · "))
-                        .font(.system(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1)
+                        .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1)
                     let tong = max(p.items ?? 0, 1)
                     CTWThanhTienDo(doan: [
                         CTWDoanTienDo(ten: "Estimated", giaTri: Double(p.estimated ?? 0), mau: AppColors.success),

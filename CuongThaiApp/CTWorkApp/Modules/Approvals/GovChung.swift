@@ -56,8 +56,8 @@ struct GovDaiKhoaSua: View {
         HStack(spacing: 10) {
             Image(systemName: "lock.fill").foregroundColor(AppColors.warning)
             VStack(alignment: .leading, spacing: 2) {
-                Text("Editing is locked").font(.system(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
-                Text("You turned on read-only mode for this project.").font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                Text("Editing is locked").font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                Text("You turned on read-only mode for this project.").font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
             }
             Spacer(minLength: 0)
             Button {
@@ -67,7 +67,7 @@ struct GovDaiKhoaSua: View {
                     if (try? await APIClient.shared.send(CTWAPI.govMoKhoaSua(pid: pid))) != nil { CTWRung.thanhCong(); moXong() }
                 }
             } label: {
-                if dangMo { ProgressView() } else { Text("Unlock").font(.system(size: 14, weight: .semibold)) }
+                if dangMo { ProgressView() } else { Text("Unlock").font(.ctw(size: 14, weight: .semibold)) }
             }
             .buttonStyle(.bordered)
             .frame(minHeight: 44)
@@ -88,7 +88,7 @@ struct GovChongAvatar: View {
                     .overlay(Circle().strokeBorder(AppColors.backgroundCard, lineWidth: 1.5))
             }
             if users.count > 4 {
-                Text("+\(users.count - 4)").font(.system(size: size * 0.42, weight: .bold))
+                Text("+\(users.count - 4)").font(.ctw(size: size * 0.42, weight: .bold))
                     .foregroundColor(AppColors.textSecondary)
                     .frame(width: size, height: size)
                     .background(Circle().fill(AppColors.backgroundTertiary))
@@ -186,7 +186,7 @@ struct GovYeuCauDuyetView: View {
         NavigationStack {
             Form {
                 if let loi { Section { CTWErrorBanner(text: loi) { self.loi = nil } }.listRowInsets(EdgeInsets()).listRowBackground(Color.clear) }
-                if let moTa { Section { Text(moTa).font(.system(size: 14)).foregroundColor(AppColors.textSecondary) } }
+                if let moTa { Section { Text(moTa).font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary) } }
                 Section {
                     ForEach(ungVien) { u in
                         Button {
@@ -201,7 +201,7 @@ struct GovYeuCauDuyetView: View {
                                 }
                                 Spacer()
                                 if let i = chon.firstIndex(of: u.id) {
-                                    Text(tuanTu ? "\(i + 1)" : "✓").font(.system(size: 13, weight: .bold))
+                                    Text(tuanTu ? "\(i + 1)" : "✓").font(.ctw(size: 13, weight: .bold))
                                         .foregroundColor(AppColors.onPrimary)
                                         .frame(width: 26, height: 26).background(Circle().fill(AppColors.primary))
                                 }

@@ -79,8 +79,8 @@ struct ChatCTW: View {
             ToolbarItem(placement: .topBarLeading) {
                 Button { tamPhu = .chonDuAn } label: {
                     HStack(spacing: 4) {
-                        Text(nguCanh.maDuAn).font(.system(size: 15, weight: .bold).monospaced())
-                        Image(systemName: "chevron.down").font(.system(size: 11, weight: .bold))
+                        Text(nguCanh.maDuAn).font(.ctw(size: 15, weight: .bold).monospaced())
+                        Image(systemName: "chevron.down").font(.ctw(size: 11, weight: .bold))
                     }
                 }
                 .accessibilityLabel("Switch project, current \(nguCanh.tenDuAn)")
@@ -260,32 +260,32 @@ struct HangKenhCTW: View {
         let dam = (kenh.badge ?? 0) > 0
         HStack(spacing: 12) {
             Image(systemName: kenh.bieuTuong)
-                .font(.system(size: 15, weight: .semibold))
+                .font(.ctw(size: 15, weight: .semibold))
                 .foregroundColor(kenh.archived == true ? AppColors.textTertiary : AppColors.primary)
                 .frame(width: 36, height: 36)
                 .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(AppColors.primary.opacity(kenh.archived == true ? 0.05 : 0.12)))
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 5) {
-                    Text(kenh.name).font(.system(size: 15, weight: dam ? .bold : .medium)).foregroundColor(AppColors.textPrimary)
+                    Text(kenh.name).font(.ctw(size: 15, weight: dam ? .bold : .medium)).foregroundColor(AppColors.textPrimary)
                         .lineLimit(1)
-                    if kenh.muted == true { Image(systemName: "bell.slash.fill").font(.system(size: 10)).foregroundColor(AppColors.textTertiary) }
-                    if kenh.archived == true { Text("Archived").font(.system(size: 10, weight: .semibold)).foregroundColor(AppColors.textTertiary) }
+                    if kenh.muted == true { Image(systemName: "bell.slash.fill").font(.ctw(size: 10)).foregroundColor(AppColors.textTertiary) }
+                    if kenh.archived == true { Text("Archived").font(.ctw(size: 10, weight: .semibold)).foregroundColor(AppColors.textTertiary) }
                 }
                 if let t = kenh.topic, !t.isEmpty {
-                    Text(t).font(.system(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1)
+                    Text(t).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1)
                 }
             }
             Spacer(minLength: 4)
             VStack(alignment: .trailing, spacing: 4) {
-                if let l = kenh.lastMessageAt { Text(CTWChatThoiGian.gio(l)).font(.system(size: 11)).foregroundColor(dam ? AppColors.primary : AppColors.textTertiary) }
+                if let l = kenh.lastMessageAt { Text(CTWChatThoiGian.gio(l)).font(.ctw(size: 11)).foregroundColor(dam ? AppColors.primary : AppColors.textTertiary) }
                 HStack(spacing: 4) {
-                    if kenh.call != nil { Image(systemName: "phone.fill").font(.system(size: 11)).foregroundColor(AppColors.success) }
+                    if kenh.call != nil { Image(systemName: "phone.fill").font(.ctw(size: 11)).foregroundColor(AppColors.success) }
                     if let m = kenh.mentions, m > 0 {
-                        Text("@").font(.system(size: 11, weight: .bold)).foregroundColor(.white)
+                        Text("@").font(.ctw(size: 11, weight: .bold)).foregroundColor(.white)
                             .frame(width: 20, height: 20).background(Circle().fill(AppColors.error))
                     }
                     if dam {
-                        Text("\(kenh.badge ?? 0)").font(.system(size: 11, weight: .bold).monospacedDigit()).foregroundColor(.white)
+                        Text("\(kenh.badge ?? 0)").font(.ctw(size: 11, weight: .bold).monospacedDigit()).foregroundColor(.white)
                             .padding(.horizontal, 7).padding(.vertical, 2).background(Capsule().fill(AppColors.primary))
                     }
                 }

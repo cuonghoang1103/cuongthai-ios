@@ -77,18 +77,18 @@ struct WTinhNangCTW: View {
         DisclosureGroup {
             VStack(alignment: .leading, spacing: 8) {
                 if let m = f.description, !m.isEmpty {
-                    Text(m).font(.system(size: 14)).foregroundColor(AppColors.textPrimary).fixedSize(horizontal: false, vertical: true)
+                    Text(m).font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary).fixedSize(horizontal: false, vertical: true)
                 }
                 if let e = f.epic, let n = e.number {
                     NavigationLink(value: CTWRoute.the(pid: pid, so: n)) {
-                        Label("Epic \(e.key ?? "#\(n)") · \(e.title ?? "")", systemImage: "bolt.fill").font(.system(size: 13))
+                        Label("Epic \(e.key ?? "#\(n)") · \(e.title ?? "")", systemImage: "bolt.fill").font(.ctw(size: 13))
                     }
                 }
                 ForEach(f.useCases ?? [], id: \.number) { u in
                     NavigationLink(value: RouteYeuCauCTW.uc(pid: pid, n: u.number)) {
                         HStack(spacing: 6) {
-                            Text(u.key ?? "UC").font(.system(size: 12, weight: .bold).monospaced()).foregroundColor(AppColors.primary)
-                            Text(u.name ?? "").font(.system(size: 13)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                            Text(u.key ?? "UC").font(.ctw(size: 12, weight: .bold).monospaced()).foregroundColor(AppColors.primary)
+                            Text(u.name ?? "").font(.ctw(size: 13)).foregroundColor(AppColors.textPrimary).lineLimit(1)
                             Spacer(minLength: 0)
                             CTWChipChu(chu: u.status, mau: CTWNhanYeuCau.mauUC(u.status))
                         }
@@ -97,7 +97,7 @@ struct WTinhNangCTW: View {
                 ForEach(f.issues ?? [], id: \.number) { i in
                     NavigationLink(value: CTWRoute.the(pid: pid, so: i.number)) {
                         Label("\(i.key ?? "#\(i.number)") · \(i.title ?? "")", systemImage: CTW.bieuTuongLoai(key: i.type))
-                            .font(.system(size: 13)).lineLimit(1)
+                            .font(.ctw(size: 13)).lineLimit(1)
                     }
                 }
             }
@@ -105,15 +105,15 @@ struct WTinhNangCTW: View {
         } label: {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
-                    Text(f.key ?? "FE").font(.system(size: 12, weight: .bold).monospaced()).foregroundColor(AppColors.primary)
-                    Text(f.name ?? "Feature").font(.system(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(2)
+                    Text(f.key ?? "FE").font(.ctw(size: 12, weight: .bold).monospaced()).foregroundColor(AppColors.primary)
+                    Text(f.name ?? "Feature").font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(2)
                 }
                 HStack(spacing: 6) {
                     if let p = CTWNhanYeuCau.nhanUuTien(f.priority) { CTWNhanNho(chu: p, bieuTuong: "flag.fill", mau: CTWNhanYeuCau.mauUuTien(f.priority)) }
                     if let r = f.release, !r.isEmpty { CTWNhanNho(chu: r, bieuTuong: "shippingbox") }
-                    Text("\(f.useCases?.count ?? 0) use cases").font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                    Text("\(f.useCases?.count ?? 0) use cases").font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                     if f.realized == true {
-                        Image(systemName: "checkmark.circle.fill").foregroundColor(AppColors.success).font(.system(size: 13))
+                        Image(systemName: "checkmark.circle.fill").foregroundColor(AppColors.success).font(.ctw(size: 13))
                             .accessibilityLabel("Realized")
                     }
                 }
@@ -149,10 +149,10 @@ struct WBenLienQuanCTW: View {
                         ForEach(Self.o, id: \.ma) { q in
                             let ten = ds.filter { $0.quadrant == q.ma }.compactMap(\.name)
                             VStack(alignment: .leading, spacing: 6) {
-                                Label(q.ten, systemImage: q.icon).font(.system(size: 12.5, weight: .semibold))
+                                Label(q.ten, systemImage: q.icon).font(.ctw(size: 12.5, weight: .semibold))
                                     .foregroundColor(q.ma == "MANAGE_CLOSELY" ? AppColors.primary : AppColors.textSecondary)
                                 Text(ten.isEmpty ? "—" : ten.joined(separator: ", "))
-                                    .font(.system(size: 13)).foregroundColor(AppColors.textPrimary).lineLimit(4)
+                                    .font(.ctw(size: 13)).foregroundColor(AppColors.textPrimary).lineLimit(4)
                                     .fixedSize(horizontal: false, vertical: true)
                                 Spacer(minLength: 0)
                             }
@@ -165,9 +165,9 @@ struct WBenLienQuanCTW: View {
                         }
                     }
                     HStack {
-                        Text("↑ Influence").font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+                        Text("↑ Influence").font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
                         Spacer()
-                        Text("Interest →").font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+                        Text("Interest →").font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
                     }
                     .accessibilityHidden(true)
                 }
@@ -177,11 +177,11 @@ struct WBenLienQuanCTW: View {
                         NavigationLink(value: RouteWiegersCTW.benLienQuanChiTiet(pid: pid, sh: s)) {
                             VStack(alignment: .leading, spacing: 3) {
                                 HStack(spacing: 6) {
-                                    Text(s.name ?? "Stakeholder").font(.system(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary)
+                                    Text(s.name ?? "Stakeholder").font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary)
                                     if s.isChampion == true { CTWNhanNho(chu: "Champion", bieuTuong: "crown", mau: AppColors.accent) }
                                 }
                                 Text([s.role, s.organization].compactMap { $0 }.joined(separator: " · "))
-                                    .font(.system(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1)
+                                    .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1)
                             }
                             .padding(.vertical, 2)
                         }
@@ -198,8 +198,8 @@ struct WBenLienQuanChiTietCTW: View {
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.md) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(sh.key ?? "SH").font(.system(size: 13, weight: .bold).monospaced()).foregroundColor(AppColors.primary)
-                    Text(sh.name ?? "Stakeholder").font(.system(size: 24, weight: .bold)).foregroundColor(AppColors.textPrimary)
+                    Text(sh.key ?? "SH").font(.ctw(size: 13, weight: .bold).monospaced()).foregroundColor(AppColors.primary)
+                    Text(sh.name ?? "Stakeholder").font(.ctw(size: 24, weight: .bold)).foregroundColor(AppColors.textPrimary)
                     HStack(spacing: 6) {
                         if let q = sh.quadrant { CTWChipChu(chu: q, mau: q == "MANAGE_CLOSELY" ? AppColors.primary : AppColors.textSecondary) }
                         if let a = sh.attitude { CTWNhanNho(chu: CTWMauTrangThai.nhan(a), mau: a == "BLOCKER" || a == "CRITIC" ? AppColors.error : AppColors.success) }
@@ -218,8 +218,8 @@ struct WBenLienQuanChiTietCTW: View {
                          ("Constraints", sh.constraints), ("Notes", sh.notes)], id: \.0) { m in
                     if let c = m.1, !c.isEmpty {
                         VStack(alignment: .leading, spacing: 6) {
-                            Text(m.0).font(.system(size: 13, weight: .semibold)).foregroundColor(AppColors.textSecondary)
-                            Text(c).font(.system(size: 15)).foregroundColor(AppColors.textPrimary).fixedSize(horizontal: false, vertical: true)
+                            Text(m.0).font(.ctw(size: 13, weight: .semibold)).foregroundColor(AppColors.textSecondary)
+                            Text(c).font(.ctw(size: 15)).foregroundColor(AppColors.textPrimary).fixedSize(horizontal: false, vertical: true)
                         }
                         .padding(14).frame(maxWidth: .infinity, alignment: .leading).ctwThe(14)
                     }
@@ -253,7 +253,7 @@ struct WThuatNguCTW: View {
                 Section {
                     Label("\(c.count) word\(c.count == 1 ? "" : "s") defined more than once: " + c.compactMap(\.word).joined(separator: ", "),
                           systemImage: "exclamationmark.triangle.fill")
-                        .font(.system(size: 13)).foregroundColor(AppColors.warning)
+                        .font(.ctw(size: 13)).foregroundColor(AppColors.warning)
                 }
             }
             if t.gt != nil && ds.isEmpty {
@@ -262,12 +262,12 @@ struct WThuatNguCTW: View {
             Section {
                 ForEach(ds) { x in
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(x.term ?? "").font(.system(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
-                        Text(x.definition ?? "").font(.system(size: 14)).foregroundColor(AppColors.textPrimary).fixedSize(horizontal: false, vertical: true)
+                        Text(x.term ?? "").font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                        Text(x.definition ?? "").font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary).fixedSize(horizontal: false, vertical: true)
                         if let a = x.aliases, !a.isEmpty {
-                            Text("Also: " + a.joined(separator: ", ")).font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                            Text("Also: " + a.joined(separator: ", ")).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                         }
-                        if let s = x.source, !s.isEmpty { Text("Source: \(s)").font(.system(size: 11.5)).foregroundColor(AppColors.textTertiary) }
+                        if let s = x.source, !s.isEmpty { Text("Source: \(s)").font(.ctw(size: 11.5)).foregroundColor(AppColors.textTertiary) }
                     }
                     .padding(.vertical, 3)
                     .textSelection(.enabled)
@@ -298,18 +298,18 @@ struct WPhienCTW: View {
                     NavigationLink(value: RouteWiegersCTW.phienChiTiet(pid: pid, n: s.number)) {
                         VStack(alignment: .leading, spacing: 5) {
                             HStack(spacing: 6) {
-                                Text(s.key ?? "ELC").font(.system(size: 12, weight: .bold).monospaced()).foregroundColor(AppColors.primary)
-                                Text(s.title ?? "Session").font(.system(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(2)
+                                Text(s.key ?? "ELC").font(.ctw(size: 12, weight: .bold).monospaced()).foregroundColor(AppColors.primary)
+                                Text(s.title ?? "Session").font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(2)
                             }
                             HStack(spacing: 6) {
-                                CTWChipChu(chu: s.status ?? "PLANNED", mau: s.status == "DONE" ? AppColors.success : (s.status == "CANCELLED" ? AppColors.error : Color(hex: 0x2563EB)))
+                                CTWChipChu(chu: s.status ?? "PLANNED", mau: s.status == "DONE" ? AppColors.success : (s.status == "CANCELLED" ? AppColors.error : AppColors.info))
                                 CTWNhanNho(chu: CTWMauTrangThai.nhan(s.technique), bieuTuong: bieuTuongKyThuat(s.technique))
                                 if s.aiSimulated == true { CTWNhanAI(chu: "AI-simulated") }
                             }
                             Text("\(s.answered ?? 0)/\(s.questions ?? 0) answered · \(s.requirements ?? 0) requirements"
                                  + ((s.pending ?? 0) > 0 ? " · \(s.pending!) pending" : "")
                                  + (CTW.ngayNgan(s.scheduledAt).map { " · \($0)" } ?? ""))
-                                .font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                                .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                         }
                         .padding(.vertical, 3)
                     }
@@ -373,10 +373,10 @@ struct WPhienChiTietCTW: View {
     @ViewBuilder
     private func noiDung(_ s: CTWSwrSessionDetail) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(s.title ?? "Session").font(.system(size: 23, weight: .bold)).foregroundColor(AppColors.textPrimary)
+            Text(s.title ?? "Session").font(.ctw(size: 23, weight: .bold)).foregroundColor(AppColors.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
             HStack(spacing: 6) {
-                CTWChipChu(chu: s.status ?? "PLANNED", mau: s.status == "DONE" ? AppColors.success : Color(hex: 0x2563EB))
+                CTWChipChu(chu: s.status ?? "PLANNED", mau: s.status == "DONE" ? AppColors.success : AppColors.info)
                 CTWNhanNho(chu: CTWMauTrangThai.nhan(s.technique), bieuTuong: bieuTuongKyThuat(s.technique))
                 if s.aiSimulated == true { CTWNhanAI(chu: "AI-simulated") }
             }
@@ -400,10 +400,10 @@ struct WPhienChiTietCTW: View {
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(Array(q.enumerated()), id: \.offset) { i, c in
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("\(i + 1). \(c.text ?? "")").font(.system(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                        Text("\(i + 1). \(c.text ?? "")").font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                             .fixedSize(horizontal: false, vertical: true)
                         Text(c.answer?.isEmpty == false ? c.answer! : "Not answered yet")
-                            .font(.system(size: 14)).foregroundColor(c.answer?.isEmpty == false ? AppColors.textPrimary : AppColors.textTertiary)
+                            .font(.ctw(size: 14)).foregroundColor(c.answer?.isEmpty == false ? AppColors.textPrimary : AppColors.textTertiary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     .padding(.vertical, 9)
@@ -428,23 +428,23 @@ struct WPhienChiTietCTW: View {
                             CTWNhanNho(chu: CTWVongDoiYeuCau.tenLoai(x.reqType))
                             if x.model != nil { CTWNhanAI(chu: "AI-drafted") }
                             Spacer(minLength: 0)
-                            if let i = x.issue { Text(i).font(.system(size: 12, weight: .bold).monospaced()).foregroundColor(AppColors.primary) }
+                            if let i = x.issue { Text(i).font(.ctw(size: 12, weight: .bold).monospaced()).foregroundColor(AppColors.primary) }
                         }
-                        Text(x.title ?? "").font(.system(size: 14.5, weight: .medium)).foregroundColor(AppColors.textPrimary)
+                        Text(x.title ?? "").font(.ctw(size: 14.5, weight: .medium)).foregroundColor(AppColors.textPrimary)
                             .fixedSize(horizontal: false, vertical: true)
                         if let tx = x.text, !tx.isEmpty {
-                            Text(tx).font(.system(size: 13)).foregroundColor(AppColors.textSecondary).fixedSize(horizontal: false, vertical: true)
+                            Text(tx).font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary).fixedSize(horizontal: false, vertical: true)
                         }
                         if let q = x.evidence?.first?.quote, !q.isEmpty {
-                            Text("“\(q)”").font(.system(size: 12.5).italic()).foregroundColor(AppColors.textTertiary).lineLimit(3)
+                            Text("“\(q)”").font(.ctw(size: 12.5).italic()).foregroundColor(AppColors.textTertiary).lineLimit(3)
                         }
-                        if let sh = x.stakeholder?.name { Text("From \(sh)").font(.system(size: 11.5)).foregroundColor(AppColors.textTertiary) }
+                        if let sh = x.stakeholder?.name { Text("From \(sh)").font(.ctw(size: 11.5)).foregroundColor(AppColors.textTertiary) }
                     }
                     .padding(12).frame(maxWidth: .infinity, alignment: .leading).ctwThe(12)
                 }
             }
             Text("Accept or dismiss proposals on the web — accepting creates a requirement issue.")
-                .font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
+                .font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
         }
         if let r = s.requirements, !r.isEmpty {
             CTWSectionHeader("list.bullet.rectangle.portrait", "Requirements from this session", count: "\(r.count)")
@@ -453,8 +453,8 @@ struct WPhienChiTietCTW: View {
                     if let num = q.number {
                         NavigationLink(value: RouteWiegersCTW.yeuCauChiTiet(pid: pid, so: num)) {
                             HStack(spacing: 8) {
-                                Text(q.key ?? "#\(num)").font(.system(size: 12, weight: .bold).monospaced()).foregroundColor(AppColors.primary)
-                                Text(q.title ?? "").font(.system(size: 14)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                                Text(q.key ?? "#\(num)").font(.ctw(size: 12, weight: .bold).monospaced()).foregroundColor(AppColors.primary)
+                                Text(q.title ?? "").font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary).lineLimit(1)
                                 Spacer(minLength: 0)
                                 CTWChipChu(chu: q.lifecycle ?? "PROPOSED", mau: mauVongDoi(q.lifecycle))
                             }
@@ -553,7 +553,7 @@ struct WNfrCTW: View {
             if !ds.isEmpty {
                 Section {
                     Text("\(t.gt?.measured ?? 0) of \(ds.count) have a measurable spec (scale, meter, target).")
-                        .font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
+                        .font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
                 }
             }
             let nhom = Dictionary(grouping: ds) { $0.spec?.characteristic ?? "" }
@@ -569,11 +569,11 @@ struct WNfrCTW: View {
         NavigationLink(value: RouteWiegersCTW.yeuCauChiTiet(pid: pid, so: q.number)) {
             VStack(alignment: .leading, spacing: 5) {
                 HStack(spacing: 6) {
-                    Text(q.key ?? "#\(q.number)").font(.system(size: 12, weight: .bold).monospaced()).foregroundColor(AppColors.primary)
-                    Text(q.title ?? "").font(.system(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(2)
+                    Text(q.key ?? "#\(q.number)").font(.ctw(size: 12, weight: .bold).monospaced()).foregroundColor(AppColors.primary)
+                    Text(q.title ?? "").font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(2)
                 }
                 if let st = q.statement, !st.isEmpty {
-                    Text(st).font(.system(size: 13)).foregroundColor(AppColors.textPrimary).fixedSize(horizontal: false, vertical: true)
+                    Text(st).font(.ctw(size: 13)).foregroundColor(AppColors.textPrimary).fixedSize(horizontal: false, vertical: true)
                 }
                 if let s = q.spec {
                     HStack(spacing: 6) {
@@ -582,7 +582,7 @@ struct WNfrCTW: View {
                         if let v = s.verification { CTWNhanNho(chu: CTWMauTrangThai.nhan(v), bieuTuong: "checkmark.circle") }
                     }
                 } else {
-                    Label("No measurable target yet", systemImage: "exclamationmark.triangle").font(.system(size: 12)).foregroundColor(AppColors.warning)
+                    Label("No measurable target yet", systemImage: "exclamationmark.triangle").font(.ctw(size: 12)).foregroundColor(AppColors.warning)
                 }
             }
             .padding(.vertical, 3)
@@ -605,13 +605,13 @@ struct WMauCTW: View {
             if let c = t.gt?.counts {
                 Section {
                     Text("\(c.withPrototype ?? 0) of \(c.screens ?? 0) screens have a prototype · \(c.approved ?? 0) approved")
-                        .font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
+                        .font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
                 }
             }
             ForEach(t.gt?.screens ?? []) { s in
                 Section {
                     if (s.mockups ?? []).isEmpty {
-                        Text("No prototype yet").font(.system(size: 13)).foregroundColor(AppColors.textTertiary)
+                        Text("No prototype yet").font(.ctw(size: 13)).foregroundColor(AppColors.textTertiary)
                     }
                     ForEach(s.mockups ?? []) { m in hang(m) }
                 } header: {
@@ -633,18 +633,18 @@ struct WMauCTW: View {
             HStack(spacing: 6) {
                 CTWChipChu(chu: m.status ?? "DRAFT", mau: m.status == "APPROVED" ? AppColors.success : (m.status == "CHANGES" ? AppColors.error : AppColors.warning))
                 Text(m.title ?? (m.kind == "LINK" ? (m.provider ?? "Link") : "Image"))
-                    .font(.system(size: 14, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                    .font(.ctw(size: 14, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(1)
             }
             if let img = m.image { CTWAnhCoXacThuc(src: img, alt: m.title ?? "Prototype") }
             if m.kind == "LINK", let s = m.url, let u = URL(string: s), u.scheme == "https" {
                 Button { mo = u } label: {
-                    Label("Open \(m.provider ?? "prototype")", systemImage: "arrow.up.right.square").font(.system(size: 13, weight: .semibold))
+                    Label("Open \(m.provider ?? "prototype")", systemImage: "arrow.up.right.square").font(.ctw(size: 13, weight: .semibold))
                 }
                 .buttonStyle(.borderless)
             }
             if let r = m.reviewerName {
                 Text("Reviewed by \(r)\(m.reviewNote.map { ": “\($0)”" } ?? "")")
-                    .font(.system(size: 12)).foregroundColor(AppColors.textSecondary).fixedSize(horizontal: false, vertical: true)
+                    .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).fixedSize(horizontal: false, vertical: true)
             }
         }
         .padding(.vertical, 4)

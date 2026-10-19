@@ -55,13 +55,13 @@ struct DashboardsCTW: View {
                             NavigationLink(value: RouteMauBaoCaoCTW(pid: pid, ref: t.ref, ten: t.name ?? "Report")) {
                                 HStack(spacing: 12) {
                                     Image(systemName: t.builtin == true ? "doc.richtext" : "doc.text")
-                                        .font(.system(size: 15, weight: .semibold)).foregroundColor(CTWMauChuoi.mau(6))
+                                        .font(.ctw(size: 15, weight: .semibold)).foregroundColor(CTWMauChuoi.mau(6))
                                         .frame(width: 34, height: 34)
                                         .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(CTWMauChuoi.mau(6).opacity(0.12)))
                                     VStack(alignment: .leading, spacing: 2) {
-                                        Text(t.name ?? "Report").font(.system(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary)
+                                        Text(t.name ?? "Report").font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary)
                                         if let d = t.description, !d.isEmpty {
-                                            Text(d).font(.system(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(2)
+                                            Text(d).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(2)
                                         }
                                     }
                                 }
@@ -112,16 +112,16 @@ struct DashboardsCTW: View {
     private func hang(_ d: CTWDashboardDb) -> some View {
         HStack(spacing: 12) {
             Image(systemName: "rectangle.3.group.fill")
-                .font(.system(size: 15, weight: .semibold)).foregroundColor(AppColors.primary)
+                .font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.primary)
                 .frame(width: 34, height: 34)
                 .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(AppColors.primary.opacity(0.12)))
             VStack(alignment: .leading, spacing: 2) {
-                Text(d.name ?? "Dashboard").font(.system(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary)
+                Text(d.name ?? "Dashboard").font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary)
                 Text("\((d.widgets ?? []).count) widget\((d.widgets ?? []).count == 1 ? "" : "s")" + (d.shared == true ? " · Shared" : " · Private"))
-                    .font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                    .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
             }
             Spacer(minLength: 0)
-            if d.shared == true { Image(systemName: "person.2.fill").font(.system(size: 11)).foregroundColor(AppColors.textTertiary) }
+            if d.shared == true { Image(systemName: "person.2.fill").font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary) }
         }
         .padding(.vertical, 2)
     }

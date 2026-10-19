@@ -83,14 +83,14 @@ struct GanttTLCTW: View {
 
     private func cotTen(_ hang: [TLHangCTW]) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("Issue").font(.system(size: 11, weight: .semibold)).foregroundColor(AppColors.textTertiary)
+            Text("Issue").font(.ctw(size: 11, weight: .semibold)).foregroundColor(AppColors.textTertiary)
                 .padding(.horizontal, 10)
                 .frame(maxWidth: .infinity, minHeight: hThuoc + hMoc, maxHeight: hThuoc + hMoc, alignment: .bottomLeading)
                 .padding(.bottom, 0)
             ForEach(hang) { h in
                 switch h {
                 case .nhom(let t):
-                    Text(t.uppercased()).font(.system(size: 10, weight: .bold)).foregroundColor(AppColors.textTertiary)
+                    Text(t.uppercased()).font(.ctw(size: 10, weight: .bold)).foregroundColor(AppColors.textTertiary)
                         .padding(.horizontal, 10)
                         .frame(maxWidth: .infinity, minHeight: hHang, maxHeight: hHang, alignment: .bottomLeading)
                         .padding(.bottom, 0)
@@ -99,9 +99,9 @@ struct GanttTLCTW: View {
                         HStack(spacing: 6) {
                             CTWTypeIcon(type: m.typeId.flatMap { cfg?.loai($0) }, size: 11)
                             VStack(alignment: .leading, spacing: 1) {
-                                Text(m.title).font(.system(size: 12, weight: m.laEpic ? .semibold : .regular))
+                                Text(m.title).font(.ctw(size: 12, weight: m.laEpic ? .semibold : .regular))
                                     .foregroundColor(AppColors.textPrimary).lineLimit(1)
-                                Text("\(cfg?.key ?? "#")-\(m.number)").font(.system(size: 10).monospaced())
+                                Text("\(cfg?.key ?? "#")-\(m.number)").font(.ctw(size: 10).monospaced())
                                     .foregroundColor(AppColors.textTertiary).strikethrough(m.done == true)
                             }
                             Spacer(minLength: 0)
@@ -134,7 +134,7 @@ struct GanttTLCTW: View {
                         let ten = (cfg?.sprints ?? []).first { $0.id == id }?.name ?? (moc.sprints ?? []).first { $0.id == id }?.name ?? "Sprint"
                         ctx.drawLayer { c in
                             c.clip(to: Path(r))
-                            c.draw(Text(ten).font(.system(size: 10, weight: .semibold)).foregroundColor(AppColors.textPrimary),
+                            c.draw(Text(ten).font(.ctw(size: 10, weight: .semibold)).foregroundColor(AppColors.textPrimary),
                                    at: CGPoint(x: r.minX + 5, y: r.midY), anchor: .leading)
                         }
                     }
@@ -147,7 +147,7 @@ struct GanttTLCTW: View {
                         ctx.fill(Path(roundedRect: r, cornerRadius: 4), with: .color(CTWMauChuoi.mau(2).opacity(s.status == "DONE" ? 0.18 : 0.32)))
                         ctx.drawLayer { c in
                             c.clip(to: Path(r))
-                            c.draw(Text("\(s.n ?? 0). \(s.name ?? "Stage")").font(.system(size: 10, weight: .semibold)).foregroundColor(AppColors.textPrimary),
+                            c.draw(Text("\(s.n ?? 0). \(s.name ?? "Stage")").font(.ctw(size: 10, weight: .semibold)).foregroundColor(AppColors.textPrimary),
                                    at: CGPoint(x: r.minX + 5, y: r.midY), anchor: .leading)
                         }
                     }
@@ -160,7 +160,7 @@ struct GanttTLCTW: View {
                         var co = Path()
                         co.move(to: CGPoint(x: x, y: y)); co.addLine(to: CGPoint(x: x + 9, y: y + 4)); co.addLine(to: CGPoint(x: x, y: y + 8))
                         ctx.fill(co, with: .color(mau))
-                        ctx.draw(Text(v.name ?? "").font(.system(size: 10, weight: .semibold)).foregroundColor(AppColors.textSecondary),
+                        ctx.draw(Text(v.name ?? "").font(.ctw(size: 10, weight: .semibold)).foregroundColor(AppColors.textSecondary),
                                  at: CGPoint(x: x + 12, y: y + 7), anchor: .leading)
                     }
                 }
@@ -220,7 +220,7 @@ struct GanttTLCTW: View {
         let x = hinh.x(Date()) + hinh.rongNgay / 2
         return ZStack(alignment: .top) {
             Rectangle().fill(AppColors.error.opacity(0.75)).frame(width: 1.5, height: cao)
-            Text("Today").font(.system(size: 9, weight: .bold)).foregroundColor(.white)
+            Text("Today").font(.ctw(size: 9, weight: .bold)).foregroundColor(.white)
                 .padding(.horizontal, 4).padding(.vertical, 1)
                 .background(Capsule().fill(AppColors.error))
                 .fixedSize()
@@ -263,7 +263,7 @@ struct ThanhTLCTW: View {
                     RoundedRectangle(cornerRadius: 5, style: .continuous).strokeBorder(AppColors.error, lineWidth: 1.5)
                 }
                 if !muc.laEpic && rong >= 54 {
-                    Text(nhan).font(.system(size: 10, weight: .semibold).monospaced())
+                    Text(nhan).font(.ctw(size: 10, weight: .semibold).monospaced())
                         .foregroundColor(tien > 0.45 && thanh.kieu != .suyRa ? .white : AppColors.textPrimary)
                         .padding(.leading, 5).lineLimit(1).fixedSize()
                 }
@@ -275,7 +275,7 @@ struct ThanhTLCTW: View {
                                    startPoint: .leading, endPoint: .trailing)
                 } else { Rectangle() }
             }
-            Text(muc.title).font(.system(size: 11, weight: muc.laEpic ? .semibold : .regular))
+            Text(muc.title).font(.ctw(size: 11, weight: muc.laEpic ? .semibold : .regular))
                 .foregroundColor(AppColors.textSecondary).lineLimit(1).fixedSize()
         }
         .frame(height: 40)
@@ -303,11 +303,11 @@ struct ThuocTLCTW: View {
                     ctx.fill(Path(CGRect(x: x, y: 0, width: 0.5, height: size.height)), with: .color(AppColors.border))
                     let chu = zoom == .quy ? (c.month == 1 || i == 0 ? "\(c.year ?? 0)" : "") : NgayCTW.thang(d)
                     if !chu.isEmpty {
-                        ctx.draw(Text(chu).font(.system(size: 11, weight: .semibold)).foregroundColor(AppColors.textPrimary),
+                        ctx.draw(Text(chu).font(.ctw(size: 11, weight: .semibold)).foregroundColor(AppColors.textPrimary),
                                  at: CGPoint(x: x + 5, y: 11), anchor: .leading)
                     }
                     if zoom == .quy {
-                        ctx.draw(Text(NgayCTW.ngan(d).prefix(3)).font(.system(size: 10)).foregroundColor(AppColors.textSecondary),
+                        ctx.draw(Text(NgayCTW.ngan(d).prefix(3)).font(.ctw(size: 10)).foregroundColor(AppColors.textSecondary),
                                  at: CGPoint(x: x + 4, y: 29), anchor: .leading)
                     }
                 }
@@ -315,13 +315,13 @@ struct ThuocTLCTW: View {
                 case .tuan:
                     let cuoiTuan = c.weekday == 1 || c.weekday == 7
                     if cuoiTuan { ctx.fill(Path(CGRect(x: x, y: 20, width: hinh.rongNgay, height: size.height - 20)), with: .color(AppColors.backgroundTertiary.opacity(0.6))) }
-                    ctx.draw(Text("\(c.day ?? 0)").font(.system(size: 10, weight: .medium).monospacedDigit())
+                    ctx.draw(Text("\(c.day ?? 0)").font(.ctw(size: 10, weight: .medium).monospacedDigit())
                                 .foregroundColor(cuoiTuan ? AppColors.textTertiary : AppColors.textSecondary),
                              at: CGPoint(x: x + hinh.rongNgay / 2, y: 30))
                 case .thang:
                     if c.weekday == 2 {
                         ctx.fill(Path(CGRect(x: x, y: 20, width: 0.5, height: size.height - 20)), with: .color(AppColors.divider))
-                        ctx.draw(Text("\(c.day ?? 0)").font(.system(size: 10).monospacedDigit()).foregroundColor(AppColors.textSecondary),
+                        ctx.draw(Text("\(c.day ?? 0)").font(.ctw(size: 10).monospacedDigit()).foregroundColor(AppColors.textSecondary),
                                  at: CGPoint(x: x + 3, y: 30), anchor: .leading)
                     }
                 case .quy: break

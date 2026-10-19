@@ -91,21 +91,21 @@ struct RetroCTW: View {
         NavigationLink(value: RouteRetroCTW(pid: nguCanh.pid, rid: r.id, ten: r.title ?? "Retro")) {
             HStack(spacing: 12) {
                 Image(systemName: r.locked == true ? "lock.fill" : "bubble.left.and.text.bubble.right")
-                    .font(.system(size: 15, weight: .semibold)).foregroundColor(r.locked == true ? AppColors.textSecondary : AppColors.primary)
+                    .font(.ctw(size: 15, weight: .semibold)).foregroundColor(r.locked == true ? AppColors.textSecondary : AppColors.primary)
                     .frame(width: 36, height: 36)
                     .background(RoundedRectangle(cornerRadius: 9, style: .continuous)
                         .fill((r.locked == true ? AppColors.textSecondary : AppColors.primary).opacity(0.12)))
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {
-                        Text(r.title ?? "Retro").font(.system(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                        Text(r.title ?? "Retro").font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                         if r.anonymous == true {
-                            Image(systemName: "eye.slash").font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+                            Image(systemName: "eye.slash").font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
                                 .accessibilityLabel("Anonymous")
                         }
                     }
                     Text([RetroCot.tenTemplate(r.template), r.sprint?.name, "\(r.cards ?? 0) cards", "\(r.actions ?? 0) actions"]
                         .compactMap { $0 }.joined(separator: " · "))
-                        .font(.system(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1)
+                        .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1)
                 }
             }
             .padding(.vertical, 3)

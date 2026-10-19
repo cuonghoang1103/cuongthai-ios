@@ -172,10 +172,10 @@ struct TaiLieuCTW: View {
                     ForEach(kq) { h in
                         NavigationLink(value: RouteTaiLieuCTW(pid: pid, so: h.number, ten: h.title)) {
                             VStack(alignment: .leading, spacing: 4) {
-                                Text(h.title).font(.system(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary)
+                                Text(h.title).font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary)
                                 if let s = h.snippet, !s.isEmpty {
                                     Text(s.replacingOccurrences(of: "\n", with: " "))
-                                        .font(.system(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(2)
+                                        .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(2)
                                 }
                             }
                             .padding(.vertical, 2)
@@ -284,17 +284,17 @@ struct TaiLieuCTW: View {
             Image(systemName: p.status == "ARCHIVED" ? "archivebox" : (sau == 0 ? "doc.text.fill" : "doc.text"))
                 .foregroundColor(p.status == "ARCHIVED" ? AppColors.textTertiary : AppColors.primary).frame(width: 20)
             VStack(alignment: .leading, spacing: 3) {
-                Text(p.title).font(.system(size: 15)).foregroundColor(AppColors.textPrimary).lineLimit(2)
+                Text(p.title).font(.ctw(size: 15)).foregroundColor(AppColors.textPrimary).lineLimit(2)
                 HStack(spacing: 6) {
-                    Text(CTWDocStatus.ten(p.status)).font(.system(size: 11, weight: .semibold))
+                    Text(CTWDocStatus.ten(p.status)).font(.ctw(size: 11, weight: .semibold))
                         .foregroundColor(p.status == "APPROVED" ? AppColors.success : AppColors.textSecondary)
                     if p.visibility == "CLIENT" {
-                        Image(systemName: "person.2.wave.2").font(.system(size: 10)).foregroundColor(AppColors.textTertiary)
+                        Image(systemName: "person.2.wave.2").font(.ctw(size: 10)).foregroundColor(AppColors.textTertiary)
                             .accessibilityLabel("Shared with client")
                     }
                     if p.aiAssisted == true { CTWNhanAI(chu: "AI-assisted") }
                     if let d = CTW.ngayNgan(p.updatedAt) {
-                        Text("Updated \(d)").font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+                        Text("Updated \(d)").font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
                     }
                 }
             }
@@ -332,7 +332,7 @@ struct TaoTrangCTW: View {
         NavigationStack {
             Form {
                 Section {
-                    TextField("Page title", text: $tieuDe).focused($dangGo).font(.system(size: 17, weight: .semibold))
+                    TextField("Page title", text: $tieuDe).focused($dangGo).font(.ctw(size: 17, weight: .semibold))
                 }
                 Section("Location") {
                     Picker("Parent page", selection: $cha) {
@@ -345,7 +345,7 @@ struct TaoTrangCTW: View {
                 }
                 Section {
                     Text("The page starts as a Draft. You can write it right after it's created.")
-                        .font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
+                        .font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
                 }
             }
             .navigationTitle("New page")
@@ -426,12 +426,12 @@ struct ThungRacTrangCTW: View {
                         Image(systemName: "doc.text").foregroundColor(AppColors.textTertiary)
                         VStack(alignment: .leading, spacing: 3) {
                             Text(m.title).foregroundColor(AppColors.textPrimary).lineLimit(2)
-                            Text(moTa(m)).font(.system(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(2)
+                            Text(moTa(m)).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(2)
                         }
                         Spacer(minLength: 8)
                         if m.canRestore == true {
                             Button("Restore") { Task { await khoiPhuc(m) } }
-                                .buttonStyle(.bordered).font(.system(size: 13, weight: .semibold))
+                                .buttonStyle(.bordered).font(.ctw(size: 13, weight: .semibold))
                         }
                     }
                     .padding(.vertical, 4)

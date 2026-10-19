@@ -140,7 +140,7 @@ struct ChuoiTraLoiCTW: View {
                         TinChatCTW(tin: vm.goc, pid: pid, hanhDong: hanhDong)
                         HStack(spacing: 8) {
                             Text(vm.traLoi.count == 1 ? "1 reply" : "\(vm.traLoi.count) replies")
-                                .font(.system(size: 12, weight: .semibold)).foregroundColor(AppColors.textSecondary)
+                                .font(.ctw(size: 12, weight: .semibold)).foregroundColor(AppColors.textSecondary)
                             Rectangle().fill(AppColors.divider).frame(height: 0.5)
                         }
                         .padding(.vertical, 8)
@@ -153,7 +153,7 @@ struct ChuoiTraLoiCTW: View {
                         }
                         ForEach(hangCho.cua(pid: pid, cid: kenh.id, chuoi: vm.gocId)) { t in TinChoCTW(tin: t) }
                         if let g = chuGo {
-                            HStack(spacing: 6) { DauGoCTW(); Text(g).font(.system(size: 12)).foregroundColor(AppColors.textSecondary) }
+                            HStack(spacing: 6) { DauGoCTW(); Text(g).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary) }
                                 .padding(.top, 4)
                         }
                         Color.clear.frame(height: 2).id("day")
@@ -176,8 +176,8 @@ struct ChuoiTraLoiCTW: View {
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     VStack(spacing: 0) {
-                        Text("Thread").font(.system(size: 16, weight: .semibold))
-                        Text(kenh.laRieng ? kenh.name : "#\(kenh.name)").font(.system(size: 11)).foregroundColor(AppColors.textSecondary)
+                        Text("Thread").font(.ctw(size: 16, weight: .semibold))
+                        Text(kenh.laRieng ? kenh.name : "#\(kenh.name)").font(.ctw(size: 11)).foregroundColor(AppColors.textSecondary)
                     }
                     .accessibilityElement(children: .combine)
                 }

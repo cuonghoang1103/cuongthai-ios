@@ -92,7 +92,7 @@ struct FinanceCTW: View {
                         bangCongView
                     }
                     if let n = vm.tongQuan?.notice ?? vm.caiDat?.notice, !n.isEmpty {
-                        Text(n).font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+                        Text(n).font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 } else if vm.loi == nil {
@@ -127,7 +127,7 @@ struct FinanceCTW: View {
             nganSach(s)
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 10)], spacing: 10) {
                 CTWODem(so: CTWTien.gon(s.bac ?? t.budgetTotal, tien), nhan: "Budget (BAC)", bieuTuong: "banknote", mau: AppColors.primary)
-                CTWODem(so: CTWTien.gon(s.actual, tien), nhan: "Actual cost", bieuTuong: "sum", mau: Color(hex: 0x2563EB))
+                CTWODem(so: CTWTien.gon(s.actual, tien), nhan: "Actual cost", bieuTuong: "sum", mau: AppColors.info)
                 CTWODem(so: CTWTien.gon(s.remaining, tien), nhan: "Remaining", bieuTuong: "tray",
                         mau: (s.remaining ?? 0) < 0 ? AppColors.error : AppColors.success)
                 CTWODem(so: CTWTien.gon(s.burnRatePerWeek, tien), nhan: "Burn per week", bieuTuong: "flame", mau: AppColors.warning)
@@ -163,7 +163,7 @@ struct FinanceCTW: View {
             if (t.pendingTimesheets ?? 0) > 0 {
                 Label("\(t.pendingTimesheets!) timesheet\(t.pendingTimesheets == 1 ? "" : "s") waiting for review (\(CTWTien.gio(t.pendingMinutes))) — not counted yet.",
                       systemImage: "hourglass")
-                    .font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
+                    .font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
             }
         } else {
             CTWOTrong(bieuTuong: "chart.pie", tieuDe: "No budget yet", moTa: "Once a budget is set for this project, spending and forecasts appear here.")
@@ -175,15 +175,15 @@ struct FinanceCTW: View {
         let qua = dung > 100
         return VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("Budget used").font(.system(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                Text("Budget used").font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                 Spacer()
-                Text(CTWTien.phanTram(s.percentUsed)).font(.system(size: 14, weight: .bold).monospacedDigit())
+                Text(CTWTien.phanTram(s.percentUsed)).font(.ctw(size: 14, weight: .bold).monospacedDigit())
                     .foregroundColor(qua ? AppColors.error : dung >= Double(s.alertLevel ?? 80) ? AppColors.warning : AppColors.textPrimary)
             }
             CTWThanhPhanDoan(doan: [(Int(min(dung, 100) * 10), qua ? AppColors.error : AppColors.primary),
                                    (Int(max(0, 100 - dung) * 10), AppColors.backgroundTertiary)], cao: 10)
             Text("\(CTWTien.dinhDang(s.actual, tien)) of \(CTWTien.dinhDang(s.bac, tien))")
-                .font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
         }
         .padding(14)
         .ctwThe(14)
@@ -198,11 +198,11 @@ struct FinanceCTW: View {
                     let ns = d.budget ?? 0, tt = d.actual ?? 0
                     VStack(alignment: .leading, spacing: 5) {
                         HStack {
-                            Text(d.label ?? CTWMauTrangThai.nhan(d.category)).font(.system(size: 14, weight: .medium))
+                            Text(d.label ?? CTWMauTrangThai.nhan(d.category)).font(.ctw(size: 14, weight: .medium))
                                 .foregroundColor(AppColors.textPrimary).lineLimit(1)
                             if let st = d.status { CTWChipChu(chu: st) }
                             Spacer()
-                            Text("\(CTWTien.gon(tt, tien)) / \(CTWTien.gon(ns, tien))").font(.system(size: 12).monospacedDigit())
+                            Text("\(CTWTien.gon(tt, tien)) / \(CTWTien.gon(ns, tien))").font(.ctw(size: 12).monospacedDigit())
                                 .foregroundColor(tt > ns && ns > 0 ? AppColors.error : AppColors.textSecondary)
                         }
                         GeometryReader { g in
@@ -232,20 +232,20 @@ struct FinanceCTW: View {
         } else {
             if let v = vm.moc?.contractValue {
                 Text("Contract value: \(CTWTien.dinhDang(v, vm.moc?.currency ?? tien))")
-                    .font(.system(size: 13, weight: .medium)).foregroundColor(AppColors.textSecondary)
+                    .font(.ctw(size: 13, weight: .medium)).foregroundColor(AppColors.textSecondary)
             }
             VStack(spacing: 8) {
                 ForEach(ds) { m in
                     HStack(alignment: .top, spacing: 12) {
-                        Text("\(m.number ?? 0)").font(.system(size: 13, weight: .bold).monospacedDigit()).foregroundColor(AppColors.primary)
+                        Text("\(m.number ?? 0)").font(.ctw(size: 13, weight: .bold).monospacedDigit()).foregroundColor(AppColors.primary)
                             .frame(width: 28, height: 28).background(Circle().fill(AppColors.primary.opacity(0.12)))
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(m.name).font(.system(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary)
+                            Text(m.name).font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary)
                             Text([CTWTien.dinhDang(m.computedAmount ?? m.amount, vm.moc?.currency ?? tien),
                                   m.percent.map { CTWTien.phanTram($0) },
                                   m.stage?.name.map { "Stage: \($0)" } ?? m.version?.name.map { "Release: \($0)" },
                                   CTW.ngayNgan(m.dueDate).map { "Due \($0)" }].compactMap { $0 }.joined(separator: " · "))
-                                .font(.system(size: 12)).foregroundColor(m.overdue == true ? AppColors.error : AppColors.textSecondary)
+                                .font(.ctw(size: 12)).foregroundColor(m.overdue == true ? AppColors.error : AppColors.textSecondary)
                         }
                         Spacer(minLength: 4)
                         CTWChipChu(chu: m.status == "PAID" ? "RECEIVED" : m.status,
@@ -268,18 +268,18 @@ struct FinanceCTW: View {
             CTWOTrong(bieuTuong: "cart", tieuDe: "No expenses", moTa: "Equipment, services and licenses bought for the project appear here.")
         } else {
             let tong = ds.reduce(0) { $0 + ($1.amount ?? 0) }
-            Text("Total: \(CTWTien.dinhDang(tong, tien))").font(.system(size: 13, weight: .semibold)).foregroundColor(AppColors.textSecondary)
+            Text("Total: \(CTWTien.dinhDang(tong, tien))").font(.ctw(size: 13, weight: .semibold)).foregroundColor(AppColors.textSecondary)
             CTWKhoiTruong {
                 ForEach(Array(ds.enumerated()), id: \.element.id) { i, e in
                     if i > 0 { Divider() }
                     HStack(alignment: .top) {
                         VStack(alignment: .leading, spacing: 3) {
-                            Text(e.description ?? "Expense").font(.system(size: 14, weight: .medium)).foregroundColor(AppColors.textPrimary)
+                            Text(e.description ?? "Expense").font(.ctw(size: 14, weight: .medium)).foregroundColor(AppColors.textPrimary)
                             Text([CTWMauTrangThai.nhan(e.category), e.vendor, CTW.ngayNgan(e.spentOn), e.budgetLine?.name].compactMap { $0 }.joined(separator: " · "))
-                                .font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                                .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                         }
                         Spacer(minLength: 8)
-                        Text(CTWTien.dinhDang(e.amount, tien)).font(.system(size: 14, weight: .semibold).monospacedDigit())
+                        Text(CTWTien.dinhDang(e.amount, tien)).font(.ctw(size: 14, weight: .semibold).monospacedDigit())
                             .foregroundColor(AppColors.textPrimary)
                     }
                     .padding(.vertical, 9)
@@ -296,7 +296,7 @@ struct FinanceCTW: View {
         let ds = vm.bangCong ?? []
         CTWSectionHeader("clock", vm.quanLy ? "Timesheets" : "My timesheets", count: "\(ds.count)")
         if ds.isEmpty {
-            Text("No submitted timesheets yet.").font(.system(size: 14)).foregroundColor(AppColors.textSecondary)
+            Text("No submitted timesheets yet.").font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary)
         } else {
             CTWKhoiTruong {
                 ForEach(Array(ds.enumerated()), id: \.element.id) { i, t in
@@ -304,12 +304,12 @@ struct FinanceCTW: View {
                     HStack(alignment: .top) {
                         VStack(alignment: .leading, spacing: 3) {
                             Text(vm.quanLy ? (t.userName ?? "—") : "Week of \(CTW.ngayNgan(t.weekStart) ?? "—")")
-                                .font(.system(size: 14, weight: .medium)).foregroundColor(AppColors.textPrimary)
+                                .font(.ctw(size: 14, weight: .medium)).foregroundColor(AppColors.textPrimary)
                             Text([vm.quanLy ? "Week of \(CTW.ngayNgan(t.weekStart) ?? "—")" : nil, CTWTien.gio(t.totalMinutes),
                                   t.approvedCost.map { CTWTien.dinhDang($0, tien) }].compactMap { $0 }.joined(separator: " · "))
-                                .font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                                .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                             if t.status == "RETURNED", let r = t.returnReason, !r.isEmpty {
-                                Text("Returned: \(r)").font(.system(size: 12)).foregroundColor(AppColors.warning)
+                                Text("Returned: \(r)").font(.ctw(size: 12)).foregroundColor(AppColors.warning)
                             }
                         }
                         Spacer(minLength: 6)

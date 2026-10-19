@@ -423,29 +423,29 @@ struct CTWIssueView: View {
                     NavigationLink(value: CTWRoute.the(pid: vm.pid, so: p.number)) {
                         HStack(spacing: 4) {
                             CTWTypeIcon(type: p.typeId.flatMap(cfg.loai), size: 11)
-                            Text("\(cfg.key)-\(p.number)").font(.system(size: 12, weight: .medium).monospaced())
+                            Text("\(cfg.key)-\(p.number)").font(.ctw(size: 12, weight: .medium).monospaced())
                         }
                     }
                     Text("/").foregroundColor(AppColors.textTertiary)
                 }
                 CTWTypeIcon(type: cfg.loai(t.typeId), size: 13)
                 Text("\(cfg.key)-\(t.number)")
-                    .font(.system(size: 13, weight: .semibold).monospaced())
+                    .font(.ctw(size: 13, weight: .semibold).monospaced())
                     .foregroundColor(AppColors.textSecondary)
                     .textSelection(.enabled)
                 Text(cfg.loai(t.typeId)?.name ?? "")
-                    .font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
+                    .font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
                 Spacer(minLength: 0)
                 if t.flaggedAt != nil {
                     Label("Flagged", systemImage: "flag.fill")
-                        .font(.system(size: 11, weight: .semibold)).foregroundColor(AppColors.error)
+                        .font(.ctw(size: 11, weight: .semibold)).foregroundColor(AppColors.error)
                 }
             }
 
             if dangSuaTieuDe {
                 VStack(alignment: .leading, spacing: 8) {
                     TextField("Title", text: $tieuDeNhap, axis: .vertical)
-                        .font(.system(size: 20, weight: .semibold))
+                        .font(.ctw(size: 20, weight: .semibold))
                         .textFieldStyle(.roundedBorder)
                     HStack {
                         Button("Cancel") { dangSuaTieuDe = false }
@@ -463,7 +463,7 @@ struct CTWIssueView: View {
             } else {
                 HStack(alignment: .top) {
                     Text(t.title)
-                        .font(.system(size: 21, weight: .semibold))
+                        .font(.ctw(size: 21, weight: .semibold))
                         .foregroundColor(AppColors.textPrimary)
                         .textSelection(.enabled)
                         .fixedSize(horizontal: false, vertical: true)
@@ -497,34 +497,34 @@ struct CTWIssueView: View {
             hangTruong("Reporter") {
                 HStack(spacing: 6) {
                     CTWAvatar(user: t.reporter, size: 22)
-                    Text(t.reporter?.ten ?? "—").font(.system(size: 14)).foregroundColor(AppColors.textPrimary)
+                    Text(t.reporter?.ten ?? "—").font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary)
                     if t.reporter?.laAgent == true { CTWNhanAI() }
                 }
             }
             if let sid = t.sprintId, let s = (cfg.sprints ?? []).first(where: { $0.id == sid }) {
                 Divider()
                 hangTruong("Sprint") {
-                    Text(s.name).font(.system(size: 14)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                    Text(s.name).font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary).lineLimit(1)
                 }
             }
             if let sp = t.storyPoints {
                 Divider()
                 hangTruong("Story points") {
                     Text(sp == sp.rounded() ? String(Int(sp)) : String(format: "%.1f", sp))
-                        .font(.system(size: 14)).foregroundColor(AppColors.textPrimary)
+                        .font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary)
                 }
             }
             if let nhan = t.labelIds, !nhan.isEmpty {
                 Divider()
                 hangTruong("Labels") {
                     Text((cfg.labels ?? []).filter { nhan.contains($0.id) }.map(\.name).joined(separator: ", "))
-                        .font(.system(size: 14)).foregroundColor(AppColors.textPrimary)
+                        .font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary)
                         .multilineTextAlignment(.trailing)
                 }
             }
             Divider()
             hangTruong("Updated") {
-                Text(CTW.thoiDiem(t.updatedAt)).font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
+                Text(CTW.thoiDiem(t.updatedAt)).font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
             }
         }
         .padding(.horizontal, 14)
@@ -533,7 +533,7 @@ struct CTWIssueView: View {
 
     private func hangTruong<V: View>(_ ten: String, @ViewBuilder _ gt: () -> V) -> some View {
         HStack(spacing: 12) {
-            Text(ten).font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
+            Text(ten).font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
                 .frame(width: 96, alignment: .leading)
             Spacer(minLength: 0)
             gt()
@@ -557,7 +557,7 @@ struct CTWIssueView: View {
             } label: {
                 HStack(spacing: 4) {
                     CTWStatusChip(status: hienTai)
-                    Image(systemName: "chevron.up.chevron.down").font(.system(size: 10))
+                    Image(systemName: "chevron.up.chevron.down").font(.ctw(size: 10))
                         .foregroundColor(AppColors.textTertiary)
                 }
             }
@@ -572,7 +572,7 @@ struct CTWIssueView: View {
         let nhan = HStack(spacing: 6) {
             CTWAvatar(user: t.assignee, size: 22)
             Text(t.assignee?.ten ?? "Unassigned")
-                .font(.system(size: 14))
+                .font(.ctw(size: 14))
                 .foregroundColor(t.assignee == nil ? AppColors.textSecondary : AppColors.textPrimary)
                 .lineLimit(1)
             if t.assignee?.laAgent == true { CTWNhanAI() }
@@ -608,7 +608,7 @@ struct CTWIssueView: View {
         let p = CTW.uuTien(t.priority)
         let nhan = HStack(spacing: 6) {
             CTWPriorityIcon(priority: t.priority)
-            Text(p.ten).font(.system(size: 14)).foregroundColor(AppColors.textPrimary)
+            Text(p.ten).font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary)
         }
         if cfg.coTheSua {
             Menu {
@@ -650,13 +650,13 @@ struct CTWIssueView: View {
                     }
                 } label: {
                     Text(chu ?? "None")
-                        .font(.system(size: 14, weight: tre ? .semibold : .regular))
+                        .font(.ctw(size: 14, weight: tre ? .semibold : .regular))
                         .foregroundColor(chu == nil ? AppColors.textSecondary : (tre ? AppColors.error : AppColors.textPrimary))
                 }
             }
         } else {
             Text(chu ?? "None")
-                .font(.system(size: 14))
+                .font(.ctw(size: 14))
                 .foregroundColor(tre ? AppColors.error : AppColors.textPrimary)
         }
     }
@@ -684,7 +684,7 @@ struct CTWIssueView: View {
                 let khoi = CTWTipTap.khoi(t.descriptionJson)
                 if khoi.isEmpty {
                     Text("No description.")
-                        .font(.system(size: 14)).foregroundColor(AppColors.textTertiary)
+                        .font(.ctw(size: 14)).foregroundColor(AppColors.textTertiary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 } else {
                     CTWKhoiView(khoi: khoi, coChu: 14.5)
@@ -712,7 +712,7 @@ struct CTWIssueView: View {
                 if vm.dangTaiLen {
                     ProgressView()
                 } else {
-                    Image(systemName: "plus.circle.fill").font(.system(size: 20)).frame(width: 44, height: 32)
+                    Image(systemName: "plus.circle.fill").font(.ctw(size: 20)).frame(width: 44, height: 32)
                 }
             }
             .disabled(vm.dangTaiLen)
@@ -733,7 +733,7 @@ struct CTWIssueView: View {
                 }
             if ds.isEmpty {
                 Text(duocThem ? "No files yet. Tap + to add a photo or file." : "No files.")
-                    .font(.system(size: 13)).foregroundColor(AppColors.textTertiary)
+                    .font(.ctw(size: 13)).foregroundColor(AppColors.textTertiary)
             } else {
                 VStack(spacing: 0) {
                     ForEach(ds) { a in
@@ -742,18 +742,18 @@ struct CTWIssueView: View {
                         } label: {
                             HStack(spacing: 11) {
                                 Image(systemName: a.bieuTuong)
-                                    .font(.system(size: 16, weight: .medium)).foregroundColor(AppColors.primary)
+                                    .font(.ctw(size: 16, weight: .medium)).foregroundColor(AppColors.primary)
                                     .frame(width: 36, height: 36)
                                     .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(AppColors.primary.opacity(0.12)))
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(a.fileName ?? "File").font(.system(size: 14, weight: .medium))
+                                    Text(a.fileName ?? "File").font(.ctw(size: 14, weight: .medium))
                                         .foregroundColor(AppColors.textPrimary).lineLimit(1)
                                     Text([a.coChu, a.uploader?.ten, CTW.thoiDiem(a.createdAt)]
                                         .compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · "))
-                                        .font(.system(size: 11)).foregroundColor(AppColors.textSecondary).lineLimit(1)
+                                        .font(.ctw(size: 11)).foregroundColor(AppColors.textSecondary).lineLimit(1)
                                 }
                                 Spacer(minLength: 0)
-                                Image(systemName: "eye").font(.system(size: 13)).foregroundColor(AppColors.textTertiary)
+                                Image(systemName: "eye").font(.ctw(size: 13)).foregroundColor(AppColors.textTertiary)
                             }
                             .padding(.vertical, 8)
                             .contentShape(Rectangle())
@@ -798,9 +798,9 @@ struct CTWIssueView: View {
                     NavigationLink(value: CTWRoute.the(pid: vm.pid, so: c.number)) {
                         HStack(spacing: 8) {
                             CTWTypeIcon(type: c.typeId.flatMap(cfg.loai), size: 12)
-                            Text("\(cfg.key)-\(c.number)").font(.system(size: 12, weight: .medium).monospaced())
+                            Text("\(cfg.key)-\(c.number)").font(.ctw(size: 12, weight: .medium).monospaced())
                                 .foregroundColor(AppColors.textSecondary)
-                            Text(c.title).font(.system(size: 14)).foregroundColor(AppColors.textPrimary)
+                            Text(c.title).font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary)
                                 .lineLimit(1)
                             Spacer(minLength: 0)
                             CTWStatusChip(status: c.statusId.flatMap(cfg.trangThai))
@@ -824,11 +824,11 @@ struct CTWIssueView: View {
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(lk) { l in
                     let hang = HStack(spacing: 8) {
-                        Text(tenLienKet(l)).font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                        Text(tenLienKet(l)).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                             .frame(width: 100, alignment: .leading)
-                        Text(l.issue?.key ?? "").font(.system(size: 12, weight: .medium).monospaced())
+                        Text(l.issue?.key ?? "").font(.ctw(size: 12, weight: .medium).monospaced())
                             .foregroundColor(AppColors.textSecondary)
-                        Text(l.issue?.title ?? "").font(.system(size: 14)).foregroundColor(AppColors.textPrimary)
+                        Text(l.issue?.title ?? "").font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary)
                             .lineLimit(1)
                         Spacer(minLength: 0)
                     }
@@ -865,28 +865,28 @@ struct CTWIssueView: View {
         VStack(alignment: .leading, spacing: 8) {
             if let ds = vm.lichSu {
                 if ds.isEmpty {
-                    Text("No history yet.").font(.system(size: 13)).foregroundColor(AppColors.textTertiary)
+                    Text("No history yet.").font(.ctw(size: 13)).foregroundColor(AppColors.textTertiary)
                 }
                 VStack(alignment: .leading, spacing: 0) {
                     ForEach(ds) { h in
                         HStack(alignment: .top, spacing: 10) {
                             if h.actorKind == "AUTOMATION" || h.actorKind == "SYSTEM" {
-                                Image(systemName: "gearshape.fill").font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                                Image(systemName: "gearshape.fill").font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                                     .frame(width: 24, height: 24).background(Circle().fill(AppColors.backgroundTertiary))
                             } else {
                                 CTWAvatar(user: h.actor, size: 24)
                             }
                             VStack(alignment: .leading, spacing: 3) {
                                 HStack(spacing: 5) {
-                                    Text(tenNguoiLam(h)).font(.system(size: 13, weight: .semibold))
+                                    Text(tenNguoiLam(h)).font(.ctw(size: 13, weight: .semibold))
                                         .foregroundColor(AppColors.textPrimary)
                                     if h.actor?.laAgent == true || h.actorKind == "AGENT" { CTWNhanAI() }
                                     else if h.actorKind == "AI" { CTWNhanAI(chu: "AI") }
                                 }
                                 Text(CTWLichSu.moTa(h, cfg: cfg))
-                                    .font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
+                                    .font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
                                     .fixedSize(horizontal: false, vertical: true)
-                                Text(CTW.thoiDiem(h.createdAt)).font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+                                Text(CTW.thoiDiem(h.createdAt)).font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
                             }
                             Spacer(minLength: 0)
                         }
@@ -923,7 +923,7 @@ struct CTWIssueView: View {
         return VStack(alignment: .leading, spacing: 10) {
             CTWSectionHeader("bubble.left.and.bubble.right", "Comments", count: "\(ds.count)")
             if ds.isEmpty {
-                Text("No comments yet.").font(.system(size: 13)).foregroundColor(AppColors.textTertiary)
+                Text("No comments yet.").font(.ctw(size: 13)).foregroundColor(AppColors.textTertiary)
             }
             ForEach(ds) { c in hangBinhLuan(c, cfg) }
 
@@ -938,7 +938,7 @@ struct CTWIssueView: View {
                         Task { if await vm.guiBinhLuan(s) { binhLuanNhap = "" } }
                     } label: {
                         Image(systemName: "arrow.up")
-                            .font(.system(size: 16, weight: .bold))
+                            .font(.ctw(size: 16, weight: .bold))
                             .foregroundColor(.white)
                             .frame(width: 36, height: 36)
                             .background(Circle().fill(trong ? AppColors.textTertiary : AppColors.primary))
@@ -949,10 +949,10 @@ struct CTWIssueView: View {
                 }
                 .padding(.top, 4)
                 Text("Comments are visible to project members. Be respectful — you can report or block anyone.")
-                    .font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+                    .font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
             } else {
                 Text("You can view this issue but not comment on it.")
-                    .font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
+                    .font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
             }
         }
     }
@@ -965,20 +965,20 @@ struct CTWIssueView: View {
             VStack(alignment: .leading, spacing: 5) {
                 HStack(spacing: 6) {
                     Text(c.author?.ten ?? "Someone")
-                        .font(.system(size: 13, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                        .font(.ctw(size: 13, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                         .lineLimit(1)
                     if c.author?.laAgent == true { CTWNhanAI() }
                     else if c.isAi == true { CTWNhanAI(chu: "AI-drafted") }
-                    Text(CTW.thoiDiem(c.createdAt)).font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+                    Text(CTW.thoiDiem(c.createdAt)).font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
                     if c.editedAt != nil {
-                        Text("(edited)").font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+                        Text("(edited)").font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
                     }
                 }
                 CTWTipTapView(doc: c.bodyJson, coChu: 14)
                 if let ds = c.attachments, !ds.isEmpty {
                     ForEach(ds) { a in
                         Label(a.fileName ?? "File", systemImage: a.bieuTuong)
-                            .font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                            .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                     }
                 }
             }

@@ -81,13 +81,13 @@ struct GiaiDoanDuAnCTW: View {
             CTWVongTienDo(tiLe: t.tong == 0 ? 0 : Double(t.xong) / Double(t.tong), co: 58, mau: AppColors.success,
                           chu: "\(t.xong)/\(t.tong)")
             VStack(alignment: .leading, spacing: 4) {
-                Text("\(t.xong) of \(t.tong) stages done").font(.system(size: 17, weight: .bold)).foregroundColor(AppColors.textPrimary)
+                Text("\(t.xong) of \(t.tong) stages done").font(.ctw(size: 17, weight: .bold)).foregroundColor(AppColors.textPrimary)
                 if let h = t.hienTai {
-                    Text("Current: \(h)").font(.system(size: 14)).foregroundColor(AppColors.textSecondary)
+                    Text("Current: \(h)").font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary)
                 } else if t.xong == t.tong {
-                    Text("All stages complete").font(.system(size: 14)).foregroundColor(AppColors.success)
+                    Text("All stages complete").font(.ctw(size: 14)).foregroundColor(AppColors.success)
                 } else {
-                    Text("No stage is active yet").font(.system(size: 14)).foregroundColor(AppColors.textSecondary)
+                    Text("No stage is active yet").font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary)
                 }
             }
             Spacer(minLength: 0)
@@ -110,7 +110,7 @@ struct GiaiDoanDuAnCTW: View {
         return HStack(alignment: .top, spacing: 12) {
             VStack(spacing: 0) {
                 Rectangle().fill(dau ? Color.clear : AppColors.border).frame(width: 2, height: 14)
-                Image(systemName: k.bieuTuong).font(.system(size: 24, weight: .semibold)).foregroundColor(k.mau)
+                Image(systemName: k.bieuTuong).font(.ctw(size: 24, weight: .semibold)).foregroundColor(k.mau)
                     .background(Circle().fill(AppColors.backgroundPrimary))
                 Rectangle().fill(cuoi ? Color.clear : AppColors.border).frame(width: 2).frame(maxHeight: .infinity)
             }
@@ -118,42 +118,42 @@ struct GiaiDoanDuAnCTW: View {
             .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 9) {
                 HStack(alignment: .firstTextBaseline) {
-                    Text("STAGE \(g.n ?? 0)").font(.system(size: 10, weight: .bold)).foregroundColor(AppColors.textTertiary)
+                    Text("STAGE \(g.n ?? 0)").font(.ctw(size: 10, weight: .bold)).foregroundColor(AppColors.textTertiary)
                     Spacer()
-                    Text(k.ten).font(.system(size: 11, weight: .semibold)).foregroundColor(k.mau)
+                    Text(k.ten).font(.ctw(size: 11, weight: .semibold)).foregroundColor(k.mau)
                         .padding(.horizontal, 8).padding(.vertical, 3)
                         .background(Capsule().fill(k.mau.opacity(0.12)))
                 }
-                Text(g.name).font(.system(size: 16, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                Text(g.name).font(.ctw(size: 16, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                 if (g.issueCount ?? 0) > 0 {
                     HStack(spacing: 8) {
                         CTWThanhTienDo(doan: [CTWDoanTienDo(ten: "Done", giaTri: Double(g.doneCount ?? 0), mau: AppColors.success),
                                               CTWDoanTienDo(ten: "Open", giaTri: Double(max((g.issueCount ?? 0) - (g.doneCount ?? 0), 0)), mau: AppColors.backgroundTertiary)],
                                        cao: 6)
-                        Text("\(g.doneCount ?? 0)/\(g.issueCount ?? 0) issues").font(.system(size: 11, weight: .semibold).monospacedDigit())
+                        Text("\(g.doneCount ?? 0)/\(g.issueCount ?? 0) issues").font(.ctw(size: 11, weight: .semibold).monospacedDigit())
                             .foregroundColor(AppColors.textSecondary).fixedSize()
                     }
                 } else {
-                    Text("No issues linked to this stage").font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
+                    Text("No issues linked to this stage").font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
                 }
                 if let ngay = dongNgay(g) {
-                    Label(ngay, systemImage: "calendar").font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                    Label(ngay, systemImage: "calendar").font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                 }
                 if g.pendingApprovalId != nil {
                     Label("Gate approval pending", systemImage: "person.badge.clock")
-                        .font(.system(size: 12, weight: .semibold)).foregroundColor(AppColors.warning)
+                        .font(.ctw(size: 12, weight: .semibold)).foregroundColor(AppColors.warning)
                 }
                 if let c = g.gateIssue, let so = c.number {
                     NavigationLink(value: CTWRoute.the(pid: pid, so: so)) {
                         HStack(spacing: 6) {
                             Image(systemName: c.resolvedAt != nil ? "checkmark.shield.fill" : "shield.lefthalf.filled")
                                 .foregroundColor(c.resolvedAt != nil ? AppColors.success : AppColors.primary)
-                            Text("Gate").font(.system(size: 12, weight: .semibold)).foregroundColor(AppColors.textSecondary)
-                            Text(g.gateIssueKey ?? "\(maDuAn)-\(so)").font(.system(size: 12, weight: .medium).monospaced())
+                            Text("Gate").font(.ctw(size: 12, weight: .semibold)).foregroundColor(AppColors.textSecondary)
+                            Text(g.gateIssueKey ?? "\(maDuAn)-\(so)").font(.ctw(size: 12, weight: .medium).monospaced())
                                 .foregroundColor(AppColors.textSecondary)
-                            Text(c.title ?? "").font(.system(size: 13)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                            Text(c.title ?? "").font(.ctw(size: 13)).foregroundColor(AppColors.textPrimary).lineLimit(1)
                             Spacer(minLength: 0)
-                            Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)).foregroundColor(AppColors.textTertiary)
+                            Image(systemName: "chevron.right").font(.ctw(size: 11, weight: .semibold)).foregroundColor(AppColors.textTertiary)
                         }
                         .padding(.horizontal, 10).frame(minHeight: 44)
                         .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(AppColors.backgroundTertiary.opacity(0.7)))

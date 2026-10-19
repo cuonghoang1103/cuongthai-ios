@@ -97,7 +97,7 @@ struct KenhChatCTW: View {
             }
             if !hangCho.coMang {
                 Label("You're offline — messages will send when you reconnect.", systemImage: "wifi.slash")
-                    .font(.system(size: 12, weight: .medium)).foregroundColor(AppColors.textSecondary)
+                    .font(.ctw(size: 12, weight: .medium)).foregroundColor(AppColors.textSecondary)
                     .frame(maxWidth: .infinity).padding(.vertical, 6)
                     .background(AppColors.warning.opacity(0.12))
             }
@@ -106,7 +106,7 @@ struct KenhChatCTW: View {
             if let g = vm.chuDangGo {
                 HStack(spacing: 6) {
                     DauGoCTW()
-                    Text(g).font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                    Text(g).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                     Spacer()
                 }
                 .padding(.horizontal, Spacing.md).padding(.vertical, 4)
@@ -244,11 +244,11 @@ struct KenhChatCTW: View {
 
     private var dauKenh: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Image(systemName: kenh.bieuTuong).font(.system(size: 20, weight: .semibold)).foregroundColor(AppColors.primary)
+            Image(systemName: kenh.bieuTuong).font(.ctw(size: 20, weight: .semibold)).foregroundColor(AppColors.primary)
                 .frame(width: 46, height: 46)
                 .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(AppColors.primary.opacity(0.12)))
-            Text(kenh.laDM ? "This is the start of your conversation with \(kenh.name)" : (kenh.laRieng ? "This is the start of \(kenh.name)" : "This is the start of #\(kenh.name)")).font(.system(size: 17, weight: .bold)).foregroundColor(AppColors.textPrimary)
-            if let t = kenh.topic, !t.isEmpty { Text(t).font(.system(size: 13)).foregroundColor(AppColors.textSecondary) }
+            Text(kenh.laDM ? "This is the start of your conversation with \(kenh.name)" : (kenh.laRieng ? "This is the start of \(kenh.name)" : "This is the start of #\(kenh.name)")).font(.ctw(size: 17, weight: .bold)).foregroundColor(AppColors.textPrimary)
+            if let t = kenh.topic, !t.isEmpty { Text(t).font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary) }
         }
         .padding(.vertical, 16)
     }
@@ -264,11 +264,11 @@ struct KenhChatCTW: View {
                 Image(systemName: "phone.connection.fill").foregroundColor(.white)
                     .frame(width: 30, height: 30).background(Circle().fill(AppColors.success))
                 VStack(alignment: .leading, spacing: 1) {
-                    Text("Call in progress").font(.system(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
-                    Text(u.host ?? "").font(.system(size: 11)).foregroundColor(AppColors.textSecondary)
+                    Text("Call in progress").font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                    Text(u.host ?? "").font(.ctw(size: 11)).foregroundColor(AppColors.textSecondary)
                 }
                 Spacer()
-                Text("Join").font(.system(size: 14, weight: .bold)).foregroundColor(.white)
+                Text("Join").font(.ctw(size: 14, weight: .bold)).foregroundColor(.white)
                     .padding(.horizontal, 16).padding(.vertical, 7).background(Capsule().fill(AppColors.success))
             }
             .padding(.horizontal, Spacing.md).padding(.vertical, 8)
@@ -287,12 +287,12 @@ struct KenhChatCTW: View {
             Button { tamPhu = .thongTin } label: {
                 VStack(spacing: 0) {
                     HStack(spacing: 4) {
-                        if kenh.laRieng { Image(systemName: "lock.fill").font(.system(size: 11)) }
-                        Text(kenh.laRieng ? kenh.name : "#\(kenh.name)").font(.system(size: 16, weight: .semibold))
-                        if kenh.muted == true { Image(systemName: "bell.slash.fill").font(.system(size: 10)).foregroundColor(AppColors.textTertiary) }
+                        if kenh.laRieng { Image(systemName: "lock.fill").font(.ctw(size: 11)) }
+                        Text(kenh.laRieng ? kenh.name : "#\(kenh.name)").font(.ctw(size: 16, weight: .semibold))
+                        if kenh.muted == true { Image(systemName: "bell.slash.fill").font(.ctw(size: 10)).foregroundColor(AppColors.textTertiary) }
                     }
                     .foregroundColor(AppColors.textPrimary)
-                    Text(phuDe).font(.system(size: 11)).foregroundColor(AppColors.textSecondary).lineLimit(1)
+                    Text(phuDe).font(.ctw(size: 11)).foregroundColor(AppColors.textSecondary).lineLimit(1)
                 }
             }
             .buttonStyle(.plain)
@@ -368,7 +368,7 @@ struct KenhChatCTW: View {
     @ViewBuilder private var oNhap: some View {
         if !duocGui {
             Text(kenh.archived == true ? "This channel is archived." : "You can read this channel but not post in it.")
-                .font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
+                .font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
                 .frame(maxWidth: .infinity).padding(12)
                 .background(.bar)
         } else {
@@ -435,7 +435,7 @@ struct VachNgayCTW: View {
     var body: some View {
         HStack(spacing: 10) {
             Rectangle().fill(AppColors.divider).frame(height: 0.5)
-            Text(chu).font(.system(size: 12, weight: .semibold)).foregroundColor(AppColors.textSecondary)
+            Text(chu).font(.ctw(size: 12, weight: .semibold)).foregroundColor(AppColors.textSecondary)
                 .padding(.horizontal, 10).padding(.vertical, 3)
                 .background(Capsule().fill(AppColors.backgroundTertiary))
                 .fixedSize()
@@ -450,7 +450,7 @@ struct VachMoiCTW: View {
     var body: some View {
         HStack(spacing: 8) {
             Rectangle().fill(AppColors.error.opacity(0.6)).frame(height: 1)
-            Text("New messages").font(.system(size: 11, weight: .bold)).foregroundColor(AppColors.error).fixedSize()
+            Text("New messages").font(.ctw(size: 11, weight: .bold)).foregroundColor(AppColors.error).fixedSize()
         }
         .padding(.vertical, 6)
     }
@@ -483,19 +483,19 @@ struct TinChoCTW: View {
             CTWAvatar(user: app.currentUser.map { CTWUser(id: $0.id, username: $0.username, fullName: $0.fullName, displayName: $0.displayName, avatarUrl: $0.avatarUrl) }, size: 36)
                 .opacity(0.6)
             VStack(alignment: .leading, spacing: 4) {
-                Text(tin.body).font(.system(size: 15)).foregroundColor(AppColors.textPrimary.opacity(0.65))
+                Text(tin.body).font(.ctw(size: 15)).foregroundColor(AppColors.textPrimary.opacity(0.65))
                     .fixedSize(horizontal: false, vertical: true)
                 switch tin.trangThai {
                 case .dangGui:
-                    Label("Sending…", systemImage: "arrow.up.circle").font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+                    Label("Sending…", systemImage: "arrow.up.circle").font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
                 case .cho:
-                    Label("Waiting for network", systemImage: "clock").font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+                    Label("Waiting for network", systemImage: "clock").font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
                 case .loi:
                     HStack(spacing: 10) {
-                        Label(tin.loi ?? "Not sent", systemImage: "exclamationmark.circle.fill").font(.system(size: 11))
+                        Label(tin.loi ?? "Not sent", systemImage: "exclamationmark.circle.fill").font(.ctw(size: 11))
                             .foregroundColor(AppColors.error)
-                        Button("Retry") { Task { await hang.thuLai(tin.id) } }.font(.system(size: 12, weight: .semibold))
-                        Button("Delete", role: .destructive) { hang.xoa(tin.id) }.font(.system(size: 12))
+                        Button("Retry") { Task { await hang.thuLai(tin.id) } }.font(.ctw(size: 12, weight: .semibold))
+                        Button("Delete", role: .destructive) { hang.xoa(tin.id) }.font(.ctw(size: 12))
                     }
                 }
             }

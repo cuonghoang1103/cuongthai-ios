@@ -36,15 +36,15 @@ struct TinChatCTW: View {
     private var tinHeThong: some View {
         VStack(spacing: 6) {
             HStack(spacing: 6) {
-                Image(systemName: tin.laCuocGoi ? "phone.fill" : "info.circle").font(.system(size: 11))
-                Text("\(tin.author?.ten ?? "CT Work") \(tin.body ?? "")").font(.system(size: 12))
+                Image(systemName: tin.laCuocGoi ? "phone.fill" : "info.circle").font(.ctw(size: 11))
+                Text("\(tin.author?.ten ?? "CT Work") \(tin.body ?? "")").font(.ctw(size: 12))
                     .multilineTextAlignment(.center)
-                Text(CTWChatThoiGian.gio(tin.createdAt)).font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+                Text(CTWChatThoiGian.gio(tin.createdAt)).font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
             }
             .foregroundColor(AppColors.textSecondary)
             if tin.laCuocGoi, let s = tin.meta?.url, let u = URL(string: s) {
                 Button { hanhDong.moCuocGoi?(u) } label: {
-                    Label("Join call", systemImage: "video.fill").font(.system(size: 13, weight: .semibold))
+                    Label("Join call", systemImage: "video.fill").font(.ctw(size: 13, weight: .semibold))
                         .padding(.horizontal, 14).padding(.vertical, 7)
                         .background(Capsule().fill(AppColors.success.opacity(0.15)))
                         .foregroundColor(AppColors.success)
@@ -53,7 +53,7 @@ struct TinChatCTW: View {
             }
             if let k = tin.meta?.key, tin.meta?.type == "issue", let u = tin.meta?.url {
                 Button { DinhTuyenCTW.mo(duongDan: u) } label: {
-                    Label("Open \(k)", systemImage: "checkmark.square").font(.system(size: 12, weight: .semibold))
+                    Label("Open \(k)", systemImage: "checkmark.square").font(.ctw(size: 12, weight: .semibold))
                 }
                 .buttonStyle(.plain)
                 .foregroundColor(AppColors.primary)
@@ -72,28 +72,28 @@ struct TinChatCTW: View {
             VStack(alignment: .leading, spacing: 4) {
                 if !gop {
                     HStack(spacing: 6) {
-                        Text(tin.author?.ten ?? "Deleted user").font(.system(size: 14, weight: .semibold))
+                        Text(tin.author?.ten ?? "Deleted user").font(.ctw(size: 14, weight: .semibold))
                             .foregroundColor(AppColors.textPrimary).lineLimit(1)
                         if tin.author?.laAgent == true { CTWNhanAI() }
-                        Text(CTWChatThoiGian.gio(tin.createdAt)).font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+                        Text(CTWChatThoiGian.gio(tin.createdAt)).font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
                         if tin.daGhim {
-                            Image(systemName: "pin.fill").font(.system(size: 9)).foregroundColor(AppColors.warning)
+                            Image(systemName: "pin.fill").font(.ctw(size: 9)).foregroundColor(AppColors.warning)
                                 .accessibilityLabel("Pinned")
                         }
                     }
                 }
                 if tin.daXoa {
-                    Text("This message was deleted.").font(.system(size: 14).italic()).foregroundColor(AppColors.textTertiary)
+                    Text("This message was deleted.").font(.ctw(size: 14).italic()).foregroundColor(AppColors.textTertiary)
                 } else {
                     noiDung
                 }
                 if let n = tin.replyCount, n > 0 {
                     Button { hanhDong.moChuoi?(tin) } label: {
                         HStack(spacing: 5) {
-                            Image(systemName: "arrowshape.turn.up.left.2.fill").font(.system(size: 10))
-                            Text(n == 1 ? "1 reply" : "\(n) replies").font(.system(size: 12, weight: .semibold))
+                            Image(systemName: "arrowshape.turn.up.left.2.fill").font(.ctw(size: 10))
+                            Text(n == 1 ? "1 reply" : "\(n) replies").font(.ctw(size: 12, weight: .semibold))
                             if let l = tin.lastReplyAt {
-                                Text("· \(CTWChatThoiGian.gio(l))").font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+                                Text("· \(CTWChatThoiGian.gio(l))").font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
                             }
                         }
                         .foregroundColor(AppColors.primary)
@@ -122,7 +122,7 @@ struct TinChatCTW: View {
     @ViewBuilder private var noiDung: some View {
         if let b = tin.body, !b.isEmpty {
             Text(CTWChatChu.dung(b, toi: app.currentUser?.username))
-                .font(.system(size: 15)).foregroundColor(AppColors.textPrimary)
+                .font(.ctw(size: 15)).foregroundColor(AppColors.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
                 .textSelection(.enabled)
         }
@@ -143,10 +143,10 @@ struct TinChatCTW: View {
                 HStack(spacing: 7) {
                     Image(systemName: p.t == "doc" ? "doc.text" : (p.t == "meeting" ? "calendar" : "checkmark.square"))
                         .foregroundColor(AppColors.primary)
-                    Text(p.key ?? "").font(.system(size: 12, weight: .semibold).monospaced()).foregroundColor(AppColors.textSecondary)
-                    Text(p.title ?? "").font(.system(size: 13)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                    Text(p.key ?? "").font(.ctw(size: 12, weight: .semibold).monospaced()).foregroundColor(AppColors.textSecondary)
+                    Text(p.title ?? "").font(.ctw(size: 13)).foregroundColor(AppColors.textPrimary).lineLimit(1)
                     Spacer(minLength: 0)
-                    Image(systemName: "chevron.right").font(.system(size: 10, weight: .semibold)).foregroundColor(AppColors.textTertiary)
+                    Image(systemName: "chevron.right").font(.ctw(size: 10, weight: .semibold)).foregroundColor(AppColors.textTertiary)
                 }
                 .padding(.horizontal, 10).padding(.vertical, 8)
                 .frame(maxWidth: 420, alignment: .leading)
@@ -161,8 +161,8 @@ struct TinChatCTW: View {
                     HStack(spacing: 8) {
                         Image(systemName: "link").foregroundColor(AppColors.primary)
                         VStack(alignment: .leading, spacing: 1) {
-                            Text(l.title ?? l.domain ?? s).font(.system(size: 13, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(1)
-                            if let d = l.domain { Text(d).font(.system(size: 11)).foregroundColor(AppColors.textSecondary) }
+                            Text(l.title ?? l.domain ?? s).font(.ctw(size: 13, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                            if let d = l.domain { Text(d).font(.ctw(size: 11)).foregroundColor(AppColors.textSecondary) }
                         }
                         Spacer(minLength: 0)
                     }
@@ -175,7 +175,7 @@ struct TinChatCTW: View {
             }
         }
         if tin.editedAt != nil {
-            Text("(edited)").font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+            Text("(edited)").font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
         }
         if let r = tin.reactions, !r.isEmpty {
             HangCamXucCTW(ds: r) { e in hanhDong.camXuc?(tin, e) } them: { hanhDong.themCamXuc?(tin) }
@@ -197,7 +197,7 @@ enum CTWChatChu {
                   let hi = AttributedString.Index(r.upperBound, within: a) else { continue }
             let ten = String(chu[r].dropFirst()).lowercased()
             a[lo..<hi].foregroundColor = AppColors.primary
-            a[lo..<hi].font = .system(size: 15, weight: .semibold)
+            a[lo..<hi].font = .ctw(size: 15, weight: .semibold)
             if let toi, ten == toi.lowercased() { a[lo..<hi].backgroundColor = AppColors.primary.opacity(0.14) }
         }
         return a
@@ -217,8 +217,8 @@ struct HangCamXucCTW: View {
             ForEach(ds, id: \.emoji) { x in
                 Button { bam(x.emoji) } label: {
                     HStack(spacing: 4) {
-                        Text(x.emoji).font(.system(size: 14))
-                        Text("\(x.count ?? 0)").font(.system(size: 12, weight: .semibold).monospacedDigit())
+                        Text(x.emoji).font(.ctw(size: 14))
+                        Text("\(x.count ?? 0)").font(.ctw(size: 12, weight: .semibold).monospacedDigit())
                             .foregroundColor(x.mine == true ? AppColors.primary : AppColors.textSecondary)
                     }
                     .padding(.horizontal, 8).frame(height: 28)
@@ -229,7 +229,7 @@ struct HangCamXucCTW: View {
                 .accessibilityLabel("\(x.emoji) \(x.count ?? 0)\(x.mine == true ? ", you reacted" : "")")
             }
             Button(action: them) {
-                Image(systemName: "face.smiling").font(.system(size: 13))
+                Image(systemName: "face.smiling").font(.ctw(size: 13))
                     .foregroundColor(AppColors.textSecondary)
                     .padding(.horizontal, 9).frame(height: 28)
                     .background(Capsule().fill(AppColors.backgroundTertiary))
@@ -354,16 +354,16 @@ struct TheTepChatCTW: View {
     var body: some View {
         Button(action: bam) {
             HStack(spacing: 10) {
-                Image(systemName: tep.bieuTuong).font(.system(size: 17, weight: .medium)).foregroundColor(AppColors.primary)
+                Image(systemName: tep.bieuTuong).font(.ctw(size: 17, weight: .medium)).foregroundColor(AppColors.primary)
                     .frame(width: 38, height: 38)
                     .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(AppColors.primary.opacity(0.12)))
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(tep.fileName ?? "File").font(.system(size: 14, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                    Text(tep.fileName ?? "File").font(.ctw(size: 14, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(1)
                     Text([tep.coChu, (tep.fileName as NSString?)?.pathExtension.uppercased()].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · "))
-                        .font(.system(size: 11)).foregroundColor(AppColors.textSecondary)
+                        .font(.ctw(size: 11)).foregroundColor(AppColors.textSecondary)
                 }
                 Spacer(minLength: 0)
-                Image(systemName: "eye").font(.system(size: 13)).foregroundColor(AppColors.textTertiary)
+                Image(systemName: "eye").font(.ctw(size: 13)).foregroundColor(AppColors.textTertiary)
             }
             .padding(10)
             .frame(maxWidth: 360, alignment: .leading)
@@ -437,7 +437,7 @@ struct GiongNoiChatCTW: View {
                         Circle().fill(AppColors.primary)
                         if dangLay { ProgressView().tint(.white) } else {
                             Image(systemName: phat.dangPhat == tep.id ? "pause.fill" : "play.fill")
-                                .font(.system(size: 14, weight: .bold)).foregroundColor(.white)
+                                .font(.ctw(size: 14, weight: .bold)).foregroundColor(.white)
                         }
                     }
                     .frame(width: 36, height: 36)
@@ -454,20 +454,20 @@ struct GiongNoiChatCTW: View {
                     }
                     .frame(height: 5)
                     Text(String(format: "%d:%02d", giay / 60, giay % 60) + (loi ? " · Couldn't load" : ""))
-                        .font(.system(size: 11).monospacedDigit()).foregroundColor(AppColors.textSecondary)
+                        .font(.ctw(size: 11).monospacedDigit()).foregroundColor(AppColors.textSecondary)
                 }
                 .frame(width: 150)
             }
             if let t = tep.voice?.transcript, !t.isEmpty, tep.voice?.transcriptStatus == "DONE" {
                 VStack(alignment: .leading, spacing: 3) {
-                    Label("Auto transcript", systemImage: "text.quote").font(.system(size: 10, weight: .semibold))
+                    Label("Auto transcript", systemImage: "text.quote").font(.ctw(size: 10, weight: .semibold))
                         .foregroundColor(AppColors.textTertiary)
-                    Text(t).font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
+                    Text(t).font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                         .textSelection(.enabled)
                 }
             } else if tep.voice?.transcriptStatus == "PENDING" {
-                Text("Transcribing…").font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+                Text("Transcribing…").font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
             }
         }
         .padding(10)

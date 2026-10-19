@@ -29,16 +29,16 @@ struct ThongTinKenhCTW: View {
                 if let loi { Section { CTWErrorBanner(text: loi) { self.loi = nil } }.listRowBackground(Color.clear) }
                 Section {
                     HStack(spacing: 12) {
-                        Image(systemName: kenh.bieuTuong).font(.system(size: 18, weight: .semibold)).foregroundColor(AppColors.primary)
+                        Image(systemName: kenh.bieuTuong).font(.ctw(size: 18, weight: .semibold)).foregroundColor(AppColors.primary)
                             .frame(width: 44, height: 44)
                             .background(RoundedRectangle(cornerRadius: 11, style: .continuous).fill(AppColors.primary.opacity(0.12)))
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(kenh.laRieng ? kenh.name : "#\(kenh.name)").font(.system(size: 17, weight: .bold))
+                            Text(kenh.laRieng ? kenh.name : "#\(kenh.name)").font(.ctw(size: 17, weight: .bold))
                             Text(kenh.laRieng ? "Private group" : (kenh.laKhach ? "Client channel" : "Public channel"))
-                                .font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                                .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                         }
                     }
-                    if let t = kenh.topic, !t.isEmpty { Text(t).font(.system(size: 14)).foregroundColor(AppColors.textSecondary) }
+                    if let t = kenh.topic, !t.isEmpty { Text(t).font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary) }
                 }
 
                 Section {
@@ -65,7 +65,7 @@ struct ThongTinKenhCTW: View {
                             Spacer()
                             if kenh.muted == true {
                                 Text(kenh.mutedForever == true ? "Until you unmute" : (CTWChatThoiGian.date(kenh.mutedUntil).map { "Until \(CTWChatThoiGian.gio(ISO8601DateFormatter().string(from: $0)))" } ?? ""))
-                                    .font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
+                                    .font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
                             }
                         }
                     }
@@ -94,11 +94,11 @@ struct ThongTinKenhCTW: View {
                             }
                             VStack(alignment: .leading, spacing: 1) {
                                 HStack(spacing: 5) {
-                                    Text(m.id == app.currentUser?.id ? "\(m.nguoi.ten) (you)" : m.nguoi.ten).font(.system(size: 15))
+                                    Text(m.id == app.currentUser?.id ? "\(m.nguoi.ten) (you)" : m.nguoi.ten).font(.ctw(size: 15))
                                     if m.nguoi.laAgent { CTWNhanAI() }
                                 }
                                 Text([m.username.map { "@\($0)" }, m.role?.capitalized, m.online == true ? "Online" : nil].compactMap { $0 }.joined(separator: " · "))
-                                    .font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                                    .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                             }
                         }
                         .accessibilityElement(children: .combine)
@@ -302,7 +302,7 @@ struct ChuyenTiepTinCTW: View {
             Form {
                 if let loi { CTWErrorBanner(text: loi) }
                 Section("Message") {
-                    Text(tin.body ?? (tin.files?.first?.fileName ?? "Attachment")).font(.system(size: 14)).lineLimit(4)
+                    Text(tin.body ?? (tin.files?.first?.fileName ?? "Attachment")).font(.ctw(size: 14)).lineLimit(4)
                         .foregroundColor(AppColors.textSecondary)
                 }
                 Section("Send to") {
@@ -377,7 +377,7 @@ struct TheTuTinCTW: View {
                     .labelsHidden()
                 }
                 Section {
-                    Text(tin.body ?? "").font(.system(size: 13)).foregroundColor(AppColors.textSecondary).lineLimit(6)
+                    Text(tin.body ?? "").font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary).lineLimit(6)
                 } header: { Text("Description") } footer: {
                     Text("The message and a link back to it become the issue description. A note is posted in the thread.")
                 }
@@ -426,11 +426,11 @@ struct ChonCamXucCTW: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     ForEach(nhom, id: \.0) { n in
-                        Text(n.0).font(.system(size: 12, weight: .semibold)).foregroundColor(AppColors.textSecondary)
+                        Text(n.0).font(.ctw(size: 12, weight: .semibold)).foregroundColor(AppColors.textSecondary)
                         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 7), spacing: 6) {
                             ForEach(n.1, id: \.self) { e in
                                 Button { chon(e); dong() } label: {
-                                    Text(e).font(.system(size: 28)).frame(width: 46, height: 46)
+                                    Text(e).font(.ctw(size: 28)).frame(width: 46, height: 46)
                                         .background(RoundedRectangle(cornerRadius: 10).fill(AppColors.backgroundTertiary))
                                 }
                                 .buttonStyle(.plain)

@@ -78,22 +78,22 @@ private struct HangDeXuat: View {
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: CTWIntake.bieuTuongNguon(d.source))
-                .font(.system(size: 15, weight: .semibold)).foregroundColor(AppColors.primary)
+                .font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.primary)
                 .frame(width: 36, height: 36)
                 .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(AppColors.primary.opacity(0.12)))
             VStack(alignment: .leading, spacing: 4) {
-                Text(d.title).font(.system(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(2)
+                Text(d.title).font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(2)
                 if let b = d.body, !b.isEmpty {
-                    Text(b.replacingOccurrences(of: "\n", with: " ")).font(.system(size: 13))
+                    Text(b.replacingOccurrences(of: "\n", with: " ")).font(.ctw(size: 13))
                         .foregroundColor(AppColors.textSecondary).lineLimit(2)
                 }
                 HStack(spacing: 6) {
-                    Text("\(CTWIntake.tenNguon(d.source)) · \(d.nguoiGui)").font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
+                    Text("\(CTWIntake.tenNguon(d.source)) · \(d.nguoiGui)").font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
                         .lineLimit(1)
                     if d.simulated == true { CTWNhanNho(chu: "Test") }
                     Spacer(minLength: 0)
                     if let k = d.issue?.key { CTWNhanNho(chu: k, bieuTuong: "checkmark", mau: AppColors.success) }
-                    Text(CTW.thoiDiem(d.createdAt)).font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+                    Text(CTW.thoiDiem(d.createdAt)).font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
                 }
             }
         }
@@ -131,7 +131,7 @@ struct DeXuatCTW: View {
                     Spacer(minLength: 0)
                     CTWChipChu(chu: dx.status)
                 }
-                Text(dx.title).font(.system(size: 21, weight: .bold)).foregroundColor(AppColors.textPrimary)
+                Text(dx.title).font(.ctw(size: 21, weight: .bold)).foregroundColor(AppColors.textPrimary)
                     .fixedSize(horizontal: false, vertical: true)
                 CTWKhoiTruong {
                     CTWHangTruong("From", dx.nguoiGui, bieuTuong: "person")
@@ -146,13 +146,13 @@ struct DeXuatCTW: View {
                 }
                 if let b = dx.body, !b.isEmpty {
                     CTWSectionHeader("text.alignleft", "Message")
-                    Text(b).font(.system(size: 15)).foregroundColor(AppColors.textPrimary)
+                    Text(b).font(.ctw(size: 15)).foregroundColor(AppColors.textPrimary)
                         .textSelection(.enabled)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(14).ctwThe(12)
                         .ctwMenuBaoCaoChan(khoa: "intake-\(dx.id)", noiDung: b, nguCanh: "Intake · \(CTWIntake.tenNguon(dx.source)) · \(dx.nguoiGui)",
                                            tacGia: nil, laCuaToi: false, dich: CTWDichBaoCao("intake_message", dx.id))
-                    Text("Touch and hold the message to report it.").font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+                    Text("Touch and hold the message to report it.").font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
                 }
                 if let so = dx.issue?.number {
                     NavigationLink(value: CTWRoute.the(pid: pid, so: so)) {

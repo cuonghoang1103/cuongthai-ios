@@ -46,11 +46,11 @@ struct ChiTietUCCTW: View {
             // Đầu trang
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 6) {
-                    Text(uc.ma).font(.system(size: 13, weight: .bold).monospaced()).foregroundColor(AppColors.primary)
-                    if let s = uc.section { Text("§ \(s)").font(.system(size: 12)).foregroundColor(AppColors.textTertiary) }
+                    Text(uc.ma).font(.ctw(size: 13, weight: .bold).monospaced()).foregroundColor(AppColors.primary)
+                    if let s = uc.section { Text("§ \(s)").font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary) }
                     if let f = uc.feature, !f.isEmpty { CTWNhanNho(chu: f, bieuTuong: "square.stack.3d.up") }
                 }
-                Text(uc.name ?? "Use case").font(.system(size: 24, weight: .bold)).foregroundColor(AppColors.textPrimary)
+                Text(uc.name ?? "Use case").font(.ctw(size: 24, weight: .bold)).foregroundColor(AppColors.textPrimary)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityAddTraits(.isHeader)
                 HStack(spacing: 6) {
@@ -60,7 +60,7 @@ struct ChiTietUCCTW: View {
                     }
                     if uc.aiModel != nil { CTWNhanAI(chu: "AI-drafted") }
                     if let u = CTW.ngayNgan(uc.updatedAt) {
-                        Text("Updated \(u)").font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
+                        Text("Updated \(u)").font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
                     }
                 }
             }
@@ -111,13 +111,13 @@ struct ChiTietUCCTW: View {
                     HStack(spacing: 10) {
                         Image(systemName: CTW.bieuTuongLoai(key: i.type?.key)).foregroundColor(AppColors.primary)
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(i.key ?? uc.issueKey ?? "Issue #\(i.number)").font(.system(size: 12, weight: .bold).monospaced())
+                            Text(i.key ?? uc.issueKey ?? "Issue #\(i.number)").font(.ctw(size: 12, weight: .bold).monospaced())
                                 .foregroundColor(AppColors.textSecondary)
-                            Text(i.title ?? "").font(.system(size: 14.5, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(2)
+                            Text(i.title ?? "").font(.ctw(size: 14.5, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(2)
                         }
                         Spacer(minLength: 0)
                         if let s = i.status?.name { CTWChipChu(chu: s, mau: CTW.mauNhom(i.status?.category)) }
-                        Image(systemName: "chevron.right").font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
+                        Image(systemName: "chevron.right").font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
                     }
                     .padding(12)
                     .ctwThe(12)
@@ -139,7 +139,7 @@ struct ChiTietUCCTW: View {
                     Task { await doi(uc, uc.status == "PROPOSED" ? "DRAFT" : "APPROVED") }
                 } label: {
                     Label(uc.status == "PROPOSED" ? "Accept proposal" : "Approve use case", systemImage: "checkmark.seal.fill")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.ctw(size: 15, weight: .semibold))
                         .frame(maxWidth: .infinity, minHeight: 32)
                 }
                 .buttonStyle(.borderedProminent)
@@ -182,14 +182,14 @@ struct ChiTietUCCTW: View {
                     ForEach(Array(buoc.enumerated()), id: \.offset) { i, b in
                         HStack(alignment: .firstTextBaseline, spacing: 10) {
                             if let nh = b.nhan {
-                                Text(nh).font(.system(size: 12, weight: .bold).monospacedDigit())
+                                Text(nh).font(.ctw(size: 12, weight: .bold).monospacedDigit())
                                     .foregroundColor(b.laNhanh ? mau : AppColors.onPrimary)
                                     .padding(.horizontal, 6).frame(minWidth: 26, minHeight: 22)
                                     .background(Capsule().fill(b.laNhanh ? mau.opacity(0.14) : mau))
                             } else {
                                 Color.clear.frame(width: 26, height: 1)
                             }
-                            Text(CTWKhoiView.dong(b.chu)).font(.system(size: 15)).foregroundColor(AppColors.textPrimary)
+                            Text(CTWKhoiView.dong(b.chu)).font(.ctw(size: 15)).foregroundColor(AppColors.textPrimary)
                                 .fixedSize(horizontal: false, vertical: true)
                                 .textSelection(.enabled)
                             Spacer(minLength: 0)
@@ -209,7 +209,7 @@ struct ChiTietUCCTW: View {
     private func ghiChu(_ icon: String, _ chu: String, _ mau: Color) -> some View {
         HStack(alignment: .top, spacing: 8) {
             Image(systemName: icon).foregroundColor(mau)
-            Text(chu).font(.system(size: 13)).foregroundColor(AppColors.textPrimary).fixedSize(horizontal: false, vertical: true)
+            Text(chu).font(.ctw(size: 13)).foregroundColor(AppColors.textPrimary).fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
         }
         .padding(12)
@@ -234,10 +234,10 @@ struct ChiTietManSrsCTW: View {
             if let d = kho.srs, let s = d.screen(id) {
                 Section {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text(s.name ?? "Screen").font(.system(size: 22, weight: .bold)).foregroundColor(AppColors.textPrimary)
+                        Text(s.name ?? "Screen").font(.ctw(size: 22, weight: .bold)).foregroundColor(AppColors.textPrimary)
                         if let f = s.feature, !f.isEmpty { CTWNhanNho(chu: f, bieuTuong: "square.stack.3d.up") }
                         if let m = s.description, !m.isEmpty {
-                            Text(m).font(.system(size: 14)).foregroundColor(AppColors.textSecondary).fixedSize(horizontal: false, vertical: true)
+                            Text(m).font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary).fixedSize(horizontal: false, vertical: true)
                         }
                     }
                     .padding(.vertical, 4)
@@ -251,7 +251,7 @@ struct ChiTietManSrsCTW: View {
                                 Image(systemName: "arrow.right.circle").foregroundColor(AppColors.primary)
                                 Text(t.screen.name ?? "Screen").foregroundColor(AppColors.textPrimary)
                                 Spacer()
-                                if let nh = t.nhan, !nh.isEmpty { Text(nh).font(.system(size: 12)).foregroundColor(AppColors.textSecondary) }
+                                if let nh = t.nhan, !nh.isEmpty { Text(nh).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary) }
                             }
                         }
                     }
@@ -318,7 +318,7 @@ struct ThaoLuanTheCTW: View {
                 !an.binhLuanAn.contains(c.id) && !(c.author.map { kiemDuyet.blockedUserIds.contains($0.id) } ?? false)
             }
             if ds != nil && hien.isEmpty {
-                Text("No comments yet.").font(.system(size: 13)).foregroundColor(AppColors.textTertiary)
+                Text("No comments yet.").font(.ctw(size: 13)).foregroundColor(AppColors.textTertiary)
             }
             ForEach(hien) { c in dong(c) }
             if ds == nil && loi == nil { ProgressView().frame(maxWidth: .infinity) }
@@ -354,11 +354,11 @@ struct ThaoLuanTheCTW: View {
             CTWAvatar(user: c.author, size: 30)
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
-                    Text(c.author?.ten ?? "Someone").font(.system(size: 13, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                    Text(c.author?.ten ?? "Someone").font(.ctw(size: 13, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                         .lineLimit(1)
                     if c.author?.laAgent == true { CTWNhanAI() } else if c.isAi == true { CTWNhanAI(chu: "AI-drafted") }
                     Spacer(minLength: 0)
-                    Text(CTW.thoiDiem(c.createdAt)).font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+                    Text(CTW.thoiDiem(c.createdAt)).font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
                 }
                 CTWTipTapView(doc: c.bodyJson, coChu: 14)
             }

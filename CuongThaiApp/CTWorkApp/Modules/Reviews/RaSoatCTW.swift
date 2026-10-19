@@ -88,11 +88,11 @@ struct RaSoatCTW: View {
     private func hang(_ r: CTWReviewHang) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
-                Text(r.nhanKhoa).font(.system(size: 12, weight: .semibold).monospaced()).foregroundColor(AppColors.textSecondary)
+                Text(r.nhanKhoa).font(.ctw(size: 12, weight: .semibold).monospaced()).foregroundColor(AppColors.textSecondary)
                 CTWChipChu(chu: r.status)
                 CTWNhanNho(chu: r.kind == "CODE" ? "Code" : "Document", bieuTuong: r.kind == "CODE" ? "chevron.left.forwardslash.chevron.right" : "doc.text")
             }
-            Text(r.title).font(.system(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(2)
+            Text(r.title).font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(2)
             HStack(spacing: 10) {
                 Text(CTWMauTrangThai.nhan(r.method))
                 if let p = r.progress { Label("\(p)%", systemImage: "checklist") }
@@ -100,7 +100,7 @@ struct RaSoatCTW: View {
                 if let n = r.participants { Label("\(n)", systemImage: "person.2") }
                 if let m = CTW.ngayNgan(r.meetingAt) { Label(m, systemImage: "calendar") }
             }
-            .font(.system(size: 12)).foregroundColor(AppColors.textSecondary).labelStyle(.titleAndIcon)
+            .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).labelStyle(.titleAndIcon)
             if let p = r.progress {
                 CTWThanhPhanDoan(doan: [(p, AppColors.primary), (100 - p, AppColors.backgroundTertiary)], cao: 4)
             }
@@ -166,7 +166,7 @@ struct ChiTietRaSoatCTW: View {
                 CTWNhanNho(chu: CTWMauTrangThai.nhan(r.method), bieuTuong: "person.3")
                 CTWNhanNho(chu: r.kind == "CODE" ? "Code" : "Document", bieuTuong: r.kind == "CODE" ? "chevron.left.forwardslash.chevron.right" : "doc.text")
             }
-            Text(r.title).font(.system(size: 22, weight: .bold)).foregroundColor(AppColors.textPrimary)
+            Text(r.title).font(.ctw(size: 22, weight: .bold)).foregroundColor(AppColors.textPrimary)
                 .fixedSize(horizontal: false, vertical: true).accessibilityAddTraits(.isHeader)
             CTWKhoiTruong {
                 if let p = r.page {
@@ -188,7 +188,7 @@ struct ChiTietRaSoatCTW: View {
                             }
                             if r.decision != nil { Button("Clear decision", role: .destructive) { Task { await sua(["decision": NSNull()]) } } }
                         } label: {
-                            HStack(spacing: 4) { Text(CTWReviewLuat.nhanQuyetDinh(r.decision)); Image(systemName: "chevron.up.chevron.down").font(.system(size: 10)) }
+                            HStack(spacing: 4) { Text(CTWReviewLuat.nhanQuyetDinh(r.decision)); Image(systemName: "chevron.up.chevron.down").font(.ctw(size: 10)) }
                                 .frame(minHeight: 32)
                         }
                     } else {
@@ -205,7 +205,7 @@ struct ChiTietRaSoatCTW: View {
         return LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 10)], spacing: 10) {
             CTWODem(so: "\(tienDo)%", nhan: "Checklist answered", bieuTuong: "checklist", mau: AppColors.primary)
             CTWODem(so: "\(m?.defects ?? 0)", nhan: "Defects (\(m?.majorDefects ?? 0) major)", bieuTuong: "ladybug.fill", mau: AppColors.error)
-            CTWODem(so: so(m?.effortHours) + "h", nhan: "Total effort", bieuTuong: "clock", mau: Color(hex: 0x2563EB))
+            CTWODem(so: so(m?.effortHours) + "h", nhan: "Total effort", bieuTuong: "clock", mau: AppColors.info)
             if let d = m?.density {
                 CTWODem(so: so(d), nhan: "Defects per \(m?.sizeUnit == "LOC" ? "KLOC" : "page")", bieuTuong: "chart.bar", mau: AppColors.warning)
             }
@@ -224,9 +224,9 @@ struct ChiTietRaSoatCTW: View {
             VStack(alignment: .leading, spacing: 8) {
                 if ke.contains("CLOSED"), let b = r.closeBlockers, !b.isEmpty {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Before closing").font(.system(size: 12, weight: .semibold)).foregroundColor(AppColors.textSecondary)
+                        Text("Before closing").font(.ctw(size: 12, weight: .semibold)).foregroundColor(AppColors.textSecondary)
                         ForEach(b, id: \.self) { x in
-                            Label(CTWReviewLuat.lyDoChan(x), systemImage: "exclamationmark.circle").font(.system(size: 13)).foregroundColor(AppColors.warning)
+                            Label(CTWReviewLuat.lyDoChan(x), systemImage: "exclamationmark.circle").font(.ctw(size: 13)).foregroundColor(AppColors.warning)
                         }
                     }
                 }
@@ -234,7 +234,7 @@ struct ChiTietRaSoatCTW: View {
                     ForEach(ke, id: \.self) { s in
                         let dong = s == "CLOSED"
                         Button { Task { await chuyen(s) } } label: {
-                            Text(CTWReviewLuat.nhanBuoc(s)).font(.system(size: 14, weight: .semibold)).frame(maxWidth: .infinity, minHeight: 44)
+                            Text(CTWReviewLuat.nhanBuoc(s)).font(.ctw(size: 14, weight: .semibold)).frame(maxWidth: .infinity, minHeight: 44)
                         }
                         .buttonStyle(.bordered)
                         .tint(dong ? AppColors.success : AppColors.primary)
@@ -254,10 +254,10 @@ struct ChiTietRaSoatCTW: View {
                 ForEach(ds) { p in
                     HStack(spacing: 10) {
                         CTWAvatar(user: p.user, size: 28)
-                        Text(p.user?.ten ?? "Member").font(.system(size: 14)).foregroundColor(AppColors.textPrimary)
+                        Text(p.user?.ten ?? "Member").font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary)
                         if p.user?.laAgent == true { CTWNhanAI() }
                         Spacer(minLength: 0)
-                        if let m = p.prepMinutes, m > 0 { Text("\(m) min prep").font(.system(size: 12)).foregroundColor(AppColors.textTertiary) }
+                        if let m = p.prepMinutes, m > 0 { Text("\(m) min prep").font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary) }
                         CTWNhanNho(chu: CTWMauTrangThai.nhan(p.role))
                     }
                     .frame(minHeight: 44)
@@ -281,7 +281,7 @@ struct ChiTietRaSoatCTW: View {
 
     private func mucView(_ m: CTWReviewMuc, _ r: CTWReview) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(m.question ?? "").font(.system(size: 15)).foregroundColor(AppColors.textPrimary).fixedSize(horizontal: false, vertical: true)
+            Text(m.question ?? "").font(.ctw(size: 15)).foregroundColor(AppColors.textPrimary).fixedSize(horizontal: false, vertical: true)
             HStack(spacing: 8) {
                 ForEach([("OK", "checkmark", AppColors.success), ("NG", "xmark", AppColors.error), ("NA", "minus", AppColors.textSecondary)], id: \.0) { k in
                     let chon = m.result == k.0
@@ -290,7 +290,7 @@ struct ChiTietRaSoatCTW: View {
                         Task { await ghi(m, ["result": govNull(chon ? nil : k.0)]) }
                     } label: {
                         Label(k.0 == "NA" ? "N/A" : k.0, systemImage: k.1)
-                            .font(.system(size: 13, weight: .semibold))
+                            .font(.ctw(size: 13, weight: .semibold))
                             .foregroundColor(chon ? .white : k.2)
                             .frame(maxWidth: .infinity, minHeight: 40)
                             .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(chon ? k.2 : k.2.opacity(0.10)))
@@ -320,14 +320,14 @@ struct ChiTietRaSoatCTW: View {
                         .buttonStyle(.plain)
                     } else if m.result == "NG" && r.canEdit == true {
                         Button { Task { await taoLoi(m) } } label: {
-                            Label("Create defect", systemImage: "ladybug").font(.system(size: 12, weight: .semibold))
+                            Label("Create defect", systemImage: "ladybug").font(.ctw(size: 12, weight: .semibold))
                         }
                         .buttonStyle(.bordered)
                         .controlSize(.small)
                     }
                 }
                 if let n = m.note, !n.isEmpty {
-                    Text(n).font(.system(size: 13)).foregroundColor(AppColors.textSecondary).fixedSize(horizontal: false, vertical: true)
+                    Text(n).font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary).fixedSize(horizontal: false, vertical: true)
                 }
             }
         }
@@ -406,7 +406,7 @@ struct SuaMucReviewCTW: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section { Text(muc.question ?? "").font(.system(size: 15)).foregroundColor(AppColors.textPrimary) }
+                Section { Text(muc.question ?? "").font(.ctw(size: 15)).foregroundColor(AppColors.textPrimary) }
                 Section("Finding") {
                     TextField("Note", text: $ghiChu, axis: .vertical).lineLimit(2...8)
                     Picker("Severity", selection: $mucDo) {

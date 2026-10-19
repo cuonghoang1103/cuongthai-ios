@@ -54,7 +54,7 @@ struct FptTongQuanCTW: View {
         VStack(alignment: .leading, spacing: 10) {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 110), spacing: 10)], spacing: 10) {
                 CTWODem(so: "\(s?.total ?? 0)", nhan: "Test cases", bieuTuong: "number", mau: AppColors.primary)
-                CTWODem(so: pct(s?.coverage), nhan: "Coverage", bieuTuong: "chart.pie", mau: Color(hex: 0x2563EB))
+                CTWODem(so: pct(s?.coverage), nhan: "Coverage", bieuTuong: "chart.pie", mau: AppColors.info)
                 CTWODem(so: pct(s?.successCoverage), nhan: "Passed", bieuTuong: "checkmark.circle", mau: AppColors.success)
                 CTWODem(so: "\(s?.failed ?? 0)", nhan: "Failed", bieuTuong: "xmark.octagon", mau: AppColors.error)
             }
@@ -70,7 +70,7 @@ struct FptTongQuanCTW: View {
                 Label(m ? "Meets the norm (\(tcPerKloc ?? 0) cases per KLOC)"
                         : "Below the norm in \(s?.belowNorm ?? 0) function(s) — need \(s?.requiredCases ?? 0) cases for the declared LOC",
                       systemImage: m ? "checkmark.seal.fill" : "exclamationmark.triangle.fill")
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.ctw(size: 12, weight: .medium))
                     .foregroundColor(m ? AppColors.success : AppColors.warning)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -81,7 +81,7 @@ struct FptTongQuanCTW: View {
         VStack(alignment: .leading, spacing: 10) {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 110), spacing: 10)], spacing: 10) {
                 CTWODem(so: "\(s?.total ?? 0)", nhan: "Test cases", bieuTuong: "number", mau: AppColors.primary)
-                CTWODem(so: pct(s?.coverage), nhan: "Coverage", bieuTuong: "chart.pie", mau: Color(hex: 0x2563EB))
+                CTWODem(so: pct(s?.coverage), nhan: "Coverage", bieuTuong: "chart.pie", mau: AppColors.info)
                 CTWODem(so: "\(s?.passed ?? 0)", nhan: "Passed", bieuTuong: "checkmark.circle", mau: AppColors.success)
                 CTWODem(so: "\(s?.failed ?? 0)", nhan: "Failed", bieuTuong: "xmark.octagon", mau: AppColors.error)
             }
@@ -93,7 +93,7 @@ struct FptTongQuanCTW: View {
     private func hangHam(_ f: CTWFptFunction) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
-                Text(f.methodName ?? "Function").font(.system(size: 15, weight: .semibold, design: .monospaced))
+                Text(f.methodName ?? "Function").font(.ctw(size: 15, weight: .semibold, design: .monospaced))
                     .foregroundColor(AppColors.textPrimary).lineLimit(1)
                 if f.belowNorm == true {
                     CTWNhanNho(chu: "Below norm", bieuTuong: "exclamationmark.triangle", mau: AppColors.warning)
@@ -101,11 +101,11 @@ struct FptTongQuanCTW: View {
                 Spacer(minLength: 0)
             }
             Text([f.moduleName, f.loc.map { "\($0) LOC" }].compactMap { $0 }.joined(separator: " · "))
-                .font(.system(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1)
+                .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1)
             CTWThanhPhanDoan(doan: [(f.stats?.passed ?? 0, AppColors.success), (f.stats?.failed ?? 0, AppColors.error),
                                      (f.stats?.untested ?? 0, Color.clear)], cao: 6)
             Text("\(f.stats?.total ?? 0) cases · \(f.stats?.passed ?? 0) P · \(f.stats?.failed ?? 0) F · \(f.stats?.untested ?? 0) untested")
-                .font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+                .font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
         }
         .padding(.vertical, 3)
     }
@@ -113,15 +113,15 @@ struct FptTongQuanCTW: View {
     private func hangModule(_ m: CTWFptModule) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
-                Text(m.name ?? "Module").font(.system(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                Text(m.name ?? "Module").font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(1)
                 if let p = m.idPrefix { CTWNhanNho(chu: p) }
                 Spacer(minLength: 0)
-                if let r = m.stats?.lastRound, r > 0 { Text("Round \(r)").font(.system(size: 11, weight: .semibold)).foregroundColor(AppColors.textSecondary) }
+                if let r = m.stats?.lastRound, r > 0 { Text("Round \(r)").font(.ctw(size: 11, weight: .semibold)).foregroundColor(AppColors.textSecondary) }
             }
             CTWThanhPhanDoan(doan: [(m.stats?.passed ?? 0, AppColors.success), (m.stats?.failed ?? 0, AppColors.error),
                                      (m.stats?.na ?? 0, AppColors.textSecondary), (m.stats?.pending ?? 0, Color.clear)], cao: 6)
             Text("\(m.stats?.total ?? 0) cases · \(m.stats?.passed ?? 0) passed · \(m.stats?.failed ?? 0) failed · \(m.stats?.pending ?? 0) pending")
-                .font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
+                .font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
         }
         .padding(.vertical, 3)
     }
@@ -255,7 +255,7 @@ struct FptHamCTW: View {
     private func o(_ chu: String, rong: CGFloat, dam: Bool = false, nen: Color = .clear, giua: Bool = false,
                    co: CGFloat = 13, mau: Color = AppColors.textPrimary) -> some View {
         Text(chu)
-            .font(.system(size: co, weight: dam ? .semibold : .regular))
+            .font(.ctw(size: co, weight: dam ? .semibold : .regular))
             .foregroundColor(mau)
             .lineLimit(3)
             .multilineTextAlignment(giua ? .center : .leading)
@@ -269,7 +269,7 @@ struct FptHamCTW: View {
 
     private var chuThich: some View {
         Text("N = Normal · A = Abnormal · B = Boundary. “O” marks the conditions and confirmations a test case covers. Edit and export the Excel report on the web.")
-            .font(.system(size: 12)).foregroundColor(AppColors.textTertiary)
+            .font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
             .fixedSize(horizontal: false, vertical: true)
     }
 }
@@ -290,7 +290,7 @@ struct FptModuleCTW: View {
                 if let loi { CTWErrorBanner(text: loi) { self.loi = nil } }
                 if let m {
                     if let d = m.description, !d.isEmpty {
-                        Text(d).font(.system(size: 14)).foregroundColor(AppColors.textSecondary).fixedSize(horizontal: false, vertical: true)
+                        Text(d).font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary).fixedSize(horizontal: false, vertical: true)
                     }
                     if (m.preCondition ?? "").isEmpty == false || (m.testRequirement ?? "").isEmpty == false {
                         CTWKhoiTruong {
@@ -304,7 +304,7 @@ struct FptModuleCTW: View {
                     let ca = m.cases ?? []
                     CTWSectionHeader("list.bullet.rectangle", "Test cases", count: "\(ca.count)")
                     if ca.isEmpty {
-                        Text("No test cases in this module yet.").font(.system(size: 13)).foregroundColor(AppColors.textTertiary)
+                        Text("No test cases in this module yet.").font(.ctw(size: 13)).foregroundColor(AppColors.textTertiary)
                     }
                     ForEach(Array(ca.enumerated()), id: \.element.id) { i, c in theCa(c, ma: CTWLuatFpt.maIt(m.idPrefix, i)) }
                 } else if loi == nil {
@@ -332,12 +332,12 @@ struct FptModuleCTW: View {
         let hienTai = CTWLuatFpt.trangThaiIt(vong)
         return VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
-                Text(ma).font(.system(size: 12, weight: .bold).monospaced()).foregroundColor(AppColors.primary)
+                Text(ma).font(.ctw(size: 12, weight: .bold).monospaced()).foregroundColor(AppColors.primary)
                 if let s = c.section, !s.isEmpty { CTWNhanNho(chu: s) }
                 Spacer(minLength: 0)
                 CTWChipChu(chu: hienTai, mau: CTWLuatFpt.mauIt(hienTai))
             }
-            Text(c.description ?? "—").font(.system(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary)
+            Text(c.description ?? "—").font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
             truong("Procedure", c.procedure)
             truong("Test data", c.testData, mono: true)
@@ -347,11 +347,11 @@ struct FptModuleCTW: View {
                 HStack(spacing: 6) {
                     ForEach(Array(vong.enumerated()), id: \.offset) { i, r in
                         VStack(spacing: 2) {
-                            Text("R\(i + 1)").font(.system(size: 10, weight: .bold)).foregroundColor(AppColors.textTertiary)
-                            Text(r.status ?? "—").font(.system(size: 11, weight: .semibold))
+                            Text("R\(i + 1)").font(.ctw(size: 10, weight: .bold)).foregroundColor(AppColors.textTertiary)
+                            Text(r.status ?? "—").font(.ctw(size: 11, weight: .semibold))
                                 .foregroundColor(r.status == nil ? AppColors.textTertiary : CTWLuatFpt.mauIt(r.status))
                                 .lineLimit(1).fixedSize()
-                            if let d = r.date { Text(CTW.ngayNgan(d) ?? d).font(.system(size: 9)).foregroundColor(AppColors.textTertiary) }
+                            if let d = r.date { Text(CTW.ngayNgan(d) ?? d).font(.ctw(size: 9)).foregroundColor(AppColors.textTertiary) }
                         }
                         .frame(minWidth: 58)
                         .padding(.vertical, 6)
@@ -369,8 +369,8 @@ struct FptModuleCTW: View {
     @ViewBuilder private func truong(_ ten: String, _ gt: String?, mono: Bool = false) -> some View {
         if let gt, !gt.isEmpty {
             VStack(alignment: .leading, spacing: 2) {
-                Text(ten.uppercased()).font(.system(size: 10, weight: .bold)).foregroundColor(AppColors.textTertiary)
-                Text(gt).font(mono ? .system(size: 13, design: .monospaced) : .system(size: 14))
+                Text(ten.uppercased()).font(.ctw(size: 10, weight: .bold)).foregroundColor(AppColors.textTertiary)
+                Text(gt).font(mono ? .ctw(size: 13, design: .monospaced) : .ctw(size: 14))
                     .foregroundColor(AppColors.textSecondary).fixedSize(horizontal: false, vertical: true)
                     .textSelection(.enabled)
             }

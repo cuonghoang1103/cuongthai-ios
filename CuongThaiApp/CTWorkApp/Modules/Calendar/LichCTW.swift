@@ -146,10 +146,10 @@ struct LichCTW: View {
         let thangNay = lich.component(.month, from: thang)
         return VStack(spacing: 10) {
             HStack {
-                Text(tenThang(thang)).font(.system(size: 18, weight: .bold)).foregroundColor(AppColors.textPrimary)
+                Text(tenThang(thang)).font(.ctw(size: 18, weight: .bold)).foregroundColor(AppColors.textPrimary)
                 Spacer()
                 Button("Today") { withAnimation { thang = Date(); chon = Date() } }
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.ctw(size: 14, weight: .semibold))
                     .frame(minHeight: 44)
                 nutThang("chevron.left", "Previous month", -1)
                 nutThang("chevron.right", "Next month", 1)
@@ -157,7 +157,7 @@ struct LichCTW: View {
             HStack(spacing: 0) {
                 ForEach(["M", "T", "W", "T", "F", "S", "S"].indices, id: \.self) { i in
                     Text(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][i].prefix(beRong == .regular ? 3 : 1))
-                        .font(.system(size: 11, weight: .semibold)).foregroundColor(AppColors.textTertiary)
+                        .font(.ctw(size: 11, weight: .semibold)).foregroundColor(AppColors.textTertiary)
                         .frame(maxWidth: .infinity)
                 }
             }
@@ -179,7 +179,7 @@ struct LichCTW: View {
 
     private func nutThang(_ icon: String, _ ten: String, _ n: Int) -> some View {
         Button { doiThang(n) } label: {
-            Image(systemName: icon).font(.system(size: 15, weight: .semibold)).frame(width: 44, height: 44)
+            Image(systemName: icon).font(.ctw(size: 15, weight: .semibold)).frame(width: 44, height: 44)
         }
         .accessibilityLabel(ten)
     }
@@ -202,7 +202,7 @@ struct LichCTW: View {
         } label: {
             VStack(spacing: 3) {
                 Text("\(lich.component(.day, from: d))")
-                    .font(.system(size: 15, weight: homNay || laChon ? .bold : .regular).monospacedDigit())
+                    .font(.ctw(size: 15, weight: homNay || laChon ? .bold : .regular).monospacedDigit())
                     .foregroundColor(laChon ? AppColors.onPrimary : (homNay ? AppColors.primary : (trongThang ? AppColors.textPrimary : AppColors.textTertiary)))
                     .frame(width: 32, height: 32)
                     .background(Circle().fill(laChon ? AppColors.primary : Color.clear))
@@ -250,7 +250,7 @@ struct LichCTW: View {
             CTWSectionHeader("calendar", Calendar.current.isDateInToday(chon) ? "Today · \(NgayCTW.ngan(chon))" : NgayCTW.day(chon),
                              count: homNayChon.isEmpty ? nil : "\(homNayChon.count)")
             if homNayChon.isEmpty {
-                Text("Nothing scheduled.").font(.system(size: 14)).foregroundColor(AppColors.textSecondary)
+                Text("Nothing scheduled.").font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(14).ctwThe(12)
             } else {
@@ -262,7 +262,7 @@ struct LichCTW: View {
                 ForEach(sapToi, id: \.0) { d, s in
                     VStack(alignment: .leading, spacing: 6) {
                         Text(Calendar.current.isDateInTomorrow(d) ? "Tomorrow · \(NgayCTW.ngan(d))" : thuNgayMay(d))
-                            .font(.system(size: 12, weight: .semibold)).foregroundColor(AppColors.textSecondary)
+                            .font(.ctw(size: 12, weight: .semibold)).foregroundColor(AppColors.textSecondary)
                         VStack(spacing: 0) { ForEach(s) { x in hang(x); if x.id != s.last?.id { Divider().padding(.leading, 52) } } }
                             .ctwThe(14)
                     }
@@ -274,18 +274,18 @@ struct LichCTW: View {
     @ViewBuilder
     private func hang(_ s: SuKienLichCTW) -> some View {
         let noi = HStack(spacing: 12) {
-            Image(systemName: s.loai.bieuTuong).font(.system(size: 13, weight: .semibold))
+            Image(systemName: s.loai.bieuTuong).font(.ctw(size: 13, weight: .semibold))
                 .foregroundColor(s.quaHan ? AppColors.error : s.loai.mau)
                 .frame(width: 30, height: 30)
                 .background(Circle().fill((s.quaHan ? AppColors.error : s.loai.mau).opacity(0.14)))
             VStack(alignment: .leading, spacing: 2) {
-                Text(s.tieuDe).font(.system(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(2)
+                Text(s.tieuDe).font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(2)
                 HStack(spacing: 4) {
                     Text(s.caNgay ? "All day" : NgayCTW.gio(s.batDau))
                     if let p = s.phu, !p.isEmpty { Text("·"); Text(p).lineLimit(1) }
                     if s.quaHan { Text("· Overdue").foregroundColor(AppColors.error) }
                 }
-                .font(.system(size: 12)).foregroundColor(AppColors.textSecondary)
+                .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
             }
             Spacer(minLength: 0)
         }
@@ -303,7 +303,7 @@ struct LichCTW: View {
             }
             .buttonStyle(.plain)
             Button { tamPhu = .them(s) } label: {
-                Image(systemName: "calendar.badge.plus").font(.system(size: 16, weight: .medium))
+                Image(systemName: "calendar.badge.plus").font(.ctw(size: 16, weight: .medium))
                     .foregroundColor(AppColors.primary).frame(width: 44, height: 44)
             }
             .buttonStyle(.plain)
@@ -358,12 +358,12 @@ struct ChiTietHopLichCTW: View {
             List {
                 Section {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text(hop.typeLabel ?? "Meeting").font(.system(size: 12, weight: .semibold)).foregroundColor(LoaiSuKienLichCTW.hop.mau)
-                        Text(hop.title ?? "Meeting").font(.system(size: 20, weight: .bold)).foregroundColor(AppColors.textPrimary)
+                        Text(hop.typeLabel ?? "Meeting").font(.ctw(size: 12, weight: .semibold)).foregroundColor(LoaiSuKienLichCTW.hop.mau)
+                        Text(hop.title ?? "Meeting").font(.ctw(size: 20, weight: .bold)).foregroundColor(AppColors.textPrimary)
                         if let a = NgayCTW.thoiDiem(hop.startsAt) {
                             let b = NgayCTW.thoiDiem(hop.endsAt)
                             Label("\(ngayMay(a)) · \(NgayCTW.gio(a))\(b.map { " – \(NgayCTW.gio($0))" } ?? "")", systemImage: "clock")
-                                .font(.system(size: 14)).foregroundColor(AppColors.textSecondary)
+                                .font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary)
                         }
                     }
                     .padding(.vertical, 4)

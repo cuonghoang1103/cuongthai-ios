@@ -182,7 +182,7 @@ struct BacklogCTW: View {
         ForEach(sprints) { s in
             let ds = the.filter { $0.sprintId == s.id }
             Section {
-                if ds.isEmpty { Text("No issues in this sprint").foregroundColor(AppColors.textTertiary).font(.system(size: 13)) }
+                if ds.isEmpty { Text("No issues in this sprint").foregroundColor(AppColors.textTertiary).font(.ctw(size: 13)) }
                 ForEach(ds) { t in hang(t, cfg) }
             } header: {
                 dauSprint(s, ds: ds, cfg: cfg)
@@ -191,7 +191,7 @@ struct BacklogCTW: View {
         let tonDong = the.filter { $0.sprintId == nil }
         Section {
             if tonDong.isEmpty && vm.backlog != nil {
-                Text("The backlog is empty").foregroundColor(AppColors.textTertiary).font(.system(size: 13))
+                Text("The backlog is empty").foregroundColor(AppColors.textTertiary).font(.ctw(size: 13))
             }
             ForEach(tonDong) { t in hang(t, cfg) }
         } header: {
@@ -200,7 +200,7 @@ struct BacklogCTW: View {
                 Text("Backlog")
                 Text("\(tonDong.count)").foregroundColor(AppColors.textTertiary)
             }
-            .font(.system(size: 13, weight: .semibold))
+            .font(.ctw(size: 13, weight: .semibold))
         } footer: {
             if vm.backlog?.truncated == true {
                 Text("Showing the first \(the.count) of \(vm.backlog?.total ?? the.count) issues.")
@@ -216,16 +216,16 @@ struct BacklogCTW: View {
                     .foregroundColor(s.state == "ACTIVE" ? AppColors.primary : AppColors.textSecondary)
                 Text(s.name)
                 if s.state == "ACTIVE" {
-                    Text("ACTIVE").font(.system(size: 10, weight: .bold)).foregroundColor(AppColors.primary)
+                    Text("ACTIVE").font(.ctw(size: 10, weight: .bold)).foregroundColor(AppColors.primary)
                         .padding(.horizontal, 6).padding(.vertical, 1)
                         .background(Capsule().fill(AppColors.primary.opacity(0.12)))
                 }
                 Spacer()
                 Text("\(xong)/\(ds.count) done").foregroundColor(AppColors.textTertiary)
             }
-            .font(.system(size: 13, weight: .semibold))
+            .font(.ctw(size: 13, weight: .semibold))
             if let a = CTW.ngayNgan(s.startAt), let b = CTW.ngayNgan(s.endAt) {
-                Text("\(a) – \(b)").font(.system(size: 11)).foregroundColor(AppColors.textTertiary).textCase(nil)
+                Text("\(a) – \(b)").font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary).textCase(nil)
             }
             if ds.count > 0 {
                 ProgressView(value: Double(xong), total: Double(ds.count)).tint(AppColors.success)
@@ -254,7 +254,7 @@ struct BacklogCTW: View {
                 Spacer()
                 Text("\(vm.tong)").foregroundColor(AppColors.textTertiary)
             }
-            .font(.system(size: 13, weight: .semibold))
+            .font(.ctw(size: 13, weight: .semibold))
         }
     }
 
@@ -265,21 +265,21 @@ struct BacklogCTW: View {
             HStack(spacing: 10) {
                 CTWTypeIcon(type: cfg.loai(t.typeId), size: 14)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(t.title).font(.system(size: 15)).foregroundColor(AppColors.textPrimary).lineLimit(2)
+                    Text(t.title).font(.ctw(size: 15)).foregroundColor(AppColors.textPrimary).lineLimit(2)
                     HStack(spacing: 7) {
-                        Text("\(cfg.key)-\(t.number)").font(.system(size: 11, weight: .medium).monospaced())
+                        Text("\(cfg.key)-\(t.number)").font(.ctw(size: 11, weight: .medium).monospaced())
                             .foregroundColor(AppColors.textSecondary)
                             .strikethrough(t.resolvedAt != nil)
                         CTWPriorityIcon(priority: t.priority)
                         if let s = cfg.trangThai(t.statusId) {
                             HStack(spacing: 3) {
                                 Circle().fill(CTW.mauNhom(s.category)).frame(width: 5, height: 5)
-                                Text(s.name).font(.system(size: 11, weight: .semibold)).foregroundColor(CTW.mauNhom(s.category))
+                                Text(s.name).font(.ctw(size: 11, weight: .semibold)).foregroundColor(CTW.mauNhom(s.category))
                                     .lineLimit(1)
                             }
                         }
                         if let d = CTW.ngayNgan(t.dueDate) {
-                            Text(d).font(.system(size: 11))
+                            Text(d).font(.ctw(size: 11))
                                 .foregroundColor(t.resolvedAt == nil && CTW.quaHan(t.dueDate) ? AppColors.error : AppColors.textTertiary)
                         }
                     }
@@ -287,7 +287,7 @@ struct BacklogCTW: View {
                 Spacer(minLength: 0)
                 if let sp = t.storyPoints {
                     Text(sp == sp.rounded() ? String(Int(sp)) : String(format: "%.1f", sp))
-                        .font(.system(size: 11, weight: .bold)).foregroundColor(AppColors.textSecondary)
+                        .font(.ctw(size: 11, weight: .bold)).foregroundColor(AppColors.textSecondary)
                         .padding(.horizontal, 6).padding(.vertical, 2)
                         .background(Capsule().fill(AppColors.backgroundTertiary))
                 }
