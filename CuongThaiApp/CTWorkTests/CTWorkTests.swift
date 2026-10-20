@@ -83,8 +83,10 @@ final class GiaiMaTests: XCTestCase {
 
     func testViecCuaToi() throws {
         let m = try giai(CTWMyWork.self, "/work/me/work")
-        XCTAssertEqual(m.counts?.overdue, 1)
+        // Dữ liệu mẫu 20/10: ba dự án, 7 thẻ quá hạn (kiểm nhóm theo dự án / gập / lọc của My Work).
+        XCTAssertEqual(m.counts?.overdue, 7)
         XCTAssertEqual(m.items?.first?.bucket, "overdue")
+        XCTAssertEqual(Set((m.items ?? []).compactMap { $0.project?.key }), ["NW", "WEB", "SWP"])
     }
 
     /// Tin chat: mảng phụ hỏng KHÔNG làm hỏng cả tin.

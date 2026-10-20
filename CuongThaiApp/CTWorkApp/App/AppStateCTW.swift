@@ -66,6 +66,7 @@ final class AppState: ObservableObject {
         didSet {
             luuLuaChon()
             CTWChiaSeNhom.ghiDuAnDangChon(luaChon)
+            DuAnGanDayCTW.ghi(luaChon)   // chỉ UserDefaults — KHÔNG đọc AppState.shared (bẫy didSet, KIEN_TRUC mục 10)
             if oldValue?.pid != luaChon?.pid { cauHinhDuAn = nil; codeDaNoi = nil; Task { await napCauHinhDuAn() } }
         }
     }
@@ -132,6 +133,7 @@ final class AppState: ObservableObject {
         isAuthenticated = false
         currentUser = nil
         luaChon = nil
+        DuAnGanDayCTW.xoaHet()   // dự án gần đây là của người vừa đăng xuất
         hopThuChuaDoc = 0
         chatChuaDoc = 0
         muc = .viecCuaToi

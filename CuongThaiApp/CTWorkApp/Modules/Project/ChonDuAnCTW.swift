@@ -41,7 +41,17 @@ struct ChonDuAnCTW: View {
     @EnvironmentObject private var app: AppState
     @Environment(\.dismiss) private var dong
     @StateObject private var vm = ChonDuAnVM()
+    @ObservedObject private var ganDay = DuAnGanDayCTW.shared
     @State private var tim = ""
+
+    /// Dự án gần đây còn tồn tại (đối chiếu danh sách vừa tải — dự án đã lưu trữ/bị rời thì bỏ).
+    private var dsGanDay: [(ws: CTWWorkspace, p: CTWProjectSummary)] {
+        guard tim.isEmpty else { return [] }
+        return ganDay.ds.compactMap { g in
+            for n in vm.nhom { if let p = n.duAn.first(where: { $0.id == g.pid }) { return (n.ws, p) } }
+            return nil
+        }
+    }
 
     var body: some View {
         NavigationStack {
@@ -59,6 +69,17 @@ struct ChonDuAnCTW: View {
                     .frame(maxWidth: .infinity).padding(.vertical, Spacing.xl)
                     .listRowBackground(Color.clear)
                 }
+                // 20/10/2026: dự án gần đây lên đầu — người làm nhiều dự án (SWP, LAB, đồ án) đổi qua lại một chạm.
+                if !dsGanDay.isEmpty {
+                    Section {
+                        ForEach(dsGanDay, id: \.p.id) { g in
+                            Button { chon(g.ws, g.p) } label: { hang(g.p, chon: app.luaChon?.pid == g.p.id, khongGian: g.ws.name) }
+                                .buttonStyle(.plain)
+                        }
+                    } header: {
+                        Label("Recent", systemImage: "clock.arrow.circlepath").textCase(nil)
+                    }
+                }
                 ForEach(vm.nhom, id: \.ws.id) { n in
                     let ds = n.duAn.filter { tim.isEmpty || $0.name.localizedCaseInsensitiveContains(tim) || $0.key.localizedCaseInsensitiveContains(tim) }
                     if !ds.isEmpty || tim.isEmpty {
@@ -71,10 +92,17 @@ struct ChonDuAnCTW: View {
                                     .buttonStyle(.plain)
                             }
                         } header: {
-                            HStack(spacing: 6) {
-                                Text(n.ws.name)
-                                if let r = n.ws.role { Text("· \(r.capitalized)").foregroundColor(AppColors.textTertiary) }
+                            HStack(spacing: 7) {
+                                Text(String(n.ws.name.prefix(1)).uppercased())
+                                    .font(.ctw(size: 11, weight: .bold)).foregroundColor(.white)
+                                    .frame(width: 20, height: 20)
+                                    .background(RoundedRectangle(cornerRadius: 5, style: .continuous).fill(CTWKieuWeb.mau(n.ws.slug)))
+                                    .accessibilityHidden(true)
+                                Text(verbatim: n.ws.name).foregroundColor(AppColors.textPrimary)
+                                if let r = n.ws.role { Text(verbatim: "· \(r.capitalized)").foregroundColor(AppColors.textTertiary) }
                             }
+                            .font(.ctw(size: 13, weight: .semibold))
+                            .textCase(nil)
                         }
                     }
                 }
@@ -92,22 +120,22 @@ struct ChonDuAnCTW: View {
         }
     }
 
-    private func hang(_ p: CTWProjectSummary, chon: Bool) -> some View {
+    private func hang(_ p: CTWProjectSummary, chon: Bool, khongGian: String? = nil) -> some View {
         HStack(spacing: 12) {
-            Text(p.key)
-                .font(.ctw(size: 11, weight: .bold).monospaced())
-                .foregroundColor(AppColors.primary)
-                .frame(minWidth: 44)
-                .padding(.vertical, 6)
-                .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(AppColors.primary.opacity(0.12)))
+            CTWProjectMark(ma: p.key, co: 38, caMa: true)
             VStack(alignment: .leading, spacing: 3) {
                 Text(p.name).font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
-                Text([p.type?.capitalized, p.openIssues.map { $0 == 1 ? "1 open issue" : "\($0) open issues" }]
+                    .lineLimit(2)
+                Text([khongGian, p.type?.capitalized, p.openIssues.map { $0 == 1 ? "1 open issue" : "\($0) open issues" }]
                     .compactMap { $0 }.joined(separator: " · "))
                     .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
+                    .lineLimit(1)
             }
             Spacer()
-            if chon { Image(systemName: "checkmark.circle.fill").foregroundColor(AppColors.primary) }
+            if chon {
+                Image(systemName: "checkmark.circle.fill").foregroundColor(AppColors.primary)
+                    .accessibilityLabel(Text("Current project"))
+            }
         }
         .padding(.vertical, 4)
         .contentShape(Rectangle())

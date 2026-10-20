@@ -124,14 +124,14 @@ struct CTWAnhCoXacThuc: View {
     let src: String
     var alt = ""
 
-    private var url: URL? {
-        if src.hasPrefix("http") { return URL(string: src) }
-        if src.hasPrefix("/") { return URL(string: APIClient.diaChiGoc + src) }
-        return nil
-    }
+    /// Tải hỏng ⇒ nhãn "ảnh" thay vì vòng quay mãi (20/10/2026).
+    @State private var hong = false
+
+    /// Tuyệt đối / tương đối (`/api/v1/...`) / khoá R2 trần — một bộ giải chung (`DuongDanAnh`); SVG ⇒ nil.
+    private var url: URL? { DuongDanAnh.urlAnh(src) }
 
     var body: some View {
-        if let url {
+        if let url, !hong {
             #if canImport(Kingfisher)
             KFImage(url)
                 .requestModifier(AnyModifier { r in
@@ -143,6 +143,7 @@ struct CTWAnhCoXacThuc: View {
                     return r
                 })
                 .placeholder { ProgressView().frame(maxWidth: .infinity, minHeight: 80) }
+                .onFailure { _ in hong = true }
                 .resizable()
                 .scaledToFit()
                 .frame(maxWidth: .infinity, maxHeight: 420)
