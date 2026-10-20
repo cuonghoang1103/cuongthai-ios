@@ -462,7 +462,7 @@ struct XinDuyetTrangCTW: View {
                                 CTWAvatar(user: u, size: 30)
                                 VStack(alignment: .leading, spacing: 1) {
                                     Text(u.ten).foregroundColor(AppColors.textPrimary)
-                                    if let r = u.role { Text(r.capitalized).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary) }
+                                    if let r = u.role { Text(CTWMauTrangThai.nhan(r)).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary) }
                                 }
                                 Spacer()
                                 if let i = chon.firstIndex(of: u.id) {

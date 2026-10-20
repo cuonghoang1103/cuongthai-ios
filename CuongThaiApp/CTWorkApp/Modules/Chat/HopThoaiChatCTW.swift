@@ -97,7 +97,7 @@ struct ThongTinKenhCTW: View {
                                     Text(m.id == app.currentUser?.id ? String(localized: "\(m.nguoi.ten) (you)") : m.nguoi.ten).font(.ctw(size: 15))
                                     if m.nguoi.laAgent { CTWNhanAI() }
                                 }
-                                Text([m.username.map { "@\($0)" }, m.role?.capitalized, m.online == true ? String(localized: "Online") : nil].compactMap { $0 }.joined(separator: " · "))
+                                Text([m.username.map { "@\($0)" }, m.role.map { CTWMauTrangThai.nhan($0) }, m.online == true ? String(localized: "Online") : nil].compactMap { $0 }.joined(separator: " · "))
                                     .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                             }
                         }

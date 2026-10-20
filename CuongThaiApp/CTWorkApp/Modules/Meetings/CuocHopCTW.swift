@@ -169,7 +169,7 @@ struct HangHopCTW: View {
             Spacer(minLength: 0)
             if hop.sapHoacDangHop, let u = hop.urlHop, let vao {
                 Button { vao(u) } label: {
-                    Text("Join").font(.ctw(size: 13, weight: .bold)).foregroundColor(.white)
+                    Text("Join").font(.ctw(size: 13, weight: .bold)).foregroundColor(.white).lineLimit(1).fixedSize()
                         .padding(.horizontal, 14).padding(.vertical, 7).background(Capsule().fill(AppColors.success))
                 }
                 .buttonStyle(.borderless)

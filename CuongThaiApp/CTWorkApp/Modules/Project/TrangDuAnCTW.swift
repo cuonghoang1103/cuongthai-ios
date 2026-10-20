@@ -113,8 +113,8 @@ struct TrangDuAnCTW: View {
 
     private func moTaDuAn(_ l: LuaChonCTW) -> String {
         var p = [l.tenKhongGian]
-        if let t = app.cauHinhDuAn?.type { p.append(t.capitalized) }
-        if let r = app.cauHinhDuAn?.role { p.append(r.capitalized) }
+        if let t = app.cauHinhDuAn?.type { p.append(CTWMauTrangThai.nhan(t)) }
+        if let r = app.cauHinhDuAn?.role { p.append(CTWMauTrangThai.nhan(r)) }
         return p.joined(separator: " · ")
     }
 

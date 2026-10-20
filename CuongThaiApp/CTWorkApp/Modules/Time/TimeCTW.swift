@@ -184,7 +184,7 @@ struct TimeCTW: View {
                         giaTri: TinhGioCTW.chuPhut(vm.laTuanNay ? (homNay ?? 0) : vm.tong / 7),
                         bieuTuong: "sun.max", mau: CTWMauChuoi.mau(1))
             if let p = vm.trangThaiPhieu {
-                CTWTheChiSo(nhan: String(localized: "Timesheet"), giaTri: p.capitalized, phu: vm.phieu?.locked == true ? String(localized: "Week is locked") : nil,
+                CTWTheChiSo(nhan: String(localized: "Timesheet"), giaTri: CTWMauTrangThai.nhan(p), phu: vm.phieu?.locked == true ? String(localized: "Week is locked") : nil,
                             bieuTuong: p == "APPROVED" ? "checkmark.seal" : "doc.text", mau: p == "APPROVED" ? AppColors.success : AppColors.warning)
             }
         }

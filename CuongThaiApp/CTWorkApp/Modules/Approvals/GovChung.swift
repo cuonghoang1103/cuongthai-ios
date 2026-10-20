@@ -197,7 +197,7 @@ struct GovYeuCauDuyetView: View {
                                 CTWAvatar(user: u, size: 30)
                                 VStack(alignment: .leading, spacing: 1) {
                                     Text(u.id == app.currentUser?.id ? String(localized: "\(u.ten) (me)") : u.ten).foregroundColor(AppColors.textPrimary)
-                                    if let r = u.role { Text(CTWVaiTroDuAn(rawValue: r)?.ten ?? r.capitalized).font(.caption).foregroundColor(AppColors.textSecondary) }
+                                    if let r = u.role { Text(CTWVaiTroDuAn(rawValue: r)?.ten ?? CTWMauTrangThai.nhan(r)).font(.caption).foregroundColor(AppColors.textSecondary) }
                                 }
                                 Spacer()
                                 if let i = chon.firstIndex(of: u.id) {

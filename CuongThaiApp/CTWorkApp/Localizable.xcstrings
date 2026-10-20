@@ -4876,7 +4876,7 @@
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Phê duyệt %@"
+            "value": "Kết quả phê duyệt: %@"
           }
         }
       }

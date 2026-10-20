@@ -554,7 +554,7 @@ struct NoiDungNguoiVsAgentCTW: View {
                         Text(a.agent?.displayName ?? a.agent?.username ?? String(localized: "Agent")).font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(1)
                         CTWNhanAI()
                     }
-                    Text([a.agent?.model, a.agent?.owner.map { String(localized: "owner \($0.ten)") }, a.agent?.status?.capitalized].compactMap { $0 }.joined(separator: " · "))
+                    Text([a.agent?.model, a.agent?.owner.map { String(localized: "owner \($0.ten)") }, a.agent?.status.map { CTWMauTrangThai.nhan($0) }].compactMap { $0 }.joined(separator: " · "))
                         .font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary).lineLimit(1)
                 }
                 Spacer()

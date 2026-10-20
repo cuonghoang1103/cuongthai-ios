@@ -397,6 +397,24 @@
         }
       }
     },
+    "CLASSROOM": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Classroom"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lớp học"
+          }
+        }
+      }
+    },
     "CLIENT": {
       "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
       "extractionState": "manual",
@@ -429,6 +447,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Đã đóng"
+          }
+        }
+      }
+    },
+    "COMMENTER": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Commenter"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Người bình luận"
           }
         }
       }
@@ -627,6 +663,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sắp đến hạn"
+          }
+        }
+      }
+    },
+    "EDITOR": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Editor"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Người sửa"
           }
         }
       }
@@ -865,6 +919,24 @@
         }
       }
     },
+    "IDLE": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Idle"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rảnh"
+          }
+        }
+      }
+    },
     "IMPLEMENTED": {
       "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
       "extractionState": "manual",
@@ -987,6 +1059,42 @@
           "stringUnit": {
             "state": "translated",
             "value": "Trễ"
+          }
+        }
+      }
+    },
+    "LEAD": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lead"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trưởng nhóm"
+          }
+        }
+      }
+    },
+    "LOCKED": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Locked"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã khoá"
           }
         }
       }
@@ -1333,6 +1441,42 @@
         }
       }
     },
+    "OBSERVER": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Observer"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Người quan sát"
+          }
+        }
+      }
+    },
+    "OFFLINE": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Offline"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ngoại tuyến"
+          }
+        }
+      }
+    },
     "OFF_TRACK": {
       "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
       "extractionState": "manual",
@@ -1347,6 +1491,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Chệch tiến độ"
+          }
+        }
+      }
+    },
+    "ONLINE": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Online"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trực tuyến"
           }
         }
       }
@@ -1509,6 +1671,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Đang chờ"
+          }
+        }
+      }
+    },
+    "PERSONAL": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personal"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cá nhân"
           }
         }
       }
@@ -1819,6 +1999,24 @@
         }
       }
     },
+    "REVIEWER": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reviewer"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Người review"
+          }
+        }
+      }
+    },
     "REVIEW_REQUESTED": {
       "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
       "extractionState": "manual",
@@ -2049,6 +2247,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Giảng viên"
+          }
+        }
+      }
+    },
+    "TEAM": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Team"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nhóm"
           }
         }
       }
@@ -2319,6 +2535,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Hằng tuần"
+          }
+        }
+      }
+    },
+    "WORKING": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Working"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang làm"
           }
         }
       }

@@ -118,7 +118,7 @@ struct PortfolioCTW: View {
                     .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(CTW.mau(p.color, macDinh: AppColors.primary)))
                 VStack(alignment: .leading, spacing: 2) {
                     Text(p.name ?? "").font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(1)
-                    Text([p.type?.capitalized, p.lead.map { String(localized: "Lead \($0.ten)") }].compactMap { $0 }.joined(separator: " · "))
+                    Text([p.type.map { CTWMauTrangThai.nhan($0) }, p.lead.map { String(localized: "Lead \($0.ten)") }].compactMap { $0 }.joined(separator: " · "))
                         .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1)
                 }
                 Spacer(minLength: 4)
@@ -582,7 +582,7 @@ struct AgentKhongGianCTW: View {
                                 Text(a.agent.displayName ?? a.agent.username ?? String(localized: "Agent")).font(.ctw(size: 15, weight: .semibold))
                                 CTWNhanAI()
                                 if a.agent.status != "ACTIVE" {
-                                    Text(a.agent.status?.capitalized ?? "").font(.ctw(size: 10, weight: .bold)).foregroundColor(AppColors.textTertiary)
+                                    Text(a.agent.status.map { CTWMauTrangThai.nhan($0) } ?? "").font(.ctw(size: 10, weight: .bold)).foregroundColor(AppColors.textTertiary)
                                 }
                             }
                             Text([a.agent.model, a.agent.owner.map { String(localized: "Owner \($0.ten)") }].compactMap { $0 }.joined(separator: " · "))
