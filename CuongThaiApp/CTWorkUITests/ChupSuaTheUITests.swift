@@ -48,6 +48,9 @@ final class ChupSuaTheUITests: XCTestCase {
         let app2 = mo("the:tuychinh")
         cho(5)
         chup(app2, "03b-truong-tuy-chinh")
+        let app3 = mo("the:nhan")
+        cho(5)
+        chup(app3, "03c-chon-nhan")
     }
 
     func test04TheConThemNhanh() {
@@ -76,13 +79,7 @@ final class ChupSuaTheUITests: XCTestCase {
 
     func test07TaoThe() {
         let app = mo("the:taothe")
-        cho(5)
-        let o = app.textFields["ctw.tao.tieuDe"].exists ? app.textFields["ctw.tao.tieuDe"] : app.textViews["ctw.tao.tieuDe"]
-        if o.waitForExistence(timeout: 5) {
-            o.tap()
-            o.typeText("Notification badge stays after reading")
-            cho(3)
-        }
+        cho(7)   // tiêu đề điền sẵn (DEBUG) ⇒ cảnh báo trùng + mẫu mô tả theo loại
         chup(app, "07-tao-the")
     }
 

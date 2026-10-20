@@ -70,7 +70,7 @@ final class CTWIssueVM: ObservableObject {
         do {
             lichSu = try await APIClient.shared.request(CTWAPI.lichSu(pid: pid, so: so))
         } catch {
-            loi = CTW.loi(error)
+            if !Self.laHuy(error) { loi = CTW.loi(error) }
         }
     }
 
@@ -78,9 +78,33 @@ final class CTWIssueVM: ObservableObject {
         do {
             nhatKyGio = try await APIClient.shared.request(CTWAPI.nhatKyGio(pid: pid, so: so))
         } catch {
+            guard !Self.laHuy(error) else { return }
             if nhatKyGio == nil { nhatKyGio = [] }
             loi = CTW.loi(error)
         }
+    }
+
+    private var dangTaiLichSu = false
+    private var dangTaiGio = false
+
+    /// Tab cần lịch sử / nhật ký giờ mà chưa có ⇒ tải trong Task RIÊNG: `.task(id:)` của màn đổi id ngay khi
+    /// một phần tải xong và huỷ phần kia — huỷ hiện thành "Không kết nối được máy chủ" (đo 21/10 khi chụp màn).
+    func damBaoHoatDong(lichSu canLS: Bool, gio canGio: Bool) {
+        if canLS, lichSu == nil, !dangTaiLichSu {
+            dangTaiLichSu = true
+            Task { await taiLichSu(); dangTaiLichSu = false }
+        }
+        if canGio, nhatKyGio == nil, !dangTaiGio {
+            dangTaiGio = true
+            Task { await taiNhatKyGio(); dangTaiGio = false }
+        }
+    }
+
+    static func laHuy(_ e: Error) -> Bool {
+        if e is CancellationError { return true }
+        if (e as? URLError)?.code == .cancelled { return true }
+        if case APIError.networkError(let u)? = e as? APIError, (u as? URLError)?.code == .cancelled { return true }
+        return false
     }
 
     func napLaiThe() async {
@@ -622,8 +646,7 @@ struct CTWIssueView: View {
         }
         // Tab cần dữ liệu chưa có (hoặc vừa bị xoá sau một lần sửa) ⇒ tải.
         .task(id: "\(khoiHoatDong.rawValue)-\(vm.lichSu == nil)-\(vm.nhatKyGio == nil)") {
-            if [.tatCa, .lichSu].contains(khoiHoatDong), vm.lichSu == nil { await vm.taiLichSu() }
-            if khoiHoatDong == .tatCa, vm.nhatKyGio == nil { await vm.taiNhatKyGio() }
+            vm.damBaoHoatDong(lichSu: [.tatCa, .lichSu].contains(khoiHoatDong), gio: [.tatCa, .nhatKy].contains(khoiHoatDong))
         }
         #if DEBUG
         // Cửa xem màn (`CT_XEM_MAN`) của app CT Work: cuộn thẳng tới khối cần chụp.

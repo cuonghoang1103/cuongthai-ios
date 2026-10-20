@@ -46,7 +46,7 @@ struct CTWIssueNhatKyGioView: View {
                 ProgressView().frame(maxWidth: .infinity).padding()
             }
         }
-        .task { if vm.nhatKyGio == nil { await vm.taiNhatKyGio() } }
+        .onAppear { vm.damBaoHoatDong(lichSu: false, gio: true) }
         .confirmationDialog("Delete this worklog?", isPresented: Binding(get: { hoiXoa != nil }, set: { if !$0 { hoiXoa = nil } }),
                             titleVisibility: .visible) {
             Button("Delete worklog", role: .destructive) {

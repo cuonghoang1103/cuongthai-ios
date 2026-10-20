@@ -225,6 +225,13 @@ struct CTWCreateIssueView: View {
                 theCha = cha
                 sprint = sprintId
                 loaiId = loaiMacDinh?.id
+                #if DEBUG
+                // Chụp màn (`the:taothe`): điền sẵn tiêu đề, không bật bàn phím (máy ảo mới hiện gợi ý "slide to type").
+                if ProcessInfo.processInfo.environment["CT_XEM_MAN"]?.lowercased() == "the:taothe" {
+                    tieuDe = "Notification badge stays after reading"
+                    return
+                }
+                #endif
                 oTieuDe = true
             }
             .task { await taiPhu() }
