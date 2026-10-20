@@ -48,6 +48,10 @@ struct TaoCuongMiniCTW: View {
                         moTa: String(localized: "A team project, capstone or client job — one board with everything planned."))
                     the(cheDo: "WORKSPACE", bieuTuong: "building.2", tieuDe: String(localized: "A whole workspace"),
                         moTa: String(localized: "Several teams or products at once — e.g. a lecturer's class of 8 groups, one project and one leader each."))
+                } footer: {
+                    // 5.1.2(i): nói rõ GỬI GÌ cho AI bên thứ ba (kể cả tên/email thành viên — dữ liệu của người khác).
+                    Label("The brief, files, links and member list you add (names, emails, roles) are sent to a third-party AI model provider to write the summary and the plan. Only add people who agreed to be in the project.", systemImage: "hand.raised")
+                        .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                 }
                 Section {
                     ForEach(Array([String(localized: "Fill in what you have and upload files — everything is optional except a name or a brief."),

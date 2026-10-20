@@ -26405,6 +26405,16 @@
         }
       }
     },
+    "The brief, files, links and member list you add (names, emails, roles) are sent to a third-party AI model provider to write the summary and the plan. Only add people who agreed to be in the project.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đề bài, tệp, link và danh sách thành viên bạn đưa vào (tên, email, vai trò) được gửi cho nhà cung cấp mô hình AI bên thứ ba để viết bản tóm tắt và kế hoạch. Chỉ thêm những người đã đồng ý tham gia dự án."
+          }
+        }
+      }
+    },
     "The card is hidden for you right away. Our moderators review reports within 24 hours.": {
       "localizations": {
         "vi": {

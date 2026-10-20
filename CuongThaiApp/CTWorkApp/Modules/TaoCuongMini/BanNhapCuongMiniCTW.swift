@@ -42,7 +42,7 @@ struct BanNhapCuongMiniCTW: View {
 
     /// Bước 1–4 + trạng thái lưu (như dải bước của web).
     private var thanhBuoc: some View {
-        let ten = [String(localized: "Fill in"), String(localized: "Summary"), String(localized: "Plan"), String(localized: "Done")]
+        let ten = [String(localized: "Fill in"), String(localized: "Summary"), String(localized: "Plan"), String(localized: "Created")]
         return VStack(spacing: 0) {
             HStack(spacing: 4) {
                 ForEach(0..<4, id: \.self) { i in
@@ -389,7 +389,7 @@ struct TienDoCMView: View {
                         Label("Starting…", systemImage: "circle.dashed").font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary)
                     }
                     ForEach(ds, id: \.key) { b in
-                        HStack(alignment: .firstTextBaseline, spacing: 10) {
+                        HStack(alignment: .top, spacing: 10) {
                             Group {
                                 switch b.status {
                                 case "done": Image(systemName: "checkmark.circle.fill").foregroundColor(AppColors.success)
@@ -399,7 +399,7 @@ struct TienDoCMView: View {
                                 default: ProgressView().controlSize(.mini)
                                 }
                             }
-                            .frame(width: 18)
+                            .frame(width: 18, height: 20)
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(NhanCM.buoc(b.key)).font(.ctw(size: 14))
                                     .foregroundColor(b.status == "done" ? AppColors.textSecondary : AppColors.textPrimary)
@@ -410,6 +410,7 @@ struct TienDoCMView: View {
                         }
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(14)
                 .ctwThe(14)
                 HStack {

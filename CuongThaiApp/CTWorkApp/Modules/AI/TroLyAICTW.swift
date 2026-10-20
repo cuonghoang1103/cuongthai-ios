@@ -349,7 +349,7 @@ struct TroLyAICTW: View {
                             // Câu trả lời đang chạy: dựng Markdown dần; thay bằng `done.reply` khi xong (đề xuất chỉ có ở `done`).
                             TraLoiDangVietAICTW(chu: vm.banNhap, trangThai: vm.tienDo.flatMap(LuongAICTW.nhan)).id("nhap")
                         } else if let c = vm.dangCho {
-                            DangNghiAICTW(chu: c, muc: vm.docMuc).id("cho")
+                            DangNghiAICTW(chu: c).id("cho")
                         }
                         if let l = vm.loiLuot {
                             VStack(alignment: .leading, spacing: 8) {
