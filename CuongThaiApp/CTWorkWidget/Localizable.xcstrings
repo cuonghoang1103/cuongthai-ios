@@ -1,107 +1,331 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "%@ %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ %2$@"
+  "sourceLanguage": "en",
+  "strings": {
+    "%@ %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ %2$@"
+          }
+        }
+      },
+      "shouldTranslate": false
+    },
+    "%@ · %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ · %2$@"
+          }
+        }
+      },
+      "shouldTranslate": false
+    },
+    "%lld": {
+      "shouldTranslate": false
+    },
+    "+%lld more": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+%lld nữa"
           }
         }
       }
     },
-    "%@ · %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ · %2$@"
+    "Action": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thao tác"
           }
         }
       }
     },
-    "%lld" : {
-
+    "All clear today": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hôm nay không có việc gì"
+          }
+        }
+      }
     },
-    "+%lld more" : {
-
+    "CT Work timer": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đồng hồ CT Work"
+          }
+        }
+      }
     },
-    "Action" : {
-
+    "CT Work: %lld today": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CT Work: %lld việc hôm nay"
+          }
+        }
+      }
     },
-    "All clear today" : {
-
+    "CT Work: all clear": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CT Work: không có việc"
+          }
+        }
+      }
     },
-    "CT Work timer" : {
-
+    "Control CT Work timer": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Điều khiển đồng hồ CT Work"
+          }
+        }
+      }
     },
-    "CT Work: %lld today" : {
-
+    "Daily stand-up": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Daily stand-up"
+          }
+        }
+      }
     },
-    "CT Work: all clear" : {
-
+    "Fix login crash": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sửa lỗi văng khi đăng nhập"
+          }
+        }
+      }
     },
-    "Control CT Work timer" : {
-
+    "My work today": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Việc hôm nay"
+          }
+        }
+      }
     },
-    "My work today" : {
-
+    "No timer": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không bấm giờ"
+          }
+        }
+      }
     },
-    "No timer" : {
-
+    "No timer running": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không có đồng hồ nào chạy"
+          }
+        }
+      }
     },
-    "No timer running" : {
-
+    "Nothing due": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không có hạn chót"
+          }
+        }
+      }
     },
-    "Nothing due" : {
-
+    "Open CT Work once to set up this widget.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mở CT Work một lần để thiết lập widget này."
+          }
+        }
+      }
     },
-    "Open CT Work once to set up this widget." : {
-
+    "Open CT Work to refresh": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mở CT Work để làm mới"
+          }
+        }
+      }
     },
-    "Open CT Work to refresh" : {
-
+    "Overdue": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quá hạn"
+          }
+        }
+      }
     },
-    "Pause" : {
-
+    "Pause": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tạm dừng"
+          }
+        }
+      }
     },
-    "Pause, resume or stop the running CT Work timer." : {
-
+    "Pause, resume or stop the running CT Work timer.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tạm dừng, chạy tiếp hoặc dừng đồng hồ CT Work đang chạy."
+          }
+        }
+      }
     },
-    "Paused" : {
-
+    "Paused": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tạm dừng"
+          }
+        }
+      }
     },
-    "Resume" : {
-
+    "Push notifications open the right issue": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thông báo đẩy mở đúng thẻ"
+          }
+        }
+      }
     },
-    "Running" : {
-
+    "Resume": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiếp tục"
+          }
+        }
+      }
     },
-    "Sign in to CT Work" : {
-
+    "Running": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang chạy"
+          }
+        }
+      }
     },
-    "Sign in to CT Work to see your day." : {
-
+    "Sign in to CT Work": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đăng nhập CT Work"
+          }
+        }
+      }
     },
-    "Stop & log" : {
-
+    "Sign in to CT Work to see your day.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đăng nhập CT Work để xem việc trong ngày."
+          }
+        }
+      }
     },
-    "Timer" : {
-
+    "Stop & log": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dừng & ghi giờ"
+          }
+        }
+      }
     },
-    "Timer paused" : {
-
+    "Timer": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đồng hồ bấm giờ"
+          }
+        }
+      }
     },
-    "Today" : {
-
+    "Timer paused": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã tạm dừng"
+          }
+        }
+      }
     },
-    "Today's meetings, issues due and overdue work." : {
-
+    "Today": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hôm nay"
+          }
+        }
+      }
     },
-    "Your running CT Work timer." : {
-
+    "Today's meetings, issues due and overdue work.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cuộc họp hôm nay, thẻ đến hạn và việc quá hạn."
+          }
+        }
+      }
+    },
+    "Your running CT Work timer.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đồng hồ CT Work đang chạy của bạn."
+          }
+        }
+      }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

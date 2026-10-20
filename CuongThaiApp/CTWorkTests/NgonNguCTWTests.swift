@@ -23,7 +23,7 @@ final class NgonNguCTWTests: XCTestCase {
 
     /// Đặc tả định dạng trong một chuỗi, chuẩn hoá: `%1$@` ⇒ (1,"@"), `%lld` ⇒ (thứ tự, "lld"). `%%` bỏ qua.
     static func dacTa(_ s: String) -> [String] {
-        let re = try! NSRegularExpression(pattern: #"%(?:(\d+)\$)?[-+ #0']*\d*(?:\.\d+)?(hh|h|ll|l|q|z|t|j|L)?([@dDuUxXoOfFeEgGcCsSpaAi%])"#)
+        let re = try! NSRegularExpression(pattern: #"%(?:(\d+)\$)?[-+#0']*\d*(?:\.\d+)?(hh|h|ll|l|q|z|t|j|L)?([@dDuUxXoOfFeEgGcCsSpaAi%])"#)
         var kq: [String] = []
         var thuTu = 0
         let ns = s as NSString

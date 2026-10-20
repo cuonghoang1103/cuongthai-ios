@@ -11,6 +11,12 @@
             "state": "translated",
             "value": "CT Work uses the camera only when you choose \"Take Photo\" to attach a picture to an issue or a chat message."
           }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CT Work chỉ dùng máy ảnh khi bạn chọn \"Chụp ảnh\" để đính kèm ảnh vào một thẻ hoặc tin nhắn chat."
+          }
         }
       }
     },
@@ -23,6 +29,12 @@
             "state": "translated",
             "value": "If you turn on Face ID lock in Account › Security, CT Work asks for Face ID when you open the app."
           }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nếu bạn bật khoá Face ID trong Tài khoản › Quyền riêng tư & bảo mật, CT Work sẽ hỏi Face ID khi bạn mở app."
+          }
         }
       }
     },
@@ -34,6 +46,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "CT Work uses the microphone only while you record a voice note to send in a team chat channel."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CT Work chỉ dùng micro khi bạn ghi một tin nhắn thoại để gửi vào kênh chat của nhóm."
           }
         }
       }
