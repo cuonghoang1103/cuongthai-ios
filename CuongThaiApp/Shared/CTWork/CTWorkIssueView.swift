@@ -738,7 +738,7 @@ struct CTWIssueView: View {
                     .font(.ctw(size: 13, weight: .semibold).monospaced())
                     .foregroundColor(AppColors.textSecondary)
                     .textSelection(.enabled)
-                Text(cfg.loai(t.typeId)?.name ?? "")
+                Text(verbatim: cfg.loai(t.typeId).map { CTWTen.loai($0.name) } ?? "")
                     .font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
                 Spacer(minLength: 0)
                 if t.flaggedAt != nil {
@@ -810,7 +810,7 @@ struct CTWIssueView: View {
                     Button {
                         Task { await vm.chuyenTrangThai(s.id) }
                     } label: {
-                        if s.id == t.statusId { Label(s.name, systemImage: "checkmark") } else { Text(s.name) }
+                        if s.id == t.statusId { Label(CTWTen.trangThai(s.name), systemImage: "checkmark") } else { Text(verbatim: CTWTen.trangThai(s.name)) }
                     }
                 }
             } label: {
@@ -822,7 +822,7 @@ struct CTWIssueView: View {
                 .frame(minHeight: 44)
                 .contentShape(Rectangle())
             }
-            .accessibilityLabel("Status: \(hienTai?.name ?? "")")
+            .accessibilityLabel("Status: \(hienTai.map { CTWTen.trangThai($0.name) } ?? "")")
         } else {
             CTWStatusChip(status: hienTai)
         }
@@ -1136,7 +1136,7 @@ enum CTWLichSu {
         case "title": return String(localized: "changed the title to “\(den ?? "")”")
         case "description": return String(localized: "updated the description")
         case "statusId":
-            return String(localized: "moved from \(ten(tu) { cfg.trangThai($0)?.name }) to \(ten(den) { cfg.trangThai($0)?.name })")
+            return String(localized: "moved from \(ten(tu) { cfg.trangThai($0).map { CTWTen.trangThai($0.name) } }) to \(ten(den) { cfg.trangThai($0).map { CTWTen.trangThai($0.name) } })")
         case "assigneeId":
             if den == nil { return String(localized: "unassigned the issue") }
             return String(localized: "assigned to \(ten(den) { cfg.thanhVien($0)?.ten })")

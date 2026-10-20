@@ -70,7 +70,7 @@ struct CTWCreateIssueView: View {
                 Section {
                     Picker("Type", selection: $loaiId) {
                         ForEach(cauHinh.dsLoai) { t in
-                            Label(t.name, systemImage: CTW.bieuTuongLoai(t)).tag(Optional(t.id))
+                            Label(CTWTen.loai(t.name), systemImage: CTW.bieuTuongLoai(t)).tag(Optional(t.id))
                         }
                     }
                     if cap != 1 && !loaiCha.isEmpty {

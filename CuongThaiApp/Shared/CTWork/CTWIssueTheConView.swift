@@ -107,7 +107,7 @@ struct CTWIssueTheConView: View {
         if cfg.coTheChuyen, let tid = c.typeId, let sid = c.statusId {
             Menu {
                 ForEach(cfg.trangThaiDich(loai: tid, tu: sid).filter { $0.id != sid }) { s in
-                    Button(s.name) {
+                    Button(CTWTen.trangThai(s.name)) {
                         Task { _ = await vm.goi(.workChuyenThe(pid: vm.pid, so: c.number, than: ["statusId": s.id])) }
                     }
                 }

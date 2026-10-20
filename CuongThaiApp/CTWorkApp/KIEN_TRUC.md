@@ -337,6 +337,8 @@ trước khi `simctl launch` (giá trị `system` | `vi` | `en`).
 - **Tên trạng thái/loại MẶC ĐỊNH dịch khi hiển thị** (web `i18n/names.ts`): `CTWTen.trangThai/loai/trangThaiCau` (Shared/CTWork/CTWUI/
   CTWTenMacDinh.swift) + bảng `CTWorkApp/TenMacDinhCTW.xcstrings` (khoá `st.*`/`ty.*`). Chỉ tên mẫu ("To Do", "Story"…); tên tự đặt
   giữ nguyên; ⛔ không bao giờ gửi tên đã dịch lên máy chủ (JQL, đổi trạng thái theo tên). `CTWStatusChip`/`CTWChonTrangThaiMenu` đã áp sẵn.
+  Chi tiết thẻ của mảng A cũng đi qua `CTWTen` (tên loại ở đầu thẻ, menu trạng thái + nhãn trợ năng, dòng lịch sử
+  "moved from … to …", menu "Change status" của việc con, bộ chọn Loại khi tạo thẻ) — thêm chỗ hiện tên mặc định ⇒ dùng `CTWTen`.
 - **Board** (Shared): bộ lọc + chia làn thuần ở `CTWBangNhom.swift` (port `grouping.ts`); nhóm theo/gập làn/gập cột nhớ theo dự án
   (`ctw.bang.<pid>.*`). Epic tải riêng (`GET /issues?type=<epic>&includeDone`), bộ phận khi `modules.teams`.
 - **Sửa hàng loạt** dùng chung Board/Backlog/List: `CTWThanhHangLoat` + `CTWHangLoat` (`POST /issues/bulk`, đổi trạng thái THEO TÊN
