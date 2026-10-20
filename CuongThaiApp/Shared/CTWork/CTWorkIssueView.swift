@@ -348,9 +348,14 @@ struct CTWIssueView: View {
     // MARK: Menu ⋯ của thẻ
 
     private func menuThe(_ t: CTWIssueDetail, _ cfg: CTWProjectConfig) -> some View {
+        // Như web đợt 8D: thanh đầu chỉ giữ trạng thái + theo dõi; thao tác phụ (sửa tiêu đề, chép, chia sẻ, web) vào "…".
         Menu {
-            Button { Task { await vm.doiTheoDoi() } } label: {
-                Label(t.isWatching == true ? "Stop watching" : "Watch", systemImage: t.isWatching == true ? "eye.slash" : "eye")
+            if cfg.coTheSua {
+                Button {
+                    tieuDeNhap = t.title
+                    dangSuaTieuDe = true
+                } label: { Label("Edit title", systemImage: "pencil") }
+                Divider()
             }
             Button {
                 CTW.chepVaoBoNho("\(cfg.key)-\(t.number)")
@@ -461,24 +466,35 @@ struct CTWIssueView: View {
                     }
                 }
             } else {
-                HStack(alignment: .top) {
-                    Text(t.title)
-                        .font(.ctw(size: 21, weight: .semibold))
-                        .foregroundColor(AppColors.textPrimary)
-                        .textSelection(.enabled)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Spacer(minLength: 0)
-                    if cfg.coTheSua {
-                        Button {
-                            tieuDeNhap = t.title
-                            dangSuaTieuDe = true
-                        } label: {
-                            Image(systemName: "pencil").frame(width: 44, height: 44)
-                        }
-                        .accessibilityLabel("Edit title")
-                    }
-                }
+                Text(t.title)
+                    .font(.ctw(size: 21, weight: .semibold))
+                    .foregroundColor(AppColors.textPrimary)
+                    .textSelection(.enabled)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
+
+            // Trạng thái (đổi ngay tại đầu thẻ, như web) · theo dõi (số người).
+            HStack(spacing: 8) {
+                menuTrangThai(t, cfg)
+                Spacer(minLength: 0)
+                Button { Task { await vm.doiTheoDoi() } } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: t.isWatching == true ? "eye.fill" : "eye")
+                        if let n = t.watcherCount, n > 0 { Text("\(n)").monospacedDigit() }
+                    }
+                    .font(.ctw(size: 13, weight: .medium))
+                    .foregroundColor(t.isWatching == true ? AppColors.primary : AppColors.textSecondary)
+                    .padding(.horizontal, 10).frame(minHeight: 32)
+                    .background(Capsule().fill(t.isWatching == true ? AppColors.primary.opacity(0.10) : AppColors.backgroundTertiary))
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(t.isWatching == true ? Text("Stop watching") : Text("Watch"))
+                .accessibilityValue(Text("\(t.watcherCount ?? 0) watchers"))
+            }
+            .padding(.top, 2)
         }
     }
 
@@ -486,8 +502,6 @@ struct CTWIssueView: View {
 
     private func truong(_ t: CTWIssueDetail, _ cfg: CTWProjectConfig) -> some View {
         VStack(spacing: 0) {
-            hangTruong("Status") { menuTrangThai(t, cfg) }
-            Divider()
             hangTruong("Assignee") { menuNguoi(t, cfg) }
             Divider()
             hangTruong("Priority") { menuUuTien(t, cfg) }
@@ -557,9 +571,11 @@ struct CTWIssueView: View {
             } label: {
                 HStack(spacing: 4) {
                     CTWStatusChip(status: hienTai)
-                    Image(systemName: "chevron.up.chevron.down").font(.ctw(size: 10))
+                    Image(systemName: "chevron.down").font(.ctw(size: 10, weight: .semibold))
                         .foregroundColor(AppColors.textTertiary)
                 }
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
             }
             .accessibilityLabel("Status: \(hienTai?.name ?? "")")
         } else {
@@ -625,7 +641,7 @@ struct CTWIssueView: View {
 
     @ViewBuilder
     private func oNgay(_ t: CTWIssueDetail, _ cfg: CTWProjectConfig) -> some View {
-        let chu = CTW.ngayNgan(t.dueDate)
+        let chu = CTWKieuWeb.ngay(t.dueDate)
         let tre = t.resolvedAt == nil && CTW.quaHan(t.dueDate)
         if cfg.coTheSua {
             if chonNgay {

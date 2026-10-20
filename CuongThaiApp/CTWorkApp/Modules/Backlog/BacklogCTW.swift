@@ -89,20 +89,27 @@ struct BacklogCTW: View {
         var id: String { rawValue }
     }
 
-    init(pid: Int) {
+    /// Nhúng trong trang dự án (công tắc Board · Backlog · List ở trên đã chọn chế độ) ⇒ ẩn công tắc Sprints/All riêng.
+    private let nhung: Bool
+
+    init(pid: Int, cheDoDau: CheDo = .backlog, nhung: Bool = false) {
         self.pid = pid
+        self.nhung = nhung
         _vm = StateObject(wrappedValue: BacklogVM(pid: pid))
+        _cheDo = State(initialValue: cheDoDau)
     }
 
     var body: some View {
         List {
             Section {
-                Picker("Mode", selection: $cheDo) {
-                    ForEach(CheDo.allCases) { Text($0.rawValue).tag($0) }
+                if !nhung {
+                    Picker("Mode", selection: $cheDo) {
+                        ForEach(CheDo.allCases) { Text($0.rawValue).tag($0) }
+                    }
+                    .pickerStyle(.segmented)
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 4, trailing: 0))
                 }
-                .pickerStyle(.segmented)
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 4, trailing: 0))
                 if let loi = vm.loi {
                     CTWErrorBanner(text: loi) { vm.loi = nil }
                         .listRowBackground(Color.clear)
@@ -169,7 +176,7 @@ struct BacklogCTW: View {
 
     private func apDungTim() {
         vm.loc.q = tim
-        if cheDo == .backlog { cheDo = .tatCa }
+        if cheDo == .backlog && !nhung { cheDo = .tatCa }
         Task { await vm.taiDanhSach() }
     }
 
@@ -177,7 +184,11 @@ struct BacklogCTW: View {
 
     @ViewBuilder
     private func phanBacklog(_ cfg: CTWProjectConfig) -> some View {
-        let the = vm.backlog?.issues ?? []
+        // Nhúng trong trang dự án: ô tìm lọc NGAY trên backlog (không nhảy sang List).
+        let q = nhung ? tim.trimmingCharacters(in: .whitespaces) : ""
+        let the = (vm.backlog?.issues ?? []).filter {
+            q.isEmpty || $0.title.localizedCaseInsensitiveContains(q) || "\(cfg.key)-\($0.number)".localizedCaseInsensitiveContains(q)
+        }
         let sprints = vm.backlog?.sprints ?? []
         ForEach(sprints) { s in
             let ds = the.filter { $0.sprintId == s.id }
@@ -266,36 +277,36 @@ struct BacklogCTW: View {
                 CTWTypeIcon(type: cfg.loai(t.typeId), size: 14)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(t.title).font(.ctw(size: 15)).foregroundColor(AppColors.textPrimary).lineLimit(2)
-                    HStack(spacing: 7) {
-                        Text("\(cfg.key)-\(t.number)").font(.ctw(size: 11, weight: .medium).monospaced())
-                            .foregroundColor(AppColors.textSecondary)
-                            .strikethrough(t.resolvedAt != nil)
-                        CTWPriorityIcon(priority: t.priority)
-                        if let s = cfg.trangThai(t.statusId) {
-                            HStack(spacing: 3) {
-                                Circle().fill(CTW.mauNhom(s.category)).frame(width: 5, height: 5)
-                                Text(s.name).font(.ctw(size: 11, weight: .semibold)).foregroundColor(CTW.mauNhom(s.category))
-                                    .lineLimit(1)
-                            }
+                    // Chật (máy nhỏ / chữ lớn) ⇒ hạn xuống dòng thay vì bị cắt.
+                    ViewThatFits(in: .horizontal) {
+                        HStack(spacing: 7) {
+                            siHang(t, cfg)
+                            CTWDueChip(dueDate: t.dueDate, xong: t.resolvedAt != nil)
                         }
-                        if let d = CTW.ngayNgan(t.dueDate) {
-                            Text(d).font(.ctw(size: 11))
-                                .foregroundColor(t.resolvedAt == nil && CTW.quaHan(t.dueDate) ? AppColors.error : AppColors.textTertiary)
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack(spacing: 7) { siHang(t, cfg) }
+                            CTWDueChip(dueDate: t.dueDate, xong: t.resolvedAt != nil)
                         }
                     }
                 }
                 Spacer(minLength: 0)
-                if let sp = t.storyPoints {
-                    Text(sp == sp.rounded() ? String(Int(sp)) : String(format: "%.1f", sp))
-                        .font(.ctw(size: 11, weight: .bold)).foregroundColor(AppColors.textSecondary)
-                        .padding(.horizontal, 6).padding(.vertical, 2)
-                        .background(Capsule().fill(AppColors.backgroundTertiary))
-                }
+                if let sp = t.storyPoints { CTWPointsBadge(diem: sp) }
                 if t.assigneeId != nil {
                     CTWAvatar(user: cfg.thanhVien(t.assigneeId) ?? CTWUser(id: t.assigneeId ?? 0), size: 24)
                 }
             }
             .padding(.vertical, 2)
+        }
+    }
+
+    @ViewBuilder private func siHang(_ t: CTWIssueCard, _ cfg: CTWProjectConfig) -> some View {
+        Text("\(cfg.key)-\(t.number)").font(.ctw(size: 12, weight: .medium).monospaced())
+            .foregroundColor(t.resolvedAt != nil ? AppColors.textTertiary : AppColors.primary)
+            .strikethrough(t.resolvedAt != nil)
+            .fixedSize()
+        CTWPriorityIcon(priority: t.priority)
+        if let s = cfg.trangThai(t.statusId) {
+            CTWStatusChip(status: s).fixedSize()
         }
     }
 }

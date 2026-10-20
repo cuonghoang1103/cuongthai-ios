@@ -351,19 +351,39 @@ enum DuLieuGia {
     ]
 
     static var viecCuaToi: [String: Any] {
-        func it(_ so: Int, _ t: String, _ pr: Int, _ han: Double?, _ b: String, type: String, st: String, cat: String) -> [String: Any] {
-            ["key": "NW-\(so)", "number": so, "title": t, "priority": pr, "dueDate": han.map { ngay($0) } ?? NSNull(), "bucket": b,
+        // Ba dự án ở hai không gian, nhiều thẻ quá hạn — giống tài khoản thật của chủ app (104 quá hạn) để kiểm nhóm/gập/lọc.
+        let duAn: [String: (String, String, String)] = ["NW": ("Mobile App Launch", "northwind", "Northwind Studio"),
+                                                        "WEB": ("Marketing Website", "northwind", "Northwind Studio"),
+                                                        "SWP": ("Clinic Booking System", "swp391-g4", "SWP391 · Group 4")]
+        func it(_ k: String, _ so: Int, _ t: String, _ pr: Int, _ han: Double?, _ b: String, type: String, st: String, cat: String) -> [String: Any] {
+            let d = duAn[k]!
+            return ["key": "\(k)-\(so)", "number": so, "title": t, "priority": pr, "dueDate": han.map { ngay($0) } ?? NSNull(), "bucket": b,
              "type": ["key": type, "name": type.capitalized, "color": type == "BUG" ? "#dc2626" : (type == "STORY" ? "#16a34a" : "#2563eb")],
              "status": ["name": st, "category": cat], "updatedAt": iso(-0.3),
-             "project": ["key": "NW", "name": "Mobile App Launch"], "workspace": ["slug": "northwind", "name": "Northwind Studio"],
-             "url": "/work/northwind/NW/issue/\(so)"]
+             "project": ["key": k, "name": d.0], "workspace": ["slug": d.1, "name": d.2],
+             "url": "/work/\(d.1)/\(k)/issue/\(so)"]
         }
-        return ["items": [it(21, "Fix sign-in token refresh loop", 1, -1, "overdue", type: "BUG", st: "In Progress", cat: "IN_PROGRESS"),
-                          it(12, "Push notifications open the right issue", 2, 0, "today", type: "STORY", st: "In Progress", cat: "IN_PROGRESS"),
-                          it(17, "Offline cache for My Work", 3, 2, "soon", type: "STORY", st: "To Do", cat: "TODO"),
-                          it(26, "Review sprint 6 demo script", 3, 3, "soon", type: "TASK", st: "To Do", cat: "TODO"),
-                          it(19, "Verify iPad split view on 11-inch", 4, nil, "none", type: "TASK", st: "In Review", cat: "IN_PROGRESS")],
-                "counts": ["overdue": 1, "dueToday": 1, "dueSoon": 2, "inProgress": 3, "total": 5]]
+        let ds: [[String: Any]] = [
+            it("NW", 21, "Fix sign-in token refresh loop", 1, -1, "overdue", type: "BUG", st: "In Progress", cat: "IN_PROGRESS"),
+            it("SWP", 12, "Project charter + scope statement (1 page)", 2, -15, "overdue", type: "TASK", st: "To Do", cat: "TODO"),
+            it("SWP", 15, "Decision log + meeting minutes template", 3, -15, "overdue", type: "TASK", st: "To Do", cat: "TODO"),
+            it("SWP", 18, "Approve topic & scope v1 (one campus, 6 actors, WF0–WF3)", 3, -15, "overdue", type: "TASK", st: "To Do", cat: "TODO"),
+            it("SWP", 19, "Repo + labels (Req/Task/Q&A/Defect), milestones iter1–3", 3, -12, "overdue", type: "TASK", st: "In Review", cat: "IN_PROGRESS"),
+            it("WEB", 4, "Hero section copy for the launch page", 2, -4, "overdue", type: "STORY", st: "To Do", cat: "TODO"),
+            it("WEB", 7, "Broken pricing link in footer", 1, -2, "overdue", type: "BUG", st: "To Do", cat: "TODO"),
+            it("NW", 12, "Push notifications open the right issue", 2, 0, "today", type: "STORY", st: "In Progress", cat: "IN_PROGRESS"),
+            it("SWP", 22, "Seed demo data for doctors and time slots", 3, 0, "today", type: "TASK", st: "To Do", cat: "TODO"),
+            it("NW", 17, "Offline cache for My Work", 3, 2, "soon", type: "STORY", st: "To Do", cat: "TODO"),
+            it("NW", 26, "Review sprint 6 demo script", 3, 3, "soon", type: "TASK", st: "To Do", cat: "TODO"),
+            it("WEB", 9, "Compress hero images (WebP, < 200 KB)", 4, 4, "soon", type: "TASK", st: "In Progress", cat: "IN_PROGRESS"),
+            it("SWP", 31, "ERD review with the lecturer", 2, 12, "later", type: "TASK", st: "To Do", cat: "TODO"),
+            it("NW", 19, "Verify iPad split view on 11-inch", 4, nil, "none", type: "TASK", st: "In Review", cat: "IN_PROGRESS"),
+            it("WEB", 11, "Cookie banner wording", 5, nil, "none", type: "TASK", st: "To Do", cat: "TODO"),
+        ]
+        func dem(_ b: String) -> Int { ds.filter { ($0["bucket"] as? String) == b }.count }
+        let dangLam = ds.filter { (($0["status"] as? [String: Any])?["category"] as? String) == "IN_PROGRESS" }.count
+        return ["items": ds,
+                "counts": ["overdue": dem("overdue"), "dueToday": dem("today"), "dueSoon": dem("soon"), "inProgress": dangLam, "total": ds.count]]
     }
 
     static let kenh: [String: Any] = [

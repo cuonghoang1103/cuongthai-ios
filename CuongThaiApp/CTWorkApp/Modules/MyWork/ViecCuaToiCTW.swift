@@ -14,15 +14,9 @@ struct ViecCuaToiCTW: View {
             if tim.trimmingCharacters(in: .whitespaces).count >= 2 {
                 TimKiemCTW(q: tim)
             } else {
-                VStack(spacing: 0) {
-                    Picker("View", selection: $che) {
-                        Text("Issues").tag(0)
-                        Text("Agenda").tag(1)
-                    }
-                    .pickerStyle(.segmented)
-                    .padding(.horizontal, Spacing.md).padding(.vertical, 8)
-                    if che == 1 { AgendaCuaToiCTW() } else { CTWMyWorkView() }
-                }
+                // Công tắc nằm TRONG danh sách (hàng đầu) ⇒ cùng lề với ô tìm và các thẻ — trước 20/10 nó đệm 16 pt
+                // riêng nên rộng hơn ô tìm và lệch với ô đếm (ảnh chủ app trên iPhone Pro Max, lề hệ thống 20 pt).
+                if che == 1 { AgendaCuaToiCTW(dau: AnyView(congTac)) } else { DanhSachViecCTW(dau: AnyView(congTac)) }
             }
         }
         .background(AppColors.backgroundPrimary)
@@ -44,6 +38,17 @@ struct ViecCuaToiCTW: View {
             }
             nganXep.duong = p
         }
+    }
+}
+
+extension ViecCuaToiCTW {
+    fileprivate var congTac: some View {
+        Picker("View", selection: $che) {
+            Text("Issues").tag(0)
+            Text("Agenda").tag(1)
+        }
+        .pickerStyle(.segmented)
+        .padding(.bottom, 4)
     }
 }
 

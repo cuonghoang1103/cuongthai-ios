@@ -292,9 +292,11 @@ targets:
         Debug:
           # ⚠️ Chỉ ở Debug — xem chú thích ở target CuongThaiApp (cờ DEBUG lọt
           # vào Release làm push đi nhầm máy chủ APNs thử nghiệm).
-          SWIFT_ACTIVE_COMPILATION_CONDITIONS: $(inherited) DEBUG
+          # CTWORK_APP: bảng màu theo web CT Work (Shared/Theme.swift) — chỉ app CT Work riêng, app chính giữ tím.
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: $(inherited) DEBUG CTWORK_APP
         Release:
           CODE_SIGN_STYLE: Automatic
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: $(inherited) CTWORK_APP
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.cuongthai.ctwork
         PRODUCT_NAME: CTWork

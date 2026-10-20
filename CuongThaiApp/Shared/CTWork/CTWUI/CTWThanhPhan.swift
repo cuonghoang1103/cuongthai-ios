@@ -16,20 +16,12 @@ struct CTWAvatar: View {
     var body: some View {
         Group {
             if let u = user {
-                if let url = u.avatarUrl, !url.isEmpty {
-                    UserAvatarView(url: url, size: size)
+                // Ảnh (đã giải đường dẫn tương đối / khoá R2, bỏ SVG — `DuongDanAnh`); không có, đang tải hoặc tải
+                // HỎNG ⇒ avatar chữ cái (20/10: chủ app thấy vòng trống trên iPhone thật).
+                if DuongDanAnh.urlAnh(u.avatarUrl) != nil {
+                    UserAvatarView(url: u.avatarUrl, size: size, duPhong: AnyView(chuCai(u)))
                 } else {
-                    Text(u.kyTuDau)
-                        .font(.ctw(size: size * 0.4, weight: .semibold))
-                        .foregroundColor(AppColors.onPrimary)
-                        .frame(width: size, height: size)
-                        .background(
-                            Circle().fill(
-                                LinearGradient(colors: [AppColors.primaryLight, AppColors.primary],
-                                               startPoint: .topLeading, endPoint: .bottomTrailing)
-                            )
-                        )
-                        .overlay(Circle().strokeBorder(Color.white.opacity(0.18), lineWidth: 0.5))
+                    chuCai(u)
                 }
             } else {
                 Image(systemName: "person.crop.circle.badge.questionmark")
@@ -52,6 +44,19 @@ struct CTWAvatar: View {
             }
         }
         .accessibilityLabel(user.map { $0.laAgent ? "\($0.ten), AI agent" : $0.ten } ?? "Unassigned")
+    }
+
+    /// Màu cố định theo người — cùng luật `avatarColor(username)` của web (CTWKieuWeb), nên một người mang cùng màu
+    /// ở web lẫn app và các avatar trên bảng phân biệt được nhau. Agent: góc vuông bo (như web).
+    private func chuCai(_ u: CTWUser) -> some View {
+        let hinh = RoundedRectangle(cornerRadius: u.laAgent ? size * 0.3 : size / 2, style: .continuous)
+        return Text(u.kyTuDau)
+            .font(.ctw(size: size * 0.4, weight: .semibold))
+            .foregroundColor(.white)
+            .minimumScaleFactor(0.6)
+            .frame(width: size, height: size)
+            .background(hinh.fill(CTWKieuWeb.mau(u.username ?? u.ten)))
+            .overlay(hinh.strokeBorder(Color.black.opacity(0.08), lineWidth: 0.5))
     }
 }
 
@@ -82,19 +87,31 @@ struct CTWPriorityIcon: View {
 }
 
 struct CTWStatusChip: View {
-    let status: CTWStatus?
+    let ten: String?
+    let category: String?
+
+    init(status: CTWStatus?) { ten = status?.name; category = status?.category }
+    init(ten: String?, category: String?) { self.ten = ten; self.category = category }
+
+    /// Kiểu web `StatusBadge`: glyph (hình + màu) + tên viết kiểu câu, ô bo 6, nền pha màu nhóm. Chữ giữ màu chữ
+    /// thường (không tô màu nhóm) ⇒ đạt tương phản ở mọi nhóm, màu chỉ nằm ở glyph/viền.
     var body: some View {
-        let mau = CTW.mauNhom(status?.category)
+        let mau = CTWKieuWeb.mauNhom(category)
+        let laTodo = category != "IN_PROGRESS" && category != "DONE"
         HStack(spacing: 5) {
-            Circle().fill(mau).frame(width: 6, height: 6)
-            Text((status?.name ?? "—").uppercased())
-                .font(.ctw(size: 11, weight: .bold))
-                .foregroundColor(mau)
+            CTWStatusGlyph(category: category, co: CTWCoChu.co(11))
+            Text(CTWKieuWeb.chuCau(ten ?? "—"))
+                .font(.ctw(size: 12, weight: .medium))
+                .foregroundColor(laTodo ? AppColors.textSecondary : AppColors.textPrimary)
                 .lineLimit(1)
         }
-        .padding(.horizontal, 9).padding(.vertical, 4)
-        .background(Capsule().fill(mau.opacity(0.14)))
-        .overlay(Capsule().strokeBorder(mau.opacity(0.22), lineWidth: 0.5))
+        .padding(.leading, 6).padding(.trailing, 7).padding(.vertical, 3)
+        .background(RoundedRectangle(cornerRadius: 6, style: .continuous)
+            .fill(laTodo ? AppColors.backgroundTertiary : mau.opacity(0.11)))
+        .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous)
+            .strokeBorder(laTodo ? AppColors.border : mau.opacity(0.30), lineWidth: 0.5))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text("Status: \(ten ?? "")"))
     }
 }
 

@@ -116,6 +116,8 @@ Luật:
 | `CTWBinhLuanDong` · `CTWHopSoan` · `.ctwMenuBaoCaoChan` | bình luận chung (markdown/TipTap, nhãn AI, ẩn khi đã báo cáo/chặn) · ô soạn · menu Copy/Report/Block (1.2) cho MỌI nội dung người dùng không có route báo cáo riêng (`AnNoiDungChungCTW`, khoá chuỗi `"<loai>-<id>"`) |
 | `CTWOSoanTaiLieu` + `CTWBoSoan` + `CTWThanhDinhDang` | trình soạn tài liệu markdown (UITextView, chèn đúng con trỏ, tự nối danh sách) + thanh định dạng trên bàn phím |
 | `CTWWeb.url(slug:ma:doan:)` | đường web của một màn (mở bằng `SafariCTW` cho phần thiết kế nặng) |
+| `CTWKieuWeb` · `CTWProjectMark` · `CTWStatusGlyph` · `CTWDueChip` · `CTWLabelChip` · `CTWPointsBadge` | ngôn ngữ hình ảnh CHUNG với web (20/10): màu theo mã dự án/username (`avatarColor` của web), glyph trạng thái (hình + màu), chip hạn (đỏ quá hạn, cam hôm nay), ngày theo ngôn ngữ máy (`CTWKieuWeb.ngay`) |
+| `DuongDanAnh.url/urlAnh` (Shared/Components/UserAvatarView.swift) | MỌI đường ảnh từ máy chủ: tuyệt đối giữ nguyên · `/images/…` ghép `APIClient.diaChiGoc` · khoá R2 trần ghép `media.cuongthai.com` · bỏ `blob:`/`data:` · `urlAnh` bỏ SVG (Kingfisher không giải). `UserAvatarView(duPhong:)` hiện avatar chữ cái khi không có/đang tải/hỏng |
 
 Luật màu: CHỈ `AppColors.*` (tự đổi sáng/tối). Biểu tượng: SF Symbols. Chạm tối thiểu 44pt.
 Chữ trong `ScrollView(.horizontal)` phải `.fixedSize` (bẫy cắt chữ). Một view chỉ MỘT
@@ -244,3 +246,18 @@ xcodebuild test -project CuongThaiApp.xcodeproj -scheme CTWorkApp -destination '
 - ⛔ **iPad — màn được ĐẨY không thấy environmentObject của cột detail** (SIGTRAP khi đọc `NganXepCTW`, đo 19/10: Docs ›
   trang › Version history, Code › Source). Ngăn xếp detail do `KhungRongCTW` giữ và gắn `.environmentObject` ở CẢ
   NavigationSplitView. Thêm environmentObject mới cho màn con ⇒ gắn ở cấp split view, không ở cột.
+
+## 12. Giao diện theo web (20/10/2026)
+
+- **Bảng màu:** target CTWorkApp có cờ `CTWORK_APP` (project.yml) ⇒ `AppColors` (Shared/Theme.swift) dùng bảng màu web CT Work
+  (indigo `#4F5BD5`/`#737DEA`, nền ấm `#F4F3F0`/`#0D0D0F`, chữ 3 bậc). App chính không có cờ ⇒ giữ tím. Đổi màu ⇒ đo lại
+  tương phản (chú thích ngay trong Theme.swift).
+- **My Work** (`Modules/MyWork/DanhSachViecCTW.swift`, chỉ app riêng — app chính vẫn `CTWMyWorkView`): công tắc Issues/Agenda
+  nằm TRONG List (cùng lề ô tìm); ô đếm = bộ lọc; nhóm Hạn/Dự án/Trạng thái (`ctw.myWork.nhomTheo`), gập nhóm
+  (`ctw.myWork.thuGon`), 12 thẻ + "Show all"; vuốt Move (`ChuyenNhanhCTW` — chỉ bước quy trình hợp lệ) / Log time / Board.
+- **Tab Projects** (`TrangDuAnCTW`): vào thẳng dự án, công tắc Board · Backlog · List · More (`ctw.duAn.che`), menu đổi dự án ở
+  đầu (`DuAnGanDayCTW`, xoá khi đăng xuất). Deep link mô-đun board/backlog ⇒ đổi công tắc, mô-đun khác ⇒ đẩy màn như cũ.
+- **Board** (`Shared/CTWork/CTWorkBoardView.swift`): iPhone bật từng cột (`scrollTargetBehavior(.viewAligned)`), cột đích sáng +
+  rung khi kéo (`dropDestination(isTargeted:)`), menu nhấn giữ liệt kê thẳng bước "Move to…", MỘT menu Filters (như web đợt 8D).
+- Màn thử: `mywork` · `board` (= trang dự án, công tắc Board) · `backlog` · `list` · `duan` (công tắc More) · `chonduan` · `issue`.
+  Nhóm/gập My Work khi chụp: `xcrun simctl spawn <U> defaults write com.cuongthai.ctwork ctw.myWork.nhomTheo duAn`.

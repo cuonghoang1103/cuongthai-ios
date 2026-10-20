@@ -41,16 +41,48 @@ final class AgendaCuaToiVM: ObservableObject {
 }
 
 struct AgendaCuaToiCTW: View {
+    /// Hàng đầu danh sách (công tắc Issues/Agenda của My Work) — nằm TRONG List để thẳng lề với các thẻ
+    /// (phản hồi 20/10: công tắc rộng hơn ô tìm và lệch lề với nội dung). Có cả lúc đang tải / lỗi.
+    var dau: AnyView? = nil
     @StateObject private var vm = AgendaCuaToiVM()
     @Environment(\.openURL) private var moURL
 
     var body: some View {
-        KhungTaiCTW(trangThai: vm.trangThai, thuLai: { Task { await vm.tai() } }) { ds in
-            List {
+        List {
+            if let dau {
+                Section { dau }
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+            }
+            switch vm.trangThai {
+            case .dangTai:
+                Section { ForEach(0..<4, id: \.self) { _ in HangGiuChoCTW() } }
+            case .loi(let m):
+                Section {
+                    VStack(spacing: 12) {
+                        CTWErrorBanner(text: m)
+                        Button("Try again") { Task { await vm.tai() } }.buttonStyle(.bordered)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets())
+            case .xong(let ds):
                 if ds.isEmpty {
-                    CTWOTrong(bieuTuong: "calendar.badge.checkmark", tieuDe: "Nothing scheduled",
-                              moTa: "No due dates, meetings or sprint dates in the next two weeks.")
-                        .listRowBackground(Color.clear)
+                    VStack(spacing: 8) {
+                        Image(systemName: "calendar.badge.checkmark")
+                            .font(.ctw(size: 28, weight: .semibold)).foregroundColor(AppColors.success)
+                            .frame(width: 64, height: 64)
+                            .background(Circle().fill(AppColors.success.opacity(0.12)))
+                            .accessibilityHidden(true)
+                        Text("Nothing scheduled").font(.ctw(size: 17, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                        Text("No due dates, meetings or sprint dates in the next two weeks.")
+                            .font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary).multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, Spacing.xl)
+                    .listRowBackground(Color.clear)
                 }
                 ForEach(nhom(ds), id: \.0) { ngay, muc in
                     Section {
@@ -60,8 +92,11 @@ struct AgendaCuaToiCTW: View {
                     }
                 }
             }
-            .listStyle(.insetGrouped)
         }
+        .listStyle(.insetGrouped)
+        .listSectionSpacing(.compact)
+        .scrollContentBackground(.hidden)
+        .background(AppColors.backgroundPrimary)
         .task { await vm.tai() }
         .refreshable { await vm.tai() }
     }
@@ -136,5 +171,21 @@ struct AgendaCuaToiCTW: View {
         case "release": return CTWMauChuoi.mau(1)
         default: return CTWMauChuoi.mau(4)
         }
+    }
+}
+
+/// Hàng giữ chỗ khi đang tải (khung xám, tôn trọng Reduce Motion vì không nhấp nháy).
+struct HangGiuChoCTW: View {
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            RoundedRectangle(cornerRadius: 6, style: .continuous).frame(width: 22, height: 22)
+            VStack(alignment: .leading, spacing: 7) {
+                RoundedRectangle(cornerRadius: 4).frame(height: 12)
+                RoundedRectangle(cornerRadius: 4).frame(width: 140, height: 9)
+            }
+        }
+        .foregroundColor(AppColors.backgroundTertiary)
+        .padding(.vertical, 6)
+        .accessibilityHidden(true)
     }
 }

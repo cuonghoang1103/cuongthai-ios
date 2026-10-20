@@ -55,6 +55,44 @@ extension Color {
 }
 
 struct AppColors {
+    #if CTWORK_APP
+    // ── App CT Work riêng (cờ CTWORK_APP, 20/10/2026): CÙNG bảng màu với web CT Work
+    // (`frontend/src/app/work/work.css` — --w-accent, --w-bg/panel/raised/sunken, --w-text-1/2/3) để người dùng chuyển
+    // qua lại web ↔ app thấy một sản phẩm. App chính KHÔNG có cờ này ⇒ giữ tím thương hiệu CuongThai bên dưới.
+    // Tương phản (WCAG, đo theo độ chói tương đối):
+    //   primary sáng #4F5BD5: chữ trắng 5,5:1 · làm chữ trên nền trắng 5,5:1.
+    //   primary tối  #737DEA: làm chữ trên thẻ #202024 4,5:1, trên nền #0D0D0F 5,4:1; chữ trắng trên nó 3,6:1
+    //     (chữ nút đậm cỡ lớn — ngưỡng 3:1, cùng mức với xanh hệ thống của iOS ở chế độ tối).
+    //   textTertiary #64635C trên #FFFFFF 6,0:1, trên tertiary #EAE9E4 5,0:1 · tối #8F8F98 trên thẻ #202024 5,1:1, trên nền lõm #131315 5,8:1.
+    static let primary = Color.theoCheDo(sang: Color(hex: 0x4F5BD5), toi: Color(hex: 0x737DEA))
+    static let primaryDark = Color.theoCheDo(sang: Color(hex: 0x434FC4), toi: Color(hex: 0x5D67D8))
+    static let primaryLight = Color.theoCheDo(sang: Color(hex: 0x6E78E6), toi: Color(hex: 0x8C95F0))
+
+    static let secondary = Color.theoCheDo(sang: Color(hex: 0x0E7F8F), toi: Color(hex: 0x3CBCBC))
+    static let accent = Color.theoCheDo(sang: Color(hex: 0xB0520F), toi: Color(hex: 0xF09468))
+
+    /// Nền khung (--w-bg) · vùng làm việc (--w-panel) · nền lõm: cột bảng, chip (--w-sunken, đậm hơn web một nấc
+    /// vì trên iOS nó nằm thẳng trên nền khung chứ không trên panel trắng) · thẻ nổi (--w-raised).
+    static let backgroundPrimary = Color.theoCheDo(sang: Color(hex: 0xF4F3F0), toi: Color(hex: 0x0D0D0F))
+    static let backgroundSecondary = Color.theoCheDo(sang: Color(hex: 0xFFFFFF), toi: Color(hex: 0x151517))
+    static let backgroundTertiary = Color.theoCheDo(sang: Color(hex: 0xEAE9E4), toi: Color(hex: 0x131315))
+    static let backgroundCard = Color.theoCheDo(sang: Color(hex: 0xFFFFFF), toi: Color(hex: 0x202024))
+
+    static let textPrimary = Color.theoCheDo(sang: Color(hex: 0x1A1A17), toi: Color(hex: 0xEDEDEF))
+    static let textSecondary = Color.theoCheDo(sang: Color(hex: 0x4B4A44), toi: Color(hex: 0xB6B6BD))
+    static let textTertiary = Color.theoCheDo(sang: Color(hex: 0x64635C), toi: Color(hex: 0x8F8F98))
+    static let onPrimary = Color.white
+
+    // Màu tín hiệu: bản CHỮ của web (--w-*-text, ≥ 4,5:1 trên thẻ và trên nền pha 11–22%).
+    static let success = Color.theoCheDo(sang: Color(hex: 0x1B6F45), toi: Color(hex: 0x5CC592))
+    static let error = Color.theoCheDo(sang: Color(hex: 0xC2302B), toi: Color(hex: 0xF27A75))
+    static let warning = Color.theoCheDo(sang: Color(hex: 0x7A5A00), toi: Color(hex: 0xE0BF5C))
+    static let info = Color.theoCheDo(sang: Color(hex: 0x2462C9), toi: Color(hex: 0x6CB0FA))
+
+    static let divider = Color.theoCheDo(sang: Color(red: 30/255, green: 28/255, blue: 22/255).opacity(0.12), toi: Color.white.opacity(0.09))
+    static let border = Color.theoCheDo(sang: Color(red: 30/255, green: 28/255, blue: 22/255).opacity(0.12), toi: Color.white.opacity(0.09))
+    static let overlay = Color.black.opacity(0.5)
+    #else
     // Primary Brand Colors — tím thương hiệu giữ nguyên ở cả hai chế độ, chỉ
     // đậm hơn một nấc ở nền sáng cho đủ tương phản chữ trắng (WCAG AA).
     static let primary = Color.theoCheDo(sang: Color(hex: 0x7A45E8), toi: Color(hex: 0x8C5AF0))
@@ -95,6 +133,8 @@ struct AppColors {
     static let divider = Color.theoCheDo(sang: Color.black.opacity(0.10), toi: Color.white.opacity(0.12))
     static let border = Color.theoCheDo(sang: Color.black.opacity(0.08), toi: Color.white.opacity(0.10))
     static let overlay = Color.black.opacity(0.5)
+
+    #endif
 
     // Reaction Colors
     static let like = primary

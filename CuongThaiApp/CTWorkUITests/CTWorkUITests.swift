@@ -40,16 +40,20 @@ final class CTWorkUITests: XCTestCase {
     func testTabVaTrangDuAn() throws {
         try XCTSkipIf(laIPad)
         let app = mo("mywork")
-        XCTAssertTrue(app.staticTexts["Fix sign-in token refresh loop"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS 'Project charter + scope statement'")).firstMatch.waitForExistence(timeout: 8))
         app.tabBars.buttons["Projects"].tap()
+        // 20/10/2026: tab Projects vào THẲNG bảng của dự án (công tắc Board · Backlog · List · More).
         XCTAssertTrue(app.staticTexts["Mobile App Launch"].waitForExistence(timeout: 5))
-        nut(app, "Board").tap()
-        XCTAssertTrue(app.staticTexts["TO DO"].waitForExistence(timeout: 5))
-        app.navigationBars.buttons.element(boundBy: 0).tap()
-        nut(app, "Backlog & issues").tap()
         XCTAssertTrue(app.staticTexts["Sprint 6 — Beta polish"].waitForExistence(timeout: 5))
-        app.buttons["All issues"].tap()
+        XCTAssertTrue(app.staticTexts["Crash when attaching a HEIC photo on iOS 17"].waitForExistence(timeout: 5)
+                      || app.buttons.containing(NSPredicate(format: "label CONTAINS 'Crash when attaching'")).firstMatch.exists)
+        app.buttons["Backlog"].tap()
+        XCTAssertTrue(app.staticTexts["Sprint 6 — Beta polish"].waitForExistence(timeout: 5))
+        app.buttons["List"].tap()
         XCTAssertTrue(app.staticTexts["Open issues"].waitForExistence(timeout: 5))
+        app.buttons["More"].tap()
+        XCTAssertTrue(nut(app, "More tools").waitForExistence(timeout: 5))
+        app.buttons["Board"].tap()
         app.tabBars.buttons["Inbox"].tap()
         XCTAssertTrue(app.buttons["Read all"].waitForExistence(timeout: 5))
         app.tabBars.buttons["Account"].tap()
@@ -113,16 +117,16 @@ final class CTWorkUITests: XCTestCase {
         let app = mo("board")
         let the = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Crash when attaching a HEIC'")).firstMatch
         XCTAssertTrue(the.waitForExistence(timeout: 8))
-        let cotDich = app.staticTexts["IN REVIEW"]
+        // 20/10/2026: tiêu đề cột viết kiểu câu ("In review") và gộp với số thẻ thành một phần tử tiêu đề.
+        let cotDich = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH 'In review'")).firstMatch
         if laIPad {
             XCTAssertTrue(cotDich.waitForExistence(timeout: 3))
             the.press(forDuration: 1.0, thenDragTo: cotDich)
         } else {
+            // Menu nhấn giữ liệt kê thẳng các bước "Move to…" hợp lệ.
             the.press(forDuration: 1.2)
-            XCTAssertTrue(app.buttons["Move to…"].waitForExistence(timeout: 5))
-            app.buttons["Move to…"].tap()
-            XCTAssertTrue(app.buttons["In Review"].waitForExistence(timeout: 5))
-            app.buttons["In Review"].tap()
+            XCTAssertTrue(app.buttons["In review"].waitForExistence(timeout: 5))
+            app.buttons["In review"].tap()
         }
         // Thẻ phải nằm dưới cột đích: toạ độ x của thẻ ≈ cột "IN REVIEW" (iPad), hoặc
         // trên iPhone cột To Do còn 2 thẻ.
@@ -131,7 +135,9 @@ final class CTWorkUITests: XCTestCase {
             XCTAssertTrue(moi.waitForExistence(timeout: 5))
             XCTAssertEqual(moi.frame.midX, cotDich.frame.midX, accuracy: max(cotDich.frame.width, 160))
         } else {
-            XCTAssertTrue(app.staticTexts["2"].waitForExistence(timeout: 5), "cột To Do còn 2 thẻ")
+            let toDo = app.descendants(matching: .any)
+                .matching(NSPredicate(format: "label BEGINSWITH 'To do' AND label CONTAINS '2 issues'")).firstMatch
+            XCTAssertTrue(toDo.waitForExistence(timeout: 5), "cột To Do còn 2 thẻ")
         }
     }
 
@@ -139,13 +145,13 @@ final class CTWorkUITests: XCTestCase {
     func testThanhBenIPad() throws {
         try XCTSkipUnless(laIPad)
         let app = mo("mywork")
-        XCTAssertTrue(app.staticTexts["Fix sign-in token refresh loop"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS 'Project charter + scope statement'")).firstMatch.waitForExistence(timeout: 8))
         mucBen(app, "Docs").tap()
         XCTAssertTrue(app.staticTexts["Release plan — v1.0"].waitForExistence(timeout: 5))
         mucBen(app, "Inbox").tap()
         XCTAssertTrue(app.buttons["Read all"].waitForExistence(timeout: 5))
         mucBen(app, "Board").tap()
-        XCTAssertTrue(app.staticTexts["TO DO"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Sprint 6 — Beta polish"].waitForExistence(timeout: 5))
         mucBen(app, "Chat").tap()
         XCTAssertTrue(app.staticTexts["general"].waitForExistence(timeout: 5))
     }
