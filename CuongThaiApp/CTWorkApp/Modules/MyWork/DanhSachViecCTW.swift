@@ -70,13 +70,8 @@ struct DanhSachViecCTW: View {
 
     var body: some View {
         List {
-            if let dau {
-                Section { dau }
-                    .listRowInsets(EdgeInsets())
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
-            }
             Section {
+                if let dau { dau }
                 if let c = vm.duLieu?.counts { oDem(c) }
                 if vm.duLieu != nil, !(vm.duLieu?.items ?? []).isEmpty { hangDieuKhien }
                 if let loi = vm.loi {
@@ -354,7 +349,10 @@ struct DanhSachViecCTW: View {
             .accessibilityHint(gon ? Text("Expands the group") : Text("Collapses the group"))
             if case .duAn(let ma, _, let slug?) = n.loai {
                 Button { moBang(slug: slug, ma: ma) } label: {
-                    Label("Board", systemImage: "rectangle.split.3x1")
+                    HStack(spacing: 4) {
+                        Image(systemName: "rectangle.split.3x1")
+                        Text("Board")
+                    }
                         .font(.ctw(size: 12, weight: .semibold))
                         .foregroundColor(AppColors.primary)
                         .padding(.horizontal, 9).frame(minHeight: 28)

@@ -25,9 +25,11 @@ enum CTWKieuWeb {
     /// "In review" thay vì "IN REVIEW" (web `sentenceCase`): viết hoa chữ đầu, giữ chữ viết tắt ≤ 3 ký tự (QA, UAT).
     static func chuCau(_ ten: String) -> String {
         let tu = ten.split(whereSeparator: \.isWhitespace)
+        // Cả tên VIẾT HOA ("IN REVIEW") ⇒ không có chữ viết tắt nào để giữ — hạ hết (web giữ "IN" ⇒ "IN review").
+        let caTenHoa = ten == ten.uppercased()
         return tu.enumerated().map { i, w -> String in
             let s = String(w)
-            if s.count > 1, s.count <= 3, s == s.uppercased(), s.rangeOfCharacter(from: .letters) != nil { return s }
+            if !caTenHoa, s.count > 1, s.count <= 3, s == s.uppercased(), s.rangeOfCharacter(from: .letters) != nil { return s }
             let thuong = s.lowercased()
             return i == 0 ? thuong.prefix(1).uppercased() + thuong.dropFirst() : thuong
         }.joined(separator: " ")

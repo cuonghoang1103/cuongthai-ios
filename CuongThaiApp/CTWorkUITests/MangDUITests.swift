@@ -18,7 +18,7 @@ final class MangDUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Join"].firstMatch.exists)
         XCTAssertTrue(app.staticTexts["Hero section copy review"].exists, "thẻ của dự án WEB")
         app.buttons["Issues"].tap()
-        XCTAssertTrue(app.staticTexts["Fix sign-in token refresh loop"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS 'Project charter + scope statement'")).firstMatch.waitForExistence(timeout: 5))
     }
 
     /// Hộp thư: nhắc họp có "Join meeting"; cài đặt có công tắc đẩy theo loại + múi giờ.

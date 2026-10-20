@@ -40,7 +40,7 @@ final class CTWorkUITests: XCTestCase {
     func testTabVaTrangDuAn() throws {
         try XCTSkipIf(laIPad)
         let app = mo("mywork")
-        XCTAssertTrue(app.staticTexts["Fix sign-in token refresh loop"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS 'Project charter + scope statement'")).firstMatch.waitForExistence(timeout: 8))
         app.tabBars.buttons["Projects"].tap()
         // 20/10/2026: tab Projects vào THẲNG bảng của dự án (công tắc Board · Backlog · List · More).
         XCTAssertTrue(app.staticTexts["Mobile App Launch"].waitForExistence(timeout: 5))
@@ -145,7 +145,7 @@ final class CTWorkUITests: XCTestCase {
     func testThanhBenIPad() throws {
         try XCTSkipUnless(laIPad)
         let app = mo("mywork")
-        XCTAssertTrue(app.staticTexts["Fix sign-in token refresh loop"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS 'Project charter + scope statement'")).firstMatch.waitForExistence(timeout: 8))
         mucBen(app, "Docs").tap()
         XCTAssertTrue(app.staticTexts["Release plan — v1.0"].waitForExistence(timeout: 5))
         mucBen(app, "Inbox").tap()
