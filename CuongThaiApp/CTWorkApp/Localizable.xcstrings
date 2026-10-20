@@ -14516,7 +14516,7 @@
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Chưa có branch nào"
+            "value": "Chưa có nhánh nào"
           }
         }
       }
@@ -18716,7 +18716,7 @@
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Push, branch mới và pull request sẽ hiện ở đây ngay khi repository gửi về."
+            "value": "Push, nhánh mới và pull request sẽ hiện ở đây ngay khi repository gửi về."
           }
         }
       }
@@ -28072,7 +28072,7 @@
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "một branch"
+            "value": "một nhánh"
           }
         }
       }

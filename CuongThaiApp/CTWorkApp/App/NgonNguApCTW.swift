@@ -21,12 +21,6 @@ final class NgonNguApCTW: ObservableObject {
         NgonNguCTW.caiDatBundle()
         NgonNguCTW.dongBoVoiCaiDatHeThong()
         CTWDinhDang.locale = NgonNguCTW.locale
-        #if DEBUG
-        NSLog("[ctw-nn] ma=%@ bundle=%@ cls=%@ a=%@ b=%@ c=%@", NgonNguCTW.ma, NgonNguCTW.bundle?.bundlePath ?? "nil",
-              String(describing: object_getClass(Bundle.main)), String(localized: "Account"),
-              Bundle.main.localizedString(forKey: "Account", value: nil, table: nil),
-              NSLocalizedString("Account", comment: ""))
-        #endif
     }
 
     func dat(_ c: NgonNguCTW.CheDo) {

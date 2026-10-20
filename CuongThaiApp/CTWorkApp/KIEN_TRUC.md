@@ -252,7 +252,10 @@ xcodebuild test -project CuongThaiApp.xcodeproj -scheme CTWorkApp -destination '
 **Đổi ngay trong app:** Account › Language: "Device language" (mặc định — máy tiếng Việt ⇒ tiếng Việt) · Tiếng Việt · English.
 - Lõi `CTWorkShared/NgonNguCTW.swift` (app + widget + Share Extension): lựa chọn lưu ở UserDefaults chuẩn + chép ra App Group
   (`ngon-ngu.json`, đọc tệp nên extension không phải khai API "required reason"); `caiDatBundle()` **tráo lớp `Bundle.main`**
-  (`BundleNgonNguCTW`) ⇒ `String(localized:)`, `NSLocalizedString`, `Text("…")` đều tra `<ma>.lproj` đang chọn. Ghi cả
+  (`BundleNgonNguCTW`) ⇒ `String(localized:)`, `NSLocalizedString` tra `<ma>.lproj` đang chọn (phải chặn cả biến thể
+  `__localizedString(…localizations:)` của iOS 18.4+). ⚠️ `Text("…")`/`Label`/`Button`/`.navigationTitle` của SwiftUI KHÔNG đi
+  qua Bundle — chúng tra theo `.environment(\.locale)`, và chỉ nhận locale NGÔN NGỮ TRẦN (`"vi"`/`"en"`; đo 20/10/2026 trên
+  iOS 26: `vi_VN` làm SwiftUI rơi về ngôn ngữ lúc khởi động). Ghi cả
   `AppleLanguages` ⇒ phần hệ thống vẽ (UIKit, App Intents, bảng chọn ảnh) theo từ lần mở sau. Đổi ở Cài đặt iOS › CT Work ›
   Ngôn ngữ cũng được nhận (`dongBoVoiCaiDatHeThong`).
 - `CTWorkApp/App/NgonNguApCTW.swift`: `@Published ma` ⇒ `GocCTW` gắn `.environment(\.locale, …)` + `.id("\(cỡ chữ)-\(ma)")`

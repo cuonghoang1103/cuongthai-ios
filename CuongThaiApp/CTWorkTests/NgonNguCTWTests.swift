@@ -10,6 +10,12 @@ import XCTest
 ///
 /// Catalog đọc thẳng từ mã nguồn (`#filePath`) — máy mô phỏng đọc được đĩa của máy Mac.
 final class NgonNguCTWTests: XCTestCase {
+    /// Trả lại tiếng Anh trong bộ nhớ cho các bộ kiểm chạy sau (xem KhoiDongKiemThuCTW).
+    override func tearDown() {
+        KhoiDongKiemThuCTW.veTiengAnh()
+        super.tearDown()
+    }
+
     private var goc: URL {
         URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
     }
@@ -118,12 +124,13 @@ final class NgonNguCTWTests: XCTestCase {
     func testDoiNgonNguApDungNgay() throws {
         let cu = NgonNguCTW.cheDo
         defer { NgonNguCTW.dat(cu) }
-        NgonNguCTW.dat(.vi)
+        NgonNguCTW.dat(.vi); CTWDinhDang.locale = NgonNguCTW.locale
         XCTAssertEqual(NgonNguCTW.ma, "vi")
         XCTAssertEqual(String(localized: "Account"), "Tài khoản")
         XCTAssertEqual(NSLocalizedString("Account", comment: ""), "Tài khoản")
+        XCTAssertEqual(String(localized: "\(3) open issues"), "3 thẻ mở", "chuỗi có nội suy")
         XCTAssertEqual(CTWModule.dich("Project"), "Dự án")
-        NgonNguCTW.dat(.en)
+        NgonNguCTW.dat(.en); CTWDinhDang.locale = NgonNguCTW.locale
         XCTAssertEqual(NgonNguCTW.ma, "en")
         XCTAssertEqual(String(localized: "Account"), "Account", "en: bảng nguồn bị Xcode bỏ — phải trả khoá, không rơi về vi")
         XCTAssertEqual(UserDefaults.standard.array(forKey: "AppleLanguages") as? [String], ["en"])

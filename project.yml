@@ -410,6 +410,8 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.cuongthai.ctwork.tests
         GENERATE_INFOPLIST_FILE: YES
+        # Chạy MỌI phép kiểm bằng tiếng Anh, dù máy mô phỏng đang chọn tiếng Việt (CTWorkTests/KhoiDongKiemThuCTW.swift).
+        INFOPLIST_KEY_NSPrincipalClass: CTWorkAppTests.KhoiDongKiemThuCTW
         # PRODUCT_NAME của app là `CTWork` (không phải tên target) ⇒ khai tay.
         TEST_HOST: $(BUILT_PRODUCTS_DIR)/CTWork.app/CTWork
         BUNDLE_LOADER: $(TEST_HOST)

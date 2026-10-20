@@ -41,7 +41,7 @@ enum NgonNguCTW {
     /// Mã ngôn ngữ đang hiệu lực: "vi" hoặc "en".
     static private(set) var ma: String = tinhMa()
 
-    static var locale: Locale { Locale(identifier: ma == "vi" ? "vi_VN" : "en_US") }
+    static var locale: Locale { Locale(identifier: ma == "vi" ? "vi" : "en") }
 
     /// Ngôn ngữ của MÁY (danh sách toàn cục, không tính `AppleLanguages` riêng của app nếu app đã tự ghi).
     static func maTheoMay() -> String {
@@ -78,6 +78,12 @@ enum NgonNguCTW {
             object_setClass(Bundle.main, BundleNgonNguCTW.self)
         }
         napLai()
+    }
+
+    /// CHỈ trong bộ nhớ, không lưu (kiểm thử: chạy mọi phép kiểm bằng tiếng Anh dù máy mô phỏng đang chọn tiếng Việt).
+    static func datTrongBoNho(_ c: CheDo) {
+        ma = c == .vi ? "vi" : (c == .en ? "en" : maTheoMay())
+        bundle = timBundle(ma)
     }
 
     /// Tính lại mã + bundle (sau khi đổi lựa chọn).
@@ -130,24 +136,49 @@ enum NgonNguCTW {
 
 /// `Bundle.main` được tráo sang lớp này: tra chuỗi trong `<ma>.lproj` đang chọn.
 /// Bảng không có trong lproj (vd chuỗi của thư viện dùng Bundle.main) ⇒ trả về như cũ.
+///
+/// ⚠️ Phải chặn ĐỦ các biến thể selector (đo trên iOS 26, 20/10/2026): `String(localized:)` của swift-foundation và
+/// `Text("…")` của SwiftUI KHÔNG đi qua `localizedStringForKey:value:table:` mà qua các biến thể có
+/// `localization(s):` (truyền ngôn ngữ ưa thích LÚC KHỞI ĐỘNG) — chỉ ghi đè hàm cũ là đổi ngôn ngữ không có tác dụng
+/// tới lần mở app sau. Ở đây mọi biến thể đều bỏ qua ngôn ngữ được truyền vào và dùng ngôn ngữ app đang chọn.
 final class BundleNgonNguCTW: Bundle, @unchecked Sendable {
-    override func localizedString(forKey key: String, value: String?, table tableName: String?) -> String {
-        if let b = NgonNguCTW.bundle {
-            let bang = (tableName?.isEmpty == false ? tableName : nil) ?? "Localizable"
-            // Bảng có trong lproj đang chọn ⇒ tra ở ĐÓ, thiếu khoá thì trả chính khoá (chữ tiếng Anh gốc) —
-            // KHÔNG rơi về `super`: bản gốc chọn ngôn ngữ theo lúc khởi động (vd máy tiếng Việt) nên sẽ lẫn.
-            if b.path(forResource: bang, ofType: "strings") != nil || b.path(forResource: bang, ofType: "stringsdict") != nil {
-                return b.localizedString(forKey: key, value: value, table: tableName)
-            }
-            // Ngôn ngữ NGUỒN (en): Xcode bỏ hẳn bảng trong en.lproj khi mọi chữ trùng khoá ⇒ bảng chỉ có ở vi.lproj.
-            // Là bảng của app (vi.lproj có) ⇒ trả chính khoá, đừng để `super` chọn tiếng Việt theo máy.
-            if NgonNguCTW.ma == "en",
-               path(forResource: bang, ofType: "strings", inDirectory: nil, forLocalization: "vi") != nil
-                || path(forResource: bang, ofType: "stringsdict", inDirectory: nil, forLocalization: "vi") != nil {
-                if let value, !value.isEmpty { return value }
-                return key
-            }
+    /// nil ⇒ không phải bảng của app (để lớp gốc xử lý).
+    private func tra(_ key: String, _ value: String?, _ tableName: String?) -> String? {
+        guard let b = NgonNguCTW.bundle else { return nil }
+        let bang = (tableName?.isEmpty == false ? tableName : nil) ?? "Localizable"
+        // Bảng có trong lproj đang chọn ⇒ tra ở ĐÓ, thiếu khoá thì trả chính khoá (chữ tiếng Anh gốc).
+        if b.path(forResource: bang, ofType: "strings") != nil || b.path(forResource: bang, ofType: "stringsdict") != nil {
+            return b.localizedString(forKey: key, value: value, table: tableName)
         }
-        return super.localizedString(forKey: key, value: value, table: tableName)
+        // Ngôn ngữ NGUỒN (en): Xcode bỏ hẳn bảng trong en.lproj khi mọi chữ trùng khoá ⇒ bảng chỉ có ở vi.lproj.
+        // Là bảng của app (vi.lproj có) ⇒ trả chính khoá, đừng để lớp gốc chọn tiếng Việt theo máy.
+        if NgonNguCTW.ma == "en",
+           path(forResource: bang, ofType: "strings", inDirectory: nil, forLocalization: "vi") != nil
+            || path(forResource: bang, ofType: "stringsdict", inDirectory: nil, forLocalization: "vi") != nil {
+            if let value, !value.isEmpty { return value }
+            return key
+        }
+        return nil
+    }
+
+    override func localizedString(forKey key: String, value: String?, table tableName: String?) -> String {
+        tra(key, value, tableName) ?? super.localizedString(forKey: key, value: value, table: tableName)
+    }
+
+    @objc(localizedStringForKey:value:table:localization:)
+    func ctwTra1(_ key: String, value: String?, table tableName: String?, localization: String?) -> String {
+        tra(key, value, tableName) ?? super.localizedString(forKey: key, value: value, table: tableName)
+    }
+
+    // iOS 18.4+: API công khai (NS_REFINED_FOR_SWIFT ⇒ Swift thấy tên `__localizedString`). iOS 17 không có hàm
+    // này trên lớp gốc ⇒ chỉ ghi đè khi có; khai `@objc` riêng cho 17 sẽ trùng selector nên để 18.4 lo.
+    @available(iOS 18.4, *)
+    override func __localizedString(forKey key: String, value: String?, table tableName: String?, localizations: [String]) -> String {
+        tra(key, value, tableName) ?? super.__localizedString(forKey: key, value: value, table: tableName, localizations: localizations)
+    }
+
+    @objc(_localizedStringForKey:value:table:localizations:)
+    func ctwTra3(_ key: String, value: String?, table tableName: String?, localizations: [String]?) -> String {
+        tra(key, value, tableName) ?? super.localizedString(forKey: key, value: value, table: tableName)
     }
 }
