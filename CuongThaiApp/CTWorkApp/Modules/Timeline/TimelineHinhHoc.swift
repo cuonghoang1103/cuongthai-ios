@@ -14,6 +14,13 @@ import CoreGraphics
 enum TLZoomCTW: String, CaseIterable, Identifiable {
     case tuan = "Week", thang = "Month", quy = "Quarter"
     var id: String { rawValue }
+    var ten: String {
+        switch self {
+        case .tuan: return String(localized: "Week")
+        case .thang: return String(localized: "Month")
+        case .quy: return String(localized: "Quarter")
+        }
+    }
     /// Độ rộng một ngày (pt) — theo web: weeks 32, months 10, quarters 3.5.
     var rongNgay: CGFloat {
         switch self {
@@ -123,7 +130,7 @@ enum TLBoDungCTW {
         }
         let le = ds.filter { !$0.laEpic && !($0.parentId.map(idEpic.contains) ?? false) && hien($0) }
         if !le.isEmpty {
-            if !epic.isEmpty { kq.append(.nhom("No epic")) }
+            if !epic.isEmpty { kq.append(.nhom(String(localized: "No epic"))) }
             kq += le.map { .muc($0, thutLe: false) }
         }
         return kq

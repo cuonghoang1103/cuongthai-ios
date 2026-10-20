@@ -92,6 +92,19 @@ final class NgonNguCTWTests: XCTestCase {
     func testCatalogWidgetDuBanVi() throws { try kiemCatalog("CTWorkWidget/Localizable.xcstrings") }
     func testCatalogShareDuBanVi() throws { try kiemCatalog("CTWorkShare/Localizable.xcstrings") }
     func testCatalogInfoPlistDuBanVi() throws { try kiemCatalog("CTWorkApp/InfoPlist.xcstrings", kiemDinhDang: false) }
+    func testCatalogMaTrangThaiDuBanVi() throws { try kiemCatalog("CTWorkApp/TrangThaiCTW.xcstrings", kiemDinhDang: false) }
+
+    /// Mã trạng thái máy chủ ⇒ nhãn theo ngôn ngữ; mã lạ ⇒ chữ tự dựng (không bao giờ lộ "IN_REVIEW").
+    func testNhanMaTrangThaiTheoNgonNgu() {
+        let cu = NgonNguCTW.cheDo
+        defer { NgonNguCTW.dat(cu) }
+        NgonNguCTW.dat(.vi)
+        XCTAssertEqual(CTWMauTrangThai.nhan("IN_REVIEW"), "Đang review")
+        XCTAssertEqual(CTWMauTrangThai.nhan("SOMETHING_NEW"), "Something new")
+        NgonNguCTW.dat(.en)
+        XCTAssertEqual(CTWMauTrangThai.nhan("IN_REVIEW"), "In review")
+        XCTAssertEqual(CTWMauTrangThai.nhan("SOMETHING_NEW"), "Something new")
+    }
 
     func testBoKiemDacTaBatDuocLech() {
         XCTAssertEqual(Self.dacTa("%lld issues"), Self.dacTa("%lld thẻ"))

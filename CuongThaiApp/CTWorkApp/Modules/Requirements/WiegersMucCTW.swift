@@ -22,7 +22,7 @@ final class TaiMotCTW<T: Decodable>: ObservableObject {
 }
 
 private struct KhungDanhSach<NoiDung: View>: View {
-    let tieuDe: String
+    let tieuDe: LocalizedStringKey
     let dangTai: Bool
     let loi: String?
     let noiBo: Bool
@@ -33,7 +33,7 @@ private struct KhungDanhSach<NoiDung: View>: View {
         List {
             if let loi { CTWErrorBanner(text: loi).listRowBackground(Color.clear).listRowInsets(EdgeInsets()) }
             if noiBo {
-                CTWOTrong(bieuTuong: "lock.doc", tieuDe: "Team only", moTa: "This part of the project is only available to the team and lecturers.")
+                CTWOTrong(bieuTuong: "lock.doc", tieuDe: String(localized: "Team only"), moTa: String(localized: "This part of the project is only available to the team and lecturers."))
                     .listRowBackground(Color.clear)
             } else { noiDung() }
         }
@@ -59,7 +59,7 @@ struct WTinhNangCTW: View {
         KhungDanhSach(tieuDe: "Features", dangTai: t.gt == nil && t.loi == nil && !t.noiBo, loi: t.loi, noiBo: t.noiBo, lamMoi: t.tai) {
             let ds = t.gt?.features ?? []
             if t.gt != nil && ds.isEmpty {
-                CTWOTrong(bieuTuong: "square.stack.3d.up", tieuDe: "No features yet", moTa: "Features define the product scope in the vision document.")
+                CTWOTrong(bieuTuong: "square.stack.3d.up", tieuDe: String(localized: "No features yet"), moTa: String(localized: "Features define the product scope in the vision document."))
                     .listRowBackground(Color.clear)
             }
             ForEach(["IN", "OUT"], id: \.self) { pv in
@@ -106,7 +106,7 @@ struct WTinhNangCTW: View {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
                     Text(f.key ?? "FE").font(.ctw(size: 12, weight: .bold).monospaced()).foregroundColor(AppColors.primary)
-                    Text(f.name ?? "Feature").font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(2)
+                    Text(f.name ?? String(localized: "Feature")).font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(2)
                 }
                 HStack(spacing: 6) {
                     if let p = CTWNhanYeuCau.nhanUuTien(f.priority) { CTWNhanNho(chu: p, bieuTuong: "flag.fill", mau: CTWNhanYeuCau.mauUuTien(f.priority)) }
@@ -131,16 +131,16 @@ struct WBenLienQuanCTW: View {
     init(pid: Int) { self.pid = pid; _t = StateObject(wrappedValue: TaiMotCTW { CTWAPI.swrBenLienQuan(pid: pid) }) }
 
     /// Thứ tự ô như web: hàng trên = ảnh hưởng CAO.
-    static let o: [(ma: String, ten: String, icon: String)] = [
-        ("KEEP_SATISFIED", "Keep satisfied", "hand.thumbsup"), ("MANAGE_CLOSELY", "Manage closely", "star.circle"),
-        ("MONITOR", "Monitor", "eye"), ("KEEP_INFORMED", "Keep informed", "envelope"),
-    ]
+    static var o: [(ma: String, ten: String, icon: String)] { [
+        ("KEEP_SATISFIED", String(localized: "Keep satisfied"), "hand.thumbsup"), ("MANAGE_CLOSELY", String(localized: "Manage closely"), "star.circle"),
+        ("MONITOR", String(localized: "Monitor"), "eye"), ("KEEP_INFORMED", String(localized: "Keep informed"), "envelope"),
+    ] }
 
     var body: some View {
         KhungDanhSach(tieuDe: "Stakeholders", dangTai: t.gt == nil && t.loi == nil && !t.noiBo, loi: t.loi, noiBo: t.noiBo, lamMoi: t.tai) {
             let ds = t.gt?.stakeholders ?? []
             if t.gt != nil && ds.isEmpty {
-                CTWOTrong(bieuTuong: "person.3", tieuDe: "No stakeholders yet", moTa: "Add stakeholders on the web to plan elicitation.")
+                CTWOTrong(bieuTuong: "person.3", tieuDe: String(localized: "No stakeholders yet"), moTa: String(localized: "Add stakeholders on the web to plan elicitation."))
                     .listRowBackground(Color.clear)
             }
             if !ds.isEmpty {
@@ -177,8 +177,8 @@ struct WBenLienQuanCTW: View {
                         NavigationLink(value: RouteWiegersCTW.benLienQuanChiTiet(pid: pid, sh: s)) {
                             VStack(alignment: .leading, spacing: 3) {
                                 HStack(spacing: 6) {
-                                    Text(s.name ?? "Stakeholder").font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary)
-                                    if s.isChampion == true { CTWNhanNho(chu: "Champion", bieuTuong: "crown", mau: AppColors.accent) }
+                                    Text(s.name ?? String(localized: "Stakeholder")).font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary)
+                                    if s.isChampion == true { CTWNhanNho(chu: String(localized: "Champion"), bieuTuong: "crown", mau: AppColors.accent) }
                                 }
                                 Text([s.role, s.organization].compactMap { $0 }.joined(separator: " · "))
                                     .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1)
@@ -199,23 +199,23 @@ struct WBenLienQuanChiTietCTW: View {
             VStack(alignment: .leading, spacing: Spacing.md) {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(sh.key ?? "SH").font(.ctw(size: 13, weight: .bold).monospaced()).foregroundColor(AppColors.primary)
-                    Text(sh.name ?? "Stakeholder").font(.ctw(size: 24, weight: .bold)).foregroundColor(AppColors.textPrimary)
+                    Text(sh.name ?? String(localized: "Stakeholder")).font(.ctw(size: 24, weight: .bold)).foregroundColor(AppColors.textPrimary)
                     HStack(spacing: 6) {
                         if let q = sh.quadrant { CTWChipChu(chu: q, mau: q == "MANAGE_CLOSELY" ? AppColors.primary : AppColors.textSecondary) }
                         if let a = sh.attitude { CTWNhanNho(chu: CTWMauTrangThai.nhan(a), mau: a == "BLOCKER" || a == "CRITIC" ? AppColors.error : AppColors.success) }
                     }
                 }
                 CTWKhoiTruong {
-                    CTWHangTruong("Role", sh.role, bieuTuong: "person.text.rectangle"); Divider()
-                    CTWHangTruong("Organization", sh.organization, bieuTuong: "building.2"); Divider()
-                    CTWHangTruong("User class", sh.userClass, bieuTuong: "person.2"); Divider()
-                    CTWHangTruong("Influence", sh.influence.map { "\($0) / 5" }, bieuTuong: "arrow.up.right"); Divider()
-                    CTWHangTruong("Interest", sh.interest.map { "\($0) / 5" }, bieuTuong: "heart"); Divider()
-                    CTWHangTruong("Requirements", sh.requirements.map(String.init), bieuTuong: "list.bullet"); Divider()
-                    CTWHangTruong("Sessions", (sh.sessions ?? []).joined(separator: ", "), bieuTuong: "bubble.left.and.bubble.right")
+                    CTWHangTruong(String(localized: "Role"), sh.role, bieuTuong: "person.text.rectangle"); Divider()
+                    CTWHangTruong(String(localized: "Organization"), sh.organization, bieuTuong: "building.2"); Divider()
+                    CTWHangTruong(String(localized: "User class"), sh.userClass, bieuTuong: "person.2"); Divider()
+                    CTWHangTruong(String(localized: "Influence"), sh.influence.map { "\($0) / 5" }, bieuTuong: "arrow.up.right"); Divider()
+                    CTWHangTruong(String(localized: "Interest"), sh.interest.map { "\($0) / 5" }, bieuTuong: "heart"); Divider()
+                    CTWHangTruong(String(localized: "Requirements"), sh.requirements.map(String.init), bieuTuong: "list.bullet"); Divider()
+                    CTWHangTruong(String(localized: "Sessions"), (sh.sessions ?? []).joined(separator: ", "), bieuTuong: "bubble.left.and.bubble.right")
                 }
-                ForEach([("Decision rights", sh.decisionRights), ("Major value", sh.majorValue), ("Interests", sh.interests),
-                         ("Constraints", sh.constraints), ("Notes", sh.notes)], id: \.0) { m in
+                ForEach([(String(localized: "Decision rights"), sh.decisionRights), (String(localized: "Major value"), sh.majorValue), (String(localized: "Interests"), sh.interests),
+                         (String(localized: "Constraints"), sh.constraints), (String(localized: "Notes"), sh.notes)], id: \.0) { m in
                     if let c = m.1, !c.isEmpty {
                         VStack(alignment: .leading, spacing: 6) {
                             Text(m.0).font(.ctw(size: 13, weight: .semibold)).foregroundColor(AppColors.textSecondary)
@@ -230,7 +230,7 @@ struct WBenLienQuanChiTietCTW: View {
             .frame(maxWidth: .infinity)
         }
         .background(AppColors.backgroundPrimary)
-        .navigationTitle(sh.key ?? "Stakeholder")
+        .navigationTitle(sh.key ?? String(localized: "Stakeholder"))
         .navigationBarTitleDisplayMode(.inline)
     }
 }
@@ -251,13 +251,14 @@ struct WThuatNguCTW: View {
             }.sorted { ($0.term ?? "").localizedCaseInsensitiveCompare($1.term ?? "") == .orderedAscending }
             if let c = t.gt?.clashes, !c.isEmpty {
                 Section {
-                    Label("\(c.count) word\(c.count == 1 ? "" : "s") defined more than once: " + c.compactMap(\.word).joined(separator: ", "),
+                    let tu = c.compactMap(\.word).joined(separator: ", ")
+                    Label(c.count == 1 ? String(localized: "1 word defined more than once: \(tu)") : String(localized: "\(c.count) words defined more than once: \(tu)"),
                           systemImage: "exclamationmark.triangle.fill")
                         .font(.ctw(size: 13)).foregroundColor(AppColors.warning)
                 }
             }
             if t.gt != nil && ds.isEmpty {
-                CTWOTrong(bieuTuong: "character.book.closed", tieuDe: q.isEmpty ? "No terms yet" : "No matches").listRowBackground(Color.clear)
+                CTWOTrong(bieuTuong: "character.book.closed", tieuDe: q.isEmpty ? String(localized: "No terms yet") : String(localized: "No matches")).listRowBackground(Color.clear)
             }
             Section {
                 ForEach(ds) { x in
@@ -265,7 +266,7 @@ struct WThuatNguCTW: View {
                         Text(x.term ?? "").font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                         Text(x.definition ?? "").font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary).fixedSize(horizontal: false, vertical: true)
                         if let a = x.aliases, !a.isEmpty {
-                            Text("Also: " + a.joined(separator: ", ")).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
+                            Text(String(localized: "Also: \(a.joined(separator: ", "))")).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                         }
                         if let s = x.source, !s.isEmpty { Text("Source: \(s)").font(.ctw(size: 11.5)).foregroundColor(AppColors.textTertiary) }
                     }
@@ -289,8 +290,8 @@ struct WPhienCTW: View {
         KhungDanhSach(tieuDe: "Elicitation", dangTai: t.gt == nil && t.loi == nil && !t.noiBo, loi: t.loi, noiBo: t.noiBo, lamMoi: t.tai) {
             let ds = t.gt?.sessions ?? []
             if t.gt != nil && ds.isEmpty {
-                CTWOTrong(bieuTuong: "bubble.left.and.text.bubble.right", tieuDe: "No sessions yet",
-                          moTa: "Plan interviews and workshops on the web; notes and proposals show up here.")
+                CTWOTrong(bieuTuong: "bubble.left.and.text.bubble.right", tieuDe: String(localized: "No sessions yet"),
+                          moTa: String(localized: "Plan interviews and workshops on the web; notes and proposals show up here."))
                     .listRowBackground(Color.clear)
             }
             Section {
@@ -299,16 +300,17 @@ struct WPhienCTW: View {
                         VStack(alignment: .leading, spacing: 5) {
                             HStack(spacing: 6) {
                                 Text(s.key ?? "ELC").font(.ctw(size: 12, weight: .bold).monospaced()).foregroundColor(AppColors.primary)
-                                Text(s.title ?? "Session").font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(2)
+                                Text(s.title ?? String(localized: "Session")).font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(2)
                             }
                             HStack(spacing: 6) {
                                 CTWChipChu(chu: s.status ?? "PLANNED", mau: s.status == "DONE" ? AppColors.success : (s.status == "CANCELLED" ? AppColors.error : AppColors.info))
                                 CTWNhanNho(chu: CTWMauTrangThai.nhan(s.technique), bieuTuong: bieuTuongKyThuat(s.technique))
-                                if s.aiSimulated == true { CTWNhanAI(chu: "AI-simulated") }
+                                if s.aiSimulated == true { CTWNhanAI(chu: String(localized: "AI-simulated")) }
                             }
-                            Text("\(s.answered ?? 0)/\(s.questions ?? 0) answered · \(s.requirements ?? 0) requirements"
-                                 + ((s.pending ?? 0) > 0 ? " · \(s.pending!) pending" : "")
-                                 + (CTW.ngayNgan(s.scheduledAt).map { " · \($0)" } ?? ""))
+                            Text(([String(localized: "\(s.answered ?? 0)/\(s.questions ?? 0) answered"),
+                                  String(localized: "\(s.requirements ?? 0) requirements"),
+                                  (s.pending ?? 0) > 0 ? String(localized: "\(s.pending ?? 0) pending") : nil,
+                                  CTW.ngayNgan(s.scheduledAt)] as [String?]).compactMap { $0 }.joined(separator: " · "))
                                 .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                         }
                         .padding(.vertical, 3)
@@ -353,7 +355,7 @@ struct WPhienChiTietCTW: View {
             .frame(maxWidth: .infinity)
         }
         .background(AppColors.backgroundPrimary)
-        .navigationTitle(t.gt?.key ?? "Session")
+        .navigationTitle(t.gt?.key ?? String(localized: "Session"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             if t.gt?.canEdit == true {
@@ -373,36 +375,36 @@ struct WPhienChiTietCTW: View {
     @ViewBuilder
     private func noiDung(_ s: CTWSwrSessionDetail) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(s.title ?? "Session").font(.ctw(size: 23, weight: .bold)).foregroundColor(AppColors.textPrimary)
+            Text(s.title ?? String(localized: "Session")).font(.ctw(size: 23, weight: .bold)).foregroundColor(AppColors.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
             HStack(spacing: 6) {
                 CTWChipChu(chu: s.status ?? "PLANNED", mau: s.status == "DONE" ? AppColors.success : AppColors.info)
                 CTWNhanNho(chu: CTWMauTrangThai.nhan(s.technique), bieuTuong: bieuTuongKyThuat(s.technique))
-                if s.aiSimulated == true { CTWNhanAI(chu: "AI-simulated") }
+                if s.aiSimulated == true { CTWNhanAI(chu: String(localized: "AI-simulated")) }
             }
         }
         CTWKhoiTruong {
-            CTWHangTruong("When", s.scheduledAt.map { CTW.thoiDiem($0) }, bieuTuong: "calendar"); Divider()
-            CTWHangTruong("Duration", s.durationMin.map { "\($0) min" }, bieuTuong: "clock"); Divider()
-            CTWHangTruong("Location", s.location, bieuTuong: "mappin.and.ellipse"); Divider()
-            CTWHangTruong("Participants", (s.participants ?? []).compactMap { p in
+            CTWHangTruong(String(localized: "When"), s.scheduledAt.map { CTW.thoiDiem($0) }, bieuTuong: "calendar"); Divider()
+            CTWHangTruong(String(localized: "Duration"), s.durationMin.map { String(localized: "\($0) min") }, bieuTuong: "clock"); Divider()
+            CTWHangTruong(String(localized: "Location"), s.location, bieuTuong: "mappin.and.ellipse"); Divider()
+            CTWHangTruong(String(localized: "Participants"), (s.participants ?? []).compactMap { p in
                 p.name.map { $0 + (p.rolePlayed.map { " (\($0))" } ?? "") }
             }.joined(separator: ", "), bieuTuong: "person.2")
         }
-        ForEach([("Objective", "target", s.objective), ("Plan", "list.number", s.plan)], id: \.0) { k in
+        ForEach([(String(localized: "Objective"), "target", s.objective), (String(localized: "Plan"), "list.number", s.plan)], id: \.0) { k in
             if let c = k.2, !c.isEmpty {
                 CTWSectionHeader(k.1, k.0)
                 CTWMarkdownView(markdown: c, coChu: 15).padding(14).frame(maxWidth: .infinity, alignment: .leading).ctwThe(14)
             }
         }
         if let q = s.questions, !q.isEmpty {
-            CTWSectionHeader("questionmark.bubble", "Questions", count: "\(q.filter { !($0.answer ?? "").isEmpty }.count)/\(q.count)")
+            CTWSectionHeader("questionmark.bubble", String(localized: "Questions"), count: "\(q.filter { !($0.answer ?? "").isEmpty }.count)/\(q.count)")
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(Array(q.enumerated()), id: \.offset) { i, c in
                     VStack(alignment: .leading, spacing: 4) {
                         Text("\(i + 1). \(c.text ?? "")").font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                             .fixedSize(horizontal: false, vertical: true)
-                        Text(c.answer?.isEmpty == false ? c.answer! : "Not answered yet")
+                        Text(c.answer?.isEmpty == false ? c.answer! : String(localized: "Not answered yet"))
                             .font(.ctw(size: 14)).foregroundColor(c.answer?.isEmpty == false ? AppColors.textPrimary : AppColors.textTertiary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -412,21 +414,21 @@ struct WPhienChiTietCTW: View {
             }
             .padding(.horizontal, 14).ctwThe(14)
         }
-        ForEach([("Notes", "note.text", s.notes), ("Outcome", "flag.checkered", s.outcome)], id: \.0) { k in
+        ForEach([(String(localized: "Notes"), "note.text", s.notes), (String(localized: "Outcome"), "flag.checkered", s.outcome)], id: \.0) { k in
             if let c = k.2, !c.isEmpty {
                 CTWSectionHeader(k.1, k.0)
                 CTWMarkdownView(markdown: c, coChu: 15).padding(14).frame(maxWidth: .infinity, alignment: .leading).ctwThe(14)
             }
         }
         if let p = s.proposals, !p.isEmpty {
-            CTWSectionHeader("sparkles", "Proposed requirements", count: "\(p.count)")
+            CTWSectionHeader("sparkles", String(localized: "Proposed requirements"), count: "\(p.count)")
             VStack(spacing: 8) {
                 ForEach(p) { x in
                     VStack(alignment: .leading, spacing: 5) {
                         HStack(spacing: 6) {
                             CTWChipChu(chu: x.status ?? "PENDING", mau: x.status == "ACCEPTED" ? AppColors.success : (x.status == "DISMISSED" ? AppColors.textTertiary : AppColors.warning))
                             CTWNhanNho(chu: CTWVongDoiYeuCau.tenLoai(x.reqType))
-                            if x.model != nil { CTWNhanAI(chu: "AI-drafted") }
+                            if x.model != nil { CTWNhanAI(chu: String(localized: "AI-drafted")) }
                             Spacer(minLength: 0)
                             if let i = x.issue { Text(i).font(.ctw(size: 12, weight: .bold).monospaced()).foregroundColor(AppColors.primary) }
                         }
@@ -447,7 +449,7 @@ struct WPhienChiTietCTW: View {
                 .font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
         }
         if let r = s.requirements, !r.isEmpty {
-            CTWSectionHeader("list.bullet.rectangle.portrait", "Requirements from this session", count: "\(r.count)")
+            CTWSectionHeader("list.bullet.rectangle.portrait", String(localized: "Requirements from this session"), count: "\(r.count)")
             VStack(spacing: 0) {
                 ForEach(Array(r.enumerated()), id: \.offset) { i, q in
                     if let num = q.number {
@@ -502,7 +504,7 @@ struct DeXuatYeuCauCTW: View {
                     if !nguoi.isEmpty {
                         Picker("Stakeholder", selection: $benLQ) {
                             Text("None").tag(Int?.none)
-                            ForEach(nguoi.compactMap { p in p.stakeholderId.map { ($0, p.name ?? "Stakeholder") } }, id: \.0) { Text($0.1).tag(Int?.some($0.0)) }
+                            ForEach(nguoi.compactMap { p in p.stakeholderId.map { ($0, p.name ?? String(localized: "Stakeholder")) } }, id: \.0) { Text($0.1).tag(Int?.some($0.0)) }
                         }
                     }
                 }
@@ -546,8 +548,8 @@ struct WNfrCTW: View {
         KhungDanhSach(tieuDe: "Quality attributes", dangTai: t.gt == nil && t.loi == nil && !t.noiBo, loi: t.loi, noiBo: t.noiBo, lamMoi: t.tai) {
             let ds = t.gt?.requirements ?? []
             if t.gt != nil && ds.isEmpty {
-                CTWOTrong(bieuTuong: "gauge.with.dots.needle.67percent", tieuDe: "No quality requirements",
-                          moTa: "Quality requirements (performance, security…) show up here with their measures.")
+                CTWOTrong(bieuTuong: "gauge.with.dots.needle.67percent", tieuDe: String(localized: "No quality requirements"),
+                          moTa: String(localized: "Quality requirements (performance, security…) show up here with their measures."))
                     .listRowBackground(Color.clear)
             }
             if !ds.isEmpty {
@@ -558,7 +560,7 @@ struct WNfrCTW: View {
             }
             let nhom = Dictionary(grouping: ds) { $0.spec?.characteristic ?? "" }
             ForEach(nhom.keys.sorted { ($0.isEmpty ? "~" : $0) < ($1.isEmpty ? "~" : $1) }, id: \.self) { k in
-                Section(k.isEmpty ? "Not measured yet" : (t.gt?.characteristics?.first { $0.key == k }?.label ?? CTWMauTrangThai.nhan(k))) {
+                Section(k.isEmpty ? String(localized: "Not measured yet") : (t.gt?.characteristics?.first { $0.key == k }?.label ?? CTWMauTrangThai.nhan(k))) {
                     ForEach(nhom[k] ?? []) { q in hang(q) }
                 }
             }
@@ -577,8 +579,8 @@ struct WNfrCTW: View {
                 }
                 if let s = q.spec {
                     HStack(spacing: 6) {
-                        if let m = s.mustValue { CTWNhanNho(chu: "Must \(s.comparator ?? "") \(so(m)) \(s.unit ?? "")", mau: AppColors.error) }
-                        if let p = s.planValue { CTWNhanNho(chu: "Plan \(s.comparator ?? "") \(so(p)) \(s.unit ?? "")", mau: AppColors.success) }
+                        if let m = s.mustValue { CTWNhanNho(chu: String(localized: "Must \(s.comparator ?? "") \(so(m)) \(s.unit ?? "")"), mau: AppColors.error) }
+                        if let p = s.planValue { CTWNhanNho(chu: String(localized: "Plan \(s.comparator ?? "") \(so(p)) \(s.unit ?? "")"), mau: AppColors.success) }
                         if let v = s.verification { CTWNhanNho(chu: CTWMauTrangThai.nhan(v), bieuTuong: "checkmark.circle") }
                     }
                 } else {
@@ -616,7 +618,7 @@ struct WMauCTW: View {
                     ForEach(s.mockups ?? []) { m in hang(m) }
                 } header: {
                     HStack {
-                        Text(s.name ?? "Screen")
+                        Text(s.name ?? String(localized: "Screen"))
                         if s.approved == true { Image(systemName: "checkmark.seal.fill").foregroundColor(AppColors.success) }
                     }
                 }
@@ -632,13 +634,13 @@ struct WMauCTW: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
                 CTWChipChu(chu: m.status ?? "DRAFT", mau: m.status == "APPROVED" ? AppColors.success : (m.status == "CHANGES" ? AppColors.error : AppColors.warning))
-                Text(m.title ?? (m.kind == "LINK" ? (m.provider ?? "Link") : "Image"))
+                Text(m.title ?? (m.kind == "LINK" ? (m.provider ?? String(localized: "Link")) : String(localized: "Image")))
                     .font(.ctw(size: 14, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(1)
             }
-            if let img = m.image { CTWAnhCoXacThuc(src: img, alt: m.title ?? "Prototype") }
+            if let img = m.image { CTWAnhCoXacThuc(src: img, alt: m.title ?? String(localized: "Prototype")) }
             if m.kind == "LINK", let s = m.url, let u = URL(string: s), u.scheme == "https" {
                 Button { mo = u } label: {
-                    Label("Open \(m.provider ?? "prototype")", systemImage: "arrow.up.right.square").font(.ctw(size: 13, weight: .semibold))
+                    Label("Open \(m.provider ?? String(localized: "prototype"))", systemImage: "arrow.up.right.square").font(.ctw(size: 13, weight: .semibold))
                 }
                 .buttonStyle(.borderless)
             }

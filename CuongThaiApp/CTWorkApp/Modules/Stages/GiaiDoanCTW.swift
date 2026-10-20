@@ -41,12 +41,12 @@ struct GiaiDoanDuAnCTW: View {
     var body: some View {
         KhungTaiCTW(trangThai: vm.trangThai, thuLai: { Task { await vm.tai() } }) { ds in
             if vm.tat {
-                CTWOTrong(bieuTuong: "flag.slash", tieuDe: "Stages are off",
-                          moTa: "This project doesn't use stage-gated delivery. A project admin can turn on Stages in project settings.")
+                CTWOTrong(bieuTuong: "flag.slash", tieuDe: String(localized: "Stages are off"),
+                          moTa: String(localized: "This project doesn't use stage-gated delivery. A project admin can turn on Stages in project settings."))
                     .frame(maxHeight: .infinity)
             } else if ds.isEmpty {
-                CTWOTrong(bieuTuong: "flag.checkered", tieuDe: "No stages yet",
-                          moTa: "Stages split delivery into phases, each closed by a gate review.")
+                CTWOTrong(bieuTuong: "flag.checkered", tieuDe: String(localized: "No stages yet"),
+                          moTa: String(localized: "Stages split delivery into phases, each closed by a gate review."))
                     .frame(maxHeight: .infinity)
             } else {
                 ScrollView {
@@ -98,10 +98,10 @@ struct GiaiDoanDuAnCTW: View {
 
     static func kieu(_ s: String?) -> (ten: String, bieuTuong: String, mau: Color) {
         switch s {
-        case "DONE": return ("Done", "checkmark.circle.fill", AppColors.success)
-        case "ACTIVE": return ("Active", "play.circle.fill", AppColors.primary)
-        case "GATE_REVIEW": return ("Gate review", "hourglass.circle.fill", AppColors.warning)
-        default: return ("Not started", "circle.dashed", AppColors.textTertiary)
+        case "DONE": return (String(localized: "Done"), "checkmark.circle.fill", AppColors.success)
+        case "ACTIVE": return (String(localized: "Active"), "play.circle.fill", AppColors.primary)
+        case "GATE_REVIEW": return (String(localized: "Gate review"), "hourglass.circle.fill", AppColors.warning)
+        default: return (String(localized: "Not started"), "circle.dashed", AppColors.textTertiary)
         }
     }
 
@@ -127,8 +127,8 @@ struct GiaiDoanDuAnCTW: View {
                 Text(g.name).font(.ctw(size: 16, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                 if (g.issueCount ?? 0) > 0 {
                     HStack(spacing: 8) {
-                        CTWThanhTienDo(doan: [CTWDoanTienDo(ten: "Done", giaTri: Double(g.doneCount ?? 0), mau: AppColors.success),
-                                              CTWDoanTienDo(ten: "Open", giaTri: Double(max((g.issueCount ?? 0) - (g.doneCount ?? 0), 0)), mau: AppColors.backgroundTertiary)],
+                        CTWThanhTienDo(doan: [CTWDoanTienDo(ten: String(localized: "Done"), giaTri: Double(g.doneCount ?? 0), mau: AppColors.success),
+                                              CTWDoanTienDo(ten: String(localized: "Open"), giaTri: Double(max((g.issueCount ?? 0) - (g.doneCount ?? 0), 0)), mau: AppColors.backgroundTertiary)],
                                        cao: 6)
                         Text("\(g.doneCount ?? 0)/\(g.issueCount ?? 0) issues").font(.ctw(size: 11, weight: .semibold).monospacedDigit())
                             .foregroundColor(AppColors.textSecondary).fixedSize()
@@ -177,9 +177,9 @@ struct GiaiDoanDuAnCTW: View {
     private func dongNgay(_ g: GiaiDoanCTW) -> String? {
         let a = NgayCTW.thoiDiem(g.startedAt), b = NgayCTW.thoiDiem(g.completedAt)
         switch (a, b) {
-        case let (a?, b?): return "\(NgayCTW.ngan(a)) – \(NgayCTW.ngan(b)) · \(max(NgayCTW.soNgay(a, b), 0) + 1) days"
-        case let (a?, nil): return "Started \(NgayCTW.day(a)) · day \(max(NgayCTW.soNgay(a, Date()), 0) + 1)"
-        case let (nil, b?): return "Completed \(NgayCTW.day(b))"
+        case let (a?, b?): return String(localized: "\(NgayCTW.ngan(a)) – \(NgayCTW.ngan(b)) · \(max(NgayCTW.soNgay(a, b), 0) + 1) days")
+        case let (a?, nil): return String(localized: "Started \(NgayCTW.day(a)) · day \(max(NgayCTW.soNgay(a, Date()), 0) + 1)")
+        case let (nil, b?): return String(localized: "Completed \(NgayCTW.day(b))")
         default: return nil
         }
     }

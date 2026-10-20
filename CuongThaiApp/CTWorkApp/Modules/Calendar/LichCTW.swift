@@ -259,7 +259,7 @@ struct LichCTW: View {
                     .ctwThe(14)
             }
             if !sapToi.isEmpty {
-                CTWSectionHeader("clock", "Coming up").padding(.top, 6)
+                CTWSectionHeader("clock", String(localized: "Coming up")).padding(.top, 6)
                 ForEach(sapToi, id: \.0) { d, s in
                     VStack(alignment: .leading, spacing: 6) {
                         Text(Calendar.current.isDateInTomorrow(d) ? String(localized: "Tomorrow · \(NgayCTW.ngan(d))") : thuNgayMay(d))

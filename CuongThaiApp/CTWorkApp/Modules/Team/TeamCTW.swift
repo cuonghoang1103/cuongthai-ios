@@ -83,11 +83,11 @@ struct TeamCTW: View {
             if let t = vm.tongQuan?.totals {
                 Section {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), spacing: 10)], spacing: 10) {
-                        CTWODem(so: "\(t.members ?? thanhVien.count)", nhan: "Members", bieuTuong: "person.2.fill")
-                        CTWODem(so: "\(t.inProgress ?? 0)", nhan: "In progress", bieuTuong: "play.circle.fill", mau: AppColors.info)
-                        CTWODem(so: "\(t.overdue ?? 0)", nhan: "Overdue", bieuTuong: "clock.badge.exclamationmark.fill",
+                        CTWODem(so: "\(t.members ?? thanhVien.count)", nhan: String(localized: "Members"), bieuTuong: "person.2.fill")
+                        CTWODem(so: "\(t.inProgress ?? 0)", nhan: String(localized: "In progress"), bieuTuong: "play.circle.fill", mau: AppColors.info)
+                        CTWODem(so: "\(t.overdue ?? 0)", nhan: String(localized: "Overdue"), bieuTuong: "clock.badge.exclamationmark.fill",
                                 mau: (t.overdue ?? 0) > 0 ? AppColors.error : AppColors.textSecondary)
-                        CTWODem(so: "\(t.reviews ?? 0)", nhan: "Waiting for review", bieuTuong: "eye.fill", mau: AppColors.warning)
+                        CTWODem(so: "\(t.reviews ?? 0)", nhan: String(localized: "Waiting for review"), bieuTuong: "eye.fill", mau: AppColors.warning)
                     }
                 }
                 .listRowBackground(Color.clear)
@@ -132,7 +132,7 @@ struct TeamCTW: View {
             }
         }
         .confirmationDialog(
-            hoiDoi.map { "Change \($0.nguoi.ten)'s role to \($0.vaiTro.ten)?" } ?? "",
+            hoiDoi.map { String(localized: "Change \($0.nguoi.ten)'s role to \($0.vaiTro.ten)?") } ?? "",
             isPresented: Binding(get: { hoiDoi != nil }, set: { if !$0 { hoiDoi = nil } }),
             titleVisibility: .visible
         ) {
@@ -144,7 +144,7 @@ struct TeamCTW: View {
             Text(hoiDoi?.vaiTro.moTa ?? "")
         }
         .confirmationDialog(
-            "Remove \(hoiXoa?.ten ?? "this member") from the project?",
+            "Remove \(hoiXoa?.ten ?? String(localized: "this member")) from the project?",
             isPresented: Binding(get: { hoiXoa != nil }, set: { if !$0 { hoiXoa = nil } }),
             titleVisibility: .visible
         ) {
@@ -208,11 +208,11 @@ struct TeamCTW: View {
 
     private func khoiLuong(_ p: CTWTongQuanNhom.Nguoi) -> String {
         var s: [String] = []
-        if let n = p.inProgress, n > 0 { s.append("\(n) in progress") }
-        if let n = p.todo, n > 0 { s.append("\(n) to do") }
-        if let n = p.overdue, n > 0 { s.append("\(n) overdue") }
-        if let n = p.reviews, n > 0 { s.append("\(n) in review") }
-        return s.isEmpty ? "No open issues" : s.joined(separator: " · ")
+        if let n = p.inProgress, n > 0 { s.append(String(localized: "\(n) in progress")) }
+        if let n = p.todo, n > 0 { s.append(String(localized: "\(n) to do")) }
+        if let n = p.overdue, n > 0 { s.append(String(localized: "\(n) overdue")) }
+        if let n = p.reviews, n > 0 { s.append(String(localized: "\(n) in review")) }
+        return s.isEmpty ? String(localized: "No open issues") : s.joined(separator: " · ")
     }
 
     private func hangNhom(_ n: CTWNhomKhongGian) -> some View {
@@ -227,9 +227,9 @@ struct TeamCTW: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(n.name).font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(1)
                 let lead = ds.filter { $0.teamRole == "LEAD" || (n.leadIds ?? []).contains($0.id) }.map { $0.nguoi.ten }
-                Text([ "\(ds.count) member\(ds.count == 1 ? "" : "s")",
-                       lead.isEmpty ? nil : "Lead: \(lead.joined(separator: ", "))",
-                       (n.openIssues ?? 0) > 0 ? "\(n.openIssues!) open" : nil ].compactMap { $0 }.joined(separator: " · "))
+                Text([ ds.count == 1 ? String(localized: "1 member") : String(localized: "\(ds.count) members"),
+                       lead.isEmpty ? nil : String(localized: "Lead: \(lead.joined(separator: ", "))"),
+                       (n.openIssues ?? 0) > 0 ? String(localized: "\(n.openIssues ?? 0) open") : nil ].compactMap { $0 }.joined(separator: " · "))
                     .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1)
             }
             Spacer(minLength: 4)
@@ -283,8 +283,12 @@ struct MoiBangLinkCTW: View {
                         }
                         .padding(.vertical, 4)
                     } footer: {
-                        Text("Save or share it now — for security CT Work shows this link only once. "
-                             + "Works for \(k.maxUses ?? soLan) people\(CTW.ngayNgan(k.expiresAt).map { ", until \($0)" } ?? "").")
+                        let soNguoi = k.maxUses ?? soLan
+                        if let han = CTW.ngayNgan(k.expiresAt) {
+                            Text(String(localized: "Save or share it now — for security CT Work shows this link only once. Works for \(soNguoi) people, until \(han)."))
+                        } else {
+                            Text(String(localized: "Save or share it now — for security CT Work shows this link only once. Works for \(soNguoi) people."))
+                        }
                     }
                 } else {
                     Section {
@@ -308,7 +312,7 @@ struct MoiBangLinkCTW: View {
                     }
                     Section("Limits") {
                         Stepper("Up to \(soLan) people", value: $soLan, in: 1...200, step: soLan < 10 ? 1 : 5)
-                        Stepper("Expires in \(soNgay) day\(soNgay == 1 ? "" : "s")", value: $soNgay, in: 1...30)
+                        Stepper(soNgay == 1 ? String(localized: "Expires in 1 day") : String(localized: "Expires in \(soNgay) days"), value: $soNgay, in: 1...30)
                     }
                     if let loi {
                         Section { Text(loi).foregroundColor(AppColors.error).font(.ctw(size: 14)) }

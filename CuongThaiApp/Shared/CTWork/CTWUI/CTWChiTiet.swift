@@ -26,11 +26,14 @@ enum CTWMauTrangThai {
         }
     }
 
-    /// "IN_REVIEW" → "In review".
+    /// "IN_REVIEW" → "In review" (tiếng Việt: "Đang review").
+    /// Mã trạng thái của MÁY CHỦ (không phải tên người dùng tự đặt) ⇒ dịch qua bảng `TrangThaiCTW.xcstrings`
+    /// (khoá = mã viết hoa). Mã lạ / app chính (không có bảng) ⇒ chữ tiếng Anh tự dựng như cũ.
     static func nhan(_ s: String?) -> String {
         guard let s, !s.isEmpty else { return "—" }
         let t = s.replacingOccurrences(of: "_", with: " ").lowercased()
-        return t.prefix(1).uppercased() + t.dropFirst()
+        let tuDung = t.prefix(1).uppercased() + t.dropFirst()
+        return Bundle.main.localizedString(forKey: s.uppercased(), value: tuDung, table: "TrangThaiCTW")
     }
 }
 

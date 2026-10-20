@@ -30,13 +30,14 @@ struct CTWorkView: View {
     enum Phan: String, CaseIterable, Identifiable {
         case myWork = "My Work", projects = "Projects"
         var id: String { rawValue }
+        var ten: String { self == .myWork ? String(localized: "My Work") : String(localized: "Projects") }
     }
 
     var body: some View {
         NavigationStack(path: $duong) {
             VStack(spacing: 0) {
                 Picker("Section", selection: $phan) {
-                    ForEach(Phan.allCases) { Text($0.rawValue).tag($0) }
+                    ForEach(Phan.allCases) { Text($0.ten).tag($0) }
                 }
                 .pickerStyle(.segmented)
                 .padding(.horizontal, Spacing.md)
@@ -158,11 +159,11 @@ final class CTWMyWorkVM: ObservableObject {
             return r
         }
         let out: [(String, Color, [CTWMyWorkItem])] = [
-            ("Overdue", AppColors.error, lay { $0.bucket == "overdue" }),
-            ("Due today", AppColors.warning, lay { $0.bucket == "today" }),
-            ("Due soon", AppColors.accent, lay { $0.bucket == "soon" }),
-            ("In progress", AppColors.info, lay { $0.status?.category == "IN_PROGRESS" }),
-            ("Other", AppColors.textTertiary, lay { _ in true }),
+            (String(localized: "Overdue"), AppColors.error, lay { $0.bucket == "overdue" }),
+            (String(localized: "Due today"), AppColors.warning, lay { $0.bucket == "today" }),
+            (String(localized: "Due soon"), AppColors.accent, lay { $0.bucket == "soon" }),
+            (String(localized: "In progress"), AppColors.info, lay { $0.status?.category == "IN_PROGRESS" }),
+            (String(localized: "Other"), AppColors.textTertiary, lay { _ in true }),
         ]
         return out.filter { !$0.2.isEmpty }.map { (ten: $0.0, mau: $0.1, items: $0.2) }
     }
@@ -232,7 +233,7 @@ struct CTWMyWorkView: View {
         }
     }
 
-    private func o(_ ten: String, _ icon: String, _ so: Int, _ mau: Color) -> some View {
+    private func o(_ ten: LocalizedStringKey, _ icon: String, _ so: Int, _ mau: Color) -> some View {
         let dang = so > 0
         return VStack(spacing: 5) {
             Image(systemName: icon)
@@ -404,8 +405,8 @@ struct CTWWorkspacesView: View {
 
     private func moTa(_ ws: CTWWorkspace) -> String {
         var p: [String] = []
-        if let n = ws.projectCount { p.append(n == 1 ? "1 project" : "\(n) projects") }
-        if let n = ws.memberCount { p.append(n == 1 ? "1 member" : "\(n) members") }
+        if let n = ws.projectCount { p.append(n == 1 ? String(localized: "1 project") : String(localized: "\(n) projects")) }
+        if let n = ws.memberCount { p.append(n == 1 ? String(localized: "1 member") : String(localized: "\(n) members")) }
         if let r = ws.role { p.append(r.capitalized) }
         return p.joined(separator: " · ")
     }
@@ -465,7 +466,7 @@ struct CTWWorkspaceView: View {
     private func moTa(_ p: CTWProjectSummary) -> String {
         var s: [String] = []
         if let t = p.type { s.append(t.capitalized) }
-        if let n = p.openIssues { s.append(n == 1 ? "1 open issue" : "\(n) open issues") }
+        if let n = p.openIssues { s.append(n == 1 ? String(localized: "1 open issue") : String(localized: "\(n) open issues")) }
         if let r = p.role { s.append(r.capitalized) }
         return s.joined(separator: " · ")
     }

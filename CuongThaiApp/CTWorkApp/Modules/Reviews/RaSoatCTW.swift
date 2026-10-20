@@ -39,7 +39,7 @@ struct RaSoatCTW: View {
         List {
             if let loi = vm.loi { CTWErrorBanner(text: loi) { vm.loi = nil }.listRowBackground(Color.clear).listRowInsets(EdgeInsets()) }
             if vm.tatMoDun {
-                GovTatMoDun(ten: "Reviews").listRowBackground(Color.clear)
+                GovTatMoDun(ten: String(localized: "Reviews")).listRowBackground(Color.clear)
             } else if let ds = vm.ds {
                 let loc = ds.filter { !chiMo || $0.status != "CLOSED" }
                 Section {
@@ -52,8 +52,8 @@ struct RaSoatCTW: View {
                 .listRowBackground(Color.clear)
                 .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
                 if loc.isEmpty {
-                    CTWOTrong(bieuTuong: "text.magnifyingglass", tieuDe: ds.isEmpty ? "No reviews yet" : "No open reviews",
-                              moTa: "Formal reviews and inspections of documents and code, with a checklist and defect log. Plan them on the web; run the checklist here.")
+                    CTWOTrong(bieuTuong: "text.magnifyingglass", tieuDe: ds.isEmpty ? String(localized: "No reviews yet") : String(localized: "No open reviews"),
+                              moTa: String(localized: "Formal reviews and inspections of documents and code, with a checklist and defect log. Plan them on the web; run the checklist here."))
                         .listRowBackground(Color.clear)
                 } else {
                     Section {
@@ -90,13 +90,13 @@ struct RaSoatCTW: View {
             HStack(spacing: 6) {
                 Text(r.nhanKhoa).font(.ctw(size: 12, weight: .semibold).monospaced()).foregroundColor(AppColors.textSecondary)
                 CTWChipChu(chu: r.status)
-                CTWNhanNho(chu: r.kind == "CODE" ? "Code" : "Document", bieuTuong: r.kind == "CODE" ? "chevron.left.forwardslash.chevron.right" : "doc.text")
+                CTWNhanNho(chu: r.kind == "CODE" ? String(localized: "Code") : String(localized: "Document"), bieuTuong: r.kind == "CODE" ? "chevron.left.forwardslash.chevron.right" : "doc.text")
             }
             Text(r.title).font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(2)
             HStack(spacing: 10) {
                 Text(CTWMauTrangThai.nhan(r.method))
                 if let p = r.progress { Label("\(p)%", systemImage: "checklist") }
-                if let d = r.defects { Label("\(d) defect\(d == 1 ? "" : "s")", systemImage: "ladybug") }
+                if let d = r.defects { Label(d == 1 ? String(localized: "1 defect") : String(localized: "\(d) defects"), systemImage: "ladybug") }
                 if let n = r.participants { Label("\(n)", systemImage: "person.2") }
                 if let m = CTW.ngayNgan(r.meetingAt) { Label(m, systemImage: "calendar") }
             }
@@ -144,7 +144,7 @@ struct ChiTietRaSoatCTW: View {
             .frame(maxWidth: .infinity)
         }
         .background(AppColors.backgroundPrimary)
-        .navigationTitle(r?.nhanKhoa ?? "Review")
+        .navigationTitle(r?.nhanKhoa ?? String(localized: "Review"))
         .navigationBarTitleDisplayMode(.inline)
         .refreshable { await tai() }
         .task { if r == nil { await tai() } }
@@ -164,23 +164,23 @@ struct ChiTietRaSoatCTW: View {
             HStack(spacing: 6) {
                 CTWChipChu(chu: r.status)
                 CTWNhanNho(chu: CTWMauTrangThai.nhan(r.method), bieuTuong: "person.3")
-                CTWNhanNho(chu: r.kind == "CODE" ? "Code" : "Document", bieuTuong: r.kind == "CODE" ? "chevron.left.forwardslash.chevron.right" : "doc.text")
+                CTWNhanNho(chu: r.kind == "CODE" ? String(localized: "Code") : String(localized: "Document"), bieuTuong: r.kind == "CODE" ? "chevron.left.forwardslash.chevron.right" : "doc.text")
             }
             Text(r.title).font(.ctw(size: 22, weight: .bold)).foregroundColor(AppColors.textPrimary)
                 .fixedSize(horizontal: false, vertical: true).accessibilityAddTraits(.isHeader)
             CTWKhoiTruong {
                 if let p = r.page {
-                    NavigationLink(value: RouteTaiLieuCTW(pid: pid, so: p.number, ten: p.title ?? "Page")) {
-                        CTWHangTruong(nhan: "Work product", bieuTuong: "doc.text") { Text(p.title ?? "Page \(p.number)").lineLimit(1) }
+                    NavigationLink(value: RouteTaiLieuCTW(pid: pid, so: p.number, ten: p.title ?? String(localized: "Page"))) {
+                        CTWHangTruong(nhan: String(localized: "Work product"), bieuTuong: "doc.text") { Text(p.title ?? String(localized: "Page \(p.number)")).lineLimit(1) }
                     }.buttonStyle(.plain)
                     Divider()
                 } else if let w = r.workProduct, !w.isEmpty {
-                    CTWHangTruong("Work product", w, bieuTuong: "shippingbox"); Divider()
+                    CTWHangTruong(String(localized: "Work product"), w, bieuTuong: "shippingbox"); Divider()
                 }
-                CTWHangTruong("Checklist", r.checklistName ?? r.checklistKey, bieuTuong: "checklist")
-                if let m = r.meetingAt { Divider(); CTWHangTruong("Meeting", CTW.thoiDiem(m), bieuTuong: "calendar") }
+                CTWHangTruong(String(localized: "Checklist"), r.checklistName ?? r.checklistKey, bieuTuong: "checklist")
+                if let m = r.meetingAt { Divider(); CTWHangTruong(String(localized: "Meeting"), CTW.thoiDiem(m), bieuTuong: "calendar") }
                 Divider()
-                CTWHangTruong(nhan: "Decision", bieuTuong: "checkmark.seal") {
+                CTWHangTruong(nhan: String(localized: "Decision"), bieuTuong: "checkmark.seal") {
                     if r.suaDuoc && (r.status == "MEETING" || r.status == "FOLLOW_UP" || r.status == "REWORK") {
                         Menu {
                             ForEach(CTWReviewLuat.quyetDinh, id: \.self) { q in
@@ -203,11 +203,11 @@ struct ChiTietRaSoatCTW: View {
         let m = r.metrics
         let tienDo = Int((m?.checklistProgress ?? 0).rounded())
         return LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 10)], spacing: 10) {
-            CTWODem(so: "\(tienDo)%", nhan: "Checklist answered", bieuTuong: "checklist", mau: AppColors.primary)
-            CTWODem(so: "\(m?.defects ?? 0)", nhan: "Defects (\(m?.majorDefects ?? 0) major)", bieuTuong: "ladybug.fill", mau: AppColors.error)
-            CTWODem(so: so(m?.effortHours) + "h", nhan: "Total effort", bieuTuong: "clock", mau: AppColors.info)
+            CTWODem(so: "\(tienDo)%", nhan: String(localized: "Checklist answered"), bieuTuong: "checklist", mau: AppColors.primary)
+            CTWODem(so: "\(m?.defects ?? 0)", nhan: String(localized: "Defects (\(m?.majorDefects ?? 0) major)"), bieuTuong: "ladybug.fill", mau: AppColors.error)
+            CTWODem(so: String(localized: "\(so(m?.effortHours))h"), nhan: String(localized: "Total effort"), bieuTuong: "clock", mau: AppColors.info)
             if let d = m?.density {
-                CTWODem(so: so(d), nhan: "Defects per \(m?.sizeUnit == "LOC" ? "KLOC" : "page")", bieuTuong: "chart.bar", mau: AppColors.warning)
+                CTWODem(so: so(d), nhan: m?.sizeUnit == "LOC" ? String(localized: "Defects per KLOC") : String(localized: "Defects per page"), bieuTuong: "chart.bar", mau: AppColors.warning)
             }
         }
     }
@@ -249,12 +249,12 @@ struct ChiTietRaSoatCTW: View {
     private func nguoiThamGia(_ r: CTWReview) -> some View {
         let ds = r.participants ?? []
         if !ds.isEmpty {
-            CTWSectionHeader("person.2", "Participants", count: "\(ds.count)")
+            CTWSectionHeader("person.2", String(localized: "Participants"), count: "\(ds.count)")
             VStack(spacing: 0) {
                 ForEach(ds) { p in
                     HStack(spacing: 10) {
                         CTWAvatar(user: p.user, size: 28)
-                        Text(p.user?.ten ?? "Member").font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary)
+                        Text(p.user?.ten ?? String(localized: "Member")).font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary)
                         if p.user?.laAgent == true { CTWNhanAI() }
                         Spacer(minLength: 0)
                         if let m = p.prepMinutes, m > 0 { Text("\(m) min prep").font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary) }
@@ -311,7 +311,7 @@ struct ChiTietRaSoatCTW: View {
             if m.note != nil || m.severity != nil || m.line != nil || m.defect != nil || (m.result == "NG" && r.canEdit == true) {
                 HStack(spacing: 6) {
                     if let s = m.severity { CTWChipChu(chu: s) }
-                    if let l = m.line?.chu, !l.isEmpty { CTWNhanNho(chu: "Line \(l)", bieuTuong: "text.line.first.and.arrowtriangle.forward") }
+                    if let l = m.line?.chu, !l.isEmpty { CTWNhanNho(chu: String(localized: "Line \(l)"), bieuTuong: "text.line.first.and.arrowtriangle.forward") }
                     Spacer(minLength: 0)
                     if let d = m.defect {
                         NavigationLink(value: CTWRoute.the(pid: pid, so: d.number)) {
@@ -338,8 +338,8 @@ struct ChiTietRaSoatCTW: View {
 
     @ViewBuilder
     private func tieuChi(_ r: CTWReview) -> some View {
-        ForEach([("Entry criteria", "arrow.right.to.line", r.entryCriteria), ("Exit criteria", "arrow.left.to.line", r.exitCriteria),
-                 ("Notes", "note.text", r.notes)], id: \.0) { x in
+        ForEach([(String(localized: "Entry criteria"), "arrow.right.to.line", r.entryCriteria), (String(localized: "Exit criteria"), "arrow.left.to.line", r.exitCriteria),
+                 (String(localized: "Notes"), "note.text", r.notes)], id: \.0) { x in
             if let t = x.2?.trimmingCharacters(in: .whitespacesAndNewlines), !t.isEmpty {
                 CTWSectionHeader(x.1, x.0)
                 CTWMarkdownView(markdown: t, coChu: 14).padding(14).frame(maxWidth: .infinity, alignment: .leading).ctwThe(14)
@@ -387,7 +387,7 @@ struct ChiTietRaSoatCTW: View {
         do {
             let k: CTWReviewTaoLoi = try await APIClient.shared.request(CTWAPI.taoLoiTuMuc(pid: pid, so: so, mucId: m.id, mucDo: m.severity))
             CTWRung.thanhCong()
-            thongBao = "Created \(k.key ?? "defect")\(k.title.map { " — \($0)" } ?? "")."
+            thongBao = String(localized: "Created \(k.key ?? String(localized: "defect"))\(k.title.map { " — \($0)" } ?? "").")
             await tai()
         } catch { baoLoi(error) }
     }

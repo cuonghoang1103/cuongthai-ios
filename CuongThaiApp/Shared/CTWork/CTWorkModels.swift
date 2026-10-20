@@ -29,7 +29,7 @@ struct CTWUser: Codable, Hashable, Identifiable {
         for s in [displayName, fullName, username] {
             if let s, !s.trimmingCharacters(in: .whitespaces).isEmpty { return s }
         }
-        return "User #\(id)"
+        return String(localized: "User #\(id)")
     }
 
     /// Hai chữ cái đầu cho vòng tròn khi không có ảnh.
@@ -530,13 +530,14 @@ struct CTWNode: Codable, Hashable {
 
 enum CTW {
     /// 1 = Highest … 5 = Lowest (cùng thứ tự với Jira và với web).
-    static let doUuTien: [(so: Int, ten: String, bieuTuong: String, mau: Color)] = [
-        (1, "Highest", "chevron.up.2", Color(hex: 0xDC2626)),
-        (2, "High", "chevron.up", Color(hex: 0xEA580C)),
-        (3, "Medium", "equal", Color(hex: 0xCA8A04)),
-        (4, "Low", "chevron.down", AppColors.info),
-        (5, "Lowest", "chevron.down.2", Color(hex: 0x64748B)),
-    ]
+    /// Computed: tên mức dịch theo ngôn ngữ app lúc đọc (đổi ngôn ngữ trong app là đổi theo).
+    static var doUuTien: [(so: Int, ten: String, bieuTuong: String, mau: Color)] { [
+        (1, String(localized: "Highest"), "chevron.up.2", Color(hex: 0xDC2626)),
+        (2, String(localized: "High"), "chevron.up", Color(hex: 0xEA580C)),
+        (3, String(localized: "Medium"), "equal", Color(hex: 0xCA8A04)),
+        (4, String(localized: "Low"), "chevron.down", AppColors.info),
+        (5, String(localized: "Lowest"), "chevron.down.2", Color(hex: 0x64748B)),
+    ] }
 
     static func uuTien(_ p: Int?) -> (so: Int, ten: String, bieuTuong: String, mau: Color) {
         doUuTien.first { $0.so == (p ?? 3) } ?? doUuTien[2]
@@ -640,37 +641,38 @@ enum CTW {
     static func loi(_ e: Error) -> String {
         if let a = e as? APIError {
             switch a {
-            case .unauthorized: return "Your session has expired. Please sign in again."
-            case .networkError: return "Can't reach the server. Check your connection and try again."
-            case .decodingError: return "The server sent an unexpected response. Please update the app or try again later."
-            case .invalidURL, .noData, .unknown: return "Something went wrong. Please try again."
+            case .unauthorized: return String(localized: "Your session has expired. Please sign in again.")
+            case .networkError: return String(localized: "Can't reach the server. Check your connection and try again.")
+            case .decodingError: return String(localized: "The server sent an unexpected response. Please update the app or try again later.")
+            case .invalidURL, .noData, .unknown: return String(localized: "Something went wrong. Please try again.")
             case .coMa(let ma, let m):
                 // 3.1.1: câu hạn mức của máy chủ có thể mời "nâng cấp" — app iOS không được dẫn đi mua.
                 if ma == "WORK_QUOTA" || ma.hasSuffix("QUOTA_EXCEEDED") || CTW.coLoiMoiMua(m) {
-                    return "You've reached the limit for this action. Please try again later."
+                    return String(localized: "You've reached the limit for this action. Please try again later.")
                 }
-                return m
+                // Máy chủ chỉ nói tiếng Anh ⇒ dịch mã/câu quen thuộc khi app đang tiếng Việt (CTWLoiDich, bảng của web).
+                return CTWLoiDich.dich(ma: ma, cau: m) ?? m
             case .serverError(let m):
                 // Không có câu nào từ máy chủ ⇒ APIClient tự dựng "Máy chủ trả lỗi N."
                 if m.hasPrefix("Máy chủ trả lỗi") {
                     let so = m.filter(\.isNumber)
                     switch so {
-                    case "403": return "You don't have access to this."
-                    case "404": return "Not found. It may have been deleted, or CT Work isn't available yet."
-                    case "409": return "Someone else just changed this. Pull to refresh and try again."
-                    case "429": return "Too many requests. Please wait a moment."
-                    default: return "Server error (\(so)). Please try again."
+                    case "403": return String(localized: "You don't have access to this.")
+                    case "404": return String(localized: "Not found. It may have been deleted, or CT Work isn't available yet.")
+                    case "409": return String(localized: "Someone else just changed this. Pull to refresh and try again.")
+                    case "429": return String(localized: "Too many requests. Please wait a moment.")
+                    default: return String(localized: "Server error (\(so)). Please try again.")
                     }
                 }
-                if CTW.coLoiMoiMua(m) { return "This action isn't available right now." }
+                if CTW.coLoiMoiMua(m) { return String(localized: "This action isn't available right now.") }
                 // 404 của tuyến chưa mở trên máy chủ ("Route GET … not found").
                 if m.hasPrefix("Route ") && m.hasSuffix("not found") {
-                    return "CT Work isn't available on the server yet."
+                    return String(localized: "CT Work isn't available on the server yet.")
                 }
-                return m
+                return CTWLoiDich.dich(ma: nil, cau: m) ?? m
             }
         }
-        if e is URLError { return "Can't reach the server. Check your connection and try again." }
+        if e is URLError { return String(localized: "Can't reach the server. Check your connection and try again.") }
         return e.localizedDescription
     }
 

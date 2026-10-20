@@ -51,7 +51,7 @@ struct CTWAvatar: View {
                     .offset(x: size * 0.12, y: size * 0.12)
             }
         }
-        .accessibilityLabel(user.map { $0.laAgent ? "\($0.ten), AI agent" : $0.ten } ?? "Unassigned")
+        .accessibilityLabel(user.map { $0.laAgent ? String(localized: "\($0.ten), AI agent") : $0.ten } ?? String(localized: "Unassigned"))
     }
 }
 
@@ -66,7 +66,7 @@ struct CTWTypeIcon: View {
             .frame(width: size + 4, height: size + 4)
             .background(RoundedRectangle(cornerRadius: 4, style: .continuous)
                 .fill(CTW.mau(type?.color, macDinh: AppColors.info)))
-            .accessibilityLabel(type?.name ?? "Issue")
+            .accessibilityLabel(type?.name ?? String(localized: "Issue"))
     }
 }
 

@@ -131,7 +131,7 @@ struct GanttTLCTW: View {
                         let r = CGRect(x: f.x + 1, y: y, width: max(f.rong - 2, 4), height: 15)
                         let dangChay = (cfg?.sprints ?? []).first { $0.id == id }?.state == "ACTIVE"
                         ctx.fill(Path(roundedRect: r, cornerRadius: 4), with: .color(AppColors.primary.opacity(dangChay ? 0.28 : 0.13)))
-                        let ten = (cfg?.sprints ?? []).first { $0.id == id }?.name ?? (moc.sprints ?? []).first { $0.id == id }?.name ?? "Sprint"
+                        let ten = (cfg?.sprints ?? []).first { $0.id == id }?.name ?? (moc.sprints ?? []).first { $0.id == id }?.name ?? String(localized: "Sprint")
                         ctx.drawLayer { c in
                             c.clip(to: Path(r))
                             c.draw(Text(ten).font(.ctw(size: 10, weight: .semibold)).foregroundColor(AppColors.textPrimary),
@@ -147,7 +147,7 @@ struct GanttTLCTW: View {
                         ctx.fill(Path(roundedRect: r, cornerRadius: 4), with: .color(CTWMauChuoi.mau(2).opacity(s.status == "DONE" ? 0.18 : 0.32)))
                         ctx.drawLayer { c in
                             c.clip(to: Path(r))
-                            c.draw(Text("\(s.n ?? 0). \(s.name ?? "Stage")").font(.ctw(size: 10, weight: .semibold)).foregroundColor(AppColors.textPrimary),
+                            c.draw(Text("\(s.n ?? 0). \(s.name ?? String(localized: "Stage"))").font(.ctw(size: 10, weight: .semibold)).foregroundColor(AppColors.textPrimary),
                                    at: CGPoint(x: r.minX + 5, y: r.midY), anchor: .leading)
                         }
                     }
@@ -307,7 +307,7 @@ struct ThuocTLCTW: View {
                                  at: CGPoint(x: x + 5, y: 11), anchor: .leading)
                     }
                     if zoom == .quy {
-                        ctx.draw(Text(NgayCTW.ngan(d).prefix(3)).font(.ctw(size: 10)).foregroundColor(AppColors.textSecondary),
+                        ctx.draw(Text(CTWDinhDang.mau("MMM", muiGio: NgayCTW.mui).string(from: d)).font(.ctw(size: 10)).foregroundColor(AppColors.textSecondary),
                                  at: CGPoint(x: x + 4, y: 29), anchor: .leading)
                     }
                 }
