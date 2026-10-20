@@ -18855,6 +18855,16 @@
         }
       }
     },
+    "Pins are saved per project and sync with CT Work on the web and desktop.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mục ghim lưu theo từng dự án và đồng bộ với CT Work trên web và app desktop."
+          }
+        }
+      }
+    },
     "Plan": {
       "localizations": {
         "vi": {

@@ -187,7 +187,8 @@ struct CTWBoardView: View {
         lanGap = Set(d.stringArray(forKey: khoa + ".lanGap") ?? [])
         #if DEBUG
         if let n = ProcessInfo.processInfo.environment["CT_XEM_NHOM"], let g = CTWNhomBang(rawValue: n) { nhom = g }
-        if ProcessInfo.processInfo.environment["CT_XEM_CHON"] != nil { dangChon = true }
+        if ProcessInfo.processInfo.environment["CT_XEM_CHON"] != nil { dangChon = true; chon = [112, 114, 117] }
+        if ProcessInfo.processInfo.environment["CT_XEM_LOC"] != nil { loc.uuTien = [1, 2]; loc.nhan = [1]; loc.loai = [2, 4] }
         #endif
     }
     private func luuNho() {
@@ -755,11 +756,13 @@ struct CTWBoardView: View {
                             .padding(.horizontal, Spacing.md)
                             if !gap {
                                 ScrollView(.horizontal, showsIndicators: false) {
+                                    // Ô trong một làn cao bằng nhau (ô cao nhất quyết định) — như hàng của bảng làn trên web.
                                     HStack(alignment: .top, spacing: 8) {
                                         ForEach(vm.cot) { c in
                                             oLan(c, lan: l.lan, rongCot: cotGap.contains(c.key) ? Self.rongCotGap : rongCot)
                                         }
                                     }
+                                    .fixedSize(horizontal: false, vertical: true)
                                 }
                                 .contentMargins(.horizontal, Spacing.md, for: .scrollContent)
                             }
@@ -772,6 +775,9 @@ struct CTWBoardView: View {
                 }
                 .padding(.bottom, 16)
             }
+            // Epic tải SAU board ⇒ làn đổi thứ tự; LazyVStack giữ "neo cuộn" ở làn cũ (No epic, giờ nằm cuối) và đẩy
+            // các làn epic ra khỏi màn phía trên (đo 21/10 trên máy mô phỏng). Đổi id ⇒ dựng lại, về đầu.
+            .id("lan-\(nhom.rawValue)-\(vm.epics.count)")
             .refreshable { await vm.tai() }
         }
     }
@@ -860,6 +866,7 @@ struct CTWBoardView: View {
         }
         .padding(8)
         .frame(width: rongCot, alignment: .top)
+        .frame(maxHeight: .infinity, alignment: .top)
         .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
             .fill(laDich ? AppColors.primary.opacity(0.10) : AppColors.backgroundTertiary))
         .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -878,16 +885,16 @@ struct CTWBoardView: View {
                     CTWRung.chon()
                     if daChon { chon.remove(t.id) } else { chon.insert(t.id) }
                 } label: {
-                    CTWCardView(the: t, cauHinh: cfg)
-                        .overlay(alignment: .topTrailing) {
-                            Image(systemName: daChon ? "checkmark.circle.fill" : "circle")
-                                .font(.ctw(size: 18, weight: .semibold))
-                                .foregroundColor(daChon ? AppColors.primary : AppColors.textTertiary)
-                                .background(Circle().fill(AppColors.backgroundCard))
-                                .padding(6)
-                        }
-                        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .strokeBorder(daChon ? AppColors.primary : Color.clear, lineWidth: 2))
+                    // Ô chọn nằm CẠNH thẻ (không đè lên tiêu đề dài).
+                    HStack(alignment: .top, spacing: 6) {
+                        Image(systemName: daChon ? "checkmark.circle.fill" : "circle")
+                            .font(.ctw(size: 20, weight: .semibold))
+                            .foregroundColor(daChon ? AppColors.primary : AppColors.textTertiary)
+                            .padding(.top, 10)
+                        CTWCardView(the: t, cauHinh: cfg)
+                            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .strokeBorder(daChon ? AppColors.primary : Color.clear, lineWidth: 2))
+                    }
                 }
                 .buttonStyle(.plain)
                 .accessibilityAddTraits(daChon ? .isSelected : [])

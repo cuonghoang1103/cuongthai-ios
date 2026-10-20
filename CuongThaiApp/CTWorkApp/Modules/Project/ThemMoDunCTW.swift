@@ -149,6 +149,10 @@ struct ManThemCTW: View {
                 Text(beRong == .regular ? "Pin the tools you use most — pinned tools appear in the sidebar. Touch and hold a tool to pin or unpin it." : "Pin the tools you use most — pinned tools appear in Projects. Touch and hold a tool to pin or unpin it.")
                     .font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
+                // Đợt B (21/10/2026): ghim theo DỰ ÁN, đồng bộ với thanh bên web / app desktop (`work.navPins`).
+                Label("Pins are saved per project and sync with CT Work on the web and desktop.", systemImage: "arrow.triangle.2.circlepath")
+                    .font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
+                    .fixedSize(horizontal: false, vertical: true)
                 if nhom.isEmpty {
                     CTWOTrong(bieuTuong: "magnifyingglass", tieuDe: String(localized: "No tools match “\(tim)”"))
                 }

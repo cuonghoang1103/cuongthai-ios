@@ -314,3 +314,21 @@ không đọc `Accept-Language` (20/10/2026) — lỗi/thông báo đẩy luôn 
 (bảng lấy từ `frontend/src/components/work/i18n/errors.ts`).
 Chụp màn thử bằng tiếng Việt: `xcrun simctl spawn $U defaults write com.cuongthai.ctwork com.cuongthai.ctwork.ngonNgu vi`
 trước khi `simctl launch` (giá trị `system` | `vi` | `en`).
+
+## 14. Đợt B — Board · Backlog · List · tìm kiếm · ghim · tên mặc định (21/10/2026)
+
+- **Tên trạng thái/loại MẶC ĐỊNH dịch khi hiển thị** (web `i18n/names.ts`): `CTWTen.trangThai/loai/trangThaiCau` (Shared/CTWork/CTWUI/
+  CTWTenMacDinh.swift) + bảng `CTWorkApp/TenMacDinhCTW.xcstrings` (khoá `st.*`/`ty.*`). Chỉ tên mẫu ("To Do", "Story"…); tên tự đặt
+  giữ nguyên; ⛔ không bao giờ gửi tên đã dịch lên máy chủ (JQL, đổi trạng thái theo tên). `CTWStatusChip`/`CTWChonTrangThaiMenu` đã áp sẵn.
+- **Board** (Shared): bộ lọc + chia làn thuần ở `CTWBangNhom.swift` (port `grouping.ts`); nhóm theo/gập làn/gập cột nhớ theo dự án
+  (`ctw.bang.<pid>.*`). Epic tải riêng (`GET /issues?type=<epic>&includeDone`), bộ phận khi `modules.teams`.
+- **Sửa hàng loạt** dùng chung Board/Backlog/List: `CTWThanhHangLoat` + `CTWHangLoat` (`POST /issues/bulk`, đổi trạng thái THEO TÊN
+  mỗi quy trình một lượt — web `board/bulk.ts`). API ở `Shared/CTWork/CTWAPI+KeHoach.swift`.
+- **Backlog** = `Modules/Backlog/KeHoachSprintCTW.swift` (ScrollView + `dropDestination` từng hàng; xếp hạng `CTWXepHang` ⇒
+  `POST /issues/:n/move {sprintId?, beforeIssueId, afterIssueId}`). **List** = `DanhSachCTW.swift` (JQL `JqlCTW.swift`, bộ lọc đã lưu,
+  sắp xếp, trường hiện `ctw.list.cot`, xuất CSV). Tìm mọi dự án = `MyWork/TimKiemNangCaoCTW.swift` (`/search` + `/search/facets`).
+- **Ghim** đồng bộ web: `Project/GhimDongBoCTW.swift` (`users.preferences.work.navPins`, cốt lõi = web `coreFor` + `ai`), store
+  `GhimMoDunCTW` (ThemMoDunCTW.swift). PATCH chỉ gửi `work.navPins.<pid>`.
+- Màn thử: `board` + `CT_XEM_NHOM=assignee|epic|priority|subtasks`, `CT_XEM_LOC=1`, `CT_XEM_CHON=1` · `backlog` + `CT_XEM_DICH=backlog|124`
+  · `list` + `CT_XEM_JQL=…` (`CT_XEM_GO=1` mở bàn phím, thấy gợi ý) · `timkiem` · `them`. Dữ liệu mẫu: `Debug/XemThuCTW+DotB.swift`.
+- Kiểm thử: `CTWorkTests/DotBTests.swift`.

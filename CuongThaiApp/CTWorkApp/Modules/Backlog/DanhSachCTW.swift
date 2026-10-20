@@ -294,6 +294,18 @@ struct DanhSachCTW: View {
                 await vm.chay(jql)
                 await vm.taiBoLoc()
             }
+            #if DEBUG
+            // Màn thử: `SIMCTL_CHILD_CT_XEM_JQL="assignee = "` ⇒ điền sẵn + mở bàn phím để thấy gợi ý.
+            if let q = ProcessInfo.processInfo.environment["CT_XEM_JQL"] {
+                jql = q
+                if ProcessInfo.processInfo.environment["CT_XEM_GO"] != nil {
+                    try? await Task.sleep(nanoseconds: 600_000_000)
+                    dangGo = true
+                } else {
+                    await vm.chay(q)
+                }
+            }
+            #endif
         }
     }
 

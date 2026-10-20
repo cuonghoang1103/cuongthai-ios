@@ -200,7 +200,11 @@ struct KeHoachSprintCTW: View {
         }
         .task { if vm.backlog == nil { await vm.tai() } }
         #if DEBUG
-        .onAppear { if ProcessInfo.processInfo.environment["CT_XEM_CHON"] != nil { dangChon = true; chon = [117, 120] } }
+        .onAppear {
+            if ProcessInfo.processInfo.environment["CT_XEM_CHON"] != nil { dangChon = true; chon = [117, 120] }
+            // Màn thử đích thả: vạch chèn trên một hàng của Backlog (kéo thật không chụp được bằng simctl).
+            if let d = ProcessInfo.processInfo.environment["CT_XEM_DICH"] { dich = d }
+        }
         #endif
     }
 

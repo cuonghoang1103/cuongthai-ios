@@ -195,4 +195,25 @@ final class DotBTests: XCTestCase {
         XCTAssertEqual(nhom, [4: [1, 2]]); XCTAssertTrue(thieu.isEmpty)
         XCTAssertEqual(CTWHangLoat.nhomTheoTen(c, the: [the(1)], ten: "Nope").thieu, [1])
     }
+
+    // MARK: Bộ lọc cơ bản ⇒ JQL (List + tìm toàn cục) — luôn TÊN GỐC kể cả khi app đang tiếng Việt
+
+    func testBoLocCoBanThanhJqlTenGoc() {
+        let cu = NgonNguCTW.cheDo
+        defer { NgonNguCTW.dat(cu) }
+        NgonNguCTW.dat(.vi); CTWDinhDang.locale = NgonNguCTW.locale
+        var l = CTWAPI.BoLoc()
+        l.type = [2, 4]; l.status = [2]; l.assignee = [1, 0, 3]; l.label = [1]; l.sprint = "backlog"; l.q = "say \"hi\""
+        let j = DanhSachCTW.tuCoBan(l, uuTien: [2, 1], cfg: cfg, toi: 1)
+        XCTAssertEqual(j, #"type IN (Story, Bug) AND status = "In Progress" AND assignee IN (currentUser(), EMPTY, minh) AND labels = ios AND priority IN (Highest, High) AND sprint IS EMPTY AND summary ~ "say \"hi\"""#)
+        XCTAssertEqual(DanhSachCTW.tuCoBan(CTWAPI.BoLoc(), uuTien: [], cfg: cfg, toi: 1), "statusCategory != Done")
+    }
+
+    func testTimToanCucThanhJql() {
+        var b = BoLocTimCTW()
+        XCTAssertEqual(b.jql(coChu: false), "ORDER BY updated DESC")
+        b.duAn = ["NW", "WEB"]; b.nhom = ["DONE", "TODO"]; b.nguoi = ["me", "none"]; b.capNhat = 7; b.loai = ["Bug"]
+        XCTAssertEqual(b.jql(coChu: true), #"project IN (NW, WEB) AND type = Bug AND statusCategory IN ("To Do", Done) AND assignee IN (currentUser(), EMPTY) AND updated >= -7d"#)
+        XCTAssertTrue(b.jql(coChu: false).hasSuffix("ORDER BY updated DESC"), "không có chữ ⇒ mới cập nhật lên đầu")
+    }
 }
