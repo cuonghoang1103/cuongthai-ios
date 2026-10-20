@@ -57,9 +57,14 @@ struct CTWIssueMoTaView: View {
         }
         #if DEBUG
         .task {
-            if ProcessInfo.processInfo.environment["CT_XEM_MAN"]?.lowercased() == "the:suamota" {
+            let man = ProcessInfo.processInfo.environment["CT_XEM_MAN"]?.lowercased()
+            if man == "the:suamota" {
                 try? await Task.sleep(nanoseconds: 700_000_000)
                 dangSoan = true
+            } else if man == "the:tick" {
+                // Chụp màn: tick ô việc thứ 3 ("Works when the app was force-quit") như người dùng bấm.
+                try? await Task.sleep(nanoseconds: 1_500_000_000)
+                await vm.doiViec(2)
             }
         }
         #endif

@@ -554,6 +554,7 @@ struct CTWIssueView: View {
             Image(systemName: "ellipsis.circle")
         }
         .accessibilityLabel("More actions")
+        .accessibilityIdentifier("ctw.the.menu")
     }
 
     private func nhanBan() async {
@@ -589,7 +590,7 @@ struct CTWIssueView: View {
                 }
                 dau(t, cfg)
                 CTWIssueTruongView(vm: vm, t: t, cfg: cfg, moRong: moRong)
-                CTWIssueMoTaView(vm: vm, coTheSua: cfg.coTheSua)
+                CTWIssueMoTaView(vm: vm, coTheSua: cfg.coTheSua).id("moTa")
                 CTWIssueTheConView(vm: vm, t: t, cfg: cfg) { tamPhu = .taoTheCon }.id("theCon")
                 dinhKem(t, cfg)
                 thanhTab(t)
@@ -631,7 +632,7 @@ struct CTWIssueView: View {
             let dich: [String: (KhoiHoatDong?, String)] = [
                 "binhluan": (.binhLuan, "hoatDong"), "lichsu": (.lichSu, "hoatDong"),
                 "the:lienket": (.lienKet, "hoatDong"), "the:nhatky": (.nhatKy, "hoatDong"),
-                "the:thecon": (nil, "theCon"), "the:ghigio": (nil, "ghiGio"), "the:tuychinh": (nil, "tuyChinh"),
+                "the:thecon": (nil, "theCon"), "the:tick": (nil, "moTa"), "the:ghigio": (nil, "ghiGio"), "the:tuychinh": (nil, "tuyChinh"),
             ]
             guard let (k, id) = dich[man] else { return }
             if let k { khoiHoatDong = k }
