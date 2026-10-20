@@ -39,6 +39,7 @@ enum DuLieuGiaMoDun {
     /// Mỗi mảng MỘT dòng.
     static let boXuLy: [(String, String, [String: Any]) -> Any?] = [
         DuLieuGiaTaoCM.route,
+        DuLieuGiaAIUsage.route,
         DuLieuGiaDichVu.route,
         DuLieuGiaDocs.route,
         DuLieuGiaGovernance.route,
