@@ -811,6 +811,22 @@
         }
       }
     },
+    "%@ · shared by %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ · shared by %2$@"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ · %2$@ chia sẻ"
+          }
+        }
+      }
+    },
     "%@ – %@": {
       "localizations": {
         "en": {
@@ -992,6 +1008,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@, AI agent"
+          }
+        }
+      }
+    },
+    "%@, collapsed, %lld issues": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@, collapsed, %2$lld issues"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@, đã thu gọn, %2$lld thẻ"
           }
         }
       }
@@ -1576,12 +1608,44 @@
         }
       }
     },
+    "%lld issues %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld issues %2$@"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld thẻ: %2$@"
+          }
+        }
+      }
+    },
     "%lld issues are not done yet.": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Còn %lld thẻ chưa xong."
+          }
+        }
+      }
+    },
+    "%lld issues couldn't be changed: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld issues couldn't be changed: %2$@"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld thẻ không đổi được: %2$@"
           }
         }
       }
@@ -3008,6 +3072,26 @@
         }
       }
     },
+    "1 issue %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 thẻ: %@"
+          }
+        }
+      }
+    },
+    "1 issue couldn't be changed: %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 thẻ không đổi được: %@"
+          }
+        }
+      }
+    },
     "1 issue due today: %@": {
       "localizations": {
         "vi": {
@@ -3487,6 +3571,16 @@
         }
       }
     },
+    "AGENT or HUMAN": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AGENT hoặc HUMAN"
+          }
+        }
+      }
+    },
     "AI agent": {
       "localizations": {
         "vi": {
@@ -3503,6 +3597,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Chi phí AI agent (ước lượng)"
+          }
+        }
+      }
+    },
+    "AI agent · %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI agent · %@"
           }
         }
       }
@@ -4813,6 +4917,16 @@
         }
       }
     },
+    "Any time": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bất kỳ lúc nào"
+          }
+        }
+      }
+    },
     "Anyone": {
       "localizations": {
         "vi": {
@@ -5235,6 +5349,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bài viết"
+          }
+        }
+      }
+    },
+    "Ascending": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tăng dần"
           }
         }
       }
@@ -5691,6 +5815,16 @@
         }
       }
     },
+    "Backlog options": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tuỳ chọn Backlog"
+          }
+        }
+      }
+    },
     "Before closing": {
       "localizations": {
         "vi": {
@@ -6015,6 +6149,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Có sẵn (chạy trên CT Work)"
+          }
+        }
+      }
+    },
+    "Bulk actions": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thao tác hàng loạt"
           }
         }
       }
@@ -6969,6 +7113,16 @@
         }
       }
     },
+    "Clear": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xoá"
+          }
+        }
+      }
+    },
     "Clear all": {
       "localizations": {
         "vi": {
@@ -7005,6 +7159,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Xoá bộ lọc"
+          }
+        }
+      }
+    },
+    "Clear query": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xoá truy vấn"
+          }
+        }
+      }
+    },
+    "Clear selection": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bỏ chọn"
           }
         }
       }
@@ -7209,6 +7383,26 @@
         }
       }
     },
+    "Collapse all lanes": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thu gọn tất cả làn"
+          }
+        }
+      }
+    },
+    "Collapse column %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thu gọn cột %@"
+          }
+        }
+      }
+    },
     "Collapsed": {
       "localizations": {
         "vi": {
@@ -7265,6 +7459,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bình luận (bắt buộc khi từ chối)"
+          }
+        }
+      }
+    },
+    "Comment contains (~)": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bình luận chứa (~)"
           }
         }
       }
@@ -7515,6 +7719,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Hoàn thành ÷ cam kết"
+          }
+        }
+      }
+    },
+    "Component name": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tên thành phần"
           }
         }
       }
@@ -8115,6 +8329,16 @@
         }
       }
     },
+    "Create, start or complete sprints": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tạo, bắt đầu hoặc hoàn thành sprint"
+          }
+        }
+      }
+    },
     "Created": {
       "localizations": {
         "vi": {
@@ -8431,6 +8655,16 @@
         }
       }
     },
+    "Date: 2026-09-01, -7d, startOfWeek()": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ngày: 2026-09-01, -7d, startOfWeek()"
+          }
+        }
+      }
+    },
     "Dates": {
       "localizations": {
         "vi": {
@@ -8627,6 +8861,36 @@
         }
       }
     },
+    "Delete %lld issues?": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xoá %lld thẻ?"
+          }
+        }
+      }
+    },
+    "Delete 1 issue?": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xoá 1 thẻ?"
+          }
+        }
+      }
+    },
+    "Delete a filter": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xoá một bộ lọc"
+          }
+        }
+      }
+    },
     "Delete account": {
       "localizations": {
         "vi": {
@@ -8717,6 +8981,16 @@
         }
       }
     },
+    "Delete this saved filter?": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xoá bộ lọc đã lưu này?"
+          }
+        }
+      }
+    },
     "Delete this sprint?": {
       "localizations": {
         "vi": {
@@ -8733,6 +9007,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Xoá nhật ký giờ"
+          }
+        }
+      }
+    },
+    "Delete “%@”": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xoá “%@”"
           }
         }
       }
@@ -8789,6 +9073,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Đã xoá (%lld)"
+          }
+        }
+      }
+    },
+    "Deleted filter “%@”": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã xoá bộ lọc “%@”"
+          }
+        }
+      }
+    },
+    "Deleted issues go to the project trash.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thẻ bị xoá sẽ vào thùng rác của dự án."
           }
         }
       }
@@ -8903,6 +9207,16 @@
         }
       }
     },
+    "Descending": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giảm dần"
+          }
+        }
+      }
+    },
     "Describe it — steps, links, what you expected…": {
       "localizations": {
         "vi": {
@@ -8929,6 +9243,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mô tả (không bắt buộc)"
+          }
+        }
+      }
+    },
+    "Description contains (~)": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mô tả chứa (~)"
           }
         }
       }
@@ -9283,6 +9607,16 @@
         }
       }
     },
+    "Done selecting": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn xong"
+          }
+        }
+      }
+    },
     "Draft": {
       "localizations": {
         "vi": {
@@ -9319,6 +9653,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Kéo thẻ giữa các cột"
+          }
+        }
+      }
+    },
+    "Drag issues here to plan this sprint": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kéo thẻ vào đây để lên kế hoạch sprint này"
           }
         }
       }
@@ -9845,6 +10189,16 @@
         }
       }
     },
+    "Epic": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Epic"
+          }
+        }
+      }
+    },
     "Epic %@ · %@": {
       "localizations": {
         "en": {
@@ -10133,12 +10487,42 @@
         }
       }
     },
+    "Expand all columns": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mở rộng tất cả cột"
+          }
+        }
+      }
+    },
+    "Expand all lanes": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mở rộng tất cả làn"
+          }
+        }
+      }
+    },
     "Expanded": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Đang mở"
+          }
+        }
+      }
+    },
+    "Expands the column": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mở rộng cột"
           }
         }
       }
@@ -10303,6 +10687,16 @@
         }
       }
     },
+    "Export CSV": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xuất CSV"
+          }
+        }
+      }
+    },
     "Export the full RTM (Excel) from the web.": {
       "localizations": {
         "vi": {
@@ -10454,6 +10848,16 @@
       }
     },
     "Field": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trường"
+          }
+        }
+      }
+    },
+    "Fields": {
       "localizations": {
         "vi": {
           "stringUnit": {
@@ -10615,6 +11019,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Lọc thẻ"
+          }
+        }
+      }
+    },
+    "Filter name": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tên bộ lọc"
           }
         }
       }
@@ -10855,6 +11269,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Định dạng"
+          }
+        }
+      }
+    },
+    "Former member": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cựu thành viên"
           }
         }
       }
@@ -11561,6 +11985,16 @@
         }
       }
     },
+    "Highest … Lowest": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Highest … Lowest"
+          }
+        }
+      }
+    },
     "History": {
       "localizations": {
         "vi": {
@@ -11943,6 +12377,16 @@
         }
       }
     },
+    "Inserts this into the query": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chèn vào truy vấn"
+          }
+        }
+      }
+    },
     "Inside another page": {
       "localizations": {
         "vi": {
@@ -12133,6 +12577,16 @@
         }
       }
     },
+    "Issue key": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mã thẻ"
+          }
+        }
+      }
+    },
     "Issue status": {
       "localizations": {
         "vi": {
@@ -12149,6 +12603,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tiêu đề thẻ"
+          }
+        }
+      }
+    },
+    "Issue type": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loại thẻ"
           }
         }
       }
@@ -12323,6 +12787,16 @@
         }
       }
     },
+    "JQL query": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Truy vấn JQL"
+          }
+        }
+      }
+    },
     "Join": {
       "localizations": {
         "vi": {
@@ -12483,6 +12957,16 @@
         }
       }
     },
+    "Key": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mã"
+          }
+        }
+      }
+    },
     "Key numbers": {
       "localizations": {
         "vi": {
@@ -12529,6 +13013,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nhãn"
+          }
+        }
+      }
+    },
+    "Label name": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tên nhãn"
           }
         }
       }
@@ -12583,12 +13077,32 @@
         }
       }
     },
+    "Last 24 hours": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "24 giờ qua"
+          }
+        }
+      }
+    },
     "Last 30 days": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "30 ngày qua"
+          }
+        }
+      }
+    },
+    "Last 7 days": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "7 ngày qua"
           }
         }
       }
@@ -12925,6 +13439,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Danh sách"
+          }
+        }
+      }
+    },
+    "List options": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tuỳ chọn danh sách"
           }
         }
       }
@@ -13887,6 +14411,16 @@
         }
       }
     },
+    "Move down": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chuyển xuống"
+          }
+        }
+      }
+    },
     "Move issue": {
       "localizations": {
         "vi": {
@@ -13917,6 +14451,36 @@
         }
       }
     },
+    "Move to bottom": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chuyển xuống cuối"
+          }
+        }
+      }
+    },
+    "Move to sprint…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chuyển sang sprint…"
+          }
+        }
+      }
+    },
+    "Move to top": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chuyển lên đầu"
+          }
+        }
+      }
+    },
     "Move to…": {
       "localizations": {
         "vi": {
@@ -13933,6 +14497,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Chuyển thẻ chưa xong sang"
+          }
+        }
+      }
+    },
+    "Move up": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chuyển lên"
           }
         }
       }
@@ -14249,6 +14823,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cần ghi nguồn"
+          }
+        }
+      }
+    },
+    "Negate": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phủ định"
           }
         }
       }
@@ -15183,6 +15767,16 @@
         }
       }
     },
+    "No grouping": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không nhóm"
+          }
+        }
+      }
+    },
     "No groups match": {
       "localizations": {
         "vi": {
@@ -15254,6 +15848,7 @@
       }
     },
     "No issues in this sprint": {
+      "extractionState": "stale",
       "localizations": {
         "vi": {
           "stringUnit": {
@@ -15299,6 +15894,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Không thẻ nào khớp bộ lọc này."
+          }
+        }
+      }
+    },
+    "No issues match this query.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không có thẻ nào khớp truy vấn này."
           }
         }
       }
@@ -15544,6 +16149,7 @@
       }
     },
     "No open issues.": {
+      "extractionState": "stale",
       "localizations": {
         "vi": {
           "stringUnit": {
@@ -15903,6 +16509,16 @@
         }
       }
     },
+    "No saved filters yet": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa có bộ lọc nào được lưu"
+          }
+        }
+      }
+    },
     "No saved versions yet": {
       "localizations": {
         "vi": {
@@ -16009,6 +16625,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Chưa có bảng chấm công nào được nộp."
+          }
+        }
+      }
+    },
+    "No team": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa có nhóm"
           }
         }
       }
@@ -17409,6 +18035,16 @@
         }
       }
     },
+    "Other issues": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thẻ khác"
+          }
+        }
+      }
+    },
     "Other links": {
       "localizations": {
         "vi": {
@@ -17715,6 +18351,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Việc song song"
+          }
+        }
+      }
+    },
+    "Parent issue key": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mã thẻ cha"
           }
         }
       }
@@ -18743,6 +19389,16 @@
         }
       }
     },
+    "Project key": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mã dự án"
+          }
+        }
+      }
+    },
     "Project role": {
       "localizations": {
         "vi": {
@@ -19219,6 +19875,16 @@
         }
       }
     },
+    "Rank": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thứ hạng"
+          }
+        }
+      }
+    },
     "Rationale": {
       "localizations": {
         "vi": {
@@ -19395,6 +20061,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Các lần chạy gần đây"
+          }
+        }
+      }
+    },
+    "Recent searches": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tìm kiếm gần đây"
           }
         }
       }
@@ -21091,6 +21767,16 @@
         }
       }
     },
+    "Run query": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chạy truy vấn"
+          }
+        }
+      }
+    },
     "Running for a long time": {
       "localizations": {
         "vi": {
@@ -21211,6 +21897,16 @@
         }
       }
     },
+    "Save current query…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lưu truy vấn hiện tại…"
+          }
+        }
+      }
+    },
     "Save details": {
       "localizations": {
         "vi": {
@@ -21237,6 +21933,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Lưu ước lượng…"
+          }
+        }
+      }
+    },
+    "Save filter": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lưu bộ lọc"
           }
         }
       }
@@ -21283,6 +21989,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Hãy lưu hoặc chia sẻ ngay — vì bảo mật CT Work chỉ hiện link này một lần. Dùng được cho %lld người."
+          }
+        }
+      }
+    },
+    "Saved filter “%@”": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã lưu bộ lọc “%@”"
+          }
+        }
+      }
+    },
+    "Saved filters": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bộ lọc đã lưu"
           }
         }
       }
@@ -21787,12 +22513,42 @@
         }
       }
     },
+    "Select": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn"
+          }
+        }
+      }
+    },
+    "Select all": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn tất cả"
+          }
+        }
+      }
+    },
     "Select for issue creation": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Chọn để tạo thẻ"
+          }
+        }
+      }
+    },
+    "Select issues": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn thẻ"
           }
         }
       }
@@ -22165,6 +22921,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Chia sẻ với khách & gửi"
+          }
+        }
+      }
+    },
+    "Share with the project": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chia sẻ với dự án"
           }
         }
       }
@@ -22807,6 +23573,26 @@
         }
       }
     },
+    "Sort by": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sắp xếp theo"
+          }
+        }
+      }
+    },
+    "Sort results": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sắp xếp kết quả"
+          }
+        }
+      }
+    },
     "Source": {
       "localizations": {
         "vi": {
@@ -22903,6 +23689,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mục tiêu sprint"
+          }
+        }
+      }
+    },
+    "Sprint name or openSprints()": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tên sprint hoặc openSprints()"
           }
         }
       }
@@ -23439,6 +24235,16 @@
         }
       }
     },
+    "Status name": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tên trạng thái"
+          }
+        }
+      }
+    },
     "Status: %@": {
       "localizations": {
         "vi": {
@@ -23455,6 +24261,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Trạng thái: %@. Đổi"
+          }
+        }
+      }
+    },
+    "Status: %@. Change status": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trạng thái: %@. Đổi trạng thái"
           }
         }
       }
@@ -23805,6 +24621,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Chạm + để chụp ảnh hoặc đính kèm ảnh chụp màn hình những gì bạn thấy."
+          }
+        }
+      }
+    },
+    "Tap issues to select them": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chạm vào thẻ để chọn"
           }
         }
       }
@@ -24271,6 +25097,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Trợ lý đọc thẻ, tài liệu và tệp của dự án trước khi trả lời, và gắn link mọi thẻ nó nhắc tới."
+          }
+        }
+      }
+    },
+    "The backlog changed while you were dragging. It has been refreshed — try again.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Backlog đã thay đổi trong lúc bạn kéo. Đã tải lại — hãy thử lại."
           }
         }
       }
@@ -24885,6 +25721,16 @@
         }
       }
     },
+    "This issue's workflow has no “%@” status": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quy trình của thẻ này không có trạng thái “%@”"
+          }
+        }
+      }
+    },
     "This item is frozen in an approved baseline. Raise a change request that lists it and get it approved before editing.": {
       "localizations": {
         "vi": {
@@ -25421,6 +26267,16 @@
         }
       }
     },
+    "Title contains (~)": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiêu đề chứa (~)"
+          }
+        }
+      }
+    },
     "Title is required": {
       "localizations": {
         "vi": {
@@ -25431,12 +26287,32 @@
         }
       }
     },
+    "Title, description or comments": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiêu đề, mô tả hoặc bình luận"
+          }
+        }
+      }
+    },
     "To": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Đến"
+          }
+        }
+      }
+    },
+    "To Do · In Progress · Done": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To Do · In Progress · Done"
           }
         }
       }
@@ -25907,6 +26783,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Loại (N/A/B)"
+          }
+        }
+      }
+    },
+    "Type at least 2 characters, or pick a filter above.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gõ ít nhất 2 ký tự, hoặc chọn một bộ lọc ở trên."
           }
         }
       }
@@ -26533,6 +27419,26 @@
         }
       }
     },
+    "Username or currentUser()": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tên đăng nhập hoặc currentUser()"
+          }
+        }
+      }
+    },
+    "Username, currentUser() or EMPTY": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tên đăng nhập, currentUser() hoặc EMPTY"
+          }
+        }
+      }
+    },
     "VND": {
       "localizations": {
         "vi": {
@@ -26749,6 +27655,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Xem toàn màn hình"
+          }
+        }
+      }
+    },
+    "View options": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tuỳ chọn hiển thị"
           }
         }
       }
@@ -28479,6 +29395,16 @@
         }
       }
     },
+    "added to %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "đã thêm vào %@"
+          }
+        }
+      }
+    },
     "added you to %@": {
       "localizations": {
         "vi": {
@@ -28833,6 +29759,16 @@
         }
       }
     },
+    "deleted": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "đã xoá"
+          }
+        }
+      }
+    },
     "docs missing": {
       "localizations": {
         "vi": {
@@ -28909,6 +29845,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "vd: Bài nộp đã được lưu"
+          }
+        }
+      }
+    },
+    "e.g. assignee = currentUser() AND statusCategory != Done": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "vd. assignee = currentUser() AND statusCategory != Done"
           }
         }
       }
@@ -28999,6 +29945,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "theo điểm"
+          }
+        }
+      }
+    },
+    "function": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "hàm"
           }
         }
       }
@@ -29163,6 +30119,16 @@
         }
       }
     },
+    "labelled %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "đã gắn nhãn %@"
+          }
+        }
+      }
+    },
     "max %@": {
       "localizations": {
         "vi": {
@@ -29267,6 +30233,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "đã chuyển từ %@ sang %@"
+          }
+        }
+      }
+    },
+    "moved to %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "đã chuyển sang %@"
           }
         }
       }
@@ -29443,6 +30419,16 @@
         }
       }
     },
+    "priority set to %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "đã đặt độ ưu tiên %@"
+          }
+        }
+      }
+    },
     "probability": {
       "localizations": {
         "vi": {
@@ -29489,6 +30475,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "đã gỡ %@"
+          }
+        }
+      }
+    },
+    "removed from epic": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "đã bỏ khỏi epic"
           }
         }
       }
@@ -29831,12 +30827,32 @@
         }
       }
     },
+    "true / false": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "true / false"
+          }
+        }
+      }
+    },
     "type": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "loại"
+          }
+        }
+      }
+    },
+    "unassigned": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "đã bỏ giao"
           }
         }
       }

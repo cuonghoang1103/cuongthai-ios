@@ -717,15 +717,17 @@ struct CTWBoardView: View {
         .dropDestination(for: String.self) { items, _ in thaVao(items, c) } isTargeted: { dichDoi($0, khoaDich) }
     }
 
-    private func oTrong(_ laDich: Bool) -> some View {
+    /// Ô trống: cột thường cao 64 + "No issues"; ô trong làn gọn (36, không chữ) để làn thưa không chiếm cả màn.
+    private func oTrong(_ laDich: Bool, gon: Bool = false) -> some View {
         RoundedRectangle(cornerRadius: 10, style: .continuous)
             .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [5, 4]))
             .foregroundColor(laDich ? AppColors.primary : AppColors.border)
-            .frame(height: 64)
+            .frame(height: gon ? 36 : 64)
             .overlay {
                 if laDich { Text("Drop here").font(.ctw(size: 13, weight: .medium)).foregroundColor(AppColors.primary) }
-                else { Text("No issues").font(.ctw(size: 13)).foregroundColor(AppColors.textTertiary) }
+                else if !gon { Text("No issues").font(.ctw(size: 13)).foregroundColor(AppColors.textTertiary) }
             }
+            .accessibilityLabel(laDich ? Text("Drop here") : Text("No issues"))
     }
 
     // MARK: Làn (swimlane)
@@ -853,7 +855,7 @@ struct CTWBoardView: View {
             } else {
                 dauCot(c, so: ds.count, coNutGap: false)
                 ForEach(ds) { t in theBang(t, rong: rongCot - 16) }
-                if ds.isEmpty { oTrong(laDich) }
+                if ds.isEmpty { oTrong(laDich, gon: true) }
             }
         }
         .padding(8)
