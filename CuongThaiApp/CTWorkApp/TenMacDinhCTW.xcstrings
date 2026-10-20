@@ -1,0 +1,384 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "st.backlog": {
+      "comment": "Tên mặc định của trạng thái/loại thẻ — CTWTen (web i18n/names.ts)",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Backlog"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Backlog"
+          }
+        }
+      }
+    },
+    "st.closed": {
+      "comment": "Tên mặc định của trạng thái/loại thẻ — CTWTen (web i18n/names.ts)",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Closed"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã đóng"
+          }
+        }
+      }
+    },
+    "st.codeReview": {
+      "comment": "Tên mặc định của trạng thái/loại thẻ — CTWTen (web i18n/names.ts)",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Code Review"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Code review"
+          }
+        }
+      }
+    },
+    "st.doing": {
+      "comment": "Tên mặc định của trạng thái/loại thẻ — CTWTen (web i18n/names.ts)",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doing"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang làm"
+          }
+        }
+      }
+    },
+    "st.done": {
+      "comment": "Tên mặc định của trạng thái/loại thẻ — CTWTen (web i18n/names.ts)",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hoàn thành"
+          }
+        }
+      }
+    },
+    "st.fixed": {
+      "comment": "Tên mặc định của trạng thái/loại thẻ — CTWTen (web i18n/names.ts)",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fixed"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã sửa"
+          }
+        }
+      }
+    },
+    "st.inProgress": {
+      "comment": "Tên mặc định của trạng thái/loại thẻ — CTWTen (web i18n/names.ts)",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In Progress"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang làm"
+          }
+        }
+      }
+    },
+    "st.inReview": {
+      "comment": "Tên mặc định của trạng thái/loại thẻ — CTWTen (web i18n/names.ts)",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In Review"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang review"
+          }
+        }
+      }
+    },
+    "st.open": {
+      "comment": "Tên mặc định của trạng thái/loại thẻ — CTWTen (web i18n/names.ts)",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mở"
+          }
+        }
+      }
+    },
+    "st.qa": {
+      "comment": "Tên mặc định của trạng thái/loại thẻ — CTWTen (web i18n/names.ts)",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "QA"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "QA"
+          }
+        }
+      }
+    },
+    "st.reopened": {
+      "comment": "Tên mặc định của trạng thái/loại thẻ — CTWTen (web i18n/names.ts)",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reopened"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mở lại"
+          }
+        }
+      }
+    },
+    "st.retest": {
+      "comment": "Tên mặc định của trạng thái/loại thẻ — CTWTen (web i18n/names.ts)",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retest"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retest"
+          }
+        }
+      }
+    },
+    "st.selected": {
+      "comment": "Tên mặc định của trạng thái/loại thẻ — CTWTen (web i18n/names.ts)",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selected"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã chọn"
+          }
+        }
+      }
+    },
+    "st.toDo": {
+      "comment": "Tên mặc định của trạng thái/loại thẻ — CTWTen (web i18n/names.ts)",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To Do"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cần làm"
+          }
+        }
+      }
+    },
+    "ty.bug": {
+      "comment": "Tên mặc định của trạng thái/loại thẻ — CTWTen (web i18n/names.ts)",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bug"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bug"
+          }
+        }
+      }
+    },
+    "ty.epic": {
+      "comment": "Tên mặc định của trạng thái/loại thẻ — CTWTen (web i18n/names.ts)",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Epic"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Epic"
+          }
+        }
+      }
+    },
+    "ty.requirement": {
+      "comment": "Tên mặc định của trạng thái/loại thẻ — CTWTen (web i18n/names.ts)",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Requirement"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yêu cầu"
+          }
+        }
+      }
+    },
+    "ty.story": {
+      "comment": "Tên mặc định của trạng thái/loại thẻ — CTWTen (web i18n/names.ts)",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Story"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Story"
+          }
+        }
+      }
+    },
+    "ty.subtask": {
+      "comment": "Tên mặc định của trạng thái/loại thẻ — CTWTen (web i18n/names.ts)",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sub-task"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Việc con"
+          }
+        }
+      }
+    },
+    "ty.task": {
+      "comment": "Tên mặc định của trạng thái/loại thẻ — CTWTen (web i18n/names.ts)",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Task"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Task"
+          }
+        }
+      }
+    },
+    "ty.test": {
+      "comment": "Tên mặc định của trạng thái/loại thẻ — CTWTen (web i18n/names.ts)",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Test"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Test"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

@@ -71,7 +71,7 @@ struct CTWTypeIcon: View {
             .frame(width: size + 4, height: size + 4)
             .background(RoundedRectangle(cornerRadius: 4, style: .continuous)
                 .fill(CTW.mau(type?.color, macDinh: AppColors.info)))
-            .accessibilityLabel(type?.name ?? String(localized: "Issue"))
+            .accessibilityLabel(type.map { CTWTen.loai($0.name) } ?? String(localized: "Issue"))
     }
 }
 
@@ -100,7 +100,7 @@ struct CTWStatusChip: View {
         let laTodo = category != "IN_PROGRESS" && category != "DONE"
         HStack(spacing: 5) {
             CTWStatusGlyph(category: category, co: CTWCoChu.co(11))
-            Text(CTWKieuWeb.chuCau(ten ?? "—"))
+            Text(verbatim: ten.map(CTWTen.trangThaiCau) ?? "—")
                 .font(.ctw(size: 12, weight: .medium))
                 .foregroundColor(laTodo ? AppColors.textSecondary : AppColors.textPrimary)
                 .lineLimit(1)
@@ -111,7 +111,7 @@ struct CTWStatusChip: View {
         .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous)
             .strokeBorder(laTodo ? AppColors.border : mau.opacity(0.30), lineWidth: 0.5))
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text("Status: \(ten ?? "")"))
+        .accessibilityLabel(Text("Status: \(ten.map(CTWTen.trangThai) ?? "")"))
     }
 }
 

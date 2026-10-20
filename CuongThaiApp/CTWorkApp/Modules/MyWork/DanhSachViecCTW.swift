@@ -389,7 +389,7 @@ struct DanhSachViecCTW: View {
             default: return Text("No due date")
             }
         case .duAn(_, let ten, _): return Text(verbatim: ten)
-        case .trangThai(let ten, _): return Text(verbatim: CTWKieuWeb.chuCau(ten))
+        case .trangThai(let ten, _): return Text(verbatim: CTWTen.trangThaiCau(ten))
         }
     }
 
@@ -418,7 +418,7 @@ struct DanhSachViecCTW: View {
                 .background(RoundedRectangle(cornerRadius: 5, style: .continuous)
                     .fill(CTW.mau(i.type?.color, macDinh: AppColors.info)))
                 .padding(.top, 1)
-                .accessibilityLabel(Text(verbatim: i.type?.name ?? ""))
+                .accessibilityLabel(Text(verbatim: CTWTen.loai(i.type?.name ?? "")))
             VStack(alignment: .leading, spacing: 6) {
                 Text(i.title)
                     .font(.ctw(size: 15, weight: .medium))
@@ -563,7 +563,7 @@ struct ChuyenNhanhCTW: View {
                                 Button { Task { await chuyen(s, t) } } label: {
                                     HStack(spacing: 10) {
                                         CTWStatusGlyph(category: s.category, co: 14)
-                                        Text(verbatim: CTWKieuWeb.chuCau(s.name)).foregroundColor(AppColors.textPrimary)
+                                        Text(verbatim: CTWTen.trangThaiCau(s.name)).foregroundColor(AppColors.textPrimary)
                                         Spacer()
                                         if dangGui == s.id { ProgressView() }
                                         else if s.id == t.statusId {

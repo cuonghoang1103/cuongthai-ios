@@ -268,7 +268,7 @@ struct CTWMyWorkView: View {
             if let s = item.status?.name {
                 HStack(spacing: 4) {
                     Circle().fill(CTW.mauNhom(item.status?.category)).frame(width: 5, height: 5)
-                    Text(s).font(.ctw(size: 11, weight: .semibold))
+                    Text(verbatim: CTWTen.trangThai(s)).font(.ctw(size: 11, weight: .semibold))
                         .foregroundColor(CTW.mauNhom(item.status?.category)).fixedSize()
                 }
             }

@@ -31,14 +31,16 @@ extension XemThuCTW {
 /// Trả `nil` = không phải đường của mô-đun nào ⇒ về bộ định tuyến lõi.
 enum DuLieuGiaMoDun {
     static func route(_ m: String, _ p: String, _ b: [String: Any]) -> Any? {
-        guard p.hasPrefix("/work/") else { return nil }
+        // `/users/me/preferences`: ghim mô-đun đồng bộ web (đợt B — `work.navPins`).
+        guard p.hasPrefix("/work/") || p == "/users/me/preferences" else { return nil }
         for f in boXuLy { if let r = f(m, p, b) { return r } }
         return nil
     }
 
     /// Mỗi mảng MỘT dòng.
     static let boXuLy: [(String, String, [String: Any]) -> Any?] = [
-        DuLieuGiaSuaThe.route,      // mảng A (sửa thẻ) — ĐẦU: bổ sung cấu hình dự án + chi tiết thẻ
+        DuLieuGiaDotB.route,        // mảng B — ĐẦU: /users/me/preferences (ghim) + board có epic, JQL, bulk, tìm toàn cục
+        DuLieuGiaSuaThe.route,      // mảng A (sửa thẻ): bổ sung cấu hình dự án + chi tiết thẻ (epic ?type=1 đã do B trả trước)
         DuLieuGiaDichVu.route,
         DuLieuGiaDocs.route,
         DuLieuGiaGovernance.route,
