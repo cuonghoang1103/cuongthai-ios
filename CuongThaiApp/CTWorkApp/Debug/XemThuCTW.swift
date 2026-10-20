@@ -66,6 +66,8 @@ enum XemThuCTW {
         // mô-đun — `moDunMoSan`); iPad: mở thẳng mục thanh bên.
         case "board", "backlog", "list", "docs", "trang": app.muc = .moDun(moDunMoSan ?? "board")
         case "issue", "lichsu", "binhluan": app.muc = .viecCuaToi; app.ctWorkDich = CTWDich(slug: "northwind", maDuAn: "NW", so: 12)
+        // Mảng A (sửa thẻ): `the:<màn>` — xem XemThuCTW+SuaThe.swift.
+        case let x where x.hasPrefix("the:"): app.muc = .viecCuaToi; app.ctWorkDich = CTWDich(slug: "northwind", maDuAn: "NW", so: 12)
         case "chat": app.muc = .moDun("chat")
         case "kenh":
             app.muc = .moDun("chat")

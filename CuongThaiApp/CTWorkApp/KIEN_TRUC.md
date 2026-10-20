@@ -314,3 +314,20 @@ không đọc `Accept-Language` (20/10/2026) — lỗi/thông báo đẩy luôn 
 (bảng lấy từ `frontend/src/components/work/i18n/errors.ts`).
 Chụp màn thử bằng tiếng Việt: `xcrun simctl spawn $U defaults write com.cuongthai.ctwork com.cuongthai.ctwork.ngonNgu vi`
 trước khi `simctl launch` (giá trị `system` | `vi` | `en`).
+
+## 14. Sửa thẻ đầy đủ như web (mảng A, 20/10/2026)
+
+- **Mô tả:** REST chỉ nhận `descriptionJson` (TipTap) — app tự đổi Markdown ⇄ TipTap ở `Shared/CTWork/CTWMoTaThe.swift` (bộ nút =
+  bộ của `RichEditor`/`docMarkdown.ts`). Mô tả có nhắc tên/bảng/dấu lạ ⇒ không cho soạn (nói lý do). Tick ô việc ở chế độ đọc sửa
+  thẳng JSON THÔ (`CTWJSON` — lossless; ⛔ đừng ghi lại qua `CTWNode`, nó bỏ `attrs`/`marks`). 409 ⇒ giữ nháp, Lưu lần nữa = ghi đè.
+- **Một phản hồi, hai model:** `CTWIssueVM` đọc `/issues/:n` và `/projects/:pid` THÔ (`requestRaw` + `CTWAPI.giaiMa`) ⇒ model lõi
+  (`CTWIssueDetail`, `CTWProjectConfig` — không sửa) + phần thêm (`CTWIssueThem`, `CTWCauHinhThem`) trong `CTWModels+IssueEdit.swift`.
+- **Khối:** `CTWIssueTruongView` (Details/Planning/More, trường tuỳ chỉnh, thời gian) · `CTWIssueMoTaView` · `CTWIssueTheConView` +
+  `CTWIssueLienKetView` · `CTWIssueThemView.swift` (Work log, tài liệu, link web, Share to channel, Move to project) · bảng chọn chung
+  `CTWBoChonThe.swift`. Menu "…": Clone · Move · Delete (hỏi lại) · Share to channel. Tab: Activity/Comments/History/Work log/Links.
+- **Móc app riêng:** `CTWIssueView(moRong: .ctwApp)` (`Modules/IssueEdit/MoRongTheCTW.swift`) cắm `NutGhiGioTheCTW` + mở trang Docs;
+  app chính để `nil`.
+- **Màn thử:** `the:suamota · the:tick · the:tuychinh · the:thecon · the:lienket · the:ghigio · the:nhatky · the:taothe · the:chiase ·
+  the:chuyen` (`Debug/XemThuCTW+SuaThe.swift`). Chụp: `ChupSuaTheUITests` với `TEST_RUNNER_CTW_CHUP_A=<thư mục>`.
+- **Không làm (thiếu tuyến / ngoài mảng):** sửa số phút của worklog (máy chủ chỉ PATCH activity/workProduct), "Draft with AI" khi tạo thẻ
+  (mảng C + đồng ý 5.1.2(i)), đổi loại thẻ (PATCH từ chối `typeKey`).

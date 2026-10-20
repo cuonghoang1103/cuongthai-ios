@@ -19,27 +19,43 @@ final class CTWIssueVM: ObservableObject {
     let pid: Int
     let so: Int
     @Published var cauHinh: CTWProjectConfig?
+    /// Phần cấu hình lõi không khai (phiên bản, component, trường tuỳ chỉnh, đơn vị ước lượng) — cùng phản hồi.
+    @Published var cauHinhThem: CTWCauHinhThem?
     @Published var the: CTWIssueDetail?
+    /// Phần thẻ lõi không khai + mô tả THÔ (để ghi lại không mất định dạng) — cùng phản hồi.
+    @Published var them: CTWIssueThem?
     @Published var binhLuan: [CTWComment] = []
     @Published var lichSu: [CTWHistory]?
+    @Published var nhatKyGio: [CTWWorklogThe]?
     @Published var loi: String?
     @Published var dangGui = false
     @Published var dangTaiLen = false
+    /// Thẻ đã bị xoá / chuyển đi ⇒ màn tự đóng.
+    @Published var daRoi = false
+    /// Lần lưu gần nhất hỏng vì 409 (có người sửa chen) — thẻ đã được nạp lại.
+    var vuaXungDot = false
 
     init(pid: Int, so: Int) { self.pid = pid; self.so = so }
 
     func tai() async {
         do {
-            async let c: CTWProjectConfig = APIClient.shared.request(.workDuAn(pid: pid))
-            async let t: CTWIssueDetail = APIClient.shared.request(.workThe(pid: pid, so: so))
-            let (cc, tt) = try await (c, t)
-            cauHinh = cc
-            the = tt
+            async let c = APIClient.shared.requestRaw(.workDuAn(pid: pid))
+            async let t = APIClient.shared.requestRaw(.workThe(pid: pid, so: so))
+            let (dc, dt) = try await (c, t)
+            cauHinh = try CTWAPI.giaiMa(CTWProjectConfig.self, dc)
+            cauHinhThem = try? CTWAPI.giaiMa(CTWCauHinhThem.self, dc)
+            try nhanThe(dt)
             loi = nil
         } catch {
             loi = CTW.loi(error)
         }
         await taiBinhLuan()
+    }
+
+    /// Đọc MỘT phản hồi thẻ bằng hai model.
+    private func nhanThe(_ d: Data) throws {
+        the = try CTWAPI.giaiMa(CTWIssueDetail.self, d)
+        them = try? CTWAPI.giaiMa(CTWIssueThem.self, d)
     }
 
     func taiBinhLuan() async {
@@ -54,28 +70,111 @@ final class CTWIssueVM: ObservableObject {
         do {
             lichSu = try await APIClient.shared.request(CTWAPI.lichSu(pid: pid, so: so))
         } catch {
+            if !Self.laHuy(error) { loi = CTW.loi(error) }
+        }
+    }
+
+    func taiNhatKyGio() async {
+        do {
+            nhatKyGio = try await APIClient.shared.request(CTWAPI.nhatKyGio(pid: pid, so: so))
+        } catch {
+            guard !Self.laHuy(error) else { return }
+            if nhatKyGio == nil { nhatKyGio = [] }
             loi = CTW.loi(error)
         }
     }
 
-    private func napLaiThe() async {
-        if let moi: CTWIssueDetail = try? await APIClient.shared.request(.workThe(pid: pid, so: so)) { the = moi }
+    private var dangTaiLichSu = false
+    private var dangTaiGio = false
+
+    /// Tab cần lịch sử / nhật ký giờ mà chưa có ⇒ tải trong Task RIÊNG: `.task(id:)` của màn đổi id ngay khi
+    /// một phần tải xong và huỷ phần kia — huỷ hiện thành "Không kết nối được máy chủ" (đo 21/10 khi chụp màn).
+    func damBaoHoatDong(lichSu canLS: Bool, gio canGio: Bool) {
+        if canLS, lichSu == nil, !dangTaiLichSu {
+            dangTaiLichSu = true
+            Task { await taiLichSu(); dangTaiLichSu = false }
+        }
+        if canGio, nhatKyGio == nil, !dangTaiGio {
+            dangTaiGio = true
+            Task { await taiNhatKyGio(); dangTaiGio = false }
+        }
     }
 
-    /// PATCH một nhóm trường. `null` gửi bằng `NSNull()`.
-    func sua(_ truong: [String: Any]) async {
-        guard let t = the else { return }
+    static func laHuy(_ e: Error) -> Bool {
+        if e is CancellationError { return true }
+        if (e as? URLError)?.code == .cancelled { return true }
+        if case APIError.networkError(let u)? = e as? APIError, (u as? URLError)?.code == .cancelled { return true }
+        return false
+    }
+
+    func napLaiThe() async {
+        if let d = try? await APIClient.shared.requestRaw(.workThe(pid: pid, so: so)) { try? nhanThe(d) }
+    }
+
+    /// PATCH một nhóm trường. `null` gửi bằng `NSNull()`. Trả `true` khi lưu được.
+    @discardableResult
+    func sua(_ truong: [String: Any]) async -> Bool {
+        guard let t = the else { return false }
         var than = truong
-        if let v = t.version { than["version"] = v }
+        if let v = them?.version ?? t.version { than["version"] = v }
+        dangGui = true
+        defer { dangGui = false }
+        vuaXungDot = false
+        do {
+            try nhanThe(try await APIClient.shared.requestRaw(CTWAPI.suaThe(pid: pid, so: so, than)))
+            loi = nil
+            lichSu = nil
+            return true
+        } catch {
+            loi = CTW.loi(error)
+            vuaXungDot = CTW.laXungDot(error)
+            if vuaXungDot { await napLaiThe() }
+            CTWRung.loi()
+            return false
+        }
+    }
+
+    /// Tick/bỏ tick ô việc thứ `chiSo` trong mô tả — sửa JSON THÔ (giữ mọi định dạng khác), kèm `version`.
+    func doiViec(_ chiSo: Int) async {
+        guard let goc = them?.descriptionJson, let moi = CTWMoTaThe.doiViec(goc, chiSo: chiSo) else { return }
+        // Lạc quan: đổi ngay trên màn, hỏng thì `sua` nạp lại.
+        let cu = them?.descriptionJson
+        them?.descriptionJson = moi
+        the?.descriptionJson = moi.nut
+        CTWRung.chon()
+        if !(await sua(["descriptionJson": moi.any])) && them?.descriptionJson == moi {
+            them?.descriptionJson = cu
+            the?.descriptionJson = cu?.nut
+        }
+    }
+
+    /// Lưu mô tả từ markdown. Trả `nil` khi xong; khác ⇒ câu lỗi (bản nháp giữ nguyên ở màn soạn).
+    func luuMoTa(_ md: String) async -> String? {
+        let t = md.trimmingCharacters(in: .whitespacesAndNewlines)
+        let gt: Any = t.isEmpty ? NSNull() : CTWMoTaThe.doc(t).any
+        if await sua(["descriptionJson": gt]) { CTWRung.thanhCong(); return nil }
+        if vuaXungDot {
+            loi = nil
+            return String(localized: "Someone else changed this issue while you were editing. Your text is kept — tap Save again to replace their version, or Cancel to keep theirs.")
+        }
+        return loi ?? String(localized: "Couldn't save. Please try again.")
+    }
+
+    /// Thao tác thẻ con/liên kết… xong ⇒ nạp lại thẻ (lấy `children`/`links` mới).
+    func goi(_ e: APIEndpoint, thanhCong: Bool = true) async -> Bool {
         dangGui = true
         defer { dangGui = false }
         do {
-            the = try await APIClient.shared.request(.workSuaThe(pid: pid, so: so, than: than))
-            loi = nil
+            try await APIClient.shared.send(e)
+            await napLaiThe()
             lichSu = nil
+            loi = nil
+            if thanhCong { CTWRung.thanhCong() }
+            return true
         } catch {
             loi = CTW.loi(error)
-            if CTW.laXungDot(error) { await napLaiThe() }
+            CTWRung.loi()
+            return false
         }
     }
 
@@ -197,14 +296,45 @@ final class CTWIssueVM: ObservableObject {
 }
 
 /// Một tấm phủ duy nhất cho màn (bẫy C5: hai `.sheet` trên một view thì chỉ
-/// cái cuối chạy).
+/// cái cuối chạy). Tấm phủ của từng khối (trường, mô tả, liên kết…) gắn ở view con của khối đó.
 private enum TamPhuThe: Identifiable {
     case suaBinhLuan(CTWComment)
     case mayAnh
+    /// "Details…" của Sub-tasks — hộp tạo thẻ đầy đủ, thẻ cha điền sẵn.
+    case taoTheCon
+    /// Hộp tạo thẻ (chỉ cửa xem thử DEBUG `the:taothe`).
+    case taoThe
+    case chiaSe
+    case chuyenDuAn
     var id: String {
         switch self {
         case .suaBinhLuan(let c): return "sua-\(c.id)"
         case .mayAnh: return "mayanh"
+        case .taoTheCon: return "taocon"
+        case .taoThe: return "tao"
+        case .chiaSe: return "chiase"
+        case .chuyenDuAn: return "chuyen"
+        }
+    }
+}
+
+/// Một mục của tab Activity (bình luận · lịch sử · nhật ký giờ, xếp theo thời gian như web).
+private enum MucHoatDong: Identifiable {
+    case binhLuan(CTWComment)
+    case lichSu(CTWHistory)
+    case gio(CTWWorklogThe)
+    var id: String {
+        switch self {
+        case .binhLuan(let c): return "c\(c.id)"
+        case .lichSu(let h): return "h\(h.id)"
+        case .gio(let w): return "w\(w.id)"
+        }
+    }
+    var luc: String {
+        switch self {
+        case .binhLuan(let c): return c.createdAt ?? ""
+        case .lichSu(let h): return h.createdAt ?? ""
+        case .gio(let w): return w.createdAt ?? w.startedAt ?? ""
         }
     }
 }
@@ -215,12 +345,11 @@ struct CTWIssueView: View {
     @ObservedObject private var an = AnNoiDungCTW.shared
     @EnvironmentObject private var appState: AppState
     @Environment(\.openURL) private var moURL
+    @Environment(\.dismiss) private var dong
 
     @State private var dangSuaTieuDe = false
     @State private var tieuDeNhap = ""
     @State private var binhLuanNhap = ""
-    @State private var chonNgay = false
-    @State private var ngayNhap = Date()
     @State private var hoiChan: CTWUser?
     /// Bình luận đang chờ chọn lý do báo cáo.
     @State private var baoCao: CTWComment?
@@ -231,20 +360,37 @@ struct CTWIssueView: View {
     @State private var moChonAnh = false
     @State private var moChonTep = false
     @State private var xemNhanh: URL?
-    @State private var khoiHoatDong: KhoiHoatDong = .binhLuan
+    @State private var khoiHoatDong: KhoiHoatDong = .tatCa
+    @State private var hoiXoaThe = false
+    /// Vừa nhân bản ⇒ số thẻ mới (hỏi "Open").
+    @State private var daNhanBan: Int?
+    @State private var moTheSo: Int?
+    @State private var moThe = false
+    @State private var daChuyen: CTWKetQuaChuyenDuAn?
 
     enum KhoiHoatDong: String, CaseIterable, Identifiable {
-        case binhLuan = "Comments", lichSu = "History"
+        case tatCa, binhLuan, lichSu, nhatKy, lienKet
         var id: String { rawValue }
-        var ten: String { self == .binhLuan ? String(localized: "Comments") : String(localized: "History") }
+        var ten: String {
+            switch self {
+            case .tatCa: return String(localized: "Activity")
+            case .binhLuan: return String(localized: "Comments")
+            case .lichSu: return String(localized: "History")
+            case .nhatKy: return String(localized: "Work log")
+            case .lienKet: return String(localized: "Links")
+            }
+        }
     }
 
     /// Gọi MỘT lần khi thẻ tải xong (app CT Work: ghi "thẻ đã xem" cho Spotlight/Share Extension).
     private let khiMo: ((CTWIssueDetail, CTWProjectConfig) -> Void)?
+    /// Móc của app CT Work (ghi giờ, mở tài liệu). App chính để `nil`.
+    private let moRong: CTWIssueMoRong?
 
-    init(pid: Int, so: Int, khiMo: ((CTWIssueDetail, CTWProjectConfig) -> Void)? = nil) {
+    init(pid: Int, so: Int, khiMo: ((CTWIssueDetail, CTWProjectConfig) -> Void)? = nil, moRong: CTWIssueMoRong? = nil) {
         _vm = StateObject(wrappedValue: CTWIssueVM(pid: pid, so: so))
         self.khiMo = khiMo
+        self.moRong = moRong
     }
 
     var body: some View {
@@ -323,33 +469,85 @@ struct CTWIssueView: View {
                 Task { await vm.xoaBinhLuan(c) }
             }
         }
+        .confirmationDialog(
+            vm.cauHinh.map { String(localized: "Delete \($0.key)-\(vm.so)?") } ?? "",
+            isPresented: $hoiXoaThe, titleVisibility: .visible
+        ) {
+            Button("Delete issue", role: .destructive) { Task { await xoaThe() } }
+        } message: {
+            Text("The issue and its sub-tasks move to the project's trash. Admins can restore them from the web.")
+        }
         .alert(daBaoCao ?? "", isPresented: Binding(get: { daBaoCao != nil }, set: { if !$0 { daBaoCao = nil } })) {
             Button("OK", role: .cancel) {}
         }
-        .sheet(item: $tamPhu) { tp in
-            switch tp {
-            case .suaBinhLuan(let c):
-                CTWSuaBinhLuanView(chuBanDau: c.bodyJson?.chuTron ?? "") { chu in
-                    await vm.suaBinhLuan(c, chu: chu)
-                }
-            case .mayAnh:
-                #if os(iOS)
-                MayAnh { du in
-                    Task { await vm.taiLen(du: du, ten: String(localized: "Photo \(CTW.tenTepTheoGio()).jpg"), kieu: "image/jpeg") }
-                }
-                .ignoresSafeArea()
-                #else
-                EmptyView()
-                #endif
+        .alert(daNhanBan.map { n in String(localized: "Cloned as \(vm.cauHinh?.key ?? "")-\(n)") } ?? "",
+               isPresented: Binding(get: { daNhanBan != nil }, set: { if !$0 { daNhanBan = nil } })) {
+            Button("Open") { moTheSo = daNhanBan; moThe = true }
+            Button("OK", role: .cancel) {}
+        }
+        .alert(String(localized: "Moved to \(daChuyen?.key ?? "")"),
+               isPresented: Binding(get: { daChuyen != nil }, set: { if !$0 { daChuyen = nil; dong() } })) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            if let bo = daChuyen?.dropped, !bo.isEmpty {
+                Text("Not carried over: \(bo.joined(separator: ", "))")
             }
         }
+        .navigationDestination(isPresented: $moThe) {
+            if let n = moTheSo { CTWIssueView(pid: vm.pid, so: n, khiMo: khiMo, moRong: moRong) }
+        }
+        .sheet(item: $tamPhu) { tp in tamPhuView(tp) }
         .ctwXemTep($xemNhanh)
+        #if DEBUG
+        .task {
+            let man = ProcessInfo.processInfo.environment["CT_XEM_MAN"]?.lowercased()
+            guard man == "the:taothe" || man == "the:chiase" || man == "the:chuyen" else { return }
+            try? await Task.sleep(nanoseconds: 900_000_000)
+            tamPhu = man == "the:taothe" ? .taoThe : (man == "the:chiase" ? .chiaSe : .chuyenDuAn)
+        }
+        #endif
+    }
+
+    @ViewBuilder
+    private func tamPhuView(_ tp: TamPhuThe) -> some View {
+        switch tp {
+        case .suaBinhLuan(let c):
+            CTWSuaBinhLuanView(chuBanDau: c.bodyJson?.chuTron ?? "") { chu in
+                await vm.suaBinhLuan(c, chu: chu)
+            }
+        case .mayAnh:
+            #if os(iOS)
+            MayAnh { du in
+                Task { await vm.taiLen(du: du, ten: String(localized: "Photo \(CTW.tenTepTheoGio()).jpg"), kieu: "image/jpeg") }
+            }
+            .ignoresSafeArea()
+            #else
+            EmptyView()
+            #endif
+        case .taoTheCon, .taoThe:
+            if let cfg = vm.cauHinh, let t = vm.the {
+                CTWCreateIssueView(cauHinh: cfg, sprintId: nil,
+                                   cha: tp.id == "taocon" ? CTWCreateIssueView.TheCha(id: t.id, number: t.number, title: t.title) : nil) { _ in
+                    Task { await vm.napLaiThe() }
+                }
+            }
+        case .chiaSe:
+            if let cfg = vm.cauHinh, let t = vm.the {
+                CTWChiaSeKenhView(pid: cfg.id,
+                                  duong: "/work/\(cfg.workspace?.slug ?? "")/\(cfg.key)/issue/\(t.number)",
+                                  nhan: "\(cfg.key)-\(t.number): \(t.title)")
+            }
+        case .chuyenDuAn:
+            if let cfg = vm.cauHinh, let t = vm.the {
+                CTWChuyenDuAnView(cfg: cfg, so: t.number, version: vm.them?.version ?? t.version) { r in daChuyen = r }
+            }
+        }
     }
 
     // MARK: Menu ⋯ của thẻ
 
     private func menuThe(_ t: CTWIssueDetail, _ cfg: CTWProjectConfig) -> some View {
-        // Như web đợt 8D: thanh đầu chỉ giữ trạng thái + theo dõi; thao tác phụ (sửa tiêu đề, chép, chia sẻ, web) vào "…".
+        // Như web đợt 8D: thanh đầu chỉ giữ trạng thái + theo dõi; thao tác phụ vào "…".
         Menu {
             if cfg.coTheSua {
                 Button {
@@ -365,10 +563,44 @@ struct CTWIssueView: View {
                 ShareLink(item: u) { Label("Share link", systemImage: "square.and.arrow.up") }
                 Button { moURL(u) } label: { Label("Open on the web", systemImage: "safari") }
             }
+            if cfg.role != "CLIENT" {
+                Button { tamPhu = .chiaSe } label: { Label("Share to channel", systemImage: "bubble.left.and.text.bubble.right") }
+            }
+            if cfg.coTheTao || t.canDelete == true { Divider() }
+            if cfg.coTheTao {
+                Button { Task { await nhanBan() } } label: { Label("Clone", systemImage: "plus.square.on.square") }
+            }
+            if t.canDelete == true {
+                Button { tamPhu = .chuyenDuAn } label: { Label("Move to another project", systemImage: "arrow.left.arrow.right") }
+                Button(role: .destructive) { hoiXoaThe = true } label: { Label("Delete issue", systemImage: "trash") }
+            }
         } label: {
             Image(systemName: "ellipsis.circle")
         }
         .accessibilityLabel("More actions")
+        .accessibilityIdentifier("ctw.the.menu")
+    }
+
+    private func nhanBan() async {
+        do {
+            let moi: CTWIssueDetail = try await APIClient.shared.request(CTWAPI.nhanBanThe(pid: vm.pid, so: vm.so))
+            CTWRung.thanhCong()
+            await vm.napLaiThe()
+            vm.lichSu = nil
+            daNhanBan = moi.number
+        } catch {
+            vm.loi = CTW.loi(error)
+        }
+    }
+
+    private func xoaThe() async {
+        do {
+            try await APIClient.shared.send(CTWAPI.xoaThe(pid: vm.pid, so: vm.so))
+            CTWRung.thanhCong()
+            dong()
+        } catch {
+            vm.loi = CTW.loi(error)
+        }
     }
 
     // MARK: Nội dung
@@ -381,44 +613,111 @@ struct CTWIssueView: View {
                     CTWErrorBanner(text: loi) { vm.loi = nil }
                 }
                 dau(t, cfg)
-                truong(t, cfg)
-                moTa(t)
+                CTWIssueTruongView(vm: vm, t: t, cfg: cfg, moRong: moRong)
+                CTWIssueMoTaView(vm: vm, coTheSua: cfg.coTheSua).id("moTa")
+                CTWIssueTheConView(vm: vm, t: t, cfg: cfg) { tamPhu = .taoTheCon }.id("theCon")
                 dinhKem(t, cfg)
-                if let con = t.children, !con.isEmpty { theCon(con, cfg) }
-                if let lk = t.links, !lk.isEmpty { lienKet(lk, cfg) }
-                Picker("Activity", selection: $khoiHoatDong) {
-                    ForEach(KhoiHoatDong.allCases) { Text($0.ten).tag($0) }
-                }
-                .pickerStyle(.segmented)
-                .padding(.top, 4)
-                .id("hoatDong")
+                thanhTab(t)
+                    .padding(.top, 4)
+                    .id("hoatDong")
                 switch khoiHoatDong {
+                case .tatCa: khoiTatCa(cfg)
                 case .binhLuan: khoiBinhLuan(cfg)
                 case .lichSu: khoiLichSu(cfg)
+                case .nhatKy: CTWIssueNhatKyGioView(vm: vm, cfg: cfg)
+                case .lienKet:
+                    VStack(alignment: .leading, spacing: 18) {
+                        CTWIssueLienKetView(vm: vm, t: t, cfg: cfg)
+                        CTWIssueLienKetKhacView(vm: vm, cfg: cfg, moRong: moRong)
+                    }
                 }
             }
             .padding(Spacing.md)
             .frame(maxWidth: 820, alignment: .leading)
             .frame(maxWidth: .infinity)
         }
-        .refreshable { await vm.tai(); if khoiHoatDong == .lichSu { await vm.taiLichSu() } }
-        .disabled(vm.dangGui)
+        .refreshable {
+            await vm.tai()
+            vm.lichSu = nil
+            vm.nhatKyGio = nil
+        }
         .overlay(alignment: .top) {
             if vm.dangGui { ProgressView().padding(8) }
         }
-        .onChange(of: khoiHoatDong) { _, moi in
-            if moi == .lichSu && vm.lichSu == nil { Task { await vm.taiLichSu() } }
+        // Tab cần dữ liệu chưa có (hoặc vừa bị xoá sau một lần sửa) ⇒ tải.
+        .task(id: "\(khoiHoatDong.rawValue)-\(vm.lichSu == nil)-\(vm.nhatKyGio == nil)") {
+            vm.damBaoHoatDong(lichSu: [.tatCa, .lichSu].contains(khoiHoatDong), gio: [.tatCa, .nhatKy].contains(khoiHoatDong))
         }
         #if DEBUG
-        // Cửa xem màn (`CT_XEM_MAN`) của app CT Work: cuộn thẳng tới bình luận/lịch sử để chụp.
+        // Cửa xem màn (`CT_XEM_MAN`) của app CT Work: cuộn thẳng tới khối cần chụp.
         .task {
-            let man = ProcessInfo.processInfo.environment["CT_XEM_MAN"]?.lowercased()
-            guard man == "binhluan" || man == "lichsu" else { return }
-            if man == "lichsu" { khoiHoatDong = .lichSu }
+            let man = ProcessInfo.processInfo.environment["CT_XEM_MAN"]?.lowercased() ?? ""
+            let dich: [String: (KhoiHoatDong?, String)] = [
+                "binhluan": (.binhLuan, "hoatDong"), "lichsu": (.lichSu, "hoatDong"),
+                "the:lienket": (.lienKet, "hoatDong"), "the:nhatky": (.nhatKy, "hoatDong"),
+                "the:thecon": (nil, "theCon"), "the:tick": (nil, "moTa"), "the:ghigio": (nil, "ghiGio"), "the:tuychinh": (nil, "tuyChinh"),
+            ]
+            guard let (k, id) = dich[man] else { return }
+            if let k { khoiHoatDong = k }
             try? await Task.sleep(nanoseconds: 600_000_000)
-            cuon.scrollTo("hoatDong", anchor: .top)
+            withAnimation { cuon.scrollTo(id, anchor: .top) }
         }
         #endif
+        }
+    }
+
+    /// Thanh tab kiểu web (gạch chân) — cuộn ngang được khi chữ dài (tiếng Việt).
+    private func thanhTab(_ t: CTWIssueDetail) -> some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 2) {
+                ForEach(KhoiHoatDong.allCases) { k in
+                    let chon = k == khoiHoatDong
+                    Button { khoiHoatDong = k } label: {
+                        VStack(spacing: 6) {
+                            HStack(spacing: 4) {
+                                Text(verbatim: k.ten)
+                                if k == .lienKet, let n = t.links?.count, n > 0 {
+                                    Text(verbatim: "\(n)").foregroundColor(AppColors.textTertiary)
+                                }
+                            }
+                            .font(.ctw(size: 14, weight: chon ? .semibold : .medium))
+                            .foregroundColor(chon ? AppColors.textPrimary : AppColors.textTertiary)
+                            .fixedSize()
+                            Rectangle().fill(chon ? AppColors.primary : Color.clear).frame(height: 2)
+                        }
+                        .padding(.horizontal, 8)
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(chon ? [.isSelected, .isButton] : .isButton)
+                }
+            }
+        }
+        .overlay(alignment: .bottom) { Divider() }
+    }
+
+    // MARK: Activity (tất cả, theo thời gian)
+
+    private func khoiTatCa(_ cfg: CTWProjectConfig) -> some View {
+        let bl: [MucHoatDong] = binhLuanHien.map { .binhLuan($0) }
+        let ls: [MucHoatDong] = (vm.lichSu ?? []).map { .lichSu($0) }
+        let gio: [MucHoatDong] = (vm.nhatKyGio ?? []).map { .gio($0) }
+        let ds = (bl + ls + gio).sorted { $0.luc < $1.luc }
+        return VStack(alignment: .leading, spacing: 10) {
+            if vm.lichSu == nil {
+                ProgressView().frame(maxWidth: .infinity)
+            } else if ds.isEmpty {
+                Text("No activity yet.").font(.ctw(size: 13)).foregroundColor(AppColors.textTertiary)
+            }
+            ForEach(ds) { m in
+                switch m {
+                case .binhLuan(let c): hangBinhLuan(c, cfg)
+                case .lichSu(let h): hangLichSu(h, cfg).padding(.horizontal, 12).ctwThe(12)
+                case .gio(let w): CTWHangNhatKyGio(w: w).padding(.horizontal, 12).ctwThe(12)
+                }
+            }
+            oSoanBinhLuan(cfg)
         }
     }
 
@@ -499,62 +798,7 @@ struct CTWIssueView: View {
         }
     }
 
-    // MARK: Trường
-
-    private func truong(_ t: CTWIssueDetail, _ cfg: CTWProjectConfig) -> some View {
-        VStack(spacing: 0) {
-            hangTruong("Assignee") { menuNguoi(t, cfg) }
-            Divider()
-            hangTruong("Priority") { menuUuTien(t, cfg) }
-            Divider()
-            hangTruong("Due date") { oNgay(t, cfg) }
-            Divider()
-            hangTruong("Reporter") {
-                HStack(spacing: 6) {
-                    CTWAvatar(user: t.reporter, size: 22)
-                    Text(t.reporter?.ten ?? "—").font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary)
-                    if t.reporter?.laAgent == true { CTWNhanAI() }
-                }
-            }
-            if let sid = t.sprintId, let s = (cfg.sprints ?? []).first(where: { $0.id == sid }) {
-                Divider()
-                hangTruong("Sprint") {
-                    Text(s.name).font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary).lineLimit(1)
-                }
-            }
-            if let sp = t.storyPoints {
-                Divider()
-                hangTruong("Story points") {
-                    Text(sp == sp.rounded() ? String(Int(sp)) : String(format: "%.1f", sp))
-                        .font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary)
-                }
-            }
-            if let nhan = t.labelIds, !nhan.isEmpty {
-                Divider()
-                hangTruong("Labels") {
-                    Text((cfg.labels ?? []).filter { nhan.contains($0.id) }.map(\.name).joined(separator: ", "))
-                        .font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary)
-                        .multilineTextAlignment(.trailing)
-                }
-            }
-            Divider()
-            hangTruong("Updated") {
-                Text(CTW.thoiDiem(t.updatedAt)).font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
-            }
-        }
-        .padding(.horizontal, 14)
-        .ctwThe(14)
-    }
-
-    private func hangTruong<V: View>(_ ten: LocalizedStringKey, @ViewBuilder _ gt: () -> V) -> some View {
-        HStack(spacing: 12) {
-            Text(ten).font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
-                .frame(width: 96, alignment: .leading)
-            Spacer(minLength: 0)
-            gt()
-        }
-        .frame(minHeight: 46)
-    }
+    // MARK: Trạng thái (đầu thẻ)
 
     @ViewBuilder
     private func menuTrangThai(_ t: CTWIssueDetail, _ cfg: CTWProjectConfig) -> some View {
@@ -584,133 +828,7 @@ struct CTWIssueView: View {
         }
     }
 
-    @ViewBuilder
-    private func menuNguoi(_ t: CTWIssueDetail, _ cfg: CTWProjectConfig) -> some View {
-        let nhan = HStack(spacing: 6) {
-            CTWAvatar(user: t.assignee, size: 22)
-            Text(t.assignee?.ten ?? String(localized: "Unassigned"))
-                .font(.ctw(size: 14))
-                .foregroundColor(t.assignee == nil ? AppColors.textSecondary : AppColors.textPrimary)
-                .lineLimit(1)
-            if t.assignee?.laAgent == true { CTWNhanAI() }
-        }
-        if cfg.coTheSua {
-            Menu {
-                if let toi = appState.currentUser?.id, cfg.nguoiGiaoDuoc.contains(where: { $0.id == toi }),
-                   t.assigneeId != toi {
-                    Button { Task { await vm.sua(["assigneeId": toi]) } } label: {
-                        Label("Assign to me", systemImage: "person.fill.checkmark")
-                    }
-                }
-                Button { Task { await vm.sua(["assigneeId": NSNull()]) } } label: {
-                    if t.assigneeId == nil { Label("Unassigned", systemImage: "checkmark") } else { Text("Unassigned") }
-                }
-                Divider()
-                ForEach(cfg.nguoiGiaoDuoc) { u in
-                    Button { Task { await vm.sua(["assigneeId": u.id]) } } label: {
-                        let ten = u.laAgent ? String(localized: "\(u.ten) · AI agent") : u.ten
-                        if u.id == t.assigneeId { Label(ten, systemImage: "checkmark") }
-                        else if u.laAgent { Label(ten, systemImage: "sparkles") }
-                        else { Text(ten) }
-                    }
-                }
-            } label: { nhan }
-        } else {
-            nhan
-        }
-    }
-
-    @ViewBuilder
-    private func menuUuTien(_ t: CTWIssueDetail, _ cfg: CTWProjectConfig) -> some View {
-        let p = CTW.uuTien(t.priority)
-        let nhan = HStack(spacing: 6) {
-            CTWPriorityIcon(priority: t.priority)
-            Text(p.ten).font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary)
-        }
-        if cfg.coTheSua {
-            Menu {
-                ForEach(CTW.doUuTien, id: \.so) { m in
-                    Button { Task { await vm.sua(["priority": m.so]) } } label: {
-                        Label(m.ten, systemImage: m.so == p.so ? "checkmark" : m.bieuTuong)
-                    }
-                }
-            } label: { nhan }
-        } else {
-            nhan
-        }
-    }
-
-    @ViewBuilder
-    private func oNgay(_ t: CTWIssueDetail, _ cfg: CTWProjectConfig) -> some View {
-        let chu = CTWKieuWeb.ngay(t.dueDate)
-        let tre = t.resolvedAt == nil && CTW.quaHan(t.dueDate)
-        if cfg.coTheSua {
-            if chonNgay {
-                HStack(spacing: 8) {
-                    DatePicker("", selection: $ngayNhap, displayedComponents: .date)
-                        .labelsHidden()
-                    Button("Save") {
-                        chonNgay = false
-                        Task { await vm.sua(["dueDate": CTW.chuoiNgay(ngayNhap)]) }
-                    }
-                    .buttonStyle(.borderedProminent)
-                    Button { chonNgay = false } label: { Image(systemName: "xmark").frame(width: 32, height: 32) }
-                        .accessibilityLabel("Cancel")
-                }
-            } else {
-                Menu {
-                    Button { batChonNgay(t) } label: { Label(chu == nil ? "Set due date" : "Change due date", systemImage: "calendar") }
-                    if chu != nil {
-                        Button(role: .destructive) { Task { await vm.sua(["dueDate": NSNull()]) } } label: {
-                            Label("Remove due date", systemImage: "calendar.badge.minus")
-                        }
-                    }
-                } label: {
-                    Text(chu ?? String(localized: "None"))
-                        .font(.ctw(size: 14, weight: tre ? .semibold : .regular))
-                        .foregroundColor(chu == nil ? AppColors.textSecondary : (tre ? AppColors.error : AppColors.textPrimary))
-                }
-            }
-        } else {
-            Text(chu ?? String(localized: "None"))
-                .font(.ctw(size: 14))
-                .foregroundColor(tre ? AppColors.error : AppColors.textPrimary)
-        }
-    }
-
-    private func batChonNgay(_ t: CTWIssueDetail) {
-        // Ngày lưu dạng YYYY-MM-DD không múi giờ — dựng lại theo lịch MÁY
-        // để DatePicker không lệch một ngày ở UTC+7.
-        if let d = CTW.ngay(t.dueDate) {
-            let p = d.split(separator: "-").compactMap { Int($0) }
-            if p.count == 3, let n = Calendar.current.date(from: DateComponents(year: p[0], month: p[1], day: p[2])) {
-                ngayNhap = n
-            }
-        } else {
-            ngayNhap = Date()
-        }
-        chonNgay = true
-    }
-
-    // MARK: Mô tả, đính kèm, thẻ con, liên kết
-
-    private func moTa(_ t: CTWIssueDetail) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            CTWSectionHeader("text.alignleft", String(localized: "Description"))
-            Group {
-                let khoi = CTWTipTap.khoi(t.descriptionJson)
-                if khoi.isEmpty {
-                    Text("No description.")
-                        .font(.ctw(size: 14)).foregroundColor(AppColors.textTertiary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                } else {
-                    CTWKhoiView(khoi: khoi, coChu: 14.5)
-                }
-            }
-            .padding(14)
-            .ctwThe(12)
-        }
-    }
+    // MARK: Đính kèm
 
     private func dinhKem(_ t: CTWIssueDetail, _ cfg: CTWProjectConfig) -> some View {
         let ds = t.attachments ?? []
@@ -806,76 +924,6 @@ struct CTWIssueView: View {
         }
     }
 
-    private func theCon(_ con: [CTWIssueRef], _ cfg: CTWProjectConfig) -> some View {
-        let xong = con.filter { $0.statusId.flatMap(cfg.trangThai)?.category == "DONE" }.count
-        return VStack(alignment: .leading, spacing: 8) {
-            CTWSectionHeader("checklist", String(localized: "Sub-tasks"), count: "\(xong)/\(con.count)")
-            VStack(spacing: 0) {
-                ForEach(con) { c in
-                    NavigationLink(value: CTWRoute.the(pid: vm.pid, so: c.number)) {
-                        HStack(spacing: 8) {
-                            CTWTypeIcon(type: c.typeId.flatMap(cfg.loai), size: 12)
-                            Text("\(cfg.key)-\(c.number)").font(.ctw(size: 12, weight: .medium).monospaced())
-                                .foregroundColor(AppColors.textSecondary)
-                            Text(c.title).font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary)
-                                .lineLimit(1)
-                            Spacer(minLength: 0)
-                            CTWStatusChip(status: c.statusId.flatMap(cfg.trangThai))
-                            if c.assigneeId != nil { CTWAvatar(user: cfg.thanhVien(c.assigneeId), size: 20) }
-                        }
-                        .padding(.vertical, 10)
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    if c.id != con.last?.id { Divider() }
-                }
-            }
-            .padding(.horizontal, 14)
-            .ctwThe(12)
-        }
-    }
-
-    private func lienKet(_ lk: [CTWIssueLink], _ cfg: CTWProjectConfig) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            CTWSectionHeader("link", String(localized: "Linked issues"))
-            VStack(alignment: .leading, spacing: 0) {
-                ForEach(lk) { l in
-                    let hang = HStack(spacing: 8) {
-                        Text(tenLienKet(l)).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
-                            .frame(width: 100, alignment: .leading)
-                        Text(l.issue?.key ?? "").font(.ctw(size: 12, weight: .medium).monospaced())
-                            .foregroundColor(AppColors.textSecondary)
-                        Text(l.issue?.title ?? "").font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary)
-                            .lineLimit(1)
-                        Spacer(minLength: 0)
-                    }
-                    .padding(.vertical, 9)
-                    .contentShape(Rectangle())
-                    // Thẻ cùng dự án (mã khớp) thì mở được ngay trong app.
-                    if let i = l.issue, (i.key ?? "").hasPrefix(cfg.key + "-") {
-                        NavigationLink(value: CTWRoute.the(pid: vm.pid, so: i.number)) { hang }.buttonStyle(.plain)
-                    } else {
-                        hang
-                    }
-                    if l.id != lk.last?.id { Divider() }
-                }
-            }
-            .padding(.horizontal, 14)
-            .ctwThe(12)
-        }
-    }
-
-    private func tenLienKet(_ l: CTWIssueLink) -> String {
-        let ra = l.direction != "inward"
-        switch l.type {
-        case "BLOCKS": return ra ? String(localized: "blocks") : String(localized: "is blocked by")
-        case "DUPLICATES": return ra ? String(localized: "duplicates") : String(localized: "is duplicated by")
-        case "CLONES": return ra ? String(localized: "clones") : String(localized: "is cloned by")
-        case "TESTS": return ra ? String(localized: "tests") : String(localized: "is tested by")
-        default: return String(localized: "relates to")
-        }
-    }
-
     // MARK: Lịch sử
 
     private func khoiLichSu(_ cfg: CTWProjectConfig) -> some View {
@@ -886,28 +934,7 @@ struct CTWIssueView: View {
                 }
                 VStack(alignment: .leading, spacing: 0) {
                     ForEach(ds) { h in
-                        HStack(alignment: .top, spacing: 10) {
-                            if h.actorKind == "AUTOMATION" || h.actorKind == "SYSTEM" {
-                                Image(systemName: "gearshape.fill").font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
-                                    .frame(width: 24, height: 24).background(Circle().fill(AppColors.backgroundTertiary))
-                            } else {
-                                CTWAvatar(user: h.actor, size: 24)
-                            }
-                            VStack(alignment: .leading, spacing: 3) {
-                                HStack(spacing: 5) {
-                                    Text(tenNguoiLam(h)).font(.ctw(size: 13, weight: .semibold))
-                                        .foregroundColor(AppColors.textPrimary)
-                                    if h.actor?.laAgent == true || h.actorKind == "AGENT" { CTWNhanAI() }
-                                    else if h.actorKind == "AI" { CTWNhanAI(chu: "AI") }
-                                }
-                                Text(CTWLichSu.moTa(h, cfg: cfg))
-                                    .font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
-                                    .fixedSize(horizontal: false, vertical: true)
-                                Text(CTW.thoiDiem(h.createdAt)).font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
-                            }
-                            Spacer(minLength: 0)
-                        }
-                        .padding(.vertical, 9)
+                        hangLichSu(h, cfg)
                         if h.id != ds.last?.id { Divider() }
                     }
                 }
@@ -917,6 +944,31 @@ struct CTWIssueView: View {
                 ProgressView().frame(maxWidth: .infinity).padding()
             }
         }
+    }
+
+    private func hangLichSu(_ h: CTWHistory, _ cfg: CTWProjectConfig) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            if h.actorKind == "AUTOMATION" || h.actorKind == "SYSTEM" {
+                Image(systemName: "gearshape.fill").font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
+                    .frame(width: 24, height: 24).background(Circle().fill(AppColors.backgroundTertiary))
+            } else {
+                CTWAvatar(user: h.actor, size: 24)
+            }
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 5) {
+                    Text(tenNguoiLam(h)).font(.ctw(size: 13, weight: .semibold))
+                        .foregroundColor(AppColors.textPrimary)
+                    if h.actor?.laAgent == true || h.actorKind == "AGENT" { CTWNhanAI() }
+                    else if h.actorKind == "AI" { CTWNhanAI(chu: "AI") }
+                }
+                Text(CTWLichSu.moTa(h, cfg: cfg))
+                    .font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(CTW.thoiDiem(h.createdAt)).font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, 9)
     }
 
     private func tenNguoiLam(_ h: CTWHistory) -> String {
@@ -929,48 +981,56 @@ struct CTWIssueView: View {
 
     // MARK: Bình luận
 
-    private func khoiBinhLuan(_ cfg: CTWProjectConfig) -> some View {
-        // Ẩn: bình luận của người đã chặn + bình luận mình đã báo cáo
-        // (Guideline 1.2 — chặn/báo cáo phải có tác dụng ngay).
-        let ds = vm.binhLuan.filter { c in
+    /// Ẩn: bình luận của người đã chặn + bình luận mình đã báo cáo
+    /// (Guideline 1.2 — chặn/báo cáo phải có tác dụng ngay).
+    private var binhLuanHien: [CTWComment] {
+        vm.binhLuan.filter { c in
             if an.binhLuanAn.contains(c.id) { return false }
             guard let a = c.author?.id else { return true }
             return !kiemDuyet.blockedUserIds.contains(a)
         }
+    }
+
+    private func khoiBinhLuan(_ cfg: CTWProjectConfig) -> some View {
+        let ds = binhLuanHien
         return VStack(alignment: .leading, spacing: 10) {
             CTWSectionHeader("bubble.left.and.bubble.right", String(localized: "Comments"), count: "\(ds.count)")
             if ds.isEmpty {
                 Text("No comments yet.").font(.ctw(size: 13)).foregroundColor(AppColors.textTertiary)
             }
             ForEach(ds) { c in hangBinhLuan(c, cfg) }
+            oSoanBinhLuan(cfg)
+        }
+    }
 
-            if cfg.coTheBinhLuan {
-                HStack(alignment: .bottom, spacing: 8) {
-                    TextField("Add a comment…", text: $binhLuanNhap, axis: .vertical)
-                        .lineLimit(1...6)
-                        .textFieldStyle(.roundedBorder)
-                    let trong = binhLuanNhap.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                    Button {
-                        let s = binhLuanNhap
-                        Task { if await vm.guiBinhLuan(s) { binhLuanNhap = "" } }
-                    } label: {
-                        Image(systemName: "arrow.up")
-                            .font(.ctw(size: 16, weight: .bold))
-                            .foregroundColor(.white)
-                            .frame(width: 36, height: 36)
-                            .background(Circle().fill(trong ? AppColors.textTertiary : AppColors.primary))
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(trong || vm.dangGui)
-                    .accessibilityLabel("Send comment")
+    @ViewBuilder
+    private func oSoanBinhLuan(_ cfg: CTWProjectConfig) -> some View {
+        if cfg.coTheBinhLuan {
+            HStack(alignment: .bottom, spacing: 8) {
+                TextField("Add a comment…", text: $binhLuanNhap, axis: .vertical)
+                    .lineLimit(1...6)
+                    .textFieldStyle(.roundedBorder)
+                let trong = binhLuanNhap.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                Button {
+                    let s = binhLuanNhap
+                    Task { if await vm.guiBinhLuan(s) { binhLuanNhap = "" } }
+                } label: {
+                    Image(systemName: "arrow.up")
+                        .font(.ctw(size: 16, weight: .bold))
+                        .foregroundColor(.white)
+                        .frame(width: 36, height: 36)
+                        .background(Circle().fill(trong ? AppColors.textTertiary : AppColors.primary))
                 }
-                .padding(.top, 4)
-                Text("Comments are visible to project members. Be respectful — you can report or block anyone.")
-                    .font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
-            } else {
-                Text("You can view this issue but not comment on it.")
-                    .font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
+                .buttonStyle(.plain)
+                .disabled(trong || vm.dangGui)
+                .accessibilityLabel("Send comment")
             }
+            .padding(.top, 4)
+            Text("Comments are visible to project members. Be respectful — you can report or block anyone.")
+                .font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
+        } else {
+            Text("You can view this issue but not comment on it.")
+                .font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
         }
     }
 
