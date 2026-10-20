@@ -13,7 +13,7 @@ enum CTWTaiTepLop {
         case quaLon, hong(String)
         var errorDescription: String? {
             switch self {
-            case .quaLon: return "Files must be 25 MB or smaller."
+            case .quaLon: return String(localized: "Files must be 25 MB or smaller.")
             case .hong(let m): return m
             }
         }
@@ -22,7 +22,7 @@ enum CTWTaiTepLop {
     static func taiLen(lop: Int, bai: Int, du: Data, ten: String) async throws -> CTWTepLop {
         guard du.count <= tranByte else { throw Loi.quaLon }
         guard let url = URL(string: APIClient.diaChiGoc + "/api/v1/work/classes/\(lop)/assignments/\(bai)/my/files") else {
-            throw Loi.hong("Upload failed. Please try again.")
+            throw Loi.hong(String(localized: "Upload failed. Please try again."))
         }
         let ranh = "CTWBoundary-\(UUID().uuidString)"
         var r = URLRequest(url: url)
@@ -43,7 +43,7 @@ enum CTWTaiTepLop {
         struct Bao: Decodable { var success: Bool?; var data: CTWTepLop?; var message: String? }
         let bao = try? JSONDecoder().decode(Bao.self, from: data)
         guard (200..<300).contains(ma), let tep = bao?.data else {
-            throw Loi.hong(bao?.message ?? "Upload failed (\(ma)). Please try again.")
+            throw Loi.hong(bao?.message ?? String(localized: "Upload failed (\(ma)). Please try again."))
         }
         return tep
     }

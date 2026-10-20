@@ -20,7 +20,7 @@ import UserNotifications
 enum HanhDongThongBaoCTW {
     enum Loi: LocalizedError {
         case khongRo
-        var errorDescription: String? { "This notification can't be answered here. Open it instead." }
+        var errorDescription: String? { String(localized: "This notification can't be answered here. Open it instead.") }
     }
 
     static func daDoc(_ ids: [Int]) async throws {
@@ -96,17 +96,17 @@ enum NutThongBaoCTW {
     ///   CTW_MEETING  — nhắc họp có `meetingUrl`: Join (mở app ra tiền cảnh) · Mark as read
     ///   CTW_DEFAULT  — còn lại: Mark as read
     static func dangKy() {
-        let daDoc = UNNotificationAction(identifier: nutDaDoc, title: "Mark as Read", options: [], icon: UNNotificationActionIcon(systemImageName: "checkmark.circle"))
-        let traLoi = UNTextInputNotificationAction(identifier: nutTraLoi, title: "Reply", options: [.authenticationRequired],
+        let daDoc = UNNotificationAction(identifier: nutDaDoc, title: String(localized: "Mark as Read"), options: [], icon: UNNotificationActionIcon(systemImageName: "checkmark.circle"))
+        let traLoi = UNTextInputNotificationAction(identifier: nutTraLoi, title: String(localized: "Reply"), options: [.authenticationRequired],
                                                    icon: UNNotificationActionIcon(systemImageName: "arrowshape.turn.up.left"),
-                                                   textInputButtonTitle: "Send", textInputPlaceholder: "Reply…")
-        let duyet = UNNotificationAction(identifier: nutDuyet, title: "Approve", options: [.authenticationRequired],
+                                                   textInputButtonTitle: String(localized: "Send"), textInputPlaceholder: String(localized: "Reply…"))
+        let duyet = UNNotificationAction(identifier: nutDuyet, title: String(localized: "Approve"), options: [.authenticationRequired],
                                          icon: UNNotificationActionIcon(systemImageName: "checkmark.seal"))
-        let tuChoi = UNNotificationAction(identifier: nutTuChoi, title: "Reject", options: [.authenticationRequired, .destructive],
+        let tuChoi = UNNotificationAction(identifier: nutTuChoi, title: String(localized: "Reject"), options: [.authenticationRequired, .destructive],
                                           icon: UNNotificationActionIcon(systemImageName: "xmark.seal"))
         // Join cần MỞ app (`.foreground`) — mở link Meet/Zoom phải có giao diện; không cần mở khoá
         // riêng vì app sẽ mở và iOS tự đòi mở khoá máy.
-        let vaoHop = UNNotificationAction(identifier: nutVaoHop, title: "Join", options: [.foreground],
+        let vaoHop = UNNotificationAction(identifier: nutVaoHop, title: String(localized: "Join"), options: [.foreground],
                                           icon: UNNotificationActionIcon(systemImageName: "video.fill"))
         UNUserNotificationCenter.current().setNotificationCategories([
             UNNotificationCategory(identifier: Self.hop, actions: [vaoHop, daDoc], intentIdentifiers: [], options: []),
@@ -155,7 +155,7 @@ enum NutThongBaoCTW {
             } catch {
                 let c = UNMutableNotificationContent()
                 c.title = "CT Work"
-                c.body = nut == nutTraLoi ? "Your reply wasn't sent: \(CTW.loi(error))" : "That action didn't go through: \(CTW.loi(error))"
+                c.body = nut == nutTraLoi ? String(localized: "Your reply wasn't sent: \(CTW.loi(error))") : String(localized: "That action didn't go through: \(CTW.loi(error))")
                 if let duong { c.userInfo = ["duongDan": duong] }
                 try? await UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: "ctw.loi.\(UUID().uuidString)", content: c, trigger: nil))
             }

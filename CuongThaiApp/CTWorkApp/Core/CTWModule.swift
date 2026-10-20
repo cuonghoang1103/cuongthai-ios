@@ -19,13 +19,13 @@ enum CTWNhomMoDun: Int, CaseIterable, Identifiable {
     var id: Int { rawValue }
     var ten: String {
         switch self {
-        case .duAn: return "Project"
-        case .giaoTiep: return "Communication"
-        case .keHoach: return "Planning"
-        case .taiLieu: return "Docs & knowledge"
-        case .chatLuong: return "Requirements & testing"
-        case .quanLy: return "Governance"
-        case .quanTri: return "Admin"
+        case .duAn: return String(localized: "Project")
+        case .giaoTiep: return String(localized: "Communication")
+        case .keHoach: return String(localized: "Planning")
+        case .taiLieu: return String(localized: "Docs & knowledge")
+        case .chatLuong: return String(localized: "Requirements & testing")
+        case .quanLy: return String(localized: "Governance")
+        case .quanTri: return String(localized: "Admin")
         }
     }
 }
@@ -93,11 +93,16 @@ struct CTWModule: Identifiable {
 
     /// Định danh — NÊN trùng đoạn đường dẫn web (`/work/<ws>/<KEY>/<id>`).
     let id: String
-    let ten: String
+    /// Tên + mô tả là `LocalizedStringResource` (trình biên dịch tự trích vào Localizable.xcstrings) và DỊCH LÚC
+    /// HIỆN (`ten`/`moTa` tính mỗi lần đọc) — `static let` của mô-đun tạo một lần, nên dịch sẵn lúc tạo là
+    /// đóng băng ngôn ngữ cũ khi người dùng đổi ngôn ngữ trong app.
+    let tenNguon: LocalizedStringResource
     let bieuTuong: String
     let nhom: CTWNhomMoDun
     /// Dòng phụ trên trang dự án (iPhone).
-    var moTa: String = ""
+    var moTaNguon: LocalizedStringResource = ""
+    var ten: String { CTWModule.dich(tenNguon) }
+    var moTa: String { CTWModule.dich(moTaNguon) }
     /// Thứ tự trong nhóm (nhỏ trước).
     var thuTu: Int = 100
     /// iPhone: một dòng trong trang dự án, hay một TAB riêng (chỉ Chat).
@@ -111,6 +116,24 @@ struct CTWModule: Identifiable {
     let man: @MainActor (CTWNguCanh) -> AnyView
     /// Đăng ký `navigationDestination` cho các route con của mô-đun.
     var dichDen: (@MainActor (AnyView) -> AnyView)?
+
+    init(id: String, ten: LocalizedStringResource, bieuTuong: String, nhom: CTWNhomMoDun,
+         moTa: LocalizedStringResource = "", thuTu: Int = 100, viTriIPhone: ViTriIPhone = .trangDuAn,
+         doanWeb: String? = nil,
+         hien: @escaping @MainActor (CTWProjectConfig?) -> Bool = { _ in true },
+         man: @escaping @MainActor (CTWNguCanh) -> AnyView,
+         dichDen: (@MainActor (AnyView) -> AnyView)? = nil) {
+        self.id = id; self.tenNguon = ten; self.bieuTuong = bieuTuong; self.nhom = nhom
+        self.moTaNguon = moTa; self.thuTu = thuTu; self.viTriIPhone = viTriIPhone; self.doanWeb = doanWeb
+        self.hien = hien; self.man = man; self.dichDen = dichDen
+    }
+
+    /// Dịch theo ngôn ngữ app đang chọn (không theo `Locale.current` của máy).
+    static func dich(_ r: LocalizedStringResource) -> String {
+        var r = r
+        r.locale = CTWDinhDang.locale
+        return String(localized: r)
+    }
 }
 
 extension CTWProjectConfig {

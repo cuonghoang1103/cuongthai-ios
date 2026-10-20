@@ -50,7 +50,7 @@ struct DongYQuyTacCTW: View {
         .sheet(item: $tamPhu) { t in NavigationStack { TrangPhapLyView(trang: t) } }
     }
 
-    private func dong(_ icon: String, _ chu: String) -> some View {
+    private func dong(_ icon: String, _ chu: LocalizedStringKey) -> some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: icon).font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.primary)
                 .frame(width: 24)
@@ -69,6 +69,7 @@ struct DangNhapCTW: View {
     enum CheDo: String, CaseIterable, Identifiable {
         case dangNhap = "Sign in", dangKy = "Create account"
         var id: String { rawValue }
+        var ten: String { self == .dangNhap ? String(localized: "Sign in") : String(localized: "Create account") }
     }
 
     @State private var cheDoForm: CheDo = .dangNhap
@@ -99,7 +100,7 @@ struct DangNhapCTW: View {
                 .padding(.top, Spacing.xl)
 
                 Picker("Mode", selection: $cheDoForm) {
-                    ForEach(CheDo.allCases) { Text($0.rawValue).tag($0) }
+                    ForEach(CheDo.allCases) { Text($0.ten).tag($0) }
                 }
                 .pickerStyle(.segmented)
 
@@ -130,7 +131,7 @@ struct DangNhapCTW: View {
 
                 Button { Task { await gui() } } label: {
                     Group {
-                        if dangGui { ProgressView().tint(.white) } else { Text(cheDoForm.rawValue) }
+                        if dangGui { ProgressView().tint(.white) } else { Text(cheDoForm.ten) }
                     }
                     .font(.ctw(size: 17, weight: .semibold))
                     .frame(maxWidth: .infinity).padding(.vertical, 14)
@@ -189,7 +190,7 @@ struct DangNhapCTW: View {
                 XacThucEmailCTW(email: x.email, tokenCho: x.token) { tk in
                     xacThuc = nil
                     if let tk { app.login(token: tk.token, refreshToken: tk.refreshToken) }
-                    else { cheDoForm = .dangNhap; loi = "Email verified. Please sign in." }
+                    else { cheDoForm = .dangNhap; loi = String(localized: "Email verified. Please sign in.") }
                 } huy: { xacThuc = nil }
             }
         }
@@ -198,7 +199,7 @@ struct DangNhapCTW: View {
         .sheet(item: $tamPhu) { t in NavigationStack { TrangPhapLyView(trang: t) } }
     }
 
-    private func o(_ nhan: String, text: Binding<String>, kieu: O) -> some View {
+    private func o(_ nhan: LocalizedStringKey, text: Binding<String>, kieu: O) -> some View {
         TextField(nhan, text: text)
             .textInputAutocapitalization(.never)
             .autocorrectionDisabled()
@@ -250,13 +251,13 @@ struct DangNhapCTW: View {
                 let res = try await AppleSignInService.authenticate(with: c)
                 app.login(token: res.token, refreshToken: res.refreshToken)
             } catch AppleSignInError.noEmail {
-                loi = "Apple didn't share an email address. Go to Settings › Apple ID › Sign in with Apple › CT Work › Stop Using, then try again."
+                loi = String(localized: "Apple didn't share an email address. Go to Settings › Apple ID › Sign in with Apple › CT Work › Stop Using, then try again.")
             } catch {
                 loi = Self.cauLoi(error)
             }
         case .failure(let e):
             if (e as NSError).code == ASAuthorizationError.canceled.rawValue { return }
-            loi = "Sign in with Apple didn't complete. Please try again."
+            loi = String(localized: "Sign in with Apple didn't complete. Please try again.")
         }
     }
 
@@ -266,11 +267,11 @@ struct DangNhapCTW: View {
         let goc = CTW.loi(e)
         let thap = goc.lowercased()
         if thap.contains("sai tên đăng nhập") || thap.contains("mật khẩu") || thap.contains("invalid credentials") {
-            return "Incorrect username or password."
+            return String(localized: "Incorrect username or password.")
         }
-        if thap.contains("đã tồn tại") || thap.contains("already") { return "That username or email is already in use." }
-        if thap.contains("khoá") || thap.contains("locked") || thap.contains("banned") { return "This account is locked. Contact support." }
-        if goc.unicodeScalars.contains(where: { $0.value > 0x2FF }) { return "Couldn't sign in. Please check your details and try again." }
+        if thap.contains("đã tồn tại") || thap.contains("already") { return String(localized: "That username or email is already in use.") }
+        if thap.contains("khoá") || thap.contains("locked") || thap.contains("banned") { return String(localized: "This account is locked. Contact support.") }
+        if goc.unicodeScalars.contains(where: { $0.value > 0x2FF }) { return String(localized: "Couldn't sign in. Please check your details and try again.") }
         return goc
     }
 }
@@ -340,7 +341,7 @@ struct XacThucEmailCTW: View {
                                                              "code": ma.filter(\.isNumber)]))
             xong(tokenCho)
         } catch {
-            loi = "That code didn't work. Check it, or send a new one."
+            loi = String(localized: "That code didn't work. Check it, or send a new one.")
         }
     }
 
@@ -349,6 +350,6 @@ struct XacThucEmailCTW: View {
         defer { dangGui = false }
         _ = try? await APIClient.shared.send(.tuyChinh(duong: "/api/v1/auth/resend-otp", phuongThuc: "POST",
                                                        than: ["email": emailNhap.trimmingCharacters(in: .whitespaces)]))
-        thongBao = "If that address needs verifying, a new code is on its way."
+        thongBao = String(localized: "If that address needs verifying, a new code is on its way.")
     }
 }

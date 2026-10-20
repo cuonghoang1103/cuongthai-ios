@@ -1,7 +1,8 @@
 # App CT Work iOS — KIẾN TRÚC (đọc trước khi thêm mô-đun)
 
 Target `CTWorkApp` · bundle `com.cuongthai.ctwork` · tên hiển thị "CT Work" · iOS 17+ · iPhone + iPad.
-Giao diện **chỉ tiếng Anh** (quyết định sản phẩm của CT Work); chú thích mã tiếng Việt.
+Giao diện **Tiếng Việt + English**, đổi ngay trong app (Account › Language, mục 12 — thay quyết định "chỉ tiếng Anh" cũ,
+chủ app đổi 20/10/2026); chú thích mã tiếng Việt.
 Luật Apple + bẫy của kho: `ios-app/CLAUDE.md` (PHẦN A, C). Ghi chú duyệt: `ios-app/CTWORK_APP_REVIEW_NOTES.md`.
 
 ## 1. Thư mục
@@ -128,7 +129,7 @@ Chữ trong `ScrollView(.horizontal)` phải `.fixedSize` (bẫy cắt chữ). M
 - **Mạng:** `APIClient.shared.request(CTWAPI.x(...))` (giải mã `data` của envelope), `.send(...)`
   (chỉ cần `success`). Đường dẫn CT Work đi qua `APIEndpoint.workGoi` — nơi gọi không gõ chuỗi.
   Header `X-Client-Platform: ios` tự gắn (máy chủ bỏ lời mời mua cho iOS).
-- **Lỗi:** `CTW.loi(error)` ra câu tiếng Anh cho người dùng; `CTW.laXungDot(error)` (409 phiên bản
+- **Lỗi:** `CTW.loi(error)` ra câu cho người dùng theo ngôn ngữ app (máy chủ chỉ nói tiếng Anh — câu quen thuộc/mã lỗi được dịch ở client, mục 12); `CTW.laXungDot(error)` (409 phiên bản
   ⇒ nạp lại); mã máy chủ trong `APIError.coMa(ma, _)` (`MODULE_DISABLED`, `WORK_AGENT_FORBIDDEN`…).
 - **Phân trang:** mỗi route một kiểu — thẻ: `nextCursor` (chuỗi rank); chat: `before` + `hasMoreBefore`;
   tìm kiếm: `offset/hasMore`; thông báo: `cursor` số + `hasNextPage`.
@@ -192,7 +193,8 @@ xcodebuild test -project CuongThaiApp.xcodeproj -scheme CTWorkApp -destination '
 
 - Kiểu/tệp của app CT Work: tiền tố `CTW` (dùng chung) hoặc hậu tố `CTW` (màn của app riêng).
 - Tên hàm/biến tiếng Việt không dấu như cả kho (`tai`, `taiThem`, `loi`, `dangTai`, `nganXep`).
-- Chữ hiện cho người dùng: TIẾNG ANH. Chú thích: tiếng Việt, giải thích VÌ SAO.
+- Chữ hiện cho người dùng: viết bằng TIẾNG ANH trong mã (là khoá của catalog) rồi dịch trong `Localizable.xcstrings` (mục 12).
+  Chú thích: tiếng Việt, giải thích VÌ SAO.
 - Model API: `var` + optional; ngày `String` (đọc bằng `CTW.ngay`, `CTW.thoiDiem`, `CTWChatThoiGian`).
 - Nhật ký chẩn đoán: chỉ trong `#if DEBUG`.
 
@@ -261,3 +263,54 @@ xcodebuild test -project CuongThaiApp.xcodeproj -scheme CTWorkApp -destination '
   rung khi kéo (`dropDestination(isTargeted:)`), menu nhấn giữ liệt kê thẳng bước "Move to…", MỘT menu Filters (như web đợt 8D).
 - Màn thử: `mywork` · `board` (= trang dự án, công tắc Board) · `backlog` · `list` · `duan` (công tắc More) · `chonduan` · `issue`.
   Nhóm/gập My Work khi chụp: `xcrun simctl spawn <U> defaults write com.cuongthai.ctwork ctw.myWork.nhomTheo duAn`.
+
+## 13. Ngôn ngữ — Tiếng Việt / English (20/10/2026)
+
+**Đổi ngay trong app:** Account › Language: "Device language" (mặc định — máy tiếng Việt ⇒ tiếng Việt) · Tiếng Việt · English.
+- Lõi `CTWorkShared/NgonNguCTW.swift` (app + widget + Share Extension): lựa chọn lưu ở UserDefaults chuẩn + chép ra App Group
+  (`ngon-ngu.json`, đọc tệp nên extension không phải khai API "required reason"); `caiDatBundle()` **tráo lớp `Bundle.main`**
+  (`BundleNgonNguCTW`) ⇒ `String(localized:)`, `NSLocalizedString` tra `<ma>.lproj` đang chọn (phải chặn cả biến thể
+  `__localizedString(…localizations:)` của iOS 18.4+). ⚠️ `Text("…")`/`Label`/`Button`/`.navigationTitle` của SwiftUI KHÔNG đi
+  qua Bundle — chúng tra theo `.environment(\.locale)`, và chỉ nhận locale NGÔN NGỮ TRẦN (`"vi"`/`"en"`; đo 20/10/2026 trên
+  iOS 26: `vi_VN` làm SwiftUI rơi về ngôn ngữ lúc khởi động). Ghi cả
+  `AppleLanguages` ⇒ phần hệ thống vẽ (UIKit, App Intents, bảng chọn ảnh) theo từ lần mở sau. Đổi ở Cài đặt iOS › CT Work ›
+  Ngôn ngữ cũng được nhận (`dongBoVoiCaiDatHeThong`).
+- `CTWorkApp/App/NgonNguApCTW.swift`: `@Published ma` ⇒ `GocCTW` gắn `.environment(\.locale, …)` + `.id("\(cỡ chữ)-\(ma)")`
+  ⇒ cả cây dựng lại (tab đang chọn giữ vì nằm ở `AppState.muc`; ngăn xếp điều hướng về gốc). Đổi xong: đăng ký lại nút trên
+  thông báo (`NutThongBaoCTW.dangKy`) + `WidgetCenter.reloadAllTimelines()`. Widget/Share gọi `NgonNguCTW.caiDatBundle()` lúc khởi tạo.
+- Ngày/số HIỂN THỊ: `CTWDinhDang` (`Shared/CTWork/CTWUI/CTWDinhDang.swift`) — `mau("MMMd")` ("Oct 5" / "5 thg 10"),
+  `gio`, `tuongDoi` ("2 giờ trước"), `so`. ⛔ Không dùng `Locale(identifier: "en_US")` để hiển thị; ĐỌC ngày máy chủ vẫn
+  `en_US_POSIX`. App chính (cũng biên dịch `Shared/CTWork`) không đặt `CTWDinhDang.locale` ⇒ vẫn `en_US`, không catalog ⇒ vẫn chữ Anh.
+
+**Catalog:** `CTWorkApp/Localizable.xcstrings` · `CTWorkApp/InfoPlist.xcstrings` (chuỗi xin quyền; tên "CT Work" giữ nguyên) ·
+`CTWorkWidget/Localizable.xcstrings` · `CTWorkShare/Localizable.xcstrings`. Ngôn ngữ nguồn `en`, khoá = chữ tiếng Anh.
+Info.plist của cả 3 target khai `CFBundleLocalizations` = en, vi.
+
+**Thêm một chuỗi mới:**
+1. Viết chữ tiếng Anh như thường. `Text("…")`, `Label`, `Button`, `Section`, `.navigationTitle("…")`, `.alert("…")`… nhận
+   literal là tự dịch được. Chữ đi vào một **`String`** (biến, `return` của thuộc tính tính toán, tham số `String` của view
+   CTWUI như `CTWOTrong(tieuDe:)`, `CTWSectionHeader`, `CTWHangTruong`, `?? "Untitled"`, câu lỗi/toast, tiêu đề
+   `UNNotificationAction`) ⇒ bọc `String(localized: "…")` (nội suy giữ trong chuỗi: `String(localized: "\(n) issues")`).
+2. ⛔ KHÔNG `String(localized:)` trong `static let`/hằng toàn cục (dịch MỘT lần ⇒ đóng băng ngôn ngữ cũ khi đổi trong app):
+   dùng `static var { … }` tính lại, hoặc lưu `LocalizedStringResource` (vd `CTWModule(ten:moTa:)` ⇒ `CTWModule.dich`) /
+   `LocalizedStringKey`.
+3. Số nhiều: viết hai câu đủ (`n == 1 ? "1 issue" : "\(n) issues"`), không ghép `"issue" + "s"`. Câu có nhiều phần ⇒ một
+   chuỗi có nội suy, không ghép mảnh bằng `+` (tiếng Việt đổi trật tự từ).
+4. Dựng app (máy mô phỏng) rồi đồng bộ catalog từ `.stringsdata` trình biên dịch sinh (`SWIFT_EMIT_LOC_STRINGS=YES` đã bật):
+   ```bash
+   B=<DerivedData>/Build/Intermediates.noindex/CuongThaiApp.build/Debug-iphonesimulator
+   xcrun xcstringstool sync CuongThaiApp/CTWorkApp/Localizable.xcstrings \
+     --stringsdata $(find $B/CTWorkApp.build/Objects-normal/arm64 -name '*.stringsdata' | grep -v /XemThuCTW)
+   ```
+   (tương tự `CTWorkWidget`, `CTWorkShare`) — hoặc mở catalog trong Xcode, nó tự thêm khoá sau khi dựng.
+5. Thêm bản `vi`. **Thuật ngữ theo web CT Work**: `api-backend/frontend/src/components/work/i18n/GLOSSARY.md` + `vi/*.ts`
+   (giữ tiếng Anh Sprint, Backlog, Epic, Story point, Test case…; Issue = "Thẻ", Assignee = "Người thực hiện"…). Giữ nguyên
+   đặc tả định dạng (`%@`, `%lld`, đổi chỗ thì `%1$@`).
+6. `NgonNguCTWTests` ĐỎ nếu một khoá thiếu bản vi hoặc bản dịch lệch đặc tả định dạng; nó cũng kiểm đổi ngôn ngữ áp ngay.
+   `NgonNguUITests` bấm thật Account › Language (vi ⇄ en) không khởi động lại.
+
+Dữ liệu máy chủ (tên dự án, trạng thái, thẻ, người, câu lỗi máy chủ trả) là nội dung người dùng — KHÔNG dịch. Máy chủ CT Work
+không đọc `Accept-Language` (20/10/2026) — lỗi/thông báo đẩy luôn tiếng Anh; `CTW.loi` dịch các mã/câu lỗi quen thuộc ở client
+(bảng lấy từ `frontend/src/components/work/i18n/errors.ts`).
+Chụp màn thử bằng tiếng Việt: `xcrun simctl spawn $U defaults write com.cuongthai.ctwork com.cuongthai.ctwork.ngonNgu vi`
+trước khi `simctl launch` (giá trị `system` | `vi` | `en`).

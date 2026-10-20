@@ -40,10 +40,10 @@ struct SucKhoeDuAnCTW: View {
         VStack(alignment: .leading, spacing: 14) {
             if let r = i.sprintRisk { nhipSprint(r) }
             let khoi: [(String, String, Color, [CTWInsightThe])] = [
-                ("Overdue", "exclamationmark.circle.fill", AppColors.error, i.overdue ?? []),
-                ("Due in the next days", "calendar.badge.clock", AppColors.warning, i.dueSoon ?? []),
-                ("No activity for a while", "zzz", CTWMauChuoi.khac, i.stale ?? []),
-                ("Urgent and unassigned", "person.crop.circle.badge.exclamationmark", AppColors.error, i.unassignedUrgent ?? []),
+                (String(localized: "Overdue"), "exclamationmark.circle.fill", AppColors.error, i.overdue ?? []),
+                (String(localized: "Due in the next days"), "calendar.badge.clock", AppColors.warning, i.dueSoon ?? []),
+                (String(localized: "No activity for a while"), "zzz", CTWMauChuoi.khac, i.stale ?? []),
+                (String(localized: "Urgent and unassigned"), "person.crop.circle.badge.exclamationmark", AppColors.error, i.unassignedUrgent ?? []),
             ]
             let coKhoi = khoi.filter { !$0.3.isEmpty }
             if coKhoi.isEmpty && (i.overloaded ?? []).isEmpty {
@@ -68,7 +68,7 @@ struct SucKhoeDuAnCTW: View {
         return VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 Image(systemName: r.atRisk == true ? "exclamationmark.triangle.fill" : "speedometer").foregroundColor(mau)
-                Text(r.sprint ?? "Sprint").font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                Text(r.sprint ?? String(localized: "Sprint")).font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                 Spacer()
                 Text(HangKpiCTW.nhanNhipTinh(r.status).uppercased()).font(.ctw(size: 10, weight: .bold)).foregroundColor(mau)
                     .padding(.horizontal, 8).padding(.vertical, 3).background(Capsule().fill(mau.opacity(0.12)))
@@ -78,9 +78,9 @@ struct SucKhoeDuAnCTW: View {
             }
             if let need = r.neededPerDay, let recent = r.recentPerDay {
                 HStack(spacing: 16) {
-                    nhan("Needed / day", CTWSo.gon(need))
-                    nhan("Recent / day", CTWSo.gon(recent))
-                    nhan("Days left", r.daysLeft.map(String.init) ?? "—")
+                    nhan(String(localized: "Needed / day"), CTWSo.gon(need))
+                    nhan(String(localized: "Recent / day"), CTWSo.gon(recent))
+                    nhan(String(localized: "Days left"), r.daysLeft.map(String.init) ?? "—")
                 }
             }
         }
@@ -133,7 +133,7 @@ struct SucKhoeDuAnCTW: View {
                 HStack {
                     Text("@\(l.username ?? "")").font(.ctw(size: 13)).foregroundColor(AppColors.textPrimary)
                     Spacer()
-                    Text("\(CTWSo.gon(l.points ?? 0)) \(l.unit ?? "points")" + (l.capacity.map { " / \(CTWSo.gon($0))" } ?? ""))
+                    Text("\(CTWSo.gon(l.points ?? 0)) \(l.unit ?? String(localized: "points"))" + (l.capacity.map { " / \(CTWSo.gon($0))" } ?? ""))
                         .font(.ctw(size: 12).monospacedDigit()).foregroundColor(AppColors.textSecondary)
                 }
             }
@@ -154,7 +154,7 @@ struct TabBurndownBaoCaoCTW: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             if sprints.isEmpty {
-                CTWOTrong(bieuTuong: "chart.line.downtrend.xyaxis", tieuDe: "No started sprints", moTa: "Start a sprint to see its burndown.")
+                CTWOTrong(bieuTuong: "chart.line.downtrend.xyaxis", tieuDe: String(localized: "No started sprints"), moTa: String(localized: "Start a sprint to see its burndown."))
             } else {
                 ChonSprintBaoCaoCTW(ds: sprints, chon: $chon)
                 if let sid = chon ?? sprints.first?.id {
@@ -180,14 +180,14 @@ struct NoiDungBurndownCTW: View {
         VStack(alignment: .leading, spacing: 12) {
             if !gon {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: rong ? 4 : 2), spacing: 10) {
-                    CTWTheChiSo(nhan: "Committed", giaTri: DonViSprintCTW.so(cs.cam, bd.unit), phu: "At start", bieuTuong: "flag", mau: CTWMauChuoi.mau(0))
-                    CTWTheChiSo(nhan: "Completed", giaTri: DonViSprintCTW.so(cs.xong, bd.unit), phu: "\(Int((cs.tiLe * 100).rounded()))%",
+                    CTWTheChiSo(nhan: String(localized: "Committed"), giaTri: DonViSprintCTW.so(cs.cam, bd.unit), phu: String(localized: "At start"), bieuTuong: "flag", mau: CTWMauChuoi.mau(0))
+                    CTWTheChiSo(nhan: String(localized: "Completed"), giaTri: DonViSprintCTW.so(cs.xong, bd.unit), phu: "\(Int((cs.tiLe * 100).rounded()))%",
                                 bieuTuong: "checkmark.circle", mau: AppColors.success)
-                    CTWTheChiSo(nhan: "Remaining", giaTri: DonViSprintCTW.so(cs.con, bd.unit), bieuTuong: "hourglass", mau: CTWMauChuoi.mau(1))
+                    CTWTheChiSo(nhan: String(localized: "Remaining"), giaTri: DonViSprintCTW.so(cs.con, bd.unit), bieuTuong: "hourglass", mau: CTWMauChuoi.mau(1))
                     if bd.sprint?.state == "CLOSED" {
-                        CTWTheChiSo(nhan: "Completed on", giaTri: NgayCTW.thoiDiem(bd.sprint?.completedAt).map(NgayCTW.ngan) ?? "—", bieuTuong: "checkmark.seal")
+                        CTWTheChiSo(nhan: String(localized: "Completed on"), giaTri: NgayCTW.thoiDiem(bd.sprint?.completedAt).map(NgayCTW.ngan) ?? "—", bieuTuong: "checkmark.seal")
                     } else if let con = TinhSprintCTW.ngayConLai(endAt: bd.sprint?.endAt) {
-                        CTWTheChiSo(nhan: con < 0 ? "Overdue by" : "Days left", giaTri: "\(abs(con))", bieuTuong: "calendar",
+                        CTWTheChiSo(nhan: con < 0 ? String(localized: "Overdue by") : String(localized: "Days left"), giaTri: "\(abs(con))", bieuTuong: "calendar",
                                     mau: con < 0 ? AppColors.error : AppColors.primary)
                     }
                 }
@@ -221,13 +221,13 @@ struct TabVelocityBaoCaoCTW: View {
         NapBaoCaoCTW(khoa: "vel-\(lamMoi)", diemCuoi: { CTWAPI.velocity(pid: pid) }) { (v: CTWVelocity) in
             VStack(alignment: .leading, spacing: 14) {
                 HStack(spacing: 10) {
-                    CTWTheChiSo(nhan: "Average (last 3)", giaTri: v.average.map { DonViSprintCTW.so($0, v.unit) } ?? "—",
+                    CTWTheChiSo(nhan: String(localized: "Average (last 3)"), giaTri: v.average.map { DonViSprintCTW.so($0, v.unit) } ?? "—",
                                 bieuTuong: "speedometer", mau: CTWMauChuoi.mau(0))
                     let ds = v.sprints ?? []
                     let cam = ds.compactMap(\.committedPoints).reduce(0, +)
                     let xong = ds.compactMap(\.completedPoints).reduce(0, +)
-                    CTWTheChiSo(nhan: "Say / do ratio", giaTri: cam > 0 ? "\(Int((xong / cam * 100).rounded()))%" : "—",
-                                phu: "Completed ÷ committed", bieuTuong: "scalemass", mau: CTWMauChuoi.mau(1))
+                    CTWTheChiSo(nhan: String(localized: "Say / do ratio"), giaTri: cam > 0 ? "\(Int((xong / cam * 100).rounded()))%" : "—",
+                                phu: String(localized: "Completed ÷ committed"), bieuTuong: "scalemass", mau: CTWMauChuoi.mau(1))
                 }
                 BieuDoVelocityCTW(v: v, cao: 240)
             }
@@ -277,9 +277,9 @@ struct TabTaoXongBaoCaoCTW: View {
                 let t = TinhBaoCaoCTW.taoXong(ds)
                 VStack(alignment: .leading, spacing: 14) {
                     HStack(spacing: 10) {
-                        CTWTheChiSo(nhan: "Created", giaTri: "\(t.tao)", bieuTuong: "plus.circle", mau: CTWMauChuoi.mau(1))
-                        CTWTheChiSo(nhan: "Resolved", giaTri: "\(t.xong)", bieuTuong: "checkmark.circle", mau: CTWMauChuoi.mau(0))
-                        CTWTheChiSo(nhan: "Net", giaTri: (t.chenh > 0 ? "+" : "") + "\(t.chenh)", phu: t.chenh > 0 ? "Backlog growing" : "Keeping up",
+                        CTWTheChiSo(nhan: String(localized: "Created"), giaTri: "\(t.tao)", bieuTuong: "plus.circle", mau: CTWMauChuoi.mau(1))
+                        CTWTheChiSo(nhan: String(localized: "Resolved"), giaTri: "\(t.xong)", bieuTuong: "checkmark.circle", mau: CTWMauChuoi.mau(0))
+                        CTWTheChiSo(nhan: String(localized: "Net"), giaTri: (t.chenh > 0 ? "+" : "") + "\(t.chenh)", phu: t.chenh > 0 ? String(localized: "Backlog growing") : String(localized: "Keeping up"),
                                     bieuTuong: t.chenh > 0 ? "arrow.up.right" : "arrow.down.right", mau: t.chenh > 0 ? AppColors.warning : AppColors.success)
                     }
                     BieuDoTaoXongCTW(ds: ds, cao: 240)
@@ -298,7 +298,7 @@ struct TabPhanBoBaoCaoCTW: View {
     @State private var theoDiem = false
     @State private var chiMo = true
 
-    private let nhom: [(String, String)] = [("status", "By status"), ("assignee", "By assignee"), ("type", "By type"), ("priority", "By priority")]
+    private var nhom: [(String, String)] { [("status", String(localized: "By status")), ("assignee", String(localized: "By assignee")), ("type", String(localized: "By type")), ("priority", String(localized: "By priority"))] }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -316,7 +316,7 @@ struct TabPhanBoBaoCaoCTW: View {
                     NapBaoCaoCTW(khoa: "st-\(g.0)-\(chiMo)-\(lamMoi)", diemCuoi: { CTWAPI.thongKe(pid: pid, nhomTheo: g.0, jql: jql) }) { (s: CTWThongKe) in
                         let thanh = TinhBaoCaoCTW.phanBo(s.groups ?? [], theoDiem: theoDiem, giuThuTu: g.0 == "priority")
                         BieuDoPhanBoCTW(tieuDe: g.1, thanh: thanh, tong: thanh.map(\.giaTri).reduce(0, +),
-                                        donVi: theoDiem ? DonViSprintCTW.tenDai(s.unit) : "issues", mauTrangThai: g.0 == "status")
+                                        donVi: theoDiem ? DonViSprintCTW.tenDai(s.unit) : String(localized: "issues"), mauTrangThai: g.0 == "status")
                     }
                 }
             }
@@ -336,7 +336,7 @@ struct TabEpicsBaoCaoCTW: View {
             let ds = e.epics ?? []
             VStack(alignment: .leading, spacing: 10) {
                 if ds.isEmpty {
-                    CTWOTrong(bieuTuong: "bolt.horizontal", tieuDe: "No epics", moTa: "Epics group related stories so you can track bigger goals.")
+                    CTWOTrong(bieuTuong: "bolt.horizontal", tieuDe: String(localized: "No epics"), moTa: String(localized: "Epics group related stories so you can track bigger goals."))
                 }
                 ForEach(ds) { ep in
                     NavigationLink(value: CTWRoute.the(pid: pid, so: ep.number ?? 0)) { hang(ep, unit: e.unit) }
@@ -349,21 +349,22 @@ struct TabEpicsBaoCaoCTW: View {
 
     private func hang(_ ep: CTWEpicBaoCao, unit: String?) -> some View {
         let tong = ep.total ?? 0, xong = ep.completed ?? 0
+        let ma = "\(app.cauHinhDuAn?.key ?? "")-\(ep.number ?? 0)"
         return VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 Image(systemName: "bolt.fill").font(.ctw(size: 11, weight: .bold)).foregroundColor(.white)
                     .frame(width: 22, height: 22).background(RoundedRectangle(cornerRadius: 5).fill(CTWMauChuoi.mau(6)))
                 VStack(alignment: .leading, spacing: 1) {
                     Text(ep.title ?? "").font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(2)
-                    Text("\(app.cauHinhDuAn?.key ?? "")-\(ep.number ?? 0)" + (NgayCTW.nganTu(ep.dueDate).map { " · due \($0)" } ?? ""))
+                    Text(NgayCTW.nganTu(ep.dueDate).map { String(localized: "\(ma) · due \($0)") } ?? ma)
                         .font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
                 }
                 Spacer()
                 Text("\(Int((ep.percent ?? 0).rounded()))%").font(.ctw(size: 16, weight: .bold).monospacedDigit())
                     .foregroundColor(ep.resolved == true ? AppColors.success : AppColors.textPrimary)
             }
-            CTWThanhTienDo(doan: [CTWDoanTienDo(ten: "Done", giaTri: Double(xong), mau: AppColors.success),
-                                 CTWDoanTienDo(ten: "Open", giaTri: Double(max(tong - xong, 0)), mau: CTWMauChuoi.khac)])
+            CTWThanhTienDo(doan: [CTWDoanTienDo(ten: String(localized: "Done"), giaTri: Double(xong), mau: AppColors.success),
+                                 CTWDoanTienDo(ten: String(localized: "Open"), giaTri: Double(max(tong - xong, 0)), mau: CTWMauChuoi.khac)])
             Text("\(xong) of \(tong) issues · \(CTWSo.gon(ep.pointsDone ?? 0)) / \(CTWSo.gon(ep.points ?? 0)) \(DonViSprintCTW.ten(unit))")
                 .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
         }
@@ -401,14 +402,14 @@ struct NoiDungThoiGianCTW: View {
         let ds = (r.people ?? []).sorted { ($0.totalMin ?? 0) > ($1.totalMin ?? 0) }
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 10) {
-                CTWTheChiSo(nhan: "Logged", giaTri: CTWSo.gio(giay: (r.totalMin ?? 0) * 60), bieuTuong: "clock", mau: CTWMauChuoi.mau(0))
-                CTWTheChiSo(nhan: "People", giaTri: CTWSo.gio(giay: (r.byPrincipal?["HUMAN"] ?? 0) * 60), bieuTuong: "person.2", mau: CTWMauChuoi.mau(0))
+                CTWTheChiSo(nhan: String(localized: "Logged"), giaTri: CTWSo.gio(giay: (r.totalMin ?? 0) * 60), bieuTuong: "clock", mau: CTWMauChuoi.mau(0))
+                CTWTheChiSo(nhan: String(localized: "People"), giaTri: CTWSo.gio(giay: (r.byPrincipal?["HUMAN"] ?? 0) * 60), bieuTuong: "person.2", mau: CTWMauChuoi.mau(0))
                 if (r.byPrincipal?["AGENT"] ?? 0) > 0 {
-                    CTWTheChiSo(nhan: "AI agents", giaTri: CTWSo.gio(giay: (r.byPrincipal?["AGENT"] ?? 0) * 60), bieuTuong: "sparkles", mau: CTWMauChuoi.mau(6))
+                    CTWTheChiSo(nhan: String(localized: "AI agents"), giaTri: CTWSo.gio(giay: (r.byPrincipal?["AGENT"] ?? 0) * 60), bieuTuong: "sparkles", mau: CTWMauChuoi.mau(6))
                 }
             }
-            CTWKhungBieuDo(tieuDe: "Hours per day", phu: "\(NgayCTW.nganTu(r.from) ?? "") – \(NgayCTW.nganTu(r.to) ?? "")",
-                           cot: ["Day", "Logged"], hang: ngay.map { CTWHangBang(nhan: NgayCTW.thuNgay($0.ngay), giaTri: [CTWSo.gio(giay: $0.phut * 60)]) },
+            CTWKhungBieuDo(tieuDe: String(localized: "Hours per day"), phu: "\(NgayCTW.nganTu(r.from) ?? "") – \(NgayCTW.nganTu(r.to) ?? "")",
+                           cot: [String(localized: "Day"), String(localized: "Logged")], hang: ngay.map { CTWHangBang(nhan: NgayCTW.thuNgay($0.ngay), giaTri: [CTWSo.gio(giay: $0.phut * 60)]) },
                            cao: 180) {
                 Chart(ngay, id: \.ymd) { d in
                     BarMark(x: .value("Day", d.ngay, unit: .day), y: .value("Hours", Double(d.phut) / 60))
@@ -417,7 +418,7 @@ struct NoiDungThoiGianCTW: View {
                 .modifier(TrucNgayCTW())
             }
             VStack(alignment: .leading, spacing: 10) {
-                CTWSectionHeader("person.2", "By person", count: "\(ds.count)")
+                CTWSectionHeader("person.2", String(localized: "By person"), count: "\(ds.count)")
                 if ds.isEmpty { Text("No time logged in this range.").font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary) }
                 ForEach(Array(ds.enumerated()), id: \.offset) { _, p in
                     HStack(spacing: 10) {
@@ -427,7 +428,7 @@ struct NoiDungThoiGianCTW: View {
                                 Text(p.user?.ten ?? p.name ?? "—").font(.ctw(size: 14, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(1)
                                 if p.userKind == "AGENT" || p.user?.laAgent == true { CTWNhanAI() }
                             }
-                            Text("\((p.issues ?? []).count) issue\((p.issues ?? []).count == 1 ? "" : "s")" + ((p.autoMin ?? 0) > 0 ? " · \(CTWSo.gio(giay: (p.autoMin ?? 0) * 60)) auto-logged" : ""))
+                            Text(Self.dongNguoi(soThe: (p.issues ?? []).count, phutTuDong: p.autoMin ?? 0))
                                 .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                         }
                         Spacer()
@@ -442,6 +443,14 @@ struct NoiDungThoiGianCTW: View {
 }
 
 // MARK: People vs Agents
+
+extension NoiDungThoiGianCTW {
+    static func dongNguoi(soThe n: Int, phutTuDong: Int) -> String {
+        let the = n == 1 ? String(localized: "1 issue") : String(localized: "\(n) issues")
+        guard phutTuDong > 0 else { return the }
+        return String(localized: "\(the) · \(CTWSo.gio(giay: phutTuDong * 60)) auto-logged")
+    }
+}
 
 struct TabAgentsBaoCaoCTW: View {
     let pid: Int
@@ -476,37 +485,37 @@ struct NoiDungNguoiVsAgentCTW: View {
         let ta = r.totals?.agents, th = r.totals?.humans
         VStack(alignment: .leading, spacing: 14) {
             // So sánh tổng: người vs agent (một thước đo — số thẻ đã xong).
-            CTWKhungBieuDo(tieuDe: "Issues resolved", phu: "\(NgayCTW.nganTu(r.from) ?? "") – \(NgayCTW.nganTu(r.to) ?? "")",
-                           chuGiai: [CTWMucChuGiai(ten: "People", mau: CTWMauChuoi.mau(0)), CTWMucChuGiai(ten: "AI agents", mau: CTWMauChuoi.mau(6))],
-                           cot: ["", "Resolved"], hang: [CTWHangBang(nhan: "People", giaTri: ["\(th?.issuesResolved ?? 0)"]),
-                                                         CTWHangBang(nhan: "AI agents", giaTri: ["\(ta?.issuesResolved ?? 0)"])],
+            CTWKhungBieuDo(tieuDe: String(localized: "Issues resolved"), phu: "\(NgayCTW.nganTu(r.from) ?? "") – \(NgayCTW.nganTu(r.to) ?? "")",
+                           chuGiai: [CTWMucChuGiai(ten: String(localized: "People"), mau: CTWMauChuoi.mau(0)), CTWMucChuGiai(ten: String(localized: "AI agents"), mau: CTWMauChuoi.mau(6))],
+                           cot: ["", String(localized: "Resolved")], hang: [CTWHangBang(nhan: String(localized: "People"), giaTri: ["\(th?.issuesResolved ?? 0)"]),
+                                                         CTWHangBang(nhan: String(localized: "AI agents"), giaTri: ["\(ta?.issuesResolved ?? 0)"])],
                            cao: 90) {
                 Chart {
-                    BarMark(x: .value("Resolved", th?.issuesResolved ?? 0), y: .value("Who", "People"))
+                    BarMark(x: .value("Resolved", th?.issuesResolved ?? 0), y: .value("Who", String(localized: "People")))
                         .foregroundStyle(CTWMauChuoi.mau(0)).cornerRadius(4)
                         .annotation(position: .trailing) { Text("\(th?.issuesResolved ?? 0)").font(.ctw(size: 11, weight: .semibold)).foregroundColor(AppColors.textPrimary) }
-                    BarMark(x: .value("Resolved", ta?.issuesResolved ?? 0), y: .value("Who", "AI agents"))
+                    BarMark(x: .value("Resolved", ta?.issuesResolved ?? 0), y: .value("Who", String(localized: "AI agents")))
                         .foregroundStyle(CTWMauChuoi.mau(6)).cornerRadius(4)
                         .annotation(position: .trailing) { Text("\(ta?.issuesResolved ?? 0)").font(.ctw(size: 11, weight: .semibold)).foregroundColor(AppColors.textPrimary) }
                 }
                 .chartXAxis(.hidden)
             }
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: rong ? 4 : 2), spacing: 10) {
-                CTWTheChiSo(nhan: "People · hours", giaTri: CTWSo.gon(th?.hours ?? 0) + "h", bieuTuong: "person.2", mau: CTWMauChuoi.mau(0))
-                CTWTheChiSo(nhan: "Agents · returned", giaTri: "\(Int(((ta?.returnRate ?? 0) * 100).rounded()))%",
-                            phu: "\(ta?.returnedCount ?? 0) sent back from review", bieuTuong: "arrow.uturn.backward", mau: CTWMauChuoi.mau(6))
-                CTWTheChiSo(nhan: "Agent cost (est.)", giaTri: CTWSo.usd(ta?.costUsd ?? 0), phu: "Mostly self-reported", bieuTuong: "sparkles", mau: CTWMauChuoi.mau(6))
-                CTWTheChiSo(nhan: "Agent cost / point", giaTri: (ta?.costPerPoint).map(CTWSo.usd) ?? "—", bieuTuong: "divide", mau: CTWMauChuoi.mau(6))
+                CTWTheChiSo(nhan: String(localized: "People · hours"), giaTri: String(localized: "\(CTWSo.gon(th?.hours ?? 0))h"), bieuTuong: "person.2", mau: CTWMauChuoi.mau(0))
+                CTWTheChiSo(nhan: String(localized: "Agents · returned"), giaTri: "\(Int(((ta?.returnRate ?? 0) * 100).rounded()))%",
+                            phu: String(localized: "\(ta?.returnedCount ?? 0) sent back from review"), bieuTuong: "arrow.uturn.backward", mau: CTWMauChuoi.mau(6))
+                CTWTheChiSo(nhan: String(localized: "Agent cost (est.)"), giaTri: CTWSo.usd(ta?.costUsd ?? 0), phu: String(localized: "Mostly self-reported"), bieuTuong: "sparkles", mau: CTWMauChuoi.mau(6))
+                CTWTheChiSo(nhan: String(localized: "Agent cost / point"), giaTri: (ta?.costPerPoint).map(CTWSo.usd) ?? "—", bieuTuong: "divide", mau: CTWMauChuoi.mau(6))
             }
             ghiChuChiPhi(ta?.costSource)
             VStack(alignment: .leading, spacing: 10) {
-                CTWSectionHeader("sparkles", "AI agents", count: "\((r.agents ?? []).count)")
+                CTWSectionHeader("sparkles", String(localized: "AI agents"), count: "\((r.agents ?? []).count)")
                 if (r.agents ?? []).isEmpty { Text("No agent activity in this range.").font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary) }
                 ForEach(Array((r.agents ?? []).enumerated()), id: \.offset) { _, a in hangAgent(a) }
             }
             .padding(14).ctwThe(14)
             VStack(alignment: .leading, spacing: 10) {
-                CTWSectionHeader("person.2", "People", count: "\((r.humans ?? []).count)")
+                CTWSectionHeader("person.2", String(localized: "People"), count: "\((r.humans ?? []).count)")
                 ForEach(Array((r.humans ?? []).enumerated()), id: \.offset) { _, h in
                     HStack(spacing: 10) {
                         CTWAvatar(user: h.user, size: 28)
@@ -542,10 +551,10 @@ struct NoiDungNguoiVsAgentCTW: View {
                 CTWAvatar(user: u, size: 30)
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 6) {
-                        Text(a.agent?.displayName ?? a.agent?.username ?? "Agent").font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                        Text(a.agent?.displayName ?? a.agent?.username ?? String(localized: "Agent")).font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(1)
                         CTWNhanAI()
                     }
-                    Text([a.agent?.model, a.agent?.owner.map { "owner \($0.ten)" }, a.agent?.status?.capitalized].compactMap { $0 }.joined(separator: " · "))
+                    Text([a.agent?.model, a.agent?.owner.map { String(localized: "owner \($0.ten)") }, a.agent?.status.map { CTWMauTrangThai.nhan($0) }].compactMap { $0 }.joined(separator: " · "))
                         .font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary).lineLimit(1)
                 }
                 Spacer()
@@ -555,10 +564,10 @@ struct NoiDungNguoiVsAgentCTW: View {
                 }
             }
             HStack(spacing: 14) {
-                so("Resolved", "\(a.issuesResolved ?? 0)")
-                so("Points", CTWSo.gon(a.pointsResolved ?? 0))
-                so("Returned", "\(Int(((a.returnRate ?? 0) * 100).rounded()))%")
-                so("Worked", CTWSo.gio(giay: (a.leaseMinutes ?? 0) * 60))
+                so(String(localized: "Resolved"), "\(a.issuesResolved ?? 0)")
+                so(String(localized: "Points"), CTWSo.gon(a.pointsResolved ?? 0))
+                so(String(localized: "Returned"), "\(Int(((a.returnRate ?? 0) * 100).rounded()))%")
+                so(String(localized: "Worked"), CTWSo.gio(giay: (a.leaseMinutes ?? 0) * 60))
             }
         }
         .padding(.vertical, 4)

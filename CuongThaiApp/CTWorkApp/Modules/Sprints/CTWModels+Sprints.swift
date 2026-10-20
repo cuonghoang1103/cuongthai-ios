@@ -20,7 +20,7 @@ struct CTWSprintDu: Codable, Hashable, Identifiable {
     var completedPoints: Double?
     var position: Int?
 
-    var ten: String { name ?? "Sprint \(id)" }
+    var ten: String { name ?? String(localized: "Sprint \(id)") }
     var dangChay: Bool { state == "ACTIVE" }
     var daDong: Bool { state == "CLOSED" }
     var chuaBatDau: Bool { state == "PLANNED" || state == nil }
@@ -98,8 +98,8 @@ extension CTWSprintReport {
 
 /// Đơn vị ước lượng: "pts" / "h".
 enum DonViSprintCTW {
-    static func ten(_ unit: String?) -> String { unit == "HOURS" ? "h" : "pts" }
-    static func tenDai(_ unit: String?) -> String { unit == "HOURS" ? "hours" : "points" }
+    static func ten(_ unit: String?) -> String { unit == "HOURS" ? String(localized: "h") : String(localized: "pts") }
+    static func tenDai(_ unit: String?) -> String { unit == "HOURS" ? String(localized: "hours") : String(localized: "points") }
     static func so(_ v: Double?, _ unit: String?) -> String {
         guard let v else { return "—" }
         return "\(CTWSo.gon(v)) \(ten(unit))"

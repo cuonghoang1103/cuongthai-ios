@@ -25,8 +25,8 @@ final class BangRetroVM: ObservableObject {
             try await APIClient.shared.send(ep)
             loi = nil
         } catch {
-            loi = DongHoCTW.maLoi(error) == "WORK_RETRO_NO_VOTES" ? "You've used all your votes. Remove a vote to vote on another card."
-                : (DongHoCTW.maLoi(error) == "WORK_RETRO_LOCKED" ? "This retro is locked." : CTW.loi(error))
+            loi = DongHoCTW.maLoi(error) == "WORK_RETRO_NO_VOTES" ? String(localized: "You've used all your votes. Remove a vote to vote on another card.")
+                : (DongHoCTW.maLoi(error) == "WORK_RETRO_LOCKED" ? String(localized: "This retro is locked.") : CTW.loi(error))
             CTWRung.loi()
         }
         await tai()
@@ -151,11 +151,11 @@ struct BangRetroCTW: View {
         .sheet(item: $tamPhu) { t in
             switch t {
             case .themThe(let c):
-                SoanRetroCTW(tieuDe: "Add to \(RetroCot.ten(c))", nut: "Add", goiY: "What's on your mind?", chu: "") { chu in
+                SoanRetroCTW(tieuDe: String(localized: "Add to \(RetroCot.ten(c))"), nut: String(localized: "Add"), goiY: String(localized: "What's on your mind?"), chu: "") { chu in
                     await vm.lam(CTWAPI.themTheRetro(pid: pid, rid: rid, cot: c, noiDung: chu))
                 }
             case .suaThe(let the):
-                SoanRetroCTW(tieuDe: "Edit card", nut: "Save", goiY: "", chu: the.body ?? "") { chu in
+                SoanRetroCTW(tieuDe: String(localized: "Edit card"), nut: String(localized: "Save"), goiY: "", chu: the.body ?? "") { chu in
                     await vm.lam(CTWAPI.suaTheRetro(pid: pid, rid: rid, cid: the.id, noiDung: chu))
                 }
             case .themViec(let the):
@@ -215,7 +215,7 @@ struct BangRetroCTW: View {
         }
     }
 
-    private func nhan(_ chu: String, _ bt: String, _ mau: Color) -> some View {
+    private func nhan(_ chu: LocalizedStringKey, _ bt: String, _ mau: Color) -> some View {
         Label(chu, systemImage: bt).font(.ctw(size: 11, weight: .bold)).foregroundColor(mau)
             .padding(.horizontal, 8).padding(.vertical, 3)
             .background(Capsule().fill(mau.opacity(0.12)))
@@ -322,7 +322,7 @@ struct BangRetroCTW: View {
     private func viec(_ r: CTWRetro) -> some View {
         let ds = r.actions ?? []
         return VStack(alignment: .leading, spacing: 0) {
-            CTWSectionHeader("checklist", "Action items", count: "\(ds.count)",
+            CTWSectionHeader("checklist", String(localized: "Action items"), count: "\(ds.count)",
                              trailing: r.me?.canFacilitate == true || r.me?.canWrite == true || r.locked == true
                                 ? AnyView(Button { tamPhu = .themViec(nil) } label: { Image(systemName: "plus").frame(width: 36, height: 36) }
                                     .accessibilityLabel("Add action item"))
@@ -369,7 +369,7 @@ struct BangRetroCTW: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
                 Text("Summary").font(.ctw(size: 15, weight: .semibold))
-                CTWNhanAI(chu: "AI summary")
+                CTWNhanAI(chu: String(localized: "AI summary"))
                 Spacer()
                 if let luc { Text(CTW.thoiDiem(luc)).font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary) }
             }

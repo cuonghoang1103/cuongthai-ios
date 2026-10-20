@@ -72,7 +72,7 @@ struct TinChatCTW: View {
             VStack(alignment: .leading, spacing: 4) {
                 if !gop {
                     HStack(spacing: 6) {
-                        Text(tin.author?.ten ?? "Deleted user").font(.ctw(size: 14, weight: .semibold))
+                        Text(tin.author?.ten ?? String(localized: "Deleted user")).font(.ctw(size: 14, weight: .semibold))
                             .foregroundColor(AppColors.textPrimary).lineLimit(1)
                         if tin.author?.laAgent == true { CTWNhanAI() }
                         Text(CTWChatThoiGian.gio(tin.createdAt)).font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
@@ -226,7 +226,7 @@ struct HangCamXucCTW: View {
                     .overlay(Capsule().strokeBorder(x.mine == true ? AppColors.primary.opacity(0.5) : Color.clear, lineWidth: 1))
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("\(x.emoji) \(x.count ?? 0)\(x.mine == true ? ", you reacted" : "")")
+                .accessibilityLabel(x.mine == true ? String(localized: "\(x.emoji) \(x.count ?? 0), you reacted") : "\(x.emoji) \(x.count ?? 0)")
             }
             Button(action: them) {
                 Image(systemName: "face.smiling").font(.ctw(size: 13))
@@ -358,7 +358,7 @@ struct TheTepChatCTW: View {
                     .frame(width: 38, height: 38)
                     .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(AppColors.primary.opacity(0.12)))
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(tep.fileName ?? "File").font(.ctw(size: 14, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                    Text(tep.fileName ?? String(localized: "File")).font(.ctw(size: 14, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(1)
                     Text([tep.coChu, (tep.fileName as NSString?)?.pathExtension.uppercased()].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · "))
                         .font(.ctw(size: 11)).foregroundColor(AppColors.textSecondary)
                 }
@@ -453,7 +453,7 @@ struct GiongNoiChatCTW: View {
                         }
                     }
                     .frame(height: 5)
-                    Text(String(format: "%d:%02d", giay / 60, giay % 60) + (loi ? " · Couldn't load" : ""))
+                    Text(loi ? String(localized: "\(String(format: "%d:%02d", giay / 60, giay % 60)) · Couldn't load") : String(format: "%d:%02d", giay / 60, giay % 60))
                         .font(.ctw(size: 11).monospacedDigit()).foregroundColor(AppColors.textSecondary)
                 }
                 .frame(width: 150)
@@ -488,25 +488,19 @@ enum CTWChatThoiGian {
 
     static func gio(_ s: String?) -> String {
         guard let d = date(s) else { return "" }
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "en_US")
-        f.dateFormat = Calendar.current.isDateInToday(d) ? "HH:mm" : "MMM d, HH:mm"
-        return f.string(from: d)
+        if Calendar.current.isDateInToday(d) { return CTWDinhDang.gio(d) }
+        return "\(CTWDinhDang.mau("MMMd").string(from: d)), \(CTWDinhDang.gio(d))"
     }
 
     /// Nhãn vạch ngày: Today · Yesterday · Monday, Oct 13 · Oct 13, 2025.
     static func nhanNgay(_ d: Date) -> String {
         let c = Calendar.current
-        if c.isDateInToday(d) { return "Today" }
-        if c.isDateInYesterday(d) { return "Yesterday" }
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "en_US")
+        if c.isDateInToday(d) { return String(localized: "Today") }
+        if c.isDateInYesterday(d) { return String(localized: "Yesterday") }
         if let tuan = c.date(byAdding: .day, value: -6, to: Date()), d > tuan {
-            f.dateFormat = "EEEE, MMM d"
-        } else {
-            f.dateFormat = c.isDate(d, equalTo: Date(), toGranularity: .year) ? "EEEE, MMM d" : "MMM d, yyyy"
+            return CTWDinhDang.mau("EEEEMMMd").string(from: d)
         }
-        return f.string(from: d)
+        return CTWDinhDang.mau(c.isDate(d, equalTo: Date(), toGranularity: .year) ? "EEEEMMMd" : "yMMMd").string(from: d)
     }
 
     static func phut(_ a: String?, _ b: String?) -> Double {

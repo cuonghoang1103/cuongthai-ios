@@ -165,7 +165,7 @@ struct ChuoiTraLoiCTW: View {
             }
             .safeAreaInset(edge: .bottom) {
                 if duocGui {
-                    SoanTinCTW(pid: pid, cid: kenh.id, goiY: "Reply…", thanhVien: thanhVien,
+                    SoanTinCTW(pid: pid, cid: kenh.id, goiY: String(localized: "Reply…"), thanhVien: thanhVien,
                                gui: { chu, tep in await vm.gui(chu, tep: tep) },
                                chuDoi: { vm.chuDoi($0) },
                                guiGiongNoi: { f in await vm.gui("", tep: [f]) })
@@ -192,13 +192,13 @@ struct ChuoiTraLoiCTW: View {
                         Task {
                             do {
                                 try await CTWBaoCao.baoCaoTin(m, duAn: tenDuAn, kenh: kenh.name, lyDoMa: l.ma)
-                                thongBao = "Thanks — our moderators will review it within 24 hours. The message is hidden for you."
+                                thongBao = String(localized: "Thanks — our moderators will review it within 24 hours. The message is hidden for you.")
                             } catch { vm.loi = CTW.loi(error) }
                         }
                     }
                 }
             } message: { Text("Reported messages are hidden for you right away.") }
-            .confirmationDialog("Block \(hoiChan?.ten ?? "this user")?", isPresented: Binding(get: { hoiChan != nil }, set: { if !$0 { hoiChan = nil } }),
+            .confirmationDialog("Block \(hoiChan?.ten ?? String(localized: "this user"))?", isPresented: Binding(get: { hoiChan != nil }, set: { if !$0 { hoiChan = nil } }),
                                 titleVisibility: .visible) {
                 Button("Block", role: .destructive) {
                     guard let u = hoiChan else { return }
@@ -222,7 +222,7 @@ struct ChuoiTraLoiCTW: View {
     private var chuGo: String? {
         let ten = vm.dangGo.values.filter { Date().timeIntervalSince($0.luc) < 6 }.map(\.nguoi.ten)
         guard !ten.isEmpty else { return nil }
-        return ten.count == 1 ? "\(ten[0]) is typing…" : "\(ten.count) people are typing…"
+        return ten.count == 1 ? String(localized: "\(ten[0]) is typing…") : String(localized: "\(ten.count) people are typing…")
     }
 
     @ViewBuilder

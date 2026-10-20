@@ -73,8 +73,8 @@ struct PhongPokerCTW: View {
                             dieuPhoi(p, m)
                         }
                     } else if !p.daDong {
-                        CTWOTrong(bieuTuong: "hand.raised", tieuDe: "Waiting for the facilitator",
-                                  moTa: p.me?.canFacilitate == true ? "Pick an issue below to start voting." : "Voting starts when the facilitator picks an issue.")
+                        CTWOTrong(bieuTuong: "hand.raised", tieuDe: String(localized: "Waiting for the facilitator"),
+                                  moTa: p.me?.canFacilitate == true ? String(localized: "Pick an issue below to start voting.") : String(localized: "Voting starts when the facilitator picks an issue."))
                             .ctwThe(14)
                     }
                     dsMuc(p)
@@ -93,7 +93,7 @@ struct PhongPokerCTW: View {
                     Menu {
                         Menu("Timer") {
                             ForEach([30, 60, 90, 120, 180, 300], id: \.self) { g in
-                                Button("\(g < 60 ? "\(g) seconds" : "\(g / 60) min\(g % 60 == 30 ? " 30 s" : "")")") {
+                                Button(g < 60 ? String(localized: "\(g) seconds") : (g % 60 == 30 ? String(localized: "\(g / 60) min 30 s") : String(localized: "\(g / 60) min"))) {
                                     Task { await vm.lam(CTWAPI.henGioPoker(pid: pid, sid: sid, giay: g)) }
                                 }
                             }
@@ -199,11 +199,11 @@ struct PhongPokerCTW: View {
     private func nhanTrangThai(_ m: CTWPokerMuc) -> some View {
         let (chu, mau): (String, Color) = {
             switch m.state {
-            case "VOTING": return ("VOTING", AppColors.primary)
-            case "REVEALED": return ("REVEALED", CTWMauChuoi.mau(1))
-            case "ESTIMATED": return ("ESTIMATED", AppColors.success)
-            case "SKIPPED": return ("SKIPPED", AppColors.textTertiary)
-            default: return ("PENDING", AppColors.textTertiary)
+            case "VOTING": return (String(localized: "VOTING"), AppColors.primary)
+            case "REVEALED": return (String(localized: "REVEALED"), CTWMauChuoi.mau(1))
+            case "ESTIMATED": return (String(localized: "ESTIMATED"), AppColors.success)
+            case "SKIPPED": return (String(localized: "SKIPPED"), AppColors.textTertiary)
+            default: return (String(localized: "PENDING"), AppColors.textTertiary)
             }
         }()
         return Text(chu).font(.ctw(size: 10, weight: .bold)).foregroundColor(mau)
@@ -234,7 +234,7 @@ struct PhongPokerCTW: View {
                                 .font(.ctw(size: 11)).foregroundColor(AppColors.textSecondary).fixedSize()
                         }
                         .accessibilityElement(children: .ignore)
-                        .accessibilityLabel("\(u.ten), \(daBau.contains(u.id) ? "voted" : "not voted yet")")
+                        .accessibilityLabel(daBau.contains(u.id) ? "\(u.ten), voted" : "\(u.ten), not voted yet")
                     }
                 }
                 .padding(.top, 4)
@@ -298,12 +298,12 @@ struct PhongPokerCTW: View {
                 }
             }
             CTWLuoiChiSo {
-                CTWTheChiSo(nhan: "Average", giaTri: d?.average.map(CTWSo.gon) ?? "—", bieuTuong: "sum")
-                CTWTheChiSo(nhan: "Median", giaTri: d?.median.map(CTWSo.gon) ?? "—", bieuTuong: "line.3.horizontal.decrease")
-                CTWTheChiSo(nhan: "Suggested", giaTri: d?.suggested ?? "—", phu: [d?.low, d?.high].compactMap { $0 }.count == 2 ? "Range \(d?.low ?? "") – \(d?.high ?? "")" : nil,
+                CTWTheChiSo(nhan: String(localized: "Average"), giaTri: d?.average.map(CTWSo.gon) ?? "—", bieuTuong: "sum")
+                CTWTheChiSo(nhan: String(localized: "Median"), giaTri: d?.median.map(CTWSo.gon) ?? "—", bieuTuong: "line.3.horizontal.decrease")
+                CTWTheChiSo(nhan: String(localized: "Suggested"), giaTri: d?.suggested ?? "—", phu: [d?.low, d?.high].compactMap { $0 }.count == 2 ? String(localized: "Range \(d?.low ?? "") – \(d?.high ?? "")") : nil,
                             bieuTuong: "wand.and.stars", mau: AppColors.success)
                 if let f = m.finalValue {
-                    CTWTheChiSo(nhan: "Final", giaTri: f, phu: m.finalPoints.map { "\(CTWSo.gon($0)) pts" }, bieuTuong: "flag.checkered", mau: AppColors.success)
+                    CTWTheChiSo(nhan: String(localized: "Final"), giaTri: f, phu: m.finalPoints.map { String(localized: "\(CTWSo.gon($0)) pts") }, bieuTuong: "flag.checkered", mau: AppColors.success)
                 }
             }
             if !dem.isEmpty {
@@ -347,13 +347,13 @@ struct PhongPokerCTW: View {
                 Text("Facilitator").font(.ctw(size: 13, weight: .semibold)).foregroundColor(AppColors.textSecondary)
                 if m.state == "VOTING" {
                     HStack(spacing: 8) {
-                        nut("Reveal cards", "eye.fill", chinh: true) { await vm.lam(CTWAPI.lenhMucPoker(pid: pid, sid: sid, iid: m.id, lenh: "reveal")) }
-                        nut("Skip", "forward.fill") { await vm.lam(CTWAPI.lenhMucPoker(pid: pid, sid: sid, iid: m.id, lenh: "skip")) }
+                        nut(String(localized: "Reveal cards"), "eye.fill", chinh: true) { await vm.lam(CTWAPI.lenhMucPoker(pid: pid, sid: sid, iid: m.id, lenh: "reveal")) }
+                        nut(String(localized: "Skip"), "forward.fill") { await vm.lam(CTWAPI.lenhMucPoker(pid: pid, sid: sid, iid: m.id, lenh: "skip")) }
                     }
                 } else if m.daLat {
                     Menu {
                         ForEach(PokerTinh.laChotDuoc(p), id: \.self) { la in
-                            Button(la + (la == m.distribution?.suggested ? " (suggested)" : "")) {
+                            Button(la == m.distribution?.suggested ? String(localized: "\(la) (suggested)") : la) {
                                 Task { await vm.lam(CTWAPI.chotPoker(pid: pid, sid: sid, iid: m.id, giaTri: la)) ; CTWRung.thanhCong() }
                             }
                         }
@@ -365,13 +365,13 @@ struct PhongPokerCTW: View {
                             .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(AppColors.primary))
                     }
                     HStack(spacing: 8) {
-                        nut("Vote again", "arrow.counterclockwise") { await vm.lam(CTWAPI.lenhMucPoker(pid: pid, sid: sid, iid: m.id, lenh: "revote")) }
+                        nut(String(localized: "Vote again"), "arrow.counterclockwise") { await vm.lam(CTWAPI.lenhMucPoker(pid: pid, sid: sid, iid: m.id, lenh: "revote")) }
                         if let tiep = mucKeTiep(p, sau: m) {
-                            nut("Next issue", "arrow.right") { await vm.lam(CTWAPI.lenhMucPoker(pid: pid, sid: sid, iid: tiep.id, lenh: "start")) }
+                            nut(String(localized: "Next issue"), "arrow.right") { await vm.lam(CTWAPI.lenhMucPoker(pid: pid, sid: sid, iid: tiep.id, lenh: "start")) }
                         }
                     }
                 } else {
-                    nut("Start voting", "play.fill", chinh: true) { await vm.lam(CTWAPI.lenhMucPoker(pid: pid, sid: sid, iid: m.id, lenh: "start")) }
+                    nut(String(localized: "Start voting"), "play.fill", chinh: true) { await vm.lam(CTWAPI.lenhMucPoker(pid: pid, sid: sid, iid: m.id, lenh: "start")) }
                 }
             }
             .padding(14)
@@ -400,7 +400,7 @@ struct PhongPokerCTW: View {
         let ds = (p.items ?? []).sorted { ($0.position ?? 0) < ($1.position ?? 0) }
         let xong = ds.filter { $0.state == "ESTIMATED" }.count
         return VStack(alignment: .leading, spacing: 0) {
-            CTWSectionHeader("list.number", "Issues", count: "\(xong)/\(ds.count)")
+            CTWSectionHeader("list.number", String(localized: "Issues"), count: "\(xong)/\(ds.count)")
                 .padding(.bottom, 8)
             ForEach(Array(ds.enumerated()), id: \.element.id) { i, m in
                 Button {

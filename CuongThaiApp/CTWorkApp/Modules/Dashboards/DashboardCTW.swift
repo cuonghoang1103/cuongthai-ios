@@ -21,7 +21,7 @@ struct DashboardCTW: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
                 if ws.isEmpty {
-                    CTWOTrong(bieuTuong: "square.grid.2x2", tieuDe: "This dashboard is empty", moTa: "Add widgets on the web — they show up here.")
+                    CTWOTrong(bieuTuong: "square.grid.2x2", tieuDe: String(localized: "This dashboard is empty"), moTa: String(localized: "Add widgets on the web — they show up here."))
                 }
                 ForEach(Array(hang(ws).enumerated()), id: \.offset) { _, h in
                     if h.count == 2 {
@@ -41,7 +41,7 @@ struct DashboardCTW: View {
         .refreshable { await napMoi(); lamMoi += 1 }
         .task { await napMoi() }
         .background(AppColors.backgroundPrimary)
-        .navigationTitle(db.name ?? "Dashboard")
+        .navigationTitle(db.name ?? String(localized: "Dashboard"))
         .navigationBarTitleDisplayMode(.inline)
     }
 
@@ -81,15 +81,15 @@ struct WidgetDbCTW: View {
     @EnvironmentObject private var app: AppState
     @State private var moWeb = false
 
-    static let tenMacDinh: [String: String] = [
-        "filter": "Filter results", "my_issues": "Assigned to me", "overdue": "Overdue", "counter": "Count",
-        "pie": "Breakdown", "bar": "Breakdown", "created_resolved": "Created vs resolved", "burndown": "Sprint burndown",
-        "health": "Project health", "text": "Notes", "top_risks": "Top risks", "kpis": "Key numbers",
-        "cfd": "Cumulative flow", "throughput": "Throughput", "cycle_time": "Cycle time", "aging_wip": "Aging work in progress",
-        "velocity": "Velocity", "release_burnup": "Release burnup", "workload": "Workload",
-        "test_pass_rate": "Test pass rate", "defects_by_severity": "Defects by severity", "license_expiring": "Expiring licenses",
-        "my_timer": "My timer", "okr": "OKRs",
-    ]
+    static var tenMacDinh: [String: String] { [
+        "filter": String(localized: "Filter results"), "my_issues": String(localized: "Assigned to me"), "overdue": String(localized: "Overdue"), "counter": String(localized: "Count"),
+        "pie": String(localized: "Breakdown"), "bar": String(localized: "Breakdown"), "created_resolved": String(localized: "Created vs resolved"), "burndown": String(localized: "Sprint burndown"),
+        "health": String(localized: "Project health"), "text": String(localized: "Notes"), "top_risks": String(localized: "Top risks"), "kpis": String(localized: "Key numbers"),
+        "cfd": String(localized: "Cumulative flow"), "throughput": String(localized: "Throughput"), "cycle_time": String(localized: "Cycle time"), "aging_wip": String(localized: "Aging work in progress"),
+        "velocity": String(localized: "Velocity"), "release_burnup": String(localized: "Release burnup"), "workload": String(localized: "Workload"),
+        "test_pass_rate": String(localized: "Test pass rate"), "defects_by_severity": String(localized: "Defects by severity"), "license_expiring": String(localized: "Expiring licenses"),
+        "my_timer": String(localized: "My timer"), "okr": String(localized: "OKRs"),
+    ] }
 
     private var tieuDe: String {
         if let t = w.title, !t.isEmpty { return t }
@@ -234,7 +234,7 @@ struct WidgetDbCTW: View {
                 }
             }
         } else {
-            thongDiep(tieuDe, "No active sprint right now.", "flag.checkered")
+            thongDiep(tieuDe, String(localized: "No active sprint right now."), "flag.checkered")
         }
     }
 
@@ -268,8 +268,8 @@ struct WidgetDbCTW: View {
                 }
                 NapBaoCaoCTW(khoa: "\(k)-mt", diemCuoi: { CTWAPI.gioCuaToiDb(pid: pid) }, soHang: 1) { (m: CTWGioCuaToiDb) in
                     HStack(spacing: 10) {
-                        CTWTheChiSo(nhan: "Today", giaTri: CTWSo.gio(giay: (m.todayMinutes ?? 0) * 60), bieuTuong: "sun.max", mau: CTWMauChuoi.mau(0))
-                        CTWTheChiSo(nhan: "This week", giaTri: CTWSo.gio(giay: (m.weekMinutes ?? 0) * 60), bieuTuong: "calendar", mau: CTWMauChuoi.mau(0))
+                        CTWTheChiSo(nhan: String(localized: "Today"), giaTri: CTWSo.gio(giay: (m.todayMinutes ?? 0) * 60), bieuTuong: "sun.max", mau: CTWMauChuoi.mau(0))
+                        CTWTheChiSo(nhan: String(localized: "This week"), giaTri: CTWSo.gio(giay: (m.weekMinutes ?? 0) * 60), bieuTuong: "calendar", mau: CTWMauChuoi.mau(0))
                     }
                 }
             }
@@ -322,9 +322,9 @@ struct BieuDoTronDbCTW: View {
     let tong: Int
 
     var body: some View {
-        CTWKhungBieuDo(tieuDe: tieuDe, phu: "\(tong) issues",
+        CTWKhungBieuDo(tieuDe: tieuDe, phu: String(localized: "\(tong) issues"),
                        chuGiai: thanh.map { CTWMucChuGiai(ten: $0.nhan, mau: mau($0)) },
-                       cot: ["Group", "Issues", "%"],
+                       cot: [String(localized: "Group"), String(localized: "Issues"), "%"],
                        hang: thanh.map { CTWHangBang(nhan: $0.nhan, giaTri: [CTWSo.gon($0.giaTri), "\(Int(($0.tiLe * 100).rounded()))%"]) },
                        cao: 200) {
             Chart(thanh) { t in

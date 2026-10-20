@@ -18,8 +18,8 @@ enum CTWTaiLen {
         case quaLon, hong(Int)
         var errorDescription: String? {
             switch self {
-            case .quaLon: return "Files must be 25 MB or smaller."
-            case .hong(let ma): return "Upload failed (\(ma)). Please try again."
+            case .quaLon: return String(localized: "Files must be 25 MB or smaller.")
+            case .hong(let ma): return String(localized: "Upload failed (\(ma)). Please try again.")
             }
         }
     }

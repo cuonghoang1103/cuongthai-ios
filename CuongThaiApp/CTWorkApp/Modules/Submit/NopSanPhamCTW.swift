@@ -19,14 +19,14 @@ struct NopSanPhamCTW: View {
                     cong(du)
                     if let t = du.totals {
                         LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), spacing: 10)], spacing: 10) {
-                            CTWODem(so: "\(t.submitted ?? 0)/\(t.issues ?? 0)", nhan: "Issues with files", bieuTuong: "tray.and.arrow.up", mau: AppColors.success)
-                            CTWODem(so: "\(t.files ?? 0)", nhan: "Files", bieuTuong: "paperclip")
-                            CTWODem(so: "\(t.overdue ?? 0)", nhan: "Overdue", bieuTuong: "calendar.badge.exclamationmark", mau: AppColors.error)
-                            CTWODem(so: "\(t.members ?? 0)", nhan: "Members", bieuTuong: "person.3", mau: AppColors.secondary)
+                            CTWODem(so: "\(t.submitted ?? 0)/\(t.issues ?? 0)", nhan: String(localized: "Issues with files"), bieuTuong: "tray.and.arrow.up", mau: AppColors.success)
+                            CTWODem(so: "\(t.files ?? 0)", nhan: String(localized: "Files"), bieuTuong: "paperclip")
+                            CTWODem(so: "\(t.overdue ?? 0)", nhan: String(localized: "Overdue"), bieuTuong: "calendar.badge.exclamationmark", mau: AppColors.error)
+                            CTWODem(so: "\(t.members ?? 0)", nhan: String(localized: "Members"), bieuTuong: "person.3", mau: AppColors.secondary)
                         }
                     }
                     let ms = du.members ?? []
-                    if ms.isEmpty { CTWOTrong(bieuTuong: "tray", tieuDe: "Nothing assigned yet", moTa: "Issues with assignees appear here.") }
+                    if ms.isEmpty { CTWOTrong(bieuTuong: "tray", tieuDe: String(localized: "Nothing assigned yet"), moTa: String(localized: "Issues with assignees appear here.")) }
                     ForEach(ms) { m in thanhVien(m) }
                 } else if loi == nil {
                     CTWKhungTai(soHang: 4).padding(.horizontal, -Spacing.md)
@@ -62,14 +62,24 @@ struct NopSanPhamCTW: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(bat ? (d.gate?.mode == "hard" ? "Files required to finish" : "Files recommended") : "No submission rule")
                     .font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
-                Text(bat
-                     ? "Each issue\(d.gate?.typeKeys.map { " (\($0.joined(separator: ", ")))" } ?? "") needs at least \(d.gate?.minAttachments ?? 1) attached file\((d.gate?.minAttachments ?? 1) == 1 ? "" : "s")\(d.gate?.mode == "hard" ? " before it can move to Done." : ".")"
-                     : "Issues can be finished without attaching files.")
+                Text(bat ? cauLuat(d) : String(localized: "Issues can be finished without attaching files."))
                     .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 0)
         }
         .padding(12).ctwThe(12)
+    }
+
+    private func cauLuat(_ d: CTWNopSanPham) -> String {
+        let loai = d.gate?.typeKeys.map { " (\($0.joined(separator: ", ")))" } ?? ""
+        let n = d.gate?.minAttachments ?? 1
+        let cung = d.gate?.mode == "hard"
+        if n == 1 {
+            return cung ? String(localized: "Each issue\(loai) needs at least 1 attached file before it can move to Done.")
+                        : String(localized: "Each issue\(loai) needs at least 1 attached file.")
+        }
+        return cung ? String(localized: "Each issue\(loai) needs at least \(n) attached files before it can move to Done.")
+                    : String(localized: "Each issue\(loai) needs at least \(n) attached files.")
     }
 
     private func thanhVien(_ m: CTWNopSanPham.ThanhVien) -> some View {
@@ -82,14 +92,14 @@ struct NopSanPhamCTW: View {
                     CTWAvatar(user: CTWUser(id: 0, username: m.username, fullName: m.name, kind: m.kind), size: 30)
                     VStack(alignment: .leading, spacing: 2) {
                         HStack(spacing: 5) {
-                            Text(m.name ?? m.username ?? "Member").font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                            Text(m.name ?? m.username ?? String(localized: "Member")).font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                             if m.kind == "AGENT" { CTWNhanAI() }
                         }
                         Text("\(m.submitted ?? 0)/\(m.total ?? 0) submitted · \(m.onTime ?? 0)/\(m.onTimeOf ?? 0) on time")
                             .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                     }
                     Spacer(minLength: 0)
-                    if (m.overdue ?? 0) > 0 { CTWNhanNho(chu: "\(m.overdue ?? 0) overdue", mau: AppColors.error) }
+                    if (m.overdue ?? 0) > 0 { CTWNhanNho(chu: String(localized: "\(m.overdue ?? 0) overdue"), mau: AppColors.error) }
                     Image(systemName: "chevron.down").font(.ctw(size: 12, weight: .semibold)).foregroundColor(AppColors.textTertiary)
                         .rotationEffect(.degrees(dangMo ? 180 : 0))
                 }
@@ -109,7 +119,7 @@ struct NopSanPhamCTW: View {
                                 .foregroundColor(it.submitted == true ? AppColors.success : AppColors.textTertiary)
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(it.title).font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary).lineLimit(2)
-                                Text([it.key, it.status, it.dueDate.flatMap(CTW.ngayNgan).map { "due \($0)" }].compactMap { $0 }.joined(separator: " · "))
+                                Text([it.key, it.status, it.dueDate.flatMap(CTW.ngayNgan).map { String(localized: "due \($0)") }].compactMap { $0 }.joined(separator: " · "))
                                     .font(.ctw(size: 11)).foregroundColor(it.overdue == true ? AppColors.error : AppColors.textTertiary)
                             }
                             Spacer(minLength: 0)

@@ -33,6 +33,8 @@ struct CTWorkApp: App {
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
+        // Ngôn ngữ (Account › Language): tráo Bundle.main + locale hiển thị TRƯỚC khi dựng view nào.
+        NgonNguApCTW.khoiDong()
         #if DEBUG
         XemThuCTW.batNeuCan()
         #endif

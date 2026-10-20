@@ -28,11 +28,11 @@ struct SoanHopCTW: View {
     @State private var loi: String?
     @State private var dangLuu = false
 
-    static let loaiHop: [(String, String)] = [
-        ("OTHER", "Meeting"), ("DAILY", "Daily stand-up"), ("WEEKLY", "Weekly"), ("PLANNING", "Sprint planning"),
-        ("DEMO", "Demo"), ("RETRO", "Retrospective"), ("KICKOFF", "Kick-off"), ("CLIENT", "Client meeting"),
-        ("STEERING", "Steering committee"), ("MENTOR", "Lecturer / mentor"), ("ELICITATION", "Requirements elicitation"),
-    ]
+    static var loaiHop: [(String, String)] { [
+        ("OTHER", String(localized: "Meeting")), ("DAILY", String(localized: "Daily stand-up")), ("WEEKLY", String(localized: "Weekly")), ("PLANNING", String(localized: "Sprint planning")),
+        ("DEMO", String(localized: "Demo")), ("RETRO", String(localized: "Retrospective")), ("KICKOFF", String(localized: "Kick-off")), ("CLIENT", String(localized: "Client meeting")),
+        ("STEERING", String(localized: "Steering committee")), ("MENTOR", String(localized: "Lecturer / mentor")), ("ELICITATION", String(localized: "Requirements elicitation")),
+    ] }
 
     static func lamTron(_ d: Date) -> Date {
         let c = Calendar.current
@@ -165,7 +165,7 @@ struct SoanHopCTW: View {
                 xong(m)
             }
         } catch {
-            loi = CTW.laXungDot(error) ? "Someone else just changed this meeting. Close and reopen it to see their version." : CTW.loi(error)
+            loi = CTW.laXungDot(error) ? String(localized: "Someone else just changed this meeting. Close and reopen it to see their version.") : CTW.loi(error)
             CTWRung.loi()
         }
     }
@@ -188,8 +188,8 @@ struct BanGhiLoiHopCTW: View {
                 let ds = (kq?.recordings ?? []).flatMap { r in (r.lines ?? []).map { (r.id, $0) } }
                     .filter { tim.isEmpty || ($0.1.text ?? "").localizedCaseInsensitiveContains(tim) }
                 if kq != nil && ds.isEmpty {
-                    CTWOTrong(bieuTuong: "text.quote", tieuDe: tim.isEmpty ? "No transcript yet" : "No matches",
-                              moTa: tim.isEmpty ? "Transcripts appear here after a meeting is recorded." : "Try another word.")
+                    CTWOTrong(bieuTuong: "text.quote", tieuDe: tim.isEmpty ? String(localized: "No transcript yet") : String(localized: "No matches"),
+                              moTa: tim.isEmpty ? String(localized: "Transcripts appear here after a meeting is recorded.") : String(localized: "Try another word."))
                         .listRowBackground(Color.clear)
                 }
                 ForEach(ds, id: \.1.id) { _, l in

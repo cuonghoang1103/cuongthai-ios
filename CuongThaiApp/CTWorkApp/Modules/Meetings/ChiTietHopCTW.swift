@@ -52,7 +52,7 @@ final class HopVM: ObservableObject {
         } catch {
             if CTW.laXungDot(error) {
                 await tai()
-                loi = "Someone else just changed this meeting — we loaded their version. Please try again."
+                loi = String(localized: "Someone else just changed this meeting — we loaded their version. Please try again.")
             } else { loi = CTW.loi(error) }
             CTWRung.loi()
             return false
@@ -102,7 +102,7 @@ final class HopVM: ObservableObject {
             if let m = kq.meeting { hop = m } else { await tai() }
             CTWRung.thanhCong()
             let k = (kq.created ?? []).compactMap(\.key)
-            return k.isEmpty ? "No new issues — every action item already has one." : "Created \(k.joined(separator: ", "))."
+            return k.isEmpty ? String(localized: "No new issues — every action item already has one.") : String(localized: "Created \(k.joined(separator: ", ")).")
         } catch { loi = CTW.loi(error); return nil }
     }
 
@@ -184,7 +184,7 @@ struct ChiTietHopCTW: View {
                     vaoHop(h)
                     if let me = vm.phong?.me, me.invited == true, !h.daHuy { rsvp(me) }
                     if daAn {
-                        CTWOTrong(bieuTuong: "eye.slash", tieuDe: "Notes hidden", moTa: "You reported this meeting's notes or blocked its organizer, so its notes are hidden for you.")
+                        CTWOTrong(bieuTuong: "eye.slash", tieuDe: String(localized: "Notes hidden"), moTa: String(localized: "You reported this meeting's notes or blocked its organizer, so its notes are hidden for you."))
                     } else {
                         chuongTrinh(h)
                         bienBan(h)
@@ -232,7 +232,7 @@ struct ChiTietHopCTW: View {
                 Button(l.nhan, role: .destructive) { Task { await guiBaoCao(l.ma) } }
             }
         } message: { Text("Reported notes are hidden for you right away.") }
-        .confirmationDialog("Block \(vm.hop?.organizer?.ten ?? "the organizer")?", isPresented: $hoiChan, titleVisibility: .visible) {
+        .confirmationDialog("Block \(vm.hop?.organizer?.ten ?? String(localized: "the organizer"))?", isPresented: $hoiChan, titleVisibility: .visible) {
             Button("Block", role: .destructive) {
                 guard let u = vm.hop?.organizer else { return }
                 Task { do { try await kd.block(userId: u.id) } catch { vm.loi = CTW.loi(error) } }
@@ -245,7 +245,7 @@ struct ChiTietHopCTW: View {
     private func dau(_ h: CTWMeeting) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 6) {
-                Text(h.typeLabel ?? "Meeting").font(.ctw(size: 12, weight: .semibold)).foregroundColor(mauLoaiHopCTW(h.type))
+                Text(h.typeLabel ?? String(localized: "Meeting")).font(.ctw(size: 12, weight: .semibold)).foregroundColor(mauLoaiHopCTW(h.type))
                     .padding(.horizontal, 8).padding(.vertical, 3).background(Capsule().fill(mauLoaiHopCTW(h.type).opacity(0.12)))
                 ChipTrangThaiHopCTW(trangThai: h.status)
                 if h.seriesId != nil { Label("Recurring", systemImage: "repeat").font(.ctw(size: 11)).foregroundColor(AppColors.textSecondary) }
@@ -275,14 +275,9 @@ struct ChiTietHopCTW: View {
 
     private func khoangGio(_ h: CTWMeeting) -> String {
         guard let b = h.batDau else { return "" }
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "en_US")
-        f.dateFormat = "EEE, MMM d · HH:mm"
-        let g = DateFormatter()
-        g.dateFormat = "HH:mm"
-        var s = f.string(from: b)
-        if let k = h.ketThuc { s += "–" + g.string(from: k) }
-        if let tz = h.timezone, tz != TimeZone.current.identifier { s += " (your time)" }
+        var s = CTWDinhDang.mau("EEEMMMd").string(from: b) + " · " + CTWDinhDang.gio(b)
+        if let k = h.ketThuc { s += "–" + CTWDinhDang.gio(k) }
+        if let tz = h.timezone, tz != TimeZone.current.identifier { s = String(localized: "\(s) (your time)") }
         return s
     }
 
@@ -300,7 +295,7 @@ struct ChiTietHopCTW: View {
                         Image(systemName: "video.fill")
                         Text("Join with \(h.tenNhaCungCap)").fontWeight(.semibold)
                         Spacer()
-                        if h.sapHoacDangHop { Text(h.batDau.map { $0 > Date() ? "Starting soon" : "Now" } ?? "").font(.ctw(size: 12, weight: .bold)) }
+                        if h.sapHoacDangHop { Text(h.batDau.map { $0 > Date() ? String(localized: "Starting soon") : String(localized: "Now") } ?? "").font(.ctw(size: 12, weight: .bold)) }
                     }
                     .foregroundColor(.white)
                     .padding(.horizontal, 16).frame(height: 50)
@@ -309,7 +304,7 @@ struct ChiTietHopCTW: View {
                 .buttonStyle(.plain)
                 .accessibilityHint("Opens the meeting in \(h.tenNhaCungCap) and marks you present")
                 HStack(spacing: 16) {
-                    Button { CTW.chepVaoBoNho(u.absoluteString); thongBao = "Meeting link copied." } label: { Label("Copy link", systemImage: "link") }
+                    Button { CTW.chepVaoBoNho(u.absoluteString); thongBao = String(localized: "Meeting link copied.") } label: { Label("Copy link", systemImage: "link") }
                     ShareLink(item: u, subject: Text(h.title)) { Label("Share", systemImage: "square.and.arrow.up") }
                     Button { tamPhu = .lich } label: { Label("Add to Calendar", systemImage: "calendar.badge.plus") }
                 }
@@ -336,7 +331,7 @@ struct ChiTietHopCTW: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Going?").font(.ctw(size: 13, weight: .semibold)).foregroundColor(AppColors.textSecondary)
             HStack(spacing: 8) {
-                ForEach([("YES", "Yes", "checkmark"), ("MAYBE", "Maybe", "questionmark"), ("NO", "No", "xmark")], id: \.0) { r in
+                ForEach([("YES", String(localized: "Yes"), "checkmark"), ("MAYBE", String(localized: "Maybe"), "questionmark"), ("NO", String(localized: "No"), "xmark")], id: \.0) { r in
                     let chon = me.rsvp == r.0
                     Button { Task { await vm.traLoiMoi(r.0) } } label: {
                         Label(r.1, systemImage: r.2).font(.ctw(size: 14, weight: .semibold))
@@ -359,7 +354,7 @@ struct ChiTietHopCTW: View {
         let ds = vm.phong?.agenda ?? []
         if !ds.isEmpty || h.agendaJson?.content?.isEmpty == false {
             VStack(alignment: .leading, spacing: 8) {
-                CTWSectionHeader("list.number", "Agenda", count: vm.phong?.agendaMinutes.map { "\($0) min" })
+                CTWSectionHeader("list.number", String(localized: "Agenda"), count: vm.phong?.agendaMinutes.map { String(localized: "\($0) min") })
                 VStack(alignment: .leading, spacing: 10) {
                     ForEach(Array(ds.enumerated()), id: \.element.id) { i, a in
                         HStack(alignment: .top, spacing: 10) {
@@ -369,7 +364,7 @@ struct ChiTietHopCTW: View {
                                 Text(a.title).font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary)
                                 let nguoi = a.presenterId.flatMap { id in h.attendees?.first { $0.id == id }?.nguoi.ten }
                                 if nguoi != nil || a.minutes != nil {
-                                    Text([nguoi, a.minutes.map { "\($0) min" }].compactMap { $0 }.joined(separator: " · "))
+                                    Text([nguoi, a.minutes.map { String(localized: "\($0) min") }].compactMap { $0 }.joined(separator: " · "))
                                         .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                                 }
                             }
@@ -386,7 +381,7 @@ struct ChiTietHopCTW: View {
 
     private func bienBan(_ h: CTWMeeting) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            CTWSectionHeader("doc.text", "Notes", trailing: suaDuoc ? AnyView(
+            CTWSectionHeader("doc.text", String(localized: "Notes"), trailing: suaDuoc ? AnyView(
                 Button { tamPhu = .ghiChu } label: { Label("Add", systemImage: "plus.circle.fill").labelStyle(.iconOnly).font(.ctw(size: 20)) }
                     .frame(width: 44, height: 32)
                     .accessibilityLabel("Add to notes")) : nil)
@@ -409,16 +404,16 @@ struct ChiTietHopCTW: View {
         if let d = ds.first, let c = d.content {
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 6) {
-                    CTWSectionHeader("sparkles", "Proposed minutes")
-                    CTWNhanAI(chu: "AI-generated")
+                    CTWSectionHeader("sparkles", String(localized: "Proposed minutes"))
+                    CTWNhanAI(chu: String(localized: "AI-generated"))
                 }
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Drafted by AI from the meeting transcript. Check it before applying — it can be wrong.")
                         .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                     if let s = c.summary, !s.isEmpty { Text(s).font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary) }
-                    nhomDeXuat("Decisions", c.decisions ?? [])
-                    nhomDeXuat("Action items", c.actions ?? [])
-                    nhomDeXuat("Open questions", c.openIssues ?? [])
+                    nhomDeXuat(String(localized: "Decisions"), c.decisions ?? [])
+                    nhomDeXuat(String(localized: "Action items"), c.actions ?? [])
+                    nhomDeXuat(String(localized: "Open questions"), c.openIssues ?? [])
                     if vm.phong?.can?.edit == true {
                         HStack {
                             Button { Task { await vm.banNhap(d, ap: true) } } label: { Text("Apply to notes").fontWeight(.semibold) }
@@ -446,7 +441,7 @@ struct ChiTietHopCTW: View {
                         Text("•").foregroundColor(AppColors.textTertiary)
                         VStack(alignment: .leading, spacing: 1) {
                             Text(x.text ?? "").font(.ctw(size: 13)).foregroundColor(AppColors.textPrimary)
-                            let phu = [x.ownerName, x.due, x.unsupported == true ? "Not found in transcript" : nil].compactMap { $0 }
+                            let phu = [x.ownerName, x.due, x.unsupported == true ? String(localized: "Not found in transcript") : nil].compactMap { $0 }
                             if !phu.isEmpty {
                                 Text(phu.joined(separator: " · ")).font(.ctw(size: 11))
                                     .foregroundColor(x.unsupported == true ? AppColors.warning : AppColors.textTertiary)
@@ -463,7 +458,7 @@ struct ChiTietHopCTW: View {
         let ds = h.decisions ?? []
         if !ds.isEmpty || suaDuoc {
             VStack(alignment: .leading, spacing: 8) {
-                CTWSectionHeader("checkmark.seal", "Decisions", count: ds.isEmpty ? nil : "\(ds.count)", trailing: suaDuoc ? AnyView(
+                CTWSectionHeader("checkmark.seal", String(localized: "Decisions"), count: ds.isEmpty ? nil : "\(ds.count)", trailing: suaDuoc ? AnyView(
                     Button { themQuyetDinh = true } label: { Image(systemName: "plus.circle.fill").font(.ctw(size: 20)) }
                         .frame(width: 44, height: 32).accessibilityLabel("Add decision")) : nil)
                 VStack(alignment: .leading, spacing: 0) {
@@ -499,7 +494,7 @@ struct ChiTietHopCTW: View {
         let ds = h.actions ?? []
         let mo = ds.filter { $0.issue == nil }
         return VStack(alignment: .leading, spacing: 8) {
-            CTWSectionHeader("checklist", "Action items", count: ds.isEmpty ? nil : "\(ds.count)", trailing: suaDuoc ? AnyView(
+            CTWSectionHeader("checklist", String(localized: "Action items"), count: ds.isEmpty ? nil : "\(ds.count)", trailing: suaDuoc ? AnyView(
                 Button { tamPhu = .viec(nil) } label: { Image(systemName: "plus.circle.fill").font(.ctw(size: 20)) }
                     .frame(width: 44, height: 32).accessibilityLabel("Add action item")) : nil)
             VStack(alignment: .leading, spacing: 0) {
@@ -533,7 +528,9 @@ struct ChiTietHopCTW: View {
                         chonViec = []
                     }
                 } label: {
-                    Label(chonViec.isEmpty ? "Create issues for \(mo.count) open item\(mo.count == 1 ? "" : "s")" : "Create \(chonViec.count) issue\(chonViec.count == 1 ? "" : "s")",
+                    Label(chonViec.isEmpty
+                          ? (mo.count == 1 ? String(localized: "Create issues for 1 open item") : String(localized: "Create issues for \(mo.count) open items"))
+                          : (chonViec.count == 1 ? String(localized: "Create 1 issue") : String(localized: "Create \(chonViec.count) issues")),
                           systemImage: "checkmark.square.fill")
                         .font(.ctw(size: 14, weight: .semibold))
                         .frame(maxWidth: .infinity).frame(height: 42)
@@ -548,7 +545,7 @@ struct ChiTietHopCTW: View {
         let phong = vm.phong?.attendees ?? []
         let ds = h.attendees ?? []
         return VStack(alignment: .leading, spacing: 8) {
-            CTWSectionHeader("person.2", "Attendees", count: "\(ds.count)", trailing: suaDuoc ? AnyView(
+            CTWSectionHeader("person.2", String(localized: "Attendees"), count: "\(ds.count)", trailing: suaDuoc ? AnyView(
                 Button { chonMoi = Set(ds.map(\.id)); tamPhu = .moi } label: { Image(systemName: "person.badge.plus").font(.ctw(size: 17)) }
                     .frame(width: 44, height: 32).accessibilityLabel("Invite people")) : nil)
             VStack(spacing: 0) {
@@ -566,7 +563,7 @@ struct ChiTietHopCTW: View {
                         }
                         Spacer()
                         Image(systemName: bieuTuongRsvp(p?.rsvp)).foregroundColor(mauRsvp(p?.rsvp))
-                            .accessibilityLabel(p?.rsvp.map { "RSVP \($0.lowercased())" } ?? "No reply")
+                            .accessibilityLabel(p?.rsvp.map { String(localized: "RSVP \($0.lowercased())") } ?? String(localized: "No reply"))
                     }
                     .padding(.vertical, 7)
                     .accessibilityElement(children: .combine)
@@ -582,12 +579,12 @@ struct ChiTietHopCTW: View {
     private func moTaNguoi(_ p: CTWHopNguoiPhong?) -> String? {
         guard let p else { return nil }
         var a: [String] = []
-        if p.present == true { a.append("In the meeting") }
+        if p.present == true { a.append(String(localized: "In the meeting")) }
         switch p.attendance {
-        case "PRESENT": a.append("Present")
-        case "LATE": a.append("Late")
-        case "EXCUSED": a.append("Excused")
-        case "ABSENT": a.append("Absent")
+        case "PRESENT": a.append(String(localized: "Present"))
+        case "LATE": a.append(String(localized: "Late"))
+        case "EXCUSED": a.append(String(localized: "Excused"))
+        case "ABSENT": a.append(String(localized: "Absent"))
         default: break
         }
         if let n = p.rsvpNote, !n.isEmpty { a.append("“\(n)”") }
@@ -607,20 +604,20 @@ struct ChiTietHopCTW: View {
         if coLoi || ghi != nil || h.previous != nil || !(h.next ?? []).isEmpty {
             VStack(spacing: 0) {
                 if coLoi {
-                    Button { tamPhu = .banGhiLoi } label: { hangLienKet("text.quote", "Transcript", nil) }.buttonStyle(.plain)
+                    Button { tamPhu = .banGhiLoi } label: { hangLienKet("text.quote", String(localized: "Transcript"), nil) }.buttonStyle(.plain)
                     Divider()
                 }
                 if let ghi {
-                    Button { moUrl(ghi) } label: { hangLienKet("play.rectangle", "Recording", ghi.host) }.buttonStyle(.plain)
+                    Button { moUrl(ghi) } label: { hangLienKet("play.rectangle", String(localized: "Recording"), ghi.host) }.buttonStyle(.plain)
                     Divider()
                 }
                 if let p = h.previous {
-                    NavigationLink(value: RouteHopCTW(pid: pid, so: p.number, tieuDe: p.title ?? "")) { hangLienKet("arrow.uturn.backward", "Previous: \(p.title ?? "M-\(p.number)")", nil) }
+                    NavigationLink(value: RouteHopCTW(pid: pid, so: p.number, tieuDe: p.title ?? "")) { hangLienKet("arrow.uturn.backward", String(localized: "Previous: \(p.title ?? "M-\(p.number)")"), nil) }
                         .buttonStyle(.plain)
                     Divider()
                 }
                 ForEach(h.next ?? [], id: \.number) { n in
-                    NavigationLink(value: RouteHopCTW(pid: pid, so: n.number, tieuDe: n.title ?? "")) { hangLienKet("arrow.uturn.forward", "Next: \(n.title ?? "M-\(n.number)")", nil) }
+                    NavigationLink(value: RouteHopCTW(pid: pid, so: n.number, tieuDe: n.title ?? "")) { hangLienKet("arrow.uturn.forward", String(localized: "Next: \(n.title ?? "M-\(n.number)")"), nil) }
                         .buttonStyle(.plain)
                 }
             }
@@ -723,7 +720,7 @@ struct ChiTietHopCTW: View {
             // `POST /projects/:pid/meetings/:num/report` — máy chủ tự trích tiêu đề + biên bản vào hàng chờ.
             let _: CTWKetQuaBaoCao = try await APIClient.shared.request(CTWAPI.baoCaoHop(pid: pid, so: so, lyDo: l.ma))
             an.an(pid: pid, so: so)
-            thongBao = "Thanks — our moderators will review it within 24 hours. The notes are hidden for you."
+            thongBao = String(localized: "Thanks — our moderators will review it within 24 hours. The notes are hidden for you.")
         } catch { vm.loi = CTW.loi(error) }
     }
 }
@@ -735,9 +732,9 @@ struct ChipTrangThaiHopCTW: View {
     var body: some View {
         let (ten, mau): (String, Color) = {
             switch trangThai {
-            case "DONE": return ("Done", AppColors.success)
-            case "CANCELLED": return ("Cancelled", AppColors.error)
-            default: return ("Scheduled", AppColors.secondary)
+            case "DONE": return (String(localized: "Done"), AppColors.success)
+            case "CANCELLED": return (String(localized: "Cancelled"), AppColors.error)
+            default: return (String(localized: "Scheduled"), AppColors.secondary)
             }
         }()
         HStack(spacing: 4) {
@@ -870,7 +867,7 @@ struct SoanViecHopCTW: View {
                 Section("Owner") {
                     Picker("Owner", selection: $nguoi) {
                         Text("Unassigned").tag(Int?.none)
-                        ForEach(ds) { u in Text(u.laAgent ? "\(u.ten) (AI agent)" : u.ten).tag(Optional(u.id)) }
+                        ForEach(ds) { u in Text(u.laAgent ? String(localized: "\(u.ten) (AI agent)") : u.ten).tag(Optional(u.id)) }
                     }
                 }
                 Section {

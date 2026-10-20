@@ -25,7 +25,7 @@ private struct ManAssetsCTW: View {
                 guard let d = app.dichCho, d.moDun == "assets" else { return }
                 defer { app.dichCho = nil }
                 if let so = d.duongDan.phanCon.first.flatMap(Int.init) {
-                    nganXep.duong.append(RouteTaiSanCTW(pid: nguCanh.pid, so: so, ten: "Asset"))
+                    nganXep.duong.append(RouteTaiSanCTW(pid: nguCanh.pid, so: so, ten: String(localized: "Asset")))
                 }
             }
     }

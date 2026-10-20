@@ -47,7 +47,7 @@ struct CTWOLoi: View {
     let loi: String
     let thuLai: () -> Void
     var body: some View {
-        CTWOTrong(bieuTuong: "wifi.exclamationmark", tieuDe: "Couldn't load", moTa: loi, nut: "Try again", hanhDong: thuLai)
+        CTWOTrong(bieuTuong: "wifi.exclamationmark", tieuDe: String(localized: "Couldn't load"), moTa: loi, nut: String(localized: "Try again"), hanhDong: thuLai)
     }
 }
 

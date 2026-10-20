@@ -146,13 +146,13 @@ struct KenhChatCTW: View {
                     Task {
                         do {
                             try await CTWBaoCao.baoCaoTin(m, duAn: tenDuAn, kenh: kenh.name, lyDoMa: l.ma)
-                            thongBao = "Thanks — our moderators will review it within 24 hours. The message is hidden for you."
+                            thongBao = String(localized: "Thanks — our moderators will review it within 24 hours. The message is hidden for you.")
                         } catch { vm.loi = CTW.loi(error) }
                     }
                 }
             }
         } message: { Text("Reported messages are hidden for you right away.") }
-        .confirmationDialog("Block \(hoiChan?.ten ?? "this user")?", isPresented: Binding(get: { hoiChan != nil }, set: { if !$0 { hoiChan = nil } }),
+        .confirmationDialog("Block \(hoiChan?.ten ?? String(localized: "this user"))?", isPresented: Binding(get: { hoiChan != nil }, set: { if !$0 { hoiChan = nil } }),
                             titleVisibility: .visible) {
             Button("Block", role: .destructive) {
                 guard let u = hoiChan else { return }
@@ -189,8 +189,8 @@ struct KenhChatCTW: View {
                         dauKenh
                     }
                     if vm.daTai && !vm.dangTai && tinHien.isEmpty && hangCho.cua(pid: pid, cid: kenh.id).isEmpty {
-                        CTWOTrong(bieuTuong: "bubble.left.and.bubble.right", tieuDe: "No messages yet",
-                                  moTa: duocGui ? "Say hello to your team in #\(kenh.name)." : "Nothing has been posted here yet.")
+                        CTWOTrong(bieuTuong: "bubble.left.and.bubble.right", tieuDe: String(localized: "No messages yet"),
+                                  moTa: duocGui ? String(localized: "Say hello to your team in #\(kenh.name).") : String(localized: "Nothing has been posted here yet."))
                             .padding(.top, 40)
                     }
                     ForEach(Array(tinHien.enumerated()), id: \.element.id) { i, m in
@@ -318,7 +318,10 @@ struct KenhChatCTW: View {
     private var phuDe: String {
         let tv = vm.thanhVien
         let online = tv.filter { $0.online == true }.count
-        if !tv.isEmpty { return "\(tv.count) member\(tv.count == 1 ? "" : "s")" + (online > 0 ? " · \(online) online" : "") }
+        if !tv.isEmpty {
+            let soNguoi = tv.count == 1 ? String(localized: "1 member") : String(localized: "\(tv.count) members")
+            return online > 0 ? String(localized: "\(soNguoi) · \(online) online") : soNguoi
+        }
         return kenh.topic ?? tenDuAn
     }
 
@@ -372,7 +375,7 @@ struct KenhChatCTW: View {
                 .frame(maxWidth: .infinity).padding(12)
                 .background(.bar)
         } else {
-            SoanTinCTW(pid: pid, cid: kenh.id, goiY: kenh.laRieng ? "Message \(kenh.name)" : "Message #\(kenh.name)",
+            SoanTinCTW(pid: pid, cid: kenh.id, goiY: kenh.laRieng ? String(localized: "Message \(kenh.name)") : String(localized: "Message #\(kenh.name)"),
                        thanhVien: vm.thanhVien,
                        gui: { chu, tep in await vm.gui(chu, tep: tep) },
                        chuDoi: { vm.chuDoi($0) },
@@ -492,7 +495,7 @@ struct TinChoCTW: View {
                     Label("Waiting for network", systemImage: "clock").font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
                 case .loi:
                     HStack(spacing: 10) {
-                        Label(tin.loi ?? "Not sent", systemImage: "exclamationmark.circle.fill").font(.ctw(size: 11))
+                        Label(tin.loi ?? String(localized: "Not sent"), systemImage: "exclamationmark.circle.fill").font(.ctw(size: 11))
                             .foregroundColor(AppColors.error)
                         Button("Retry") { Task { await hang.thuLai(tin.id) } }.font(.ctw(size: 12, weight: .semibold))
                         Button("Delete", role: .destructive) { hang.xoa(tin.id) }.font(.ctw(size: 12))

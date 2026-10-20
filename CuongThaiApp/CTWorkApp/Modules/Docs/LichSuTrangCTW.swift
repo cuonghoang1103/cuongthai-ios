@@ -19,8 +19,8 @@ struct LichSuTrangCTW: View {
             if let loi { CTWErrorBanner(text: loi) { self.loi = nil }.listRowBackground(Color.clear).listRowInsets(EdgeInsets()) }
             if let ds {
                 if ds.isEmpty {
-                    CTWOTrong(bieuTuong: "clock.arrow.circlepath", tieuDe: "No saved versions yet",
-                              moTa: "Versions appear as people edit the page.")
+                    CTWOTrong(bieuTuong: "clock.arrow.circlepath", tieuDe: String(localized: "No saved versions yet"),
+                              moTa: String(localized: "Versions appear as people edit the page."))
                         .listRowBackground(Color.clear)
                 }
                 Section {
@@ -29,7 +29,7 @@ struct LichSuTrangCTW: View {
                             hang(v, laMoiNhat: i == 0)
                         }
                     }
-                } header: { if !ds.isEmpty { Text("\(ds.count) version\(ds.count == 1 ? "" : "s")") } }
+                } header: { if !ds.isEmpty { Text(ds.count == 1 ? "1 version" : "\(ds.count) versions") } }
             }
         }
         .listStyle(.insetGrouped)
@@ -47,10 +47,10 @@ struct LichSuTrangCTW: View {
                 HStack(spacing: 6) {
                     Text("v\(v.n)").font(.ctw(size: 14, weight: .bold).monospacedDigit()).foregroundColor(AppColors.textPrimary)
                     CTWNhanNho(chu: Self.nhanKieu(v.kind), bieuTuong: Self.bieuTuongKieu(v.kind))
-                    if laMoiNhat { CTWNhanNho(chu: "Latest", mau: AppColors.success) }
+                    if laMoiNhat { CTWNhanNho(chu: String(localized: "Latest"), mau: AppColors.success) }
                 }
                 HStack(spacing: 4) {
-                    Text(v.author?.ten ?? "Someone").font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
+                    Text(v.author?.ten ?? String(localized: "Someone")).font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
                     if v.author?.laAgent == true { CTWNhanAI() }
                     Text("· \(CTW.thoiDiem(v.updatedAt ?? v.createdAt))").font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
                 }
@@ -68,10 +68,10 @@ struct LichSuTrangCTW: View {
 
     static func nhanKieu(_ k: String?) -> String {
         switch k {
-        case "CREATE": return "Created"
-        case "RESTORE": return "Restored"
-        case "MANUAL": return "Saved version"
-        default: return "Edit"
+        case "CREATE": return String(localized: "Created")
+        case "RESTORE": return String(localized: "Restored")
+        case "MANUAL": return String(localized: "Saved version")
+        default: return String(localized: "Edit")
         }
     }
     static func bieuTuongKieu(_ k: String?) -> String {
@@ -116,7 +116,7 @@ struct PhienBanTrangCTW: View {
                 if let v {
                     HStack(spacing: 8) {
                         CTWAvatar(user: v.author, size: 22)
-                        Text(v.author?.ten ?? "Someone").font(.ctw(size: 13, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                        Text(v.author?.ten ?? String(localized: "Someone")).font(.ctw(size: 13, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                         if v.author?.laAgent == true { CTWNhanAI() }
                         Spacer()
                         Text(CTW.thoiDiem(v.updatedAt ?? v.createdAt)).font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)

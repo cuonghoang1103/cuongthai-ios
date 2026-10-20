@@ -25,7 +25,7 @@ final class ChiTietSprintVM: ObservableObject {
             let ds: [CTWSprintDu] = try await APIClient.shared.request(CTWAPI.dsSprint(pid: pid))
             dsSprint = ds
             guard let s = ds.first(where: { $0.id == sid }) else {
-                trangThai = .loi("This sprint no longer exists.")
+                trangThai = .loi(String(localized: "This sprint no longer exists."))
                 return
             }
             sprint = s
@@ -83,7 +83,7 @@ struct ChiTietSprintCTW: View {
             if let s = vm.sprint { noiDung(s) }
         }
         .background(AppColors.backgroundPrimary)
-        .navigationTitle(vm.sprint?.ten ?? "Sprint")
+        .navigationTitle(vm.sprint?.ten ?? String(localized: "Sprint"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             if quanLy, let s = vm.sprint, !s.daDong {
@@ -156,7 +156,7 @@ struct ChiTietSprintCTW: View {
     }
 
     private func chipTrangThai(_ s: CTWSprintDu) -> some View {
-        let (chu, mau): (String, Color) = s.dangChay ? ("ACTIVE", AppColors.primary) : (s.daDong ? ("COMPLETED", AppColors.success) : ("PLANNED", AppColors.textSecondary))
+        let (chu, mau): (String, Color) = s.dangChay ? (String(localized: "ACTIVE"), AppColors.primary) : (s.daDong ? (String(localized: "COMPLETED"), AppColors.success) : (String(localized: "PLANNED"), AppColors.textSecondary))
         return Text(chu).font(.ctw(size: 10, weight: .bold)).foregroundColor(mau)
             .padding(.horizontal, 8).padding(.vertical, 3)
             .background(Capsule().fill(mau.opacity(0.12)))
@@ -170,11 +170,11 @@ struct ChiTietSprintCTW: View {
         let diemThe = TinhSprintCTW.tongDiem(vm.the, laTheCon: laTheCon)
         let cot = Array(repeating: GridItem(.flexible(), spacing: 10), count: rong ? 4 : 2)
         LazyVGrid(columns: cot, spacing: 10) {
-            CTWTheChiSo(nhan: "Committed", giaTri: DonViSprintCTW.so(cs?.cam ?? diemThe, unit), phu: s.chuaBatDau ? "Current scope" : "At sprint start",
+            CTWTheChiSo(nhan: String(localized: "Committed"), giaTri: DonViSprintCTW.so(cs?.cam ?? diemThe, unit), phu: s.chuaBatDau ? String(localized: "Current scope") : String(localized: "At sprint start"),
                         bieuTuong: "flag", mau: CTWMauChuoi.mau(0))
-            CTWTheChiSo(nhan: "Completed", giaTri: DonViSprintCTW.so(cs?.xong ?? 0, unit),
-                        phu: cs.map { "\(Int(($0.tiLe * 100).rounded()))% of committed" }, bieuTuong: "checkmark.circle", mau: AppColors.success)
-            CTWTheChiSo(nhan: "Remaining", giaTri: DonViSprintCTW.so(cs?.con ?? diemThe, unit), bieuTuong: "hourglass", mau: CTWMauChuoi.mau(1))
+            CTWTheChiSo(nhan: String(localized: "Completed"), giaTri: DonViSprintCTW.so(cs?.xong ?? 0, unit),
+                        phu: cs.map { String(localized: "\(Int(($0.tiLe * 100).rounded()))% of committed") }, bieuTuong: "checkmark.circle", mau: AppColors.success)
+            CTWTheChiSo(nhan: String(localized: "Remaining"), giaTri: DonViSprintCTW.so(cs?.con ?? diemThe, unit), bieuTuong: "hourglass", mau: CTWMauChuoi.mau(1))
             o4(s)
         }
     }
@@ -182,16 +182,16 @@ struct ChiTietSprintCTW: View {
     private func o4(_ s: CTWSprintDu) -> CTWTheChiSo {
         if s.daDong {
             let d = NgayCTW.thoiDiem(s.completedAt).map(NgayCTW.ngan) ?? "—"
-            return CTWTheChiSo(nhan: "Completed on", giaTri: d, bieuTuong: "checkmark.seal", mau: AppColors.success)
+            return CTWTheChiSo(nhan: String(localized: "Completed on"), giaTri: d, bieuTuong: "checkmark.seal", mau: AppColors.success)
         }
         guard let con = TinhSprintCTW.ngayConLai(endAt: s.endAt) else {
-            return CTWTheChiSo(nhan: "Days left", giaTri: "—", phu: "No dates yet", bieuTuong: "calendar")
+            return CTWTheChiSo(nhan: String(localized: "Days left"), giaTri: "—", phu: String(localized: "No dates yet"), bieuTuong: "calendar")
         }
-        let duBao = vm.burndown.flatMap(TinhSprintCTW.duBaoXong).map { "Forecast: done \(NgayCTW.ngan($0))" }
+        let duBao = vm.burndown.flatMap(TinhSprintCTW.duBaoXong).map { String(localized: "Forecast: done \(NgayCTW.ngan($0))") }
         if con < 0 {
-            return CTWTheChiSo(nhan: "Overdue by", giaTri: "\(-con) day\(con == -1 ? "" : "s")", phu: duBao, bieuTuong: "exclamationmark.triangle", mau: AppColors.error)
+            return CTWTheChiSo(nhan: String(localized: "Overdue by"), giaTri: con == -1 ? String(localized: "1 day") : String(localized: "\(-con) days"), phu: duBao, bieuTuong: "exclamationmark.triangle", mau: AppColors.error)
         }
-        return CTWTheChiSo(nhan: "Days left", giaTri: "\(con)", phu: duBao ?? NgayCTW.thoiDiem(s.endAt).map { "Ends \(NgayCTW.ngan($0))" },
+        return CTWTheChiSo(nhan: String(localized: "Days left"), giaTri: "\(con)", phu: duBao ?? NgayCTW.thoiDiem(s.endAt).map { String(localized: "Ends \(NgayCTW.ngan($0))") },
                            bieuTuong: "calendar", mau: AppColors.primary)
     }
 
@@ -200,20 +200,20 @@ struct ChiTietSprintCTW: View {
         let dem = TinhSprintCTW.demThe(vm.the, nhom: { cfg?.trangThai($0)?.category }, laTheCon: laTheCon)
         let cs = vm.burndown.map(TinhSprintCTW.chiSo)
         return VStack(alignment: .leading, spacing: 14) {
-            CTWSectionHeader("chart.bar.fill", "Progress")
+            CTWSectionHeader("chart.bar.fill", String(localized: "Progress"))
             if let cs, cs.cam > 0 {
-                dongTienDo(tieuDe: "By \(DonViSprintCTW.tenDai(vm.burndown?.unit))",
+                dongTienDo(tieuDe: String(localized: "By \(DonViSprintCTW.tenDai(vm.burndown?.unit))"),
                            phai: "\(CTWSo.gon(cs.xong)) / \(CTWSo.gon(cs.cam))",
-                           doan: [CTWDoanTienDo(ten: "Done", giaTri: cs.xong, mau: AppColors.success),
-                                  CTWDoanTienDo(ten: "Remaining", giaTri: max(cs.con, 0), mau: CTWMauChuoi.khac)])
+                           doan: [CTWDoanTienDo(ten: String(localized: "Done"), giaTri: cs.xong, mau: AppColors.success),
+                                  CTWDoanTienDo(ten: String(localized: "Remaining"), giaTri: max(cs.con, 0), mau: CTWMauChuoi.khac)])
             }
-            dongTienDo(tieuDe: "By issues", phai: "\(dem.xong) / \(dem.tong)",
-                       doan: [CTWDoanTienDo(ten: "Done", giaTri: Double(dem.xong), mau: AppColors.success),
-                              CTWDoanTienDo(ten: "In progress", giaTri: Double(dem.dangLam), mau: CTWMauChuoi.mau(0)),
-                              CTWDoanTienDo(ten: "To do", giaTri: Double(dem.chuaLam), mau: CTWMauChuoi.khac)])
-            CTWChuGiai(muc: [CTWMucChuGiai(ten: "Done \(dem.xong)", mau: AppColors.success),
-                             CTWMucChuGiai(ten: "In progress \(dem.dangLam)", mau: CTWMauChuoi.mau(0)),
-                             CTWMucChuGiai(ten: "To do \(dem.chuaLam)", mau: CTWMauChuoi.khac)])
+            dongTienDo(tieuDe: String(localized: "By issues"), phai: "\(dem.xong) / \(dem.tong)",
+                       doan: [CTWDoanTienDo(ten: String(localized: "Done"), giaTri: Double(dem.xong), mau: AppColors.success),
+                              CTWDoanTienDo(ten: String(localized: "In progress"), giaTri: Double(dem.dangLam), mau: CTWMauChuoi.mau(0)),
+                              CTWDoanTienDo(ten: String(localized: "To do"), giaTri: Double(dem.chuaLam), mau: CTWMauChuoi.khac)])
+            CTWChuGiai(muc: [CTWMucChuGiai(ten: String(localized: "Done \(dem.xong)"), mau: AppColors.success),
+                             CTWMucChuGiai(ten: String(localized: "In progress \(dem.dangLam)"), mau: CTWMauChuoi.mau(0)),
+                             CTWMucChuGiai(ten: String(localized: "To do \(dem.chuaLam)"), mau: CTWMauChuoi.khac)])
         }
         .padding(14)
         .ctwThe(14)
@@ -234,12 +234,12 @@ struct ChiTietSprintCTW: View {
 
     private func baoCao(_ bc: CTWSprintReport, unit: String?) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            CTWSectionHeader("doc.text.magnifyingglass", "Sprint report")
+            CTWSectionHeader("doc.text.magnifyingglass", String(localized: "Sprint report"))
             HStack(spacing: 10) {
-                o("Completed", "\(bc.soXong)", AppColors.success)
-                o("Not done", "\(bc.soChuaXong)", CTWMauChuoi.mau(1))
-                o("Added", "+\(bc.added?.count ?? 0)", CTWMauChuoi.mau(0))
-                o("Removed", "−\(bc.removed?.count ?? 0)", CTWMauChuoi.khac)
+                o(String(localized: "Completed"), "\(bc.soXong)", AppColors.success)
+                o(String(localized: "Not done"), "\(bc.soChuaXong)", CTWMauChuoi.mau(1))
+                o(String(localized: "Added"), "+\(bc.added?.count ?? 0)", CTWMauChuoi.mau(0))
+                o(String(localized: "Removed"), "−\(bc.removed?.count ?? 0)", CTWMauChuoi.khac)
             }
             if !(bc.added ?? []).isEmpty || !(bc.removed ?? []).isEmpty {
                 Text(thayDoiPhamVi(bc)).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
@@ -257,8 +257,8 @@ struct ChiTietSprintCTW: View {
     private func thayDoiPhamVi(_ bc: CTWSprintReport) -> String {
         let ma = cfg?.key ?? ""
         var p: [String] = []
-        if let a = bc.added, !a.isEmpty { p.append("Added after start: " + a.prefix(8).map { "\(ma)-\($0)" }.joined(separator: ", ")) }
-        if let r = bc.removed, !r.isEmpty { p.append("Removed: " + r.prefix(8).map { "\(ma)-\($0)" }.joined(separator: ", ")) }
+        if let a = bc.added, !a.isEmpty { p.append(String(localized: "Added after start: \(a.prefix(8).map { "\(ma)-\($0)" }.joined(separator: ", "))")) }
+        if let r = bc.removed, !r.isEmpty { p.append(String(localized: "Removed: \(r.prefix(8).map { "\(ma)-\($0)" }.joined(separator: ", "))")) }
         return p.joined(separator: "\n")
     }
 
@@ -298,12 +298,12 @@ struct ChiTietSprintCTW: View {
 
     private func dsThe() -> some View {
         let nhom: [(String, String, [CTWIssueCard])] = [
-            ("In progress", "IN_PROGRESS", vm.the.filter { cfg?.trangThai($0.statusId)?.category == "IN_PROGRESS" }),
-            ("To do", "TODO", vm.the.filter { let c = cfg?.trangThai($0.statusId)?.category; return c != "IN_PROGRESS" && c != "DONE" }),
-            ("Done", "DONE", vm.the.filter { cfg?.trangThai($0.statusId)?.category == "DONE" }),
+            (String(localized: "In progress"), "IN_PROGRESS", vm.the.filter { cfg?.trangThai($0.statusId)?.category == "IN_PROGRESS" }),
+            (String(localized: "To do"), "TODO", vm.the.filter { let c = cfg?.trangThai($0.statusId)?.category; return c != "IN_PROGRESS" && c != "DONE" }),
+            (String(localized: "Done"), "DONE", vm.the.filter { cfg?.trangThai($0.statusId)?.category == "DONE" }),
         ]
         return VStack(alignment: .leading, spacing: 10) {
-            CTWSectionHeader("list.bullet.rectangle", "Issues", count: "\(vm.the.count)")
+            CTWSectionHeader("list.bullet.rectangle", String(localized: "Issues"), count: "\(vm.the.count)")
             if vm.the.isEmpty {
                 Text("No issues in this sprint yet.").font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary)
             }

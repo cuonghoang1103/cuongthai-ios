@@ -23,7 +23,7 @@ final class AgentsVM: ObservableObject {
     init(pid: Int, wsId: Int?) { self.pid = pid; self.wsId = wsId }
 
     func tai() async {
-        guard let wsId else { loi = "This project isn't in a workspace you can see."; return }
+        guard let wsId else { loi = String(localized: "This project isn't in a workspace you can see."); return }
         do {
             async let a: [CTWAgentHoSo] = APIClient.shared.request(CTWAPI.dsAgent(wsId: wsId))
             async let b: [CTWAgentChip]? = try? APIClient.shared.request(CTWAPI.chipAgent(pid: pid))
@@ -42,7 +42,7 @@ final class AgentsVM: ObservableObject {
             theTheoId = map
         } catch {
             if case APIError.coMa(let ma, _) = error, ma == "WORK_AGENT_FORBIDDEN" {
-                loi = "AI agents can't view other agents."
+                loi = String(localized: "AI agents can't view other agents.")
             } else { loi = CTW.loi(error) }
         }
     }
@@ -79,8 +79,8 @@ struct AgentsCTW: View {
             }
             if let ds = vm.ds {
                 if ds.isEmpty {
-                    CTWOTrong(bieuTuong: "sparkles", tieuDe: "No AI agents yet",
-                              moTa: "Workspace admins can add AI agents as team members. They show up here with their status and current work.")
+                    CTWOTrong(bieuTuong: "sparkles", tieuDe: String(localized: "No AI agents yet"),
+                              moTa: String(localized: "Workspace admins can add AI agents as team members. They show up here with their status and current work."))
                         .listRowBackground(Color.clear)
                 } else {
                     Section("Agents in this workspace · \(ds.count)") {
@@ -144,7 +144,7 @@ struct AgentsCTW: View {
         let noiDung = VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 8) {
                 CTWAvatar(user: u, size: 26)
-                Text(u?.ten ?? "Agent").font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                Text(u?.ten ?? String(localized: "Agent")).font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(1)
                 CTWNhanAI()
                 Spacer(minLength: 4)
                 CTWNhanNho(chu: ch.chu, bieuTuong: ch.ket ? "exclamationmark.triangle.fill" : "bolt.fill",
@@ -196,29 +196,29 @@ struct AgentChiTietCTW: View {
                     dau(a)
                     if a.canManage == true && a.status != "RETIRED" { nutDieuKhien(a) }
                     CTWKhoiTruong {
-                        CTWHangTruong("Model", a.model, bieuTuong: "cpu")
+                        CTWHangTruong(String(localized: "Model"), a.model, bieuTuong: "cpu")
                         Divider()
-                        CTWHangTruong("Runs", a.tenRuntime, bieuTuong: "server.rack")
+                        CTWHangTruong(String(localized: "Runs"), a.tenRuntime, bieuTuong: "server.rack")
                         Divider()
-                        CTWHangTruong(nhan: "Owner", bieuTuong: "person.crop.circle") {
+                        CTWHangTruong(nhan: String(localized: "Owner"), bieuTuong: "person.crop.circle") {
                             HStack(spacing: 6) {
                                 CTWAvatar(user: a.owner, size: 20)
                                 Text(a.owner?.ten ?? "—")
                             }
                         }
                         Divider()
-                        CTWHangTruong("Parallel tasks", a.parallelSlots.map(String.init), bieuTuong: "square.stack.3d.up")
+                        CTWHangTruong(String(localized: "Parallel tasks"), a.parallelSlots.map(String.init), bieuTuong: "square.stack.3d.up")
                         if let cap = a.dailyCostCapUsd {
                             Divider()
-                            CTWHangTruong("Daily cost cap", String(format: "$%.2f (estimate)", cap), bieuTuong: "gauge.with.dots.needle.33percent")
+                            CTWHangTruong(String(localized: "Daily cost cap"), String(localized: "\(String(format: "$%.2f", cap)) (estimate)"), bieuTuong: "gauge.with.dots.needle.33percent")
                         }
                         Divider()
-                        CTWHangTruong("Last seen", CTWAgentHienThi.truoc(a.lastSeenAt) ?? "Never", bieuTuong: "clock")
+                        CTWHangTruong(String(localized: "Last seen"), CTWAgentHienThi.truoc(a.lastSeenAt) ?? String(localized: "Never"), bieuTuong: "clock")
                         Divider()
-                        CTWHangTruong("Added", CTW.ngayNgan(a.createdAt), bieuTuong: "calendar")
+                        CTWHangTruong(String(localized: "Added"), CTW.ngayNgan(a.createdAt), bieuTuong: "calendar")
                     }
                     let dangLamDs = lease.filter { $0.status == "ACTIVE" }
-                    CTWSectionHeader("bolt.fill", "Current work", count: "\(dangLamDs.count)")
+                    CTWSectionHeader("bolt.fill", String(localized: "Current work"), count: "\(dangLamDs.count)")
                     if dangLamDs.isEmpty {
                         Text("Not working on anything right now.").font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary)
                     } else {
@@ -226,11 +226,11 @@ struct AgentChiTietCTW: View {
                     }
                     let cu = lease.filter { $0.status != "ACTIVE" }.prefix(20)
                     if !cu.isEmpty {
-                        CTWSectionHeader("clock.arrow.circlepath", "Recent work", count: "\(cu.count)")
+                        CTWSectionHeader("clock.arrow.circlepath", String(localized: "Recent work"), count: "\(cu.count)")
                         VStack(spacing: 8) { ForEach(Array(cu)) { hangLease($0) } }
                     }
                     if let ps = a.projects, !ps.isEmpty {
-                        CTWSectionHeader("rectangle.3.group", "Projects", count: "\(ps.count)")
+                        CTWSectionHeader("rectangle.3.group", String(localized: "Projects"), count: "\(ps.count)")
                         CTWKhoiTruong {
                             ForEach(Array(ps.enumerated()), id: \.element.id) { i, p in
                                 if i > 0 { Divider() }
@@ -310,7 +310,7 @@ struct AgentChiTietCTW: View {
                 if let k = l.issue?.key {
                     Text(k).font(.ctw(size: 12, weight: .bold).monospaced()).foregroundColor(AppColors.primary)
                 }
-                Text(l.issue?.title ?? "Issue").font(.ctw(size: 14, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(2)
+                Text(l.issue?.title ?? String(localized: "Issue")).font(.ctw(size: 14, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(2)
                 Spacer(minLength: 4)
                 CTWNhanNho(chu: ch.chu, mau: ch.ket ? AppColors.error : (l.status == "ACTIVE" ? AppColors.primary : AppColors.textSecondary))
             }
@@ -318,8 +318,9 @@ struct AgentChiTietCTW: View {
                 Text(p).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(3)
             }
             Text(l.status == "ACTIVE"
-                 ? "Claimed \(CTWAgentHienThi.truoc(l.claimedAt) ?? "—") · heartbeat \(CTWAgentHienThi.truoc(l.heartbeatAt) ?? "—")"
-                 : "Claimed \(CTW.thoiDiem(l.claimedAt))\(l.releasedAt.map { " · released \(CTW.thoiDiem($0))" } ?? "")")
+                 ? String(localized: "Claimed \(CTWAgentHienThi.truoc(l.claimedAt) ?? "—") · heartbeat \(CTWAgentHienThi.truoc(l.heartbeatAt) ?? "—")")
+                 : (l.releasedAt.map { String(localized: "Claimed \(CTW.thoiDiem(l.claimedAt)) · released \(CTW.thoiDiem($0))") }
+                    ?? String(localized: "Claimed \(CTW.thoiDiem(l.claimedAt))")))
                 .font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
         }
         .padding(12)

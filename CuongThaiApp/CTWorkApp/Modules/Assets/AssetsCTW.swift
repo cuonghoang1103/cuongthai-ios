@@ -54,15 +54,15 @@ struct AssetsCTW: View {
     }
 
     private var chip: [CTWChipLoc] {
-        var c = [CTWChipLoc(id: "all", nhan: "All", bat: loc == "all")]
+        var c = [CTWChipLoc(id: "all", nhan: String(localized: "All"), bat: loc == "all")]
         if (vm.du?.summary?.expiring ?? 0) > 0 {
-            c.append(CTWChipLoc(id: "expiring", nhan: "Expiring", bieuTuong: "clock.badge.exclamationmark", bat: loc == "expiring"))
+            c.append(CTWChipLoc(id: "expiring", nhan: String(localized: "Expiring"), bieuTuong: "clock.badge.exclamationmark", bat: loc == "expiring"))
         }
         if (vm.du?.summary?.expired ?? 0) > 0 {
-            c.append(CTWChipLoc(id: "expired", nhan: "Expired", bieuTuong: "xmark.octagon", bat: loc == "expired"))
+            c.append(CTWChipLoc(id: "expired", nhan: String(localized: "Expired"), bieuTuong: "xmark.octagon", bat: loc == "expired"))
         }
         if (vm.du?.summary?.needsAttribution ?? 0) > 0 {
-            c.append(CTWChipLoc(id: "attribution", nhan: "Needs credit", bieuTuong: "quote.bubble", bat: loc == "attribution"))
+            c.append(CTWChipLoc(id: "attribution", nhan: String(localized: "Needs credit"), bieuTuong: "quote.bubble", bat: loc == "attribution"))
         }
         let loai = Array(Set(tatCa.compactMap(\.category))).sorted()
         for l in loai {
@@ -81,15 +81,15 @@ struct AssetsCTW: View {
             if let s = vm.du?.summary {
                 Section {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), spacing: 10)], spacing: 10) {
-                        CTWODem(so: "\(s.active ?? 0)", nhan: "Active of \(s.total ?? 0)", bieuTuong: "checkmark.seal.fill", mau: AppColors.success)
-                        CTWODem(so: "\(s.expiring ?? 0)", nhan: "Expiring soon", bieuTuong: "clock.badge.exclamationmark.fill",
+                        CTWODem(so: "\(s.active ?? 0)", nhan: String(localized: "Active of \(s.total ?? 0)"), bieuTuong: "checkmark.seal.fill", mau: AppColors.success)
+                        CTWODem(so: "\(s.expiring ?? 0)", nhan: String(localized: "Expiring soon"), bieuTuong: "clock.badge.exclamationmark.fill",
                                 mau: (s.expiring ?? 0) > 0 ? AppColors.warning : AppColors.textSecondary)
-                        CTWODem(so: "\(s.expired ?? 0)", nhan: "Expired", bieuTuong: "xmark.octagon.fill",
+                        CTWODem(so: "\(s.expired ?? 0)", nhan: String(localized: "Expired"), bieuTuong: "xmark.octagon.fill",
                                 mau: (s.expired ?? 0) > 0 ? AppColors.error : AppColors.textSecondary)
-                        CTWODem(so: "\(s.needsAttribution ?? 0)", nhan: "Need a credit line", bieuTuong: "quote.bubble.fill", mau: AppColors.primary)
+                        CTWODem(so: "\(s.needsAttribution ?? 0)", nhan: String(localized: "Need a credit line"), bieuTuong: "quote.bubble.fill", mau: AppColors.primary)
                     }
                     if let c = s.annualCost, !c.isEmpty {
-                        Text("Yearly running cost: " + c.sorted { $0.key < $1.key }.map { CTWTien.dinhDang($0.value, $0.key) }.joined(separator: " + "))
+                        Text(String(localized: "Yearly running cost: \(c.sorted { $0.key < $1.key }.map { CTWTien.dinhDang($0.value, $0.key) }.joined(separator: " + "))"))
                             .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                             .padding(.top, 2)
                             .listRowSeparator(.hidden)
@@ -105,13 +105,13 @@ struct AssetsCTW: View {
             }
             if vm.du != nil {
                 if tatCa.isEmpty {
-                    CTWOTrong(bieuTuong: "archivebox", tieuDe: "No assets yet",
-                              moTa: "Software, fonts, images and licenses your team tracks appear here with their expiry dates.")
+                    CTWOTrong(bieuTuong: "archivebox", tieuDe: String(localized: "No assets yet"),
+                              moTa: String(localized: "Software, fonts, images and licenses your team tracks appear here with their expiry dates."))
                         .listRowBackground(Color.clear)
                 } else if hienThi.isEmpty {
                     Text("Nothing matches this filter.").foregroundColor(AppColors.textSecondary).listRowBackground(Color.clear)
                 } else {
-                    Section("\(hienThi.count) item\(hienThi.count == 1 ? "" : "s")") {
+                    Section(hienThi.count == 1 ? String(localized: "1 item") : String(localized: "\(hienThi.count) items")) {
                         ForEach(hienThi) { a in
                             NavigationLink(value: RouteTaiSanCTW(pid: nguCanh.pid, so: a.number ?? a.id, ten: a.name)) { hang(a) }
                         }
@@ -177,31 +177,31 @@ struct TaiSanChiTietCTW: View {
                 if let a {
                     dau(a)
                     CTWKhoiTruong {
-                        CTWHangTruong("Category", CTWMauTrangThai.nhan(a.category), bieuTuong: CTWTaiSanHienThi.bieuTuong(a.category))
+                        CTWHangTruong(String(localized: "Category"), CTWMauTrangThai.nhan(a.category), bieuTuong: CTWTaiSanHienThi.bieuTuong(a.category))
                         Divider()
-                        CTWHangTruong("License", a.licenseLabel ?? a.licenseName, bieuTuong: "checkmark.seal")
-                        if let v = a.version, !v.isEmpty { Divider(); CTWHangTruong("Version", v, bieuTuong: "number") }
-                        if let s = a.source, !s.isEmpty { Divider(); CTWHangTruong("Source", s, bieuTuong: "building.2") }
+                        CTWHangTruong(String(localized: "License"), a.licenseLabel ?? a.licenseName, bieuTuong: "checkmark.seal")
+                        if let v = a.version, !v.isEmpty { Divider(); CTWHangTruong(String(localized: "Version"), v, bieuTuong: "number") }
+                        if let s = a.source, !s.isEmpty { Divider(); CTWHangTruong(String(localized: "Source"), s, bieuTuong: "building.2") }
                         Divider()
-                        CTWHangTruong(nhan: "Owner", bieuTuong: "person.crop.circle") {
+                        CTWHangTruong(nhan: String(localized: "Owner"), bieuTuong: "person.crop.circle") {
                             HStack(spacing: 6) { CTWAvatar(user: a.owner, size: 20); Text(a.owner?.ten ?? "—") }
                         }
                         Divider()
-                        CTWHangTruong("Expires", a.expiresAt.flatMap { CTW.ngayNgan($0) } ?? "No expiry", bieuTuong: "calendar")
-                        if let n = a.remindDays, a.expiresAt != nil { Divider(); CTWHangTruong("Reminder", "\(n) days before", bieuTuong: "bell") }
-                        if let s = a.seats { Divider(); CTWHangTruong("Seats", "\(s)", bieuTuong: "person.2") }
+                        CTWHangTruong(String(localized: "Expires"), a.expiresAt.flatMap { CTW.ngayNgan($0) } ?? String(localized: "No expiry"), bieuTuong: "calendar")
+                        if let n = a.remindDays, a.expiresAt != nil { Divider(); CTWHangTruong(String(localized: "Reminder"), String(localized: "\(n) days before"), bieuTuong: "bell") }
+                        if let s = a.seats { Divider(); CTWHangTruong(String(localized: "Seats"), "\(s)", bieuTuong: "person.2") }
                         if let c = a.cost {
                             Divider()
-                            CTWHangTruong("Cost", ([CTWTien.dinhDang(c, a.currency), CTWTaiSanHienThi.nhanThanhToan(a.billing)].compactMap { $0 }).joined(separator: " "),
+                            CTWHangTruong(String(localized: "Cost"), ([CTWTien.dinhDang(c, a.currency), CTWTaiSanHienThi.nhanThanhToan(a.billing)].compactMap { $0 }).joined(separator: " "),
                                           bieuTuong: "banknote")
                         } else if a.billing == "FREE" {
-                            Divider(); CTWHangTruong("Cost", "Free", bieuTuong: "banknote")
+                            Divider(); CTWHangTruong(String(localized: "Cost"), String(localized: "Free"), bieuTuong: "banknote")
                         }
                     }
                     if a.attributionRequired == true {
-                        CTWSectionHeader("quote.bubble", "Credit line")
+                        CTWSectionHeader("quote.bubble", String(localized: "Credit line"))
                         VStack(alignment: .leading, spacing: 8) {
-                            Text(a.attribution?.isEmpty == false ? a.attribution! : "This license requires a credit line, but none has been written yet.")
+                            Text(a.attribution?.isEmpty == false ? a.attribution! : String(localized: "This license requires a credit line, but none has been written yet."))
                                 .font(.ctw(size: 14, design: a.attribution == nil ? .default : .monospaced))
                                 .foregroundColor(a.attribution == nil ? AppColors.warning : AppColors.textPrimary)
                                 .textSelection(.enabled)
@@ -212,19 +212,19 @@ struct TaiSanChiTietCTW: View {
                         }
                         .padding(14).frame(maxWidth: .infinity, alignment: .leading).ctwThe(12)
                     }
-                    let nut = [("License terms", a.licenseUrl), ("Source page", a.sourceUrl)].compactMap { t -> URLToChucCTW? in
+                    let nut = [(String(localized: "License terms"), a.licenseUrl), (String(localized: "Source page"), a.sourceUrl)].compactMap { t -> URLToChucCTW? in
                         guard let s = t.1, s.hasPrefix("https://") || s.hasPrefix("http://"), let u = URL(string: s) else { return nil }
                         return URLToChucCTW(url: u, nhan: t.0)
                     }
                     if !nut.isEmpty {
                         HStack(spacing: 10) {
                             ForEach(nut) { n in
-                                Button { web = n.url } label: { Label(n.nhan ?? "Open", systemImage: "safari") }.buttonStyle(.bordered)
+                                Button { web = n.url } label: { Label(n.nhan ?? String(localized: "Open"), systemImage: "safari") }.buttonStyle(.bordered)
                             }
                         }
                     }
                     if let ls = a.links, !ls.isEmpty {
-                        CTWSectionHeader("link", "Used in", count: "\(ls.count)")
+                        CTWSectionHeader("link", String(localized: "Used in"), count: "\(ls.count)")
                         VStack(spacing: 0) {
                             ForEach(Array(ls.enumerated()), id: \.offset) { i, l in
                                 if i > 0 { Divider() }
@@ -234,7 +234,7 @@ struct TaiSanChiTietCTW: View {
                         .padding(.horizontal, 14).ctwThe(12)
                     }
                     if let n = a.notes, !n.isEmpty {
-                        CTWSectionHeader("note.text", "Notes")
+                        CTWSectionHeader("note.text", String(localized: "Notes"))
                         CTWMarkdownView(markdown: n, coChu: 14).padding(14).ctwThe(12)
                     }
                 } else if loi == nil {
@@ -288,7 +288,7 @@ struct TaiSanChiTietCTW: View {
         .padding(.vertical, 11)
         .contentShape(Rectangle())
         if l.kind == "PAGE", let so = l.number {
-            NavigationLink(value: RouteTaiLieuCTW(pid: r.pid, so: so, ten: l.title ?? "Page")) { hang }.buttonStyle(.plain)
+            NavigationLink(value: RouteTaiLieuCTW(pid: r.pid, so: so, ten: l.title ?? String(localized: "Page"))) { hang }.buttonStyle(.plain)
         } else if let so = l.number {
             NavigationLink(value: CTWRoute.the(pid: r.pid, so: so)) { hang }.buttonStyle(.plain)
         } else {

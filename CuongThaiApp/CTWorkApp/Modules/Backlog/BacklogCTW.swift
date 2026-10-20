@@ -87,6 +87,7 @@ struct BacklogCTW: View {
     enum CheDo: String, CaseIterable, Identifiable {
         case backlog = "Sprints", tatCa = "All issues"
         var id: String { rawValue }
+        var ten: String { self == .backlog ? String(localized: "Sprints") : String(localized: "All issues") }
     }
 
     /// Nhúng trong trang dự án (công tắc Board · Backlog · List ở trên đã chọn chế độ) ⇒ ẩn công tắc Sprints/All riêng.
@@ -104,7 +105,7 @@ struct BacklogCTW: View {
             Section {
                 if !nhung {
                     Picker("Mode", selection: $cheDo) {
-                        ForEach(CheDo.allCases) { Text($0.rawValue).tag($0) }
+                        ForEach(CheDo.allCases) { Text($0.ten).tag($0) }
                     }
                     .pickerStyle(.segmented)
                     .listRowBackground(Color.clear)
@@ -130,7 +131,7 @@ struct BacklogCTW: View {
         .searchable(text: $tim, placement: .toolbar, prompt: "Search title or key")
         .onSubmit(of: .search) { apDungTim() }
         .onChange(of: tim) { _, moi in if moi.isEmpty { apDungTim() } }
-        .navigationTitle(vm.cauHinh?.name ?? "Backlog")
+        .navigationTitle(vm.cauHinh?.name ?? String(localized: "Backlog"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
@@ -326,11 +327,11 @@ struct BoLocCTW: View {
             Form {
                 Section("Assignee") {
                     if let toi {
-                        chon("Me", loc.assignee.contains(toi)) { doi(&loc.assignee, toi) }
+                        chon(String(localized: "Me"), loc.assignee.contains(toi)) { doi(&loc.assignee, toi) }
                     }
-                    chon("Unassigned", loc.assignee.contains(0)) { doi(&loc.assignee, 0) }
+                    chon(String(localized: "Unassigned"), loc.assignee.contains(0)) { doi(&loc.assignee, 0) }
                     ForEach(cauHinh.dsThanhVien.filter { $0.id != toi }) { u in
-                        chon(u.laAgent ? "\(u.ten) · AI agent" : u.ten, loc.assignee.contains(u.id)) { doi(&loc.assignee, u.id) }
+                        chon(u.laAgent ? String(localized: "\(u.ten) · AI agent") : u.ten, loc.assignee.contains(u.id)) { doi(&loc.assignee, u.id) }
                     }
                 }
                 Section("Status") {
@@ -366,10 +367,10 @@ struct BoLocCTW: View {
                 }
                 if !(cauHinh.sprints ?? []).isEmpty {
                     Section("Sprint") {
-                        chon("Any", loc.sprint == nil) { loc.sprint = nil }
-                        chon("Backlog (no sprint)", loc.sprint == "backlog") { loc.sprint = "backlog" }
+                        chon(String(localized: "Any"), loc.sprint == nil) { loc.sprint = nil }
+                        chon(String(localized: "Backlog (no sprint)"), loc.sprint == "backlog") { loc.sprint = "backlog" }
                         ForEach(cauHinh.sprints ?? []) { s in
-                            chon(s.name + (s.state == "ACTIVE" ? " (active)" : ""), loc.sprint == String(s.id)) { loc.sprint = String(s.id) }
+                            chon(s.state == "ACTIVE" ? String(localized: "\(s.name) (active)") : s.name, loc.sprint == String(s.id)) { loc.sprint = String(s.id) }
                         }
                     }
                 }

@@ -53,6 +53,13 @@ struct KiemThuCTW: View {
     enum Muc: String, CaseIterable, Identifiable {
         case chuKy = "Cycles", ca = "Test cases", fpt = "FPT reports"
         var id: String { rawValue }
+        var ten: String {
+            switch self {
+            case .chuKy: return String(localized: "Cycles")
+            case .ca: return String(localized: "Test cases")
+            case .fpt: return String(localized: "FPT reports")
+            }
+        }
     }
 
     init(pid: Int, maDuAn: String) {
@@ -65,7 +72,7 @@ struct KiemThuCTW: View {
         List {
             Section {
                 Picker("View", selection: $muc) {
-                    ForEach(Muc.allCases.filter { $0 != .fpt || vm.coFpt }) { Text($0.rawValue).tag($0) }
+                    ForEach(Muc.allCases.filter { $0 != .fpt || vm.coFpt }) { Text($0.ten).tag($0) }
                 }
                 .pickerStyle(.segmented)
                 .listRowBackground(Color.clear)
@@ -117,7 +124,7 @@ struct KiemThuCTW: View {
             if let r = d.duongDan.tham["run"].flatMap(Int.init) {
                 nganXep.duong.append(RouteLuotChayCTW(pid: pid, id: r))
             } else if let c = d.duongDan.tham["cycle"].flatMap(Int.init) {
-                nganXep.duong.append(RouteChuKyCTW(pid: pid, id: c, ten: "Test cycle"))
+                nganXep.duong.append(RouteChuKyCTW(pid: pid, id: c, ten: String(localized: "Test cycle")))
             }
         }
         #if DEBUG
@@ -142,8 +149,8 @@ struct KiemThuCTW: View {
     @ViewBuilder private var dsChuKy: some View {
         if let ds = vm.chuKy {
             if ds.isEmpty {
-                CTWOTrong(bieuTuong: "checkmark.seal", tieuDe: "No test cycles yet",
-                          moTa: "Create a cycle on the web to group test runs for a sprint, build or environment. Runs then show up here to execute on your phone.")
+                CTWOTrong(bieuTuong: "checkmark.seal", tieuDe: String(localized: "No test cycles yet"),
+                          moTa: String(localized: "Create a cycle on the web to group test runs for a sprint, build or environment. Runs then show up here to execute on your phone."))
                     .listRowBackground(Color.clear)
             } else {
                 let dangChay = ds.filter { $0.state != "DONE" }
@@ -182,10 +189,10 @@ struct KiemThuCTW: View {
     }
 
     private func moTaTienDo(_ c: CTWTestCycle) -> String {
-        var p = ["\(c.executed ?? 0)/\(c.total ?? 0) executed"]
-        if let r = c.passRate { p.append("\(Int(r))% passed") }
-        if c.dem("FAIL") > 0 { p.append("\(c.dem("FAIL")) failed") }
-        if c.dem("BLOCKED") > 0 { p.append("\(c.dem("BLOCKED")) blocked") }
+        var p = [String(localized: "\(c.executed ?? 0)/\(c.total ?? 0) executed")]
+        if let r = c.passRate { p.append(String(localized: "\(Int(r))% passed")) }
+        if c.dem("FAIL") > 0 { p.append(String(localized: "\(c.dem("FAIL")) failed")) }
+        if c.dem("BLOCKED") > 0 { p.append(String(localized: "\(c.dem("BLOCKED")) blocked")) }
         return p.joined(separator: " · ")
     }
 
@@ -195,15 +202,15 @@ struct KiemThuCTW: View {
         if let ds = vm.ca {
             if ds.isEmpty {
                 CTWOTrong(bieuTuong: "doc.text.magnifyingglass",
-                          tieuDe: tim.isEmpty ? "No test cases yet" : "No test cases match “\(tim)”",
-                          moTa: tim.isEmpty ? "Test cases are issues of type Test. Your team writes their steps on the web." : "")
+                          tieuDe: tim.isEmpty ? String(localized: "No test cases yet") : String(localized: "No test cases match “\(tim)”"),
+                          moTa: tim.isEmpty ? String(localized: "Test cases are issues of type Test. Your team writes their steps on the web.") : "")
                     .listRowBackground(Color.clear)
             } else {
                 Section {
                     ForEach(ds) { t in
                         NavigationLink(value: RouteTestCTW(pid: pid, so: t.number, ten: t.title)) { hangCa(t) }
                     }
-                } header: { Text("\(ds.count) test case\(ds.count == 1 ? "" : "s")") }
+                } header: { Text(ds.count == 1 ? String(localized: "1 test case") : String(localized: "\(ds.count) test cases")) }
             }
         } else if vm.loi == nil {
             CTWKhungTai(soHang: 6, coAvatar: false).listRowBackground(Color.clear).listRowInsets(EdgeInsets())
@@ -278,9 +285,10 @@ struct ChuKyCTW: View {
     @State private var loi: String?
     @State private var loc = "ALL"
 
-    private let boLoc: [(ma: String, nhan: String)] = [
-        ("ALL", "All"), ("TODO", "To do"), ("FAIL", "Failed"), ("BLOCKED", "Blocked"), ("PASS", "Passed"),
-    ]
+    private var boLoc: [(ma: String, nhan: String)] { [
+        ("ALL", String(localized: "All")), ("TODO", String(localized: "To do")), ("FAIL", String(localized: "Failed")),
+        ("BLOCKED", String(localized: "Blocked")), ("PASS", String(localized: "Passed")),
+    ] }
 
     var body: some View {
         List {
@@ -291,7 +299,7 @@ struct ChuKyCTW: View {
                 Section { dau(c) }.listRowBackground(Color.clear).listRowInsets(EdgeInsets())
                 Section {
                     CTWThanhLoc(chip: boLoc.map { l in
-                        CTWChipLoc(id: l.ma, nhan: l.ma == "ALL" ? "All \(c.total ?? 0)" : "\(l.nhan) \(demLoc(c, l.ma))", bat: loc == l.ma)
+                        CTWChipLoc(id: l.ma, nhan: l.ma == "ALL" ? String(localized: "All \(c.total ?? 0)") : "\(l.nhan) \(demLoc(c, l.ma))", bat: loc == l.ma)
                     }) { loc = $0.id }
                     .listRowBackground(Color.clear).listRowInsets(EdgeInsets())
                 }
@@ -344,10 +352,10 @@ struct ChuKyCTW: View {
                 Spacer(minLength: 0)
             }
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 120), spacing: 10)], spacing: 10) {
-                CTWODem(so: c.passRate.map { "\(Int($0))%" } ?? "—", nhan: "Pass rate", bieuTuong: "percent", mau: AppColors.success)
-                CTWODem(so: "\(c.executed ?? 0)/\(c.total ?? 0)", nhan: "Executed", bieuTuong: "play.circle", mau: AppColors.primary)
-                CTWODem(so: "\(c.dem("FAIL"))", nhan: "Failed", bieuTuong: "xmark.octagon", mau: AppColors.error)
-                CTWODem(so: "\(c.dem("BLOCKED"))", nhan: "Blocked", bieuTuong: "hand.raised", mau: AppColors.warning)
+                CTWODem(so: c.passRate.map { "\(Int($0))%" } ?? "—", nhan: String(localized: "Pass rate"), bieuTuong: "percent", mau: AppColors.success)
+                CTWODem(so: "\(c.executed ?? 0)/\(c.total ?? 0)", nhan: String(localized: "Executed"), bieuTuong: "play.circle", mau: AppColors.primary)
+                CTWODem(so: "\(c.dem("FAIL"))", nhan: String(localized: "Failed"), bieuTuong: "xmark.octagon", mau: AppColors.error)
+                CTWODem(so: "\(c.dem("BLOCKED"))", nhan: String(localized: "Blocked"), bieuTuong: "hand.raised", mau: AppColors.warning)
             }
             CTWThanhTienDoTest(counts: c.counts ?? [:], cao: 10)
         }
@@ -365,10 +373,10 @@ struct ChuKyCTW: View {
                         .foregroundColor(AppColors.textSecondary)
                     CTWPriorityIcon(priority: r.test?.priority)
                     if r.outdated == true {
-                        CTWNhanNho(chu: "Outdated", bieuTuong: "exclamationmark.arrow.circlepath", mau: AppColors.warning)
+                        CTWNhanNho(chu: String(localized: "Outdated"), bieuTuong: "exclamationmark.arrow.circlepath", mau: AppColors.warning)
                     }
                 }
-                Text(r.test?.title ?? "Test").font(.ctw(size: 15)).foregroundColor(AppColors.textPrimary).lineLimit(2)
+                Text(r.test?.title ?? String(localized: "Test")).font(.ctw(size: 15)).foregroundColor(AppColors.textPrimary).lineLimit(2)
                 HStack(spacing: 6) {
                     Text(CTWLuatTest.nhan(r.status)).foregroundColor(CTWLuatTest.mau(r.status))
                     Text("· \(r.stepCount ?? 0) steps")
@@ -462,7 +470,7 @@ struct TestChiTietCTW: View {
                 CTWRung.thanhCong()
                 nganXep.duong.append(RouteLuotChayCTW(pid: pid, id: r.id))
             } else {
-                loi = "The test was added, but its run isn't ready yet. Pull to refresh the cycle."
+                loi = String(localized: "The test was added, but its run isn't ready yet. Pull to refresh the cycle.")
             }
         } catch { CTWRung.loi(); loi = CTW.loi(error) }
     }
@@ -472,21 +480,21 @@ struct TestChiTietCTW: View {
             .fixedSize(horizontal: false, vertical: true)
             .accessibilityAddTraits(.isHeader)
         HStack(spacing: 6) {
-            CTWNhanNho(chu: t.kind == "GHERKIN" ? "Gherkin" : "Manual", bieuTuong: "checkmark.seal")
-            ForEach(t.plans ?? []) { p in CTWNhanNho(chu: p.name ?? "Plan", bieuTuong: "list.bullet.rectangle") }
+            CTWNhanNho(chu: t.kind == "GHERKIN" ? "Gherkin" : String(localized: "Manual"), bieuTuong: "checkmark.seal")
+            ForEach(t.plans ?? []) { p in CTWNhanNho(chu: p.name ?? String(localized: "Plan"), bieuTuong: "list.bullet.rectangle") }
         }
         if let p = t.preconditions, !p.isEmpty {
-            CTWSectionHeader("flag", "Preconditions")
+            CTWSectionHeader("flag", String(localized: "Preconditions"))
             Text(p).font(.ctw(size: 15)).foregroundColor(AppColors.textPrimary)
                 .frame(maxWidth: .infinity, alignment: .leading).padding(12).ctwThe(12)
         }
         if let g = t.gherkin, !g.isEmpty {
-            CTWSectionHeader("text.alignleft", "Scenario")
+            CTWSectionHeader("text.alignleft", String(localized: "Scenario"))
             CTWKhoiView(khoi: [.ma(g)])
         }
         let buoc = (t.steps ?? []).sorted { ($0.position ?? 0) < ($1.position ?? 0) }
         if !buoc.isEmpty {
-            CTWSectionHeader("list.number", "Steps", count: "\(buoc.count)")
+            CTWSectionHeader("list.number", String(localized: "Steps"), count: "\(buoc.count)")
             VStack(spacing: 10) {
                 ForEach(Array(buoc.enumerated()), id: \.element.id) { i, s in
                     CTWBuocTestView(so: i + 1, action: s.action, data: s.data, expected: s.expected)
@@ -494,7 +502,7 @@ struct TestChiTietCTW: View {
             }
         }
         let luot = t.runs ?? []
-        CTWSectionHeader("clock.arrow.circlepath", "Recent runs", count: luot.isEmpty ? nil : "\(luot.count)")
+        CTWSectionHeader("clock.arrow.circlepath", String(localized: "Recent runs"), count: luot.isEmpty ? nil : "\(luot.count)")
         if luot.isEmpty {
             Text("This test hasn't been run yet.").font(.ctw(size: 13)).foregroundColor(AppColors.textTertiary)
         } else {
@@ -504,7 +512,7 @@ struct TestChiTietCTW: View {
                         HStack(spacing: 10) {
                             Image(systemName: CTWLuatTest.bieuTuong(r.status)).foregroundColor(CTWLuatTest.mau(r.status))
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(r.cycle?.name ?? "Cycle").font(.ctw(size: 14, weight: .medium))
+                                Text(r.cycle?.name ?? String(localized: "Cycle")).font(.ctw(size: 14, weight: .medium))
                                     .foregroundColor(AppColors.textPrimary).lineLimit(1)
                                 Text([CTWLuatTest.nhan(r.status), r.cycle?.environment, r.executedAt.map { CTW.thoiDiem($0) }]
                                     .compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · "))
@@ -548,10 +556,10 @@ struct CTWBuocTestView<Duoi: View>: View {
                 Text(action ?? "—").font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary)
                     .fixedSize(horizontal: false, vertical: true)
                 if let d = data, !d.isEmpty {
-                    nhan("Data", d, mono: true)
+                    nhan(String(localized: "Data"), d, mono: true)
                 }
                 if let e = expected, !e.isEmpty {
-                    nhan("Expected", e, mono: false)
+                    nhan(String(localized: "Expected"), e, mono: false)
                 }
                 duoi()
             }

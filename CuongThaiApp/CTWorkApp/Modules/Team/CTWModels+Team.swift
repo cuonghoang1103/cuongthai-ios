@@ -10,20 +10,20 @@ enum CTWVaiTroDuAn: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     var ten: String {
         switch self {
-        case .ADMIN: return "Admin"
-        case .MEMBER: return "Member"
-        case .VIEWER: return "Viewer"
-        case .TEACHER: return "Teacher"
-        case .CLIENT: return "Client"
+        case .ADMIN: return String(localized: "Admin")
+        case .MEMBER: return String(localized: "Member")
+        case .VIEWER: return String(localized: "Viewer")
+        case .TEACHER: return String(localized: "Teacher")
+        case .CLIENT: return String(localized: "Client")
         }
     }
     var moTa: String {
         switch self {
-        case .ADMIN: return "Full control, settings and members"
-        case .MEMBER: return "Create, edit and move issues"
-        case .VIEWER: return "Read-only"
-        case .TEACHER: return "Read, comment and approve"
-        case .CLIENT: return "Client portal access only"
+        case .ADMIN: return String(localized: "Full control, settings and members")
+        case .MEMBER: return String(localized: "Create, edit and move issues")
+        case .VIEWER: return String(localized: "Read-only")
+        case .TEACHER: return String(localized: "Read, comment and approve")
+        case .CLIENT: return String(localized: "Client portal access only")
         }
     }
     /// Agent chỉ được MEMBER/VIEWER (máy chủ trả `WORK_AGENT_ROLE` nếu khác).
@@ -34,7 +34,13 @@ enum CTWVaiTroDuAn: String, CaseIterable, Identifiable {
 enum CTWVaiTroKhongGian: String, CaseIterable, Identifiable {
     case ADMIN, MEMBER, GUEST
     var id: String { rawValue }
-    var ten: String { String(rawValue.prefix(1)) + rawValue.dropFirst().lowercased() }
+    var ten: String {
+        switch self {
+        case .ADMIN: return String(localized: "Admin")
+        case .MEMBER: return String(localized: "Member")
+        case .GUEST: return String(localized: "Guest")
+        }
+    }
 }
 
 struct CTWNhomThanhVien: Codable, Hashable, Identifiable {

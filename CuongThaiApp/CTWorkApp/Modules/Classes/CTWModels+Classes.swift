@@ -230,11 +230,11 @@ struct CTWQuyenGiangDay: Codable { var teaching: Bool?; var projects: Int?; var 
 enum CTWLopNhan {
     static func trangThaiNop(_ s: String?) -> String {
         switch s {
-        case "TURNED_IN": return "Turned in"
-        case "LATE": return "Turned in late"
-        case "MISSING": return "Missing"
-        case "RETURNED": return "Returned"
-        default: return "Assigned"
+        case "TURNED_IN": return String(localized: "Turned in")
+        case "LATE": return String(localized: "Turned in late")
+        case "MISSING": return String(localized: "Missing")
+        case "RETURNED": return String(localized: "Returned")
+        default: return String(localized: "Assigned")
         }
     }
 

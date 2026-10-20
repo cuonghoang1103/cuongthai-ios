@@ -39,9 +39,9 @@ struct TrangPhapLyView: View {
 
     private var tieuDe: String {
         switch trang {
-        case .dieuKhoan: return "Terms of Use"
-        case .baoMat: return "Privacy Policy"
-        case .troGiup: return "Help & Contact"
+        case .dieuKhoan: return String(localized: "Terms of Use")
+        case .baoMat: return String(localized: "Privacy Policy")
+        case .troGiup: return String(localized: "Help & Contact")
         }
     }
 
@@ -90,7 +90,7 @@ struct TrangPhapLyView: View {
         } header: { Text("Contact us") }
     }
 
-    private func muc(_ s: String) -> some View {
+    private func muc(_ s: LocalizedStringKey) -> some View {
         Text(s).font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary)
             .fixedSize(horizontal: false, vertical: true)
             .padding(.vertical, 2)
@@ -119,6 +119,7 @@ struct TaiKhoanCTW: View {
     @State private var hoiDangXuat = false
     /// 5.1.2(i): đồng ý gửi câu hỏi + nội dung dự án cho nhà cung cấp AI (Modules/AI/TroLyAICTW.swift).
     @AppStorage("com.cuongthai.ctwork.ai.dongY") private var aiDongY = false
+    @ObservedObject private var ngonNgu = NgonNguApCTW.shared
 
     enum TamPhu: Identifiable {
         case phapLy(TrangPhapLyCTW), chonDuAn, web(URL)
@@ -159,11 +160,27 @@ struct TaiKhoanCTW: View {
                         HStack {
                             Label("Current project", systemImage: "rectangle.3.group")
                             Spacer()
-                            Text(app.luaChon.map { "\($0.maDuAn) · \($0.tenKhongGian)" } ?? "None")
+                            Text(app.luaChon.map { "\($0.maDuAn) · \($0.tenKhongGian)" } ?? String(localized: "None"))
                                 .foregroundColor(AppColors.textSecondary).lineLimit(1)
                         }
                     }
                 } header: { Text("Workspace") }
+
+                // 20/10/2026 — ngôn ngữ app. Bảng chọn dạng menu (không đẩy màn) ⇒ đổi xong vẫn đứng ở Account
+                // dù cả cây dựng lại (`GocCTW` `.id(ngonNgu.ma)`).
+                Section {
+                    Picker(selection: Binding(get: { ngonNgu.cheDo }, set: { ngonNgu.dat($0) })) {
+                        ForEach(NgonNguCTW.CheDo.allCases) { c in
+                            Text(verbatim: NgonNguApCTW.ten(c)).tag(c)
+                        }
+                    } label: {
+                        Label("Language", systemImage: "globe")
+                    }
+                    .pickerStyle(.menu)
+                    .accessibilityIdentifier("account.language")
+                } header: { Text("Language") } footer: {
+                    Text("Changes apply right away. Names of projects, statuses and issues stay as your team wrote them.")
+                }
 
                 Section("Notifications") {
                     NavigationLink { CaiDatThongBaoCTW() } label: { Label("What to notify me about", systemImage: "slider.horizontal.3") }
@@ -250,7 +267,7 @@ struct DanhSachChanCTW: View {
             }
             Section {
                 let n = an.tinAn.count + an.binhLuanAn.count
-                Text(n == 0 ? "Nothing hidden." : "\(n) reported item\(n == 1 ? "" : "s") hidden")
+                Text(n == 0 ? "Nothing hidden." : n == 1 ? "1 reported item hidden" : "\(n) reported items hidden")
                     .foregroundColor(AppColors.textSecondary)
                 if n > 0 {
                     Button("Show hidden content again") { an.boAnHet() }
@@ -333,19 +350,19 @@ struct XoaTaiKhoanCTW: View {
         }
     }
 
-    private func dong(_ s: String) -> some View {
+    private func dong(_ s: LocalizedStringKey) -> some View {
         Label { Text(s).font(.ctw(size: 14)) } icon: { Image(systemName: "circle.fill").font(.ctw(size: 6)) }
     }
 
     private func han(_ r: YeuCauXoa) -> String {
-        guard let s = r.createdAt else { return "in 72 hours" }
+        guard let s = r.createdAt else { return String(localized: "in 72 hours") }
         let f = ISO8601DateFormatter()
         f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        guard let d = f.date(from: s) ?? ISO8601DateFormatter().date(from: s) else { return "in 72 hours" }
-        let o = DateFormatter()
-        o.locale = Locale(identifier: "en_US")
-        o.dateFormat = "MMM d 'at' HH:mm"
-        return "on " + o.string(from: d.addingTimeInterval(72 * 3600))
+        guard let d = f.date(from: s) ?? ISO8601DateFormatter().date(from: s) else { return String(localized: "in 72 hours") }
+        let h = d.addingTimeInterval(72 * 3600)
+        let ngay = CTWDinhDang.mau("MMMd").string(from: h)
+        let gio = CTWDinhDang.gio(h)
+        return String(localized: "on \(ngay) at \(gio)")
     }
 
     private func tai() async {

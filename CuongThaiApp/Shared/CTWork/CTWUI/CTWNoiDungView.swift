@@ -148,12 +148,12 @@ struct CTWAnhCoXacThuc: View {
                 .scaledToFit()
                 .frame(maxWidth: .infinity, maxHeight: 420)
                 .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                .accessibilityLabel(alt.isEmpty ? "Image" : alt)
+                .accessibilityLabel(alt.isEmpty ? String(localized: "Image") : alt)
             #else
-            Label(alt.isEmpty ? "Image" : alt, systemImage: "photo")
+            Label(alt.isEmpty ? String(localized: "Image") : alt, systemImage: "photo")
             #endif
         } else {
-            Label(alt.isEmpty ? "Image" : alt, systemImage: "photo").foregroundColor(AppColors.textSecondary)
+            Label(alt.isEmpty ? String(localized: "Image") : alt, systemImage: "photo").foregroundColor(AppColors.textSecondary)
         }
     }
 }

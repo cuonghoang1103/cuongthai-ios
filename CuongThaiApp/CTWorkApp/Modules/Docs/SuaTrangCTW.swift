@@ -36,8 +36,8 @@ final class SuaTrangVM: ObservableObject {
         do {
             let (ct, raw) = try await taiTrang()
             if let ly = CTWSuaTrang.lyDoKhongSuaDuoc(raw) { trangThai = .khongSua(ly); return }
-            if ct.status == "ARCHIVED" { trangThai = .khongSua("Archived pages are read-only. Move the page back to Draft to edit it."); return }
-            if ct.canEdit == false { trangThai = .khongSua("You can read this page but not edit it."); return }
+            if ct.status == "ARCHIVED" { trangThai = .khongSua(String(localized: "Archived pages are read-only. Move the page back to Draft to edit it.")); return }
+            if ct.canEdit == false { trangThai = .khongSua(String(localized: "You can read this page but not edit it.")); return }
             let md: CTWPageMarkdown = try await APIClient.shared.request(CTWAPI.trangMarkdown(pid: pid, so: so))
             v0 = ct.version
             md0 = md.markdown ?? ""
@@ -65,7 +65,7 @@ final class SuaTrangVM: ObservableObject {
     func luu() async -> Bool {
         guard daSua, !dangLuu else { return !daSua }
         let td = tieuDe.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !td.isEmpty else { loi = "Give the page a title."; return false }
+        guard !td.isEmpty else { loi = String(localized: "Give the page a title."); return false }
         dangLuu = true
         defer { dangLuu = false }
         do {
@@ -119,7 +119,7 @@ final class SuaTrangVM: ObservableObject {
     func luuThanhTrangCon() async -> CTWPageDetail? {
         do {
             let t: CTWPageDetail = try await APIClient.shared.request(CTWAPI.taoTrang(
-                pid: pid, tieuDe: "\(tieuDe) (my version)", trangCha: so, markdown: noiDung))
+                pid: pid, tieuDe: String(localized: "\(tieuDe) (my version)"), trangCha: so, markdown: noiDung))
             noiDung0 = noiDung; tieuDe0 = tieuDe
             CTWRung.thanhCong()
             return t
@@ -130,7 +130,7 @@ final class SuaTrangVM: ObservableObject {
         dangTaiAnh = true
         defer { dangTaiAnh = false }
         #if canImport(UIKit)
-        guard let jpg = CTWTaiAnhTaiLieu.chuanBi(du) else { loi = "This image format isn't supported."; return nil }
+        guard let jpg = CTWTaiAnhTaiLieu.chuanBi(du) else { loi = String(localized: "This image format isn't supported."); return nil }
         #else
         let jpg = du
         #endif
@@ -253,7 +253,7 @@ struct SuaTrangCTW: View {
             case .web:
                 if let u = CTWWeb.url(slug: slug, ma: maDuAn, doan: "docs/\(so)") { SafariCTW(url: u).ignoresSafeArea() }
             case .chonThe:
-                ChonTheCTW(pid: pid, tieuDe: "Link an issue") { the in
+                ChonTheCTW(pid: pid, tieuDe: String(localized: "Link an issue")) { the in
                     boSoan.chen(CTWSuaTrang.lienKetThe(slug: slug, maDuAn: maDuAn, so: the.number, tieuDe: the.title))
                     Task { _ = try? await APIClient.shared.send(CTWAPI.ganTheVaoTrang(pid: pid, so: so, the: the.number)) }
                 }
@@ -276,8 +276,8 @@ struct SuaTrangCTW: View {
             CTWOLoi(loi: l) { Task { await vm.tai() } }
         case .khongSua(let l):
             // Không đẩy người dùng "lên web" như lối duy nhất (4.2) — nói rõ lý do, cho lối mở trang đầy đủ.
-            CTWOTrong(bieuTuong: "lock.doc", tieuDe: "Can't edit this page here", moTa: l,
-                      nut: "Open the full editor", hanhDong: { tamPhu = .web })
+            CTWOTrong(bieuTuong: "lock.doc", tieuDe: String(localized: "Can't edit this page here"), moTa: l,
+                      nut: String(localized: "Open the full editor"), hanhDong: { tamPhu = .web })
         case .san:
             VStack(spacing: 0) {
                 if vm.khoaSua {
@@ -301,7 +301,7 @@ struct SuaTrangCTW: View {
                 Divider().padding(.horizontal, 16)
                 if xemTruoc {
                     ScrollView {
-                        CTWMarkdownView(markdown: vm.noiDung.isEmpty ? "_Nothing to preview_" : vm.noiDung, coChu: 15.5)
+                        CTWMarkdownView(markdown: vm.noiDung.isEmpty ? String(localized: "_Nothing to preview_") : vm.noiDung, coChu: 15.5)
                             .padding(16)
                             .frame(maxWidth: 760, alignment: .leading)
                             .frame(maxWidth: .infinity)
@@ -404,20 +404,21 @@ struct XungDotTrangCTW: View {
                             Text("This page changed while you were editing")
                                 .font(.ctw(size: 17, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                                 .fixedSize(horizontal: false, vertical: true)
-                            Text("\(xungDot.nguoi.map { "\($0) saved a newer version. " } ?? "Someone saved a newer version. ")Your changes were NOT saved, so nothing of theirs was overwritten. Reload the latest version or compare it with yours.")
+                            Text(xungDot.nguoi.map { String(localized: "\($0) saved a newer version. Your changes were NOT saved, so nothing of theirs was overwritten. Reload the latest version or compare it with yours.") }
+                                 ?? String(localized: "Someone saved a newer version. Your changes were NOT saved, so nothing of theirs was overwritten. Reload the latest version or compare it with yours."))
                                 .font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                     }
                     VStack(spacing: 10) {
-                        nut("doc.badge.plus", "Save mine as a subpage", "Keeps both versions — merge them later.", chinh: true) {
+                        nut("doc.badge.plus", String(localized: "Save mine as a subpage"), String(localized: "Keeps both versions — merge them later."), chinh: true) {
                             dangLuu = true
                             Task { await luuTrangCon(); dangLuu = false; dong() }
                         }
-                        nut(daChep ? "checkmark" : "doc.on.doc", daChep ? "Copied" : "Copy my text", "Paste it anywhere, then reload.") {
+                        nut(daChep ? "checkmark" : "doc.on.doc", daChep ? String(localized: "Copied") : String(localized: "Copy my text"), String(localized: "Paste it anywhere, then reload.")) {
                             CTW.chepVaoBoNho(banCuaToi); daChep = true; CTWRung.thanhCong()
                         }
-                        nut("arrow.clockwise", "Reload the latest version", "Discards your changes and starts from theirs.", nguyHiem: true) {
+                        nut("arrow.clockwise", String(localized: "Reload the latest version"), String(localized: "Discards your changes and starts from theirs."), nguyHiem: true) {
                             dong(); taiLai()
                         }
                     }
@@ -428,7 +429,7 @@ struct XungDotTrangCTW: View {
                     .pickerStyle(.segmented)
                     .padding(.top, 6)
                     if cheDo == 0 {
-                        CTWMarkdownView(markdown: xungDot.banMoi.isEmpty ? "_Empty page_" : xungDot.banMoi, coChu: 14)
+                        CTWMarkdownView(markdown: xungDot.banMoi.isEmpty ? String(localized: "_Empty page_") : xungDot.banMoi, coChu: 14)
                             .padding(14).ctwThe(12)
                     } else {
                         SoSanhTrangCTW(dong: CTWSuaTrang.soSanhDong(cuaToi: banCuaToi, banMoi: xungDot.banMoi))
@@ -473,7 +474,7 @@ struct XungDotTrangCTW: View {
 
 struct ChonTheCTW: View {
     let pid: Int
-    var tieuDe = "Choose an issue"
+    var tieuDe = String(localized: "Choose an issue")
     let chon: (CTWIssueCard) -> Void
     @Environment(\.dismiss) private var dong
     @State private var q = ""

@@ -115,7 +115,7 @@ struct BaiTapCTW: View {
                     if let d = c.description, !d.chuTron.isEmpty { CTWTipTapView(doc: d, coChu: 15).padding(14).ctwThe(12) }
                     else if let t = c.descriptionText, !t.isEmpty { Text(t).font(.ctw(size: 15)).padding(14).frame(maxWidth: .infinity, alignment: .leading).ctwThe(12) }
                     if let f = c.files, !f.isEmpty {
-                        CTWSectionHeader("paperclip", "Materials", count: "\(f.count)")
+                        CTWSectionHeader("paperclip", String(localized: "Materials"), count: "\(f.count)")
                         ForEach(f) { t in TepLopDong(lop: lop, t: t) }
                     }
                     if c.manage == true { tinhTrangNop } else if let n = c.submission { baiCuaToi(c, n) }
@@ -136,7 +136,7 @@ struct BaiTapCTW: View {
             guard case .success(let ds) = kq, let u = ds.first else { return }
             let mo = u.startAccessingSecurityScopedResource()
             defer { if mo { u.stopAccessingSecurityScopedResource() } }
-            guard let du = try? Data(contentsOf: u) else { vm.loi = "Couldn't read that file."; return }
+            guard let du = try? Data(contentsOf: u) else { vm.loi = String(localized: "Couldn't read that file."); return }
             Task { await vm.taiTep(du: du, ten: u.lastPathComponent) }
         }
         .onChange(of: chonAnh) { _, muc in
@@ -166,24 +166,24 @@ struct BaiTapCTW: View {
     private func dau(_ c: CTWBaiTapChiTiet) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
-                CTWNhanNho(chu: c.kind == "GROUP" ? "Group" : "Individual", bieuTuong: c.kind == "GROUP" ? "person.3" : "person", mau: AppColors.primary)
+                CTWNhanNho(chu: c.kind == "GROUP" ? String(localized: "Group") : String(localized: "Individual"), bieuTuong: c.kind == "GROUP" ? "person.3" : "person", mau: AppColors.primary)
                 if let cat = c.category, !cat.isEmpty { CTWNhanNho(chu: cat) }
                 if let t = c.topic, !t.isEmpty { CTWNhanNho(chu: t) }
             }
             Text(c.title).font(.ctw(size: 22, weight: .bold)).foregroundColor(AppColors.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
             CTWKhoiTruong {
-                CTWHangTruong("Due", c.dueAt.map { CTW.thoiDiem($0) } ?? "No due date", bieuTuong: "calendar")
+                CTWHangTruong(String(localized: "Due"), c.dueAt.map { CTW.thoiDiem($0) } ?? String(localized: "No due date"), bieuTuong: "calendar")
                 Divider()
-                CTWHangTruong("Points", c.maxPoints.map { CTWLopNhan.diem($0) }, bieuTuong: "star")
+                CTWHangTruong(String(localized: "Points"), c.maxPoints.map { CTWLopNhan.diem($0) }, bieuTuong: "star")
                 if c.allowLate == true, let p = c.latePenaltyPct, p > 0 {
                     Divider()
-                    CTWHangTruong("Late penalty", "\(CTWLopNhan.diem(p))%" + (c.latePenaltyMaxPct.map { " (max \(CTWLopNhan.diem($0))%)" } ?? ""), bieuTuong: "clock.badge.exclamationmark")
+                    CTWHangTruong(String(localized: "Late penalty"), c.latePenaltyMaxPct.map { String(localized: "\(CTWLopNhan.diem(p))% (max \(CTWLopNhan.diem($0))%)") } ?? "\(CTWLopNhan.diem(p))%", bieuTuong: "clock.badge.exclamationmark")
                 } else if c.allowLate == false {
                     Divider()
-                    CTWHangTruong("Late work", "Not accepted", bieuTuong: "clock.badge.xmark")
+                    CTWHangTruong(String(localized: "Late work"), String(localized: "Not accepted"), bieuTuong: "clock.badge.xmark")
                 }
-                if let a = c.author { Divider(); CTWHangTruong("Posted by", a.ten, bieuTuong: "person") }
+                if let a = c.author { Divider(); CTWHangTruong(String(localized: "Posted by"), a.ten, bieuTuong: "person") }
             }
         }
     }
@@ -191,7 +191,7 @@ struct BaiTapCTW: View {
     private func baiCuaToi(_ c: CTWBaiTapChiTiet, _ n: CTWBaiNop) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                CTWSectionHeader("tray.and.arrow.up", "Your work")
+                CTWSectionHeader("tray.and.arrow.up", String(localized: "Your work"))
                 CTWChipChu(chu: CTWLopNhan.trangThaiNop(n.state), mau: CTWMauTrangThai.mau(CTWLopNhan.mauNop(n.state)))
             }
             if let g = n.grade, g.points != nil {
@@ -213,7 +213,7 @@ struct BaiTapCTW: View {
                 Label("This is a group assignment. Join a group in the class first.", systemImage: "person.3")
                     .font(.ctw(size: 13)).foregroundColor(AppColors.warning)
             }
-            if let s = n.submittedAt { Text("Turned in \(CTW.thoiDiem(s))\(n.late == true ? " · late" : "")").font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary) }
+            if let s = n.submittedAt { Text(n.late == true ? String(localized: "Turned in \(CTW.thoiDiem(s)) · late") : String(localized: "Turned in \(CTW.thoiDiem(s))")).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary) }
 
             // Soạn bài: chỉ khi CHƯA nộp (đã nộp phải rút lại — luật máy chủ).
             VStack(alignment: .leading, spacing: 8) {
@@ -268,25 +268,25 @@ struct BaiTapCTW: View {
                     Text("Turning in now applies a \(CTWLopNhan.diem(p))% late penalty.").font(.ctw(size: 12)).foregroundColor(AppColors.warning)
                 }
             }
-            CTWSectionHeader("lock.fill", "Private comments", count: "\(n.comments?.count ?? 0)").padding(.top, 6)
+            CTWSectionHeader("lock.fill", String(localized: "Private comments"), count: "\(n.comments?.count ?? 0)").padding(.top, 6)
             Text("Only you and your teachers see these.").font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
             ForEach(n.comments ?? []) { c in
                 CTWBinhLuanDong(khoa: "submission-comment-\(c.id)", tacGia: c.author, noiDung: c.body ?? "", thoiDiem: c.createdAt,
                                 nguCanh: "Class #\(lop) assignment #\(aid)")
             }
-            CTWHopSoan(goiY: "Add a private comment…", nutGui: "Send") { s in await vm.binhLuan(s) }
+            CTWHopSoan(goiY: String(localized: "Add a private comment…"), nutGui: String(localized: "Send")) { s in await vm.binhLuan(s) }
         }
     }
 
     @ViewBuilder
     private var tinhTrangNop: some View {
-        CTWSectionHeader("person.2.badge.gearshape", "Submissions", count: vm.dsNop.map { "\($0.count)" })
+        CTWSectionHeader("person.2.badge.gearshape", String(localized: "Submissions"), count: vm.dsNop.map { "\($0.count)" })
         if let ds = vm.dsNop {
             let dem = Dictionary(grouping: ds, by: { $0.state ?? "ASSIGNED" }).mapValues(\.count)
             HStack(spacing: 8) {
-                CTWODem(so: "\((dem["TURNED_IN"] ?? 0) + (dem["LATE"] ?? 0))", nhan: "Turned in", bieuTuong: "tray.and.arrow.up", mau: AppColors.success)
-                CTWODem(so: "\(dem["MISSING"] ?? 0)", nhan: "Missing", bieuTuong: "exclamationmark.circle", mau: AppColors.error)
-                CTWODem(so: "\(dem["RETURNED"] ?? 0)", nhan: "Returned", bieuTuong: "checkmark.circle", mau: AppColors.primary)
+                CTWODem(so: "\((dem["TURNED_IN"] ?? 0) + (dem["LATE"] ?? 0))", nhan: String(localized: "Turned in"), bieuTuong: "tray.and.arrow.up", mau: AppColors.success)
+                CTWODem(so: "\(dem["MISSING"] ?? 0)", nhan: String(localized: "Missing"), bieuTuong: "exclamationmark.circle", mau: AppColors.error)
+                CTWODem(so: "\(dem["RETURNED"] ?? 0)", nhan: String(localized: "Returned"), bieuTuong: "checkmark.circle", mau: AppColors.primary)
             }
             VStack(spacing: 0) {
                 ForEach(ds) { r in
@@ -295,7 +295,7 @@ struct BaiTapCTW: View {
                             Text(r.group?.name ?? r.members?.first?.name ?? r.ownerKey).font(.ctw(size: 14, weight: .semibold))
                                 .foregroundColor(AppColors.textPrimary).lineLimit(1)
                             Text([r.members?.compactMap(\.studentCode).joined(separator: ", "),
-                                  r.submittedAt.map { "Turned in \(CTW.ngayNgan($0) ?? "")" }]
+                                  r.submittedAt.map { String(localized: "Turned in \(CTW.ngayNgan($0) ?? "")") }]
                                 .compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · "))
                                 .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1)
                         }

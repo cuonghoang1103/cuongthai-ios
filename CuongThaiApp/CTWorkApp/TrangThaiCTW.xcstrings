@@ -1,0 +1,2562 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "ABSENT": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Absent"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vắng"
+          }
+        }
+      }
+    },
+    "ACCEPT": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accept"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chấp nhận"
+          }
+        }
+      }
+    },
+    "ACCEPTED": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accepted"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã chấp nhận"
+          }
+        }
+      }
+    },
+    "ACCEPT_WITH_CHANGES": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accept with changes"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chấp nhận kèm sửa"
+          }
+        }
+      }
+    },
+    "ACTIVE": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Active"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang hoạt động"
+          }
+        }
+      }
+    },
+    "ADMIN": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Admin"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quản trị"
+          }
+        }
+      }
+    },
+    "AMBER": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Amber"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vàng"
+          }
+        }
+      }
+    },
+    "ANALYSIS": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analysis"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phân tích"
+          }
+        }
+      }
+    },
+    "ANSWERED": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Answered"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã trả lời"
+          }
+        }
+      }
+    },
+    "APPROVED": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Approved"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã duyệt"
+          }
+        }
+      }
+    },
+    "ARCHIVED": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archived"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã lưu trữ"
+          }
+        }
+      }
+    },
+    "ASSIGNED": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assigned"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã giao"
+          }
+        }
+      }
+    },
+    "ASSUMPTION": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assumption"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giả định"
+          }
+        }
+      }
+    },
+    "AT_RISK": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "At risk"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Có rủi ro"
+          }
+        }
+      }
+    },
+    "AVOID": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avoid"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tránh"
+          }
+        }
+      }
+    },
+    "BLOCKER": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Blocker"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chặn"
+          }
+        }
+      }
+    },
+    "BREACHED": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Breached"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vi phạm"
+          }
+        }
+      }
+    },
+    "BUSINESS": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Business"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nghiệp vụ"
+          }
+        }
+      }
+    },
+    "CANCELED": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Canceled"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã huỷ"
+          }
+        }
+      }
+    },
+    "CANCELLED": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancelled"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã huỷ"
+          }
+        }
+      }
+    },
+    "CHANGE": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thay đổi"
+          }
+        }
+      }
+    },
+    "CHANGES_REQUESTED": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Changes requested"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yêu cầu sửa"
+          }
+        }
+      }
+    },
+    "CLASSROOM": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Classroom"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lớp học"
+          }
+        }
+      }
+    },
+    "CLIENT": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Client"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khách hàng"
+          }
+        }
+      }
+    },
+    "CLOSED": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Closed"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã đóng"
+          }
+        }
+      }
+    },
+    "COMMENTER": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Commenter"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Người bình luận"
+          }
+        }
+      }
+    },
+    "COMPLETED": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Completed"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hoàn thành"
+          }
+        }
+      }
+    },
+    "CONSTRAINT": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Constraint"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ràng buộc"
+          }
+        }
+      }
+    },
+    "CRITICAL": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Critical"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nghiêm trọng"
+          }
+        }
+      }
+    },
+    "DAILY": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Daily"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hằng ngày"
+          }
+        }
+      }
+    },
+    "DATA": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Data"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dữ liệu"
+          }
+        }
+      }
+    },
+    "DELETED": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deleted"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã xoá"
+          }
+        }
+      }
+    },
+    "DEPENDENCY": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dependency"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phụ thuộc"
+          }
+        }
+      }
+    },
+    "DISMISSED": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dismissed"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã bỏ qua"
+          }
+        }
+      }
+    },
+    "DONE": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hoàn thành"
+          }
+        }
+      }
+    },
+    "DRAFT": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Draft"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nháp"
+          }
+        }
+      }
+    },
+    "DUE_SOON": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Due soon"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sắp đến hạn"
+          }
+        }
+      }
+    },
+    "EDITOR": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Editor"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Người sửa"
+          }
+        }
+      }
+    },
+    "ESCALATED": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escalated"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã chuyển cấp"
+          }
+        }
+      }
+    },
+    "EXCUSED": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Excused"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Có phép"
+          }
+        }
+      }
+    },
+    "EXECUTING": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Executing"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang thực hiện"
+          }
+        }
+      }
+    },
+    "EXPIRED": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expired"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hết hạn"
+          }
+        }
+      }
+    },
+    "EXPIRING": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expiring"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sắp hết hạn"
+          }
+        }
+      }
+    },
+    "EXTERNAL_INTERFACE": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "External interface"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giao diện ngoài"
+          }
+        }
+      }
+    },
+    "FAILED": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thất bại"
+          }
+        }
+      }
+    },
+    "FOLLOW_UP": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Follow up"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Theo dõi tiếp"
+          }
+        }
+      }
+    },
+    "FUNCTIONAL": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Functional"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chức năng"
+          }
+        }
+      }
+    },
+    "GRADED": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Graded"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã chấm"
+          }
+        }
+      }
+    },
+    "GREEN": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Green"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xanh"
+          }
+        }
+      }
+    },
+    "GUEST": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guest"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khách"
+          }
+        }
+      }
+    },
+    "HIGH": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "High"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cao"
+          }
+        }
+      }
+    },
+    "IDLE": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Idle"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rảnh"
+          }
+        }
+      }
+    },
+    "IMPLEMENTED": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Implemented"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã triển khai"
+          }
+        }
+      }
+    },
+    "INCIDENT": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Incident"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sự cố"
+          }
+        }
+      }
+    },
+    "INTERNAL": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Internal"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nội bộ"
+          }
+        }
+      }
+    },
+    "IN_PROGRESS": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In progress"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang làm"
+          }
+        }
+      }
+    },
+    "IN_REVIEW": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In review"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang review"
+          }
+        }
+      }
+    },
+    "ISSUE": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Issue"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vấn đề"
+          }
+        }
+      }
+    },
+    "LATE": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Late"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trễ"
+          }
+        }
+      }
+    },
+    "LEAD": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lead"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trưởng nhóm"
+          }
+        }
+      }
+    },
+    "LOCKED": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Locked"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã khoá"
+          }
+        }
+      }
+    },
+    "LOW": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Low"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thấp"
+          }
+        }
+      }
+    },
+    "MAJOR": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Major"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lớn"
+          }
+        }
+      }
+    },
+    "MEDIUM": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Medium"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trung bình"
+          }
+        }
+      }
+    },
+    "MEMBER": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Member"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thành viên"
+          }
+        }
+      }
+    },
+    "MENTOR": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mentor"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mentor"
+          }
+        }
+      }
+    },
+    "MERGED": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Merged"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã merge"
+          }
+        }
+      }
+    },
+    "MET": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Met"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đạt"
+          }
+        }
+      }
+    },
+    "MINOR": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minor"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nhỏ"
+          }
+        }
+      }
+    },
+    "MISSING": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Missing"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thiếu"
+          }
+        }
+      }
+    },
+    "MITIGATE": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mitigate"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giảm thiểu"
+          }
+        }
+      }
+    },
+    "MITIGATED": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mitigated"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã giảm thiểu"
+          }
+        }
+      }
+    },
+    "MONITOR": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Monitor"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Theo dõi"
+          }
+        }
+      }
+    },
+    "MONITORING": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Monitoring"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang theo dõi"
+          }
+        }
+      }
+    },
+    "MONTHLY": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Monthly"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hằng tháng"
+          }
+        }
+      }
+    },
+    "NEW": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mới"
+          }
+        }
+      }
+    },
+    "NONE": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "None"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không"
+          }
+        }
+      }
+    },
+    "NOT_STARTED": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not started"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa bắt đầu"
+          }
+        }
+      }
+    },
+    "NO_DECISION": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No decision"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa quyết định"
+          }
+        }
+      }
+    },
+    "OBSERVATION": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Observation"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quan sát"
+          }
+        }
+      }
+    },
+    "OBSERVER": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Observer"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Người quan sát"
+          }
+        }
+      }
+    },
+    "OFFLINE": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Offline"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ngoại tuyến"
+          }
+        }
+      }
+    },
+    "OFF_TRACK": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Off track"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chệch tiến độ"
+          }
+        }
+      }
+    },
+    "ONLINE": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Online"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trực tuyến"
+          }
+        }
+      }
+    },
+    "ON_TRACK": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On track"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đúng tiến độ"
+          }
+        }
+      }
+    },
+    "OPEN": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mở"
+          }
+        }
+      }
+    },
+    "OTHER": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khác"
+          }
+        }
+      }
+    },
+    "OVERDUE": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Overdue"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quá hạn"
+          }
+        }
+      }
+    },
+    "OWNER": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Owner"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chủ sở hữu"
+          }
+        }
+      }
+    },
+    "PAID": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paid"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã thanh toán"
+          }
+        }
+      }
+    },
+    "PASSED": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Passed"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đạt"
+          }
+        }
+      }
+    },
+    "PAUSED": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paused"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tạm dừng"
+          }
+        }
+      }
+    },
+    "PENDING": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pending"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang chờ"
+          }
+        }
+      }
+    },
+    "PERSONAL": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personal"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cá nhân"
+          }
+        }
+      }
+    },
+    "PLANNED": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Planned"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã lên kế hoạch"
+          }
+        }
+      }
+    },
+    "PLANNING": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Planning"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lập kế hoạch"
+          }
+        }
+      }
+    },
+    "PREPARATION": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparation"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chuẩn bị"
+          }
+        }
+      }
+    },
+    "PRESENT": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Present"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Có mặt"
+          }
+        }
+      }
+    },
+    "PRIVATE": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Private"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Riêng tư"
+          }
+        }
+      }
+    },
+    "PROPOSED": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Proposed"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đề xuất"
+          }
+        }
+      }
+    },
+    "PUBLIC": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Public"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Công khai"
+          }
+        }
+      }
+    },
+    "QUALITY": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quality"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chất lượng"
+          }
+        }
+      }
+    },
+    "QUESTION": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Question"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Câu hỏi"
+          }
+        }
+      }
+    },
+    "RECEIVED": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Received"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã nhận"
+          }
+        }
+      }
+    },
+    "RED": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Red"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đỏ"
+          }
+        }
+      }
+    },
+    "REINSPECT": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reinspect"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kiểm tra lại"
+          }
+        }
+      }
+    },
+    "REJECTED": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rejected"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bị từ chối"
+          }
+        }
+      }
+    },
+    "RELEASED": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Released"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã phát hành"
+          }
+        }
+      }
+    },
+    "RESOLVED": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resolved"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã giải quyết"
+          }
+        }
+      }
+    },
+    "RETIRED": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retired"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã ngừng"
+          }
+        }
+      }
+    },
+    "RETURNED": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Returned"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã trả lại"
+          }
+        }
+      }
+    },
+    "REVIEWER": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reviewer"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Người review"
+          }
+        }
+      }
+    },
+    "REVIEW_REQUESTED": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review requested"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chờ review"
+          }
+        }
+      }
+    },
+    "REWORK": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rework"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Làm lại"
+          }
+        }
+      }
+    },
+    "RISK": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rủi ro"
+          }
+        }
+      }
+    },
+    "RUNNING": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Running"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang chạy"
+          }
+        }
+      }
+    },
+    "SCHEDULED": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scheduled"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã lên lịch"
+          }
+        }
+      }
+    },
+    "SERVICE_REQUEST": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Service request"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yêu cầu dịch vụ"
+          }
+        }
+      }
+    },
+    "SKIP": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skip"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bỏ qua"
+          }
+        }
+      }
+    },
+    "SKIPPED": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skipped"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã bỏ qua"
+          }
+        }
+      }
+    },
+    "SPRINT_AT_RISK": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprint at risk"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprint có rủi ro"
+          }
+        }
+      }
+    },
+    "STUDENT": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Student"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sinh viên"
+          }
+        }
+      }
+    },
+    "SUBMITTED": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Submitted"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã gửi"
+          }
+        }
+      }
+    },
+    "SUBMITTED_FOR_REVIEW": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Submitted for review"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã gửi duyệt"
+          }
+        }
+      }
+    },
+    "TEACHER": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Teacher"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giảng viên"
+          }
+        }
+      }
+    },
+    "TEAM": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Team"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nhóm"
+          }
+        }
+      }
+    },
+    "TODO": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Todo"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cần làm"
+          }
+        }
+      }
+    },
+    "TRANSFER": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transfer"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chuyển giao"
+          }
+        }
+      }
+    },
+    "TRIVIAL": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trivial"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không đáng kể"
+          }
+        }
+      }
+    },
+    "TURNED_IN": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turned in"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã nộp"
+          }
+        }
+      }
+    },
+    "UNCLASSIFIED": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unclassified"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa phân loại"
+          }
+        }
+      }
+    },
+    "UNDER_REVIEW": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Under review"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang xem xét"
+          }
+        }
+      }
+    },
+    "UNRELEASED": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unreleased"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa phát hành"
+          }
+        }
+      }
+    },
+    "UNVALIDATED": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unvalidated"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa xác thực"
+          }
+        }
+      }
+    },
+    "USER": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "User"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Người dùng"
+          }
+        }
+      }
+    },
+    "VALIDATED": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Validated"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã xác thực"
+          }
+        }
+      }
+    },
+    "VERIFIED": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verified"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã xác minh"
+          }
+        }
+      }
+    },
+    "VIEWER": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Viewer"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Người xem"
+          }
+        }
+      }
+    },
+    "WAITING": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang chờ"
+          }
+        }
+      }
+    },
+    "WAITING_ON_CUSTOMER": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting on customer"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chờ khách hàng"
+          }
+        }
+      }
+    },
+    "WEEKLY": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weekly"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hằng tuần"
+          }
+        }
+      }
+    },
+    "WORKING": {
+      "comment": "Mã trạng thái của máy chủ — CTWMauTrangThai.nhan",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Working"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang làm"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

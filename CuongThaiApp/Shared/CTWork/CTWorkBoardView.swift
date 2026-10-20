@@ -78,7 +78,7 @@ final class CTWBoardVM: ObservableObject {
               let the = bang?.issues?.first(where: { $0.number == soThe }) else { return false }
         if (c.statusIds ?? []).contains(the.statusId) { return false }
         guard let st = cfg.trangThaiTrongCot(c, loai: the.typeId, tu: the.statusId) else {
-            loi = "\(cfg.key)-\(the.number) can't move to \(c.name) — the workflow doesn't allow it."
+            loi = String(localized: "\(cfg.key)-\(the.number) can't move to \(c.name) — the workflow doesn't allow it.")
             return false
         }
         await chuyen(the, sang: st.id)

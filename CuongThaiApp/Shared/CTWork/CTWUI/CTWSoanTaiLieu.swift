@@ -134,7 +134,7 @@ struct CTWOSoanTaiLieu: UIViewRepresentable {
         tv.delegate = context.coordinator
         tv.text = chu
         tv.isEditable = !chiDoc
-        tv.accessibilityLabel = "Page content (Markdown)"
+        tv.accessibilityLabel = String(localized: "Page content (Markdown)")
         boSoan.tv = tv
         boSoan.capNhat = { s in context.coordinator.dayRa(s) }
         return tv
@@ -233,13 +233,13 @@ struct CTWThanhDinhDang: View {
 
     private var vach: some View { Divider().frame(height: 22).padding(.horizontal, 4) }
 
-    private func o(_ icon: String, _ ten: String) -> some View {
+    private func o(_ icon: String, _ ten: LocalizedStringKey) -> some View {
         Image(systemName: icon).font(.ctw(size: 16, weight: .medium))
             .frame(width: 42, height: 44).contentShape(Rectangle())
             .accessibilityLabel(ten)
     }
 
-    private func nut(_ icon: String, _ ten: String, _ lam: @escaping () -> Void) -> some View {
+    private func nut(_ icon: String, _ ten: LocalizedStringKey, _ lam: @escaping () -> Void) -> some View {
         Button { CTWRung.chon(); lam() } label: { o(icon, ten) }
             .buttonStyle(.plain)
     }

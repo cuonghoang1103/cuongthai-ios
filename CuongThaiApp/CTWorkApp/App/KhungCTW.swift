@@ -6,6 +6,8 @@ struct GocCTW: View {
     @EnvironmentObject private var app: AppState
     /// Cỡ chữ hệ thống — đổi lúc app đang mở ⇒ dựng lại cả cây để `.ctw(size:)` đọc tỉ lệ mới (CTWUI/CTWCoChu.swift).
     @Environment(\.dynamicTypeSize) private var coChuHeThong
+    /// Ngôn ngữ app (Account › Language) — đổi ⇒ `.id` dựng lại cả cây bằng ngôn ngữ mới, không khởi động lại.
+    @ObservedObject private var ngonNgu = NgonNguApCTW.shared
 
     var body: some View {
         Group {
@@ -17,7 +19,8 @@ struct GocCTW: View {
                 KhungCTW()
             }
         }
-        .id(coChuHeThong)
+        .id("\(coChuHeThong)-\(ngonNgu.ma)")
+        .environment(\.locale, ngonNgu.locale)
         .animation(.easeInOut(duration: 0.2), value: app.isAuthenticated)
         .animation(.easeInOut(duration: 0.2), value: app.daDongYDieuKhoan)
     }
@@ -97,9 +100,9 @@ struct KhungRongCTW: View {
                                 .frame(minWidth: 40, minHeight: 32)
                                 .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(AppColors.primary))
                             VStack(alignment: .leading, spacing: 1) {
-                                Text(app.luaChon?.tenDuAn ?? "Choose a project").font(.ctw(size: 15, weight: .semibold))
+                                Text(app.luaChon?.tenDuAn ?? String(localized: "Choose a project")).font(.ctw(size: 15, weight: .semibold))
                                     .foregroundColor(AppColors.textPrimary).lineLimit(1)
-                                Text(app.luaChon?.tenKhongGian ?? "No project selected").font(.ctw(size: 12))
+                                Text(app.luaChon?.tenKhongGian ?? String(localized: "No project selected")).font(.ctw(size: 12))
                                     .foregroundColor(AppColors.textSecondary).lineLimit(1)
                             }
                             Spacer(minLength: 0)
@@ -183,8 +186,8 @@ struct ChuaChonDuAnCTW: View {
     @State private var moChon = false
 
     var body: some View {
-        CTWOTrong(bieuTuong: "rectangle.3.group.fill", tieuDe: "Choose a project", moTa: lyDo,
-                  nut: "Choose project") { moChon = true }
+        CTWOTrong(bieuTuong: "rectangle.3.group.fill", tieuDe: String(localized: "Choose a project"), moTa: lyDo,
+                  nut: String(localized: "Choose project")) { moChon = true }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(AppColors.backgroundPrimary)
             .sheet(isPresented: $moChon) { ChonDuAnCTW() }

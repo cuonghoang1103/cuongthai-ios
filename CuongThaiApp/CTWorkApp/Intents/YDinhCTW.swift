@@ -113,7 +113,7 @@ struct DungBamGioYD: AppIntent {
         let r = try await DongHoCTW.shared.dung()
         let phut = r.minutes ?? 0
         if phut == 0 { return .result(dialog: "Stopped. Under 30 seconds, so nothing was logged.") }
-        return .result(dialog: "Logged \(TinhGioCTW.chuPhut(phut)) on \(r.issueKey ?? d.issueKey ?? "the issue").")
+        return .result(dialog: "Logged \(TinhGioCTW.chuPhut(phut)) on \(r.issueKey ?? d.issueKey ?? String(localized: "the issue")).")
     }
 }
 
@@ -132,22 +132,23 @@ struct ViecHomNayYD: AppIntent {
 
     /// Câu đọc to — thuần, có kiểm thử.
     static func cau(_ ds: [AnhViecHomNayCTW.Viec]) -> String {
-        if ds.isEmpty { return "Nothing is due today and you have no meetings. Enjoy." }
+        if ds.isEmpty { return String(localized: "Nothing is due today and you have no meetings. Enjoy.") }
         let hop = ds.filter { $0.loai == "meeting" }
         let han = ds.filter { $0.loai == "due" }
         let tre = ds.filter { $0.loai == "overdue" }
         var cau: [String] = []
         if !hop.isEmpty {
-            let f = DateFormatter(); f.dateFormat = "HH:mm"
-            let dau = hop.prefix(3).map { h in h.gio.map { "\(h.tieuDe) at \(f.string(from: $0))" } ?? h.tieuDe }
-            cau.append("\(hop.count) meeting\(hop.count == 1 ? "" : "s"): \(dau.joined(separator: ", "))")
+            let dau = hop.prefix(3).map { h in h.gio.map { String(localized: "\(h.tieuDe) at \(CTWDinhDang.gio($0))") } ?? h.tieuDe }
+            let dsHop = dau.joined(separator: ", ")
+            cau.append(hop.count == 1 ? String(localized: "1 meeting: \(dsHop)") : String(localized: "\(hop.count) meetings: \(dsHop)"))
         }
         if !han.isEmpty {
-            cau.append("\(han.count) issue\(han.count == 1 ? "" : "s") due today: \(han.prefix(3).map { $0.ma ?? $0.tieuDe }.joined(separator: ", "))")
+            let dsHan = han.prefix(3).map { $0.ma ?? $0.tieuDe }.joined(separator: ", ")
+            cau.append(han.count == 1 ? String(localized: "1 issue due today: \(dsHan)") : String(localized: "\(han.count) issues due today: \(dsHan)"))
         }
-        if !tre.isEmpty { cau.append("\(tre.count) overdue") }
+        if !tre.isEmpty { cau.append(String(localized: "\(tre.count) overdue")) }
         let khac = ds.count - hop.count - han.count - tre.count
-        if khac > 0 { cau.append("\(khac) sprint or release date\(khac == 1 ? "" : "s")") }
+        if khac > 0 { cau.append(khac == 1 ? String(localized: "1 sprint or release date") : String(localized: "\(khac) sprint or release dates")) }
         return cau.joined(separator: ". ") + "."
     }
 }

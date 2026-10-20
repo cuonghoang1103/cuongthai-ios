@@ -96,16 +96,16 @@ enum RetroCot {
     }
     static func ten(_ k: String) -> String {
         switch k {
-        case "START": return "Start"
-        case "STOP": return "Stop"
-        case "CONTINUE": return "Continue"
-        case "MAD": return "Mad"
-        case "SAD": return "Sad"
-        case "GLAD": return "Glad"
-        case "LIKED": return "Liked"
-        case "LEARNED": return "Learned"
-        case "LACKED": return "Lacked"
-        case "LONGED_FOR": return "Longed for"
+        case "START": return String(localized: "Start")
+        case "STOP": return String(localized: "Stop")
+        case "CONTINUE": return String(localized: "Continue")
+        case "MAD": return String(localized: "Mad")
+        case "SAD": return String(localized: "Sad")
+        case "GLAD": return String(localized: "Glad")
+        case "LIKED": return String(localized: "Liked")
+        case "LEARNED": return String(localized: "Learned")
+        case "LACKED": return String(localized: "Lacked")
+        case "LONGED_FOR": return String(localized: "Longed for")
         default: return k.capitalized
         }
     }
@@ -126,9 +126,9 @@ enum RetroCot {
     }
     static func tenTemplate(_ t: String?) -> String {
         switch t {
-        case "MSG": return "Mad · Sad · Glad"
-        case "FOUR_L": return "4Ls"
-        default: return "Start · Stop · Continue"
+        case "MSG": return String(localized: "Mad · Sad · Glad")
+        case "FOUR_L": return String(localized: "4Ls")
+        default: return String(localized: "Start · Stop · Continue")
         }
     }
 }

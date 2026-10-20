@@ -34,7 +34,7 @@ final class ChayTestVM: ObservableObject {
     private func baoLoi(_ e: Error) {
         if case APIError.coMa(let ma, _) = e, ma.contains("EDIT_LOCKED") {
             biKhoa = true
-            loi = "Editing is locked for this project on your account. Unlock it on the web (or in project settings) to record results."
+            loi = String(localized: "Editing is locked for this project on your account. Unlock it on the web (or in project settings) to record results.")
             return
         }
         loi = CTW.loi(e)
@@ -208,7 +208,7 @@ struct ChayTestCTW: View {
         }
         .scrollDismissesKeyboard(.interactively)
         .background(AppColors.backgroundPrimary)
-        .navigationTitle(vm.soTest.map { "\(maDuAn)-\($0)" } ?? "Test run")
+        .navigationTitle(vm.soTest.map { "\(maDuAn)-\($0)" } ?? String(localized: "Test run"))
         .ctwTieuDeNho()
         .toolbar {
             if vm.r != nil {
@@ -271,7 +271,7 @@ struct ChayTestCTW: View {
                         loiChoBao = so
                         return nil
                     }
-                    let m = vm.loi ?? "Couldn't create the bug. Please try again."
+                    let m = vm.loi ?? String(localized: "Couldn't create the bug. Please try again.")
                     vm.loi = nil
                     return m
                 }
@@ -281,10 +281,10 @@ struct ChayTestCTW: View {
     }
 
     private func tieuDeLoi(_ s: CTWRunStep?) -> String {
-        let ten = vm.r?.testCase?.issue?.title ?? "Test"
+        let ten = vm.r?.testCase?.issue?.title ?? String(localized: "Test")
         let buoc = s ?? vm.r?.steps?.first { $0.status == "FAIL" } ?? vm.r?.steps?.first { $0.status == "BLOCKED" }
-        guard let b = buoc else { return "\(ten) fails" }
-        return "\(ten) — step \((b.position ?? 0) + 1) fails"
+        guard let b = buoc else { return String(localized: "\(ten) fails") }
+        return String(localized: "\(ten) — step \((b.position ?? 0) + 1) fails")
     }
 
     // MARK: Đầu màn
@@ -298,7 +298,7 @@ struct ChayTestCTW: View {
                 if let e = r.cycle?.environment, !e.isEmpty { CTWNhanNho(chu: e, bieuTuong: "desktopcomputer") }
                 if let b = r.cycle?.build, !b.isEmpty { CTWNhanNho(chu: b, bieuTuong: "shippingbox") }
             }
-            Text(r.testCase?.issue?.title ?? "Test").font(.ctw(size: 22, weight: .bold))
+            Text(r.testCase?.issue?.title ?? String(localized: "Test")).font(.ctw(size: 22, weight: .bold))
                 .foregroundColor(AppColors.textPrimary).fixedSize(horizontal: false, vertical: true)
                 .accessibilityAddTraits(.isHeader)
             HStack(spacing: 12) {
@@ -344,16 +344,16 @@ struct ChayTestCTW: View {
 
     @ViewBuilder private func cacBuoc(_ r: CTWRunDetail) -> some View {
         if let p = r.testCase?.preconditions, !p.isEmpty {
-            CTWSectionHeader("flag", "Preconditions")
+            CTWSectionHeader("flag", String(localized: "Preconditions"))
             Text(p).font(.ctw(size: 15)).foregroundColor(AppColors.textPrimary)
                 .frame(maxWidth: .infinity, alignment: .leading).padding(12).ctwThe(12)
         }
         if let g = r.gherkin, !g.isEmpty {
-            CTWSectionHeader("text.alignleft", "Scenario")
+            CTWSectionHeader("text.alignleft", String(localized: "Scenario"))
             CTWKhoiView(khoi: [.ma(g)])
         }
         let buoc = (r.steps ?? []).sorted { ($0.position ?? 0) < ($1.position ?? 0) }
-        CTWSectionHeader("list.number", "Steps", count: "\(buoc.count)")
+        CTWSectionHeader("list.number", String(localized: "Steps"), count: "\(buoc.count)")
         if buoc.isEmpty {
             Text("This test has no steps. Set the overall result from the web, or add steps to the test.")
                 .font(.ctw(size: 13)).foregroundColor(AppColors.textTertiary)
@@ -407,7 +407,7 @@ struct ChayTestCTW: View {
     private func nutTrangThai(_ s: CTWRunStep, _ k: String) -> some View {
         let chon = s.status == k
         let mau = CTWLuatTest.mau(k)
-        let ngan = ["PASS": "Pass", "FAIL": "Fail", "BLOCKED": "Blocked", "SKIP": "Skip"][k] ?? k
+        let ngan = ["PASS": String(localized: "Pass"), "FAIL": String(localized: "Fail"), "BLOCKED": String(localized: "Blocked"), "SKIP": String(localized: "Skip")][k] ?? k
         return Button {
             Task { await vm.danhDau(s, k) }
         } label: {
@@ -452,14 +452,14 @@ struct ChayTestCTW: View {
             .accessibilityLabel("Add evidence")
         ) : nil
         return VStack(alignment: .leading, spacing: 8) {
-            CTWSectionHeader("camera.viewfinder", "Evidence", count: ds.isEmpty ? nil : "\(ds.count)", trailing: them)
+            CTWSectionHeader("camera.viewfinder", String(localized: "Evidence"), count: ds.isEmpty ? nil : "\(ds.count)", trailing: them)
                 // Bộ chọn tệp gắn ở đây, bộ chọn ảnh gắn ở khối ngoài, sheet ở gốc (C5).
                 .fileImporter(isPresented: $moChonTep, allowedContentTypes: [.item], allowsMultipleSelection: false) { kq in
                     guard case .success(let ds) = kq, let u = ds.first else { return }
                     Task {
                         let mo = u.startAccessingSecurityScopedResource()
                         defer { if mo { u.stopAccessingSecurityScopedResource() } }
-                        guard let du = try? Data(contentsOf: u) else { vm.loi = "Couldn't read that file."; return }
+                        guard let du = try? Data(contentsOf: u) else { vm.loi = String(localized: "Couldn't read that file."); return }
                         await vm.taiLen(du: du, ten: u.lastPathComponent)
                     }
                 }
@@ -479,7 +479,7 @@ struct ChayTestCTW: View {
                                     .frame(width: 36, height: 36)
                                     .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(AppColors.primary.opacity(0.12)))
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(a.fileName ?? "File").font(.ctw(size: 14, weight: .medium))
+                                    Text(a.fileName ?? String(localized: "File")).font(.ctw(size: 14, weight: .medium))
                                         .foregroundColor(AppColors.textPrimary).lineLimit(1)
                                     Text([a.coChu, a.uploader?.ten, CTW.thoiDiem(a.createdAt)]
                                         .compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · "))
@@ -519,7 +519,7 @@ struct ChayTestCTW: View {
         let ds = (r.defects ?? []).filter { $0.deletedAt == nil }
         if !ds.isEmpty || coTheTaoLoi {
             VStack(alignment: .leading, spacing: 8) {
-                CTWSectionHeader("ladybug", "Bugs", count: ds.isEmpty ? nil : "\(ds.count)",
+                CTWSectionHeader("ladybug", String(localized: "Bugs"), count: ds.isEmpty ? nil : "\(ds.count)",
                                  trailing: coTheTaoLoi ? AnyView(
                                     Button { tamPhu = .taoLoi(nil) } label: {
                                         Image(systemName: "plus.circle.fill").font(.ctw(size: 20)).frame(width: 44, height: 32)
@@ -534,7 +534,7 @@ struct ChayTestCTW: View {
                                     Image(systemName: "ladybug.fill").foregroundColor(AppColors.error).frame(width: 20)
                                     Text("\(maDuAn)-\(d.number)").font(.ctw(size: 12, weight: .medium).monospaced())
                                         .foregroundColor(AppColors.textSecondary)
-                                    Text(d.title ?? "Bug").font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                                    Text(d.title ?? String(localized: "Bug")).font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary).lineLimit(1)
                                     Spacer(minLength: 0)
                                     if let st = d.statusId.flatMap({ cfg?.trangThai($0) }) { CTWStatusChip(status: st) }
                                 }
@@ -555,7 +555,7 @@ struct ChayTestCTW: View {
     @ViewBuilder private func ghiChuLuot(_ r: CTWRunDetail) -> some View {
         if coTheChay || !(r.comment ?? "").isEmpty {
             VStack(alignment: .leading, spacing: 8) {
-                CTWSectionHeader("text.bubble", "Run notes")
+                CTWSectionHeader("text.bubble", String(localized: "Run notes"))
                 if coTheChay {
                     TextField("Environment details, data used, anything worth knowing…", text: $ghiChu, axis: .vertical)
                         .lineLimit(2...8)

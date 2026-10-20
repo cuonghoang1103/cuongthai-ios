@@ -25,8 +25,8 @@ struct ChiTietUCCTW: View {
                     .frame(maxWidth: 760, alignment: .leading)
                     .frame(maxWidth: .infinity)
             } else if kho.srs != nil {
-                CTWOTrong(bieuTuong: "questionmark.folder", tieuDe: "Use case not found",
-                          moTa: "It may have been deleted or merged.")
+                CTWOTrong(bieuTuong: "questionmark.folder", tieuDe: String(localized: "Use case not found"),
+                          moTa: String(localized: "It may have been deleted or merged."))
             } else if let l = kho.loi {
                 CTWOLoi(loi: l) { Task { await kho.taiSrs() } }
             } else {
@@ -50,15 +50,15 @@ struct ChiTietUCCTW: View {
                     if let s = uc.section { Text("§ \(s)").font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary) }
                     if let f = uc.feature, !f.isEmpty { CTWNhanNho(chu: f, bieuTuong: "square.stack.3d.up") }
                 }
-                Text(uc.name ?? "Use case").font(.ctw(size: 24, weight: .bold)).foregroundColor(AppColors.textPrimary)
+                Text(uc.name ?? String(localized: "Use case")).font(.ctw(size: 24, weight: .bold)).foregroundColor(AppColors.textPrimary)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityAddTraits(.isHeader)
                 HStack(spacing: 6) {
                     CTWChipChu(chu: uc.status ?? "DRAFT", mau: CTWNhanYeuCau.mauUC(uc.status))
                     if let p = CTWNhanYeuCau.nhanUuTien(uc.priority) {
-                        CTWNhanNho(chu: "\(p) priority", bieuTuong: "flag.fill", mau: CTWNhanYeuCau.mauUuTien(uc.priority))
+                        CTWNhanNho(chu: String(localized: "\(p) priority"), bieuTuong: "flag.fill", mau: CTWNhanYeuCau.mauUuTien(uc.priority))
                     }
-                    if uc.aiModel != nil { CTWNhanAI(chu: "AI-drafted") }
+                    if uc.aiModel != nil { CTWNhanAI(chu: String(localized: "AI-drafted")) }
                     if let u = CTW.ngayNgan(uc.updatedAt) {
                         Text("Updated \(u)").font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
                     }
@@ -67,33 +67,33 @@ struct ChiTietUCCTW: View {
 
             if let loi { CTWErrorBanner(text: loi) { self.loi = nil } }
             if uc.status == "PROPOSED" {
-                ghiChu("sparkles", "This use case is a proposal. It isn't part of the SRS until someone on the team accepts it.", AppColors.primary)
+                ghiChu("sparkles", String(localized: "This use case is a proposal. It isn't part of the SRS until someone on the team accepts it."), AppColors.primary)
             }
             if let m = uc.missing, !m.isEmpty {
-                ghiChu("exclamationmark.triangle.fill", "Missing for a complete specification: " + m.joined(separator: ", ") + ".", AppColors.warning)
+                ghiChu("exclamationmark.triangle.fill", String(localized: "Missing for a complete specification: \(m.joined(separator: ", "))."), AppColors.warning)
             }
             hanhDongDuyet(uc, d)
 
             // Diễn viên + kích hoạt
             CTWKhoiTruong {
-                CTWHangTruong("Primary actor", d.actor(uc.primaryActorId)?.name, bieuTuong: "person.fill")
+                CTWHangTruong(String(localized: "Primary actor"), d.actor(uc.primaryActorId)?.name, bieuTuong: "person.fill")
                 Divider()
-                CTWHangTruong("Secondary", (uc.secondaryActorIds ?? []).compactMap { d.actor($0)?.name }.joined(separator: ", "),
+                CTWHangTruong(String(localized: "Secondary"), (uc.secondaryActorIds ?? []).compactMap { d.actor($0)?.name }.joined(separator: ", "),
                               bieuTuong: "person.2")
                 Divider()
-                CTWHangTruong("Trigger", uc.trigger, bieuTuong: "bolt")
+                CTWHangTruong(String(localized: "Trigger"), uc.trigger, bieuTuong: "bolt")
             }
 
-            khoiChu("Description", "text.alignleft", uc.description)
-            khoiChu("Preconditions", "arrow.right.to.line", uc.preconditions)
-            khoiLuong("Normal flow", "arrow.triangle.turn.up.right.circle", uc.normalFlow, AppColors.primary)
-            khoiLuong("Alternative flows", "arrow.triangle.branch", uc.alternativeFlows, AppColors.secondary)
-            khoiLuong("Exceptions", "exclamationmark.octagon", uc.exceptionFlows, AppColors.error)
-            khoiChu("Postconditions", "flag.checkered", uc.postconditions)
+            khoiChu(String(localized: "Description"), "text.alignleft", uc.description)
+            khoiChu(String(localized: "Preconditions"), "arrow.right.to.line", uc.preconditions)
+            khoiLuong(String(localized: "Normal flow"), "arrow.triangle.turn.up.right.circle", uc.normalFlow, AppColors.primary)
+            khoiLuong(String(localized: "Alternative flows"), "arrow.triangle.branch", uc.alternativeFlows, AppColors.secondary)
+            khoiLuong(String(localized: "Exceptions"), "exclamationmark.octagon", uc.exceptionFlows, AppColors.error)
+            khoiChu(String(localized: "Postconditions"), "flag.checkered", uc.postconditions)
 
             let rules = (uc.ruleNumbers ?? []).compactMap { d.rule($0) }
             if !rules.isEmpty {
-                CTWSectionHeader("checkmark.shield", "Business rules", count: "\(rules.count)")
+                CTWSectionHeader("checkmark.shield", String(localized: "Business rules"), count: "\(rules.count)")
                 VStack(spacing: 0) {
                     ForEach(rules) { r in
                         HangQuyTacCTW(pid: pid, r: r, d: d)
@@ -105,13 +105,13 @@ struct ChiTietUCCTW: View {
                 .ctwThe(14)
             }
 
-            CTWSectionHeader("text.bubble", "Discussion")
+            CTWSectionHeader("text.bubble", String(localized: "Discussion"))
             if let i = uc.issue {
                 NavigationLink(value: CTWRoute.the(pid: pid, so: i.number)) {
                     HStack(spacing: 10) {
                         Image(systemName: CTW.bieuTuongLoai(key: i.type?.key)).foregroundColor(AppColors.primary)
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(i.key ?? uc.issueKey ?? "Issue #\(i.number)").font(.ctw(size: 12, weight: .bold).monospaced())
+                            Text(i.key ?? uc.issueKey ?? String(localized: "Issue #\(i.number)")).font(.ctw(size: 12, weight: .bold).monospaced())
                                 .foregroundColor(AppColors.textSecondary)
                             Text(i.title ?? "").font(.ctw(size: 14.5, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(2)
                         }
@@ -125,7 +125,7 @@ struct ChiTietUCCTW: View {
                 .buttonStyle(.plain)
                 ThaoLuanTheCTW(pid: pid, so: i.number, nguCanh: "\(uc.ma) \(uc.name ?? "")")
             } else {
-                ghiChu("link", "Comments on a use case live on its linked issue. Link an issue to \(uc.ma) on the web to start a discussion.",
+                ghiChu("link", String(localized: "Comments on a use case live on its linked issue. Link an issue to \(uc.ma) on the web to start a discussion."),
                        AppColors.textSecondary)
             }
         }
@@ -234,7 +234,7 @@ struct ChiTietManSrsCTW: View {
             if let d = kho.srs, let s = d.screen(id) {
                 Section {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text(s.name ?? "Screen").font(.ctw(size: 22, weight: .bold)).foregroundColor(AppColors.textPrimary)
+                        Text(s.name ?? String(localized: "Screen")).font(.ctw(size: 22, weight: .bold)).foregroundColor(AppColors.textPrimary)
                         if let f = s.feature, !f.isEmpty { CTWNhanNho(chu: f, bieuTuong: "square.stack.3d.up") }
                         if let m = s.description, !m.isEmpty {
                             Text(m).font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary).fixedSize(horizontal: false, vertical: true)
@@ -249,7 +249,7 @@ struct ChiTietManSrsCTW: View {
                         NavigationLink(value: RouteYeuCauCTW.man(pid: pid, id: t.screen.id)) {
                             HStack {
                                 Image(systemName: "arrow.right.circle").foregroundColor(AppColors.primary)
-                                Text(t.screen.name ?? "Screen").foregroundColor(AppColors.textPrimary)
+                                Text(t.screen.name ?? String(localized: "Screen")).foregroundColor(AppColors.textPrimary)
                                 Spacer()
                                 if let nh = t.nhan, !nh.isEmpty { Text(nh).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary) }
                             }
@@ -261,7 +261,7 @@ struct ChiTietManSrsCTW: View {
                     Section("Reached from") {
                         ForEach(tu) { t in
                             NavigationLink(value: RouteYeuCauCTW.man(pid: pid, id: t.id)) {
-                                Label(t.name ?? "Screen", systemImage: "arrow.left.circle").foregroundColor(AppColors.textPrimary)
+                                Label(t.name ?? String(localized: "Screen"), systemImage: "arrow.left.circle").foregroundColor(AppColors.textPrimary)
                             }
                         }
                     }
@@ -270,7 +270,7 @@ struct ChiTietManSrsCTW: View {
                     ForEach((d.actors ?? []).sorted { ($0.position ?? 0) < ($1.position ?? 0) }) { a in
                         let duoc = d.duocVao(screen: id, actor: a.id)
                         HStack {
-                            Text(a.name ?? "Actor").foregroundColor(AppColors.textPrimary)
+                            Text(a.name ?? String(localized: "Actor")).foregroundColor(AppColors.textPrimary)
                             Spacer()
                             Image(systemName: duoc ? "checkmark.circle.fill" : "minus.circle")
                                 .foregroundColor(duoc ? AppColors.success : AppColors.textTertiary)
@@ -281,13 +281,13 @@ struct ChiTietManSrsCTW: View {
                 } header: { Text("Screen authorization") }
                   footer: { Text("Who can open this screen. Edit the access grid on the web.") }
             } else if kho.srs != nil {
-                CTWOTrong(bieuTuong: "rectangle.on.rectangle", tieuDe: "Screen not found").listRowBackground(Color.clear)
+                CTWOTrong(bieuTuong: "rectangle.on.rectangle", tieuDe: String(localized: "Screen not found")).listRowBackground(Color.clear)
             }
         }
         .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)
         .background(AppColors.backgroundPrimary)
-        .navigationTitle(kho.srs?.screen(id)?.name ?? "Screen")
+        .navigationTitle(kho.srs?.screen(id)?.name ?? String(localized: "Screen"))
         .navigationBarTitleDisplayMode(.inline)
         .task { if kho.srs == nil { await kho.taiSrs() } }
     }
@@ -323,7 +323,7 @@ struct ThaoLuanTheCTW: View {
             ForEach(hien) { c in dong(c) }
             if ds == nil && loi == nil { ProgressView().frame(maxWidth: .infinity) }
             if app.cauHinhDuAn?.coTheBinhLuan ?? true {
-                CTWHopSoan(goiY: "Add to the discussion…") { chu in await gui(chu) }
+                CTWHopSoan(goiY: String(localized: "Add to the discussion…")) { chu in await gui(chu) }
             }
         }
         .task { if ds == nil { await tai() } }
@@ -336,7 +336,7 @@ struct ThaoLuanTheCTW: View {
                 }
             }
         } message: { Text("Project admins will review it and remove it if it breaks the rules.") }
-        .confirmationDialog("Block \(hoiChan?.ten ?? "this user")?", isPresented: Binding(get: { hoiChan != nil }, set: { if !$0 { hoiChan = nil } }),
+        .confirmationDialog("Block \(hoiChan?.ten ?? String(localized: "this user"))?", isPresented: Binding(get: { hoiChan != nil }, set: { if !$0 { hoiChan = nil } }),
                             titleVisibility: .visible) {
             Button("Block", role: .destructive) {
                 guard let u = hoiChan else { return }
@@ -354,9 +354,9 @@ struct ThaoLuanTheCTW: View {
             CTWAvatar(user: c.author, size: 30)
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
-                    Text(c.author?.ten ?? "Someone").font(.ctw(size: 13, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                    Text(c.author?.ten ?? String(localized: "Someone")).font(.ctw(size: 13, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                         .lineLimit(1)
-                    if c.author?.laAgent == true { CTWNhanAI() } else if c.isAi == true { CTWNhanAI(chu: "AI-drafted") }
+                    if c.author?.laAgent == true { CTWNhanAI() } else if c.isAi == true { CTWNhanAI(chu: String(localized: "AI-drafted")) }
                     Spacer(minLength: 0)
                     Text(CTW.thoiDiem(c.createdAt)).font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
                 }
@@ -394,8 +394,8 @@ struct ThaoLuanTheCTW: View {
         do {
             let r: CTWBaoCaoKetQua = try await APIClient.shared.request(.workBaoCaoBinhLuan(pid: pid, so: so, cid: c.id, lyDo: lyDo))
             an.anBinhLuan(c.id)
-            thongBao = r.duplicate == true ? "You already reported this comment."
-                : "Thanks — project admins have been notified. The comment is hidden for you."
+            thongBao = r.duplicate == true ? String(localized: "You already reported this comment.")
+                : String(localized: "Thanks — project admins have been notified. The comment is hidden for you.")
         } catch { loi = CTW.loi(error) }
     }
 }
@@ -432,7 +432,7 @@ struct DeXuatUCCTW: View {
                     TextField("Feature", text: $tinhNang)
                     Picker("Primary actor", selection: $actorChinh) {
                         Text("None").tag(Int?.none)
-                        ForEach(kho.srs?.actors ?? []) { a in Text(a.name ?? "Actor").tag(Int?.some(a.id)) }
+                        ForEach(kho.srs?.actors ?? []) { a in Text(a.name ?? String(localized: "Actor")).tag(Int?.some(a.id)) }
                     }
                     Picker("Priority", selection: $uuTien) {
                         Text("High").tag("HIGH"); Text("Medium").tag("MEDIUM"); Text("Low").tag("LOW")
@@ -459,7 +459,7 @@ struct DeXuatUCCTW: View {
         }
     }
 
-    private func o(_ b: Binding<String>, _ goiY: String) -> some View {
+    private func o(_ b: Binding<String>, _ goiY: LocalizedStringKey) -> some View {
         TextField(goiY, text: b, axis: .vertical).lineLimit(2...10)
     }
 

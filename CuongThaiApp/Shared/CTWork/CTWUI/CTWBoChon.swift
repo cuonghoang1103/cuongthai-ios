@@ -62,7 +62,7 @@ struct CTWChonNguoiView: View {
                 CTWAvatar(user: u, size: 30)
                 VStack(alignment: .leading, spacing: 1) {
                     HStack(spacing: 6) {
-                        Text(u.map { $0.id == toi ? "\($0.ten) (me)" : $0.ten } ?? "Unassigned")
+                        Text(u.map { $0.id == toi ? String(localized: "\($0.ten) (me)") : $0.ten } ?? String(localized: "Unassigned"))
                             .foregroundColor(AppColors.textPrimary)
                         if u?.laAgent == true { CTWNhanAI() }
                     }
@@ -128,7 +128,7 @@ struct CTWChonUuTienMenu: View {
 /// thẻ cần TipTap thì dùng `CTWNode.docTuChu` (mỗi dòng một đoạn).
 struct CTWSoanMarkdown: View {
     @Binding var chu: String
-    var goiY = "Write something…"
+    var goiY = String(localized: "Write something…")
     var dongToiThieu = 4
     @State private var xemTruoc = false
 
@@ -149,7 +149,7 @@ struct CTWSoanMarkdown: View {
             .foregroundColor(AppColors.textSecondary)
             if xemTruoc {
                 ScrollView {
-                    CTWMarkdownView(markdown: chu.isEmpty ? "_Nothing to preview_" : chu, coChu: 15)
+                    CTWMarkdownView(markdown: chu.isEmpty ? String(localized: "_Nothing to preview_") : chu, coChu: 15)
                         .padding(12)
                 }
                 .frame(minHeight: CGFloat(dongToiThieu) * 22)
@@ -164,7 +164,7 @@ struct CTWSoanMarkdown: View {
         }
     }
 
-    private func nut(_ icon: String, _ ten: String, _ lam: @escaping () -> Void) -> some View {
+    private func nut(_ icon: String, _ ten: LocalizedStringKey, _ lam: @escaping () -> Void) -> some View {
         Button(action: lam) { Image(systemName: icon).frame(width: 36, height: 32) }
             .buttonStyle(.borderless)
             .accessibilityLabel(ten)

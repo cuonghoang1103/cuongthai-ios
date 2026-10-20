@@ -1,0 +1,257 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "%@ · %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ · %2$@"
+          }
+        }
+      },
+      "shouldTranslate": false
+    },
+    "Add as": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thêm dưới dạng"
+          }
+        }
+      }
+    },
+    "Attached": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đính kèm"
+          }
+        }
+      }
+    },
+    "Bad address.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Địa chỉ không hợp lệ."
+          }
+        }
+      }
+    },
+    "CT Work": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CT Work"
+          }
+        }
+      }
+    },
+    "Cancel": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Huỷ"
+          }
+        }
+      }
+    },
+    "Choose…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn…"
+          }
+        }
+      }
+    },
+    "Comment": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bình luận"
+          }
+        }
+      }
+    },
+    "Comment on": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bình luận vào"
+          }
+        }
+      }
+    },
+    "Couldn't send (%lld). Please try again.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không gửi được (%lld). Vui lòng thử lại."
+          }
+        }
+      }
+    },
+    "Couldn't send. Check your connection and try again.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không gửi được. Kiểm tra kết nối rồi thử lại."
+          }
+        }
+      }
+    },
+    "Create": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tạo"
+          }
+        }
+      }
+    },
+    "Description (optional)": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mô tả (tuỳ chọn)"
+          }
+        }
+      }
+    },
+    "Issue": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thẻ"
+          }
+        }
+      }
+    },
+    "Issues you opened recently in CT Work appear here.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Các thẻ bạn mở gần đây trong CT Work sẽ hiện ở đây."
+          }
+        }
+      }
+    },
+    "New issue": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thẻ mới"
+          }
+        }
+      }
+    },
+    "Open CT Work and pick a project once, then share again.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mở CT Work và chọn một dự án, rồi chia sẻ lại."
+          }
+        }
+      }
+    },
+    "Open CT Work and sign in again, then share once more.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mở CT Work và đăng nhập lại, rồi chia sẻ lần nữa."
+          }
+        }
+      }
+    },
+    "Open CT Work and sign in first. Then you can share photos, links and text into your projects.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hãy mở CT Work và đăng nhập trước. Sau đó bạn có thể chia sẻ ảnh, link và chữ vào dự án của mình."
+          }
+        }
+      }
+    },
+    "Photo from %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ảnh ngày %@"
+          }
+        }
+      }
+    },
+    "Post": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đăng"
+          }
+        }
+      }
+    },
+    "Project": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dự án"
+          }
+        }
+      }
+    },
+    "The issue was created but the reply was unexpected.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã tạo thẻ nhưng máy chủ trả lời không như mong đợi."
+          }
+        }
+      }
+    },
+    "Title": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiêu đề"
+          }
+        }
+      }
+    },
+    "Upload failed. Please try again.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tải lên thất bại. Vui lòng thử lại."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

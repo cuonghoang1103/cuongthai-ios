@@ -17,12 +17,12 @@ struct BieuDoVelocityCTW: View {
         let ds = v.sprints ?? []
         let dv = DonViSprintCTW.ten(v.unit)
         CTWKhungBieuDo(
-            tieuDe: "Velocity",
-            phu: v.average.map { "Average of the last 3 sprints: \(CTWSo.gon($0)) \(dv)" } ?? "Committed vs completed per sprint",
-            chuGiai: [CTWMucChuGiai(ten: "Committed", mau: CTWMauChuoi.khac),
-                      CTWMucChuGiai(ten: "Completed", mau: CTWMauChuoi.mau(0)),
-                      CTWMucChuGiai(ten: "3-sprint average", mau: CTWMauChuoi.mau(1), netDut: true)],
-            cot: ["Sprint", "Committed", "Completed"],
+            tieuDe: String(localized: "Velocity"),
+            phu: v.average.map { String(localized: "Average of the last 3 sprints: \(CTWSo.gon($0)) \(dv)") } ?? String(localized: "Committed vs completed per sprint"),
+            chuGiai: [CTWMucChuGiai(ten: String(localized: "Committed"), mau: CTWMauChuoi.khac),
+                      CTWMucChuGiai(ten: String(localized: "Completed"), mau: CTWMauChuoi.mau(0)),
+                      CTWMucChuGiai(ten: String(localized: "3-sprint average"), mau: CTWMauChuoi.mau(1), netDut: true)],
+            cot: [String(localized: "Sprint"), String(localized: "Committed"), String(localized: "Completed")],
             hang: ds.map { CTWHangBang(nhan: $0.name ?? "#\($0.id)", giaTri: [CTWSo.gon($0.committedPoints ?? 0), CTWSo.gon($0.completedPoints ?? 0)]) },
             cao: cao
         ) {
@@ -71,10 +71,10 @@ struct BieuDoCfdCTW: View {
         let dai = Array((c.bands ?? []).reversed())
         let mau = mauDai(dai)
         CTWKhungBieuDo(
-            tieuDe: "Cumulative flow",
-            phu: "Issues per status at the end of each day · last \(c.days ?? 30) days",
+            tieuDe: String(localized: "Cumulative flow"),
+            phu: String(localized: "Issues per status at the end of each day · last \(c.days ?? 30) days"),
             chuGiai: dai.reversed().map { CTWMucChuGiai(ten: $0.name ?? $0.key, mau: mau[$0.key] ?? CTWMauChuoi.khac) },
-            cot: ["Day"] + dai.reversed().map { $0.name ?? $0.key },
+            cot: [String(localized: "Day")] + dai.reversed().map { $0.name ?? $0.key },
             hang: (c.points ?? []).map { p in
                 CTWHangBang(nhan: NgayCTW.nganTu(p.day) ?? p.day, giaTri: dai.reversed().map { CTWSo.gon(p.giaTri[$0.key] ?? 0) })
             },
@@ -126,9 +126,9 @@ struct BieuDoThroughputCTW: View {
     var body: some View {
         let ds = (t.weeks ?? []).compactMap { w in NgayCTW.ngay(w.week).map { (w, $0) } }
         CTWKhungBieuDo(
-            tieuDe: "Throughput",
-            phu: t.average.map { "Issues finished per week · average \(CTWSo.gon($0))" } ?? "Issues finished per week",
-            cot: ["Week of", "Issues", DonViSprintCTW.tenDai(t.unit).capitalized],
+            tieuDe: String(localized: "Throughput"),
+            phu: t.average.map { String(localized: "Issues finished per week · average \(CTWSo.gon($0))") } ?? String(localized: "Issues finished per week"),
+            cot: [String(localized: "Week of"), String(localized: "Issues"), DonViSprintCTW.tenDai(t.unit).capitalized],
             hang: ds.map { CTWHangBang(nhan: NgayCTW.ngan($0.1), giaTri: ["\($0.0.count ?? 0)", CTWSo.gon($0.0.points ?? 0)]) },
             cao: cao
         ) {
@@ -163,19 +163,19 @@ struct TheCycleTimeCTW: View {
             Text("Days from start (cycle) or creation (lead) to done · last \(c.days ?? 90) days · \(c.cycle?.n ?? 0) issues")
                 .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
             HStack(spacing: 10) {
-                CTWTheChiSo(nhan: "Cycle P50", giaTri: ngay(c.cycle?.p50), phu: "half finish faster", bieuTuong: "timer", mau: CTWMauChuoi.mau(0))
-                CTWTheChiSo(nhan: "Cycle P85", giaTri: ngay(c.cycle?.p85), phu: "85% finish within", bieuTuong: "timer", mau: CTWMauChuoi.mau(0))
+                CTWTheChiSo(nhan: String(localized: "Cycle P50"), giaTri: ngay(c.cycle?.p50), phu: String(localized: "half finish faster"), bieuTuong: "timer", mau: CTWMauChuoi.mau(0))
+                CTWTheChiSo(nhan: String(localized: "Cycle P85"), giaTri: ngay(c.cycle?.p85), phu: String(localized: "85% finish within"), bieuTuong: "timer", mau: CTWMauChuoi.mau(0))
             }
             HStack(spacing: 10) {
-                CTWTheChiSo(nhan: "Lead P50", giaTri: ngay(c.lead?.p50), bieuTuong: "clock.arrow.circlepath", mau: CTWMauChuoi.mau(1))
-                CTWTheChiSo(nhan: "Lead P85", giaTri: ngay(c.lead?.p85), bieuTuong: "clock.arrow.circlepath", mau: CTWMauChuoi.mau(1))
+                CTWTheChiSo(nhan: String(localized: "Lead P50"), giaTri: ngay(c.lead?.p50), bieuTuong: "clock.arrow.circlepath", mau: CTWMauChuoi.mau(1))
+                CTWTheChiSo(nhan: String(localized: "Lead P85"), giaTri: ngay(c.lead?.p85), bieuTuong: "clock.arrow.circlepath", mau: CTWMauChuoi.mau(1))
             }
         }
         .padding(14)
         .ctwThe(14)
     }
 
-    private func ngay(_ v: Double?) -> String { v.map { "\(CTWSo.gon($0))d" } ?? "—" }
+    private func ngay(_ v: Double?) -> String { v.map { String(localized: "\(CTWSo.gon($0))d") } ?? "—" }
 }
 
 // MARK: Created vs resolved
@@ -188,10 +188,10 @@ struct BieuDoTaoXongCTW: View {
         let diem = ds.compactMap { d in NgayCTW.ngay(d.day).map { (d, $0) } }
         let tong = TinhBaoCaoCTW.taoXong(ds)
         CTWKhungBieuDo(
-            tieuDe: "Created vs resolved",
-            phu: "\(tong.tao) created · \(tong.xong) resolved · " + (tong.chenh > 0 ? "backlog grew by \(tong.chenh)" : (tong.chenh < 0 ? "backlog shrank by \(-tong.chenh)" : "backlog steady")),
-            chuGiai: [CTWMucChuGiai(ten: "Created", mau: CTWMauChuoi.mau(1)), CTWMucChuGiai(ten: "Resolved", mau: CTWMauChuoi.mau(0))],
-            cot: ["Day", "Created", "Resolved"],
+            tieuDe: String(localized: "Created vs resolved"),
+            phu: String(localized: "\(tong.tao) created · \(tong.xong) resolved") + " · " + (tong.chenh > 0 ? String(localized: "backlog grew by \(tong.chenh)") : (tong.chenh < 0 ? String(localized: "backlog shrank by \(-tong.chenh)") : String(localized: "backlog steady"))),
+            chuGiai: [CTWMucChuGiai(ten: String(localized: "Created"), mau: CTWMauChuoi.mau(1)), CTWMucChuGiai(ten: String(localized: "Resolved"), mau: CTWMauChuoi.mau(0))],
+            cot: [String(localized: "Day"), String(localized: "Created"), String(localized: "Resolved")],
             hang: diem.map { CTWHangBang(nhan: NgayCTW.ngan($0.1), giaTri: ["\($0.0.created ?? 0)", "\($0.0.resolved ?? 0)"]) },
             cao: cao
         ) {
@@ -215,7 +215,7 @@ struct BieuDoPhanBoCTW: View {
     var phu: String?
     let thanh: [ThanhPhanBoCTW]
     var tong: Double
-    var donVi: String = "issues"
+    var donVi: String = String(localized: "issues")
     /// Màu theo nhóm trạng thái (groupBy=status/statusCategory).
     var mauTrangThai = false
 
@@ -224,7 +224,7 @@ struct BieuDoPhanBoCTW: View {
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(tieuDe).font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
-                    Text(phu ?? "\(CTWSo.gon(tong)) \(donVi) in total").font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
+                    Text(phu ?? String(localized: "\(CTWSo.gon(tong)) \(donVi) in total")).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                 }
                 Spacer()
             }
@@ -271,16 +271,16 @@ struct HangKpiCTW: View {
 
     var body: some View {
         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: soCot), spacing: 10) {
-            CTWTheChiSo(nhan: "Open issues", giaTri: so(k.open?.value), phu: xu(k.open), bieuTuong: "tray.full", mau: CTWMauChuoi.mau(0))
-            CTWTheChiSo(nhan: "Overdue", giaTri: so(k.overdue?.value), phu: xu(k.overdue), bieuTuong: "exclamationmark.circle",
+            CTWTheChiSo(nhan: String(localized: "Open issues"), giaTri: so(k.open?.value), phu: xu(k.open), bieuTuong: "tray.full", mau: CTWMauChuoi.mau(0))
+            CTWTheChiSo(nhan: String(localized: "Overdue"), giaTri: so(k.overdue?.value), phu: xu(k.overdue), bieuTuong: "exclamationmark.circle",
                         mau: (k.overdue?.value ?? 0) > 0 ? AppColors.error : AppColors.success)
-            CTWTheChiSo(nhan: "Blocked", giaTri: so(k.blocked?.value), bieuTuong: "hand.raised", mau: AppColors.warning)
+            CTWTheChiSo(nhan: String(localized: "Blocked"), giaTri: so(k.blocked?.value), bieuTuong: "hand.raised", mau: AppColors.warning)
             if let s = k.sprint {
-                CTWTheChiSo(nhan: s.name ?? "Sprint", giaTri: s.pctDone.map { "\(Int($0.rounded()))%" } ?? "—",
-                            phu: nhanNhip(s.status) + (s.daysLeft.map { " · \($0)d left" } ?? ""), bieuTuong: "flag.checkered",
+                CTWTheChiSo(nhan: s.name ?? String(localized: "Sprint"), giaTri: s.pctDone.map { "\(Int($0.rounded()))%" } ?? "—",
+                            phu: s.daysLeft.map { String(localized: "\(nhanNhip(s.status)) · \($0)d left") } ?? nhanNhip(s.status), bieuTuong: "flag.checkered",
                             mau: s.status == "AT_RISK" ? AppColors.warning : AppColors.primary)
             } else if let r = k.highRisks {
-                CTWTheChiSo(nhan: "High risks", giaTri: "\(r)", bieuTuong: "shield.lefthalf.filled", mau: r > 0 ? AppColors.error : AppColors.success)
+                CTWTheChiSo(nhan: String(localized: "High risks"), giaTri: "\(r)", bieuTuong: "shield.lefthalf.filled", mau: r > 0 ? AppColors.error : AppColors.success)
             }
         }
     }
@@ -289,17 +289,17 @@ struct HangKpiCTW: View {
     private func xu(_ k: CTWKpiSo?) -> String? {
         guard let v = k?.value, let p = k?.previous else { return nil }
         let d = v - p
-        if d == 0 { return "Same as 7 days ago" }
-        return "\(d > 0 ? "▲" : "▼") \(CTWSo.gon(abs(d))) vs 7 days ago"
+        if d == 0 { return String(localized: "Same as 7 days ago") }
+        return String(localized: "\(d > 0 ? "▲" : "▼") \(CTWSo.gon(abs(d))) vs 7 days ago")
     }
 
     static func nhanNhipTinh(_ s: String?) -> String {
         switch s {
-        case "ON_TRACK": return "On track"
-        case "AT_RISK": return "At risk"
-        case "DONE": return "Done"
-        case "TOO_EARLY": return "Too early to tell"
-        case "NO_ESTIMATES": return "No estimates"
+        case "ON_TRACK": return String(localized: "On track")
+        case "AT_RISK": return String(localized: "At risk")
+        case "DONE": return String(localized: "Done")
+        case "TOO_EARLY": return String(localized: "Too early to tell")
+        case "NO_ESTIMATES": return String(localized: "No estimates")
         default: return "—"
         }
     }
@@ -316,7 +316,7 @@ struct BieuDoTaiNguoiCTW: View {
         let maxTong = max(ds.map { $0.total ?? 0 }.max() ?? 1, 1)
         VStack(alignment: .leading, spacing: 10) {
             Text("Workload").font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
-            CTWChuGiai(muc: [CTWMucChuGiai(ten: "In progress", mau: CTWMauChuoi.mau(0)), CTWMucChuGiai(ten: "To do", mau: CTWMauChuoi.khac)])
+            CTWChuGiai(muc: [CTWMucChuGiai(ten: String(localized: "In progress"), mau: CTWMauChuoi.mau(0)), CTWMucChuGiai(ten: String(localized: "To do"), mau: CTWMauChuoi.khac)])
             ForEach(Array(ds.enumerated()), id: \.offset) { _, p in
                 HStack(spacing: 10) {
                     if let u = p.user { CTWAvatar(user: u, size: 26) } else {
@@ -324,7 +324,7 @@ struct BieuDoTaiNguoiCTW: View {
                     }
                     VStack(alignment: .leading, spacing: 4) {
                         HStack(spacing: 6) {
-                            Text(p.user?.ten ?? "Unassigned").font(.ctw(size: 13, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                            Text(p.user?.ten ?? String(localized: "Unassigned")).font(.ctw(size: 13, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(1)
                             if p.user?.laAgent == true { CTWNhanAI() }
                             Spacer(minLength: 4)
                             if (p.overdue ?? 0) > 0 {
@@ -333,8 +333,8 @@ struct BieuDoTaiNguoiCTW: View {
                             Text("\(p.total ?? 0)").font(.ctw(size: 13, weight: .semibold).monospacedDigit()).foregroundColor(AppColors.textPrimary)
                         }
                         GeometryReader { g in
-                            CTWThanhTienDo(doan: [CTWDoanTienDo(ten: "In progress", giaTri: Double(p.inProgress ?? 0), mau: CTWMauChuoi.mau(0)),
-                                                 CTWDoanTienDo(ten: "To do", giaTri: Double(p.todo ?? 0), mau: CTWMauChuoi.khac)], cao: 7)
+                            CTWThanhTienDo(doan: [CTWDoanTienDo(ten: String(localized: "In progress"), giaTri: Double(p.inProgress ?? 0), mau: CTWMauChuoi.mau(0)),
+                                                 CTWDoanTienDo(ten: String(localized: "To do"), giaTri: Double(p.todo ?? 0), mau: CTWMauChuoi.khac)], cao: 7)
                                 .frame(width: max(g.size.width * CGFloat(Double(p.total ?? 0) / Double(maxTong)), 8))
                         }
                         .frame(height: 7)

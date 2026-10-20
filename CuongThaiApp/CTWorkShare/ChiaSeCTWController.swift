@@ -17,6 +17,8 @@ import UniformTypeIdentifiers
 final class ChiaSeCTWController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
+        // Ngôn ngữ app chọn (đọc từ App Group) — trước khi dựng view nào.
+        NgonNguCTW.caiDatBundle()
         let mh = NoiDungChiaSeVM(context: extensionContext)
         let goc = UIHostingController(rootView: ChiaSeCTWView(vm: mh, dong: { [weak self] daGui in
             if daGui { self?.extensionContext?.completeRequest(returningItems: nil) }
@@ -35,7 +37,10 @@ final class ChiaSeCTWController: UIViewController {
 
 @MainActor
 final class NoiDungChiaSeVM: ObservableObject {
-    enum CheDo: String, CaseIterable { case theMoi = "New issue", binhLuan = "Comment" }
+    enum CheDo: String, CaseIterable {
+        case theMoi = "New issue", binhLuan = "Comment"
+        var ten: String { self == .theMoi ? String(localized: "New issue") : String(localized: "Comment") }
+    }
 
     @Published var cheDo: CheDo = .theMoi
     @Published var tieuDe = ""
@@ -90,7 +95,7 @@ final class NoiDungChiaSeVM: ObservableObject {
         let toanBo = chu.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
         if lien == nil, let u = Self.timLien(toanBo) { lien = u }
         let dong = toanBo.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty && $0 != lien?.absoluteString }
-        tieuDe = String((dong.first ?? lien?.host ?? (anh.isEmpty ? "" : "Photo from \(Date().formatted(date: .abbreviated, time: .omitted))")).prefix(200))
+        tieuDe = String((dong.first ?? lien?.host ?? (anh.isEmpty ? "" : String(localized: "Photo from \(Date().formatted(Date.FormatStyle(date: .abbreviated, time: .omitted).locale(NgonNguCTW.locale)))"))).prefix(200))
         ghiChu = dong.dropFirst().joined(separator: "\n")
         if dong.count <= 1 && cheDo == .binhLuan { ghiChu = toanBo }
     }
@@ -143,7 +148,7 @@ final class NoiDungChiaSeVM: ObservableObject {
                 var than: [String: Any] = ["title": String(tieuDe.trimmingCharacters(in: .whitespacesAndNewlines).prefix(255)), "typeKey": "TASK"]
                 if !ghiChu.isEmpty || lien != nil { than["descriptionJson"] = Self.docTipTap(chu: ghiChu, lien: lien) }
                 let r = try await MangChiaSe.goi("/projects/\(pid)/issues", than: than)
-                guard let n = r["number"] as? Int else { throw MangChiaSe.Loi.thongDiep("The issue was created but the reply was unexpected.") }
+                guard let n = r["number"] as? Int else { throw MangChiaSe.Loi.thongDiep(String(localized: "The issue was created but the reply was unexpected.")) }
                 so = n
             case .binhLuan:
                 guard let ma = theChon, let t = TheGanDayCTW.ds().first(where: { $0.ma == ma }) else { return false }
@@ -155,7 +160,7 @@ final class NoiDungChiaSeVM: ObservableObject {
             for a in anh { try await MangChiaSe.dinhKem(pid: pid, so: so, ten: a.ten, du: a.du) }
             return true
         } catch {
-            loi = (error as? LocalizedError)?.errorDescription ?? "Couldn't send. Check your connection and try again."
+            loi = (error as? LocalizedError)?.errorDescription ?? String(localized: "Couldn't send. Check your connection and try again.")
             return false
         }
     }
@@ -170,7 +175,7 @@ enum MangChiaSe {
         case chuaDangNhap, thongDiep(String)
         var errorDescription: String? {
             switch self {
-            case .chuaDangNhap: return "Open CT Work and sign in again, then share once more."
+            case .chuaDangNhap: return String(localized: "Open CT Work and sign in again, then share once more.")
             case .thongDiep(let s): return s
             }
         }
@@ -178,7 +183,7 @@ enum MangChiaSe {
 
     private static func yeuCau(_ duong: String, phuongThuc: String = "POST", than: [String: Any]) throws -> URLRequest {
         guard let t = TokenNhomCTW.doc() else { throw Loi.chuaDangNhap }
-        guard let u = URL(string: goc + duong) else { throw Loi.thongDiep("Bad address.") }
+        guard let u = URL(string: goc + duong) else { throw Loi.thongDiep(String(localized: "Bad address.")) }
         var r = URLRequest(url: u)
         r.httpMethod = phuongThuc
         r.timeoutInterval = 30
@@ -197,7 +202,7 @@ enum MangChiaSe {
         let goi = (try? JSONSerialization.jsonObject(with: d)) as? [String: Any]
         if ma == 401 { throw Loi.chuaDangNhap }
         guard (200..<300).contains(ma) else {
-            throw Loi.thongDiep((goi?["message"] as? String) ?? "Couldn't send (\(ma)). Please try again.")
+            throw Loi.thongDiep((goi?["message"] as? String) ?? String(localized: "Couldn't send (\(ma)). Please try again."))
         }
         return (goi?["data"] as? [String: Any]) ?? [:]
     }
@@ -207,7 +212,7 @@ enum MangChiaSe {
         let ps = try await goi("/projects/\(pid)/issues/\(so)/attachments/presign",
                                than: ["fileName": ten, "contentType": "image/jpeg", "size": du.count])
         guard let s = ps["uploadUrl"] as? String, let url = URL(string: s), let key = ps["key"] as? String else {
-            throw Loi.thongDiep("Upload failed. Please try again.")
+            throw Loi.thongDiep(String(localized: "Upload failed. Please try again."))
         }
         var r = URLRequest(url: url)
         r.httpMethod = "PUT"
@@ -215,7 +220,7 @@ enum MangChiaSe {
         for (k, v) in dau { r.setValue(v, forHTTPHeaderField: k) }
         if dau["Content-Type"] == nil { r.setValue("image/jpeg", forHTTPHeaderField: "Content-Type") }
         let (_, res) = try await URLSession.shared.upload(for: r, from: du)
-        guard (200..<300).contains((res as? HTTPURLResponse)?.statusCode ?? 0) else { throw Loi.thongDiep("Upload failed. Please try again.") }
+        guard (200..<300).contains((res as? HTTPURLResponse)?.statusCode ?? 0) else { throw Loi.thongDiep(String(localized: "Upload failed. Please try again.")) }
         _ = try await goi("/projects/\(pid)/issues/\(so)/attachments/complete", than: ["key": key, "fileName": ten])
     }
 }
@@ -239,7 +244,7 @@ struct ChiaSeCTWView: View {
                 } else {
                     Section {
                         Picker("Add as", selection: $vm.cheDo) {
-                            ForEach(NoiDungChiaSeVM.CheDo.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                            ForEach(NoiDungChiaSeVM.CheDo.allCases, id: \.self) { Text($0.ten).tag($0) }
                         }
                         .pickerStyle(.segmented)
                         Picker("Project", selection: $vm.duAnChon) {

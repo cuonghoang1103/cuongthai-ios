@@ -74,26 +74,21 @@ enum NgayCTW {
 
     private static func dinhDang(_ mau: String) -> DateFormatter {
         let f = DateFormatter()
-        f.locale = Locale(identifier: "en_US")
+        f.locale = CTWDinhDang.locale
         f.timeZone = mui
         f.dateFormat = mau
         return f
     }
     /// "Oct 18"
-    static func ngan(_ d: Date) -> String { dinhDang("MMM d").string(from: d) }
+    static func ngan(_ d: Date) -> String { CTWDinhDang.mau("MMMd", muiGio: mui).string(from: d) }
     /// "Oct 18, 2026"
-    static func day(_ d: Date) -> String { dinhDang("MMM d, yyyy").string(from: d) }
-    /// "Mon 18"
+    static func day(_ d: Date) -> String { CTWDinhDang.mau("yMMMd", muiGio: mui).string(from: d) }
+    /// "Mon 18" (định dạng cố định — mẫu "EEEd" của en_US ra "18 Mon")
     static func thuNgay(_ d: Date) -> String { dinhDang("EEE d").string(from: d) }
     /// "October 2026"
-    static func thang(_ d: Date) -> String { dinhDang("MMMM yyyy").string(from: d) }
+    static func thang(_ d: Date) -> String { CTWDinhDang.mau("MMMMy", muiGio: mui).string(from: d) }
     /// "14:05" theo giờ MÁY (họp có giờ thật — người dùng đọc theo giờ của mình).
-    static func gio(_ d: Date) -> String {
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "en_US")
-        f.dateFormat = "HH:mm"
-        return f.string(from: d)
-    }
+    static func gio(_ d: Date) -> String { CTWDinhDang.gio(d) }
 
     /// "YYYY-MM-DD" → "Oct 18" (nil nếu hỏng).
     static func nganTu(_ s: String?) -> String? { ngay(s).map(ngan) }

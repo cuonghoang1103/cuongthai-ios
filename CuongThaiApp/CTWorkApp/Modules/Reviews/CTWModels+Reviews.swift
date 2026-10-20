@@ -111,7 +111,7 @@ struct CTWReview: Codable, Hashable {
         var thuTu: [String] = []
         var nhom: [String: [CTWReviewMuc]] = [:]
         for m in (items ?? []).sorted(by: { ($0.position ?? 0, $0.id) < ($1.position ?? 0, $1.id) }) {
-            let p = m.section ?? "Checklist"
+            let p = m.section ?? String(localized: "Checklist")
             if nhom[p] == nil { thuTu.append(p) }
             nhom[p, default: []].append(m)
         }
@@ -139,30 +139,30 @@ enum CTWReviewLuat {
 
     static func nhanBuoc(_ s: String) -> String {
         switch s {
-        case "PREPARATION": return "Start preparation"
-        case "MEETING": return "Start meeting"
-        case "REWORK": return "Send to rework"
-        case "FOLLOW_UP": return "Follow up"
-        case "CLOSED": return "Close review"
-        case "PLANNING": return "Back to planning"
+        case "PREPARATION": return String(localized: "Start preparation")
+        case "MEETING": return String(localized: "Start meeting")
+        case "REWORK": return String(localized: "Send to rework")
+        case "FOLLOW_UP": return String(localized: "Follow up")
+        case "CLOSED": return String(localized: "Close review")
+        case "PLANNING": return String(localized: "Back to planning")
         default: return CTWMauTrangThai.nhan(s)
         }
     }
 
     static func nhanQuyetDinh(_ s: String?) -> String {
         switch s {
-        case "ACCEPT": return "Accept"
-        case "ACCEPT_WITH_CHANGES": return "Accept with changes"
-        case "REINSPECT": return "Re-inspect"
-        default: return "No decision"
+        case "ACCEPT": return String(localized: "Accept")
+        case "ACCEPT_WITH_CHANGES": return String(localized: "Accept with changes")
+        case "REINSPECT": return String(localized: "Re-inspect")
+        default: return String(localized: "No decision")
         }
     }
 
     static func lyDoChan(_ s: String) -> String {
         switch s {
-        case "NO_MODERATOR": return "Add a moderator before closing."
-        case "CHECKLIST_INCOMPLETE": return "Answer every checklist item (OK, NG or N/A)."
-        case "NO_DECISION": return "Record the review decision."
+        case "NO_MODERATOR": return String(localized: "Add a moderator before closing.")
+        case "CHECKLIST_INCOMPLETE": return String(localized: "Answer every checklist item (OK, NG or N/A).")
+        case "NO_DECISION": return String(localized: "Record the review decision.")
         default: return CTWMauTrangThai.nhan(s)
         }
     }

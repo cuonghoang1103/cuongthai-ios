@@ -20,6 +20,9 @@ private enum MauW {
 
 @main
 struct GoiWidgetCTW: WidgetBundle {
+    /// Ngôn ngữ app chọn (Account › Language) — đọc từ App Group, tráo Bundle.main của widget (CTWorkShared/NgonNguCTW.swift).
+    init() { NgonNguCTW.caiDatBundle() }
+
     var body: some Widget {
         ViecHomNayWidget()
         DongHoWidget()
@@ -48,17 +51,18 @@ struct NguonViec: TimelineProvider {
         completion(Timeline(entries: [MocViec(date: Date(), anh: AnhViecHomNayCTW.doc())], policy: .after(tiep)))
     }
 
-    static let mau = AnhViecHomNayCTW(ngay: NgayNhomCTW.ymd(), capNhat: Date(), viec: [
-        .init(loai: "meeting", id: "m", tieuDe: "Daily stand-up", ma: "M-4", duAn: "NW", gio: Date().addingTimeInterval(3600), quaHan: false, duongDan: nil),
-        .init(loai: "overdue", id: "o", tieuDe: "Fix login crash", ma: "NW-9", duAn: "NW", gio: nil, quaHan: true, duongDan: nil),
-        .init(loai: "due", id: "d", tieuDe: "Push notifications open the right issue", ma: "NW-12", duAn: "NW", gio: nil, quaHan: false, duongDan: nil),
-    ], daDangNhap: true)
+    static var mau: AnhViecHomNayCTW { AnhViecHomNayCTW(ngay: NgayNhomCTW.ymd(), capNhat: Date(), viec: [
+        .init(loai: "meeting", id: "m", tieuDe: String(localized: "Daily stand-up"), ma: "M-4", duAn: "NW", gio: Date().addingTimeInterval(3600), quaHan: false, duongDan: nil),
+        .init(loai: "overdue", id: "o", tieuDe: String(localized: "Fix login crash"), ma: "NW-9", duAn: "NW", gio: nil, quaHan: true, duongDan: nil),
+        .init(loai: "due", id: "d", tieuDe: String(localized: "Push notifications open the right issue"), ma: "NW-12", duAn: "NW", gio: nil, quaHan: false, duongDan: nil),
+    ], daDangNhap: true) }
 }
 
 struct ViecHomNayWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: "CTWViecHomNayWidget", provider: NguonViec()) { m in
             ViecHomNayView(moc: m).containerBackground(.fill.tertiary, for: .widget)
+                .environment(\.locale, NgonNguCTW.locale)
         }
         .configurationDisplayName("My work today")
         .description("Today's meetings, issues due and overdue work.")
@@ -142,7 +146,7 @@ struct ViecHomNayView: View {
     private func phu(_ v: AnhViecHomNayCTW.Viec) -> String {
         var p: [String] = []
         if let g = v.gio { p.append(g.formatted(date: .omitted, time: .shortened)) }
-        if v.quaHan { p.append("Overdue") }
+        if v.quaHan { p.append(String(localized: "Overdue")) }
         if let m = v.ma { p.append(m) } else if let d = v.duAn { p.append(d) }
         return p.joined(separator: " · ")
     }
@@ -173,6 +177,7 @@ struct DongHoWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: "CTWDongHoWidget", provider: NguonDongHo()) { m in
             DongHoWidgetView(moc: m).containerBackground(.fill.tertiary, for: .widget)
+                .environment(\.locale, NgonNguCTW.locale)
         }
         .configurationDisplayName("Timer")
         .description("Your running CT Work timer.")
@@ -196,7 +201,7 @@ struct DongHoWidgetView: View {
                 VStack(alignment: .leading, spacing: 1) {
                     Text(d.issueKey).font(.headline).widgetAccentable()
                     DemGioW(anh: d).font(.body.monospacedDigit())
-                    Text(d.running ? d.issueTitle : "Paused").font(.caption).lineLimit(1)
+                    Text(d.running ? d.issueTitle : String(localized: "Paused")).font(.caption).lineLimit(1)
                 }
             default:
                 VStack(alignment: .leading, spacing: 6) {
@@ -242,6 +247,7 @@ struct DongHoLiveActivityWidget: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: CTWDongHoAttributes.self) { ctx in
             ManKhoaDongHo(s: ctx.state)
+                .environment(\.locale, NgonNguCTW.locale)
                 .padding(14)
                 .activityBackgroundTint(Color(.systemBackground).opacity(0.9))
                 .widgetURL(URL(string: "ctwork://work/\(ctx.attributes.workspaceSlug)/\(ctx.state.projectKey)/issue/\(ctx.attributes.issueNumber)"))

@@ -35,9 +35,9 @@ struct RetroCTW: View {
                 let khoa = (d.retros ?? []).filter { $0.locked == true }
                 if mo.isEmpty && khoa.isEmpty {
                     Section {
-                        CTWOTrong(bieuTuong: "bubble.left.and.text.bubble.right", tieuDe: "No retrospectives yet",
-                                  moTa: "Collect what went well and what to improve, vote, and turn it into action items.",
-                                  nut: d.canCreate == true ? "New retro" : nil) { moTao = true }
+                        CTWOTrong(bieuTuong: "bubble.left.and.text.bubble.right", tieuDe: String(localized: "No retrospectives yet"),
+                                  moTa: String(localized: "Collect what went well and what to improve, vote, and turn it into action items."),
+                                  nut: d.canCreate == true ? String(localized: "New retro") : nil) { moTao = true }
                     }
                     .listRowBackground(Color.clear)
                 }
@@ -75,7 +75,7 @@ struct RetroCTW: View {
             guard let d = app.dichCho, d.moDun == "retros" else { return }
             defer { app.dichCho = nil }
             if let r = Int(d.duongDan.tham["r"] ?? d.duongDan.phanCon.first ?? "") {
-                nganXep.duong.append(RouteRetroCTW(pid: nguCanh.pid, rid: r, ten: "Retro"))
+                nganXep.duong.append(RouteRetroCTW(pid: nguCanh.pid, rid: r, ten: String(localized: "Retro")))
             }
         }
         #if DEBUG
@@ -88,7 +88,7 @@ struct RetroCTW: View {
     }
 
     private func hang(_ r: CTWRetroDs.Retro) -> some View {
-        NavigationLink(value: RouteRetroCTW(pid: nguCanh.pid, rid: r.id, ten: r.title ?? "Retro")) {
+        NavigationLink(value: RouteRetroCTW(pid: nguCanh.pid, rid: r.id, ten: r.title ?? String(localized: "Retro"))) {
             HStack(spacing: 12) {
                 Image(systemName: r.locked == true ? "lock.fill" : "bubble.left.and.text.bubble.right")
                     .font(.ctw(size: 15, weight: .semibold)).foregroundColor(r.locked == true ? AppColors.textSecondary : AppColors.primary)
@@ -97,13 +97,14 @@ struct RetroCTW: View {
                         .fill((r.locked == true ? AppColors.textSecondary : AppColors.primary).opacity(0.12)))
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {
-                        Text(r.title ?? "Retro").font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                        Text(r.title ?? String(localized: "Retro")).font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                         if r.anonymous == true {
                             Image(systemName: "eye.slash").font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
                                 .accessibilityLabel("Anonymous")
                         }
                     }
-                    Text([RetroCot.tenTemplate(r.template), r.sprint?.name, "\(r.cards ?? 0) cards", "\(r.actions ?? 0) actions"]
+                    Text([RetroCot.tenTemplate(r.template), r.sprint?.name, r.cards == 1 ? String(localized: "1 card") : String(localized: "\(r.cards ?? 0) cards"),
+                                  r.actions == 1 ? String(localized: "1 action") : String(localized: "\(r.actions ?? 0) actions")]
                         .compactMap { $0 }.joined(separator: " · "))
                         .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1)
                 }
@@ -169,7 +170,7 @@ struct TaoRetroCTW: View {
             .onAppear {
                 let s = app.cauHinhDuAn?.sprints?.first { $0.state == "ACTIVE" }
                 sprintId = s?.id
-                if ten.isEmpty, let s { ten = "\(s.name) retro" }
+                if ten.isEmpty, let s { ten = String(localized: "\(s.name) retro") }
             }
         }
     }

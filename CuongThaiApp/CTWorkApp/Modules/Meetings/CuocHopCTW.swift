@@ -47,9 +47,9 @@ struct CuocHopCTW: View {
                 }
             }
             if ds != nil && hien.isEmpty {
-                CTWOTrong(bieuTuong: "calendar", tieuDe: ngayChon != nil ? "No meetings that day" : (pham == "upcoming" ? "No upcoming meetings" : "No past meetings"),
-                          moTa: ds?.canEdit == true ? "Schedule a meeting and invite your team." : "Meetings your team schedules appear here.",
-                          nut: ds?.canEdit == true && pham == "upcoming" ? "New meeting" : nil) { moTao = true }
+                CTWOTrong(bieuTuong: "calendar", tieuDe: ngayChon != nil ? String(localized: "No meetings that day") : (pham == "upcoming" ? String(localized: "No upcoming meetings") : String(localized: "No past meetings")),
+                          moTa: ds?.canEdit == true ? String(localized: "Schedule a meeting and invite your team.") : String(localized: "Meetings your team schedules appear here."),
+                          nut: ds?.canEdit == true && pham == "upcoming" ? String(localized: "New meeting") : nil) { moTao = true }
                     .listRowBackground(Color.clear)
             }
             ForEach(nhomTheoNgay, id: \.0) { n in
@@ -96,7 +96,7 @@ struct CuocHopCTW: View {
     private var nhomTheoNgay: [(String, [CTWMeeting])] {
         var ra: [(String, [CTWMeeting])] = []
         for m in hien {
-            let k = m.batDau.map { CTWChatThoiGian.nhanNgay($0) } ?? "No date"
+            let k = m.batDau.map { CTWChatThoiGian.nhanNgay($0) } ?? String(localized: "No date")
             if let i = ra.firstIndex(where: { $0.0 == k }) { ra[i].1.append(m) } else { ra.append((k, [m])) }
         }
         return ra
@@ -107,7 +107,7 @@ struct CuocHopCTW: View {
             ds = try await APIClient.shared.request(CTWAPI.dsHop(pid: nguCanh.pid, pham: pham))
             loi = nil
         } catch {
-            if case APIError.coMa(let ma, _) = error, ma == "MODULE_DISABLED" { loi = "Meetings are turned off for this project." } else { loi = CTW.loi(error) }
+            if case APIError.coMa(let ma, _) = error, ma == "MODULE_DISABLED" { loi = String(localized: "Meetings are turned off for this project.") } else { loi = CTW.loi(error) }
         }
     }
 
@@ -147,7 +147,7 @@ struct HangHopCTW: View {
                         .strikethrough(hop.daHuy).lineLimit(2)
                 }
                 HStack(spacing: 6) {
-                    Text(hop.typeLabel ?? "Meeting").font(.ctw(size: 11, weight: .semibold)).foregroundColor(mauLoaiHopCTW(hop.type))
+                    Text(hop.typeLabel ?? String(localized: "Meeting")).font(.ctw(size: 11, weight: .semibold)).foregroundColor(mauLoaiHopCTW(hop.type))
                         .padding(.horizontal, 6).padding(.vertical, 2)
                         .background(Capsule().fill(mauLoaiHopCTW(hop.type).opacity(0.12)))
                         .fixedSize()
@@ -169,7 +169,7 @@ struct HangHopCTW: View {
             Spacer(minLength: 0)
             if hop.sapHoacDangHop, let u = hop.urlHop, let vao {
                 Button { vao(u) } label: {
-                    Text("Join").font(.ctw(size: 13, weight: .bold)).foregroundColor(.white)
+                    Text("Join").font(.ctw(size: 13, weight: .bold)).foregroundColor(.white).lineLimit(1).fixedSize()
                         .padding(.horizontal, 14).padding(.vertical, 7).background(Capsule().fill(AppColors.success))
                 }
                 .buttonStyle(.borderless)
@@ -181,10 +181,7 @@ struct HangHopCTW: View {
 
     private func gio(_ d: Date?) -> String {
         guard let d else { return "" }
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "en_US")
-        f.dateFormat = "HH:mm"
-        return f.string(from: d)
+        return CTWDinhDang.gio(d)
     }
 }
 
@@ -215,7 +212,7 @@ struct ChongAvatarCTW: View {
             }
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(ds.count) attendee\(ds.count == 1 ? "" : "s")")
+        .accessibilityLabel(ds.count == 1 ? "1 attendee" : "\(ds.count) attendees")
     }
 }
 
@@ -256,7 +253,7 @@ struct DaiLichHopCTW: View {
                         .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(AppColors.border, lineWidth: 0.5))
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("\(CTWChatThoiGian.nhanNgay(d)), \(so) meeting\(so == 1 ? "" : "s")")
+                    .accessibilityLabel(so == 1 ? "\(CTWChatThoiGian.nhanNgay(d)), 1 meeting" : "\(CTWChatThoiGian.nhanNgay(d)), \(so) meetings")
                     .accessibilityAddTraits(dangChon ? .isSelected : [])
                 }
             }
@@ -265,8 +262,7 @@ struct DaiLichHopCTW: View {
     }
 
     private func thu(_ d: Date) -> String {
-        let f = DateFormatter(); f.locale = Locale(identifier: "en_US"); f.dateFormat = "EEE"
-        return f.string(from: d)
+        return CTWDinhDang.mau("EEE").string(from: d)
     }
     private func ngaySo(_ d: Date) -> String {
         let f = DateFormatter(); f.dateFormat = "d"

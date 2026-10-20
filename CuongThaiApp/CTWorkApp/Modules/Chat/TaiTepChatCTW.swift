@@ -20,8 +20,8 @@ enum TaiTepChatCTW {
         case quaLon(Int), hong(Int, String?)
         var errorDescription: String? {
             switch self {
-            case .quaLon(let mb): return "Files must be \(mb) MB or smaller."
-            case .hong(let ma, let s): return s ?? "Upload failed (\(ma)). Please try again."
+            case .quaLon(let mb): return String(localized: "Files must be \(mb) MB or smaller.")
+            case .hong(let ma, let s): return s ?? String(localized: "Upload failed (\(ma)). Please try again.")
             }
         }
     }

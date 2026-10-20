@@ -82,28 +82,28 @@ enum CTWTaiSanHienThi {
 
     /// Nhãn hạn dùng: "Expires in 44 days", "Expires today", "Expired 3 days ago", "No expiry".
     static func nhanHan(_ e: CTWTaiSan.HetHan?) -> (chu: String, mau: Color) {
-        guard let e, let st = e.state, st != "NONE" else { return ("No expiry", AppColors.textSecondary) }
+        guard let e, let st = e.state, st != "NONE" else { return (String(localized: "No expiry"), AppColors.textSecondary) }
         let n = e.daysLeft
         switch st {
         case "EXPIRED":
-            if let n, n < 0 { return ("Expired \(-n) day\(n == -1 ? "" : "s") ago", AppColors.error) }
-            return ("Expired", AppColors.error)
+            if let n, n < 0 { return (n == -1 ? String(localized: "Expired 1 day ago") : String(localized: "Expired \(-n) days ago"), AppColors.error) }
+            return (String(localized: "Expired"), AppColors.error)
         case "EXPIRING":
-            if n == 0 { return ("Expires today", AppColors.warning) }
-            if let n { return ("Expires in \(n) day\(n == 1 ? "" : "s")", AppColors.warning) }
-            return ("Expiring soon", AppColors.warning)
+            if n == 0 { return (String(localized: "Expires today"), AppColors.warning) }
+            if let n { return (n == 1 ? String(localized: "Expires in 1 day") : String(localized: "Expires in \(n) days"), AppColors.warning) }
+            return (String(localized: "Expiring soon"), AppColors.warning)
         default:
-            if let n { return ("Expires in \(n) day\(n == 1 ? "" : "s")", AppColors.success) }
-            return ("Valid", AppColors.success)
+            if let n { return (n == 1 ? String(localized: "Expires in 1 day") : String(localized: "Expires in \(n) days"), AppColors.success) }
+            return (String(localized: "Valid"), AppColors.success)
         }
     }
 
     static func nhanThanhToan(_ b: String?) -> String? {
         switch b {
-        case "FREE": return "Free"
-        case "ONE_TIME": return "One-time"
-        case "MONTHLY": return "per month"
-        case "YEARLY": return "per year"
+        case "FREE": return String(localized: "Free")
+        case "ONE_TIME": return String(localized: "One-time")
+        case "MONTHLY": return String(localized: "per month")
+        case "YEARLY": return String(localized: "per year")
         default: return nil
         }
     }

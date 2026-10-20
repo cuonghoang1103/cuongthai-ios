@@ -36,7 +36,7 @@ enum CTWGiaTri: Codable, Hashable {
         switch self {
         case .chu(let s): return s
         case .so(let d): return d == d.rounded() && abs(d) < 1e15 ? String(Int(d)) : String(format: "%.2f", d)
-        case .dung(let b): return b ? "Yes" : "No"
+        case .dung(let b): return b ? String(localized: "Yes") : String(localized: "No")
         case .mang(let a): return a.map(\.hienThi).filter { !$0.isEmpty }.joined(separator: ", ")
         case .rong: return ""
         }
@@ -49,12 +49,12 @@ enum DichVuLoi {
     static func cau(_ e: Error) -> String {
         if case APIError.coMa(let ma, _) = e {
             switch ma {
-            case "WORK_INTERNAL_ONLY": return "This area is only for the project team."
-            case "CLIENT_PORTAL_ONLY": return "Your client account can only use the client portal of this project."
-            case "MODULE_DISABLED": return "This module is turned off for the project. A project admin can turn it on in settings."
-            case "WORK_EDIT_LOCKED", "EDIT_LOCKED": return "Editing is locked for this project on your account. Unlock it on the project page to make changes."
-            case "WORK_TEACHING_ONLY": return "The teaching overview is for teachers of at least one group."
-            case "WORK_AGENT_FORBIDDEN": return "AI agents can't do this."
+            case "WORK_INTERNAL_ONLY": return String(localized: "This area is only for the project team.")
+            case "CLIENT_PORTAL_ONLY": return String(localized: "Your client account can only use the client portal of this project.")
+            case "MODULE_DISABLED": return String(localized: "This module is turned off for the project. A project admin can turn it on in settings.")
+            case "WORK_EDIT_LOCKED", "EDIT_LOCKED": return String(localized: "Editing is locked for this project on your account. Unlock it on the project page to make changes.")
+            case "WORK_TEACHING_ONLY": return String(localized: "The teaching overview is for teachers of at least one group.")
+            case "WORK_AGENT_FORBIDDEN": return String(localized: "AI agents can't do this.")
             default: break
             }
         }
@@ -115,9 +115,9 @@ struct DongBinhLuanTheCTW: View {
                 CTWAvatar(user: c.author, size: 30)
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 6) {
-                        Text(c.author?.ten ?? "Someone").font(.ctw(size: 13, weight: .semibold))
+                        Text(c.author?.ten ?? String(localized: "Someone")).font(.ctw(size: 13, weight: .semibold))
                             .foregroundColor(AppColors.textPrimary).lineLimit(1)
-                        if c.author?.laAgent == true { CTWNhanAI() } else if c.isAi == true { CTWNhanAI(chu: "AI-drafted") }
+                        if c.author?.laAgent == true { CTWNhanAI() } else if c.isAi == true { CTWNhanAI(chu: String(localized: "AI-drafted")) }
                         if let nhanPhu {
                             CTWNhanNho(chu: nhanPhu, bieuTuong: noiBo ? "lock.fill" : "globe",
                                        mau: noiBo ? AppColors.warning : AppColors.success)
@@ -127,7 +127,7 @@ struct DongBinhLuanTheCTW: View {
                     }
                     CTWTipTapView(doc: c.bodyJson, coChu: 14)
                     ForEach(c.attachments ?? []) { a in
-                        Label(a.fileName ?? "File", systemImage: a.bieuTuong)
+                        Label(a.fileName ?? String(localized: "File"), systemImage: a.bieuTuong)
                             .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                     }
                 }
@@ -160,7 +160,7 @@ struct DongBinhLuanTheCTW: View {
                                                                   nguCanh: "Project #\(pid) issue #\(so)", tacGia: c.author, lyDoMa: l.ma)
                                     an.anBinhLuan(c.id)
                                     CTWRung.thanhCong()
-                                    thongBao = "Thanks — our moderators will review it within 24 hours. It's hidden for you now."
+                                    thongBao = String(localized: "Thanks — our moderators will review it within 24 hours. It's hidden for you now.")
                                     return
                                 }
                                 let r: CTWBaoCaoKetQua = try await APIClient.shared.request(
@@ -168,14 +168,14 @@ struct DongBinhLuanTheCTW: View {
                                 an.anBinhLuan(c.id)
                                 CTWRung.thanhCong()
                                 thongBao = r.duplicate == true
-                                    ? "You already reported this comment."
-                                    : "Thanks — project admins have been notified. The comment is hidden for you."
+                                    ? String(localized: "You already reported this comment.")
+                                    : String(localized: "Thanks — project admins have been notified. The comment is hidden for you.")
                             } catch { thongBao = DichVuLoi.cau(error) }
                         }
                     }
                 }
             } message: { Text("Project admins will review it and remove it if it breaks the rules.") }
-            .confirmationDialog("Block \(c.author?.ten ?? "this user")?", isPresented: $hoiChan, titleVisibility: .visible) {
+            .confirmationDialog("Block \(c.author?.ten ?? String(localized: "this user"))?", isPresented: $hoiChan, titleVisibility: .visible) {
                 Button("Block", role: .destructive) {
                     guard let u = c.author else { return }
                     Task {
@@ -199,7 +199,7 @@ extension View {
 
 /// Dải "xem như khách — chỉ đọc".
 struct DaiXemThuKhach: View {
-    var chu = "Preview as client — read-only"
+    var chu = String(localized: "Preview as client — read-only")
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: "eye.fill")

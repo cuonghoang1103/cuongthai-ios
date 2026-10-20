@@ -156,7 +156,7 @@ struct LichCTW: View {
             }
             HStack(spacing: 0) {
                 ForEach(["M", "T", "W", "T", "F", "S", "S"].indices, id: \.self) { i in
-                    Text(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][i].prefix(beRong == .regular ? 3 : 1))
+                    Text(tenThu[i])
                         .font(.ctw(size: 11, weight: .semibold)).foregroundColor(AppColors.textTertiary)
                         .frame(maxWidth: .infinity)
                 }
@@ -177,7 +177,7 @@ struct LichCTW: View {
         })
     }
 
-    private func nutThang(_ icon: String, _ ten: String, _ n: Int) -> some View {
+    private func nutThang(_ icon: String, _ ten: LocalizedStringKey, _ n: Int) -> some View {
         Button { doiThang(n) } label: {
             Image(systemName: icon).font(.ctw(size: 15, weight: .semibold)).frame(width: 44, height: 44)
         }
@@ -219,7 +219,8 @@ struct LichCTW: View {
             .opacity(trongThang ? 1 : 0.55)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("\(NgayCTW.day(d))\(sk.isEmpty ? "" : ", \(sk.count) event\(sk.count == 1 ? "" : "s")")")
+        .accessibilityLabel(sk.isEmpty ? NgayCTW.day(d)
+                            : sk.count == 1 ? String(localized: "\(NgayCTW.day(d)), 1 event") : String(localized: "\(NgayCTW.day(d)), \(sk.count) events"))
         .accessibilityAddTraits(laChon ? .isSelected : [])
     }
 
@@ -247,7 +248,7 @@ struct LichCTW: View {
             return s.isEmpty ? nil : (d, s)
         }
         return VStack(alignment: .leading, spacing: 12) {
-            CTWSectionHeader("calendar", Calendar.current.isDateInToday(chon) ? "Today · \(NgayCTW.ngan(chon))" : NgayCTW.day(chon),
+            CTWSectionHeader("calendar", Calendar.current.isDateInToday(chon) ? String(localized: "Today · \(NgayCTW.ngan(chon))") : NgayCTW.day(chon),
                              count: homNayChon.isEmpty ? nil : "\(homNayChon.count)")
             if homNayChon.isEmpty {
                 Text("Nothing scheduled.").font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary)
@@ -258,10 +259,10 @@ struct LichCTW: View {
                     .ctwThe(14)
             }
             if !sapToi.isEmpty {
-                CTWSectionHeader("clock", "Coming up").padding(.top, 6)
+                CTWSectionHeader("clock", String(localized: "Coming up")).padding(.top, 6)
                 ForEach(sapToi, id: \.0) { d, s in
                     VStack(alignment: .leading, spacing: 6) {
-                        Text(Calendar.current.isDateInTomorrow(d) ? "Tomorrow · \(NgayCTW.ngan(d))" : thuNgayMay(d))
+                        Text(Calendar.current.isDateInTomorrow(d) ? String(localized: "Tomorrow · \(NgayCTW.ngan(d))") : thuNgayMay(d))
                             .font(.ctw(size: 12, weight: .semibold)).foregroundColor(AppColors.textSecondary)
                         VStack(spacing: 0) { ForEach(s) { x in hang(x); if x.id != s.last?.id { Divider().padding(.leading, 52) } } }
                             .ctwThe(14)
@@ -281,7 +282,7 @@ struct LichCTW: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(s.tieuDe).font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(2)
                 HStack(spacing: 4) {
-                    Text(s.caNgay ? "All day" : NgayCTW.gio(s.batDau))
+                    Text(s.caNgay ? String(localized: "All day") : NgayCTW.gio(s.batDau))
                     if let p = s.phu, !p.isEmpty { Text("·"); Text(p).lineLimit(1) }
                     if s.quaHan { Text("· Overdue").foregroundColor(AppColors.error) }
                 }
@@ -331,17 +332,20 @@ struct LichCTW: View {
     }
 
     private func tenThang(_ d: Date) -> String {
+        CTWDinhDang.mau("MMMMy").string(from: d)
+    }
+
+    /// Tên thứ (thứ Hai trước) theo ngôn ngữ app: "Mon"… trên iPad, "M"… trên iPhone.
+    private var tenThu: [String] {
         let f = DateFormatter()
-        f.locale = Locale(identifier: "en_US")
-        f.dateFormat = "MMMM yyyy"
-        return f.string(from: d)
+        f.locale = CTWDinhDang.locale
+        let s: [String] = (beRong == .regular ? f.shortWeekdaySymbols : f.veryShortWeekdaySymbols) ?? []
+        guard s.count == 7 else { return ["M", "T", "W", "T", "F", "S", "S"] }
+        return Array(s[1...]) + [s[0]]
     }
 
     private func thuNgayMay(_ d: Date) -> String {
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "en_US")
-        f.dateFormat = "EEEE · MMM d"
-        return f.string(from: d)
+        "\(CTWDinhDang.mau("EEEE").string(from: d)) · \(CTWDinhDang.mau("MMMd").string(from: d))"
     }
 }
 
@@ -358,8 +362,8 @@ struct ChiTietHopLichCTW: View {
             List {
                 Section {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text(hop.typeLabel ?? "Meeting").font(.ctw(size: 12, weight: .semibold)).foregroundColor(LoaiSuKienLichCTW.hop.mau)
-                        Text(hop.title ?? "Meeting").font(.ctw(size: 20, weight: .bold)).foregroundColor(AppColors.textPrimary)
+                        Text(hop.typeLabel ?? String(localized: "Meeting")).font(.ctw(size: 12, weight: .semibold)).foregroundColor(LoaiSuKienLichCTW.hop.mau)
+                        Text(hop.title ?? String(localized: "Meeting")).font(.ctw(size: 20, weight: .bold)).foregroundColor(AppColors.textPrimary)
                         if let a = NgayCTW.thoiDiem(hop.startsAt) {
                             let b = NgayCTW.thoiDiem(hop.endsAt)
                             Label("\(ngayMay(a)) · \(NgayCTW.gio(a))\(b.map { " – \(NgayCTW.gio($0))" } ?? "")", systemImage: "clock")
@@ -391,7 +395,7 @@ struct ChiTietHopLichCTW: View {
                     } label: { Label("Add to Calendar", systemImage: "calendar.badge.plus") }
                 }
             }
-            .navigationTitle(hop.key ?? "Meeting")
+            .navigationTitle(hop.key ?? String(localized: "Meeting"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dong() } } }
         }
@@ -399,7 +403,7 @@ struct ChiTietHopLichCTW: View {
 
     private var suKien: SuKienLichCTW? {
         guard let a = NgayCTW.thoiDiem(hop.startsAt) else { return nil }
-        return SuKienLichCTW(id: "hop-\(hop.id)", loai: .hop, tieuDe: hop.title ?? "Meeting", phu: hop.location,
+        return SuKienLichCTW(id: "hop-\(hop.id)", loai: .hop, tieuDe: hop.title ?? String(localized: "Meeting"), phu: hop.location,
                              batDau: a, ketThuc: NgayCTW.thoiDiem(hop.endsAt), caNgay: false, hop: hop)
     }
 
@@ -409,7 +413,7 @@ struct ChiTietHopLichCTW: View {
         case "ZOOM": return "Zoom"
         case "TEAMS": return "Microsoft Teams"
         case "JITSI": return "Jitsi"
-        default: return "meeting"
+        default: return String(localized: "meeting")
         }
     }
 
@@ -422,9 +426,6 @@ struct ChiTietHopLichCTW: View {
     }
 
     private func ngayMay(_ d: Date) -> String {
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "en_US")
-        f.dateFormat = "EEE, MMM d"
-        return f.string(from: d)
+        CTWDinhDang.mau("EEEMMMd").string(from: d)
     }
 }

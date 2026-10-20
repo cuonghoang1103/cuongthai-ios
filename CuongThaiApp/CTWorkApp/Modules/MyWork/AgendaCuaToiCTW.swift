@@ -107,8 +107,8 @@ struct AgendaCuaToiCTW: View {
 
     private func tieuDeNgay(_ ymd: String) -> String {
         let hn = NgayNhomCTW.ymd()
-        if ymd == hn { return "Today" }
-        if let d = NgayCTW.ngay(hn), ymd == NgayCTW.ymd(NgayCTW.cong(d, ngay: 1)) { return "Tomorrow" }
+        if ymd == hn { return String(localized: "Today") }
+        if let d = NgayCTW.ngay(hn), ymd == NgayCTW.ymd(NgayCTW.cong(d, ngay: 1)) { return String(localized: "Tomorrow") }
         return NgayCTW.ngay(ymd).map(NgayCTW.thuNgay) ?? ymd
     }
 
@@ -134,9 +134,9 @@ struct AgendaCuaToiCTW: View {
 
     private func tieuDe(_ i: CTWAgendaItem) -> String {
         switch i.type {
-        case "sprint": return "\(i.title ?? "Sprint") \(i.event ?? "starts")"
-        case "release": return "Release \(i.title ?? "")"
-        case "stage": return "Stage \(i.n ?? 0) \(i.event ?? "") · \(i.title ?? "")"
+        case "sprint": return i.event == "ends" ? String(localized: "\(i.title ?? String(localized: "Sprint")) ends") : String(localized: "\(i.title ?? String(localized: "Sprint")) starts")
+        case "release": return String(localized: "Release \(i.title ?? "")")
+        case "stage": return String(localized: "Stage \(i.n ?? 0) \(i.event ?? "") · \(i.title ?? "")")
         default: return i.title ?? ""
         }
     }

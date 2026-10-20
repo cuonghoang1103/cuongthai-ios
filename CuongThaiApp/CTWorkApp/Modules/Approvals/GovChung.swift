@@ -95,7 +95,7 @@ struct GovChongAvatar: View {
             }
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(users.map { $0.laAgent ? "\($0.ten), AI agent" : $0.ten }.joined(separator: ", "))
+        .accessibilityLabel(users.map { $0.laAgent ? String(localized: "\($0.ten), AI agent") : $0.ten }.joined(separator: ", "))
     }
 }
 
@@ -124,7 +124,7 @@ enum GovNgay {
         f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         guard let d = f.date(from: s) ?? { f.formatOptions = [.withInternetDateTime]; return f.date(from: s) }() else { return nil }
         let r = RelativeDateTimeFormatter()
-        r.locale = Locale(identifier: "en_US")
+        r.locale = CTWDinhDang.locale
         r.unitsStyle = .full
         return r.localizedString(for: d, relativeTo: Date())
     }
@@ -151,8 +151,8 @@ struct GovChuHoacSo: Codable, Hashable {
 struct GovTatMoDun: View {
     let ten: String
     var body: some View {
-        CTWOTrong(bieuTuong: "lock.shield", tieuDe: "\(ten) isn't available",
-                  moTa: "It's turned off for this project, or your role can't see it. A project admin can change this in project settings.")
+        CTWOTrong(bieuTuong: "lock.shield", tieuDe: String(localized: "\(ten) isn't available"),
+                  moTa: String(localized: "It's turned off for this project, or your role can't see it. A project admin can change this in project settings."))
     }
 }
 
@@ -162,7 +162,7 @@ struct GovTatMoDun: View {
 /// tuần tự/song song, hạn. `gui` trả `true` khi máy chủ nhận.
 struct GovYeuCauDuyetView: View {
     let cfg: CTWProjectConfig?
-    var tieuDe = "Request approval"
+    var tieuDe = String(localized: "Request approval")
     var moTa: String?
     let gui: (_ ids: [Int], _ tuanTu: Bool, _ han: Date?) async -> String?
 
@@ -196,8 +196,8 @@ struct GovYeuCauDuyetView: View {
                             HStack(spacing: 12) {
                                 CTWAvatar(user: u, size: 30)
                                 VStack(alignment: .leading, spacing: 1) {
-                                    Text(u.id == app.currentUser?.id ? "\(u.ten) (me)" : u.ten).foregroundColor(AppColors.textPrimary)
-                                    if let r = u.role { Text(r.capitalized).font(.caption).foregroundColor(AppColors.textSecondary) }
+                                    Text(u.id == app.currentUser?.id ? String(localized: "\(u.ten) (me)") : u.ten).foregroundColor(AppColors.textPrimary)
+                                    if let r = u.role { Text(CTWVaiTroDuAn(rawValue: r)?.ten ?? CTWMauTrangThai.nhan(r)).font(.caption).foregroundColor(AppColors.textSecondary) }
                                 }
                                 Spacer()
                                 if let i = chon.firstIndex(of: u.id) {

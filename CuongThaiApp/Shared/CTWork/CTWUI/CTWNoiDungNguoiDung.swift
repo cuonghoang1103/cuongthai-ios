@@ -114,7 +114,7 @@ private struct MenuBaoCaoChan: ViewModifier {
                             do {
                                 try await CTWBaoCaoChung.guiDi(khoa: khoa, noiDung: noiDung, nguCanh: nguCanh, tacGia: tacGia, lyDoMa: l.ma, dich: dich)
                                 CTWRung.thanhCong()
-                                thongBao = "Thanks — our moderators will review it within 24 hours. It's hidden for you now."
+                                thongBao = String(localized: "Thanks — our moderators will review it within 24 hours. It's hidden for you now.")
                             } catch { thongBao = CTW.loi(error) }
                         }
                     }
@@ -176,9 +176,9 @@ struct CTWBinhLuanDong: View {
                 CTWAvatar(user: tacGia, size: 30)
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 6) {
-                        Text(tacGia?.ten ?? "Someone").font(.ctw(size: 13, weight: .semibold))
+                        Text(tacGia?.ten ?? String(localized: "Someone")).font(.ctw(size: 13, weight: .semibold))
                             .foregroundColor(AppColors.textPrimary).lineLimit(1)
-                        if tacGia?.laAgent == true { CTWNhanAI() } else if laAI { CTWNhanAI(chu: "AI-drafted") }
+                        if tacGia?.laAgent == true { CTWNhanAI() } else if laAI { CTWNhanAI(chu: String(localized: "AI-drafted")) }
                         if let nhanPhu {
                             Text(nhanPhu).font(.ctw(size: 10, weight: .bold)).foregroundColor(AppColors.textSecondary)
                                 .padding(.horizontal, 6).padding(.vertical, 2)
@@ -201,8 +201,8 @@ struct CTWBinhLuanDong: View {
 // MARK: - Ô soạn bình luận chung
 
 struct CTWHopSoan: View {
-    var goiY = "Add a comment…"
-    var nutGui = "Send"
+    var goiY = String(localized: "Add a comment…")
+    var nutGui = String(localized: "Send")
     let gui: (String) async -> Bool
     @State private var chu = ""
     @State private var dangGui = false

@@ -236,6 +236,7 @@ struct CTWIssueView: View {
     enum KhoiHoatDong: String, CaseIterable, Identifiable {
         case binhLuan = "Comments", lichSu = "History"
         var id: String { rawValue }
+        var ten: String { self == .binhLuan ? String(localized: "Comments") : String(localized: "History") }
     }
 
     /// Gọi MỘT lần khi thẻ tải xong (app CT Work: ghi "thẻ đã xem" cho Spotlight/Share Extension).
@@ -303,8 +304,8 @@ struct CTWIssueView: View {
                                 .workBaoCaoBinhLuan(pid: pid, so: so, cid: cid, lyDo: l.ma))
                             an.anBinhLuan(cid)
                             daBaoCao = r.duplicate == true
-                                ? "You already reported this comment."
-                                : "Thanks — project admins have been notified. The comment is hidden for you."
+                                ? String(localized: "You already reported this comment.")
+                                : String(localized: "Thanks — project admins have been notified. The comment is hidden for you.")
                         } catch { vm.loi = CTW.loi(error) }
                     }
                 }
@@ -334,7 +335,7 @@ struct CTWIssueView: View {
             case .mayAnh:
                 #if os(iOS)
                 MayAnh { du in
-                    Task { await vm.taiLen(du: du, ten: "Photo \(CTW.tenTepTheoGio()).jpg", kieu: "image/jpeg") }
+                    Task { await vm.taiLen(du: du, ten: String(localized: "Photo \(CTW.tenTepTheoGio()).jpg"), kieu: "image/jpeg") }
                 }
                 .ignoresSafeArea()
                 #else
@@ -386,7 +387,7 @@ struct CTWIssueView: View {
                 if let con = t.children, !con.isEmpty { theCon(con, cfg) }
                 if let lk = t.links, !lk.isEmpty { lienKet(lk, cfg) }
                 Picker("Activity", selection: $khoiHoatDong) {
-                    ForEach(KhoiHoatDong.allCases) { Text($0.rawValue).tag($0) }
+                    ForEach(KhoiHoatDong.allCases) { Text($0.ten).tag($0) }
                 }
                 .pickerStyle(.segmented)
                 .padding(.top, 4)
@@ -545,7 +546,7 @@ struct CTWIssueView: View {
         .ctwThe(14)
     }
 
-    private func hangTruong<V: View>(_ ten: String, @ViewBuilder _ gt: () -> V) -> some View {
+    private func hangTruong<V: View>(_ ten: LocalizedStringKey, @ViewBuilder _ gt: () -> V) -> some View {
         HStack(spacing: 12) {
             Text(ten).font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
                 .frame(width: 96, alignment: .leading)
@@ -587,7 +588,7 @@ struct CTWIssueView: View {
     private func menuNguoi(_ t: CTWIssueDetail, _ cfg: CTWProjectConfig) -> some View {
         let nhan = HStack(spacing: 6) {
             CTWAvatar(user: t.assignee, size: 22)
-            Text(t.assignee?.ten ?? "Unassigned")
+            Text(t.assignee?.ten ?? String(localized: "Unassigned"))
                 .font(.ctw(size: 14))
                 .foregroundColor(t.assignee == nil ? AppColors.textSecondary : AppColors.textPrimary)
                 .lineLimit(1)
@@ -607,7 +608,7 @@ struct CTWIssueView: View {
                 Divider()
                 ForEach(cfg.nguoiGiaoDuoc) { u in
                     Button { Task { await vm.sua(["assigneeId": u.id]) } } label: {
-                        let ten = u.laAgent ? "\(u.ten) · AI agent" : u.ten
+                        let ten = u.laAgent ? String(localized: "\(u.ten) · AI agent") : u.ten
                         if u.id == t.assigneeId { Label(ten, systemImage: "checkmark") }
                         else if u.laAgent { Label(ten, systemImage: "sparkles") }
                         else { Text(ten) }
@@ -665,13 +666,13 @@ struct CTWIssueView: View {
                         }
                     }
                 } label: {
-                    Text(chu ?? "None")
+                    Text(chu ?? String(localized: "None"))
                         .font(.ctw(size: 14, weight: tre ? .semibold : .regular))
                         .foregroundColor(chu == nil ? AppColors.textSecondary : (tre ? AppColors.error : AppColors.textPrimary))
                 }
             }
         } else {
-            Text(chu ?? "None")
+            Text(chu ?? String(localized: "None"))
                 .font(.ctw(size: 14))
                 .foregroundColor(tre ? AppColors.error : AppColors.textPrimary)
         }
@@ -695,7 +696,7 @@ struct CTWIssueView: View {
 
     private func moTa(_ t: CTWIssueDetail) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            CTWSectionHeader("text.alignleft", "Description")
+            CTWSectionHeader("text.alignleft", String(localized: "Description"))
             Group {
                 let khoi = CTWTipTap.khoi(t.descriptionJson)
                 if khoi.isEmpty {
@@ -735,7 +736,7 @@ struct CTWIssueView: View {
             .accessibilityLabel("Add attachment")
         ) : nil
         return VStack(alignment: .leading, spacing: 8) {
-            CTWSectionHeader("paperclip", "Attachments", count: ds.isEmpty ? nil : "\(ds.count)", trailing: them)
+            CTWSectionHeader("paperclip", String(localized: "Attachments"), count: ds.isEmpty ? nil : "\(ds.count)", trailing: them)
                 // Bộ chọn tệp gắn ở ĐÂY, bộ chọn ảnh gắn ở khối ngoài, tấm phủ
                 // `.sheet` gắn ở gốc màn — ba trình bày ba chỗ (bẫy C5).
                 .fileImporter(isPresented: $moChonTep, allowedContentTypes: [.item], allowsMultipleSelection: false) { kq in
@@ -743,7 +744,7 @@ struct CTWIssueView: View {
                     Task {
                         let mo = u.startAccessingSecurityScopedResource()
                         defer { if mo { u.stopAccessingSecurityScopedResource() } }
-                        guard let du = try? Data(contentsOf: u) else { vm.loi = "Couldn't read that file."; return }
+                        guard let du = try? Data(contentsOf: u) else { vm.loi = String(localized: "Couldn't read that file."); return }
                         await vm.taiLen(du: du, ten: u.lastPathComponent)
                     }
                 }
@@ -762,7 +763,7 @@ struct CTWIssueView: View {
                                     .frame(width: 36, height: 36)
                                     .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(AppColors.primary.opacity(0.12)))
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(a.fileName ?? "File").font(.ctw(size: 14, weight: .medium))
+                                    Text(a.fileName ?? String(localized: "File")).font(.ctw(size: 14, weight: .medium))
                                         .foregroundColor(AppColors.textPrimary).lineLimit(1)
                                     Text([a.coChu, a.uploader?.ten, CTW.thoiDiem(a.createdAt)]
                                         .compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · "))
@@ -799,7 +800,7 @@ struct CTWIssueView: View {
                     let loai = item.supportedContentTypes.first
                     let duoi = loai?.preferredFilenameExtension ?? "jpg"
                     let kieu = loai?.preferredMIMEType ?? "image/jpeg"
-                    await vm.taiLen(du: du, ten: "Image \(CTW.tenTepTheoGio())\(ds.count > 1 ? "-\(i + 1)" : "").\(duoi)", kieu: kieu)
+                    await vm.taiLen(du: du, ten: String(localized: "Image \(CTW.tenTepTheoGio())\(ds.count > 1 ? "-\(i + 1)" : "").\(duoi)"), kieu: kieu)
                 }
             }
         }
@@ -808,7 +809,7 @@ struct CTWIssueView: View {
     private func theCon(_ con: [CTWIssueRef], _ cfg: CTWProjectConfig) -> some View {
         let xong = con.filter { $0.statusId.flatMap(cfg.trangThai)?.category == "DONE" }.count
         return VStack(alignment: .leading, spacing: 8) {
-            CTWSectionHeader("checklist", "Sub-tasks", count: "\(xong)/\(con.count)")
+            CTWSectionHeader("checklist", String(localized: "Sub-tasks"), count: "\(xong)/\(con.count)")
             VStack(spacing: 0) {
                 ForEach(con) { c in
                     NavigationLink(value: CTWRoute.the(pid: vm.pid, so: c.number)) {
@@ -836,7 +837,7 @@ struct CTWIssueView: View {
 
     private func lienKet(_ lk: [CTWIssueLink], _ cfg: CTWProjectConfig) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            CTWSectionHeader("link", "Linked issues")
+            CTWSectionHeader("link", String(localized: "Linked issues"))
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(lk) { l in
                     let hang = HStack(spacing: 8) {
@@ -867,11 +868,11 @@ struct CTWIssueView: View {
     private func tenLienKet(_ l: CTWIssueLink) -> String {
         let ra = l.direction != "inward"
         switch l.type {
-        case "BLOCKS": return ra ? "blocks" : "is blocked by"
-        case "DUPLICATES": return ra ? "duplicates" : "is duplicated by"
-        case "CLONES": return ra ? "clones" : "is cloned by"
-        case "TESTS": return ra ? "tests" : "is tested by"
-        default: return "relates to"
+        case "BLOCKS": return ra ? String(localized: "blocks") : String(localized: "is blocked by")
+        case "DUPLICATES": return ra ? String(localized: "duplicates") : String(localized: "is duplicated by")
+        case "CLONES": return ra ? String(localized: "clones") : String(localized: "is cloned by")
+        case "TESTS": return ra ? String(localized: "tests") : String(localized: "is tested by")
+        default: return String(localized: "relates to")
         }
     }
 
@@ -920,9 +921,9 @@ struct CTWIssueView: View {
 
     private func tenNguoiLam(_ h: CTWHistory) -> String {
         switch h.actorKind {
-        case "AUTOMATION": return "Automation"
+        case "AUTOMATION": return String(localized: "Automation")
         case "SYSTEM": return "CT Work"
-        default: return h.actor?.ten ?? "Someone"
+        default: return h.actor?.ten ?? String(localized: "Someone")
         }
     }
 
@@ -937,7 +938,7 @@ struct CTWIssueView: View {
             return !kiemDuyet.blockedUserIds.contains(a)
         }
         return VStack(alignment: .leading, spacing: 10) {
-            CTWSectionHeader("bubble.left.and.bubble.right", "Comments", count: "\(ds.count)")
+            CTWSectionHeader("bubble.left.and.bubble.right", String(localized: "Comments"), count: "\(ds.count)")
             if ds.isEmpty {
                 Text("No comments yet.").font(.ctw(size: 13)).foregroundColor(AppColors.textTertiary)
             }
@@ -980,11 +981,11 @@ struct CTWIssueView: View {
             CTWAvatar(user: c.author, size: 28)
             VStack(alignment: .leading, spacing: 5) {
                 HStack(spacing: 6) {
-                    Text(c.author?.ten ?? "Someone")
+                    Text(c.author?.ten ?? String(localized: "Someone"))
                         .font(.ctw(size: 13, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                         .lineLimit(1)
                     if c.author?.laAgent == true { CTWNhanAI() }
-                    else if c.isAi == true { CTWNhanAI(chu: "AI-drafted") }
+                    else if c.isAi == true { CTWNhanAI(chu: String(localized: "AI-drafted")) }
                     Text(CTW.thoiDiem(c.createdAt)).font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
                     if c.editedAt != nil {
                         Text("(edited)").font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
@@ -993,7 +994,7 @@ struct CTWIssueView: View {
                 CTWTipTapView(doc: c.bodyJson, coChu: 14)
                 if let ds = c.attachments, !ds.isEmpty {
                     ForEach(ds) { a in
-                        Label(a.fileName ?? "File", systemImage: a.bieuTuong)
+                        Label(a.fileName ?? String(localized: "File"), systemImage: a.bieuTuong)
                             .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                     }
                 }
@@ -1067,35 +1068,35 @@ enum CTWLichSu {
     static func moTa(_ h: CTWHistory, cfg: CTWProjectConfig) -> String {
         let tu = h.fromValue, den = h.toValue
         func ten(_ s: String?, _ ra: (Int) -> String?) -> String {
-            guard let s, let n = Int(s) else { return s ?? "none" }
+            guard let s, let n = Int(s) else { return s ?? String(localized: "none") }
             return ra(n) ?? "#\(n)"
         }
         switch h.field {
-        case "created": return "created the issue"
-        case "title": return "changed the title to “\(den ?? "")”"
-        case "description": return "updated the description"
+        case "created": return String(localized: "created the issue")
+        case "title": return String(localized: "changed the title to “\(den ?? "")”")
+        case "description": return String(localized: "updated the description")
         case "statusId":
-            return "moved from \(ten(tu) { cfg.trangThai($0)?.name }) to \(ten(den) { cfg.trangThai($0)?.name })"
+            return String(localized: "moved from \(ten(tu) { cfg.trangThai($0)?.name }) to \(ten(den) { cfg.trangThai($0)?.name })")
         case "assigneeId":
-            if den == nil { return "unassigned the issue" }
-            return "assigned to \(ten(den) { cfg.thanhVien($0)?.ten })"
+            if den == nil { return String(localized: "unassigned the issue") }
+            return String(localized: "assigned to \(ten(den) { cfg.thanhVien($0)?.ten })")
         case "priority":
-            return "changed priority to \(den.flatMap(Int.init).map { CTW.uuTien($0).ten } ?? "none")"
-        case "dueDate": return den == nil ? "removed the due date" : "set the due date to \(CTW.ngayNgan(den) ?? den ?? "")"
-        case "startDate": return den == nil ? "removed the start date" : "set the start date to \(CTW.ngayNgan(den) ?? den ?? "")"
-        case "storyPoints": return "set story points to \(den ?? "none")"
+            return String(localized: "changed priority to \(den.flatMap(Int.init).map { CTW.uuTien($0).ten } ?? String(localized: "none"))")
+        case "dueDate": return den == nil ? String(localized: "removed the due date") : String(localized: "set the due date to \(CTW.ngayNgan(den) ?? den ?? "")")
+        case "startDate": return den == nil ? String(localized: "removed the start date") : String(localized: "set the start date to \(CTW.ngayNgan(den) ?? den ?? "")")
+        case "storyPoints": return String(localized: "set story points to \(den ?? String(localized: "none"))")
         case "sprintId":
-            return den == nil ? "moved to the backlog"
-                : "moved to sprint \(ten(den) { id in (cfg.sprints ?? []).first { $0.id == id }?.name })"
-        case "parentId": return den == nil ? "removed the parent" : "changed the parent issue"
-        case "labels": return "set labels: \(den?.isEmpty == false ? den! : "none")"
-        case "components": return "set components: \(den?.isEmpty == false ? den! : "none")"
-        case "attachment": return den != nil ? "attached \(den!)" : "removed \(tu ?? "a file")"
-        case "flagged": return den == "true" ? "flagged the issue" : "removed the flag"
-        case "agentReview": return "sent the issue to review"
+            return den == nil ? String(localized: "moved to the backlog")
+                : String(localized: "moved to sprint \(ten(den) { id in (cfg.sprints ?? []).first { $0.id == id }?.name })")
+        case "parentId": return den == nil ? String(localized: "removed the parent") : String(localized: "changed the parent issue")
+        case "labels": return String(localized: "set labels: \(den?.isEmpty == false ? den! : String(localized: "none"))")
+        case "components": return String(localized: "set components: \(den?.isEmpty == false ? den! : String(localized: "none"))")
+        case "attachment": return den != nil ? String(localized: "attached \(den!)") : String(localized: "removed \(tu ?? String(localized: "a file"))")
+        case "flagged": return den == "true" ? String(localized: "flagged the issue") : String(localized: "removed the flag")
+        case "agentReview": return String(localized: "sent the issue to review")
         default:
             let f = (h.field ?? "a field").replacingOccurrences(of: "Id", with: "")
-            return "changed \(f)"
+            return String(localized: "changed \(f)")
         }
     }
 }
@@ -1108,11 +1109,12 @@ struct CTWBaoCaoKetQua: Decodable {
 }
 
 /// Lý do báo cáo — khớp COMMENT_REPORT_REASONS ở backend.
-let ctwLyDoBaoCao: [(ma: String, nhan: String)] = [
-    ("spam", "Spam or advertising"),
-    ("harassment", "Harassment or bullying"),
-    ("hate", "Hate speech"),
-    ("sexual", "Sexual content"),
-    ("violence", "Violence or threats"),
-    ("other", "Something else"),
-]
+/// Computed (không phải `let`): nhãn dịch theo ngôn ngữ app lúc hiện, đổi ngôn ngữ là đổi theo.
+var ctwLyDoBaoCao: [(ma: String, nhan: String)] { [
+    ("spam", String(localized: "Spam or advertising")),
+    ("harassment", String(localized: "Harassment or bullying")),
+    ("hate", String(localized: "Hate speech")),
+    ("sexual", String(localized: "Sexual content")),
+    ("violence", String(localized: "Violence or threats")),
+    ("other", String(localized: "Something else")),
+] }

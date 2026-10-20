@@ -69,7 +69,7 @@ struct RaidCTW: View {
                 CTWErrorBanner(text: loi) { vm.loi = nil }.listRowBackground(Color.clear).listRowInsets(EdgeInsets())
             }
             if vm.tatMoDun {
-                GovTatMoDun(ten: "RAID log").listRowBackground(Color.clear)
+                GovTatMoDun(ten: String(localized: "RAID log")).listRowBackground(Color.clear)
             } else if let ds = vm.ds {
                 Section {
                     CTWThanhLoc(chip: hienLoai.map { l in
@@ -92,9 +92,9 @@ struct RaidCTW: View {
                 Section {
                     if ds2.isEmpty {
                         CTWOTrong(bieuTuong: CTWRaidLuat.loai.first { $0.ma == loai }?.bieuTuong ?? "tray",
-                                  tieuDe: o != nil ? "No open risks in this cell" : "No \(CTWRaidLuat.tenLoai(loai).lowercased())s yet",
-                                  moTa: "Keep risks, assumptions, issues and dependencies in one log so the team reviews them on time.",
-                                  nut: ds.canEdit == true && o == nil ? "Add \(CTWRaidLuat.tenLoai(loai).lowercased())" : nil,
+                                  tieuDe: o != nil ? String(localized: "No open risks in this cell") : chuaCo(loai),
+                                  moTa: String(localized: "Keep risks, assumptions, issues and dependencies in one log so the team reviews them on time."),
+                                  nut: ds.canEdit == true && o == nil ? String(localized: "Add \(CTWRaidLuat.tenLoai(loai).lowercased())") : nil,
                                   hanhDong: { tamPhu = .tao(loai) })
                             .listRowBackground(Color.clear)
                     } else {
@@ -152,11 +152,22 @@ struct RaidCTW: View {
         #endif
     }
 
+    private func chuaCo(_ l: String) -> String {
+        switch l {
+        case "RISK": return String(localized: "No risks yet")
+        case "ASSUMPTION": return String(localized: "No assumptions yet")
+        case "ISSUE": return String(localized: "No issues yet")
+        case "DEPENDENCY": return String(localized: "No dependencies yet")
+        case "QUESTION": return String(localized: "No questions yet")
+        default: return String(localized: "No items yet")
+        }
+    }
+
     private func tongRuiRo(_ ds: CTWRaidDanhSach) -> some View {
         HStack(spacing: 10) {
-            CTWODem(so: "\(ds.highRisks ?? 0)", nhan: "High risks", bieuTuong: "exclamationmark.triangle.fill", mau: AppColors.error)
-            CTWODem(so: "\(ds.counts?["RISK"]?.open ?? 0)", nhan: "Open risks", bieuTuong: "shield.lefthalf.filled", mau: AppColors.warning)
-            CTWODem(so: "\(ds.reviewDue ?? 0)", nhan: "Review due", bieuTuong: "calendar.badge.exclamationmark", mau: AppColors.info)
+            CTWODem(so: "\(ds.highRisks ?? 0)", nhan: String(localized: "High risks"), bieuTuong: "exclamationmark.triangle.fill", mau: AppColors.error)
+            CTWODem(so: "\(ds.counts?["RISK"]?.open ?? 0)", nhan: String(localized: "Open risks"), bieuTuong: "shield.lefthalf.filled", mau: AppColors.warning)
+            CTWODem(so: "\(ds.reviewDue ?? 0)", nhan: String(localized: "Review due"), bieuTuong: "calendar.badge.exclamationmark", mau: AppColors.info)
         }
         .padding(.horizontal, Spacing.md)
     }
@@ -218,7 +229,7 @@ struct MaTranRuiRoCTW: View {
         }
         .buttonStyle(.plain)
         .disabled(n == 0)
-        .accessibilityLabel("Probability \(p), impact \(i): \(n) open risk\(n == 1 ? "" : "s")")
+        .accessibilityLabel(n == 1 ? String(localized: "Probability \(p), impact \(i): 1 open risk") : String(localized: "Probability \(p), impact \(i): \(n) open risks"))
     }
 }
 
@@ -241,7 +252,7 @@ struct GovHangRaid: View {
                 HStack(spacing: 6) {
                     Text(r.nhanKhoa).font(.ctw(size: 12, weight: .semibold).monospaced()).foregroundColor(AppColors.textSecondary)
                     CTWChipChu(chu: r.status)
-                    if r.reviewDue == true { CTWNhanNho(chu: "Review due", bieuTuong: "calendar.badge.exclamationmark", mau: AppColors.warning) }
+                    if r.reviewDue == true { CTWNhanNho(chu: String(localized: "Review due"), bieuTuong: "calendar.badge.exclamationmark", mau: AppColors.warning) }
                 }
                 Text(r.title).font(.ctw(size: 15, weight: .medium)).foregroundColor(r.closed == true ? AppColors.textSecondary : AppColors.textPrimary)
                     .strikethrough(r.closed == true).lineLimit(2)
@@ -326,33 +337,35 @@ struct ChiTietRaidCTW: View {
         }
         if r.type == "RISK" && r.canEdit == true { thangDiem(r) }
         CTWKhoiTruong {
-            CTWHangTruong(nhan: "Owner", bieuTuong: "person") {
+            CTWHangTruong(nhan: String(localized: "Owner"), bieuTuong: "person") {
                 HStack(spacing: 6) {
                     CTWAvatar(user: r.owner, size: 20)
-                    Text(r.owner?.ten ?? "Unassigned")
+                    Text(r.owner?.ten ?? String(localized: "Unassigned"))
                     if r.owner?.laAgent == true { CTWNhanAI() }
                 }
             }
             if r.type == "RISK" {
-                Divider(); CTWHangTruong("Probability", r.probability.map { "\($0) / 5" }, bieuTuong: "dice")
-                Divider(); CTWHangTruong("Impact", r.impact.map { "\($0) / 5" }, bieuTuong: "bolt")
-                Divider(); CTWHangTruong("Response", r.response.map(CTWMauTrangThai.nhan), bieuTuong: "shield")
+                Divider(); CTWHangTruong(String(localized: "Probability"), r.probability.map { "\($0) / 5" }, bieuTuong: "dice")
+                Divider(); CTWHangTruong(String(localized: "Impact"), r.impact.map { "\($0) / 5" }, bieuTuong: "bolt")
+                Divider(); CTWHangTruong(String(localized: "Response"), r.response.map(CTWMauTrangThai.nhan), bieuTuong: "shield")
             }
-            if let c = r.category, !c.isEmpty { Divider(); CTWHangTruong("Category", c, bieuTuong: "tag") }
+            if let c = r.category, !c.isEmpty { Divider(); CTWHangTruong(String(localized: "Category"), c, bieuTuong: "tag") }
             Divider()
-            CTWHangTruong(nhan: "Review date", bieuTuong: "calendar") {
+            CTWHangTruong(nhan: String(localized: "Review date"), bieuTuong: "calendar") {
                 Text(CTW.ngayNgan(r.reviewDate) ?? "—").foregroundColor(r.reviewDue == true ? AppColors.error : AppColors.textPrimary)
             }
-            if r.clientVisible == true { Divider(); CTWHangTruong("Client portal", "Visible to the client", bieuTuong: "person.crop.rectangle") }
-            Divider(); CTWHangTruong("Updated", CTW.thoiDiem(r.updatedAt), bieuTuong: "clock")
+            if r.clientVisible == true { Divider(); CTWHangTruong(String(localized: "Client portal"), String(localized: "Visible to the client"), bieuTuong: "person.crop.rectangle") }
+            Divider(); CTWHangTruong(String(localized: "Updated"), CTW.thoiDiem(r.updatedAt), bieuTuong: "clock")
         }
-        ForEach([("Description", "text.alignleft", r.description), ("Mitigation / plan", "wrench.and.screwdriver", r.mitigation),
-                 ("Trigger", "bell", r.trigger)], id: \.0) { m in
-            if let t = m.2?.trimmingCharacters(in: .whitespacesAndNewlines), !t.isEmpty {
-                CTWSectionHeader(m.1, m.0)
+        // m.0 = khoá ổn định (KHÔNG dịch — nằm trong khoá ẩn nội dung đã báo cáo), m.1 = nhãn hiện.
+        ForEach([("description", String(localized: "Description"), "text.alignleft", r.description),
+                 ("mitigation / plan", String(localized: "Mitigation / plan"), "wrench.and.screwdriver", r.mitigation),
+                 ("trigger", String(localized: "Trigger"), "bell", r.trigger)], id: \.0) { m in
+            if let t = m.3?.trimmingCharacters(in: .whitespacesAndNewlines), !t.isEmpty {
+                CTWSectionHeader(m.2, m.1)
                 CTWMarkdownView(markdown: t, coChu: 15)
                     .padding(14).frame(maxWidth: .infinity, alignment: .leading).ctwThe(14)
-                    .ctwMenuBaoCaoChan(khoa: "raid-\(m.0.lowercased())-\(pid)-\(r.number)", noiDung: t, nguCanh: "RAID \(r.nhanKhoa)",
+                    .ctwMenuBaoCaoChan(khoa: "raid-\(m.0)-\(pid)-\(r.number)", noiDung: t, nguCanh: "RAID \(r.nhanKhoa)",
                                        tacGia: r.createdBy, laCuaToi: cuaToi, dich: CTWDichBaoCao("raid_item", r.id))
             }
         }
@@ -362,9 +375,9 @@ struct ChiTietRaidCTW: View {
 
     private func thangDiem(_ r: CTWRaid) -> some View {
         VStack(spacing: 10) {
-            buoc("Probability", r.probability) { v in Task { await sua(["probability": govNull(v)]) } }
+            buoc(String(localized: "Probability"), r.probability) { v in Task { await sua(["probability": govNull(v)]) } }
             Divider()
-            buoc("Impact", r.impact) { v in Task { await sua(["impact": govNull(v)]) } }
+            buoc(String(localized: "Impact"), r.impact) { v in Task { await sua(["impact": govNull(v)]) } }
         }
         .padding(12)
         .ctwThe(14)
@@ -391,7 +404,7 @@ struct ChiTietRaidCTW: View {
     private func lienKet(_ r: CTWRaid) -> some View {
         let ds = r.links ?? []
         if !ds.isEmpty {
-            CTWSectionHeader("link", "Linked", count: "\(ds.count)")
+            CTWSectionHeader("link", String(localized: "Linked"), count: "\(ds.count)")
             VStack(spacing: 0) {
                 ForEach(ds) { l in
                     Group {
@@ -400,7 +413,7 @@ struct ChiTietRaidCTW: View {
                         } else if let c = l.changeRequest {
                             NavigationLink(value: RouteCrCTW(pid: pid, so: c.number)) { hang("arrow.triangle.branch", c.key ?? "CR-\(c.number)", c.title ?? "") }
                         } else if let s = l.stage {
-                            hang("flag.checkered", "Stage \(s.n.map(String.init) ?? "")", s.name ?? "")
+                            hang("flag.checkered", String(localized: "Stage \(s.n.map(String.init) ?? "")"), s.name ?? "")
                         }
                     }
                     .buttonStyle(.plain)
@@ -425,14 +438,14 @@ struct ChiTietRaidCTW: View {
     private func lichSu(_ r: CTWRaid) -> some View {
         let ds = r.history ?? []
         if !ds.isEmpty {
-            CTWSectionHeader("clock.arrow.circlepath", "History", count: "\(ds.count)")
+            CTWSectionHeader("clock.arrow.circlepath", String(localized: "History"), count: "\(ds.count)")
             VStack(alignment: .leading, spacing: 12) {
                 ForEach(ds.prefix(30)) { h in
                     HStack(alignment: .top, spacing: 10) {
                         CTWAvatar(user: h.actor, size: 22)
                         VStack(alignment: .leading, spacing: 2) {
                             HStack(spacing: 5) {
-                                Text(h.actor?.ten ?? "Someone").font(.ctw(size: 13, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                                Text(h.actor?.ten ?? String(localized: "Someone")).font(.ctw(size: 13, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                                 if h.actor?.laAgent == true { CTWNhanAI() }
                             }
                             Text(moTa(h)).font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary).fixedSize(horizontal: false, vertical: true)
@@ -447,14 +460,14 @@ struct ChiTietRaidCTW: View {
 
     private func moTa(_ h: CTWRaidLichSu) -> String {
         let f = CTWRaidLuat.tenTruong(h.field)
-        if h.field == "created" { return "created this item" }
+        if h.field == "created" { return String(localized: "created this item") }
         let tu = h.fromValue.map { h.field == "status" || h.field == "response" ? CTWMauTrangThai.nhan($0) : $0 }
         let den = h.toValue.map { h.field == "status" || h.field == "response" ? CTWMauTrangThai.nhan($0) : $0 }
         switch (tu, den) {
-        case (nil, let d?): return "set \(f) to \(d)"
-        case (let t?, nil): return "cleared \(f) (was \(t))"
-        case (let t?, let d?): return "changed \(f) from \(t) to \(d)"
-        default: return "updated \(f)"
+        case (nil, let d?): return String(localized: "set \(f) to \(d)")
+        case (let t?, nil): return String(localized: "cleared \(f) (was \(t))")
+        case (let t?, let d?): return String(localized: "changed \(f) from \(t) to \(d)")
+        default: return String(localized: "updated \(f)")
         }
     }
 
@@ -474,7 +487,7 @@ struct ChiTietRaidCTW: View {
         } catch {
             CTWRung.loi()
             if GovLoi.laKhoaSua(error) { khoaSua = true }
-            else if CTW.laXungDot(error) { loi = "Someone else just changed this item. It has been reloaded."; await tai() }
+            else if CTW.laXungDot(error) { loi = String(localized: "Someone else just changed this item. It has been reloaded."); await tai() }
             else { loi = CTW.loi(error) }
         }
     }
@@ -531,14 +544,14 @@ struct FormRaidCTW: View {
                     }
                     Picker("Owner", selection: $chuSo) {
                         Text("Unassigned").tag(0)
-                        ForEach(thanhVien) { u in Text(u.laAgent ? "\(u.ten) (AI agent)" : u.ten).tag(u.id) }
+                        ForEach(thanhVien) { u in Text(u.laAgent ? String(localized: "\(u.ten) (AI agent)") : u.ten).tag(u.id) }
                     }
                     TextField("Category (optional)", text: $nhom)
                 }
                 if loai == "RISK" {
                     Section {
-                        Stepper("Probability: \(xacSuat == 0 ? "not set" : "\(xacSuat)")", value: $xacSuat, in: 0...5)
-                        Stepper("Impact: \(tacDong == 0 ? "not set" : "\(tacDong)")", value: $tacDong, in: 0...5)
+                        Stepper(xacSuat == 0 ? String(localized: "Probability: not set") : String(localized: "Probability: \(xacSuat)"), value: $xacSuat, in: 0...5)
+                        Stepper(tacDong == 0 ? String(localized: "Impact: not set") : String(localized: "Impact: \(tacDong)"), value: $tacDong, in: 0...5)
                         if let d = CTWRaidLuat.diem(xacSuat, tacDong) {
                             HStack {
                                 Text("Score")
@@ -630,7 +643,7 @@ struct FormRaidCTW: View {
         } catch {
             CTWRung.loi()
             if GovLoi.laKhoaSua(error) { khoaSua = true }
-            else if CTW.laXungDot(error) { loi = "Someone else changed this item. Close, pull to refresh and try again." }
+            else if CTW.laXungDot(error) { loi = String(localized: "Someone else changed this item. Close, pull to refresh and try again.") }
             else { loi = CTW.loi(error) }
         }
     }

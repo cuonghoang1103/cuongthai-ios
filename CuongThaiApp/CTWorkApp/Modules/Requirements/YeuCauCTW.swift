@@ -95,6 +95,16 @@ struct YeuCauCTW: View {
     enum Phan: String, CaseIterable, Identifiable {
         case uc = "Use cases", actor = "Actors", rule = "Rules", man = "Screens", nonUI = "Non-UI", trace = "Trace"
         var id: String { rawValue }
+        var ten: String {
+            switch self {
+            case .uc: return String(localized: "Use cases")
+            case .actor: return String(localized: "Actors")
+            case .rule: return String(localized: "Rules")
+            case .man: return String(localized: "Screens")
+            case .nonUI: return String(localized: "Non-UI")
+            case .trace: return String(localized: "Trace")
+            }
+        }
         var bieuTuong: String {
             switch self {
             case .uc: return "person.2.wave.2"
@@ -121,14 +131,14 @@ struct YeuCauCTW: View {
                     .listRowBackground(Color.clear).listRowInsets(EdgeInsets())
             }
             if kho.noiBo {
-                CTWOTrong(bieuTuong: "lock.doc", tieuDe: "Team only",
-                          moTa: "Requirements are only available to the project team and lecturers.")
+                CTWOTrong(bieuTuong: "lock.doc", tieuDe: String(localized: "Team only"),
+                          moTa: String(localized: "Requirements are only available to the project team and lecturers."))
                     .listRowBackground(Color.clear)
             } else if let d = kho.srs {
                 Section { tomTat(d) }
                     .listRowInsets(EdgeInsets()).listRowBackground(Color.clear)
                 Section {
-                    CTWThanhLoc(chip: Phan.allCases.map { CTWChipLoc(id: $0.rawValue, nhan: $0.rawValue, bieuTuong: $0.bieuTuong, bat: phan == $0) }) { c in
+                    CTWThanhLoc(chip: Phan.allCases.map { CTWChipLoc(id: $0.rawValue, nhan: $0.ten, bieuTuong: $0.bieuTuong, bat: phan == $0) }) { c in
                         phan = Phan(rawValue: c.id) ?? .uc
                     }
                 }
@@ -197,12 +207,12 @@ struct YeuCauCTW: View {
         let c = d.counts
         let ucs = d.useCases ?? []
         return LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: 10)], spacing: 10) {
-            CTWODem(so: "\(c?.useCases ?? ucs.count)", nhan: "Use cases", bieuTuong: "person.2.wave.2")
-            CTWODem(so: "\(c?.approved ?? ucs.filter { $0.status == "APPROVED" }.count)", nhan: "Approved",
+            CTWODem(so: "\(c?.useCases ?? ucs.count)", nhan: String(localized: "Use cases"), bieuTuong: "person.2.wave.2")
+            CTWODem(so: "\(c?.approved ?? ucs.filter { $0.status == "APPROVED" }.count)", nhan: String(localized: "Approved"),
                     bieuTuong: "checkmark.seal", mau: AppColors.success)
-            CTWODem(so: "\(c?.proposed ?? ucs.filter { $0.status == "PROPOSED" }.count)", nhan: "Proposals",
+            CTWODem(so: "\(c?.proposed ?? ucs.filter { $0.status == "PROPOSED" }.count)", nhan: String(localized: "Proposals"),
                     bieuTuong: "sparkles", mau: AppColors.accent)
-            CTWODem(so: "\(c?.rules ?? d.rules?.count ?? 0)", nhan: "Business rules", bieuTuong: "checkmark.shield",
+            CTWODem(so: "\(c?.rules ?? d.rules?.count ?? 0)", nhan: String(localized: "Business rules"), bieuTuong: "checkmark.shield",
                     mau: AppColors.secondary)
         }
         .padding(.horizontal, 2)
@@ -220,8 +230,8 @@ struct YeuCauCTW: View {
                 return ds.isEmpty ? nil : (n.tinhNang, ds)
             }
             if nhom.isEmpty {
-                trong("person.2.wave.2", t.isEmpty ? "No use cases yet" : "No matches",
-                      t.isEmpty ? "Use cases your team writes in CT Work show up here." : "Try another word.")
+                trong("person.2.wave.2", t.isEmpty ? String(localized: "No use cases yet") : String(localized: "No matches"),
+                      t.isEmpty ? String(localized: "Use cases your team writes in CT Work show up here.") : String(localized: "Try another word."))
             }
             ForEach(nhom, id: \.0) { n in
                 Section(n.0) {
@@ -232,28 +242,29 @@ struct YeuCauCTW: View {
             }
         case .actor:
             let ds = (d.actors ?? []).filter { khop(t, $0.name, $0.description) }.sorted { ($0.position ?? 0) < ($1.position ?? 0) }
-            if ds.isEmpty { trong("person.crop.rectangle.stack", "No actors", "Actors are the people and systems that use the product.") }
+            if ds.isEmpty { trong("person.crop.rectangle.stack", String(localized: "No actors"), String(localized: "Actors are the people and systems that use the product.")) }
             Section {
                 ForEach(ds) { a in hangActor(a, d) }
             }
         case .rule:
             let ds = (d.rules ?? []).filter { khop(t, $0.ma, $0.name, $0.definition, $0.category) }.sorted { $0.number < $1.number }
-            if ds.isEmpty { trong("checkmark.shield", "No business rules", "") }
+            if ds.isEmpty { trong("checkmark.shield", String(localized: "No business rules"), "") }
             Section {
                 ForEach(ds) { r in HangQuyTacCTW(pid: pid, r: r, d: d) }
             }
         case .man:
             let ds = (d.screens ?? []).filter { khop(t, $0.name, $0.feature, $0.description) }.sorted { ($0.position ?? 0) < ($1.position ?? 0) }
-            if ds.isEmpty { trong("rectangle.on.rectangle", "No screens", "") }
+            if ds.isEmpty { trong("rectangle.on.rectangle", String(localized: "No screens"), "") }
             Section {
                 ForEach(ds) { s in
                     NavigationLink(value: RouteYeuCauCTW.man(pid: pid, id: s.id)) {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(s.name ?? "Screen").font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary)
+                            Text(s.name ?? String(localized: "Screen")).font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary)
                             HStack(spacing: 6) {
                                 if let f = s.feature, !f.isEmpty { CTWNhanNho(chu: f, bieuTuong: "square.stack.3d.up") }
                                 let a = d.actorsCho(screen: s.id).count
-                                Text("\(a) actor\(a == 1 ? "" : "s") · \(d.diToi(tu: s.id).count) links")
+                                let lk = d.diToi(tu: s.id).count
+                                Text(a == 1 ? String(localized: "1 actor · \(lk) links") : String(localized: "\(a) actors · \(lk) links"))
                                     .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                             }
                         }
@@ -265,12 +276,12 @@ struct YeuCauCTW: View {
             }
         case .nonUI:
             let ds = (d.functions ?? []).filter { khop(t, $0.name, $0.feature, $0.description) }.sorted { ($0.position ?? 0) < ($1.position ?? 0) }
-            if ds.isEmpty { trong("gearshape.2", "No non-UI functions", "Background jobs, integrations and scheduled tasks are listed here.") }
+            if ds.isEmpty { trong("gearshape.2", String(localized: "No non-UI functions"), String(localized: "Background jobs, integrations and scheduled tasks are listed here.")) }
             Section {
                 ForEach(ds) { f in
                     VStack(alignment: .leading, spacing: 4) {
                         HStack(spacing: 6) {
-                            Text(f.name ?? "Function").font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary)
+                            Text(f.name ?? String(localized: "Function")).font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary)
                             Spacer(minLength: 0)
                             if let fe = f.feature, !fe.isEmpty { CTWNhanNho(chu: fe) }
                         }
@@ -297,14 +308,14 @@ struct YeuCauCTW: View {
                 .background(Circle().fill(AppColors.primary.opacity(0.12)))
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
-                    Text(a.name ?? "Actor").font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary)
-                    CTWNhanNho(chu: a.kind == "SYSTEM" ? "System" : "Person")
+                    Text(a.name ?? String(localized: "Actor")).font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary)
+                    CTWNhanNho(chu: a.kind == "SYSTEM" ? String(localized: "System") : String(localized: "Person"))
                 }
                 if let m = a.description, !m.isEmpty {
                     Text(m).font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary).fixedSize(horizontal: false, vertical: true)
                 }
                 if !chinh.isEmpty {
-                    Text("Primary actor in " + chinh.map(\.ma).joined(separator: ", "))
+                    Text(String(localized: "Primary actor in \(chinh.map { $0.ma }.joined(separator: ", "))"))
                         .font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
                 }
             }
@@ -328,7 +339,7 @@ struct HangUCCTW: View {
         VStack(alignment: .leading, spacing: 5) {
             HStack(spacing: 6) {
                 Text(uc.ma).font(.ctw(size: 12, weight: .bold).monospaced()).foregroundColor(AppColors.primary)
-                Text(uc.name ?? "Use case").font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary)
+                Text(uc.name ?? String(localized: "Use case")).font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary)
                     .lineLimit(2)
             }
             HStack(spacing: 6) {
@@ -336,13 +347,13 @@ struct HangUCCTW: View {
                 if let p = CTWNhanYeuCau.nhanUuTien(uc.priority) {
                     CTWNhanNho(chu: p, bieuTuong: "flag.fill", mau: CTWNhanYeuCau.mauUuTien(uc.priority))
                 }
-                if uc.aiModel != nil { CTWNhanAI(chu: "AI-drafted") }
+                if uc.aiModel != nil { CTWNhanAI(chu: String(localized: "AI-drafted")) }
                 if let a = d.actor(uc.primaryActorId)?.name {
                     Text(a).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1)
                 }
             }
             if let m = uc.missing, !m.isEmpty {
-                Label("Missing: " + m.joined(separator: ", "), systemImage: "exclamationmark.triangle.fill")
+                Label(String(localized: "Missing: \(m.joined(separator: ", "))"), systemImage: "exclamationmark.triangle.fill")
                     .font(.ctw(size: 11.5)).foregroundColor(AppColors.warning).lineLimit(2)
             }
         }
@@ -362,11 +373,11 @@ struct HangQuyTacCTW: View {
     var body: some View {
         DisclosureGroup(isExpanded: $mo) {
             VStack(alignment: .leading, spacing: 8) {
-                Text(r.definition?.isEmpty == false ? r.definition! : "No definition yet.")
+                Text(r.definition?.isEmpty == false ? r.definition! : String(localized: "No definition yet."))
                     .font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary).fixedSize(horizontal: false, vertical: true)
                     .textSelection(.enabled)
                 if let u = r.usedIn, !u.isEmpty {
-                    Text("Used in " + u.joined(separator: ", ")).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
+                    Text(String(localized: "Used in \(u.joined(separator: ", "))")).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                 }
                 if let loi { Text(loi).font(.ctw(size: 12)).foregroundColor(AppColors.error) }
                 if d.canApprove == true, r.status != "APPROVED" {
@@ -385,12 +396,12 @@ struct HangQuyTacCTW: View {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
                     Text(r.ma).font(.ctw(size: 12, weight: .bold).monospaced()).foregroundColor(AppColors.secondary)
-                    Text(r.name ?? "Rule").font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(2)
+                    Text(r.name ?? String(localized: "Rule")).font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(2)
                 }
                 HStack(spacing: 6) {
                     CTWChipChu(chu: r.status ?? "DRAFT", mau: CTWNhanYeuCau.mauUC(r.status))
                     if let c = r.category, !c.isEmpty { CTWNhanNho(chu: c) }
-                    if r.aiModel != nil { CTWNhanAI(chu: "AI-drafted") }
+                    if r.aiModel != nil { CTWNhanAI(chu: String(localized: "AI-drafted")) }
                 }
             }
             .padding(.vertical, 2)
@@ -425,10 +436,10 @@ struct TruyVetCTW: View {
             let s = r.summary
             Section {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: 10)], spacing: 10) {
-                    CTWODem(so: "\(s?.rows ?? r.rows?.count ?? 0)", nhan: "Traced items", bieuTuong: "list.bullet.rectangle")
-                    CTWODem(so: "\(Int((s?.testedPct ?? 0).rounded()))%", nhan: "Have tests", bieuTuong: "checkmark.circle", mau: AppColors.success)
-                    CTWODem(so: "\(s?.passing ?? 0)", nhan: "Passing", bieuTuong: "checkmark.seal", mau: AppColors.success)
-                    CTWODem(so: "\(s?.withGaps ?? 0)", nhan: "With gaps", bieuTuong: "exclamationmark.triangle", mau: AppColors.warning)
+                    CTWODem(so: "\(s?.rows ?? r.rows?.count ?? 0)", nhan: String(localized: "Traced items"), bieuTuong: "list.bullet.rectangle")
+                    CTWODem(so: "\(Int((s?.testedPct ?? 0).rounded()))%", nhan: String(localized: "Have tests"), bieuTuong: "checkmark.circle", mau: AppColors.success)
+                    CTWODem(so: "\(s?.passing ?? 0)", nhan: String(localized: "Passing"), bieuTuong: "checkmark.seal", mau: AppColors.success)
+                    CTWODem(so: "\(s?.withGaps ?? 0)", nhan: String(localized: "With gaps"), bieuTuong: "exclamationmark.triangle", mau: AppColors.warning)
                 }
                 .padding(.horizontal, 2)
             }
@@ -467,9 +478,9 @@ struct TruyVetCTW: View {
                 CTWChipChu(chu: row.status ?? "Planned", mau: mauTrangThai(row.status))
                 if let k = row.issueKey { CTWNhanNho(chu: k, bieuTuong: "number") }
                 let ca = row.soCaKiem
-                if ca > 0 { CTWNhanNho(chu: "\(ca) test\(ca == 1 ? "" : "s")", bieuTuong: "checkmark.circle") }
+                if ca > 0 { CTWNhanNho(chu: ca == 1 ? String(localized: "1 test") : String(localized: "\(ca) tests"), bieuTuong: "checkmark.circle") }
                 let mo = (row.bugs ?? []).filter { $0.open == true }.count
-                if mo > 0 { CTWNhanNho(chu: "\(mo) open bug\(mo == 1 ? "" : "s")", bieuTuong: "ladybug", mau: AppColors.error) }
+                if mo > 0 { CTWNhanNho(chu: mo == 1 ? String(localized: "1 open bug") : String(localized: "\(mo) open bugs"), bieuTuong: "ladybug", mau: AppColors.error) }
             }
             if let g = row.gaps, !g.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {

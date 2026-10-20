@@ -71,6 +71,7 @@ struct TimelineCTW: View {
     enum CheDo: String, CaseIterable, Identifiable {
         case danhSach = "List", gantt = "Gantt"
         var id: String { rawValue }
+        var ten: String { self == .danhSach ? String(localized: "List") : "Gantt" }
     }
 
     init(pid: Int) {
@@ -112,8 +113,8 @@ struct TimelineCTW: View {
         VStack(spacing: 0) {
             thanhDieuKhien(d, ds: ds, thanh: thanh)
             if ds.isEmpty {
-                CTWOTrong(bieuTuong: "calendar.day.timeline.left", tieuDe: tatCa.isEmpty ? "Nothing on the roadmap yet" : "No issues match",
-                          moTa: tatCa.isEmpty ? "Add start and due dates to epics and issues to see them here." : "Try a different assignee or version filter.")
+                CTWOTrong(bieuTuong: "calendar.day.timeline.left", tieuDe: tatCa.isEmpty ? String(localized: "Nothing on the roadmap yet") : String(localized: "No issues match"),
+                          moTa: tatCa.isEmpty ? String(localized: "Add start and due dates to epics and issues to see them here.") : String(localized: "Try a different assignee or version filter."))
                     .frame(maxHeight: .infinity)
             } else if cheDoHien == .gantt {
                 GanttTLCTW(pid: pid, du: d, ds: ds, thanh: thanh, moc: vm.moc, khoangSprint: vm.khoangSprint,
@@ -140,13 +141,13 @@ struct TimelineCTW: View {
         VStack(spacing: 8) {
             HStack(spacing: 8) {
                 Picker("View", selection: Binding(get: { cheDoHien }, set: { cheDo = $0 })) {
-                    ForEach(CheDo.allCases) { Text($0.rawValue).tag($0) }
+                    ForEach(CheDo.allCases) { Text($0.ten).tag($0) }
                 }
                 .pickerStyle(.segmented)
                 .frame(maxWidth: 200)
                 if cheDoHien == .gantt {
                     Picker("Zoom", selection: $zoom) {
-                        ForEach(TLZoomCTW.allCases) { Text($0.rawValue).tag($0) }
+                        ForEach(TLZoomCTW.allCases) { Text($0.ten).tag($0) }
                     }
                     .pickerStyle(.segmented)
                     .frame(maxWidth: 260)
@@ -156,14 +157,14 @@ struct TimelineCTW: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 6) {
                     let coLich = ds.filter { thanh[$0.id] != nil }.count
-                    chip("calendar", "\(coLich) scheduled", AppColors.textSecondary)
-                    if ds.count - coLich > 0 { chip("calendar.badge.exclamationmark", "\(ds.count - coLich) unscheduled", AppColors.textSecondary) }
+                    chip("calendar", String(localized: "\(coLich) scheduled"), AppColors.textSecondary)
+                    if ds.count - coLich > 0 { chip("calendar.badge.exclamationmark", String(localized: "\(ds.count - coLich) unscheduled"), AppColors.textSecondary) }
                     let canh = d.dependencies?.count ?? 0
-                    if canh > 0 { chip("arrow.triangle.branch", "\(canh) dependencies", AppColors.textSecondary) }
+                    if canh > 0 { chip("arrow.triangle.branch", String(localized: "\(canh) dependencies"), AppColors.textSecondary) }
                     let xd = d.conflicts?.count ?? 0
-                    if xd > 0 { chip("exclamationmark.triangle.fill", "\(xd) scheduling conflict\(xd == 1 ? "" : "s")", AppColors.error) }
+                    if xd > 0 { chip("exclamationmark.triangle.fill", xd == 1 ? String(localized: "1 scheduling conflict") : String(localized: "\(xd) scheduling conflicts"), AppColors.error) }
                     if let cd = d.criticalDays, cd > 0, (d.criticalPath?.count ?? 0) >= 2 {
-                        chip("bolt.horizontal.fill", "Critical path \(cd)d", AppColors.accent)
+                        chip("bolt.horizontal.fill", String(localized: "Critical path \(cd)d"), AppColors.accent)
                     }
                 }
             }
@@ -190,7 +191,7 @@ struct TimelineCTW: View {
                 if let toi = app.currentUser?.id { Text("Me").tag(Int?.some(toi)) }
                 Text("Unassigned").tag(Int?.some(0))
                 ForEach((vm.cauHinh?.dsThanhVien ?? []).filter { $0.id != app.currentUser?.id }) { u in
-                    Text(u.laAgent ? "\(u.ten) · AI agent" : u.ten).tag(Int?.some(u.id))
+                    Text(u.laAgent ? String(localized: "\(u.ten) · AI agent") : u.ten).tag(Int?.some(u.id))
                 }
             }
             .pickerStyle(.menu)
@@ -198,7 +199,7 @@ struct TimelineCTW: View {
             if !pb.isEmpty {
                 Picker("Version", selection: $phienBan) {
                     Text("All versions").tag(Int?.none)
-                    ForEach(pb) { v in Text(v.name ?? "Version").tag(Int?.some(v.id)) }
+                    ForEach(pb) { v in Text(v.name ?? String(localized: "Version")).tag(Int?.some(v.id)) }
                 }
                 .pickerStyle(.menu)
             }
@@ -224,7 +225,7 @@ struct TimelineCTW: View {
                     }
                 } header: {
                     HStack {
-                        Text(n.thang.map(NgayCTW.thang) ?? "Unscheduled")
+                        Text(n.thang.map(NgayCTW.thang) ?? String(localized: "Unscheduled"))
                         Spacer()
                         Text("\(n.ds.count)").foregroundColor(AppColors.textTertiary)
                     }
@@ -260,8 +261,8 @@ struct HangTLCTW: View {
                 HStack(spacing: 8) {
                     chipNgay
                     if !(muc.done ?? false) || (muc.progress ?? 0) > 0 {
-                        CTWThanhTienDo(doan: [CTWDoanTienDo(ten: "Done", giaTri: muc.progress ?? 0, mau: AppColors.success),
-                                              CTWDoanTienDo(ten: "Remaining", giaTri: max(1 - (muc.progress ?? 0), 0), mau: AppColors.backgroundTertiary)],
+                        CTWThanhTienDo(doan: [CTWDoanTienDo(ten: String(localized: "Done"), giaTri: muc.progress ?? 0, mau: AppColors.success),
+                                              CTWDoanTienDo(ten: String(localized: "Remaining"), giaTri: max(1 - (muc.progress ?? 0), 0), mau: AppColors.backgroundTertiary)],
                                        cao: 5)
                             .frame(maxWidth: 90)
                         Text("\(Int(((muc.progress ?? 0) * 100).rounded()))%").font(.ctw(size: 11).monospacedDigit())
@@ -284,11 +285,11 @@ struct HangTLCTW: View {
 
     @ViewBuilder private var chipNgay: some View {
         let chu: String = {
-            guard let t = thanh else { return "No dates" }
+            guard let t = thanh else { return String(localized: "No dates") }
             let a = NgayCTW.ngan(t.batDau), b = NgayCTW.ngan(t.ketThuc)
             switch t.kieu {
-            case .motNgay: return "Due \(b)"
-            case .moDuoi: return "From \(a)"
+            case .motNgay: return String(localized: "Due \(b)")
+            case .moDuoi: return String(localized: "From \(a)")
             case .suyRa: return a == b ? "~ \(a)" : "~ \(a) – \(b)"
             case .day: return a == b ? a : "\(a) – \(b)"
             }
@@ -300,6 +301,6 @@ struct HangTLCTW: View {
         .foregroundColor(quaHan ? AppColors.error : (muc.done == true ? AppColors.success : AppColors.textSecondary))
         .padding(.horizontal, 7).padding(.vertical, 2)
         .background(Capsule().fill((quaHan ? AppColors.error : AppColors.textTertiary).opacity(0.12)))
-        .accessibilityLabel(quaHan ? "\(chu), overdue" : chu)
+        .accessibilityLabel(quaHan ? String(localized: "\(chu), overdue") : chu)
     }
 }

@@ -380,6 +380,8 @@ targets:
       - path: CuongThaiApp/CTWorkShare
       # Chỉ tệp App Group/Keychain — tệp Live Activity (ActivityKit/AppIntents) không cần ở đây.
       - path: CuongThaiApp/CTWorkShared/NhomCTW.swift
+      # Ngôn ngữ app (đọc lựa chọn từ App Group, tráo Bundle.main) — 20/10/2026.
+      - path: CuongThaiApp/CTWorkShared/NgonNguCTW.swift
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.cuongthai.ctwork.share
@@ -410,6 +412,8 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.cuongthai.ctwork.tests
         GENERATE_INFOPLIST_FILE: YES
+        # Chạy MỌI phép kiểm bằng tiếng Anh, dù máy mô phỏng đang chọn tiếng Việt (CTWorkTests/KhoiDongKiemThuCTW.swift).
+        INFOPLIST_KEY_NSPrincipalClass: CTWorkAppTests.KhoiDongKiemThuCTW
         # PRODUCT_NAME của app là `CTWork` (không phải tên target) ⇒ khai tay.
         TEST_HOST: $(BUILT_PRODUCTS_DIR)/CTWork.app/CTWork
         BUNDLE_LOADER: $(TEST_HOST)

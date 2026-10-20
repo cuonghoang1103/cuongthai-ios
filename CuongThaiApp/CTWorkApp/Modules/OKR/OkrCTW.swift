@@ -9,7 +9,11 @@ import Combine
 
 @MainActor
 final class OkrVM: ObservableObject {
-    enum PhamVi: String, CaseIterable, Identifiable { case duAn = "Project", khongGian = "Workspace"; var id: String { rawValue } }
+    enum PhamVi: String, CaseIterable, Identifiable {
+        case duAn = "Project", khongGian = "Workspace"
+        var id: String { rawValue }
+        var ten: String { self == .duAn ? String(localized: "Project") : String(localized: "Workspace") }
+    }
     let pid: Int
     @Published var phamVi: PhamVi = .duAn
     @Published var chuKy: Int?
@@ -25,12 +29,12 @@ final class OkrVM: ObservableObject {
             case .duAn:
                 view = .xong(try await APIClient.shared.request(CTWAPI.okrDuAn(pid: pid, chuKy: chuKy)))
             case .khongGian:
-                guard let w = await app.idKhongGian() else { view = .loi("Couldn't find this workspace."); return }
+                guard let w = await app.idKhongGian() else { view = .loi(String(localized: "Couldn't find this workspace.")); return }
                 view = .xong(try await APIClient.shared.request(CTWAPI.okrKhongGian(wid: w, chuKy: chuKy)))
             }
         } catch {
             view = .loi(phamVi == .khongGian && CTW.loi(error).lowercased().contains("not found")
-                        ? "Workspace OKRs aren't available to guests." : CTW.loi(error))
+                        ? String(localized: "Workspace OKRs aren't available to guests.") : CTW.loi(error))
         }
     }
 }
@@ -53,7 +57,7 @@ struct OkrCTW: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
                 Picker("Scope", selection: $vm.phamVi) {
-                    ForEach(OkrVM.PhamVi.allCases) { Text($0.rawValue).tag($0) }
+                    ForEach(OkrVM.PhamVi.allCases) { Text($0.ten).tag($0) }
                 }
                 .pickerStyle(.segmented)
                 switch vm.view {
@@ -75,11 +79,11 @@ struct OkrCTW: View {
                     Menu {
                         ForEach(ck) { c in
                             Button { vm.chuKy = c.id } label: {
-                                if c.id == vm.view.giaTri?.cycle?.id { Label(c.name ?? "Cycle", systemImage: "checkmark") }
-                                else { Text((c.name ?? "Cycle") + (c.status == "CLOSED" ? " (closed)" : "")) }
+                                if c.id == vm.view.giaTri?.cycle?.id { Label(c.name ?? String(localized: "Cycle"), systemImage: "checkmark") }
+                                else { Text(c.status == "CLOSED" ? String(localized: "\(c.name ?? String(localized: "Cycle")) (closed)") : (c.name ?? String(localized: "Cycle"))) }
                             }
                         }
-                    } label: { Label(vm.view.giaTri?.cycle?.name ?? "Cycle", systemImage: "calendar") }
+                    } label: { Label(vm.view.giaTri?.cycle?.name ?? String(localized: "Cycle"), systemImage: "calendar") }
                     .accessibilityLabel("Choose OKR cycle")
                 }
             }
@@ -101,16 +105,15 @@ struct OkrCTW: View {
 
     @ViewBuilder private func noiDung(_ v: CTWOkrView) -> some View {
         if let c = v.cycle {
-            Text("\(c.name ?? "Cycle") · \(NgayCTW.nganTu(c.startDate) ?? "") – \(NgayCTW.nganTu(c.endDate) ?? "")"
-                 + (c.status == "CLOSED" ? " · Closed" : ""))
+            Text(dongChuKy(c))
                 .font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
         }
         if let d = v.dashboard { bangTong(d) }
         let cay = OkrTinh.cay(v.objectives ?? [])
         if cay.isEmpty {
-            CTWOTrong(bieuTuong: "scope", tieuDe: "No objectives in this cycle",
-                      moTa: vm.phamVi == .duAn ? "Objectives for this project appear here once they're added on the web."
-                                              : "Workspace objectives appear here once an admin adds them.")
+            CTWOTrong(bieuTuong: "scope", tieuDe: String(localized: "No objectives in this cycle"),
+                      moTa: vm.phamVi == .duAn ? String(localized: "Objectives for this project appear here once they're added on the web.")
+                                              : String(localized: "Workspace objectives appear here once an admin adds them."))
                 .ctwThe(14)
         } else {
             let cot = beRong == .regular ? [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)] : [GridItem(.flexible())]
@@ -131,28 +134,33 @@ struct OkrCTW: View {
         }
     }
 
+    private func dongChuKy(_ c: CTWOkrChuKy) -> String {
+        let s = "\(c.name ?? String(localized: "Cycle")) · \(NgayCTW.nganTu(c.startDate) ?? "") – \(NgayCTW.nganTu(c.endDate) ?? "")"
+        return c.status == "CLOSED" ? String(localized: "\(s) · Closed") : s
+    }
+
     // MARK: Bảng tổng
 
     private func bangTong(_ d: CTWOkrBang) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             CTWLuoiChiSo {
-                CTWTheChiSo(nhan: "Average progress", giaTri: "\(Int((d.avgProgress ?? 0).rounded()))%",
-                            phu: "\(d.objectives ?? 0) objectives · \(d.keyResults ?? 0) key results", bieuTuong: "scope")
-                CTWTheChiSo(nhan: "Confidence", giaTri: d.avgConfidence.map { "\(CTWSo.gon($0))/10" } ?? "—",
-                            phu: "Average of the latest check-ins", bieuTuong: "gauge.with.dots.needle.50percent", mau: CTWMauChuoi.mau(2))
-                CTWTheChiSo(nhan: "On track", giaTri: "\(d.statusCounts?["ON_TRACK"] ?? 0)",
-                            phu: "At risk \(d.statusCounts?["AT_RISK"] ?? 0) · Off track \(d.statusCounts?["OFF_TRACK"] ?? 0)",
+                CTWTheChiSo(nhan: String(localized: "Average progress"), giaTri: "\(Int((d.avgProgress ?? 0).rounded()))%",
+                            phu: String(localized: "\(d.objectives ?? 0) objectives · \(d.keyResults ?? 0) key results"), bieuTuong: "scope")
+                CTWTheChiSo(nhan: String(localized: "Confidence"), giaTri: d.avgConfidence.map { "\(CTWSo.gon($0))/10" } ?? "—",
+                            phu: String(localized: "Average of the latest check-ins"), bieuTuong: "gauge.with.dots.needle.50percent", mau: CTWMauChuoi.mau(2))
+                CTWTheChiSo(nhan: String(localized: "On track"), giaTri: "\(d.statusCounts?["ON_TRACK"] ?? 0)",
+                            phu: String(localized: "At risk \(d.statusCounts?["AT_RISK"] ?? 0) · Off track \(d.statusCounts?["OFF_TRACK"] ?? 0)"),
                             bieuTuong: "checkmark.circle", mau: AppColors.success)
                 if let s = d.avgScore {
-                    CTWTheChiSo(nhan: "Average score", giaTri: String(format: "%.1f", s), bieuTuong: "star", mau: CTWMauChuoi.mau(3))
+                    CTWTheChiSo(nhan: String(localized: "Average score"), giaTri: String(format: "%.1f", s), bieuTuong: "star", mau: CTWMauChuoi.mau(3))
                 }
             }
             let tuan = d.weeks ?? []
             if tuan.count >= 2 {
-                CTWKhungBieuDo(tieuDe: "Progress vs expected", phu: "Weekly, across all objectives",
-                               chuGiai: [CTWMucChuGiai(ten: "Actual", mau: AppColors.primary),
-                                         CTWMucChuGiai(ten: "Expected", mau: AppColors.textTertiary, netDut: true)],
-                               cot: ["Week", "Actual", "Expected"],
+                CTWKhungBieuDo(tieuDe: String(localized: "Progress vs expected"), phu: String(localized: "Weekly, across all objectives"),
+                               chuGiai: [CTWMucChuGiai(ten: String(localized: "Actual"), mau: AppColors.primary),
+                                         CTWMucChuGiai(ten: String(localized: "Expected"), mau: AppColors.textTertiary, netDut: true)],
+                               cot: [String(localized: "Week"), String(localized: "Actual"), String(localized: "Expected")],
                                hang: tuan.map { CTWHangBang(nhan: NgayCTW.nganTu($0.week) ?? $0.week,
                                                             giaTri: [$0.actual.map { "\(Int($0))%" } ?? "—", "\(Int($0.expected ?? 0))%"]) },
                                cao: 180) {
@@ -431,7 +439,7 @@ struct CheckinKRCTW: View {
             dong()
             xong()
         } catch {
-            loi = DongHoCTW.maLoi(error) == "WORK_OKR_CYCLE_CLOSED" ? "This cycle is closed — check-ins are no longer accepted." : CTW.loi(error)
+            loi = DongHoCTW.maLoi(error) == "WORK_OKR_CYCLE_CLOSED" ? String(localized: "This cycle is closed — check-ins are no longer accepted.") : CTW.loi(error)
             CTWRung.loi()
         }
     }

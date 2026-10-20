@@ -150,12 +150,13 @@ struct CTWSrsData: Codable {
     var ucTheoTinhNang: [(tinhNang: String, ds: [CTWSrsUseCase])] {
         var thuTu: [String] = []
         var nhom: [String: [CTWSrsUseCase]] = [:]
+        let khac = String(localized: "Other")
         for u in (useCases ?? []).sorted(by: { $0.number < $1.number }) {
-            let f = (u.feature?.trimmingCharacters(in: .whitespaces)).flatMap { $0.isEmpty ? nil : $0 } ?? "Other"
+            let f = (u.feature?.trimmingCharacters(in: .whitespaces)).flatMap { $0.isEmpty ? nil : $0 } ?? khac
             if nhom[f] == nil { thuTu.append(f) }
             nhom[f, default: []].append(u)
         }
-        if let i = thuTu.firstIndex(of: "Other") { thuTu.append(thuTu.remove(at: i)) }
+        if let i = thuTu.firstIndex(of: khac) { thuTu.append(thuTu.remove(at: i)) }
         return thuTu.map { ($0, nhom[$0] ?? []) }
     }
 }
@@ -340,25 +341,25 @@ enum CTWVongDoiYeuCau {
     }
     static func nhanHanhDong(_ den: String) -> String {
         switch den {
-        case "APPROVED": return "Approve"
-        case "IMPLEMENTED": return "Mark implemented"
-        case "VERIFIED": return "Mark verified"
-        case "DELETED": return "Delete"
-        case "REJECTED": return "Reject"
-        case "PROPOSED": return "Reopen as proposed"
+        case "APPROVED": return String(localized: "Approve")
+        case "IMPLEMENTED": return String(localized: "Mark implemented")
+        case "VERIFIED": return String(localized: "Mark verified")
+        case "DELETED": return String(localized: "Delete")
+        case "REJECTED": return String(localized: "Reject")
+        case "PROPOSED": return String(localized: "Reopen as proposed")
         default: return CTWMauTrangThai.nhan(den)
         }
     }
     static func tenLoai(_ t: String?) -> String {
         switch t {
-        case "BUSINESS": return "Business"
-        case "USER": return "User"
-        case "FUNCTIONAL": return "Functional"
-        case "QUALITY": return "Quality"
-        case "CONSTRAINT": return "Constraint"
-        case "EXTERNAL_INTERFACE": return "External interface"
-        case "DATA": return "Data"
-        case nil: return "Unclassified"
+        case "BUSINESS": return String(localized: "Business")
+        case "USER": return String(localized: "User")
+        case "FUNCTIONAL": return String(localized: "Functional")
+        case "QUALITY": return String(localized: "Quality")
+        case "CONSTRAINT": return String(localized: "Constraint")
+        case "EXTERNAL_INTERFACE": return String(localized: "External interface")
+        case "DATA": return String(localized: "Data")
+        case nil: return String(localized: "Unclassified")
         default: return CTWMauTrangThai.nhan(t)
         }
     }

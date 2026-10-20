@@ -83,14 +83,14 @@ struct XemBaoCaoCTW: View {
                     .padding(10)
                     .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.white))
                     .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(AppColors.border, lineWidth: 0.5))
-                    .accessibilityLabel(k.title ?? "Chart")
+                    .accessibilityLabel(k.title ?? String(localized: "Chart"))
             }
         case "issues":
             bangThe(k)
         case "risks":
             VStack(alignment: .leading, spacing: 8) {
-                tieuDeKhoi(k.title ?? "Risks")
-                if (k.items ?? []).isEmpty { Text(k.note ?? "No open risks.").font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary) }
+                tieuDeKhoi(k.title ?? String(localized: "Risks"))
+                if (k.items ?? []).isEmpty { Text(k.note ?? String(localized: "No open risks.")).font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary) }
                 ForEach(Array((k.items ?? []).enumerated()), id: \.offset) { _, r in
                     VStack(alignment: .leading, spacing: 3) {
                         HStack {
@@ -107,15 +107,15 @@ struct XemBaoCaoCTW: View {
         case "ai":
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 6) {
-                    tieuDeKhoi(k.title ?? "Summary")
-                    CTWNhanAI(chu: "AI-drafted")
+                    tieuDeKhoi(k.title ?? String(localized: "Summary"))
+                    CTWNhanAI(chu: String(localized: "AI-drafted"))
                 }
                 CTWMarkdownView(markdown: k.text ?? "", coChu: 14)
                 if let n = k.note, !n.isEmpty { Text(n).font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary) }
             }
             .padding(12).ctwThe(12)
         case "error":
-            CTWErrorBanner(text: k.message ?? "This block couldn't be built.")
+            CTWErrorBanner(text: k.message ?? String(localized: "This block couldn't be built."))
         default:
             EmptyView()
         }

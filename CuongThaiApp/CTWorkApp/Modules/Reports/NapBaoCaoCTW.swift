@@ -86,7 +86,7 @@ struct ChonSprintBaoCaoCTW: View {
         } label: {
             HStack(spacing: 6) {
                 Image(systemName: "flag.checkered")
-                Text(ds.first { $0.id == chon }.map(nhan) ?? (choPhepTatCa ? "Any sprint" : "Choose sprint"))
+                Text(ds.first { $0.id == chon }.map(nhan) ?? (choPhepTatCa ? String(localized: "Any sprint") : String(localized: "Choose sprint")))
                     .lineLimit(1)
                 Image(systemName: "chevron.down").font(.ctw(size: 10, weight: .bold))
             }
@@ -99,5 +99,5 @@ struct ChonSprintBaoCaoCTW: View {
         .accessibilityLabel("Sprint")
     }
 
-    private func nhan(_ s: CTWSprintDu) -> String { s.ten + (s.dangChay ? " (active)" : "") }
+    private func nhan(_ s: CTWSprintDu) -> String { s.dangChay ? String(localized: "\(s.ten) (active)") : s.ten }
 }

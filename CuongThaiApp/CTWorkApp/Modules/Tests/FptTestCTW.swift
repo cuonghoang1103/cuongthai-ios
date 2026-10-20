@@ -26,7 +26,7 @@ struct FptTongQuanCTW: View {
                 tomTatIt(i.summary)
                     .listRowBackground(Color.clear).listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 8, trailing: 0))
                 ForEach(m) { x in
-                    NavigationLink(value: RouteFptModuleCTW(pid: pid, kieu: "integration", id: x.id, ten: x.name ?? "Module")) { hangModule(x) }
+                    NavigationLink(value: RouteFptModuleCTW(pid: pid, kieu: "integration", id: x.id, ten: x.name ?? String(localized: "Module"))) { hangModule(x) }
                 }
             } header: { Text("Report 5.2 · Integration test") }
         }
@@ -35,13 +35,13 @@ struct FptTongQuanCTW: View {
                 tomTatIt(s.summary)
                     .listRowBackground(Color.clear).listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 8, trailing: 0))
                 ForEach(m) { x in
-                    NavigationLink(value: RouteFptModuleCTW(pid: pid, kieu: "system", id: x.id, ten: x.name ?? "Workflow")) { hangModule(x) }
+                    NavigationLink(value: RouteFptModuleCTW(pid: pid, kieu: "system", id: x.id, ten: x.name ?? String(localized: "Workflow"))) { hangModule(x) }
                 }
             } header: { Text("Report 5.3 · System test") }
         }
         if !vm.coFpt {
-            CTWOTrong(bieuTuong: "tablecells", tieuDe: "No FPT test reports",
-                      moTa: "Unit and integration test reports in the FPT template appear here once your team adds them.")
+            CTWOTrong(bieuTuong: "tablecells", tieuDe: String(localized: "No FPT test reports"),
+                      moTa: String(localized: "Unit and integration test reports in the FPT template appear here once your team adds them."))
                 .listRowBackground(Color.clear)
         }
     }
@@ -53,10 +53,10 @@ struct FptTongQuanCTW: View {
     private func tomTatUnit(_ s: CTWFptUnitSummary?, tcPerKloc: Int?) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 110), spacing: 10)], spacing: 10) {
-                CTWODem(so: "\(s?.total ?? 0)", nhan: "Test cases", bieuTuong: "number", mau: AppColors.primary)
-                CTWODem(so: pct(s?.coverage), nhan: "Coverage", bieuTuong: "chart.pie", mau: AppColors.info)
-                CTWODem(so: pct(s?.successCoverage), nhan: "Passed", bieuTuong: "checkmark.circle", mau: AppColors.success)
-                CTWODem(so: "\(s?.failed ?? 0)", nhan: "Failed", bieuTuong: "xmark.octagon", mau: AppColors.error)
+                CTWODem(so: "\(s?.total ?? 0)", nhan: String(localized: "Test cases"), bieuTuong: "number", mau: AppColors.primary)
+                CTWODem(so: pct(s?.coverage), nhan: String(localized: "Coverage"), bieuTuong: "chart.pie", mau: AppColors.info)
+                CTWODem(so: pct(s?.successCoverage), nhan: String(localized: "Passed"), bieuTuong: "checkmark.circle", mau: AppColors.success)
+                CTWODem(so: "\(s?.failed ?? 0)", nhan: String(localized: "Failed"), bieuTuong: "xmark.octagon", mau: AppColors.error)
             }
             CTWThanhPhanDoan(doan: [(s?.passed ?? 0, AppColors.success), (s?.failed ?? 0, AppColors.error), (s?.untested ?? 0, Color.clear)])
             HStack(spacing: 6) {
@@ -80,10 +80,10 @@ struct FptTongQuanCTW: View {
     private func tomTatIt(_ s: CTWFptItSummary?) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 110), spacing: 10)], spacing: 10) {
-                CTWODem(so: "\(s?.total ?? 0)", nhan: "Test cases", bieuTuong: "number", mau: AppColors.primary)
-                CTWODem(so: pct(s?.coverage), nhan: "Coverage", bieuTuong: "chart.pie", mau: AppColors.info)
-                CTWODem(so: "\(s?.passed ?? 0)", nhan: "Passed", bieuTuong: "checkmark.circle", mau: AppColors.success)
-                CTWODem(so: "\(s?.failed ?? 0)", nhan: "Failed", bieuTuong: "xmark.octagon", mau: AppColors.error)
+                CTWODem(so: "\(s?.total ?? 0)", nhan: String(localized: "Test cases"), bieuTuong: "number", mau: AppColors.primary)
+                CTWODem(so: pct(s?.coverage), nhan: String(localized: "Coverage"), bieuTuong: "chart.pie", mau: AppColors.info)
+                CTWODem(so: "\(s?.passed ?? 0)", nhan: String(localized: "Passed"), bieuTuong: "checkmark.circle", mau: AppColors.success)
+                CTWODem(so: "\(s?.failed ?? 0)", nhan: String(localized: "Failed"), bieuTuong: "xmark.octagon", mau: AppColors.error)
             }
             CTWThanhPhanDoan(doan: [(s?.passed ?? 0, AppColors.success), (s?.failed ?? 0, AppColors.error),
                                      (s?.na ?? 0, AppColors.textSecondary), (s?.pending ?? 0, Color.clear)])
@@ -93,10 +93,10 @@ struct FptTongQuanCTW: View {
     private func hangHam(_ f: CTWFptFunction) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
-                Text(f.methodName ?? "Function").font(.ctw(size: 15, weight: .semibold, design: .monospaced))
+                Text(f.methodName ?? String(localized: "Function")).font(.ctw(size: 15, weight: .semibold, design: .monospaced))
                     .foregroundColor(AppColors.textPrimary).lineLimit(1)
                 if f.belowNorm == true {
-                    CTWNhanNho(chu: "Below norm", bieuTuong: "exclamationmark.triangle", mau: AppColors.warning)
+                    CTWNhanNho(chu: String(localized: "Below norm"), bieuTuong: "exclamationmark.triangle", mau: AppColors.warning)
                 }
                 Spacer(minLength: 0)
             }
@@ -113,7 +113,7 @@ struct FptTongQuanCTW: View {
     private func hangModule(_ m: CTWFptModule) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
-                Text(m.name ?? "Module").font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                Text(m.name ?? String(localized: "Module")).font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(1)
                 if let p = m.idPrefix { CTWNhanNho(chu: p) }
                 Spacer(minLength: 0)
                 if let r = m.stats?.lastRound, r > 0 { Text("Round \(r)").font(.ctw(size: 11, weight: .semibold)).foregroundColor(AppColors.textSecondary) }
@@ -147,7 +147,7 @@ struct FptHamCTW: View {
                 if let loi { CTWErrorBanner(text: loi) { self.loi = nil } }
                 if let f {
                     dau(f)
-                    CTWSectionHeader("tablecells", "Test matrix", count: "\((f.cases ?? []).count) cases")
+                    CTWSectionHeader("tablecells", String(localized: "Test matrix"), count: String(localized: "\((f.cases ?? []).count) cases"))
                     maTran(f)
                     chuThich
                 } else if loi == nil {
@@ -172,27 +172,27 @@ struct FptHamCTW: View {
 
     private func dau(_ f: CTWFptFunction) -> some View {
         CTWKhoiTruong {
-            CTWHangTruong("Module", f.moduleName, bieuTuong: "shippingbox")
+            CTWHangTruong(String(localized: "Module"), f.moduleName, bieuTuong: "shippingbox")
             Divider()
-            CTWHangTruong("Function", f.methodName, bieuTuong: "function")
-            if let s = f.sheetName, !s.isEmpty { Divider(); CTWHangTruong("Sheet", s, bieuTuong: "tablecells") }
-            if let d = f.description, !d.isEmpty { Divider(); CTWHangTruong("Description", d, bieuTuong: "text.alignleft") }
-            if let p = f.preCondition, !p.isEmpty { Divider(); CTWHangTruong("Pre-condition", p, bieuTuong: "flag") }
-            if let r = f.testRequirement, !r.isEmpty { Divider(); CTWHangTruong("Requirement", r, bieuTuong: "checklist") }
-            if let c = f.codeRef, !c.isEmpty { Divider(); CTWHangTruong("Code", c, bieuTuong: "chevron.left.forwardslash.chevron.right") }
+            CTWHangTruong(String(localized: "Function"), f.methodName, bieuTuong: "function")
+            if let s = f.sheetName, !s.isEmpty { Divider(); CTWHangTruong(String(localized: "Sheet"), s, bieuTuong: "tablecells") }
+            if let d = f.description, !d.isEmpty { Divider(); CTWHangTruong(String(localized: "Description"), d, bieuTuong: "text.alignleft") }
+            if let p = f.preCondition, !p.isEmpty { Divider(); CTWHangTruong(String(localized: "Pre-condition"), p, bieuTuong: "flag") }
+            if let r = f.testRequirement, !r.isEmpty { Divider(); CTWHangTruong(String(localized: "Requirement"), r, bieuTuong: "checklist") }
+            if let c = f.codeRef, !c.isEmpty { Divider(); CTWHangTruong(String(localized: "Code"), c, bieuTuong: "chevron.left.forwardslash.chevron.right") }
             Divider()
-            CTWHangTruong("Lines of code", f.loc.map { "\($0)" }, bieuTuong: "number")
+            CTWHangTruong(String(localized: "Lines of code"), f.loc.map { "\($0)" }, bieuTuong: "number")
             if let r = f.requiredCases {
                 Divider()
-                CTWHangTruong(nhan: "Norm", bieuTuong: "gauge") {
+                CTWHangTruong(nhan: String(localized: "Norm"), bieuTuong: "gauge") {
                     Text("\(f.stats?.total ?? 0) / \(r) cases")
                         .foregroundColor(f.belowNorm == true ? AppColors.warning : AppColors.success)
                 }
             }
             Divider()
-            CTWHangTruong("Created by", f.createdBy, bieuTuong: "person")
+            CTWHangTruong(String(localized: "Created by"), f.createdBy, bieuTuong: "person")
             Divider()
-            CTWHangTruong("Executed by", f.executedBy, bieuTuong: "person.badge.clock")
+            CTWHangTruong(String(localized: "Executed by"), f.executedBy, bieuTuong: "person.badge.clock")
         }
     }
 
@@ -212,7 +212,7 @@ struct FptHamCTW: View {
                 }
                 ForEach(Array(nhom.enumerated()), id: \.offset) { _, g in
                     GridRow {
-                        o("\(g.section == "COND" ? "Condition" : "Confirm") · \(g.nhom)", rong: 220, dam: true,
+                        o("\(g.section == "COND" ? String(localized: "Condition") : String(localized: "Confirm")) · \(g.nhom)", rong: 220, dam: true,
                           nen: AppColors.primary.opacity(0.08), mau: AppColors.primary)
                         ForEach(ca) { _ in o("", rong: 74, nen: AppColors.primary.opacity(0.08)) }
                     }
@@ -226,22 +226,22 @@ struct FptHamCTW: View {
                     }
                 }
                 GridRow {
-                    o("Type (N/A/B)", rong: 220, dam: true, nen: AppColors.backgroundTertiary)
+                    o(String(localized: "Type (N/A/B)"), rong: 220, dam: true, nen: AppColors.backgroundTertiary)
                     ForEach(ca) { c in o(c.type ?? "", rong: 74, dam: true, nen: AppColors.backgroundTertiary, giua: true) }
                 }
                 GridRow {
-                    o("Passed / Failed", rong: 220, dam: true)
+                    o(String(localized: "Passed / Failed"), rong: 220, dam: true)
                     ForEach(ca) { c in
                         o(c.result ?? "–", rong: 74, dam: true, giua: true,
                           mau: c.result == "P" ? AppColors.success : (c.result == "F" ? AppColors.error : AppColors.textTertiary))
                     }
                 }
                 GridRow {
-                    o("Executed date", rong: 220, dam: true)
+                    o(String(localized: "Executed date"), rong: 220, dam: true)
                     ForEach(ca) { c in o(c.executedAt.flatMap { CTW.ngayNgan($0) } ?? "", rong: 74, giua: true, co: 11) }
                 }
                 GridRow {
-                    o("Defect ID", rong: 220, dam: true)
+                    o(String(localized: "Defect ID"), rong: 220, dam: true)
                     ForEach(ca) { c in o(c.defectId ?? "", rong: 74, giua: true, co: 11, mau: AppColors.error) }
                 }
             }
@@ -294,15 +294,15 @@ struct FptModuleCTW: View {
                     }
                     if (m.preCondition ?? "").isEmpty == false || (m.testRequirement ?? "").isEmpty == false {
                         CTWKhoiTruong {
-                            if let p = m.preCondition, !p.isEmpty { CTWHangTruong("Pre-condition", p, bieuTuong: "flag") }
+                            if let p = m.preCondition, !p.isEmpty { CTWHangTruong(String(localized: "Pre-condition"), p, bieuTuong: "flag") }
                             if let r = m.testRequirement, !r.isEmpty {
                                 if !(m.preCondition ?? "").isEmpty { Divider() }
-                                CTWHangTruong("Requirement", r, bieuTuong: "checklist")
+                                CTWHangTruong(String(localized: "Requirement"), r, bieuTuong: "checklist")
                             }
                         }
                     }
                     let ca = m.cases ?? []
-                    CTWSectionHeader("list.bullet.rectangle", "Test cases", count: "\(ca.count)")
+                    CTWSectionHeader("list.bullet.rectangle", String(localized: "Test cases"), count: "\(ca.count)")
                     if ca.isEmpty {
                         Text("No test cases in this module yet.").font(.ctw(size: 13)).foregroundColor(AppColors.textTertiary)
                     }
@@ -339,16 +339,16 @@ struct FptModuleCTW: View {
             }
             Text(c.description ?? "—").font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
-            truong("Procedure", c.procedure)
-            truong("Test data", c.testData, mono: true)
-            truong("Expected", c.expected)
-            truong("Actual", c.actual)
+            truong(String(localized: "Procedure"), c.procedure)
+            truong(String(localized: "Test data"), c.testData, mono: true)
+            truong(String(localized: "Expected"), c.expected)
+            truong(String(localized: "Actual"), c.actual)
             if !vong.isEmpty {
                 HStack(spacing: 6) {
                     ForEach(Array(vong.enumerated()), id: \.offset) { i, r in
                         VStack(spacing: 2) {
                             Text("R\(i + 1)").font(.ctw(size: 10, weight: .bold)).foregroundColor(AppColors.textTertiary)
-                            Text(r.status ?? "—").font(.ctw(size: 11, weight: .semibold))
+                            Text(r.status.map { $0 == "N/A" ? $0 : CTWMauTrangThai.nhan($0) } ?? "—").font(.ctw(size: 11, weight: .semibold))
                                 .foregroundColor(r.status == nil ? AppColors.textTertiary : CTWLuatFpt.mauIt(r.status))
                                 .lineLimit(1).fixedSize()
                             if let d = r.date { Text(CTW.ngayNgan(d) ?? d).font(.ctw(size: 9)).foregroundColor(AppColors.textTertiary) }

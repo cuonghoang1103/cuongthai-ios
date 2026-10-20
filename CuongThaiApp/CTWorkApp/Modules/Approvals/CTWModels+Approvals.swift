@@ -86,11 +86,11 @@ struct CTWDuyet: Codable, Hashable, Identifiable {
     /// Nhãn đối tượng: "NW-12", "CR-5", "Gate 2 · Analysis", "Doc 7".
     var nhanDoiTuong: String {
         switch targetType {
-        case "CR": return changeRequest.map { "CR-\($0.number)" } ?? "Change request"
-        case "STAGE_GATE": return stage.map { "Gate \($0.n.map(String.init) ?? "") · \($0.name ?? "Stage")" } ?? "Stage gate"
-        case "DOC": return page.map { "Doc \($0.number)" } ?? "Document"
-        case "UAT": return "UAT sign-off"
-        default: return issueKey ?? issue.map { "#\($0.number)" } ?? "Issue"
+        case "CR": return changeRequest.map { "CR-\($0.number)" } ?? String(localized: "Change request")
+        case "STAGE_GATE": return stage.map { String(localized: "Gate \($0.n.map(String.init) ?? "") · \($0.name ?? String(localized: "Stage"))") } ?? String(localized: "Stage gate")
+        case "DOC": return page.map { String(localized: "Doc \($0.number)") } ?? String(localized: "Document")
+        case "UAT": return String(localized: "UAT sign-off")
+        default: return issueKey ?? issue.map { "#\($0.number)" } ?? String(localized: "Issue")
         }
     }
 

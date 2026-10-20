@@ -58,7 +58,7 @@ struct CTWCreateIssueView: View {
                     Picker("Assignee", selection: $nguoiId) {
                         Text("Unassigned").tag(Int?.none)
                         ForEach(cauHinh.nguoiGiaoDuoc) { u in
-                            Text(u.laAgent ? "\(u.ten) · AI agent" : u.ten).tag(Optional(u.id))
+                            Text(u.laAgent ? String(localized: "\(u.ten) · AI agent") : u.ten).tag(Optional(u.id))
                         }
                     }
                     Toggle("Due date", isOn: $coHan.animation())

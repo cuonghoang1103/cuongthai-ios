@@ -99,7 +99,7 @@ struct ChonDuAnCTW: View {
                                     .background(RoundedRectangle(cornerRadius: 5, style: .continuous).fill(CTWKieuWeb.mau(n.ws.slug)))
                                     .accessibilityHidden(true)
                                 Text(verbatim: n.ws.name).foregroundColor(AppColors.textPrimary)
-                                if let r = n.ws.role { Text(verbatim: "· \(r.capitalized)").foregroundColor(AppColors.textTertiary) }
+                                if let r = n.ws.role { Text(verbatim: "· \(CTWMauTrangThai.nhan(r))").foregroundColor(AppColors.textTertiary) }
                             }
                             .font(.ctw(size: 13, weight: .semibold))
                             .textCase(nil)
@@ -126,7 +126,7 @@ struct ChonDuAnCTW: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(p.name).font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                     .lineLimit(2)
-                Text([khongGian, p.type?.capitalized, p.openIssues.map { $0 == 1 ? "1 open issue" : "\($0) open issues" }]
+                Text([khongGian, p.type.map { CTWMauTrangThai.nhan($0) }, p.openIssues.map { $0 == 1 ? String(localized: "1 open issue") : String(localized: "\($0) open issues") }]
                     .compactMap { $0 }.joined(separator: " · "))
                     .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                     .lineLimit(1)

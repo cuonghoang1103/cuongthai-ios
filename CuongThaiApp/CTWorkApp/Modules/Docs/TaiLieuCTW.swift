@@ -163,8 +163,8 @@ struct TaiLieuCTW: View {
                 CTWErrorBanner(text: loi) { vm.loi = nil }.listRowBackground(Color.clear).listRowInsets(EdgeInsets())
             }
             if vm.tatMoDun {
-                CTWOTrong(bieuTuong: "doc.text.magnifyingglass", tieuDe: "Docs are turned off",
-                          moTa: "A project admin can turn Docs on in project settings.")
+                CTWOTrong(bieuTuong: "doc.text.magnifyingglass", tieuDe: String(localized: "Docs are turned off"),
+                          moTa: String(localized: "A project admin can turn Docs on in project settings."))
                     .listRowBackground(Color.clear)
             } else if let kq = vm.ketQuaTim {
                 Section("Results") {
@@ -185,10 +185,10 @@ struct TaiLieuCTW: View {
             } else if vm.ds != nil {
                 let cay = vm.cay
                 if cay.isEmpty {
-                    CTWOTrong(bieuTuong: "doc.text", tieuDe: "No pages yet",
-                              moTa: vm.coTheSua ? "Write meeting notes, specs or a how-to — right from your phone."
-                                                : "Pages your team writes show up here.",
-                              nut: vm.coTheSua ? "New page" : nil,
+                    CTWOTrong(bieuTuong: "doc.text", tieuDe: String(localized: "No pages yet"),
+                              moTa: vm.coTheSua ? String(localized: "Write meeting notes, specs or a how-to — right from your phone.")
+                                                : String(localized: "Pages your team writes show up here."),
+                              nut: vm.coTheSua ? String(localized: "New page") : nil,
                               hanhDong: vm.coTheSua ? { tamPhu = .taoMoi(trangCha: nil) } : nil)
                         .listRowBackground(Color.clear)
                 } else {
@@ -263,7 +263,7 @@ struct TaiLieuCTW: View {
             guard let d = app.dichCho, d.moDun == "docs" else { return }
             defer { app.dichCho = nil }
             if let so = d.duongDan.phanCon.first.flatMap(Int.init) {
-                nganXep.duong.append(RouteTaiLieuCTW(pid: pid, so: so, ten: "Page"))
+                nganXep.duong.append(RouteTaiLieuCTW(pid: pid, so: so, ten: String(localized: "Page")))
             }
         }
         #if DEBUG
@@ -292,7 +292,7 @@ struct TaiLieuCTW: View {
                         Image(systemName: "person.2.wave.2").font(.ctw(size: 10)).foregroundColor(AppColors.textTertiary)
                             .accessibilityLabel("Shared with client")
                     }
-                    if p.aiAssisted == true { CTWNhanAI(chu: "AI-assisted") }
+                    if p.aiAssisted == true { CTWNhanAI(chu: String(localized: "AI-assisted")) }
                     if let d = CTW.ngayNgan(p.updatedAt) {
                         Text("Updated \(d)").font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
                     }
@@ -418,7 +418,7 @@ struct ThungRacTrangCTW: View {
             if let loi { CTWErrorBanner(text: loi) { self.loi = nil }.listRowBackground(Color.clear).listRowInsets(EdgeInsets()) }
             if let ds = du?.items {
                 if ds.isEmpty {
-                    CTWOTrong(bieuTuong: "trash", tieuDe: "Trash is empty", moTa: "Deleted pages stay here until an admin empties the trash.")
+                    CTWOTrong(bieuTuong: "trash", tieuDe: String(localized: "Trash is empty"), moTa: String(localized: "Deleted pages stay here until an admin empties the trash."))
                         .listRowBackground(Color.clear)
                 }
                 ForEach(ds) { m in
@@ -451,9 +451,11 @@ struct ThungRacTrangCTW: View {
 
     private func moTa(_ m: CTWTrashPages.Muc) -> String {
         var p: [String] = []
-        if let d = CTW.ngayNgan(m.deletedAt) { p.append("Deleted \(d)") }
-        if let n = m.deletedBy?.name { p.append("by \(n)") }
-        if let c = m.childCount, c > 0 { p.append("+\(c) subpage\(c == 1 ? "" : "s")") }
+        let d = CTW.ngayNgan(m.deletedAt), n = m.deletedBy?.name
+        if let d, let n { p.append(String(localized: "Deleted \(d) by \(n)")) }
+        else if let d { p.append(String(localized: "Deleted \(d)")) }
+        else if let n { p.append(String(localized: "by \(n)")) }
+        if let c = m.childCount, c > 0 { p.append(c == 1 ? String(localized: "+1 subpage") : String(localized: "+\(c) subpages")) }
         return p.joined(separator: " ")
     }
 
@@ -465,7 +467,7 @@ struct ThungRacTrangCTW: View {
         do {
             let r: CTWTrashRestore = try await APIClient.shared.request(CTWAPI.khoiPhucTrang(pid: pid, so: m.number))
             CTWRung.thanhCong()
-            thongBao = r.toTopLevel == true ? "Restored to the top level (its old parent is gone)." : "Page restored."
+            thongBao = r.toTopLevel == true ? String(localized: "Restored to the top level (its old parent is gone).") : String(localized: "Page restored.")
             await tai()
         } catch { loi = CTW.loi(error); CTWRung.loi() }
     }

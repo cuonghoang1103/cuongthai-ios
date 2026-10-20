@@ -202,10 +202,10 @@ enum CTWDocStatus {
 
     static func ten(_ s: String?) -> String {
         switch s {
-        case "IN_REVIEW": return "In review"
-        case "APPROVED": return "Approved"
-        case "ARCHIVED": return "Archived"
-        default: return "Draft"
+        case "IN_REVIEW": return String(localized: "In review")
+        case "APPROVED": return String(localized: "Approved")
+        case "ARCHIVED": return String(localized: "Archived")
+        default: return String(localized: "Draft")
         }
     }
 

@@ -211,13 +211,13 @@ enum CTWLuatTest {
 
     static func nhan(_ s: String?) -> String {
         switch s {
-        case "PASS": return "Passed"
-        case "FAIL": return "Failed"
-        case "BLOCKED": return "Blocked"
-        case "SKIP": return "Skipped"
-        case "IN_PROGRESS": return "In progress"
-        case "RETEST": return "Retest"
-        default: return "To do"
+        case "PASS": return String(localized: "Passed")
+        case "FAIL": return String(localized: "Failed")
+        case "BLOCKED": return String(localized: "Blocked")
+        case "SKIP": return String(localized: "Skipped")
+        case "IN_PROGRESS": return String(localized: "In progress")
+        case "RETEST": return String(localized: "Retest")
+        default: return String(localized: "To do")
         }
     }
 

@@ -58,11 +58,11 @@ enum LoaiSuKienLichCTW: String, CaseIterable, Identifiable, Hashable {
     var id: String { rawValue }
     var ten: String {
         switch self {
-        case .han: return "My due dates"
-        case .sprint: return "Sprints"
-        case .phatHanh: return "Releases"
-        case .hop: return "Meetings"
-        case .giaiDoan: return "Stages"
+        case .han: return String(localized: "My due dates")
+        case .sprint: return String(localized: "Sprints")
+        case .phatHanh: return String(localized: "Releases")
+        case .hop: return String(localized: "Meetings")
+        case .giaiDoan: return String(localized: "Stages")
         }
     }
     var bieuTuong: String {
@@ -146,39 +146,39 @@ enum GopLichCTW {
         for s in sprintCfg {
             daCo.insert(s.id)
             if let a = NgayCTW.ngay(NgayCTW.ngayCua(s.startAt)) {
-                kq.append(SuKienLichCTW(id: "sp-\(s.id)-a", loai: .sprint, tieuDe: "\(s.name) starts", phu: s.goal, batDau: a, caNgay: true))
+                kq.append(SuKienLichCTW(id: "sp-\(s.id)-a", loai: .sprint, tieuDe: String(localized: "\(s.name) starts"), phu: s.goal, batDau: a, caNgay: true))
             }
             if let b = NgayCTW.ngay(NgayCTW.ngayCua(s.endAt)) {
-                kq.append(SuKienLichCTW(id: "sp-\(s.id)-b", loai: .sprint, tieuDe: "\(s.name) ends", phu: s.goal, batDau: b, caNgay: true))
+                kq.append(SuKienLichCTW(id: "sp-\(s.id)-b", loai: .sprint, tieuDe: String(localized: "\(s.name) ends"), phu: s.goal, batDau: b, caNgay: true))
             }
         }
         for s in moc.sprints ?? [] where !daCo.contains(s.id) {
             if let a = NgayCTW.ngay(s.start) {
-                kq.append(SuKienLichCTW(id: "sp-\(s.id)-a", loai: .sprint, tieuDe: "\(s.name ?? "Sprint") starts", batDau: a, caNgay: true))
+                kq.append(SuKienLichCTW(id: "sp-\(s.id)-a", loai: .sprint, tieuDe: String(localized: "\(s.name ?? String(localized: "Sprint")) starts"), batDau: a, caNgay: true))
             }
             if let b = NgayCTW.ngay(s.end) {
-                kq.append(SuKienLichCTW(id: "sp-\(s.id)-b", loai: .sprint, tieuDe: "\(s.name ?? "Sprint") ends", batDau: b, caNgay: true))
+                kq.append(SuKienLichCTW(id: "sp-\(s.id)-b", loai: .sprint, tieuDe: String(localized: "\(s.name ?? String(localized: "Sprint")) ends"), batDau: b, caNgay: true))
             }
         }
         for v in moc.versions ?? [] {
             guard let r = NgayCTW.ngay(v.release) else { continue }
-            kq.append(SuKienLichCTW(id: "pb-\(v.id)", loai: .phatHanh, tieuDe: "Release \(v.name ?? "")",
-                                    phu: v.status == "RELEASED" ? "Released" : "Planned release",
+            kq.append(SuKienLichCTW(id: "pb-\(v.id)", loai: .phatHanh, tieuDe: String(localized: "Release \(v.name ?? "")"),
+                                    phu: v.status == "RELEASED" ? String(localized: "Released") : String(localized: "Planned release"),
                                     batDau: r, caNgay: true, idPhienBan: v.id))
         }
         for g in moc.stages ?? [] {
             if let a = NgayCTW.ngay(g.start) {
-                kq.append(SuKienLichCTW(id: "gd-\(g.id)-a", loai: .giaiDoan, tieuDe: "Stage \(g.n ?? 0) started · \(g.name ?? "")", batDau: a, caNgay: true))
+                kq.append(SuKienLichCTW(id: "gd-\(g.id)-a", loai: .giaiDoan, tieuDe: String(localized: "Stage \(g.n ?? 0) started · \(g.name ?? "")"), batDau: a, caNgay: true))
             }
             if let b = NgayCTW.ngay(g.end) {
-                kq.append(SuKienLichCTW(id: "gd-\(g.id)-b", loai: .giaiDoan, tieuDe: "Stage \(g.n ?? 0) completed · \(g.name ?? "")", batDau: b, caNgay: true))
+                kq.append(SuKienLichCTW(id: "gd-\(g.id)-b", loai: .giaiDoan, tieuDe: String(localized: "Stage \(g.n ?? 0) completed · \(g.name ?? "")"), batDau: b, caNgay: true))
             }
         }
         for h in hop where h.status != "CANCELLED" {
             guard let a = NgayCTW.thoiDiem(h.startsAt) else { continue }
             let b = NgayCTW.thoiDiem(h.endsAt)
             let gio = b.map { "\(NgayCTW.gio(a)) – \(NgayCTW.gio($0))" } ?? NgayCTW.gio(a)
-            kq.append(SuKienLichCTW(id: "hop-\(h.id)", loai: .hop, tieuDe: h.title ?? "Meeting",
+            kq.append(SuKienLichCTW(id: "hop-\(h.id)", loai: .hop, tieuDe: h.title ?? String(localized: "Meeting"),
                                     phu: [gio, h.location].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · "),
                                     batDau: a, ketThuc: b, caNgay: false, hop: h))
         }
@@ -194,28 +194,28 @@ enum GopLichCTW {
             switch i.type {
             case "due":
                 guard let d = NgayCTW.ngay(i.date) else { continue }
-                kq.append(SuKienLichCTW(id: "han-\(i.key ?? "\(i.id)")", loai: .han, tieuDe: i.title ?? "Issue",
+                kq.append(SuKienLichCTW(id: "han-\(i.key ?? "\(i.id)")", loai: .han, tieuDe: i.title ?? String(localized: "Issue"),
                                         phu: [i.key, i.status?.name].compactMap { $0 }.joined(separator: " · "),
                                         batDau: d, caNgay: true, slug: p?.workspaceSlug, maDuAn: p?.key, so: i.number,
                                         quaHan: i.date < hn))
             case "sprint":
                 if let a = NgayCTW.ngay(i.date) {
-                    kq.append(SuKienLichCTW(id: "sp-\(i.id)-a", loai: .sprint, tieuDe: "\(i.title ?? "Sprint") starts",
+                    kq.append(SuKienLichCTW(id: "sp-\(i.id)-a", loai: .sprint, tieuDe: String(localized: "\(i.title ?? String(localized: "Sprint")) starts"),
                                             phu: [p?.key, i.goal].compactMap { $0 }.joined(separator: " · "), batDau: a, caNgay: true))
                 }
                 if let b = NgayCTW.ngay(i.end) {
-                    kq.append(SuKienLichCTW(id: "sp-\(i.id)-b", loai: .sprint, tieuDe: "\(i.title ?? "Sprint") ends",
+                    kq.append(SuKienLichCTW(id: "sp-\(i.id)-b", loai: .sprint, tieuDe: String(localized: "\(i.title ?? String(localized: "Sprint")) ends"),
                                             phu: [p?.key, i.goal].compactMap { $0 }.joined(separator: " · "), batDau: b, caNgay: true))
                 }
             case "release":
                 guard let r = NgayCTW.ngay(i.date) else { continue }
-                kq.append(SuKienLichCTW(id: "pb-\(i.id)", loai: .phatHanh, tieuDe: "Release \(i.title ?? "")",
-                                        phu: [p?.key, i.statusText == "RELEASED" ? "Released" : "Planned release"].compactMap { $0 }.joined(separator: " · "),
+                kq.append(SuKienLichCTW(id: "pb-\(i.id)", loai: .phatHanh, tieuDe: String(localized: "Release \(i.title ?? "")"),
+                                        phu: [p?.key, i.statusText == "RELEASED" ? String(localized: "Released") : String(localized: "Planned release")].compactMap { $0 }.joined(separator: " · "),
                                         batDau: r, caNgay: true, idPhienBan: i.id))
             case "stage":
                 guard let d = NgayCTW.ngay(i.date) else { continue }
                 kq.append(SuKienLichCTW(id: "gd-\(i.id)-\(i.event ?? "")", loai: .giaiDoan,
-                                        tieuDe: "Stage \(i.n ?? 0) \(i.event == "completed" ? "completed" : "started") · \(i.title ?? "")",
+                                        tieuDe: i.event == "completed" ? String(localized: "Stage \(i.n ?? 0) completed · \(i.title ?? "")") : String(localized: "Stage \(i.n ?? 0) started · \(i.title ?? "")"),
                                         phu: p?.key, batDau: d, caNgay: true))
             case "meeting":
                 guard i.statusText != "CANCELLED", let a = NgayCTW.thoiDiem(i.startsAt) else { continue }
@@ -224,7 +224,7 @@ enum GopLichCTW {
                 let hop = HopLichCTW(id: i.id, number: i.number, title: i.title, type: i.meetingType, status: i.statusText,
                                      startsAt: i.startsAt, endsAt: i.endsAt, timezone: i.timezone, location: i.location,
                                      meetingUrl: i.meetingUrl, key: i.number.map { "M-\($0)" })
-                kq.append(SuKienLichCTW(id: "hop-\(i.id)", loai: .hop, tieuDe: i.title ?? "Meeting",
+                kq.append(SuKienLichCTW(id: "hop-\(i.id)", loai: .hop, tieuDe: i.title ?? String(localized: "Meeting"),
                                         phu: [gio, p?.key, i.location].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · "),
                                         batDau: a, ketThuc: b, caNgay: false, hop: hop))
             default:

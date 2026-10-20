@@ -47,9 +47,9 @@ struct ReleasesCTW: View {
     var body: some View {
         KhungTaiCTW(trangThai: vm.trangThai, thuLai: { Task { await vm.tai() } }) { ds in
             if ds.isEmpty {
-                CTWOTrong(bieuTuong: "shippingbox", tieuDe: "No versions yet",
-                          moTa: "Versions group the issues you plan to ship together and track how close they are.",
-                          nut: quanLy ? "New version" : nil, hanhDong: quanLy ? { moTao = true } : nil)
+                CTWOTrong(bieuTuong: "shippingbox", tieuDe: String(localized: "No versions yet"),
+                          moTa: String(localized: "Versions group the issues you plan to ship together and track how close they are."),
+                          nut: quanLy ? String(localized: "New version") : nil, hanhDong: quanLy ? { moTao = true } : nil)
                     .frame(maxHeight: .infinity)
             } else {
                 danhSach(ds)
@@ -75,13 +75,13 @@ struct ReleasesCTW: View {
             guard let d = app.dichCho, d.moDun == "releases" else { return }
             defer { app.dichCho = nil }
             if let v = d.duongDan.tham["v"].flatMap(Int.init) {
-                nganXep.duong.append(RoutePhienBanCTW(pid: pid, id: v, ten: "Release"))
+                nganXep.duong.append(RoutePhienBanCTW(pid: pid, id: v, ten: String(localized: "Release")))
             }
         }
         #if DEBUG
         .onAppear {
             if let c = XemThuCTW.conCua("releases"), let v = Int(c), nganXep.duong.count <= 1 {
-                nganXep.duong.append(RoutePhienBanCTW(pid: pid, id: v, ten: "Release"))
+                nganXep.duong.append(RoutePhienBanCTW(pid: pid, id: v, ten: String(localized: "Release")))
             }
         }
         #endif
@@ -116,7 +116,7 @@ struct ReleasesCTW: View {
         .scrollContentBackground(.hidden)
     }
 
-    private func dauMuc(_ t: String, _ n: Int) -> some View {
+    private func dauMuc(_ t: LocalizedStringKey, _ n: Int) -> some View {
         HStack {
             Text(t)
             Spacer()
@@ -158,19 +158,19 @@ struct ReleasesCTW: View {
 /// Câu ngày của một phiên bản — dùng chung danh sách + chi tiết + lịch.
 enum PhienBanChuCTW {
     static func dongNgay(_ v: PhienBanCTW) -> String {
-        if v.daPhatHanh, let d = NgayCTW.ngay(v.releasedAt.flatMap(NgayCTW.ngayCua) ?? v.releaseDate) { return "Released \(NgayCTW.day(d))" }
-        guard let r = NgayCTW.ngay(v.releaseDate) else { return "No release date" }
+        if v.daPhatHanh, let d = NgayCTW.ngay(v.releasedAt.flatMap(NgayCTW.ngayCua) ?? v.releaseDate) { return String(localized: "Released \(NgayCTW.day(d))") }
+        guard let r = NgayCTW.ngay(v.releaseDate) else { return String(localized: "No release date") }
         let con = NgayCTW.soNgay(Date(), r)
-        if v.overdue == true || con < 0 { return "Overdue · was due \(NgayCTW.ngan(r))" }
-        if con == 0 { return "Releases today" }
-        return "Releases \(NgayCTW.ngan(r)) · in \(con) day\(con == 1 ? "" : "s")"
+        if v.overdue == true || con < 0 { return String(localized: "Overdue · was due \(NgayCTW.ngan(r))") }
+        if con == 0 { return String(localized: "Releases today") }
+        return con == 1 ? String(localized: "Releases \(NgayCTW.ngan(r)) · in 1 day") : String(localized: "Releases \(NgayCTW.ngan(r)) · in \(con) days")
     }
 
     static func trangThai(_ s: String?) -> (ten: String, bieuTuong: String, mau: Color) {
         switch s {
-        case "RELEASED": return ("Released", "checkmark.seal.fill", AppColors.success)
-        case "ARCHIVED": return ("Archived", "archivebox.fill", AppColors.textTertiary)
-        default: return ("Unreleased", "shippingbox", CTWMauChuoi.mau(0))
+        case "RELEASED": return (String(localized: "Released"), "checkmark.seal.fill", AppColors.success)
+        case "ARCHIVED": return (String(localized: "Archived"), "archivebox.fill", AppColors.textTertiary)
+        default: return (String(localized: "Unreleased"), "shippingbox", CTWMauChuoi.mau(0))
         }
     }
 }
@@ -197,8 +197,8 @@ struct HangPhienBanCTW: View {
                 Text(tt.ten).font(.ctw(size: 11, weight: .semibold)).foregroundColor(tt.mau)
             }
             HStack(spacing: 8) {
-                CTWThanhTienDo(doan: [CTWDoanTienDo(ten: "Done", giaTri: Double(v.done ?? 0), mau: AppColors.success),
-                                      CTWDoanTienDo(ten: "Not done", giaTri: Double(max((v.total ?? 0) - (v.done ?? 0), 0)), mau: AppColors.backgroundTertiary)],
+                CTWThanhTienDo(doan: [CTWDoanTienDo(ten: String(localized: "Done"), giaTri: Double(v.done ?? 0), mau: AppColors.success),
+                                      CTWDoanTienDo(ten: String(localized: "Not done"), giaTri: Double(max((v.total ?? 0) - (v.done ?? 0), 0)), mau: AppColors.backgroundTertiary)],
                                cao: 6)
                 Text("\(v.done ?? 0)/\(v.total ?? 0)").font(.ctw(size: 11, weight: .semibold).monospacedDigit())
                     .foregroundColor(AppColors.textSecondary)
@@ -252,7 +252,7 @@ struct TaoPhienBanCTW: View {
     }
 
     private func luu() async {
-        if coBatDau && coPhatHanh && batDau > phatHanh { loi = "The start date must be before the release date."; return }
+        if coBatDau && coPhatHanh && batDau > phatHanh { loi = String(localized: "The start date must be before the release date."); return }
         dangLuu = true
         defer { dangLuu = false }
         do {

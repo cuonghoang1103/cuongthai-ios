@@ -57,14 +57,14 @@ struct ResourcesCTW: View {
         let ds = loc
         var out: [(String, String?, [CTWNguonLuc])] = []
         let ghim = ds.filter { $0.pinned == true }
-        if !ghim.isEmpty { out.append(("Pinned", "📌", ghim)) }
+        if !ghim.isEmpty { out.append((String(localized: "Pinned"), "📌", ghim)) }
         let nhom = (vm.du?.groups ?? []).sorted { ($0.rank ?? 0, $0.id) < ($1.rank ?? 0, $1.id) }
         for g in nhom {
             let m = ds.filter { $0.groupId == g.id && $0.pinned != true }
             if !m.isEmpty { out.append((g.name, g.icon, m)) }
         }
         let le = ds.filter { $0.groupId == nil && $0.pinned != true }
-        if !le.isEmpty { out.append(("Other links", nil, le)) }
+        if !le.isEmpty { out.append((String(localized: "Other links"), nil, le)) }
         return out.map { (ten: $0.0, icon: $0.1, ds: $0.2.sorted { ($0.rank ?? 0, $0.id) < ($1.rank ?? 0, $1.id) }) }
     }
 
@@ -75,13 +75,13 @@ struct ResourcesCTW: View {
                 else { CTWErrorBanner(text: loi) { vm.loi = nil }.listRowBackground(Color.clear).listRowInsets(EdgeInsets()) }
             }
             if vm.tatMoDun {
-                CTWOTrong(bieuTuong: "link", tieuDe: "Resources are turned off",
-                          moTa: "A project admin can turn Resources on in project settings.")
+                CTWOTrong(bieuTuong: "link", tieuDe: String(localized: "Resources are turned off"),
+                          moTa: String(localized: "A project admin can turn Resources on in project settings."))
                     .listRowBackground(Color.clear)
             } else if let du = vm.du {
                 if let tags = du.tags, !tags.isEmpty {
                     Section {
-                        CTWThanhLoc(chip: [CTWChipLoc(id: "", nhan: "All", bat: the == nil)]
+                        CTWThanhLoc(chip: [CTWChipLoc(id: "", nhan: String(localized: "All"), bat: the == nil)]
                                     + tags.prefix(20).map { CTWChipLoc(id: $0.tag, nhan: "#\($0.tag)", bat: the == $0.tag) }) { c in
                             the = c.id.isEmpty ? nil : c.id
                         }
@@ -90,13 +90,13 @@ struct ResourcesCTW: View {
                     .listRowBackground(Color.clear)
                 }
                 if let b = du.broken, b > 0 {
-                    Label("\(b) link\(b == 1 ? "" : "s") looked broken at the last check.", systemImage: "exclamationmark.triangle.fill")
+                    Label(b == 1 ? String(localized: "1 link looked broken at the last check.") : String(localized: "\(b) links looked broken at the last check."), systemImage: "exclamationmark.triangle.fill")
                         .font(.ctw(size: 13)).foregroundColor(AppColors.warning)
                         .listRowBackground(Color.clear)
                 }
                 if (du.items ?? []).isEmpty {
-                    CTWOTrong(bieuTuong: "link", tieuDe: "No links yet",
-                              moTa: "Repositories, designs, drives and docs your team saves for this project appear here.")
+                    CTWOTrong(bieuTuong: "link", tieuDe: String(localized: "No links yet"),
+                              moTa: String(localized: "Repositories, designs, drives and docs your team saves for this project appear here."))
                         .listRowBackground(Color.clear)
                 } else if loc.isEmpty {
                     Text("Nothing matches.").foregroundColor(AppColors.textSecondary).listRowBackground(Color.clear)
@@ -146,7 +146,7 @@ struct ResourcesCTW: View {
                 HStack(spacing: 6) {
                     Text(r.tenHien).font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(1)
                     if r.linkStatus == "BROKEN" {
-                        CTWNhanNho(chu: "Broken", bieuTuong: "exclamationmark.triangle.fill", mau: AppColors.error)
+                        CTWNhanNho(chu: String(localized: "Broken"), bieuTuong: "exclamationmark.triangle.fill", mau: AppColors.error)
                     }
                 }
                 Text(URL(string: r.url)?.host ?? r.url).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1)

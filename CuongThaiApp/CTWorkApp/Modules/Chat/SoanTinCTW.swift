@@ -227,7 +227,7 @@ struct SoanTinCTW: View {
                 for u in ds.prefix(10) {
                     let mo = u.startAccessingSecurityScopedResource()
                     defer { if mo { u.stopAccessingSecurityScopedResource() } }
-                    guard let du = try? Data(contentsOf: u) else { loi = "Couldn't read \(u.lastPathComponent)."; continue }
+                    guard let du = try? Data(contentsOf: u) else { loi = String(localized: "Couldn't read \(u.lastPathComponent)."); continue }
                     themTep(du: du, ten: u.lastPathComponent, kieu: nil, laAnh: false)
                 }
             }
