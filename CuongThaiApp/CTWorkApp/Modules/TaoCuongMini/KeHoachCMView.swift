@@ -26,6 +26,7 @@ struct KeHoachCMView: View {
         let kh = vm.keHoach?.giai(CTWKeHoachCM.self)
         let ps = kh?.projects ?? []
         let p = ps[cm: min(duAn, max(0, ps.count - 1))]
+        ScrollViewReader { cuon in
         Form {
             Section {
                 HStack(alignment: .top, spacing: 10) {
@@ -64,6 +65,15 @@ struct KeHoachCMView: View {
             }
         }
         .scrollDismissesKeyboard(.interactively)
+        #if DEBUG
+        // Chụp màn: `CT_XEM_CUON=viec` cuộn tới phần mô-đun/epic.
+        .task {
+            guard ProcessInfo.processInfo.environment["CT_XEM_CUON"] == "viec" else { return }
+            try? await Task.sleep(nanoseconds: 600_000_000)
+            cuon.scrollTo("modun", anchor: .top)
+        }
+        #endif
+        }
         .disabled(!vm.suaDuoc)
         .safeAreaInset(edge: .bottom) { if vm.suaDuoc { thanhNut(ps.count) } }
         .sheet(item: $sua) { s in
@@ -172,6 +182,7 @@ struct KeHoachCMView: View {
                     }
                 }
             } header: { Text("Modules").textCase(nil) }
+            .id("modun")
         }
     }
 
