@@ -63,9 +63,9 @@ extension View {
                     case .bang(let pid, let ten): CTWBoardView(pid: pid, ten: ten)
                     case .bangTheoMa(let slug, let ma):
                         CTWResolver(slug: slug, ma: ma) { pid in CTWBoardView(pid: pid, ten: ma) }
-                    case .the(let pid, let so): CTWIssueView(pid: pid, so: so, khiMo: CTWChiaSeNhom.khiMoThe)
+                    case .the(let pid, let so): CTWIssueView(pid: pid, so: so, khiMo: CTWChiaSeNhom.khiMoThe, moRong: .ctwApp)
                     case .theTheoMa(let slug, let ma, let so):
-                        CTWResolver(slug: slug, ma: ma) { pid in CTWIssueView(pid: pid, so: so, khiMo: CTWChiaSeNhom.khiMoThe) }
+                        CTWResolver(slug: slug, ma: ma) { pid in CTWIssueView(pid: pid, so: so, khiMo: CTWChiaSeNhom.khiMoThe, moRong: .ctwApp) }
                     }
                 }
                 .navigationDestination(for: RouteMoDunCTW.self) { r in ManMoDunCTW(id: r.id) }
