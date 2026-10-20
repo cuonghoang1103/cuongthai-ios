@@ -314,3 +314,25 @@ không đọc `Accept-Language` (20/10/2026) — lỗi/thông báo đẩy luôn 
 (bảng lấy từ `frontend/src/components/work/i18n/errors.ts`).
 Chụp màn thử bằng tiếng Việt: `xcrun simctl spawn $U defaults write com.cuongthai.ctwork com.cuongthai.ctwork.ngonNgu vi`
 trước khi `simctl launch` (giá trị `system` | `vi` | `en`).
+
+## 14. AI stream · Create with CuongMini · AI usage (21/10/2026)
+
+- **Trợ lý AI bản stream** (`Modules/AI/LuongAICTW.swift`): `POST /projects/:pid/ai/chat/stream` (hợp đồng
+  `api-backend/docs/ctw-ai-stream.md`). `BoDocSSE` tự tách dòng theo byte (⛔ đừng dùng `bytes.lines` — nó nuốt dòng trống,
+  mà dòng trống là dấu hết khung). 404/405/501 hoặc không phải `text/event-stream` ⇒ `LuongAICTW.khongCoLuong = true` (nhớ
+  trong phiên) ⇒ VM lặng lẽ về `/ai/chat`. Nháp đẩy ~12 lần/giây; `done.reply` thay nháp, đề xuất CHỈ từ `done`, câu hỏi +
+  trả lời ghép tại chỗ (không nạp lại). Nút Dừng/rời màn (ngăn xếp NGẮN lại) ⇒ huỷ Task ⇒ đóng kết nối. Hỏi lại = stream với
+  `retryMessageId`. Máy chủ giả phát SSE thật, cắt mẩu 23 byte (`Debug/XemThuCTW+LuongAI.swift`); màn thử `mod:ai/doc` ·
+  `mod:ai/viet` · `mod:ai/stream` (+ `CT_XEM_LUONG=0` giả tuyến chưa deploy, `CT_XEM_BANG_CUOI=1` mở bảng ở mép phải).
+- **Markdown** (`CTWNoiDungView`): bảng = `CTWBangView` (cuộn ngang trong khung riêng, ô dài bọc dòng 90–240 pt, hàng xen
+  màu), giãn dòng theo cỡ chữ, `mã` có nền, mục danh sách nhiều dòng gộp, bảng không viền `a | b` + dòng kẻ.
+- **Create with CuongMini** (`Modules/TaoCuongMini/`): lối vào là nút **+** của bảng chọn dự án (`ChonDuAnCTW` →
+  `MenuTaoMoiCTW`, chỉ vai OWNER/ADMIN/MEMBER) ⇒ `TaoDuAnCTW` (New project) hoặc `TaoCuongMiniCTW` (bản nháp). `input` khai
+  đủ trường zod; `understanding`/`plan` giữ JSON thô `CTWJSON` (sửa tại chỗ, gửi lại nguyên vẹn — trường không khai không
+  rơi). iOS luôn `reviewFirst = true`. KHÔNG có chọn/mở khoá model (3.1.1). Máy chủ giả: `CT_XEM_MAN=chonduan` +
+  `CT_XEM_TAO=duan | cm | cm/dien | cm/dangdoc | cm/hieu | cm/kehoach | cm/xong`.
+- **AI usage** (`Modules/AIUsage/`, mô-đun `ai-usage`, nhóm Admin): dự án ⇄ không gian, chỉ đọc, nhãn "ước lượng" / "tự khai"
+  như web. Màn thử `mod:ai-usage` · `mod:ai-usage/ws`.
+- ⚠️ Chụp màn tiếng Việt khi app ĐÃ có tệp prefs trong container (vd sau khi chạy test): `simctl spawn … defaults write`
+  ghi vào miền khác, app vẫn đọc "system" ⇒ sửa thẳng `<container>/Library/Preferences/com.cuongthai.ctwork.plist`
+  (khoá có dấu chấm ⇒ dùng `plistlib`, không dùng `plutil -replace`).

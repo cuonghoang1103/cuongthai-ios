@@ -144,11 +144,6 @@ final class TroLyAIVM: ObservableObject {
     @Published var tienDo: SuKienAICTW?
     /// Bản nháp Markdown đang chạy — cập nhật tối đa ~12 lần/giây (dựng lại markdown mỗi mẩu thì giật).
     @Published private(set) var banNhap = ""
-    /// Mục đang đọc của sự kiện `reading` gần nhất (chip dưới dòng trạng thái).
-    var docMuc: [String] {
-        if case .doc(_, let m)? = tienDo { return Array(m.prefix(6)) }
-        return []
-    }
     private var nhapTho = ""
     private var henDay: Task<Void, Never>?
     private var lanDayCuoi = Date.distantPast
@@ -860,8 +855,6 @@ struct TraLoiAICTW: View {
 /// "AI đang đọc dự án…" — chấm nhảy, tôn trọng Giảm chuyển động.
 struct DangNghiAICTW: View {
     let chu: String
-    /// Mục đang đọc (sự kiện `reading` của luồng) — hiện thành chip mã thẻ/trang Docs.
-    var muc: [String] = []
     @State private var giay = 0
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
@@ -870,9 +863,6 @@ struct DangNghiAICTW: View {
                 Text(chu).font(.ctw(size: 14, weight: .medium)).foregroundColor(AppColors.textPrimary)
                     .fixedSize(horizontal: false, vertical: true)
                     .contentTransition(.opacity)
-                if !muc.isEmpty {
-                    CTWDongChip(ds: muc)
-                }
                 Text(giay < 20 ? "The assistant reads the issues and docs it needs first." : "Still working — long answers can take up to a minute.")
                     .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -923,22 +913,5 @@ struct TraLoiDangVietAICTW: View {
         .ctwThe(16)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("ai.streaming")
-    }
-}
-
-/// Hàng chip bọc dòng (mã thẻ, trang Docs đang đọc).
-struct CTWDongChip: View {
-    let ds: [String]
-    var body: some View {
-        BoCucBocDongCTW(khoang: 5) {
-            ForEach(Array(ds.enumerated()), id: \.offset) { _, t in
-                Text(verbatim: t.count > 40 ? String(t.prefix(38)) + "…" : t)
-                    .font(.ctw(size: 11.5, weight: .medium))
-                    .foregroundColor(AppColors.textSecondary)
-                    .lineLimit(1)
-                    .padding(.horizontal, 7).padding(.vertical, 3)
-                    .background(Capsule().fill(AppColors.backgroundTertiary))
-            }
-        }
     }
 }
