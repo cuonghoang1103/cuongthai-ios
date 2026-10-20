@@ -26360,7 +26360,7 @@
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Câu trả lời đã dừng trước khi xong. Bấm Hỏi lại."
+            "value": "Câu trả lời đã dừng trước khi xong. Chạm Hỏi lại."
           }
         }
       }
@@ -26430,7 +26430,7 @@
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Kết nối bị ngắt trước khi có câu trả lời. Bấm Hỏi lại."
+            "value": "Kết nối bị ngắt trước khi có câu trả lời. Chạm Hỏi lại."
           }
         }
       }

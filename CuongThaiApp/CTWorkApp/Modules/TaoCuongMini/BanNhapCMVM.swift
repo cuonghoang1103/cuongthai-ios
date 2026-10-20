@@ -242,7 +242,7 @@ final class BanNhapCMVM: ObservableObject {
     }
 
     /// Lỗi cho người dùng — không để lọt câu mời mua/mở khoá của máy chủ (3.1.1).
-    static func cauLoi(_ e: Error) -> String {
+    nonisolated static func cauLoi(_ e: Error) -> String {
         if case APIError.coMa(let ma, let m) = e {
             switch ma {
             case "WORK_SETUP_KEY_REQUIRED", "WORK_SETUP_SAI_KHOA", "WORK_SETUP_CHUA_BAT":
