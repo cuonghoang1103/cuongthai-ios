@@ -110,10 +110,12 @@ enum CTWBangNhom {
     }
 
     /// Chia thẻ (đã lọc) thành làn. `none` ⇒ một làn. `tenNguoi` đọc tên thành viên; `epicTen` = (số, tiêu đề) của epic.
+    /// `longViecCon` = việc con đi theo thẻ cha (web lồng nó VÀO thẻ cha). Board của app vẽ việc con thành thẻ rời ở
+    /// chế độ người/epic/ưu tiên (chưa có hàng "N sub-tasks" trong thẻ) ⇒ truyền false để không thẻ nào biến mất.
     static func chiaLan(_ che: CTWNhomBang, _ ds: [CTWIssueCard], cfg: CTWProjectConfig,
-                        epicTen: [Int: (so: Int, ten: String)]) -> [CTWLanBang] {
+                        epicTen: [Int: (so: Int, ten: String)], longViecCon: Bool = true) -> [CTWLanBang] {
         let con = viecConTheoCha(ds, cfg)
-        let longVao = Set(con.values.flatMap { $0.map(\.id) })
+        let longVao = longViecCon || che == .subtasks ? Set(con.values.flatMap { $0.map(\.id) }) : []
 
         if che == .subtasks {
             let theoId = Dictionary(ds.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
