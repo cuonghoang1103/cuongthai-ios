@@ -381,6 +381,7 @@ struct DanhSachCTW: View {
                 }
                 .frame(minHeight: 32)
             }
+            .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
             .accessibilityHint(Text("Inserts this into the query"))
         }
     }
