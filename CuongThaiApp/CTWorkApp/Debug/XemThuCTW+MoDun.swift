@@ -31,7 +31,8 @@ extension XemThuCTW {
 /// Trả `nil` = không phải đường của mô-đun nào ⇒ về bộ định tuyến lõi.
 enum DuLieuGiaMoDun {
     static func route(_ m: String, _ p: String, _ b: [String: Any]) -> Any? {
-        guard p.hasPrefix("/work/") else { return nil }
+        // `/users/me/preferences`: ghim mô-đun đồng bộ web (đợt B — `work.navPins`).
+        guard p.hasPrefix("/work/") || p == "/users/me/preferences" else { return nil }
         for f in boXuLy { if let r = f(m, p, b) { return r } }
         return nil
     }

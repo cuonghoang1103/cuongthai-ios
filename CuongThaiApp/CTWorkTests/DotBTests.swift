@@ -216,4 +216,13 @@ final class DotBTests: XCTestCase {
         XCTAssertEqual(b.jql(coChu: true), #"project IN (NW, WEB) AND type = Bug AND statusCategory IN ("To Do", Done) AND assignee IN (currentUser(), EMPTY) AND updated >= -7d"#)
         XCTAssertTrue(b.jql(coChu: false).hasSuffix("ORDER BY updated DESC"), "không có chữ ⇒ mới cập nhật lên đầu")
     }
+
+    /// Dữ liệu mẫu (màn thử `them`) đi đúng đường giải mã của app: tuỳ chọn người dùng ⇒ navPins.
+    func testMayChuGiaTraNavPins() throws {
+        let d = DuLieuGia.traLoi(method: "GET", path: "/api/v1/users/me/preferences", body: [:])
+        let tc = try XCTUnwrap(JSONDecoder().decode(APIResponse<CTWTuyChonNguoiDung>.self, from: d).data)
+        XCTAssertEqual(tc.navPins["7"], CTWGhimMuc(pin: ["time", "sprints"], hide: ["code"]))
+        let p = DuLieuGia.traLoi(method: "GET", path: "/api/v1/profile", body: [:])
+        XCTAssertNoThrow(try JSONDecoder().decode(APIResponse<User>.self, from: p), "hồ sơ giả phải giải mã được — không thì ghim không đồng bộ ở màn thử")
+    }
 }
