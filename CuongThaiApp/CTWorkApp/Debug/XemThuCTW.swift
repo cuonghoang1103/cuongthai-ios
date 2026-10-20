@@ -100,6 +100,8 @@ final class MayChuGia: URLProtocol {
         }
         // GET không có thân ⇒ đưa tham số query vào `body` cho tuyến giả cần (cây thư mục theo `path`, tệp…).
         var than = Self.than(request)
+        // Tuyến SSE (trợ lý AI bản stream) — phát từng mẩu theo thời gian (`XemThuCTW+LuongAI.swift`).
+        if let l = DuLieuGiaLuongAI.luong(method: request.httpMethod ?? "GET", path: u.path, body: than) { phatLuong(l, u); return }
         if than.isEmpty, let q = URLComponents(url: u, resolvingAgainstBaseURL: false)?.queryItems {
             for i in q { than[i.name] = i.value ?? "" }
         }
@@ -114,7 +116,23 @@ final class MayChuGia: URLProtocol {
             self.client?.urlProtocolDidFinishLoading(self)
         }
     }
-    override func stopLoading() {}
+    override func stopLoading() { daDung = true }
+    private var daDung = false
+
+    private func phatLuong(_ l: DuLieuGiaLuongAI.PhanHoi, _ u: URL) {
+        let res = HTTPURLResponse(url: u, statusCode: l.trangThai, httpVersion: "HTTP/1.1",
+                                  headerFields: ["Content-Type": l.loaiNoiDung, "Cache-Control": "no-cache, no-transform"])!
+        client?.urlProtocol(self, didReceive: res, cacheStoragePolicy: .notAllowed)
+        let q = DispatchQueue(label: "may-chu-gia-luong")
+        for (i, (luc, d)) in l.mau.enumerated() {
+            q.asyncAfter(deadline: .now() + luc) { [self] in
+                guard !daDung else { return }
+                client?.urlProtocol(self, didLoad: d)
+                if i == l.mau.count - 1 { client?.urlProtocolDidFinishLoading(self) }
+            }
+        }
+        if l.mau.isEmpty { client?.urlProtocolDidFinishLoading(self) }
+    }
 
     private static func than(_ r: URLRequest) -> [String: Any] {
         var d = r.httpBody

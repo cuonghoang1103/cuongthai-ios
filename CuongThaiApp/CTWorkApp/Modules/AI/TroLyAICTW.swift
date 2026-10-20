@@ -63,7 +63,7 @@ final class TroLyAIVM: ObservableObject {
         loiLuot = nil
         cauDangHoi = cau
         dangCho = String(localized: "Reading the project…")
-        defer { dangCho = nil; cauDangHoi = nil }
+        defer { dangCho = nil; cauDangHoi = nil; tienDo = nil; xoaNhap() }
         var tid = hoiThoai?.id
         do {
             if tid == nil {
@@ -72,12 +72,30 @@ final class TroLyAIVM: ObservableObject {
                 tid = t.id
             }
             guard let tid else { return false }
+            // Bản stream trước; máy chủ chưa có tuyến ⇒ lặng lẽ về `/ai/chat` (và nhớ trong phiên).
+            if !LuongAICTW.khongCoLuong {
+                do {
+                    try await chayLuong(LuongAICTW.than(cauHoi: cau, threadId: tid), tid: tid)
+                    CTWRung.thanhCong()
+                    return true
+                } catch LoiLuongAI.khongHoTro {
+                    xoaNhap()
+                }
+            }
             let kq: CTWAIKetQua = try await APIClient.shared.request(CTWAPI.aiHoi(pid: pid, cauHoi: cau, threadId: tid))
             if let q = kq.quota { hanMuc = q }
             await mo(tid)
             CTWRung.thanhCong()
             return true
+        } catch is CancellationError {
+            // Người dùng bấm Dừng / rời màn: máy chủ đánh dấu câu hỏi lỗi ⇒ nạp lại để thấy nút "Ask again".
+            if let tid { await moLang(tid) }
+            return true
         } catch {
+            if Task.isCancelled || (error as? URLError)?.code == .cancelled {
+                if let tid { await moLang(tid) }
+                return true
+            }
             CTWRung.loi()
             // Máy chủ LƯU câu hỏi trước khi gọi AI ⇒ có trong hội thoại (kèm nút Ask again). Không có ⇒ trả lại ô soạn.
             // ⚠️ Nạp lại TRƯỚC rồi mới đặt `loiLuot` — `mo()` xoá `loiLuot` (đã dính: nút Ask again biến mất ngay).
@@ -92,18 +110,133 @@ final class TroLyAIVM: ObservableObject {
         guard dangCho == nil, let tid = hoiThoai?.id else { return }
         loiLuot = nil
         dangCho = String(localized: "Asking again…")
-        defer { dangCho = nil }
+        defer { dangCho = nil; tienDo = nil; xoaNhap() }
         var loiMoi: String?
         do {
-            let kq: CTWAIKetQua = try await APIClient.shared.request(CTWAPI.aiHoiLai(pid: pid, mid: m.id))
-            if let q = kq.quota { hanMuc = q }
+            var xong = false
+            if !LuongAICTW.khongCoLuong {
+                do {
+                    try await chayLuong(LuongAICTW.than(cauHoi: m.content.isEmpty ? "retry" : m.content, threadId: tid, hoiLai: m.id), tid: tid)
+                    xong = true
+                } catch LoiLuongAI.khongHoTro {
+                    xoaNhap()
+                }
+            }
+            if !xong {
+                let kq: CTWAIKetQua = try await APIClient.shared.request(CTWAPI.aiHoiLai(pid: pid, mid: m.id))
+                if let q = kq.quota { hanMuc = q }
+            }
             CTWRung.thanhCong()
+        } catch is CancellationError {
         } catch {
-            CTWRung.loi()
-            loiMoi = TroLyAICTW.loi(error)
+            if !(Task.isCancelled || (error as? URLError)?.code == .cancelled) {
+                CTWRung.loi()
+                loiMoi = TroLyAICTW.loi(error)
+            }
         }
-        await mo(tid)
+        await moLang(tid)
         loiLuot = loiMoi
+    }
+
+    // MARK: Luồng (SSE)
+
+    /// Tiến độ đang hiện ("Đang đọc LFD-75, Docs #3…", "Đang nghĩ…") — nil khi chưa có sự kiện nào.
+    @Published var tienDo: SuKienAICTW?
+    /// Bản nháp Markdown đang chạy — cập nhật tối đa ~12 lần/giây (dựng lại markdown mỗi mẩu thì giật).
+    @Published private(set) var banNhap = ""
+    /// Mục đang đọc của sự kiện `reading` gần nhất (chip dưới dòng trạng thái).
+    var docMuc: [String] {
+        if case .doc(_, let m)? = tienDo { return Array(m.prefix(6)) }
+        return []
+    }
+    private var nhapTho = ""
+    private var henDay: Task<Void, Never>?
+    private var lanDayCuoi = Date.distantPast
+    /// Lượt hỏi đang chạy — `dung()` huỷ nó (đóng kết nối ⇒ máy chủ thôi gọi model).
+    var luot: Task<Void, Never>?
+
+    func dung() {
+        luot?.cancel()
+    }
+
+    #if DEBUG
+    /// Đặt trạng thái lượt hỏi đứng yên (chụp màn) — không gọi mạng.
+    func datThu(cau: String, tienDo: SuKienAICTW?, nhap: String) {
+        cauDangHoi = cau
+        self.tienDo = tienDo
+        dangCho = tienDo.flatMap(LuongAICTW.nhan) ?? String(localized: "Writing the answer…")
+        nhapTho = nhap
+        banNhap = nhap
+    }
+    #endif
+
+    private func xoaNhap() {
+        henDay?.cancel(); henDay = nil
+        nhapTho = ""
+        if !banNhap.isEmpty { banNhap = "" }
+    }
+
+    private func dayNhap(ngay: Bool = false) {
+        let bayGio = Date()
+        if ngay || bayGio.timeIntervalSince(lanDayCuoi) >= 0.08 {
+            henDay?.cancel(); henDay = nil
+            lanDayCuoi = bayGio
+            banNhap = nhapTho
+            return
+        }
+        guard henDay == nil else { return }
+        henDay = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 80_000_000)
+            guard let self, !Task.isCancelled else { return }
+            self.henDay = nil
+            self.lanDayCuoi = Date()
+            self.banNhap = self.nhapTho
+        }
+    }
+
+    /// Chạy một lượt stream tới `done` (ghép câu hỏi + câu trả lời vào hội thoại tại chỗ, không nạp lại) hoặc ném lỗi.
+    private func chayLuong(_ than: [String: Any], tid: Int) async throws {
+        for try await s in LuongAICTW.mo(pid: pid, than: than) {
+            switch s {
+            case .chuanBi, .doc, .nghi, .kiemTra:
+                tienDo = s
+                if let n = LuongAICTW.nhan(s) { dangCho = n }
+            case .manh(let t):
+                if tienDo != nil { tienDo = nil; dangCho = String(localized: "Writing the answer…") }
+                nhapTho += t
+                dayNhap()
+            case .xoaNhap:
+                nhapTho = ""
+                dayNhap(ngay: true)
+            case .xong(let d):
+                let kq = try JSONDecoder().decode(CTWAIKetQua.self, from: d)
+                if let q = kq.quota { hanMuc = q }
+                if let r = kq.reply { nhapTho = r; dayNhap(ngay: true) }
+                ghep(kq, tid: tid)
+                return
+            case .loi(let ma, let m, _):
+                throw APIError.coMa(ma: ma, thongDiep: m)
+            }
+        }
+        throw LoiLuongAI.dutGiuaChung
+    }
+
+    /// Ghép `question` + `answer` của `done` vào hội thoại đang mở (đúng dữ liệu máy chủ đã lưu) — khỏi nạp lại cả hội thoại.
+    private func ghep(_ kq: CTWAIKetQua, tid: Int) {
+        guard var t = hoiThoai, t.id == tid else { return }
+        var ms = t.messages ?? []
+        for m in [kq.question, kq.answer].compactMap({ $0 }) {
+            if let i = ms.firstIndex(where: { $0.id == m.id }) { ms[i] = m } else { ms.append(m) }
+        }
+        t.messages = ms
+        t.messageCount = ms.count
+        hoiThoai = t
+        if kq.answer == nil { Task { await mo(tid) } }
+    }
+
+    /// Nạp lại hội thoại mà không đè lỗi đang hiện bằng thông báo lỗi tải.
+    private func moLang(_ tid: Int) async {
+        if let t: CTWAIHoiThoai = try? await APIClient.shared.request(CTWAPI.aiHoiThoai(pid: pid, id: tid)) { hoiThoai = t }
     }
 
     func apDung(_ m: CTWAITinNhan, _ d: CTWAIDeXuat) async {
@@ -145,6 +278,7 @@ struct TroLyAICTW: View {
     @State private var rieng = false
     @State private var tamPhu: TamPhuAI?
     @FocusState private var dangGo: Bool
+    @State private var demLucHien = 0
 
     init(pid: Int) {
         self.pid = pid
@@ -159,9 +293,13 @@ struct TroLyAICTW: View {
             case "WORK_AI_UNAVAILABLE": return String(localized: "The AI assistant is temporarily unavailable. Please try again in a few minutes.")
             case "WORK_AI_QUOTA_EXCEEDED", "WORK_AI_TOKEN_CAP": return String(localized: "You've reached today's AI limit. It resets tomorrow.")
             case "WORK_AI_NOTHING_TO_RETRY": return String(localized: "This question already has an answer.")
+            case "WORK_AI_CANCELLED": return String(localized: "The answer was stopped before it was ready. Tap Ask again.")
             case "CLIENT_PORTAL_ONLY", "WORK_FORBIDDEN": return String(localized: "The AI assistant is only available to the project team.")
             default: return CTW.coLoiMoiMua(m) ? String(localized: "This action isn't available right now.") : m
             }
+        }
+        if let l = e as? LoiLuongAI, l == .dutGiuaChung {
+            return String(localized: "The connection closed before the answer was ready. Tap Ask again.")
         }
         return CTW.loi(e)
     }
@@ -197,7 +335,7 @@ struct TroLyAICTW: View {
                                     .id(m.id)
                             } else {
                                 CauHoiAICTW(m: m, cuaToi: m.author?.id == app.currentUser?.id, dangCho: vm.dangCho != nil) {
-                                    Task { await vm.hoiLai(m) }
+                                    vm.luot = Task { await vm.hoiLai(m) }
                                 }
                                 .id(m.id)
                             }
@@ -207,12 +345,17 @@ struct TroLyAICTW: View {
                                 CTWUser(id: $0.id, username: $0.username, fullName: $0.fullName, displayName: nil, avatarUrl: $0.avatarUrl, role: nil, kind: nil)
                             }), cuaToi: true, dangCho: true) {}
                         }
-                        if let c = vm.dangCho { DangNghiAICTW(chu: c).id("cho") }
+                        if !vm.banNhap.isEmpty {
+                            // Câu trả lời đang chạy: dựng Markdown dần; thay bằng `done.reply` khi xong (đề xuất chỉ có ở `done`).
+                            TraLoiDangVietAICTW(chu: vm.banNhap, trangThai: vm.tienDo.flatMap(LuongAICTW.nhan)).id("nhap")
+                        } else if let c = vm.dangCho {
+                            DangNghiAICTW(chu: c, muc: vm.docMuc).id("cho")
+                        }
                         if let l = vm.loiLuot {
                             VStack(alignment: .leading, spacing: 8) {
                                 CTWErrorBanner(text: l) { vm.loiLuot = nil }
                                 if let h = vm.cauHong {
-                                    Button { Task { await vm.hoiLai(h) } } label: {
+                                    Button { vm.luot = Task { await vm.hoiLai(h) } } label: {
                                         Label("Ask again", systemImage: "arrow.clockwise").font(.ctw(size: 15, weight: .semibold))
                                             .frame(maxWidth: .infinity, minHeight: 44)
                                     }
@@ -234,6 +377,8 @@ struct TroLyAICTW: View {
             .scrollDismissesKeyboard(.interactively)
             .onChange(of: vm.tinNhan.count) { _, _ in withAnimation { cuon.scrollTo("cuoi", anchor: .bottom) } }
             .onChange(of: vm.dangCho) { _, _ in withAnimation { cuon.scrollTo("cuoi", anchor: .bottom) } }
+            // Nháp chạy ⇒ bám đáy (không hoạt ảnh — ~12 lần/giây).
+            .onChange(of: vm.banNhap.count / 120) { _, _ in cuon.scrollTo("cuoi", anchor: .bottom) }
         }
         .safeAreaInset(edge: .bottom) { oSoan }
         .background(AppColors.backgroundPrimary)
@@ -242,6 +387,10 @@ struct TroLyAICTW: View {
         .toolbar { ToolbarItem(placement: .primaryAction) { menuHoiThoai } }
         .environment(\.openURL, OpenURLAction { u in moLink(u) })
         .task { await vm.taiDanhSach() }
+        .onAppear { demLucHien = nganXep.duong.count }
+        // Rời màn (quay lại) ⇒ đóng luồng — máy chủ thôi gọi model. Đẩy một thẻ từ link trong câu trả lời (ngăn xếp DÀI ra)
+        // hoặc đổi tab (giữ nguyên) thì để câu trả lời chạy tiếp.
+        .onDisappear { if nganXep.duong.count < demLucHien { vm.dung() } }
         // MỘT `.sheet(item:)` cho cả hai tấm phủ (CLAUDE.md C5: hai `.sheet` trên một view ⇒ chỉ cái cuối chạy).
         .sheet(item: $tamPhu) { t in
             switch t {
@@ -267,6 +416,20 @@ struct TroLyAICTW: View {
                 if let t = vm.dsHoiThoai.first(where: { $0.title.contains("velocity") }) { await vm.mo(t.id) }
                 vm.loiLuot = TroLyAICTW.loi(APIError.coMa(ma: "WORK_AI_BAD_OUTPUT", thongDiep: ""))
             case "dongy"?: daDongY = false; tamPhu = .dongY(mau[0])
+            // Bản stream qua máy chủ giả (XemThuCTW+LuongAI): hỏi thật một câu ⇒ chụp lúc đọc / đang viết / xong.
+            case "stream"?:
+                daDongY = true
+                guiDi(String(localized: "How is Sprint 6 going, and what should I do first?"))
+            // Trạng thái đứng yên để chụp: đang đọc thẻ/Docs · câu trả lời đang chạy giữa chừng.
+            case "doc"?:
+                daDongY = true
+                vm.datThu(cau: String(localized: "How is Sprint 6 going, and what should I do first?"),
+                          tienDo: .doc(vong: 1, muc: ["NW-12", "NW-17", "Docs #3 — Notification payloads", "Sprint 6"]), nhap: "")
+            case "viet"?:
+                daDongY = true
+                let t = AIGia.traLoiBang
+                vm.datThu(cau: String(localized: "How is Sprint 6 going, and what should I do first?"), tienDo: nil,
+                          nhap: String(t.prefix(t.count * 55 / 100)))
             default: break
             }
         }
@@ -381,15 +544,27 @@ struct TroLyAICTW: View {
                     .background(RoundedRectangle(cornerRadius: 20, style: .continuous).fill(AppColors.backgroundCard))
                     .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(AppColors.border))
                     .accessibilityIdentifier("ai.input")
-                Button { thuHoi(soan) } label: {
-                    Image(systemName: vm.dangCho == nil ? "arrow.up.circle.fill" : "hourglass.circle.fill")
-                        .font(.ctw(size: 32))
-                        .foregroundColor(soan.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || vm.dangCho != nil ? AppColors.textTertiary : AppColors.primary)
-                        .frame(width: 44, height: 44)
+                if vm.dangCho != nil {
+                    // Đang trả lời ⇒ nút Dừng (đóng luồng; câu hỏi giữ lại với nút "Ask again").
+                    Button { vm.dung() } label: {
+                        Image(systemName: "stop.circle.fill")
+                            .font(.ctw(size: 32))
+                            .foregroundColor(AppColors.primary)
+                            .frame(width: 44, height: 44)
+                    }
+                    .accessibilityLabel("Stop the answer")
+                    .accessibilityIdentifier("ai.stop")
+                } else {
+                    Button { thuHoi(soan) } label: {
+                        Image(systemName: "arrow.up.circle.fill")
+                            .font(.ctw(size: 32))
+                            .foregroundColor(soan.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? AppColors.textTertiary : AppColors.primary)
+                            .frame(width: 44, height: 44)
+                    }
+                    .disabled(soan.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .accessibilityLabel("Send question to AI")
+                    .accessibilityIdentifier("ai.send")
                 }
-                .disabled(soan.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || vm.dangCho != nil)
-                .accessibilityLabel("Send question to AI")
-                .accessibilityIdentifier("ai.send")
             }
             Text("AI answers can be wrong — check important facts. Don't share passwords or keys.")
                 .font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
@@ -410,7 +585,7 @@ struct TroLyAICTW: View {
     private func guiDi(_ cau: String) {
         soan = ""
         dangGo = false
-        Task {
+        vm.luot = Task {
             let ok = await vm.hoi(cau, rieng: rieng)
             if !ok && soan.isEmpty { soan = cau }
             await vm.taiDanhSach()
@@ -685,15 +860,24 @@ struct TraLoiAICTW: View {
 /// "AI đang đọc dự án…" — chấm nhảy, tôn trọng Giảm chuyển động.
 struct DangNghiAICTW: View {
     let chu: String
+    /// Mục đang đọc (sự kiện `reading` của luồng) — hiện thành chip mã thẻ/trang Docs.
+    var muc: [String] = []
     @State private var giay = 0
     var body: some View {
-        HStack(spacing: 10) {
-            ProgressView()
-            VStack(alignment: .leading, spacing: 2) {
+        HStack(alignment: .top, spacing: 10) {
+            ProgressView().padding(.top, 2)
+            VStack(alignment: .leading, spacing: 4) {
                 Text(chu).font(.ctw(size: 14, weight: .medium)).foregroundColor(AppColors.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .contentTransition(.opacity)
+                if !muc.isEmpty {
+                    CTWDongChip(ds: muc)
+                }
                 Text(giay < 20 ? "The assistant reads the issues and docs it needs first." : "Still working — long answers can take up to a minute.")
                     .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
+            Spacer(minLength: 0)
         }
         .padding(12)
         .ctwThe(14)
@@ -704,5 +888,57 @@ struct DangNghiAICTW: View {
             }
         }
         .accessibilityElement(children: .combine)
+    }
+}
+
+// MARK: - Câu trả lời ĐANG chạy (SSE)
+
+/// Bong bóng trợ lý khi chữ đang về: Markdown dựng dần (VM đã giới hạn ~12 lần/giây), nhãn "AI-generated" ngay từ chữ đầu
+/// (4.7). Chưa có Copy/Report/đề xuất — những thứ đó thuộc câu trả lời CHUẨN (`done`), thay ngay khi xong.
+struct TraLoiDangVietAICTW: View {
+    let chu: String
+    var trangThai: String?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 6) {
+                Image(systemName: "sparkles").font(.ctw(size: 12, weight: .bold)).foregroundColor(AppColors.onPrimary)
+                    .frame(width: 22, height: 22)
+                    .background(Circle().fill(AppColors.primary))
+                    .accessibilityHidden(true)
+                Text(verbatim: "CT Work AI").font(.ctw(size: 13, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                CTWNhanAI(chu: String(localized: "AI-generated"))
+                Spacer(minLength: 0)
+                ProgressView().controlSize(.small)
+            }
+            CTWMarkdownView(markdown: chu, coChu: 15)
+            if let t = trangThai {
+                Text(t).font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                Text("Writing the answer…").font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
+            }
+        }
+        .padding(14)
+        .ctwThe(16)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("ai.streaming")
+    }
+}
+
+/// Hàng chip bọc dòng (mã thẻ, trang Docs đang đọc).
+struct CTWDongChip: View {
+    let ds: [String]
+    var body: some View {
+        BoCucBocDongCTW(khoang: 5) {
+            ForEach(Array(ds.enumerated()), id: \.offset) { _, t in
+                Text(verbatim: t.count > 40 ? String(t.prefix(38)) + "…" : t)
+                    .font(.ctw(size: 11.5, weight: .medium))
+                    .foregroundColor(AppColors.textSecondary)
+                    .lineLimit(1)
+                    .padding(.horizontal, 7).padding(.vertical, 3)
+                    .background(Capsule().fill(AppColors.backgroundTertiary))
+            }
+        }
     }
 }
