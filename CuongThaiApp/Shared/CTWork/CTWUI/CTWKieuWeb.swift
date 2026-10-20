@@ -46,15 +46,15 @@ enum CTWKieuWeb {
 
     // MARK: Ngày
 
-    /// Ngày `YYYY-MM-DD` (hoặc ISO) ⇒ "Oct 5" / "Oct 5, 2027" theo NGÔN NGỮ MÁY (không ép en_US).
+    /// Ngày `YYYY-MM-DD` (hoặc ISO) ⇒ "Oct 5" / "5 thg 10" (khác năm: "Oct 5, 2027" / "5 thg 10, 2027") theo NGÔN NGỮ
+    /// APP đang chọn (`CTWDinhDang.locale` — đổi trong Account là đổi ngay), không theo ngôn ngữ máy.
     static func ngay(_ s: String?) -> String? {
         guard let d = CTW.ngayDate(s) else { return nil }
         var lich = Calendar(identifier: .gregorian)
-        lich.timeZone = TimeZone(identifier: "UTC") ?? .current
-        var f = Date.FormatStyle.dateTime.month(.abbreviated).day()
-        if lich.component(.year, from: d) != Calendar.current.component(.year, from: Date()) { f = f.year() }
-        f.timeZone = lich.timeZone
-        return d.formatted(f)
+        let utc = TimeZone(identifier: "UTC") ?? .current
+        lich.timeZone = utc
+        let khacNam = lich.component(.year, from: d) != Calendar.current.component(.year, from: Date())
+        return CTWDinhDang.mau(khacNam ? "yMMMd" : "MMMd", muiGio: utc).string(from: d)
     }
 
     /// Hạn rơi vào HÔM NAY (theo ngày máy).

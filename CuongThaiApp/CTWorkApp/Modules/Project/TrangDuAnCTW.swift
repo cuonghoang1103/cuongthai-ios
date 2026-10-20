@@ -188,7 +188,7 @@ struct TrangDuAnCTW: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(l.tenDuAn).font(.ctw(size: 18, weight: .bold)).foregroundColor(AppColors.textPrimary)
                     .lineLimit(2).fixedSize(horizontal: false, vertical: true)
-                Text(moTaDuAn(l)).font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary).lineLimit(1)
+                Text(moTaDuAn(l)).font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary).lineLimit(2)
             }
             .layoutPriority(1)
             Spacer(minLength: 0)
@@ -223,7 +223,7 @@ struct TrangDuAnCTW: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(m.ten).font(.ctw(size: 16, weight: .medium)).foregroundColor(AppColors.textPrimary)
                 if !m.moTa.isEmpty {
-                    Text(m.moTa).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1)
+                    Text(m.moTa).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(2)
                 }
             }
         }

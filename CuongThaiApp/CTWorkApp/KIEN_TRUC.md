@@ -279,7 +279,7 @@ xcodebuild test -project CuongThaiApp.xcodeproj -scheme CTWorkApp -destination '
   ⇒ cả cây dựng lại (tab đang chọn giữ vì nằm ở `AppState.muc`; ngăn xếp điều hướng về gốc). Đổi xong: đăng ký lại nút trên
   thông báo (`NutThongBaoCTW.dangKy`) + `WidgetCenter.reloadAllTimelines()`. Widget/Share gọi `NgonNguCTW.caiDatBundle()` lúc khởi tạo.
 - Ngày/số HIỂN THỊ: `CTWDinhDang` (`Shared/CTWork/CTWUI/CTWDinhDang.swift`) — `mau("MMMd")` ("Oct 5" / "5 thg 10"),
-  `gio`, `tuongDoi` ("2 giờ trước"), `so`. ⛔ Không dùng `Locale(identifier: "en_US")` để hiển thị; ĐỌC ngày máy chủ vẫn
+  `gio`, `tuongDoi` ("2 giờ trước"), `so`. Chip hạn kiểu web (`CTWKieuWeb.ngay` ⇒ `CTWDueChip`, Board, My Work, chi tiết thẻ) cũng đi qua `CTWDinhDang`. ⛔ Không dùng `Locale(identifier: "en_US")` để hiển thị; ĐỌC ngày máy chủ vẫn
   `en_US_POSIX`. App chính (cũng biên dịch `Shared/CTWork`) không đặt `CTWDinhDang.locale` ⇒ vẫn `en_US`, không catalog ⇒ vẫn chữ Anh.
 
 **Catalog:** `CTWorkApp/Localizable.xcstrings` · `CTWorkApp/InfoPlist.xcstrings` (chuỗi xin quyền; tên "CT Work" giữ nguyên) ·

@@ -263,7 +263,7 @@ struct CTWIssueView: View {
             }
         }
         .background(AppColors.backgroundPrimary)
-        .navigationTitle(vm.cauHinh.map { "\($0.key)-\(vm.so)" } ?? "Issue")
+        .navigationTitle(vm.cauHinh.map { "\($0.key)-\(vm.so)" } ?? String(localized: "Issue"))
         .ctwTieuDeNho()
         .toolbar {
             if let t = vm.the, let cfg = vm.cauHinh {
