@@ -6,6 +6,11 @@ import Foundation
 // khi mã hoá lại. Sửa mô tả thẻ (tick ô việc, soạn lại) mà đi qua `CTWNode` là
 // làm rơi màu chữ, nhắc tên, ảnh, thuộc tính bảng… của người khác. Mọi chỗ GHI
 // lại TipTap phải đi qua `CTWJSON` (đọc thô ⇒ sửa đúng chỗ ⇒ gửi lại thô).
+//
+// Mảng C dùng lại cho kế hoạch "Create with CuongMini" (`SetupPlan`): cây rất to, máy chủ kiểm CHẶT khi PATCH. App chỉ sửa
+// vài trường; khai struct Codable cho cả cây thì mỗi trường app không khai sẽ RƠI MẤT khi gửi lại (CLAUDE.md C4 — mất im
+// lặng). Giữ cây gốc, sửa đúng chỗ (`subscript` set, `suaTrongMang`), gửi lại nguyên vẹn; phần hiển thị giải mã riêng
+// bằng model có kiểu (`giai`).
 
 enum CTWJSON: Codable, Hashable {
     case null
@@ -31,7 +36,8 @@ enum CTWJSON: Codable, Hashable {
         switch self {
         case .null: try c.encodeNil()
         case .bool(let b): try c.encode(b)
-        case .so(let n): try c.encode(n)
+        // Số nguyên gửi dạng nguyên ("5", không "5.0") — zod `.int()` của máy chủ, TipTap `level: 3`.
+        case .so(let n): if n.rounded() == n, abs(n) < 1e15 { try c.encode(Int64(n)) } else { try c.encode(n) }
         case .chuoi(let s): try c.encode(s)
         case .mang(let a): try c.encode(a)
         case .doiTuong(let o): try c.encode(o)
@@ -65,9 +71,16 @@ enum CTWJSON: Codable, Hashable {
     }
 
     subscript(_ k: String) -> CTWJSON? {
-        if case .doiTuong(let o) = self { return o[k] }
-        return nil
+        get { if case .doiTuong(let o) = self { return o[k] }; return nil }
+        set {
+            guard case .doiTuong(var o) = self else { return }
+            o[k] = newValue
+            self = .doiTuong(o)
+        }
     }
+
+    /// Tên mảng C dùng — cùng nghĩa với `any`.
+    var foundation: Any { any }
 
     var chuoi: String? { if case .chuoi(let s) = self { return s }; return nil }
     var so: Double? { if case .so(let n) = self { return n }; return nil }
@@ -80,5 +93,28 @@ enum CTWJSON: Codable, Hashable {
     var nut: CTWNode? {
         guard let d = try? JSONEncoder().encode(self) else { return nil }
         return try? JSONDecoder().decode(CTWNode.self, from: d)
+    }
+
+    /// Giải mã cây này thành một model có kiểu (hiển thị).
+    func giai<T: Decodable>(_ t: T.Type) -> T? {
+        guard let d = try? JSONEncoder().encode(self) else { return nil }
+        return try? JSONDecoder().decode(T.self, from: d)
+    }
+
+    /// Mã hoá một model có kiểu thành cây (đầu vào trình hướng dẫn đã khai đủ trường).
+    static func tu<T: Encodable>(_ v: T) -> CTWJSON? {
+        guard let d = try? JSONEncoder().encode(v) else { return nil }
+        return try? JSONDecoder().decode(CTWJSON.self, from: d)
+    }
+
+    // MARK: Sửa tại chỗ trong mảng đối tượng (theo `ref`)
+
+    /// Sửa phần tử có `ref == ref` trong mảng `self[khoa]` bằng `sua`. Trả false nếu không thấy.
+    @discardableResult
+    mutating func suaTrongMang(_ khoa: String, ref: String, khoaRef: String = "ref", _ sua: (inout CTWJSON) -> Void) -> Bool {
+        guard var a = self[khoa]?.mang, let i = a.firstIndex(where: { $0[khoaRef]?.chuoi == ref }) else { return false }
+        sua(&a[i])
+        self[khoa] = .mang(a)
+        return true
     }
 }

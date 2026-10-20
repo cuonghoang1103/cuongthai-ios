@@ -348,7 +348,31 @@ enum AIGia {
         hoiThoai[i]["lastMessageAt"] = G.iso(0)
     }
 
-    static func hoi(_ b: [String: Any]) -> Any {
+    /// Câu trả lời của bản STREAM giả (tiếng Việt, có BẢNG rộng — kiểm bảng cuộn ngang trong khung riêng).
+    static let traLoiBang = """
+    ### Việc gấp nhất
+    1. [NW-12 — Push notifications open the right issue](/work/northwind/NW/issue/12) — **hạn 2 ngày nữa**, đang làm, 5 điểm. Đọc trước [Docs #3 — Notification payloads](/work/northwind/NW/docs/3) rồi thử chạm thông báo khi app đang tắt hẳn.
+    2. [NW-17 — Offline cache for My Work](/work/northwind/NW/issue/17) — chưa bắt đầu; hỏi @linh màn nào phải chạy được khi mất mạng.
+
+    ### Sprint 6 đang thế nào
+    | Thẻ | Người làm | Trạng thái | Điểm | Hạn | Ghi chú |
+    | --- | --- | --- | --- | --- | --- |
+    | NW-12 | Alex Morgan | In Progress | 5 | 22/10 | Còn ca khởi động nguội (cold start) chưa thử trên iPad |
+    | NW-17 | Alex Morgan | To Do | 3 | 28/10 | Chờ chốt danh sách màn ngoại tuyến |
+    | NW-19 | Linh Tran | Done | 8 | 18/10 | Đã gộp vào `main` |
+
+    - Còn **8/16 điểm**; nếu NW-12 xong trước thứ Năm thì sprint vẫn kịp.
+    - Mã cần xem: `Sources/App/DinhTuyenThongBao.swift` (hàm `tach(duongDan:)`).
+
+    _Kiến thức chung:_ giữ bộ định tuyến là hàm thuần để kiểm thử không cần máy thật.
+    """
+
+    /// Id câu hỏi cuối của hội thoại (máy chủ giả trả ở `preparing.questionId`).
+    static func idCauHoiCuoi(_ tid: Int) -> Int? {
+        ((mot(tid)?["messages"] as? [[String: Any]])?.last { ($0["role"] as? String) == "user" })?["id"] as? Int
+    }
+
+    static func hoi(_ b: [String: Any], traLoi: String = traLoiMau) -> Any {
         let tid = b["threadId"] as? Int ?? 0
         let cau = b["message"] as? String ?? ""
         idKe += 1
@@ -358,9 +382,9 @@ enum AIGia {
             return LoiGiaCTW(trangThai: 502, ma: "WORK_AI_BAD_OUTPUT", thongDiep: "The AI returned an answer we could not read. Please try again.")
         }
         idKe += 1
-        let a = tin(idKe, tid, "assistant", traLoiMau, author: nil, gio: 0)
+        let a = tin(idKe, tid, "assistant", traLoi, author: nil, gio: 0)
         them(tid, a)
-        return ["reply": traLoiMau, "actions": [Any](), "threadId": tid, "question": q, "answer": a,
+        return ["reply": traLoi, "actions": [Any](), "threadId": tid, "question": q, "answer": a,
                 "quota": ["pro": false, "used": 4, "limit": NSNull(), "remaining": NSNull(), "available": true]]
     }
 

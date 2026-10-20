@@ -29,45 +29,72 @@ struct CTWKhoiView: View {
     let khoi: [CTWKhoi]
     var coChu: CGFloat = 15
 
+    /// Khoảng giữa hai dòng trong một đoạn — câu trả lời AI dài đọc dễ hơn (21/10/2026).
+    private var gianDong: CGFloat { max(2, coChu * 0.22) }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 9) {
+        VStack(alignment: .leading, spacing: max(8, coChu * 0.7)) {
             ForEach(Array(khoi.enumerated()), id: \.offset) { _, k in mot(k) }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// Kiểu chữ trong dòng: `mã` ⇒ chữ đơn cách trên nền nhạt (Text không có nền theo đoạn ⇒ dùng thuộc tính
+    /// `backgroundColor` của AttributedString); link ⇒ màu nhấn. Chữ dài không có dấu cách (đường dẫn, mã) vẫn bọc dòng.
+    private func kieu(_ a: AttributedString) -> AttributedString {
+        var x = a
+        for r in x.runs {
+            if r.inlinePresentationIntent?.contains(.code) == true {
+                x[r.range].font = .ctw(size: coChu - 1.5, design: .monospaced)
+                x[r.range].backgroundColor = AppColors.backgroundTertiary
+                x[r.range].foregroundColor = AppColors.textPrimary
+            }
+            if r.link != nil {
+                x[r.range].foregroundColor = AppColors.primary
+            }
+        }
+        return x
     }
 
     @ViewBuilder
     private func mot(_ k: CTWKhoi) -> some View {
         switch k {
         case .doan(let a):
-            Text(a).font(.ctw(size: coChu)).foregroundColor(AppColors.textPrimary)
+            Text(kieu(a)).font(.ctw(size: coChu)).foregroundColor(AppColors.textPrimary)
+                .lineSpacing(gianDong)
                 .fixedSize(horizontal: false, vertical: true)
                 .textSelection(.enabled)
         case .tieuDe(let a, let cap):
-            Text(a)
+            Text(kieu(a))
                 .font(.ctw(size: cap <= 1 ? coChu + 7 : (cap == 2 ? coChu + 4 : coChu + 2), weight: .bold))
                 .foregroundColor(AppColors.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, cap <= 2 ? 6 : 2)
                 .accessibilityAddTraits(.isHeader)
         case .muc(let a, let nhan, let cap):
-            HStack(alignment: .firstTextBaseline, spacing: 7) {
-                Text(nhan).font(.ctw(size: coChu, weight: .semibold)).foregroundColor(AppColors.textSecondary)
-                    .frame(minWidth: 14, alignment: .trailing)
-                Text(a).font(.ctw(size: coChu)).foregroundColor(AppColors.textPrimary)
+            // Nhãn có cột cố định (số "10." không đẩy chữ lệch hàng) + thụt theo cấp; dòng thứ hai thẳng hàng với chữ.
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text(nhan).font(.ctw(size: coChu, weight: nhan == "•" ? .bold : .semibold))
+                    .foregroundColor(nhan == "•" ? AppColors.textTertiary : AppColors.textSecondary)
+                    .monospacedDigit()
+                    .frame(minWidth: nhan == "•" ? 12 : coChu * 1.3, alignment: .trailing)
+                Text(kieu(a)).font(.ctw(size: coChu)).foregroundColor(AppColors.textPrimary)
+                    .lineSpacing(gianDong)
                     .fixedSize(horizontal: false, vertical: true)
+                    .textSelection(.enabled)
             }
-            .padding(.leading, CGFloat(cap) * 16)
+            .padding(.leading, CGFloat(cap) * 18)
         case .viec(let a, let xong, let cap):
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Image(systemName: xong ? "checkmark.square.fill" : "square")
                     .foregroundColor(xong ? AppColors.success : AppColors.textTertiary)
-                Text(a).font(.ctw(size: coChu))
+                Text(kieu(a)).font(.ctw(size: coChu))
                     .foregroundColor(xong ? AppColors.textSecondary : AppColors.textPrimary)
+                    .lineSpacing(gianDong)
                     .strikethrough(xong)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(.leading, CGFloat(cap) * 16)
+            .padding(.leading, CGFloat(cap) * 18)
             .accessibilityElement(children: .combine)
             .accessibilityValue(xong ? "Done" : "Not done")
         case .ma(let s):
@@ -92,29 +119,76 @@ struct CTWKhoiView: View {
         case .anh(let src, let alt):
             CTWAnhCoXacThuc(src: src, alt: alt)
         case .bang(let hang):
-            ScrollView(.horizontal, showsIndicators: true) {
-                Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 8) {
-                    ForEach(Array(hang.enumerated()), id: \.offset) { i, h in
-                        GridRow {
-                            ForEach(Array(h.enumerated()), id: \.offset) { _, o in
-                                Text(Self.dong(o))
-                                    .font(.ctw(size: coChu - 1, weight: i == 0 ? .semibold : .regular))
-                                    .foregroundColor(AppColors.textPrimary)
-                                    .fixedSize(horizontal: true, vertical: false)
-                            }
-                        }
-                        if i == 0 { Divider() }
-                    }
-                }
-                .padding(12)
-            }
-            .background(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(AppColors.border))
+            CTWBangView(hang: hang, coChu: coChu, kieu: kieu)
         }
     }
 
     static func dong(_ s: String) -> AttributedString {
         (try? AttributedString(markdown: s, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)))
             ?? AttributedString(s)
+    }
+}
+
+/// Bảng Markdown: cuộn NGANG trong khung riêng (bảng rộng không bị cắt, không đẩy cả trang rộng ra), hàng tiêu đề
+/// có nền, hàng xen kẽ màu, ô chữ dài bọc dòng trong bề rộng giới hạn (thay vì kéo cột thành một dòng dài vô tận).
+struct CTWBangView: View {
+    let hang: [[String]]
+    var coChu: CGFloat = 15
+    var kieu: (AttributedString) -> AttributedString = { $0 }
+
+    private var soCot: Int { hang.map(\.count).max() ?? 0 }
+
+    /// Ô dài (> ~24 ký tự) ⇒ bề rộng cố định theo độ dài (90…240 pt) và bọc dòng; ô ngắn ⇒ một dòng.
+    static func rongO(_ s: String, coChu: CGFloat) -> CGFloat? {
+        let n = s.count
+        guard n > 24 else { return nil }
+        return min(240, max(90, CGFloat(n) * coChu * 0.42))
+    }
+
+    var body: some View {
+        ScrollView(.horizontal) {
+            Grid(alignment: .leading, horizontalSpacing: 0, verticalSpacing: 0) {
+                ForEach(Array(hang.enumerated()), id: \.offset) { i, h in
+                    GridRow {
+                        ForEach(0..<soCot, id: \.self) { c in
+                            o(c < h.count ? h[c] : "", hang: i)
+                        }
+                    }
+                    if i == 0 { Divider().gridCellUnsizedAxes(.horizontal) }
+                }
+            }
+            .fixedSize(horizontal: true, vertical: false)
+            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(AppColors.border))
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        }
+        .scrollIndicators(.visible)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        #if DEBUG
+        // Chụp màn "bảng đã cuộn": `CT_XEM_BANG_CUOI=1` mở bảng ở mép phải.
+        .defaultScrollAnchor(ProcessInfo.processInfo.environment["CT_XEM_BANG_CUOI"] == "1" ? .trailing : .leading)
+        #endif
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(Text("Table"))
+    }
+
+    @ViewBuilder
+    private func o(_ s: String, hang i: Int) -> some View {
+        let dau = i == 0
+        let t = Text(kieu(CTWKhoiView.dong(s)))
+            .font(.ctw(size: coChu - 1.5, weight: dau ? .semibold : .regular))
+            .foregroundColor(AppColors.textPrimary)
+            .lineSpacing(2)
+        Group {
+            if let w = Self.rongO(s, coChu: coChu) {
+                t.fixedSize(horizontal: false, vertical: true).frame(width: w, alignment: .leading)
+            } else {
+                t.fixedSize(horizontal: true, vertical: false).frame(minWidth: 36, alignment: .leading)
+            }
+        }
+        .padding(.horizontal, 10).padding(.vertical, 7)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        // Nền theo Ô (mọi ô cùng hàng cao bằng nhau nhờ maxHeight) — hàng tiêu đề đậm, hàng chẵn nhạt.
+        .background(dau ? AppColors.backgroundTertiary : (i % 2 == 0 ? AppColors.backgroundTertiary.opacity(0.45) : Color.clear))
     }
 }
 
@@ -264,7 +338,14 @@ enum CTWMarkdown {
         }
         func xaHet() { xaDoan(); xaTrich(); xaBang() }
 
-        for dongGoc in md.components(separatedBy: "\n") {
+        let cacDong = md.components(separatedBy: "\n")
+        /// Dòng kẻ của bảng: `| --- | :---: |` hoặc `---|---` (chỉ `-`, `:`, `|`, dấu cách; có `-` và `|`).
+        func laDongKe(_ x: String) -> Bool {
+            let g = x.trimmingCharacters(in: .whitespaces)
+            return g.contains("-") && g.contains("|") && g.allSatisfy { "-:| ".contains($0) }
+        }
+        var trongBang = false
+        for (soDong, dongGoc) in cacDong.enumerated() {
             let dong = dongGoc.replacingOccurrences(of: "\r", with: "")
             let gon = dong.trimmingCharacters(in: .whitespaces)
             if var m = ma {
@@ -273,15 +354,18 @@ enum CTWMarkdown {
                 continue
             }
             if gon.hasPrefix("```") { xaHet(); ma = []; continue }
-            if gon.isEmpty { xaHet(); continue }
+            if gon.isEmpty { xaHet(); trongBang = false; continue }
             if gon.hasPrefix(">") {
                 xaDoan(); xaBang()
                 trich.append(String(gon.dropFirst()).trimmingCharacters(in: .whitespaces))
                 continue
             }
             xaTrich()
-            if gon.hasPrefix("|") {
+            // Bảng: dòng bắt đầu bằng `|`, hoặc dòng có `|` mà dòng SAU là dòng kẻ (bảng không viền ngoài `a | b`).
+            let batDauBang = !gon.hasPrefix("|") && gon.contains("|") && soDong + 1 < cacDong.count && laDongKe(cacDong[soDong + 1])
+            if gon.hasPrefix("|") || batDauBang || (trongBang && gon.contains("|")) {
                 xaDoan()
+                trongBang = true
                 let o = gon.trimmingCharacters(in: CharacterSet(charactersIn: "|"))
                     .components(separatedBy: "|").map { $0.trimmingCharacters(in: .whitespaces) }
                 // Dòng kẻ `| --- | :---: |` bỏ qua.
@@ -290,6 +374,7 @@ enum CTWMarkdown {
                 continue
             }
             xaBang()
+            trongBang = false
             if gon == "---" || gon == "***" || gon == "___" { xaDoan(); out.append(.ke); continue }
             if let h = gon.firstIndex(where: { $0 != "#" }), gon.hasPrefix("#"),
                gon[h] == " ", gon.distance(from: gon.startIndex, to: h) <= 6 {
@@ -323,6 +408,18 @@ enum CTWMarkdown {
                 out.append(.muc(CTWKhoiView.dong(String(gon[gon.index(cham, offsetBy: 2)...])),
                                 nhan: String(gon[...cham]), cap: thut))
                 continue
+            }
+            // Dòng thụt đầu nối tiếp mục danh sách ngay trên (mục nhiều dòng) ⇒ gộp vào mục đó, không thành đoạn rời.
+            if thut > 0, doan.isEmpty, let cuoi = out.last {
+                switch cuoi {
+                case .muc(var a, let nhan, let cap):
+                    a.append(AttributedString(" ")); a.append(CTWKhoiView.dong(gon))
+                    out[out.count - 1] = .muc(a, nhan: nhan, cap: cap); continue
+                case .viec(var a, let xong, let cap):
+                    a.append(AttributedString(" ")); a.append(CTWKhoiView.dong(gon))
+                    out[out.count - 1] = .viec(a, xong: xong, cap: cap); continue
+                default: break
+                }
             }
             doan.append(gon)
         }

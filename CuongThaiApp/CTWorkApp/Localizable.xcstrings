@@ -567,6 +567,16 @@
         }
       }
     },
+    "%@ turns": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ lượt"
+          }
+        }
+      }
+    },
     "%@ urgency": {
       "localizations": {
         "vi": {
@@ -713,6 +723,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ · còn %lld ngày"
+          }
+        }
+      }
+    },
+    "%@ · %lldk characters": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ · %2$lldk characters"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ · %2$lldk ký tự"
           }
         }
       }
@@ -1288,6 +1314,16 @@
         }
       }
     },
+    "%lld AI calls so far": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã gọi AI %lld lượt"
+          }
+        }
+      }
+    },
     "%lld actions": {
       "localizations": {
         "vi": {
@@ -1522,6 +1558,22 @@
         }
       }
     },
+    "%lld epics · %lld stories/tasks · %lld subtasks · %@ points · %lld sprints · %lld pages": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld epics · %2$lld stories/tasks · %3$lld subtasks · %4$@ points · %5$lld sprints · %6$lld pages"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld epic · %2$lld story/việc · %3$lld việc con · %4$@ điểm · %5$lld sprint · %6$lld trang"
+          }
+        }
+      }
+    },
     "%lld failed": {
       "localizations": {
         "vi": {
@@ -1538,6 +1590,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld tệp"
+          }
+        }
+      }
+    },
+    "%lld files attached": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "đính kèm %lld tệp"
           }
         }
       }
@@ -1614,6 +1676,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld đang review"
+          }
+        }
+      }
+    },
+    "%lld invited": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "đã mời %lld người"
           }
         }
       }
@@ -2176,12 +2248,32 @@
         }
       }
     },
+    "%lld planned people waiting to join": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld người dự kiến chờ vào nhóm"
+          }
+        }
+      }
+    },
     "%lld projects": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "%lld dự án"
+          }
+        }
+      }
+    },
+    "%lld projects are ready": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld dự án đã sẵn sàng"
           }
         }
       }
@@ -2470,6 +2562,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld người theo dõi"
+          }
+        }
+      }
+    },
+    "%lld weeks": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld tuần"
           }
         }
       }
@@ -3008,6 +3110,16 @@
     "0": {
       "shouldTranslate": false
     },
+    "1 AI call so far": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã gọi AI 1 lượt"
+          }
+        }
+      }
+    },
     "1 action": {
       "localizations": {
         "vi": {
@@ -3308,12 +3420,32 @@
         }
       }
     },
+    "1 turn": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 lượt"
+          }
+        }
+      }
+    },
     "1 version": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "1 phiên bản"
+          }
+        }
+      }
+    },
+    "1 week": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 tuần"
           }
         }
       }
@@ -3348,6 +3480,16 @@
         }
       }
     },
+    "1 · beginner": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 · mới bắt đầu"
+          }
+        }
+      }
+    },
     "1. …\n2. …\n3. …": {
       "shouldTranslate": false
     },
@@ -3371,6 +3513,16 @@
         }
       }
     },
+    "2 · basic": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "2 · cơ bản"
+          }
+        }
+      }
+    },
     "2A. …": {
       "localizations": {
         "vi": {
@@ -3387,6 +3539,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "2–40 chữ cái, chữ số hoặc dấu gạch ngang. Dấu cách sẽ thành gạch ngang."
+          }
+        }
+      }
+    },
+    "3 · average": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3 · trung bình"
           }
         }
       }
@@ -3421,6 +3583,16 @@
         }
       }
     },
+    "4 · good": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "4 · khá giỏi"
+          }
+        }
+      }
+    },
     "4Ls": {
       "localizations": {
         "vi": {
@@ -3437,6 +3609,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "4Ls (Thích, Học được, Thiếu, Mong muốn)"
+          }
+        }
+      }
+    },
+    "5 · very strong": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5 · rất giỏi"
           }
         }
       }
@@ -3527,6 +3709,16 @@
         }
       }
     },
+    "A product team shipping software: sprints, code review, releases and GitHub.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nhóm sản phẩm làm phần mềm: sprint, code review, release và GitHub."
+          }
+        }
+      }
+    },
     "A project admin can connect GitHub or GitLab in the project settings. Pushes, branches and pull requests then show up here.": {
       "localizations": {
         "vi": {
@@ -3577,6 +3769,16 @@
         }
       }
     },
+    "A team project, capstone or client job — one board with everything planned.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dự án nhóm, đồ án tốt nghiệp, việc cho khách — một board với mọi thứ đã lên kế hoạch."
+          }
+        }
+      }
+    },
     "A timer is already running on %@.": {
       "localizations": {
         "vi": {
@@ -3593,6 +3795,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Đồng hồ bấm giờ đang chạy."
+          }
+        }
+      }
+    },
+    "A whole workspace": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cả không gian"
           }
         }
       }
@@ -3727,6 +3939,16 @@
         }
       }
     },
+    "AI changed nothing in this period.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI không thay đổi gì trong khoảng này."
+          }
+        }
+      }
+    },
     "AI is unavailable right now. Try again later.": {
       "localizations": {
         "vi": {
@@ -3753,6 +3975,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Thành viên AI, trạng thái và việc đang làm"
+          }
+        }
+      }
+    },
+    "AI usage": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI trong dự án"
+          }
+        }
+      }
+    },
+    "AI users": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Người dùng AI"
           }
         }
       }
@@ -3817,6 +4059,26 @@
         }
       }
     },
+    "Accept & create": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chấp nhận & tạo"
+          }
+        }
+      }
+    },
+    "Accept & plan": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chấp nhận & lập kế hoạch"
+          }
+        }
+      }
+    },
     "Accept as issue": {
       "localizations": {
         "vi": {
@@ -3857,6 +4119,16 @@
         }
       }
     },
+    "Acceptance criteria (one per line)": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiêu chí nghiệm thu (mỗi dòng một tiêu chí)"
+          }
+        }
+      }
+    },
     "Acceptance test": {
       "localizations": {
         "vi": {
@@ -3873,6 +4145,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Đã nhận"
+          }
+        }
+      }
+    },
+    "Access": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quyền truy cập"
           }
         }
       }
@@ -3933,6 +4215,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Việc cần làm"
+          }
+        }
+      }
+    },
+    "Actions": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thao tác"
           }
         }
       }
@@ -4167,12 +4459,42 @@
         }
       }
     },
+    "Add a name, a goal, a brief or a file first": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thêm tên, mục tiêu, đề bài hoặc một tệp trước đã"
+          }
+        }
+      }
+    },
+    "Add a name, a goal, a brief or a file first.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thêm tên, mục tiêu, đề bài hoặc một tệp trước đã."
+          }
+        }
+      }
+    },
     "Add a note…": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Thêm ghi chú…"
+          }
+        }
+      }
+    },
+    "Add a person": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thêm người"
           }
         }
       }
@@ -4257,12 +4579,32 @@
         }
       }
     },
+    "Add epic": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thêm epic"
+          }
+        }
+      }
+    },
     "Add evidence": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Thêm bằng chứng"
+          }
+        }
+      }
+    },
+    "Add group": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thêm nhóm"
           }
         }
       }
@@ -4307,6 +4649,16 @@
         }
       }
     },
+    "Add sample data to explore": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thêm dữ liệu mẫu để tôi khám phá"
+          }
+        }
+      }
+    },
     "Add stakeholders on the web to plan elicitation.": {
       "localizations": {
         "vi": {
@@ -4323,6 +4675,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Thêm ngày bắt đầu và hạn chót cho epic và thẻ để chúng hiện ở đây."
+          }
+        }
+      }
+    },
+    "Add story": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thêm story"
           }
         }
       }
@@ -4414,6 +4776,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Đã thêm"
+          }
+        }
+      }
+    },
+    "Added %lld people": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã thêm %lld người"
+          }
+        }
+      }
+    },
+    "Added 1 person": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã thêm 1 người"
           }
         }
       }
@@ -4518,6 +4900,16 @@
         }
       }
     },
+    "Agent (self-reported)": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agent (tự khai)"
+          }
+        }
+      }
+    },
     "Agent cost (est.)": {
       "localizations": {
         "vi": {
@@ -4554,12 +4946,32 @@
         }
       }
     },
+    "Agent cost marked “self-reported” is the number the agent reported to CT Work, not a measurement.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chi phí agent ghi \"tự khai\" là con số agent tự báo cho CT Work, không phải số đo."
+          }
+        }
+      }
+    },
     "Agent costs are estimates. Most are self-reported by the agent, not measured by CT Work.": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Chi phí agent là ước lượng. Phần lớn do agent tự báo, không phải CT Work đo."
+          }
+        }
+      }
+    },
+    "Agents ($, self-reported)": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agent ($, tự khai)"
           }
         }
       }
@@ -5034,6 +5446,16 @@
         }
       }
     },
+    "Anything else CuongMini should know": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Điều khác CuongMini cần biết"
+          }
+        }
+      }
+    },
     "Apart from the AI assistant and voice-note transcription, this app does not send your data to third-party AI services. AI agents that a workspace admin adds can read the project they are members of, like any other member; AI-drafted meeting minutes are labelled “AI-generated”.": {
       "localizations": {
         "vi": {
@@ -5460,6 +5882,26 @@
         }
       }
     },
+    "Ask CuongMini": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nhờ CuongMini"
+          }
+        }
+      }
+    },
+    "Ask CuongMini to change something — e.g. “give the report to the BA”": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nhờ CuongMini sửa — vd “chuyển báo cáo cho BA”"
+          }
+        }
+      }
+    },
     "Ask a question": {
       "localizations": {
         "vi": {
@@ -5566,6 +6008,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Giao cho tôi"
+          }
+        }
+      }
+    },
+    "Assign, schedule and check the load": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phân công, xếp lịch, kiểm tải"
           }
         }
       }
@@ -5702,6 +6154,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Đính kèm"
+          }
+        }
+      }
+    },
+    "Attach a file": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đính kèm tệp"
           }
         }
       }
@@ -5942,6 +6404,16 @@
         }
       }
     },
+    "Beginner on hard work": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Người mới ôm việc khó"
+          }
+        }
+      }
+    },
     "Below norm": {
       "localizations": {
         "vi": {
@@ -5974,6 +6446,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tệp nhị phân"
+          }
+        }
+      }
+    },
+    "Blank project": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dự án trống"
           }
         }
       }
@@ -6084,6 +6566,16 @@
         }
       }
     },
+    "Both (Vietnamese + English)": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cả hai (Việt + Anh)"
+          }
+        }
+      }
+    },
     "Branch": {
       "localizations": {
         "vi": {
@@ -6140,6 +6632,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Phân tích chi tiết"
+          }
+        }
+      }
+    },
+    "Brief & requirements": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đề bài & yêu cầu"
           }
         }
       }
@@ -6256,6 +6758,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Có sẵn (chạy trên CT Work)"
+          }
+        }
+      }
+    },
+    "Built-in agent": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agent dựng sẵn"
           }
         }
       }
@@ -6502,6 +7014,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "CT Work AI"
+          }
+        }
+      }
+    },
+    "CT Work actions": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thao tác CT Work"
           }
         }
       }
@@ -6939,12 +7461,42 @@
         }
       }
     },
+    "Changes": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thay đổi"
+          }
+        }
+      }
+    },
     "Changes apply right away. Names of projects, statuses and issues stay as your team wrote them.": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Đổi là áp dụng ngay. Tên dự án, trạng thái và thẻ giữ nguyên như nhóm bạn đã đặt."
+          }
+        }
+      }
+    },
+    "Changes by AI": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thay đổi do AI"
+          }
+        }
+      }
+    },
+    "Changes made by AI (log)": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thay đổi AI đã làm (nhật ký)"
           }
         }
       }
@@ -7049,6 +7601,16 @@
         }
       }
     },
+    "Check before creating": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cần xem trước khi tạo"
+          }
+        }
+      }
+    },
     "Check in": {
       "localizations": {
         "vi": {
@@ -7065,6 +7627,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Check-in"
+          }
+        }
+      }
+    },
+    "Checking the suggested changes…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang kiểm tra các đề xuất…"
           }
         }
       }
@@ -7261,6 +7833,26 @@
         }
       }
     },
+    "Classic (flat plan)": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Classic (gói trọn)"
+          }
+        }
+      }
+    },
+    "Classic (turns, flat plan)": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Classic (lượt, gói trọn)"
+          }
+        }
+      }
+    },
     "Classwork": {
       "localizations": {
         "vi": {
@@ -7421,6 +8013,26 @@
         }
       }
     },
+    "Client project": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dự án khách hàng"
+          }
+        }
+      }
+    },
+    "Client project (studio)": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dự án khách hàng (studio)"
+          }
+        }
+      }
+    },
     "Clients": {
       "localizations": {
         "vi": {
@@ -7523,6 +8135,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Khối code"
+          }
+        }
+      }
+    },
+    "Code review and QA columns before Done.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cột Code review và QA trước Hoàn thành."
           }
         }
       }
@@ -8027,6 +8649,16 @@
         }
       }
     },
+    "Continuous flow on a board, no sprints.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luồng liên tục trên board, không có sprint."
+          }
+        }
+      }
+    },
     "Contract value: %@": {
       "localizations": {
         "vi": {
@@ -8173,6 +8805,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Chép nội dung"
+          }
+        }
+      }
+    },
+    "Copy the cells from Excel/Sheets with the header row: Full name · Student ID · Email · Role · Level · Hours/week. Vietnamese or English headers both work.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chép các ô từ Excel/Sheets kèm dòng tiêu đề: Họ và tên · MSSV · Email · Vai trò · Trình độ · Giờ/tuần. Tiêu đề tiếng Việt hay tiếng Anh đều được."
           }
         }
       }
@@ -8363,6 +9005,16 @@
         }
       }
     },
+    "Create %lld projects": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tạo %lld dự án"
+          }
+        }
+      }
+    },
     "Create 1 issue": {
       "localizations": {
         "vi": {
@@ -8453,6 +9105,16 @@
         }
       }
     },
+    "Create in CT Work": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tạo trong CT Work"
+          }
+        }
+      }
+    },
     "Create issue": {
       "localizations": {
         "vi": {
@@ -8503,6 +9165,16 @@
         }
       }
     },
+    "Create project": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tạo dự án"
+          }
+        }
+      }
+    },
     "Create project overview": {
       "localizations": {
         "vi": {
@@ -8539,6 +9211,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tạo test case “%@”"
+          }
+        }
+      }
+    },
+    "Create with CuongMini": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tạo cùng CuongMini"
           }
         }
       }
@@ -8671,6 +9353,26 @@
         }
       }
     },
+    "Creating": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang tạo"
+          }
+        }
+      }
+    },
+    "Creating in CT Work…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang tạo trong CT Work…"
+          }
+        }
+      }
+    },
     "Credit line": {
       "localizations": {
         "vi": {
@@ -8707,6 +9409,66 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dòng chảy tích luỹ (CFD)"
+          }
+        }
+      }
+    },
+    "CuongMini Core ($)": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CuongMini Core ($)"
+          }
+        }
+      }
+    },
+    "CuongMini cost is an ESTIMATE: a CuongMini turn is counted for this project when it called this project's CT Work tools during that turn (team-quota turns are exact).": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chi phí CuongMini là ƯỚC LƯỢNG: một lượt CuongMini được tính cho dự án khi trong lượt đó nó gọi tool CT Work của dự án này (lượt dùng hạn mức nhóm thì chính xác)."
+          }
+        }
+      }
+    },
+    "CuongMini is planning…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CuongMini đang lập kế hoạch…"
+          }
+        }
+      }
+    },
+    "CuongMini is reading everything…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CuongMini đang đọc mọi thứ…"
+          }
+        }
+      }
+    },
+    "CuongMini is still working on this draft — wait a moment or cancel it.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CuongMini vẫn đang làm bản nháp này — chờ một chút hoặc huỷ."
+          }
+        }
+      }
+    },
+    "CuongMini plans backwards from the deadline: sprints, due dates and milestones that fit.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CuongMini lập kế hoạch ngược từ hạn chót: sprint, hạn từng việc và mốc vừa khít."
           }
         }
       }
@@ -8787,6 +9549,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Hiện tại: %@"
+          }
+        }
+      }
+    },
+    "Custom range": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khoảng tuỳ chọn"
+          }
+        }
+      }
+    },
+    "Custom range…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khoảng tuỳ chọn…"
           }
         }
       }
@@ -8973,6 +9755,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Số ngày còn lại"
+          }
+        }
+      }
+    },
+    "Deadline": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hạn chót"
           }
         }
       }
@@ -9189,6 +9981,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Xoá hội thoại"
+          }
+        }
+      }
+    },
+    "Delete draft": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xoá bản nháp"
           }
         }
       }
@@ -9445,6 +10247,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sản phẩm bàn giao"
+          }
+        }
+      }
+    },
+    "Deliverables & grading": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sản phẩm nộp & tiêu chí chấm"
           }
         }
       }
@@ -10139,6 +10951,16 @@
         }
       }
     },
+    "Each group becomes its own project with a leader. Leave the topic empty to use the shared brief. Or use the “Group” column in the member list.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mỗi nhóm thành một dự án riêng có trưởng nhóm. Để trống đề tài thì dùng chung đề bài. Hoặc dùng cột “Nhóm” trong danh sách thành viên."
+          }
+        }
+      }
+    },
     "Each issue%@ needs at least %lld attached files before it can move to Done.": {
       "localizations": {
         "en": {
@@ -10221,6 +11043,16 @@
         }
       }
     },
+    "Edit anything. What you change is locked so Rebalance and Ask CuongMini don't overwrite it.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sửa trực tiếp mọi thứ. Mục bạn đã sửa được khoá để Cân lại và Nhờ CuongMini không đè lên."
+          }
+        }
+      }
+    },
     "Edit card": {
       "localizations": {
         "vi": {
@@ -10257,6 +11089,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sửa mô tả"
+          }
+        }
+      }
+    },
+    "Edit inputs": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sửa đầu vào"
           }
         }
       }
@@ -10637,6 +11479,36 @@
         }
       }
     },
+    "Epics + a few stories": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Epic + vài story"
+          }
+        }
+      }
+    },
+    "Epics + stories": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Epic + story"
+          }
+        }
+      }
+    },
+    "Epics + stories + subtasks": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Epic + story + việc con"
+          }
+        }
+      }
+    },
     "Epics group related stories so you can track bigger goals.": {
       "localizations": {
         "vi": {
@@ -10769,6 +11641,16 @@
         }
       }
     },
+    "Everyone": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mọi người"
+          }
+        }
+      }
+    },
     "Everyone can sign at the same time.": {
       "localizations": {
         "vi": {
@@ -10799,12 +11681,32 @@
         }
       }
     },
+    "Everyone in the workspace": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mọi người trong không gian"
+          }
+        }
+      }
+    },
     "Everyone in this workspace. %@": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Mọi người trong không gian làm việc này. %@"
+          }
+        }
+      }
+    },
+    "Everything is editable — board, backlog, Docs, risks and meetings. Each person got their brief on an onboarding issue.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mọi thứ đều sửa được — board, backlog, Docs, rủi ro và lịch họp. Mỗi người đã nhận brief của mình trên thẻ onboarding."
           }
         }
       }
@@ -11159,6 +12061,26 @@
         }
       }
     },
+    "Extra instructions — these win over everything above": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chỉ dẫn thêm — ưu tiên hơn mọi thứ ở trên"
+          }
+        }
+      }
+    },
+    "FPT Capstone": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FPT Capstone"
+          }
+        }
+      }
+    },
     "FPT documents": {
       "localizations": {
         "vi": {
@@ -11435,6 +12357,36 @@
         }
       }
     },
+    "Fill in": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Điền"
+          }
+        }
+      }
+    },
+    "Fill in what you have and upload files — everything is optional except a name or a brief.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Điền những gì bạn có và tải tệp lên — mọi thứ đều tuỳ chọn, trừ tên hoặc đề bài."
+          }
+        }
+      }
+    },
+    "Filled in from the name.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tự điền từ tên."
+          }
+        }
+      }
+    },
     "Filter and settings": {
       "localizations": {
         "vi": {
@@ -11505,6 +12457,16 @@
         }
       }
     },
+    "Final deadline": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hạn chót"
+          }
+        }
+      }
+    },
     "Finance": {
       "localizations": {
         "vi": {
@@ -11561,6 +12523,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Phản hồi đầu"
+          }
+        }
+      }
+    },
+    "Fix anything wrong and answer the open questions — CuongMini plans from this summary, not from the original files.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sửa chỗ sai và trả lời các câu hỏi còn mở — CuongMini lập kế hoạch từ bản này, không phải từ tệp gốc."
           }
         }
       }
@@ -11891,6 +12863,16 @@
         }
       }
     },
+    "Full name": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Họ và tên"
+          }
+        }
+      }
+    },
     "Full name (optional)": {
       "localizations": {
         "vi": {
@@ -11997,6 +12979,16 @@
         }
       }
     },
+    "Getting ready…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang chuẩn bị…"
+          }
+        }
+      }
+    },
     "Git activity (pushes, pull requests, reviews)": {
       "localizations": {
         "vi": {
@@ -12037,12 +13029,32 @@
         }
       }
     },
+    "Give it the brief, code, member list and deadline. CuongMini tells you what it understood first; once you accept, it builds epics, stories, sprints, assignments, docs, risks and meetings.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đưa đề bài, mã nguồn, danh sách thành viên và hạn chót. CuongMini nói lại điều nó hiểu trước; bạn chấp nhận xong, nó dựng epic, story, sprint, phân công, tài liệu, rủi ro và lịch họp."
+          }
+        }
+      }
+    },
     "Give the page a title.": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Đặt tiêu đề cho trang."
+          }
+        }
+      }
+    },
+    "Given … when … then …": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cho … khi … thì …"
           }
         }
       }
@@ -12063,6 +13075,46 @@
           "stringUnit": {
             "state": "translated",
             "value": "Thuật ngữ"
+          }
+        }
+      }
+    },
+    "Go to the plan": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tới kế hoạch"
+          }
+        }
+      }
+    },
+    "Go to the summary": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tới bản tóm tắt"
+          }
+        }
+      }
+    },
+    "Goal": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mục tiêu"
+          }
+        }
+      }
+    },
+    "Goal in one paragraph": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mục tiêu trong một đoạn"
           }
         }
       }
@@ -12127,6 +13179,16 @@
         }
       }
     },
+    "Group assignments and capstones (SWP391, SWR302, SWT301). Sprints, tests and reports for your lecturer.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bài tập nhóm và đồ án (SWP391, SWR302, SWT301). Sprint, test và báo cáo cho giảng viên."
+          }
+        }
+      }
+    },
     "Group by": {
       "localizations": {
         "vi": {
@@ -12147,6 +13209,16 @@
         }
       }
     },
+    "Group name": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tên nhóm"
+          }
+        }
+      }
+    },
     "Group:": {
       "localizations": {
         "vi": {
@@ -12163,6 +13235,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nhóm"
+          }
+        }
+      }
+    },
+    "Groups / projects": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Các nhóm / dự án"
           }
         }
       }
@@ -12347,6 +13429,16 @@
         }
       }
     },
+    "Here's what CuongMini understood": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đây là điều CuongMini hiểu"
+          }
+        }
+      }
+    },
     "Hidden": {
       "localizations": {
         "vi": {
@@ -12497,12 +13589,62 @@
         }
       }
     },
+    "How is Sprint 6 going, and what should I do first?": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprint 6 đang thế nào, và tôi nên làm gì trước?"
+          }
+        }
+      }
+    },
+    "How it works": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cách làm"
+          }
+        }
+      }
+    },
     "How likely is the team to hit this by the end of the cycle?": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Khả năng nhóm đạt mục tiêu này trước khi hết chu kỳ là bao nhiêu?"
+          }
+        }
+      }
+    },
+    "How the work is split": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cách chia việc"
+          }
+        }
+      }
+    },
+    "How to split the work": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cách chia việc"
+          }
+        }
+      }
+    },
+    "How to split the work, what to stress, what to skip…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chia thế nào, nhấn mạnh gì, bỏ qua gì…"
           }
         }
       }
@@ -12533,6 +13675,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Lý tưởng"
+          }
+        }
+      }
+    },
+    "If anything fails, nothing is left half-created.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Có lỗi thì không có gì bị tạo dở."
           }
         }
       }
@@ -12699,6 +13851,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Trong cuộc họp"
+          }
+        }
+      }
+    },
+    "In the workspace": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trong không gian"
           }
         }
       }
@@ -12949,12 +14111,38 @@
         }
       }
     },
+    "Invitations: %lld sent, %lld added directly": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Invitations: %1$lld sent, %2$lld added directly"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lời mời: đã gửi %1$lld, thêm thẳng %2$lld"
+          }
+        }
+      }
+    },
     "Invite": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Mời"
+          }
+        }
+      }
+    },
+    "Invite by email": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mời qua email"
           }
         }
       }
@@ -13035,6 +14223,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mã thẻ"
+          }
+        }
+      }
+    },
+    "Issue keys will look like %@-12.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mã thẻ sẽ có dạng %@-12."
           }
         }
       }
@@ -13559,6 +14757,16 @@
         }
       }
     },
+    "Language of the content": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ngôn ngữ nội dung tạo ra"
+          }
+        }
+      }
+    },
     "Last %lld days": {
       "localizations": {
         "vi": {
@@ -13739,6 +14947,26 @@
         }
       }
     },
+    "Leader": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trưởng nhóm"
+          }
+        }
+      }
+    },
+    "Leader (name or student ID)": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trưởng nhóm (tên hoặc MSSV)"
+          }
+        }
+      }
+    },
     "Learned": {
       "localizations": {
         "vi": {
@@ -13755,6 +14983,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "Giảng viên / mentor"
+          }
+        }
+      }
+    },
+    "Let CuongMini set up the work for your team": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Để CuongMini dựng việc cho nhóm"
+          }
+        }
+      }
+    },
+    "Level": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trình độ"
+          }
+        }
+      }
+    },
+    "Level of detail": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mức chi tiết"
           }
         }
       }
@@ -14307,6 +15565,16 @@
         }
       }
     },
+    "Make leader": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đặt làm trưởng nhóm"
+          }
+        }
+      }
+    },
     "Manage closely": {
       "localizations": {
         "vi": {
@@ -14797,6 +16065,16 @@
         }
       }
     },
+    "Missing info": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thiếu thông tin"
+          }
+        }
+      }
+    },
     "Missing: %@": {
       "localizations": {
         "vi": {
@@ -14837,6 +16115,16 @@
         }
       }
     },
+    "Models": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model"
+          }
+        }
+      }
+    },
     "Models, priority matrix, RACI & exports": {
       "localizations": {
         "vi": {
@@ -14853,6 +16141,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Module"
+          }
+        }
+      }
+    },
+    "Modules": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mô-đun"
           }
         }
       }
@@ -15301,6 +16599,9 @@
         }
       }
     },
+    "NTS": {
+      "shouldTranslate": false
+    },
     "Name": {
       "localizations": {
         "vi": {
@@ -15347,6 +16648,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tên, vd: 1.2.0"
+          }
+        }
+      }
+    },
+    "Names, level and hours help CuongMini share the work fairly and pair beginners with stronger members. Only rows with an email get an invitation; people without a CT Work account keep their work under “Planned owner”.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tên, trình độ và giờ rảnh giúp CuongMini giao việc công bằng và ghép người mới với người mạnh. Chỉ dòng có email mới được mời; người chưa có tài khoản CT Work giữ việc dưới tên “Planned owner”."
           }
         }
       }
@@ -15551,6 +16862,16 @@
         }
       }
     },
+    "New epic": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Epic mới"
+          }
+        }
+      }
+    },
     "New here? Create an account, or continue with Apple.": {
       "localizations": {
         "vi": {
@@ -15631,6 +16952,16 @@
         }
       }
     },
+    "New project": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dự án mới"
+          }
+        }
+      }
+    },
     "New request": {
       "localizations": {
         "vi": {
@@ -15677,6 +17008,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sprint mới"
+          }
+        }
+      }
+    },
+    "New story": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Story mới"
           }
         }
       }
@@ -15791,6 +17132,16 @@
         }
       }
     },
+    "No AI usage in this period.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không có lượt dùng AI nào trong khoảng này."
+          }
+        }
+      }
+    },
     "No FPT test reports": {
       "localizations": {
         "vi": {
@@ -15817,6 +17168,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Không có quyền"
+          }
+        }
+      }
+    },
+    "No accounts are created for anyone. People without an account are invited (if they have an email) or keep the “Planned owner” name on their work — they get it as soon as they join.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không ai bị tạo tài khoản hộ. Người chưa có tài khoản được mời (nếu có email) hoặc giữ tên “Planned owner” trên việc — họ vào nhóm là tự được giao."
           }
         }
       }
@@ -16311,6 +17672,16 @@
         }
       }
     },
+    "No email": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không có email"
+          }
+        }
+      }
+    },
     "No epic": {
       "localizations": {
         "vi": {
@@ -16688,6 +18059,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Không có cuộc họp ngày đó"
+          }
+        }
+      }
+    },
+    "No members yet — work stays unassigned.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa có thành viên — việc để trống người làm."
           }
         }
       }
@@ -17763,6 +19144,16 @@
         }
       }
     },
+    "Not saved": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa lưu được"
+          }
+        }
+      }
+    },
     "Not sent": {
       "localizations": {
         "vi": {
@@ -18193,6 +19584,26 @@
         }
       }
     },
+    "Official": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chính hãng"
+          }
+        }
+      }
+    },
+    "Official ($)": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chính hãng ($)"
+          }
+        }
+      }
+    },
     "On": {
       "localizations": {
         "vi": {
@@ -18249,6 +19660,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mỗi dòng một mục."
+          }
+        }
+      }
+    },
+    "One project": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Một dự án"
           }
         }
       }
@@ -18329,6 +19750,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Chỉ có trong bản của bạn: %@"
+          }
+        }
+      }
+    },
+    "Only invited members": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chỉ thành viên được mời"
           }
         }
       }
@@ -18599,6 +20030,16 @@
         }
       }
     },
+    "Open project": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mở dự án"
+          }
+        }
+      }
+    },
     "Open project %@": {
       "localizations": {
         "vi": {
@@ -18635,6 +20076,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Câu hỏi mở"
+          }
+        }
+      }
+    },
+    "Open questions (%lld)": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Câu hỏi còn mở (%lld)"
           }
         }
       }
@@ -18729,6 +20180,16 @@
         }
       }
     },
+    "Options for %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tuỳ chọn cho %@"
+          }
+        }
+      }
+    },
     "Order": {
       "localizations": {
         "vi": {
@@ -18799,6 +20260,16 @@
         }
       }
     },
+    "Other AI (MCP)": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI khác (MCP)"
+          }
+        }
+      }
+    },
     "Other issues": {
       "localizations": {
         "vi": {
@@ -18815,6 +20286,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Liên kết khác"
+          }
+        }
+      }
+    },
+    "Other work": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Việc khác"
           }
         }
       }
@@ -18959,6 +20440,16 @@
         }
       }
     },
+    "Own topic / product (optional)": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đề tài / sản phẩm riêng (tuỳ chọn)"
+          }
+        }
+      }
+    },
     "Owner": {
       "localizations": {
         "vi": {
@@ -18985,6 +20476,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "TẠM DỪNG"
+          }
+        }
+      }
+    },
+    "PDF, DOCX, XLSX, PPTX, ZIP, images or text — up to 25 MB each. Shared links must be viewable by anyone with the link.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF, DOCX, XLSX, PPTX, ZIP, ảnh hoặc văn bản — mỗi tệp ≤ 25 MB. Link chia sẻ phải để “ai có link cũng xem được”."
           }
         }
       }
@@ -19259,12 +20760,42 @@
         }
       }
     },
+    "Paste a link (Google Docs, Drive, GitHub…)": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dán link (Google Docs, Drive, GitHub…)"
+          }
+        }
+      }
+    },
+    "Paste from Excel": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dán từ Excel"
+          }
+        }
+      }
+    },
     "Paste it anywhere, then reload.": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Dán vào đâu đó, rồi tải lại."
+          }
+        }
+      }
+    },
+    "Paste the brief, user stories, meeting notes…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dán nội dung đề, user story, biên bản họp…"
           }
         }
       }
@@ -19445,6 +20976,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Người"
+          }
+        }
+      }
+    },
+    "Personal": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cá nhân"
           }
         }
       }
@@ -19665,12 +21206,62 @@
         }
       }
     },
+    "Plan epics, modules, risks and sprint goals": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lập epic, mô-đun, rủi ro và mục tiêu sprint"
+          }
+        }
+      }
+    },
+    "Plan in sprints from a backlog.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lên kế hoạch theo sprint từ backlog."
+          }
+        }
+      }
+    },
     "Plan interviews and workshops on the web; notes and proposals show up here.": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Lên kế hoạch phỏng vấn và workshop trên web; ghi chú và đề xuất sẽ hiện ở đây."
+          }
+        }
+      }
+    },
+    "Plan name (e.g. the class or programme)": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tên kế hoạch (vd tên lớp hoặc chương trình)"
+          }
+        }
+      }
+    },
+    "Plan ready": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã có kế hoạch"
+          }
+        }
+      }
+    },
+    "Plan — review before creating": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kế hoạch — xem lại trước khi tạo"
           }
         }
       }
@@ -19701,6 +21292,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dự kiến"
+          }
+        }
+      }
+    },
+    "Planned owner only": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chỉ ghi Planned owner"
           }
         }
       }
@@ -20193,6 +21794,16 @@
         }
       }
     },
+    "Project name": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tên dự án"
+          }
+        }
+      }
+    },
     "Project role": {
       "localizations": {
         "vi": {
@@ -20209,6 +21820,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Giai đoạn dự án"
+          }
+        }
+      }
+    },
+    "Project type": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loại dự án"
           }
         }
       }
@@ -20249,6 +21870,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Các dự án bạn xem được trong không gian này sẽ hiện ở đây."
+          }
+        }
+      }
+    },
+    "Projects, members and sprints": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dự án, thành viên và sprint"
           }
         }
       }
@@ -20719,12 +22350,62 @@
         }
       }
     },
+    "Read & summarize": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đọc & tóm tắt"
+          }
+        }
+      }
+    },
+    "Read CuongMini's summary, answer its questions, fix what it got wrong, then accept.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đọc bản tóm tắt của CuongMini, trả lời câu hỏi, sửa chỗ nó hiểu sai, rồi chấp nhận."
+          }
+        }
+      }
+    },
+    "Read again": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đọc lại"
+          }
+        }
+      }
+    },
     "Read all": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Đánh dấu đã đọc hết"
+          }
+        }
+      }
+    },
+    "Read files, links and repo": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đọc tệp, link và repo"
+          }
+        }
+      }
+    },
+    "Read list": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đọc danh sách"
           }
         }
       }
@@ -20745,6 +22426,42 @@
           "stringUnit": {
             "state": "translated",
             "value": "Chỉ xem"
+          }
+        }
+      }
+    },
+    "Reading": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang đọc"
+          }
+        }
+      }
+    },
+    "Reading %@ and %lld more…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Reading %1$@ and %2$lld more…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang đọc %1$@ và %2$lld mục khác…"
+          }
+        }
+      }
+    },
+    "Reading %@…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang đọc %@…"
           }
         }
       }
@@ -20795,6 +22512,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Lý do (không bắt buộc)"
+          }
+        }
+      }
+    },
+    "Rebalance": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cân lại"
           }
         }
       }
@@ -20955,6 +22682,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Đỏ %lld"
+          }
+        }
+      }
+    },
+    "Refused": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bị từ chối"
+          }
+        }
+      }
+    },
+    "Refused · %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bị từ chối · %@"
           }
         }
       }
@@ -21286,6 +23033,16 @@
         }
       }
     },
+    "Remove from plan": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bỏ khỏi kế hoạch"
+          }
+        }
+      }
+    },
     "Remove from project": {
       "localizations": {
         "vi": {
@@ -21302,6 +23059,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Gỡ khỏi phiên bản"
+          }
+        }
+      }
+    },
+    "Remove leader": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bỏ trưởng nhóm"
           }
         }
       }
@@ -21896,6 +23663,16 @@
         }
       }
     },
+    "Requirement issues with a MoSCoW field and Sprint 1 ready.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thẻ yêu cầu có trường MoSCoW và Sprint 1 sẵn sàng."
+          }
+        }
+      }
+    },
     "Requirement issues your team creates show up here.": {
       "localizations": {
         "vi": {
@@ -22436,6 +24213,26 @@
         }
       }
     },
+    "Review the plan before creating": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xem kế hoạch trước khi tạo"
+          }
+        }
+      }
+    },
+    "Review the plan — modules, epics, stories, sprints and people — then create.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xem kế hoạch — mô-đun, epic, story, sprint và con người — rồi mới tạo."
+          }
+        }
+      }
+    },
     "Review timesheets": {
       "localizations": {
         "vi": {
@@ -22478,6 +24275,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Rà soát"
+          }
+        }
+      }
+    },
+    "Revise the plan": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sửa kế hoạch"
           }
         }
       }
@@ -22692,6 +24499,9 @@
         }
       }
     },
+    "SWP": {
+      "shouldTranslate": false
+    },
     "Sad": {
       "localizations": {
         "vi": {
@@ -22838,6 +24648,16 @@
         }
       }
     },
+    "Saved": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã lưu"
+          }
+        }
+      }
+    },
     "Saved filter “%@”": {
       "localizations": {
         "vi": {
@@ -22864,6 +24684,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Phiên bản đã lưu"
+          }
+        }
+      }
+    },
+    "Saving…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang lưu…"
           }
         }
       }
@@ -22948,12 +24778,32 @@
         }
       }
     },
+    "Schedule, milestones & sprints": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lịch, mốc & sprint"
+          }
+        }
+      }
+    },
     "Scheduled": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Đã lên lịch"
+          }
+        }
+      }
+    },
+    "School / coursework": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trường học / môn học"
           }
         }
       }
@@ -23124,6 +24974,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Màn hình"
+          }
+        }
+      }
+    },
+    "Scrum with epics, stories, Sprint 1 ready and a bug lifecycle with retest.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scrum có epic, story, Sprint 1 sẵn sàng và vòng đời bug có retest."
           }
         }
       }
@@ -23474,6 +25334,26 @@
         }
       }
     },
+    "Send email invitations": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gửi lời mời qua email"
+          }
+        }
+      }
+    },
+    "Send invitations": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gửi lời mời"
+          }
+        }
+      }
+    },
     "Send message": {
       "localizations": {
         "vi": {
@@ -23707,6 +25587,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nhiều người đang gõ…"
+          }
+        }
+      }
+    },
+    "Several teams or products at once — e.g. a lecturer's class of 8 groups, one project and one leader each.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nhiều nhóm hoặc sản phẩm cùng lúc — vd lớp của giảng viên có 8 nhóm, mỗi nhóm một dự án và một trưởng nhóm."
           }
         }
       }
@@ -24011,6 +25901,16 @@
         }
       }
     },
+    "Show less": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thu gọn"
+          }
+        }
+      }
+    },
     "Showing %lld of %lld": {
       "localizations": {
         "en": {
@@ -24255,6 +26155,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mặt cười"
+          }
+        }
+      }
+    },
+    "Software project": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dự án phần mềm"
+          }
+        }
+      }
+    },
+    "Software team": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nhóm phần mềm"
+          }
+        }
+      }
+    },
+    "Software testing": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kiểm thử phần mềm"
           }
         }
       }
@@ -24579,6 +26509,16 @@
         }
       }
     },
+    "Sprint length": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Độ dài sprint"
+          }
+        }
+      }
+    },
     "Sprint name or openSprints()": {
       "localizations": {
         "vi": {
@@ -24805,6 +26745,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Giai đoạn đang tắt"
+          }
+        }
+      }
+    },
+    "Stages for Reports 1–7, Iterations 1–3, FPT report templates in Docs, RAID, meetings and approvals.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giai đoạn cho Report 1–7, Iteration 1–3, mẫu báo cáo FPT trong Docs, RAID, họp và phê duyệt có sẵn."
           }
         }
       }
@@ -25071,6 +27021,16 @@
         }
       }
     },
+    "Starting…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang bắt đầu…"
+          }
+        }
+      }
+    },
     "Starts": {
       "localizations": {
         "vi": {
@@ -25241,6 +27201,16 @@
         }
       }
     },
+    "Stop the answer": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dừng câu trả lời"
+          }
+        }
+      }
+    },
     "Stop watching": {
       "localizations": {
         "vi": {
@@ -25391,6 +27361,16 @@
         }
       }
     },
+    "Subtask": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Việc con"
+          }
+        }
+      }
+    },
     "Suggested": {
       "localizations": {
         "vi": {
@@ -25441,6 +27421,16 @@
         }
       }
     },
+    "Summary ready": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã có tóm tắt"
+          }
+        }
+      }
+    },
     "Switch project": {
       "localizations": {
         "vi": {
@@ -25487,6 +27477,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cỡ áo"
+          }
+        }
+      }
+    },
+    "Table": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bảng"
           }
         }
       }
@@ -25567,6 +27567,16 @@
         }
       }
     },
+    "Task": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Task"
+          }
+        }
+      }
+    },
     "Teacher": {
       "localizations": {
         "vi": {
@@ -25607,6 +27617,16 @@
         }
       }
     },
+    "Team & proposed roles": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thành viên & vai đề xuất"
+          }
+        }
+      }
+    },
     "Team channels and private groups": {
       "localizations": {
         "vi": {
@@ -25627,12 +27647,52 @@
         }
       }
     },
+    "Team project": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dự án nhóm"
+          }
+        }
+      }
+    },
     "Teams": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Nhóm"
+          }
+        }
+      }
+    },
+    "Tech stack": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Công nghệ"
+          }
+        }
+      }
+    },
+    "Tell CuongMini how you want the work split — it follows your words before its own habits.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nói với CuongMini bạn muốn chia việc thế nào — nó làm theo lời bạn trước thói quen của nó."
+          }
+        }
+      }
+    },
+    "Template": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mẫu"
           }
         }
       }
@@ -25683,6 +27743,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Test case là thẻ loại Test. Nhóm bạn viết các bước trên web."
+          }
+        }
+      }
+    },
+    "Test cases with steps, a test plan, test cycles and a full bug lifecycle.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Test case có bước, test plan, test cycle và vòng đời bug đầy đủ."
           }
         }
       }
@@ -25997,6 +28067,16 @@
         }
       }
     },
+    "The answer was stopped before it was ready. Tap Ask again.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Câu trả lời đã dừng trước khi xong. Chạm Hỏi lại."
+          }
+        }
+      }
+    },
     "The assistant reads the issues and docs it needs first.": {
       "localizations": {
         "vi": {
@@ -26047,6 +28127,16 @@
         }
       }
     },
+    "The brief, files, links and member list you add (names, emails, roles) are sent to a third-party AI model provider to write the summary and the plan. Only add people who agreed to be in the project.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đề bài, tệp, link và danh sách thành viên bạn đưa vào (tên, email, vai trò) được gửi cho nhà cung cấp mô hình AI bên thứ ba để viết bản tóm tắt và kế hoạch. Chỉ thêm những người đã đồng ý tham gia dự án."
+          }
+        }
+      }
+    },
     "The card is hidden for you right away. Our moderators review reports within 24 hours.": {
       "localizations": {
         "vi": {
@@ -26063,6 +28153,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Thay đổi được ghi vào lịch sử của yêu cầu."
+          }
+        }
+      }
+    },
+    "The connection closed before the answer was ready. Tap Ask again.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kết nối bị ngắt trước khi có câu trả lời. Chạm Hỏi lại."
           }
         }
       }
@@ -26197,6 +28297,16 @@
         }
       }
     },
+    "The key is 2–10 letters or digits and starts with a letter.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mã dự án gồm 2–10 chữ hoặc số, bắt đầu bằng chữ."
+          }
+        }
+      }
+    },
     "The message and a link back to it become the issue description. A note is posted in the thread.": {
       "localizations": {
         "vi": {
@@ -26213,6 +28323,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Micro chỉ được dùng khi bạn ghi tin nhắn thoại trong chat. Tin nhắn thoại được lưu cho những người trong kênh đó và gửi tới Groq, một dịch vụ chuyển giọng nói thành chữ của bên thứ ba, để tạo bản chép lời — app hỏi ý bạn trước tin nhắn thoại đầu tiên."
+          }
+        }
+      }
+    },
+    "The name, course and language decide the board, the issue keys and the language CuongMini writes in.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tên, môn học và ngôn ngữ quyết định board, mã thẻ và chữ CuongMini viết ra."
           }
         }
       }
@@ -26303,6 +28423,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Máy chủ đang gặp sự cố. Thử lại sau ít phút."
+          }
+        }
+      }
+    },
+    "The server returned an error (%lld).": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Máy chủ trả lỗi (%lld)."
           }
         }
       }
@@ -26403,6 +28533,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Họ vẫn là thành viên không gian. Thẻ vẫn giao cho họ cho tới khi bạn giao lại."
+          }
+        }
+      }
+    },
+    "Thinking…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang suy nghĩ…"
           }
         }
       }
@@ -26593,6 +28733,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Diff này quá lớn để hiển thị."
+          }
+        }
+      }
+    },
+    "This draft uses a model that isn't available in the app. Open it on the web, or start a new draft here.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bản nháp này dùng một model không có trong app. Mở nó trên web, hoặc bắt đầu bản nháp mới ở đây."
+          }
+        }
+      }
+    },
+    "This draft was already used to create projects — start a new one.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bản nháp này đã dùng để tạo dự án — hãy bắt đầu bản mới."
           }
         }
       }
@@ -26893,6 +29053,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Phần này của dự án chỉ dành cho nhóm và giảng viên."
+          }
+        }
+      }
+    },
+    "This project": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dự án này"
           }
         }
       }
@@ -27333,6 +29503,16 @@
         }
       }
     },
+    "To Do, In Progress, Done. Configure the rest yourself.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cần làm, Đang làm, Hoàn thành. Phần còn lại tự cấu hình."
+          }
+        }
+      }
+    },
     "To do": {
       "localizations": {
         "vi": {
@@ -27389,6 +29569,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Token"
+          }
+        }
+      }
+    },
+    "Tokens": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Token"
+          }
+        }
+      }
+    },
+    "Tokens in / out": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Token vào / ra"
           }
         }
       }
@@ -28183,6 +30383,16 @@
         }
       }
     },
+    "Untitled draft": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bản nháp chưa đặt tên"
+          }
+        }
+      }
+    },
     "Up to %lld people": {
       "localizations": {
         "vi": {
@@ -28291,6 +30501,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tải lên thất bại. Vui lòng thử lại."
+          }
+        }
+      }
+    },
+    "Upload the brief, code, member list and deadline — CuongMini builds the epics, issues, sprints, assignments and docs for you. You review it before anything is created.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tải đề bài, mã nguồn, danh sách thành viên và hạn chót lên — CuongMini dựng epic, thẻ, sprint, phân công và tài liệu cho bạn. Bạn xem lại trước khi có gì được tạo."
           }
         }
       }
@@ -29035,6 +31255,16 @@
         }
       }
     },
+    "Web AI assistant": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trợ lý AI web"
+          }
+        }
+      }
+    },
     "Web links": {
       "localizations": {
         "vi": {
@@ -29107,6 +31337,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Hằng tuần"
+          }
+        }
+      }
+    },
+    "Weekly sprints and hour estimates to report to the client.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprint theo tuần và ước lượng giờ để báo cáo cho khách hàng."
           }
         }
       }
@@ -29197,6 +31437,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cần làm gì?"
+          }
+        }
+      }
+    },
+    "What should CuongMini look at again? (optional)": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CuongMini cần xem lại điều gì? (tuỳ chọn)"
           }
         }
       }
@@ -29391,6 +31641,16 @@
         }
       }
     },
+    "While creating content": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khi tạo nội dung"
+          }
+        }
+      }
+    },
     "While paused the agent can still read the project, but every change it tries is refused.": {
       "localizations": {
         "vi": {
@@ -29427,6 +31687,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ai đã nộp tệp cho thẻ của mình"
+          }
+        }
+      }
+    },
+    "Who uses AI connected to CT Work — CuongMini over MCP, other AI tools, the web AI assistant and agents — how many turns and tokens, the cost by source, and every change AI made.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ai đang dùng AI nối CT Work — CuongMini qua MCP, công cụ AI khác, trợ lý AI trên web và agent — dùng bao nhiêu lượt, bao nhiêu token, tốn bao nhiêu theo từng nguồn, và mọi thay đổi AI đã làm."
+          }
+        }
+      }
+    },
+    "Who uses AI with CT Work, how much, and what it changed": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ai dùng AI với CT Work, bao nhiêu, và đã thay đổi gì"
           }
         }
       }
@@ -29507,6 +31787,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Khối lượng hoàn thành"
+          }
+        }
+      }
+    },
+    "Work delivered for a client through departments: stages with gate reviews, approvals and handoffs.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Việc làm cho khách hàng qua các bộ phận: giai đoạn có duyệt cổng, phê duyệt và bàn giao."
           }
         }
       }
@@ -29681,12 +31971,32 @@
         }
       }
     },
+    "Write Docs pages": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Viết trang Docs"
+          }
+        }
+      }
+    },
     "Write a reply…": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Viết câu trả lời…"
+          }
+        }
+      }
+    },
+    "Write a summary of what it understood": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Viết bản tóm tắt điều đã hiểu"
           }
         }
       }
@@ -29711,12 +32021,42 @@
         }
       }
     },
+    "Write stories and subtasks for each epic": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Viết story và việc con cho từng epic"
+          }
+        }
+      }
+    },
+    "Write the key test cases": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Viết test case chính"
+          }
+        }
+      }
+    },
     "Write your answer or a note to your teacher…": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Viết câu trả lời hoặc lời nhắn cho giảng viên…"
+          }
+        }
+      }
+    },
+    "Writing the answer…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang viết câu trả lời…"
           }
         }
       }
@@ -29841,6 +32181,16 @@
         }
       }
     },
+    "You can change modules later in Project settings.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đổi mô-đun được sau ở Cài đặt dự án."
+          }
+        }
+      }
+    },
     "You can delete your account at any time from Account › Delete account.": {
       "localizations": {
         "vi": {
@@ -29857,6 +32207,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bạn có thể sửa và nộp lại. Nếu đã quá hạn, bài có thể bị đánh dấu nộp muộn."
+          }
+        }
+      }
+    },
+    "You can leave this screen — the work keeps running and you can come back to it.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn có thể rời màn này — việc vẫn chạy và quay lại xem được."
           }
         }
       }
@@ -29961,6 +32321,16 @@
         }
       }
     },
+    "You can't see AI usage here.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn không xem được mục AI ở đây."
+          }
+        }
+      }
+    },
     "You cannot comment in this project": {
       "localizations": {
         "vi": {
@@ -30041,6 +32411,16 @@
         }
       }
     },
+    "You edited this — kept as is when rebalancing": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn đã sửa — giữ nguyên khi cân lại"
+          }
+        }
+      }
+    },
     "You have used all your attempts.": {
       "localizations": {
         "vi": {
@@ -30067,6 +32447,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bạn cần quyền tài chính trong dự án này."
+          }
+        }
+      }
+    },
+    "You only see your own usage. Project admins see everyone's.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn chỉ xem được phần của mình. ADMIN dự án xem được tất cả."
           }
         }
       }
@@ -30251,6 +32641,16 @@
         }
       }
     },
+    "Your answer (leave empty and CuongMini will assume)": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Câu trả lời của bạn (để trống thì CuongMini tự giả định)"
+          }
+        }
+      }
+    },
     "Your client account can only use the client portal of this project.": {
       "localizations": {
         "vi": {
@@ -30277,6 +32677,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Quyết định của bạn được ghi lại kèm thời điểm và phiên bản nội dung bạn đã xem."
+          }
+        }
+      }
+    },
+    "Your drafts": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bản nháp của bạn"
           }
         }
       }
@@ -30311,12 +32721,32 @@
         }
       }
     },
+    "Your own tasks and side projects. Just a board — nothing to set up.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Việc riêng và dự án phụ của bạn. Chỉ một board — không cần cài đặt gì."
+          }
+        }
+      }
+    },
     "Your profile, comments, chat messages and files you uploaded are removed from the service.": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Hồ sơ, bình luận, tin nhắn chat và tệp bạn đã tải lên sẽ bị gỡ khỏi dịch vụ."
+          }
+        }
+      }
+    },
+    "Your project is ready": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dự án đã sẵn sàng"
           }
         }
       }
@@ -31005,6 +33435,16 @@
         }
       }
     },
+    "error": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "lỗi"
+          }
+        }
+      }
+    },
     "est.": {
       "localizations": {
         "vi": {
@@ -31275,6 +33715,16 @@
         }
       }
     },
+    "meetings": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "lịch họp"
+          }
+        }
+      }
+    },
     "mentioned you in %@": {
       "localizations": {
         "vi": {
@@ -31403,12 +33853,32 @@
         }
       }
     },
+    "no text": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "không có chữ"
+          }
+        }
+      }
+    },
     "none": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "không có"
+          }
+        }
+      }
+    },
+    "not shared publicly": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "chưa công khai"
           }
         }
       }
@@ -31505,6 +33975,16 @@
         }
       }
     },
+    "pages": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "trang"
+          }
+        }
+      }
+    },
     "per month": {
       "localizations": {
         "vi": {
@@ -31571,6 +34051,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "điểm"
+          }
+        }
+      }
+    },
+    "read": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "đã đọc"
           }
         }
       }
@@ -31727,6 +34217,16 @@
         }
       }
     },
+    "risks": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "rủi ro"
+          }
+        }
+      }
+    },
     "self-reported": {
       "localizations": {
         "vi": {
@@ -31839,6 +34339,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "sprint → %@"
+          }
+        }
+      }
+    },
+    "sprints": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "sprint"
           }
         }
       }

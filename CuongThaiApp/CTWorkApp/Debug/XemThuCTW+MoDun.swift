@@ -41,6 +41,8 @@ enum DuLieuGiaMoDun {
     static let boXuLy: [(String, String, [String: Any]) -> Any?] = [
         DuLieuGiaDotB.route,        // mảng B — ĐẦU: /users/me/preferences (ghim) + board có epic, JQL, bulk, tìm toàn cục
         DuLieuGiaSuaThe.route,      // mảng A (sửa thẻ): bổ sung cấu hình dự án + chi tiết thẻ (epic ?type=1 đã do B trả trước)
+        DuLieuGiaTaoCM.route,       // mảng C: Create with CuongMini (setup-drafts) + New project
+        DuLieuGiaAIUsage.route,     // mảng C: AI usage (dự án / không gian)
         DuLieuGiaDichVu.route,
         DuLieuGiaDocs.route,
         DuLieuGiaGovernance.route,

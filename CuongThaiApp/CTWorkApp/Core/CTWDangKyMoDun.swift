@@ -10,6 +10,7 @@ enum CTWDangKyMoDun {
     static let dangKyMoDun: [CTWModule] = [
         .desk, .intake, .forms, .portal, .classes, .submit,
         .ai,
+        .aiUsage,
         .board,
         .backlog,
         .code,

@@ -43,6 +43,8 @@ struct ChonDuAnCTW: View {
     @StateObject private var vm = ChonDuAnVM()
     @ObservedObject private var ganDay = DuAnGanDayCTW.shared
     @State private var tim = ""
+    /// Tạo dự án / Tạo cùng CuongMini (21/10/2026) — MỘT tấm phủ theo enum (CLAUDE.md C5).
+    @State private var tao: TaoMoiCTW?
 
     /// Dự án gần đây còn tồn tại (đối chiếu danh sách vừa tải — dự án đã lưu trữ/bị rời thì bỏ).
     private var dsGanDay: [(ws: CTWWorkspace, p: CTWProjectSummary)] {
@@ -114,9 +116,30 @@ struct ChonDuAnCTW: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Close") { dong() } }
+                ToolbarItem(placement: .primaryAction) { MenuTaoMoiCTW(dsKhongGian: vm.nhom.map(\.ws)) { tao = $0 } }
+            }
+            .sheet(item: $tao) { t in
+                switch t {
+                case .duAn(let w):
+                    TaoDuAnCTW(ws: w) { p in
+                        moDuAnMoi(w, id: p.id, ma: p.key, ten: p.name)
+                    } sangCuongMini: { dv in
+                        tao = nil
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { tao = .cuongMini(w, dv) }
+                    }
+                case .cuongMini(let w, let dv):
+                    TaoCuongMiniCTW(ws: w, mangSang: dv) { p in moDuAnMoi(w, id: p.id, ma: p.key, ten: p.name) }
+                }
             }
             .refreshable { await vm.tai() }
             .task { if !vm.daTai { await vm.tai() } }
+            #if DEBUG
+            // `CT_XEM_TAO=duan` ⇒ hộp New project · `cm[/dien|hieu|kehoach|xong|dangdoc]` ⇒ Create with CuongMini.
+            .task(id: vm.daTai) {
+                guard vm.daTai, tao == nil, let x = DuLieuGiaTaoCM.xem, let w = vm.nhom.first?.ws else { return }
+                tao = x == "duan" ? .duAn(w) : .cuongMini(w, nil)
+            }
+            #endif
         }
     }
 
@@ -139,6 +162,13 @@ struct ChonDuAnCTW: View {
         }
         .padding(.vertical, 4)
         .contentShape(Rectangle())
+    }
+
+    /// Dự án vừa tạo ⇒ chọn nó rồi đóng cả hai tấm phủ.
+    private func moDuAnMoi(_ ws: CTWWorkspace, id: Int, ma: String, ten: String) {
+        tao = nil
+        app.luaChon = LuaChonCTW(slug: ws.slug, tenKhongGian: ws.name, pid: id, maDuAn: ma, tenDuAn: ten)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { dong() }
     }
 
     private func chon(_ ws: CTWWorkspace, _ p: CTWProjectSummary) {
