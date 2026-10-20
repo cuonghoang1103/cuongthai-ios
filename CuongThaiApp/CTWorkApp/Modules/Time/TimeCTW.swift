@@ -10,6 +10,19 @@ import Charts
 /// Hoạt động chuẩn của worklog (`TL_ACTIVITIES`, `fptReports.ts:277`).
 let hoatDongCTW = ["Training", "Analyzing", "Designing", "Coding", "Testing", "Deploying"]
 
+/// Tên HIỂN THỊ của một hoạt động (giá trị gửi máy chủ giữ nguyên tiếng Anh).
+func tenHoatDongCTW(_ s: String) -> String {
+    switch s {
+    case "Training": return String(localized: "Training")
+    case "Analyzing": return String(localized: "Analyzing")
+    case "Designing": return String(localized: "Designing")
+    case "Coding": return String(localized: "Coding")
+    case "Testing": return String(localized: "Testing")
+    case "Deploying": return String(localized: "Deploying")
+    default: return s
+    }
+}
+
 /// Route con của mô-đun Time.
 struct RouteWorklogCTW: Hashable { var pid: Int; var so: Int; var tieuDe: String }
 
@@ -140,7 +153,7 @@ struct TimeCTW: View {
     private var khoiTuan: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 4) {
-                CTWSectionHeader("calendar", "My week")
+                CTWSectionHeader("calendar", String(localized: "My week"))
                 Button { vm.doiTuan(-1) } label: { Image(systemName: "chevron.left").frame(width: 44, height: 44) }
                     .accessibilityLabel("Previous week")
                 Button { vm.doiTuan(1) } label: { Image(systemName: "chevron.right").frame(width: 44, height: 44) }
@@ -159,23 +172,24 @@ struct TimeCTW: View {
     private var nhanTuan: String {
         let ds = TinhGioCTW.bayNgay(tuThuHai: vm.thuHai)
         guard let a = NgayCTW.nganTu(ds.first), let b = NgayCTW.nganTu(ds.last) else { return "" }
-        return "\(a) – \(b)" + (vm.laTuanNay ? " · This week" : "") + (vm.cuaToi != nil ? " · All projects" : " · \(nguCanh.maDuAn)")
+        let pham = vm.cuaToi != nil ? String(localized: "All projects") : nguCanh.maDuAn
+        return vm.laTuanNay ? String(localized: "\(a) – \(b) · This week · \(pham)") : "\(a) – \(b) · \(pham)"
     }
 
     @ViewBuilder private var noiDungTuan: some View {
         CTWLuoiChiSo {
-            CTWTheChiSo(nhan: "Logged this week", giaTri: TinhGioCTW.chuPhut(vm.tong), bieuTuong: "clock")
+            CTWTheChiSo(nhan: String(localized: "Logged this week"), giaTri: TinhGioCTW.chuPhut(vm.tong), bieuTuong: "clock")
             let homNay = vm.ngay.first { $0.ngay == NgayCTW.ymd(Date()) }?.phut
-            CTWTheChiSo(nhan: vm.laTuanNay ? "Today" : "Daily average",
+            CTWTheChiSo(nhan: vm.laTuanNay ? String(localized: "Today") : String(localized: "Daily average"),
                         giaTri: TinhGioCTW.chuPhut(vm.laTuanNay ? (homNay ?? 0) : vm.tong / 7),
                         bieuTuong: "sun.max", mau: CTWMauChuoi.mau(1))
             if let p = vm.trangThaiPhieu {
-                CTWTheChiSo(nhan: "Timesheet", giaTri: p.capitalized, phu: vm.phieu?.locked == true ? "Week is locked" : nil,
+                CTWTheChiSo(nhan: String(localized: "Timesheet"), giaTri: p.capitalized, phu: vm.phieu?.locked == true ? String(localized: "Week is locked") : nil,
                             bieuTuong: p == "APPROVED" ? "checkmark.seal" : "doc.text", mau: p == "APPROVED" ? AppColors.success : AppColors.warning)
             }
         }
-        CTWKhungBieuDo(tieuDe: "Hours per day", phu: vm.cuaToi != nil ? "Your worklogs in every project" : "Your worklogs in \(nguCanh.maDuAn)",
-                       cot: ["Day", "Logged"],
+        CTWKhungBieuDo(tieuDe: String(localized: "Hours per day"), phu: vm.cuaToi != nil ? String(localized: "Your worklogs in every project") : String(localized: "Your worklogs in \(nguCanh.maDuAn)"),
+                       cot: [String(localized: "Day"), String(localized: "Logged")],
                        hang: vm.ngay.map { CTWHangBang(nhan: NgayCTW.ngay($0.ngay).map(NgayCTW.thuNgay) ?? $0.ngay, giaTri: [TinhGioCTW.chuPhut($0.phut)]) },
                        cao: 180) {
             Chart(vm.ngay) { n in
@@ -249,7 +263,7 @@ struct TheDongHoCTW: View {
                     }
                     Spacer()
                     if let a = d.activity {
-                        Text(a).font(.ctw(size: 11, weight: .semibold)).foregroundColor(AppColors.textSecondary)
+                        Text(tenHoatDongCTW(a)).font(.ctw(size: 11, weight: .semibold)).foregroundColor(AppColors.textSecondary)
                             .padding(.horizontal, 8).padding(.vertical, 3)
                             .background(Capsule().fill(AppColors.backgroundTertiary))
                     }
@@ -350,7 +364,7 @@ struct TamPhuTimeView: View {
             switch tamPhu {
             case .chonThe(let muc):
                 ChonTheB3CTW(pid: nguCanh.pid, maDuAn: nguCanh.maDuAn,
-                             tieuDe: muc == .batDau ? "Start timer on…" : "Log time on…") { so, ten in
+                             tieuDe: muc == .batDau ? String(localized: "Start timer on…") : String(localized: "Log time on…")) { so, ten in
                     BatDauHoacGhiCTW(muc: muc, pid: nguCanh.pid, so: so, tieuDe: ten, maDuAn: nguCanh.maDuAn) { dong(); xong() }
                 }
             case .ghiGio(let pid, let so, let ten):
@@ -460,7 +474,7 @@ struct BatDauDongHoCTW: View {
             Section("Activity") {
                 Picker("Activity", selection: $hoatDong) {
                     Text("Guess from the issue").tag(String?.none)
-                    ForEach(hoatDongCTW, id: \.self) { Text($0).tag(String?.some($0)) }
+                    ForEach(hoatDongCTW, id: \.self) { Text(tenHoatDongCTW($0)).tag(String?.some($0)) }
                 }
             }
             Section("Note") { TextField("What are you working on? (optional)", text: $ghiChu, axis: .vertical).lineLimit(1...4) }
@@ -490,7 +504,7 @@ struct BatDauDongHoCTW: View {
         } catch {
             if DongHoCTW.maLoi(error) == "WORK_TIMER_RUNNING" {
                 let k = DongHoCTW.shared.dongHo?.issueKey
-                hoiChuyen = "A timer is already running" + (k.map { " on \($0)" } ?? "") + "."
+                hoiChuyen = k.map { String(localized: "A timer is already running on \($0).") } ?? String(localized: "A timer is already running.")
             } else {
                 loi = CTW.loi(error)
                 CTWRung.loi()
@@ -508,7 +522,7 @@ struct GhiGioCTW: View {
     let maDuAn: String
     let xong: () -> Void
     @State private var phut = 30
-    @State private var chuPhut = "30m"
+    @State private var chuPhut = TinhGioCTW.chuPhut(30)
     @State private var ngay = Date()
     @State private var ghiChu = ""
     @State private var hoatDong: String?
@@ -556,7 +570,7 @@ struct GhiGioCTW: View {
             Section("Activity") {
                 Picker("Activity", selection: $hoatDong) {
                     Text("None").tag(String?.none)
-                    ForEach(dsHoatDong, id: \.self) { Text($0).tag(String?.some($0)) }
+                    ForEach(dsHoatDong, id: \.self) { Text(tenHoatDongCTW($0)).tag(String?.some($0)) }
                 }
             }
             Section("Note") { TextField("What did you do? (optional)", text: $ghiChu, axis: .vertical).lineLimit(1...5) }
@@ -589,7 +603,7 @@ struct GhiGioCTW: View {
             xong()
         } catch {
             loi = DongHoCTW.maLoi(error) == "WORK_TIMESHEET_LOCKED"
-                ? "That week's timesheet is submitted or approved, so it's locked. Ask a project admin to reopen it."
+                ? String(localized: "That week's timesheet is submitted or approved, so it's locked. Ask a project admin to reopen it.")
                 : CTW.loi(error)
             CTWRung.loi()
         }
@@ -613,8 +627,8 @@ struct DungDongHoCTW: View {
         Form {
             if let k = ketQua {
                 Section {
-                    Label(k.worklog != nil ? "Logged \(TinhGioCTW.chuPhut(k.minutes ?? 0)) on \(k.issueKey ?? "the issue")"
-                                           : "Under 30 seconds — nothing was logged.",
+                    Label(k.worklog != nil ? String(localized: "Logged \(TinhGioCTW.chuPhut(k.minutes ?? 0)) on \(k.issueKey ?? String(localized: "the issue"))")
+                                           : String(localized: "Under 30 seconds — nothing was logged."),
                           systemImage: k.worklog != nil ? "checkmark.circle.fill" : "info.circle")
                         .foregroundColor(k.worklog != nil ? AppColors.success : AppColors.textSecondary)
                     if k.capped == true { Text("Capped at 24 hours.").font(.ctw(size: 13)).foregroundColor(AppColors.warning) }
@@ -643,11 +657,11 @@ struct DungDongHoCTW: View {
                 }
                 Section("Activity") {
                     Picker("Activity", selection: $hoatDong) {
-                        Text("Keep (\(d.activity ?? "guess"))").tag(String?.none)
-                        ForEach(hoatDongCTW, id: \.self) { Text($0).tag(String?.some($0)) }
+                        Text(d.activity.map { String(localized: "Keep (\(tenHoatDongCTW($0)))") } ?? String(localized: "Keep (guess)")).tag(String?.none)
+                        ForEach(hoatDongCTW, id: \.self) { Text(tenHoatDongCTW($0)).tag(String?.some($0)) }
                     }
                 }
-                Section("Note") { TextField(d.note ?? "Logged with the timer", text: $ghiChu, axis: .vertical).lineLimit(1...4) }
+                Section("Note") { TextField(d.note ?? String(localized: "Logged with the timer"), text: $ghiChu, axis: .vertical).lineLimit(1...4) }
             }
             if let loi { Section { Text(loi).foregroundColor(AppColors.error) } }
         }
@@ -673,7 +687,7 @@ struct DungDongHoCTW: View {
             ketQua = try await dongHo.dung(phut: suaPhut ? phut : nil, note: ghiChu.isEmpty ? nil : ghiChu, activity: hoatDong)
         } catch {
             loi = DongHoCTW.maLoi(error) == "WORK_TIMESHEET_LOCKED"
-                ? "That week's timesheet is locked, so the time can't be logged. The timer keeps running — ask a project admin to reopen the week."
+                ? String(localized: "That week's timesheet is locked, so the time can't be logged. The timer keeps running — ask a project admin to reopen the week.")
                 : CTW.loi(error)
             CTWRung.loi()
         }
@@ -692,7 +706,7 @@ struct SuaDongHoCTW: View {
             Section("Activity") {
                 Picker("Activity", selection: $hoatDong) {
                     Text("None").tag(String?.none)
-                    ForEach(hoatDongCTW, id: \.self) { Text($0).tag(String?.some($0)) }
+                    ForEach(hoatDongCTW, id: \.self) { Text(tenHoatDongCTW($0)).tag(String?.some($0)) }
                 }
             }
             Section("Note") { TextField("Note", text: $ghiChu, axis: .vertical).lineLimit(1...5) }
@@ -756,7 +770,7 @@ struct DsWorklogTheCTW: View {
             }
         }
         .listStyle(.insetGrouped)
-        .navigationTitle(tieuDe.isEmpty ? "Worklogs" : tieuDe)
+        .navigationTitle(tieuDe.isEmpty ? String(localized: "Worklogs") : tieuDe)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -777,7 +791,7 @@ struct DsWorklogTheCTW: View {
             CTWAvatar(user: w.user, size: 30)
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
-                    Text(w.user?.ten ?? "Someone").font(.ctw(size: 14, weight: .semibold))
+                    Text(w.user?.ten ?? String(localized: "Someone")).font(.ctw(size: 14, weight: .semibold))
                     if w.user?.laAgent == true { CTWNhanAI() }
                     if w.source == "AGENT_AUTO" { Text("auto").font(.ctw(size: 10, weight: .semibold)).foregroundColor(AppColors.textTertiary) }
                     Spacer()
@@ -785,7 +799,7 @@ struct DsWorklogTheCTW: View {
                 }
                 HStack(spacing: 6) {
                     Text(CTW.thoiDiem(w.startedAt)).font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
-                    if let a = w.activity { Text("· \(a)").font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary) }
+                    if let a = w.activity { Text("· \(tenHoatDongCTW(a))").font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary) }
                 }
                 if let n = w.note, !n.isEmpty { Text(n).font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary) }
             }
@@ -809,7 +823,7 @@ struct DsWorklogTheCTW: View {
             if case .xong(let a) = ds { ds = .xong(a.filter { $0.id != w.id }) }
             CTWRung.thanhCong()
         } catch {
-            loi = DongHoCTW.maLoi(error) == "WORK_TIMESHEET_LOCKED" ? "That week's timesheet is locked." : CTW.loi(error)
+            loi = DongHoCTW.maLoi(error) == "WORK_TIMESHEET_LOCKED" ? String(localized: "That week's timesheet is locked.") : CTW.loi(error)
         }
     }
 }
@@ -855,7 +869,7 @@ struct NutGhiGioTheCTW: View {
             if let loi { Text(loi).font(.ctw(size: 12)).foregroundColor(AppColors.error) }
         }
         .task { if !dongHo.daTai { await dongHo.taiLai() } }
-        .confirmationDialog("A timer is already running on \(dongHo.dongHo?.issueKey ?? "another issue").",
+        .confirmationDialog("A timer is already running on \(dongHo.dongHo?.issueKey ?? String(localized: "another issue")).",
                             isPresented: $hoiChuyen, titleVisibility: .visible) {
             Button("Stop it, log the time and switch") { Task { await batDau(chuyen: true) } }
             Button("Cancel", role: .cancel) {}

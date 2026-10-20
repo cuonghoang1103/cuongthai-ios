@@ -20,11 +20,11 @@ enum MucCTW: Hashable {
 
     var ten: String {
         switch self {
-        case .viecCuaToi: return "My Work"
-        case .duAn: return "Projects"
-        case .hopThu: return "Inbox"
-        case .taiKhoan: return "Account"
-        case .them: return "More tools"
+        case .viecCuaToi: return String(localized: "My Work")
+        case .duAn: return String(localized: "Projects")
+        case .hopThu: return String(localized: "Inbox")
+        case .taiKhoan: return String(localized: "Account")
+        case .them: return String(localized: "More tools")
         case .moDun(let id): return CTWDangKyMoDun.moDun(id)?.ten ?? id
         }
     }

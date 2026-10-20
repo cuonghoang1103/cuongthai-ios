@@ -49,9 +49,9 @@ struct DuyetCTW: View {
         _vm = StateObject(wrappedValue: DuyetVM(pid: pid))
     }
 
-    private static let locChip: [(id: String?, nhan: String)] = [
-        (nil, "All"), ("PENDING", "Pending"), ("APPROVED", "Approved"), ("REJECTED", "Rejected"), ("CANCELLED", "Cancelled"),
-    ]
+    private static var locChip: [(id: String?, nhan: String)] { [
+        (nil, String(localized: "All")), ("PENDING", String(localized: "Pending")), ("APPROVED", String(localized: "Approved")), ("REJECTED", String(localized: "Rejected")), ("CANCELLED", String(localized: "Cancelled")),
+    ] }
 
     var body: some View {
         List {
@@ -76,13 +76,13 @@ struct DuyetCTW: View {
                 CTWErrorBanner(text: loi) { vm.loi = nil }.listRowBackground(Color.clear).listRowInsets(EdgeInsets())
             }
             if vm.tatMoDun {
-                GovTatMoDun(ten: "Approvals").listRowBackground(Color.clear)
+                GovTatMoDun(ten: String(localized: "Approvals")).listRowBackground(Color.clear)
             } else if let ds = tab == 0 ? vm.choToi : vm.tatCa {
                 if ds.isEmpty {
                     CTWOTrong(bieuTuong: tab == 0 ? "checkmark.seal" : "tray",
-                              tieuDe: tab == 0 ? "Nothing waiting on you" : "No approvals",
-                              moTa: tab == 0 ? "When someone asks you to sign off an issue, document, change request or stage gate, it shows up here."
-                                            : "Approval requests for this project appear here.")
+                              tieuDe: tab == 0 ? String(localized: "Nothing waiting on you") : String(localized: "No approvals"),
+                              moTa: tab == 0 ? String(localized: "When someone asks you to sign off an issue, document, change request or stage gate, it shows up here.")
+                                            : String(localized: "Approval requests for this project appear here."))
                         .listRowBackground(Color.clear)
                 } else {
                     Section {
@@ -137,12 +137,12 @@ struct GovHangDuyet: View {
                         .foregroundColor(AppColors.textSecondary).lineLimit(1)
                     if let p = a.project?.key, a.project?.id != a.projectId { Text(p).font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary) }
                 }
-                Text(a.title ?? "Approval").font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                Text(a.title ?? String(localized: "Approval")).font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                     .lineLimit(2).fixedSize(horizontal: false, vertical: true)
                 HStack(spacing: 6) {
                     CTWChipChu(chu: a.status)
-                    if a.canDecide == true { CTWNhanNho(chu: "Your turn", bieuTuong: "hand.point.right.fill", mau: AppColors.primary) }
-                    if a.contentChanged == true { CTWNhanNho(chu: "Changed", bieuTuong: "exclamationmark.triangle.fill", mau: AppColors.warning) }
+                    if a.canDecide == true { CTWNhanNho(chu: String(localized: "Your turn"), bieuTuong: "hand.point.right.fill", mau: AppColors.primary) }
+                    if a.contentChanged == true { CTWNhanNho(chu: String(localized: "Changed"), bieuTuong: "exclamationmark.triangle.fill", mau: AppColors.warning) }
                 }
                 HStack(spacing: 8) {
                     GovChongAvatar(users: a.dsBuoc.compactMap(\.approver), size: 20)

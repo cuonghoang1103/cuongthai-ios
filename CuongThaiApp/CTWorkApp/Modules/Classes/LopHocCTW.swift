@@ -67,11 +67,11 @@ struct LopHocCTW: View {
                 if let loi { CTWErrorBanner(text: loi) { self.loi = nil } }
                 if let ds {
                     if (ds.teaching ?? []).isEmpty && (ds.enrolled ?? []).isEmpty {
-                        CTWOTrong(bieuTuong: "graduationcap", tieuDe: "No classes yet",
-                                  moTa: "Join a class with the code your teacher gives you on cuongthai.com/work/classes.")
+                        CTWOTrong(bieuTuong: "graduationcap", tieuDe: String(localized: "No classes yet"),
+                                  moTa: String(localized: "Join a class with the code your teacher gives you on cuongthai.com/work/classes."))
                     }
-                    if let t = ds.teaching, !t.isEmpty { khoi("Teaching", "person.crop.rectangle", t) }
-                    if let e = ds.enrolled, !e.isEmpty { khoi("Enrolled", "graduationcap", e) }
+                    if let t = ds.teaching, !t.isEmpty { khoi(String(localized: "Teaching"), "person.crop.rectangle", t) }
+                    if let e = ds.enrolled, !e.isEmpty { khoi(String(localized: "Enrolled"), "graduationcap", e) }
                 } else if loi == nil {
                     CTWKhungTai(soHang: 4, coAvatar: false).padding(.horizontal, -Spacing.md)
                 }
@@ -107,12 +107,12 @@ struct LopHocCTW: View {
     private func theLop(_ l: CTWLop) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
-                Text(l.subject ?? "Class").font(.ctw(size: 11, weight: .heavy).monospaced())
+                Text(l.subject ?? String(localized: "Class")).font(.ctw(size: 11, weight: .heavy).monospaced())
                     .foregroundColor(AppColors.onPrimary)
                     .padding(.horizontal, 8).padding(.vertical, 4)
                     .background(Capsule().fill(LinearGradient(colors: [AppColors.primaryLight, AppColors.primary],
                                                               startPoint: .leading, endPoint: .trailing)))
-                if l.archivedAt != nil { CTWNhanNho(chu: "Archived", bieuTuong: "archivebox") }
+                if l.archivedAt != nil { CTWNhanNho(chu: String(localized: "Archived"), bieuTuong: "archivebox") }
                 Spacer(minLength: 0)
                 CTWNhanNho(chu: CTWMauTrangThai.nhan(l.role))
             }
@@ -187,10 +187,10 @@ struct LopCTW: View {
     private func dau(_ l: CTWLopChiTiet) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
-                CTWNhanNho(chu: l.subject ?? "Class", mau: AppColors.primary)
+                CTWNhanNho(chu: l.subject ?? String(localized: "Class"), mau: AppColors.primary)
                 if let c = l.classCode { CTWNhanNho(chu: c) }
                 if let t = l.term { CTWNhanNho(chu: t) }
-                if l.archivedAt != nil { CTWNhanNho(chu: "Archived", bieuTuong: "archivebox", mau: AppColors.warning) }
+                if l.archivedAt != nil { CTWNhanNho(chu: String(localized: "Archived"), bieuTuong: "archivebox", mau: AppColors.warning) }
             }
             HStack(spacing: 8) {
                 CTWAvatar(user: l.teacher ?? l.owner, size: 24)
@@ -206,7 +206,7 @@ struct LopCTW: View {
     @ViewBuilder
     private var bangTin: some View {
         if let ps = tin?.posts {
-            if ps.isEmpty { CTWOTrong(bieuTuong: "megaphone", tieuDe: "No posts yet", moTa: "Announcements and new classwork appear here.") }
+            if ps.isEmpty { CTWOTrong(bieuTuong: "megaphone", tieuDe: String(localized: "No posts yet"), moTa: String(localized: "Announcements and new classwork appear here.")) }
             ForEach(ps) { p in
                 BaiDangLopCTW(lop: id, p: p, quanLy: tin?.manage == true) { moi in
                     if let i = tin?.posts?.firstIndex(where: { $0.id == moi.id }) { tin?.posts?[i] = moi }
@@ -235,7 +235,7 @@ struct LopCTW: View {
     @ViewBuilder
     private var dsBaiTap: some View {
         if let ds = baiTap?.assignments {
-            if ds.isEmpty { CTWOTrong(bieuTuong: "doc.text", tieuDe: "No classwork yet") }
+            if ds.isEmpty { CTWOTrong(bieuTuong: "doc.text", tieuDe: String(localized: "No classwork yet")) }
             ForEach(ds) { a in
                 NavigationLink(value: RouteLopCTW.baiTap(lop: id, aid: a.id, ten: a.title)) { hangBaiTap(a, quanLy: baiTap?.manage == true) }
                     .buttonStyle(.plain)
@@ -282,7 +282,7 @@ struct LopCTW: View {
     @ViewBuilder
     private var dsNhom: some View {
         if let gs = lop?.groups {
-            if gs.isEmpty { CTWOTrong(bieuTuong: "person.3", tieuDe: "No groups yet") }
+            if gs.isEmpty { CTWOTrong(bieuTuong: "person.3", tieuDe: String(localized: "No groups yet")) }
             ForEach(gs) { g in
                 HStack(spacing: 12) {
                     Text("\(g.number ?? 0)").font(.ctw(size: 14, weight: .bold).monospacedDigit())
@@ -292,9 +292,9 @@ struct LopCTW: View {
                     VStack(alignment: .leading, spacing: 2) {
                         HStack(spacing: 6) {
                             Text(g.name).font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
-                            if lop?.me?.groupId == g.id { CTWNhanNho(chu: "Your group", mau: AppColors.success) }
+                            if lop?.me?.groupId == g.id { CTWNhanNho(chu: String(localized: "Your group"), mau: AppColors.success) }
                         }
-                        Text("\(g.members ?? 0) members" + (g.project?.key.map { " · project \($0)" } ?? ""))
+                        Text(g.project?.key.map { String(localized: "\(g.members ?? 0) members · project \($0)") } ?? String(localized: "\(g.members ?? 0) members"))
                             .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                     }
                     Spacer(minLength: 0)
@@ -338,7 +338,7 @@ struct BaiDangLopCTW: View {
                     .frame(width: 32, height: 32).background(Circle().fill(AppColors.primary))
                 VStack(alignment: .leading, spacing: 1) {
                     HStack(spacing: 5) {
-                        Text(p.author?.ten ?? "Teacher").font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                        Text(p.author?.ten ?? String(localized: "Teacher")).font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                         if p.author?.laAgent == true { CTWNhanAI() }
                     }
                     Text(CTW.thoiDiem(p.publishAt ?? p.createdAt)).font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
@@ -374,7 +374,7 @@ struct BaiDangLopCTW: View {
                     if c.hidden == true && !quanLy { EmptyView() } else { dongBinhLuan(c) }
                 }
                 if p.canComment == true && p.commentsOff != true {
-                    CTWHopSoan(goiY: "Add a class comment…", nutGui: "Post comment") { chu in
+                    CTWHopSoan(goiY: String(localized: "Add a class comment…"), nutGui: String(localized: "Post comment")) { chu in
                         do {
                             let c: CTWBaiDangLop.BinhLuan = try await APIClient.shared.request(CTWAPI.binhLuanBangTin(lop, post: p.id, chu: chu))
                             var moi = p
@@ -396,7 +396,7 @@ struct BaiDangLopCTW: View {
     private func dongBinhLuan(_ c: CTWBaiDangLop.BinhLuan) -> some View {
         CTWBinhLuanDong(
             khoa: "class-comment-\(c.id)", tacGia: c.author, noiDung: c.body ?? "", thoiDiem: c.createdAt,
-            nhanPhu: c.hidden == true ? "Hidden" : nil, nguCanh: "Class #\(lop) post #\(p.id)",
+            nhanPhu: c.hidden == true ? String(localized: "Hidden") : nil, nguCanh: "Class #\(lop) post #\(p.id)",
             themMuc: AnyView(Group {
                 if quanLy {
                     Button { Task { await an(c, an: !(c.hidden ?? false)) } } label: {
@@ -445,7 +445,7 @@ struct TepLopDong: View {
             Image(systemName: (t.mime ?? "").hasPrefix("image/") ? "photo" : ((t.mime ?? "").contains("pdf") ? "doc.richtext" : "doc"))
                 .foregroundColor(AppColors.primary).frame(width: 22)
             VStack(alignment: .leading, spacing: 1) {
-                Text(t.fileName ?? "File").font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                Text(t.fileName ?? String(localized: "File")).font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary).lineLimit(1)
                 if let s = t.size {
                     Text(ByteCountFormatter.string(fromByteCount: Int64(s), countStyle: .file))
                         .font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)

@@ -85,7 +85,7 @@ struct ManMoDunCTW: View {
             m.man(CTWNguCanh(pid: l.pid, slug: l.slug, maDuAn: l.maDuAn, tenDuAn: l.tenDuAn))
                 .id("\(id)-\(l.pid)")
         } else {
-            ChuaChonDuAnCTW(lyDo: "Pick a project to continue.")
+            ChuaChonDuAnCTW(lyDo: String(localized: "Pick a project to continue."))
         }
     }
 }

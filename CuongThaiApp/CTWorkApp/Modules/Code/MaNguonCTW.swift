@@ -82,7 +82,7 @@ struct CayThuMucCTW: View {
                 .listStyle(.insetGrouped)
                 .scrollContentBackground(.hidden)
                 .background(AppColors.backgroundPrimary)
-                .navigationTitle(path.isEmpty ? "Source" : (path.split(separator: "/").last.map(String.init) ?? path))
+                .navigationTitle(path.isEmpty ? String(localized: "Source") : (path.split(separator: "/").last.map(String.init) ?? path))
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar { ToolbarItem(placement: .primaryAction) { menuNhanh } }
                 .refreshable { await vm.tai() }
@@ -101,10 +101,10 @@ struct CayThuMucCTW: View {
                 }
             }
         } label: {
-            Label(vm.ref ?? "Branch", systemImage: "arrow.triangle.branch").labelStyle(.titleAndIcon)
+            Label(vm.ref ?? String(localized: "Branch"), systemImage: "arrow.triangle.branch").labelStyle(.titleAndIcon)
                 .font(.ctw(size: 13, weight: .semibold)).lineLimit(1)
         }
-        .accessibilityLabel("Branch: \(vm.ref ?? "default")")
+        .accessibilityLabel("Branch: \(vm.ref ?? String(localized: "default"))")
         .task { await vm.taiRefs() }
     }
 
@@ -132,7 +132,7 @@ struct CayThuMucCTW: View {
             Section { CTWOLoi(loi: l) { Task { await vm.tai() } } }.listRowBackground(Color.clear)
         case .xong(let c):
             if c.entries.isEmpty {
-                Section { CTWOTrong(bieuTuong: "folder", tieuDe: "This folder is empty") }.listRowBackground(Color.clear)
+                Section { CTWOTrong(bieuTuong: "folder", tieuDe: String(localized: "This folder is empty")) }.listRowBackground(Color.clear)
             } else {
                 Section {
                     // NavigationLink(value:) — KHÔNG đọc `NganXepCTW` ở đây: màn này cũng được ĐẨY, và trên iPad màn được
@@ -197,14 +197,14 @@ struct XemTepCodeCTW: View {
     var body: some View {
         KhungTaiCTW(trangThai: tt, thuLai: { Task { await tai() } }) { t in
             if t.tooLarge == true {
-                CTWOTrong(bieuTuong: "doc.badge.ellipsis", tieuDe: "This file is too large to show",
-                          moTa: "Files over 1 MB aren't shown in CT Work (this one is \(CTWCodeChu.coTep(t.size))).",
-                          nut: t.webUrl != nil ? "Open in Safari" : nil, hanhDong: t.webUrl.flatMap(URL.init(string:)).map { u in { moUrl(u) } })
+                CTWOTrong(bieuTuong: "doc.badge.ellipsis", tieuDe: String(localized: "This file is too large to show"),
+                          moTa: String(localized: "Files over 1 MB aren't shown in CT Work (this one is \(CTWCodeChu.coTep(t.size)))."),
+                          nut: t.webUrl != nil ? String(localized: "Open in Safari") : nil, hanhDong: t.webUrl.flatMap(URL.init(string:)).map { u in { moUrl(u) } })
                     .frame(maxHeight: .infinity)
             } else if t.binary == true || t.content == nil {
-                CTWOTrong(bieuTuong: "doc.zipper", tieuDe: "Binary file",
-                          moTa: "\(ten) (\(CTWCodeChu.coTep(t.size))) isn't a text file, so it can't be shown here.",
-                          nut: t.webUrl != nil ? "Open in Safari" : nil, hanhDong: t.webUrl.flatMap(URL.init(string:)).map { u in { moUrl(u) } })
+                CTWOTrong(bieuTuong: "doc.zipper", tieuDe: String(localized: "Binary file"),
+                          moTa: String(localized: "\(ten) (\(CTWCodeChu.coTep(t.size))) isn't a text file, so it can't be shown here."),
+                          nut: t.webUrl != nil ? String(localized: "Open in Safari") : nil, hanhDong: t.webUrl.flatMap(URL.init(string:)).map { u in { moUrl(u) } })
                     .frame(maxHeight: .infinity)
             } else {
                 KhungMaCTW(noiDung: t.content ?? "", tenTep: ten, xuongDong: xuongDong)
@@ -410,7 +410,7 @@ struct LichSuCommitCTW: View {
     var body: some View {
         KhungTaiCTW(trangThai: tt, thuLai: { Task { await tai() } }) { r in
             if r.items.isEmpty {
-                CTWOTrong(bieuTuong: "clock.arrow.circlepath", tieuDe: "No commits found").frame(maxHeight: .infinity)
+                CTWOTrong(bieuTuong: "clock.arrow.circlepath", tieuDe: String(localized: "No commits found")).frame(maxHeight: .infinity)
             } else {
                 List {
                     Section {
@@ -423,7 +423,7 @@ struct LichSuCommitCTW: View {
                                             .fixedSize(horizontal: false, vertical: true)
                                         HStack(spacing: 6) {
                                             Text(String(c.sha.prefix(7))).font(.ctw(size: 11.5, weight: .semibold).monospaced()).foregroundColor(AppColors.primary)
-                                            Text("\(c.author?.ten ?? c.authorName ?? "unknown") · \(CTW.thoiDiem(c.at))")
+                                            Text("\(c.author?.ten ?? c.authorName ?? String(localized: "unknown")) · \(CTW.thoiDiem(c.at))")
                                                 .font(.ctw(size: 11.5)).foregroundColor(AppColors.textTertiary).lineLimit(1)
                                         }
                                     }
@@ -474,7 +474,7 @@ struct ChiTietCommitCTW: View {
                             .textSelection(.enabled)
                         HStack(spacing: 6) {
                             CTWAvatar(user: c.author?.user, size: 20)
-                            Text("\(c.author?.ten ?? c.authorName ?? "unknown") · \(CTW.thoiDiem(c.at))")
+                            Text("\(c.author?.ten ?? c.authorName ?? String(localized: "unknown")) · \(CTW.thoiDiem(c.at))")
                                 .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                         }
                         HStack(spacing: 12) {
@@ -606,8 +606,8 @@ struct KhungDiffCTW: View {
         return .clear
     }
     private func nhan(_ d: Substring) -> String {
-        if d.hasPrefix("+") { return "Added: \(d.dropFirst())" }
-        if d.hasPrefix("-") { return "Removed: \(d.dropFirst())" }
+        if d.hasPrefix("+") { return String(localized: "Added: \(String(d.dropFirst()))") }
+        if d.hasPrefix("-") { return String(localized: "Removed: \(String(d.dropFirst()))") }
         return String(d)
     }
 }

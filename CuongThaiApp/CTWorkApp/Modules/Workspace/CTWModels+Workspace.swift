@@ -249,18 +249,18 @@ struct CTWAgentDashboard: Codable {
 enum WorkspaceTinh {
     static func tenMuc(_ level: String?) -> String {
         switch level {
-        case "over": return "Overloaded"
-        case "high": return "High"
-        case "ok": return "Healthy"
-        case "low": return "Light"
-        default: return "No capacity"
+        case "over": return String(localized: "Overloaded")
+        case "high": return String(localized: "High")
+        case "ok": return String(localized: "Healthy")
+        case "low": return String(localized: "Light")
+        default: return String(localized: "No capacity")
         }
     }
     static func tenRag(_ r: String?) -> String {
         switch r {
-        case "RED": return "Off track"
-        case "AMBER": return "Needs attention"
-        default: return "On track"
+        case "RED": return String(localized: "Off track")
+        case "AMBER": return String(localized: "Needs attention")
+        default: return String(localized: "On track")
         }
     }
     static func bieuTuongRag(_ r: String?) -> String {

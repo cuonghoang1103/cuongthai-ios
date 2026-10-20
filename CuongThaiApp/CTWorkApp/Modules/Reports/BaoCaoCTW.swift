@@ -11,15 +11,15 @@ enum TabBaoCaoCTW: String, CaseIterable, Hashable {
 
     var ten: String {
         switch self {
-        case .tongQuan: return "Overview"
-        case .burndown: return "Burndown"
-        case .velocity: return "Velocity"
-        case .flow: return "Flow"
-        case .taoXong: return "Created vs resolved"
-        case .phanBo: return "Distribution"
-        case .epics: return "Epics"
-        case .thoiGian: return "Time"
-        case .agents: return "People vs Agents"
+        case .tongQuan: return String(localized: "Overview")
+        case .burndown: return String(localized: "Burndown")
+        case .velocity: return String(localized: "Velocity")
+        case .flow: return String(localized: "Flow")
+        case .taoXong: return String(localized: "Created vs resolved")
+        case .phanBo: return String(localized: "Distribution")
+        case .epics: return String(localized: "Epics")
+        case .thoiGian: return String(localized: "Time")
+        case .agents: return String(localized: "People vs Agents")
         }
     }
     var bieuTuong: String {

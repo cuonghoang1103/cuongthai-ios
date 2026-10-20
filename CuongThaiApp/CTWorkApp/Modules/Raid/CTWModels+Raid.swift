@@ -78,22 +78,22 @@ struct CTWRaidDanhSach: Codable {
 }
 
 enum CTWRaidLuat {
-    static let loai: [(ma: String, ten: String, bieuTuong: String)] = [
-        ("RISK", "Risks", "exclamationmark.triangle"),
-        ("ASSUMPTION", "Assumptions", "lightbulb"),
-        ("ISSUE", "Issues", "exclamationmark.bubble"),
-        ("DEPENDENCY", "Dependencies", "point.3.connected.trianglepath.dotted"),
-        ("QUESTION", "Questions", "questionmark.circle"),
-    ]
+    static var loai: [(ma: String, ten: String, bieuTuong: String)] { [
+        ("RISK", String(localized: "Risks"), "exclamationmark.triangle"),
+        ("ASSUMPTION", String(localized: "Assumptions"), "lightbulb"),
+        ("ISSUE", String(localized: "Issues"), "exclamationmark.bubble"),
+        ("DEPENDENCY", String(localized: "Dependencies"), "point.3.connected.trianglepath.dotted"),
+        ("QUESTION", String(localized: "Questions"), "questionmark.circle"),
+    ] }
 
     static func tenLoai(_ m: String?) -> String {
         switch m {
-        case "RISK": return "Risk"
-        case "ASSUMPTION": return "Assumption"
-        case "ISSUE": return "Issue"
-        case "DEPENDENCY": return "Dependency"
-        case "QUESTION": return "Question"
-        default: return "Item"
+        case "RISK": return String(localized: "Risk")
+        case "ASSUMPTION": return String(localized: "Assumption")
+        case "ISSUE": return String(localized: "Issue")
+        case "DEPENDENCY": return String(localized: "Dependency")
+        case "QUESTION": return String(localized: "Question")
+        default: return String(localized: "Item")
         }
     }
 
@@ -145,16 +145,16 @@ enum CTWRaidLuat {
 
     static func tenTruong(_ f: String?) -> String {
         switch f {
-        case "status": return "status"
-        case "probability": return "probability"
-        case "impact": return "impact"
-        case "ownerId", "owner": return "owner"
-        case "response": return "response"
-        case "type": return "type"
-        case "title": return "title"
-        case "reviewDate": return "review date"
-        case "created": return "created"
-        default: return f ?? "field"
+        case "status": return String(localized: "status")
+        case "probability": return String(localized: "probability")
+        case "impact": return String(localized: "impact")
+        case "ownerId", "owner": return String(localized: "owner")
+        case "response": return String(localized: "response")
+        case "type": return String(localized: "type")
+        case "title": return String(localized: "title")
+        case "reviewDate": return String(localized: "review date")
+        case "created": return String(localized: "created")
+        default: return f ?? String(localized: "field")
         }
     }
 }

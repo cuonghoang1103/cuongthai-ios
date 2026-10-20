@@ -378,6 +378,8 @@ targets:
       - path: CuongThaiApp/CTWorkShare
       # Chỉ tệp App Group/Keychain — tệp Live Activity (ActivityKit/AppIntents) không cần ở đây.
       - path: CuongThaiApp/CTWorkShared/NhomCTW.swift
+      # Ngôn ngữ app (đọc lựa chọn từ App Group, tráo Bundle.main) — 20/10/2026.
+      - path: CuongThaiApp/CTWorkShared/NgonNguCTW.swift
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.cuongthai.ctwork.share

@@ -22,21 +22,22 @@ enum CTWChiaSeNhom {
         for i in CTWAgendaKhoang.homNay(agenda, homNay: homNay) {
             switch i.type {
             case "due":
-                viec.append(.init(loai: "due", id: "due-\(i.id)", tieuDe: i.title ?? "Issue", ma: i.key, duAn: i.project?.key,
+                viec.append(.init(loai: "due", id: "due-\(i.id)", tieuDe: i.title ?? String(localized: "Issue"), ma: i.key, duAn: i.project?.key,
                                   gio: nil, quaHan: false, duongDan: i.url))
             case "meeting":
                 guard i.statusText != "CANCELLED" else { continue }
-                viec.append(.init(loai: "meeting", id: "hop-\(i.id)", tieuDe: i.title ?? "Meeting", ma: i.number.map { "M-\($0)" },
+                viec.append(.init(loai: "meeting", id: "hop-\(i.id)", tieuDe: i.title ?? String(localized: "Meeting"), ma: i.number.map { "M-\($0)" },
                                   duAn: i.project?.key, gio: NgayCTW.thoiDiem(i.startsAt), quaHan: false, duongDan: i.url))
             case "sprint":
                 let ket = i.end == homNay && i.date != homNay
-                viec.append(.init(loai: "sprint", id: "sp-\(i.id)", tieuDe: "\(i.title ?? "Sprint") \(ket ? "ends" : "starts")", ma: nil,
+                let tenSprint = i.title ?? String(localized: "Sprint")
+                viec.append(.init(loai: "sprint", id: "sp-\(i.id)", tieuDe: ket ? String(localized: "\(tenSprint) ends") : String(localized: "\(tenSprint) starts"), ma: nil,
                                   duAn: i.project?.key, gio: nil, quaHan: false, duongDan: i.url))
             case "release":
-                viec.append(.init(loai: "release", id: "pb-\(i.id)", tieuDe: "Release \(i.title ?? "")", ma: nil,
+                viec.append(.init(loai: "release", id: "pb-\(i.id)", tieuDe: String(localized: "Release \(i.title ?? "")"), ma: nil,
                                   duAn: i.project?.key, gio: nil, quaHan: false, duongDan: i.url))
             case "stage":
-                viec.append(.init(loai: "stage", id: "gd-\(i.id)", tieuDe: "Stage \(i.n ?? 0) \(i.event ?? "") · \(i.title ?? "")", ma: nil,
+                viec.append(.init(loai: "stage", id: "gd-\(i.id)", tieuDe: String(localized: "Stage \(i.n ?? 0) \(i.event ?? "") · \(i.title ?? "")"), ma: nil,
                                   duAn: i.project?.key, gio: nil, quaHan: false, duongDan: i.url))
             default: continue
             }
@@ -109,7 +110,7 @@ enum CTWChiaSeNhom {
         TheGanDayCTW.them(t)
         let a = CSSearchableItemAttributeSet(contentType: .text)
         a.title = "\(t.ma) \(tieuDe)"
-        a.contentDescription = "CT Work issue in \(maDuAn)"
+        a.contentDescription = String(localized: "CT Work issue in \(maDuAn)")
         a.keywords = [t.ma, maDuAn, "CT Work"]
         let item = CSSearchableItem(uniqueIdentifier: "ctw-issue-\(t.ma)|\(t.duongDan)", domainIdentifier: mienSpotlight, attributeSet: a)
         // Hết hạn sau 30 ngày không xem lại.

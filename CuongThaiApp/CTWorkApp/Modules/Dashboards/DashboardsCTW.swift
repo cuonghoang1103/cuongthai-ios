@@ -35,8 +35,8 @@ struct DashboardsCTW: View {
                 Section {
                     if ds.isEmpty {
                         VStack(spacing: 10) {
-                            CTWOTrong(bieuTuong: "rectangle.3.group", tieuDe: "No dashboards yet",
-                                      moTa: "Start with the project overview — KPIs, flow, workload and recent activity in one place.")
+                            CTWOTrong(bieuTuong: "rectangle.3.group", tieuDe: String(localized: "No dashboards yet"),
+                                      moTa: String(localized: "Start with the project overview — KPIs, flow, workload and recent activity in one place."))
                             Button { Task { await taoTongQuan() } } label: {
                                 if dangTao { ProgressView() } else { Text("Create project overview").bold() }
                             }
@@ -52,14 +52,14 @@ struct DashboardsCTW: View {
                 if let m = mau, !((m.builtins ?? []) + (m.templates ?? [])).isEmpty {
                     Section {
                         ForEach((m.builtins ?? []) + (m.templates ?? [])) { t in
-                            NavigationLink(value: RouteMauBaoCaoCTW(pid: pid, ref: t.ref, ten: t.name ?? "Report")) {
+                            NavigationLink(value: RouteMauBaoCaoCTW(pid: pid, ref: t.ref, ten: t.name ?? String(localized: "Report"))) {
                                 HStack(spacing: 12) {
                                     Image(systemName: t.builtin == true ? "doc.richtext" : "doc.text")
                                         .font(.ctw(size: 15, weight: .semibold)).foregroundColor(CTWMauChuoi.mau(6))
                                         .frame(width: 34, height: 34)
                                         .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(CTWMauChuoi.mau(6).opacity(0.12)))
                                     VStack(alignment: .leading, spacing: 2) {
-                                        Text(t.name ?? "Report").font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary)
+                                        Text(t.name ?? String(localized: "Report")).font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary)
                                         if let d = t.description, !d.isEmpty {
                                             Text(d).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(2)
                                         }
@@ -92,7 +92,7 @@ struct DashboardsCTW: View {
                 } else if let db: CTWDashboardDb = try? await APIClient.shared.request(CTWAPI.motDashboard(pid: pid, id: id)) {
                     nganXep.duong.append(RouteDashboardCTW(pid: pid, dashboard: db))
                 } else {
-                    loi = "That dashboard isn't available to you."
+                    loi = String(localized: "That dashboard isn't available to you.")
                 }
             }
         }
@@ -116,14 +116,22 @@ struct DashboardsCTW: View {
                 .frame(width: 34, height: 34)
                 .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(AppColors.primary.opacity(0.12)))
             VStack(alignment: .leading, spacing: 2) {
-                Text(d.name ?? "Dashboard").font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary)
-                Text("\((d.widgets ?? []).count) widget\((d.widgets ?? []).count == 1 ? "" : "s")" + (d.shared == true ? " · Shared" : " · Private"))
+                Text(d.name ?? String(localized: "Dashboard")).font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary)
+                Text(dongPhu(d))
                     .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
             }
             Spacer(minLength: 0)
             if d.shared == true { Image(systemName: "person.2.fill").font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary) }
         }
         .padding(.vertical, 2)
+    }
+
+    private func dongPhu(_ d: CTWDashboardDb) -> String {
+        let n = (d.widgets ?? []).count
+        if d.shared == true {
+            return n == 1 ? String(localized: "1 widget · Shared") : String(localized: "\(n) widgets · Shared")
+        }
+        return n == 1 ? String(localized: "1 widget · Private") : String(localized: "\(n) widgets · Private")
     }
 
     private func tai() async {

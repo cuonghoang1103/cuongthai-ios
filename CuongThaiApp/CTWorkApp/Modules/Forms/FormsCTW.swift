@@ -21,13 +21,13 @@ struct DsFormCTW: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 if let b = biChan {
-                    CTWOTrong(bieuTuong: "lock.shield", tieuDe: "Forms unavailable", moTa: b)
+                    CTWOTrong(bieuTuong: "lock.shield", tieuDe: String(localized: "Forms unavailable"), moTa: b)
                 } else {
                     if let loi { CTWErrorBanner(text: loi) { self.loi = nil } }
                     if let ds = du?.forms {
                         if ds.isEmpty {
-                            CTWOTrong(bieuTuong: "list.bullet.rectangle.portrait", tieuDe: "No forms yet",
-                                      moTa: "Forms your team publishes collect requests that turn into issues automatically.")
+                            CTWOTrong(bieuTuong: "list.bullet.rectangle.portrait", tieuDe: String(localized: "No forms yet"),
+                                      moTa: String(localized: "Forms your team publishes collect requests that turn into issues automatically."))
                         } else {
                             LazyVStack(spacing: 10) {
                                 ForEach(ds) { f in
@@ -84,8 +84,8 @@ struct DsFormCTW: View {
                     Text(f.key ?? "F-\(f.number ?? f.id)").font(.ctw(size: 12, weight: .semibold).monospacedDigit())
                         .foregroundColor(AppColors.textSecondary)
                     CTWChipChu(chu: f.status)
-                    if f.access == "PUBLIC" { CTWNhanNho(chu: "Public", bieuTuong: "globe") }
-                    else { CTWNhanNho(chu: "Members", bieuTuong: "person.2") }
+                    if f.access == "PUBLIC" { CTWNhanNho(chu: String(localized: "Public"), bieuTuong: "globe") }
+                    else { CTWNhanNho(chu: String(localized: "Members"), bieuTuong: "person.2") }
                 }
                 Text(f.title).font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(2)
                 HStack(spacing: 8) {
@@ -138,7 +138,7 @@ struct FormCTW: View {
             .dvBeRong()
         }
         .background(AppColors.backgroundPrimary)
-        .navigationTitle(form.key ?? "Form")
+        .navigationTitle(form.key ?? String(localized: "Form"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             if let l = form.link, let u = URL(string: l) {
@@ -161,7 +161,7 @@ struct FormCTW: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
                 CTWChipChu(chu: form.status)
-                CTWNhanNho(chu: form.access == "PUBLIC" ? "Anyone with the link" : "Signed-in members", bieuTuong: form.access == "PUBLIC" ? "globe" : "lock")
+                CTWNhanNho(chu: form.access == "PUBLIC" ? String(localized: "Anyone with the link") : String(localized: "Signed-in members"), bieuTuong: form.access == "PUBLIC" ? "globe" : "lock")
                 if let l = CTWFormNhan.lyDoDong(form.closed) { CTWNhanNho(chu: l, mau: AppColors.warning) }
             }
             Text(form.title).font(.ctw(size: 22, weight: .bold)).foregroundColor(AppColors.textPrimary)
@@ -170,9 +170,9 @@ struct FormCTW: View {
                 Text(d).font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary).fixedSize(horizontal: false, vertical: true)
             }
             HStack(spacing: 10) {
-                CTWODem(so: "\(tl?.total ?? form.responses ?? 0)", nhan: "Responses", bieuTuong: "tray.full")
-                CTWODem(so: "\(truong.count)", nhan: "Questions", bieuTuong: "questionmark.circle", mau: AppColors.secondary)
-                if let m = form.maxResponses { CTWODem(so: "\(m)", nhan: "Limit", bieuTuong: "gauge", mau: AppColors.accent) }
+                CTWODem(so: "\(tl?.total ?? form.responses ?? 0)", nhan: String(localized: "Responses"), bieuTuong: "tray.full")
+                CTWODem(so: "\(truong.count)", nhan: String(localized: "Questions"), bieuTuong: "questionmark.circle", mau: AppColors.secondary)
+                if let m = form.maxResponses { CTWODem(so: "\(m)", nhan: String(localized: "Limit"), bieuTuong: "gauge", mau: AppColors.accent) }
             }
         }
     }
@@ -180,12 +180,12 @@ struct FormCTW: View {
     @ViewBuilder
     private var tomTat: some View {
         if let ds = tl?.summary {
-            if ds.isEmpty { CTWOTrong(bieuTuong: "chart.bar", tieuDe: "No responses yet") }
+            if ds.isEmpty { CTWOTrong(bieuTuong: "chart.bar", tieuDe: String(localized: "No responses yet")) }
             ForEach(ds) { s in
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 6) {
                         Image(systemName: CTWFormNhan.bieuTuong(s.kind)).foregroundColor(AppColors.primary).font(.ctw(size: 12))
-                        Text(s.label ?? "Question").font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                        Text(s.label ?? String(localized: "Question")).font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                         Spacer(minLength: 0)
                         Text("\(s.answered ?? 0) answered").font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
                     }
@@ -204,8 +204,10 @@ struct FormCTW: View {
                             .accessibilityElement(children: .combine)
                         }
                     } else if let a = s.average {
-                        Text("Average \(String(format: "%.1f", a))" + (s.min.map { " · min \(CTWGiaTri.so($0).hienThi)" } ?? "")
-                             + (s.max.map { " · max \(CTWGiaTri.so($0).hienThi)" } ?? ""))
+                        Text(([String(localized: "Average \(String(format: "%.1f", a))")]
+                              + [s.min.map { String(localized: "min \(CTWGiaTri.so($0).hienThi)") },
+                                 s.max.map { String(localized: "max \(CTWGiaTri.so($0).hienThi)") }].compactMap { $0 })
+                             .joined(separator: " · "))
                             .font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
                     } else if let e = s.earliest {
                         Text("From \(CTW.ngayNgan(e) ?? e) to \(CTW.ngayNgan(s.latest) ?? s.latest ?? "")")
@@ -227,13 +229,13 @@ struct FormCTW: View {
     @ViewBuilder
     private var phanHoi: some View {
         if let ds = tl?.responses {
-            if ds.isEmpty { CTWOTrong(bieuTuong: "tray", tieuDe: "No responses yet") }
+            if ds.isEmpty { CTWOTrong(bieuTuong: "tray", tieuDe: String(localized: "No responses yet")) }
             ForEach(ds) { r in
                 let chu = truong.map { "\($0.label ?? $0.id): \(r.answers?[$0.id]?.hienThi ?? "")" }.joined(separator: "\n")
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 6) {
                         Image(systemName: "person.crop.circle").foregroundColor(AppColors.textSecondary)
-                        Text(r.respondent ?? r.email ?? "Anonymous").font(.ctw(size: 13, weight: .semibold))
+                        Text(r.respondent ?? r.email ?? String(localized: "Anonymous")).font(.ctw(size: 13, weight: .semibold))
                             .foregroundColor(AppColors.textPrimary).lineLimit(1)
                         Spacer(minLength: 0)
                         Text(CTW.thoiDiem(r.createdAt)).font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
@@ -250,7 +252,7 @@ struct FormCTW: View {
                     }
                     if let so = r.issue?.number {
                         NavigationLink(value: CTWRoute.the(pid: pid, so: so)) {
-                            Label(r.issue?.key ?? "Issue #\(so)", systemImage: "arrow.up.right.square")
+                            Label(r.issue?.key ?? String(localized: "Issue #\(so)"), systemImage: "arrow.up.right.square")
                                 .font(.ctw(size: 13, weight: .semibold))
                                 .frame(minHeight: 32)
                         }

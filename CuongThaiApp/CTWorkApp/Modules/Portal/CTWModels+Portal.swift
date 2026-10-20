@@ -137,11 +137,11 @@ struct CTWPortalTrang: Codable {
 struct CTWPortalTaoYeuCau: Codable { var number: Int?; var key: String? }
 
 enum CTWPortal {
-    static let loaiYeuCau: [(ma: String, nhan: String, bieuTuong: String)] = [
-        ("BUG", "Report a problem", "ladybug"),
-        ("CHANGE", "Request a change", "arrow.triangle.2.circlepath"),
-        ("QUESTION", "Ask a question", "questionmark.bubble"),
-        ("FEEDBACK", "Share feedback", "hand.thumbsup"),
-    ]
-    static let locYeuCau: [(ma: String, nhan: String)] = [("all", "All"), ("open", "Open"), ("done", "Done"), ("mine", "Mine")]
+    static var loaiYeuCau: [(ma: String, nhan: String, bieuTuong: String)] { [
+        ("BUG", String(localized: "Report a problem"), "ladybug"),
+        ("CHANGE", String(localized: "Request a change"), "arrow.triangle.2.circlepath"),
+        ("QUESTION", String(localized: "Ask a question"), "questionmark.bubble"),
+        ("FEEDBACK", String(localized: "Share feedback"), "hand.thumbsup"),
+    ] }
+    static var locYeuCau: [(ma: String, nhan: String)] { [("all", String(localized: "All")), ("open", String(localized: "Open")), ("done", String(localized: "Done")), ("mine", String(localized: "Mine"))] }
 }

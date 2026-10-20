@@ -43,7 +43,7 @@ struct PortalCTW: View {
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.md) {
                 if let b = biChan {
-                    CTWOTrong(bieuTuong: "lock.shield", tieuDe: "Client portal unavailable", moTa: b)
+                    CTWOTrong(bieuTuong: "lock.shield", tieuDe: String(localized: "Client portal unavailable"), moTa: b)
                 } else {
                     if let loi { CTWErrorBanner(text: loi) { self.loi = nil } }
                     if let tq {
@@ -101,7 +101,7 @@ struct PortalCTW: View {
         VStack(alignment: .leading, spacing: 10) {
             Text(t.project?.organization ?? t.project?.workspaceName ?? "").font(.ctw(size: 12, weight: .semibold))
                 .foregroundColor(AppColors.textSecondary)
-            Text(t.project?.name ?? "Project").font(.ctw(size: 24, weight: .bold)).foregroundColor(AppColors.textPrimary)
+            Text(t.project?.name ?? String(localized: "Project")).font(.ctw(size: 24, weight: .bold)).foregroundColor(AppColors.textPrimary)
             if let d = t.project?.description, !d.isEmpty {
                 Text(d).font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary).lineLimit(3)
             }
@@ -117,21 +117,21 @@ struct PortalCTW: View {
                 .accessibilityElement(children: .combine)
             }
             HStack(spacing: 10) {
-                CTWODem(so: "\(t.counts?.sharedOpen ?? 0)", nhan: "In progress", bieuTuong: "hammer")
-                CTWODem(so: "\(t.counts?.sharedDone ?? 0)", nhan: "Delivered", bieuTuong: "checkmark.seal", mau: AppColors.success)
-                CTWODem(so: "\(t.counts?.requestsOpen ?? 0)", nhan: "Open requests", bieuTuong: "tray", mau: AppColors.secondary)
+                CTWODem(so: "\(t.counts?.sharedOpen ?? 0)", nhan: String(localized: "In progress"), bieuTuong: "hammer")
+                CTWODem(so: "\(t.counts?.sharedDone ?? 0)", nhan: String(localized: "Delivered"), bieuTuong: "checkmark.seal", mau: AppColors.success)
+                CTWODem(so: "\(t.counts?.requestsOpen ?? 0)", nhan: String(localized: "Open requests"), bieuTuong: "tray", mau: AppColors.secondary)
             }
         }
     }
 
     private func menu(_ t: CTWPortalTongQuan) -> some View {
         VStack(spacing: 0) {
-            dong("tray.full", "Requests", "What you asked for and its status", RoutePortalCTW.yeuCau(pid: pid, xemThu: xemThu))
+            dong("tray.full", String(localized: "Requests"), String(localized: "What you asked for and its status"), RoutePortalCTW.yeuCau(pid: pid, xemThu: xemThu))
             Divider().padding(.leading, 56)
-            dong("checkmark.seal", "Approvals", "Sign-offs waiting for you", RoutePortalCTW.duyet(pid: pid, xemThu: xemThu),
+            dong("checkmark.seal", String(localized: "Approvals"), String(localized: "Sign-offs waiting for you"), RoutePortalCTW.duyet(pid: pid, xemThu: xemThu),
                  dem: t.waitingOnClient?.count)
             Divider().padding(.leading, 56)
-            dong("doc.richtext", "Documents & files", "Everything shared with you", RoutePortalCTW.taiLieu(pid: pid, xemThu: xemThu))
+            dong("doc.richtext", String(localized: "Documents & files"), String(localized: "Everything shared with you"), RoutePortalCTW.taiLieu(pid: pid, xemThu: xemThu))
         }
         .ctwThe(14)
     }
@@ -161,13 +161,13 @@ struct PortalCTW: View {
 
     private func choKhach(_ w: [CTWPortalTongQuan.ChoKhach]) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            CTWSectionHeader("hourglass", xemThu ? "Waiting on the client" : "Waiting on you", count: "\(w.count)")
+            CTWSectionHeader("hourglass", xemThu ? String(localized: "Waiting on the client") : String(localized: "Waiting on you"), count: "\(w.count)")
             ForEach(w) { x in
                 NavigationLink(value: RoutePortalCTW.duyet(pid: pid, xemThu: xemThu)) {
                     HStack(spacing: 10) {
                         Image(systemName: x.kind == "UAT" ? "checklist.checked" : "signature").foregroundColor(AppColors.warning)
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(x.title ?? "Approval").font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                            Text(x.title ?? String(localized: "Approval")).font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                             Text(x.kind == "UAT" ? "Acceptance test" : "Approval").font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                         }
                         Spacer(minLength: 0)
@@ -185,7 +185,7 @@ struct PortalCTW: View {
 
     private func giaiDoan(_ s: [CTWPortalTongQuan.GiaiDoan]) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            CTWSectionHeader("flag.checkered", "Project stages")
+            CTWSectionHeader("flag.checkered", String(localized: "Project stages"))
             VStack(spacing: 0) {
                 ForEach(s) { g in
                     HStack(spacing: 12) {
@@ -197,7 +197,7 @@ struct PortalCTW: View {
                         }
                         VStack(alignment: .leading, spacing: 4) {
                             HStack {
-                                Text(g.name ?? "Stage").font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                                Text(g.name ?? String(localized: "Stage")).font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                                 Spacer()
                                 CTWChipChu(chu: g.status)
                             }
@@ -218,13 +218,14 @@ struct PortalCTW: View {
 
     private func mocPhatHanh(_ m: [CTWPortalTongQuan.MocPhatHanh]) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            CTWSectionHeader("shippingbox", "Releases")
+            CTWSectionHeader("shippingbox", String(localized: "Releases"))
             VStack(spacing: 0) {
                 ForEach(m) { x in
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(x.name ?? "Release").font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
-                            Text("\(x.done ?? 0) of \(x.items ?? 0) items done" + (x.releaseDate.flatMap(CTW.ngayNgan).map { " · \($0)" } ?? ""))
+                            Text(x.name ?? String(localized: "Release")).font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                            Text(x.releaseDate.flatMap(CTW.ngayNgan).map { String(localized: "\(x.done ?? 0) of \(x.items ?? 0) items done · \($0)") }
+                                 ?? String(localized: "\(x.done ?? 0) of \(x.items ?? 0) items done"))
                                 .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                         }
                         Spacer()
@@ -257,7 +258,7 @@ struct PortalYeuCauCTW: View {
                     .padding(.horizontal, -Spacing.md)
                 if let loi { CTWErrorBanner(text: loi) { self.loi = nil } }
                 if let ds {
-                    if ds.isEmpty { CTWOTrong(bieuTuong: "tray", tieuDe: "No requests", moTa: "Shared work and your requests appear here.") }
+                    if ds.isEmpty { CTWOTrong(bieuTuong: "tray", tieuDe: String(localized: "No requests"), moTa: String(localized: "Shared work and your requests appear here.")) }
                     LazyVStack(spacing: 10) {
                         ForEach(ds) { r in
                             NavigationLink(value: RoutePortalCTW.yeuCauCT(pid: pid, so: r.number, xemThu: xemThu)) { hang(r) }
@@ -289,7 +290,7 @@ struct PortalYeuCauCTW: View {
                 Image(systemName: CTW.bieuTuongLoai(key: r.type?.icon ?? r.type?.key))
                     .font(.ctw(size: 11, weight: .bold)).foregroundColor(CTW.mau(r.type?.color, macDinh: AppColors.primary))
                 Text(r.key ?? "#\(r.number)").font(.ctw(size: 12, weight: .semibold).monospacedDigit()).foregroundColor(AppColors.textSecondary)
-                if r.fromClient == true { CTWNhanNho(chu: r.mine == true ? "Yours" : "From client", bieuTuong: "person") }
+                if r.fromClient == true { CTWNhanNho(chu: r.mine == true ? String(localized: "Yours") : String(localized: "From client"), bieuTuong: "person") }
                 Spacer(minLength: 0)
                 CTWChipChu(chu: r.status?.name, mau: r.status?.color.map { CTW.mau($0) } ?? CTW.mauNhom(r.status?.category))
             }
@@ -329,27 +330,27 @@ struct PortalYeuCauCTCTW: View {
                     Text(c.title).font(.ctw(size: 21, weight: .bold)).foregroundColor(AppColors.textPrimary)
                         .fixedSize(horizontal: false, vertical: true)
                     CTWKhoiTruong {
-                        CTWHangTruong("Type", c.type?.name, bieuTuong: "tag")
+                        CTWHangTruong(String(localized: "Type"), c.type?.name, bieuTuong: "tag")
                         Divider()
-                        CTWHangTruong("Priority", CTW.uuTien(c.priority).ten, bieuTuong: "flag")
-                        if let s = c.stage { Divider(); CTWHangTruong("Stage", "\(s.n.map { "\($0). " } ?? "")\(s.name ?? "")", bieuTuong: "flag.checkered") }
-                        if let v = c.fixVersion { Divider(); CTWHangTruong("Release", v.name, bieuTuong: "shippingbox") }
-                        if let d = c.dueDate { Divider(); CTWHangTruong("Due", CTW.ngayNgan(d), bieuTuong: "calendar") }
+                        CTWHangTruong(String(localized: "Priority"), CTW.uuTien(c.priority).ten, bieuTuong: "flag")
+                        if let s = c.stage { Divider(); CTWHangTruong(String(localized: "Stage"), "\(s.n.map { "\($0). " } ?? "")\(s.name ?? "")", bieuTuong: "flag.checkered") }
+                        if let v = c.fixVersion { Divider(); CTWHangTruong(String(localized: "Release"), v.name, bieuTuong: "shippingbox") }
+                        if let d = c.dueDate { Divider(); CTWHangTruong(String(localized: "Due"), CTW.ngayNgan(d), bieuTuong: "calendar") }
                         Divider()
-                        CTWHangTruong("Requested", DichVuLoi.luc(c.createdAt), bieuTuong: "clock")
+                        CTWHangTruong(String(localized: "Requested"), DichVuLoi.luc(c.createdAt), bieuTuong: "clock")
                     }
                     if let d = c.descriptionJson, !d.chuTron.isEmpty {
                         CTWTipTapView(doc: d, coChu: 15).padding(14).ctwThe(12)
                     }
                     if let f = c.attachments, !f.isEmpty {
-                        CTWSectionHeader("paperclip", "Files", count: "\(f.count)")
+                        CTWSectionHeader("paperclip", String(localized: "Files"), count: "\(f.count)")
                         VStack(spacing: 0) {
                             ForEach(f) { a in
                                 HStack(spacing: 10) {
                                     Image(systemName: a.bieuTuong).foregroundColor(AppColors.primary).frame(width: 22)
-                                    Text(a.fileName ?? "File").font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                                    Text(a.fileName ?? String(localized: "File")).font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary).lineLimit(1)
                                     Spacer(minLength: 0)
-                                    if a.deliverable == true { CTWNhanNho(chu: "Deliverable", mau: AppColors.success) }
+                                    if a.deliverable == true { CTWNhanNho(chu: String(localized: "Deliverable"), mau: AppColors.success) }
                                 }
                                 .padding(.vertical, 10)
                                 if a.id != f.last?.id { Divider() }
@@ -357,13 +358,13 @@ struct PortalYeuCauCTCTW: View {
                         }
                         .padding(.horizontal, 12).ctwThe(12)
                     }
-                    CTWSectionHeader("bubble.left.and.bubble.right", "Conversation", count: "\(c.comments?.count ?? 0)")
+                    CTWSectionHeader("bubble.left.and.bubble.right", String(localized: "Conversation"), count: "\(c.comments?.count ?? 0)")
                     ForEach(c.comments ?? []) { b in DongBinhLuanTheCTW(pid: pid, so: so, c: b) }
                     if (c.comments ?? []).isEmpty {
                         Text("No replies yet.").font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary)
                     }
                     if !xemThu {
-                        CTWHopSoan(goiY: "Write a reply…", nutGui: "Send reply") { chu in
+                        CTWHopSoan(goiY: String(localized: "Write a reply…"), nutGui: String(localized: "Send reply")) { chu in
                             do {
                                 let m: CTWComment = try await APIClient.shared.request(CTWAPI.dvGuiBinhLuan(pid: pid, so: so, chu: chu, congKhai: nil))
                                 ct?.comments = (ct?.comments ?? []) + [m]
@@ -377,7 +378,7 @@ struct PortalYeuCauCTCTW: View {
             .dvBeRong()
         }
         .background(AppColors.backgroundPrimary)
-        .navigationTitle(ct?.key ?? "Request")
+        .navigationTitle(ct?.key ?? String(localized: "Request"))
         .navigationBarTitleDisplayMode(.inline)
         .refreshable { await tai() }
         .task { if ct == nil { await tai() } }
@@ -405,7 +406,7 @@ struct PortalDuyetCTW: View {
                 if xemThu { DaiXemThuKhach().clipShape(RoundedRectangle(cornerRadius: 10)) }
                 if let loi { CTWErrorBanner(text: loi) { self.loi = nil } }
                 if let ds {
-                    if ds.isEmpty { CTWOTrong(bieuTuong: "checkmark.seal", tieuDe: "Nothing to approve", moTa: "Sign-off requests for you appear here.") }
+                    if ds.isEmpty { CTWOTrong(bieuTuong: "checkmark.seal", tieuDe: String(localized: "Nothing to approve"), moTa: String(localized: "Sign-off requests for you appear here.")) }
                     ForEach(ds) { d in the(d) }
                 } else if loi == nil { CTWKhungTai(soHang: 3, coAvatar: false).padding(.horizontal, -Spacing.md) }
             }
@@ -432,14 +433,14 @@ struct PortalDuyetCTW: View {
     private func the(_ d: CTWPortalDuyet) -> some View {
         VStack(alignment: .leading, spacing: 9) {
             HStack(spacing: 6) {
-                CTWNhanNho(chu: d.targetType == "UAT" ? "Acceptance test" : CTWMauTrangThai.nhan(d.targetType),
+                CTWNhanNho(chu: d.targetType == "UAT" ? String(localized: "Acceptance test") : CTWMauTrangThai.nhan(d.targetType),
                            bieuTuong: d.targetType == "UAT" ? "checklist.checked" : "signature", mau: AppColors.primary)
-                if d.waitingOnClient == true { CTWNhanNho(chu: "Your turn", mau: AppColors.warning) }
-                if d.contentChanged == true { CTWNhanNho(chu: "Changed since sign-off", bieuTuong: "exclamationmark.triangle", mau: AppColors.warning) }
+                if d.waitingOnClient == true { CTWNhanNho(chu: String(localized: "Your turn"), mau: AppColors.warning) }
+                if d.contentChanged == true { CTWNhanNho(chu: String(localized: "Changed since sign-off"), bieuTuong: "exclamationmark.triangle", mau: AppColors.warning) }
                 Spacer(minLength: 0)
                 CTWChipChu(chu: d.status)
             }
-            Text(d.title ?? "Approval").font(.ctw(size: 16, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+            Text(d.title ?? String(localized: "Approval")).font(.ctw(size: 16, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
             if let m = d.description, !m.isEmpty {
                 Text(m).font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary).lineLimit(4)
@@ -453,8 +454,8 @@ struct PortalDuyetCTW: View {
                 ForEach(d.steps ?? []) { b in
                     HStack(spacing: 8) {
                         CTWAvatar(user: b.approver, size: 22)
-                        Text(b.approver?.ten ?? "Approver").font(.ctw(size: 13)).foregroundColor(AppColors.textPrimary).lineLimit(1)
-                        if b.isClient == true { CTWNhanNho(chu: "Client") }
+                        Text(b.approver?.ten ?? String(localized: "Approver")).font(.ctw(size: 13)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                        if b.isClient == true { CTWNhanNho(chu: String(localized: "Client")) }
                         Spacer(minLength: 0)
                         CTWChipChu(chu: b.decision)
                     }
@@ -491,7 +492,7 @@ private struct QuyetDuyetPortal: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section { Text(d.title ?? "Approval").font(.headline) }
+                Section { Text(d.title ?? String(localized: "Approval")).font(.headline) }
                 if d.contentChanged == true {
                     Section { Label("The content changed after it was sent for approval. Review it before deciding.", systemImage: "exclamationmark.triangle")
                         .foregroundColor(AppColors.warning) }
@@ -567,7 +568,7 @@ struct PortalTaiLieuCTW: View {
                         HStack(spacing: 10) {
                             Image(systemName: (f.mime ?? "").hasPrefix("image/") ? "photo" : "doc").foregroundColor(AppColors.primary)
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(f.fileName ?? "File").foregroundColor(AppColors.textPrimary).lineLimit(1)
+                                Text(f.fileName ?? String(localized: "File")).foregroundColor(AppColors.textPrimary).lineLimit(1)
                                 Text([f.issue?.key, f.size.map { ByteCountFormatter.string(fromByteCount: Int64($0), countStyle: .file) }]
                                     .compactMap { $0 }.joined(separator: " · "))
                                     .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
@@ -615,7 +616,7 @@ struct PortalTrangCTW: View {
             .dvBeRong()
         }
         .background(AppColors.backgroundPrimary)
-        .navigationTitle(t?.title ?? "Document")
+        .navigationTitle(t?.title ?? String(localized: "Document"))
         .navigationBarTitleDisplayMode(.inline)
         .task {
             do { t = try await APIClient.shared.request(CTWAPI.portalTrang(pid: pid, so: so, xemThu: xemThu)) } catch { loi = DichVuLoi.cau(error) }

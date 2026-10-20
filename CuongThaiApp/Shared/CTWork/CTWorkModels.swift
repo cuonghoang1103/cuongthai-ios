@@ -607,13 +607,11 @@ enum CTW {
     /// "Sep 25" / "Sep 25, 2027".
     static func ngayNgan(_ s: String?) -> String? {
         guard let d = ngayDate(s) else { return nil }
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "en_US")
-        f.timeZone = TimeZone(identifier: "UTC")
         let namNay = Calendar.current.component(.year, from: Date())
         var lich = Calendar(identifier: .gregorian)
         lich.timeZone = TimeZone(identifier: "UTC")!
-        f.dateFormat = lich.component(.year, from: d) == namNay ? "MMM d" : "MMM d, yyyy"
+        // Theo ngôn ngữ app: "Sep 25" / "25 thg 9".
+        let f = CTWDinhDang.mau(lich.component(.year, from: d) == namNay ? "MMMd" : "yMMMd", muiGio: TimeZone(identifier: "UTC"))
         return f.string(from: d)
     }
 
@@ -633,10 +631,7 @@ enum CTW {
             return iso.date(from: s)
         }()
         guard let d else { return s }
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "en_US")
-        f.dateFormat = "MMM d, HH:mm"
-        return f.string(from: d)
+        return CTWDinhDang.mau("MMMd").string(from: d) + ", " + CTWDinhDang.gio(d)
     }
 
     /// Câu lỗi bằng TIẾNG ANH. Lỗi của máy chủ CT Work vốn đã là tiếng Anh

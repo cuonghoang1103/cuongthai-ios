@@ -52,7 +52,7 @@ struct ThongTinKenhCTW: View {
                         Task { await luuBao(["notify": v]) }
                     }
                     Menu {
-                        ForEach([("30m", "30 minutes"), ("1h", "1 hour"), ("8h", "8 hours"), ("tomorrow", "Until tomorrow"), ("forever", "Until I turn it back on")], id: \.0) { m in
+                        ForEach([("30m", String(localized: "30 minutes")), ("1h", String(localized: "1 hour")), ("8h", String(localized: "8 hours")), ("tomorrow", String(localized: "Until tomorrow")), ("forever", String(localized: "Until I turn it back on"))], id: \.0) { m in
                             Button(m.1) { Task { await luuBao(["mute": m.0]) } }
                         }
                         if kenh.muted == true {
@@ -64,7 +64,7 @@ struct ThongTinKenhCTW: View {
                             Label(kenh.muted == true ? "Muted" : "Mute channel", systemImage: kenh.muted == true ? "bell.slash.fill" : "bell.slash")
                             Spacer()
                             if kenh.muted == true {
-                                Text(kenh.mutedForever == true ? "Until you unmute" : (CTWChatThoiGian.date(kenh.mutedUntil).map { "Until \(CTWChatThoiGian.gio(ISO8601DateFormatter().string(from: $0)))" } ?? ""))
+                                Text(kenh.mutedForever == true ? String(localized: "Until you unmute") : (CTWChatThoiGian.date(kenh.mutedUntil).map { String(localized: "Until \(CTWChatThoiGian.gio(ISO8601DateFormatter().string(from: $0)))") } ?? ""))
                                     .font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
                             }
                         }
@@ -94,10 +94,10 @@ struct ThongTinKenhCTW: View {
                             }
                             VStack(alignment: .leading, spacing: 1) {
                                 HStack(spacing: 5) {
-                                    Text(m.id == app.currentUser?.id ? "\(m.nguoi.ten) (you)" : m.nguoi.ten).font(.ctw(size: 15))
+                                    Text(m.id == app.currentUser?.id ? String(localized: "\(m.nguoi.ten) (you)") : m.nguoi.ten).font(.ctw(size: 15))
                                     if m.nguoi.laAgent { CTWNhanAI() }
                                 }
-                                Text([m.username.map { "@\($0)" }, m.role?.capitalized, m.online == true ? "Online" : nil].compactMap { $0 }.joined(separator: " · "))
+                                Text([m.username.map { "@\($0)" }, m.role?.capitalized, m.online == true ? String(localized: "Online") : nil].compactMap { $0 }.joined(separator: " · "))
                                     .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                             }
                         }
@@ -200,7 +200,7 @@ struct TimTinCTW: View {
         NavigationStack {
             List {
                 if daTim && kq.isEmpty && !dangTim {
-                    CTWOTrong(bieuTuong: "magnifyingglass", tieuDe: "No results", moTa: "Try another word. Search covers messages, file names and voice-note transcripts.")
+                    CTWOTrong(bieuTuong: "magnifyingglass", tieuDe: String(localized: "No results"), moTa: String(localized: "Try another word. Search covers messages, file names and voice-note transcripts."))
                         .listRowBackground(Color.clear)
                 }
                 ForEach(kq) { m in
@@ -249,7 +249,7 @@ struct TinGhimCTW: View {
             List {
                 if let loi { CTWErrorBanner(text: loi).listRowBackground(Color.clear) }
                 if let ds, ds.isEmpty {
-                    CTWOTrong(bieuTuong: "pin", tieuDe: "No pinned messages", moTa: "Touch and hold a message, then choose Pin to channel.")
+                    CTWOTrong(bieuTuong: "pin", tieuDe: String(localized: "No pinned messages"), moTa: String(localized: "Touch and hold a message, then choose Pin to channel."))
                         .listRowBackground(Color.clear)
                 }
                 ForEach(ds ?? []) { m in
@@ -302,7 +302,7 @@ struct ChuyenTiepTinCTW: View {
             Form {
                 if let loi { CTWErrorBanner(text: loi) }
                 Section("Message") {
-                    Text(tin.body ?? (tin.files?.first?.fileName ?? "Attachment")).font(.ctw(size: 14)).lineLimit(4)
+                    Text(tin.body ?? (tin.files?.first?.fileName ?? String(localized: "Attachment"))).font(.ctw(size: 14)).lineLimit(4)
                         .foregroundColor(AppColors.textSecondary)
                 }
                 Section("Send to") {
@@ -341,7 +341,7 @@ struct ChuyenTiepTinCTW: View {
             CTWRung.thanhCong()
             let ten = kenh.first { $0.id == chon }?.name ?? ""
             dong()
-            xong("Forwarded to #\(ten).")
+            xong(String(localized: "Forwarded to #\(ten)."))
         } catch { loi = CTW.loi(error) }
     }
 }
@@ -405,7 +405,7 @@ struct TheTuTinCTW: View {
             let kq: CTWTheTuTinKQ = try await APIClient.shared.request(CTWAPI.theTuTin(pid: pid, cid: kenh.id, mid: tin.id, loai: loai, tieuDe: tieuDe))
             CTWRung.thanhCong()
             dong()
-            xong("Created \(kq.key ?? "the issue").")
+            xong(String(localized: "Created \(kq.key ?? String(localized: "the issue"))."))
         } catch { loi = CTW.loi(error) }
     }
 }
@@ -415,11 +415,11 @@ struct TheTuTinCTW: View {
 struct ChonCamXucCTW: View {
     let chon: (String) -> Void
     @Environment(\.dismiss) private var dong
-    private let nhom: [(String, [String])] = [
-        ("Frequently used", ["👍", "❤️", "😂", "🎉", "👀", "🙏", "✅", "🔥"]),
-        ("Smileys", ["😀", "😄", "😊", "😍", "🤩", "😎", "🤔", "😅", "😢", "😮", "😴", "🤯"]),
-        ("Work", ["🚀", "💯", "👏", "🙌", "💪", "🤝", "📌", "📝", "🐛", "⚠️", "❓", "⏳", "☕️", "🍕"]),
-    ]
+    private var nhom: [(String, [String])] { [
+        (String(localized: "Frequently used"), ["👍", "❤️", "😂", "🎉", "👀", "🙏", "✅", "🔥"]),
+        (String(localized: "Smileys"), ["😀", "😄", "😊", "😍", "🤩", "😎", "🤔", "😅", "😢", "😮", "😴", "🤯"]),
+        (String(localized: "Work"), ["🚀", "💯", "👏", "🙌", "💪", "🤝", "📌", "📝", "🐛", "⚠️", "❓", "⏳", "☕️", "🍕"]),
+    ] }
 
     var body: some View {
         NavigationStack {

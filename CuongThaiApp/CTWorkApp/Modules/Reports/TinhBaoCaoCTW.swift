@@ -43,7 +43,7 @@ enum TinhBaoCaoCTW {
         }
         if nhom.count > toiDa {
             let con = nhom.dropFirst(toiDa).map(gt).reduce(0, +)
-            kq.append(ThanhPhanBoCTW(id: "__other", nhan: "Other (\(nhom.count - toiDa))", giaTri: con, tiLe: con / tong,
+            kq.append(ThanhPhanBoCTW(id: "__other", nhan: String(localized: "Other (\(nhom.count - toiDa))"), giaTri: con, tiLe: con / tong,
                                      mauHex: nil, category: nil, viTriMau: 8))
         }
         return kq

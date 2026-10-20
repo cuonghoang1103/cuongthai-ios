@@ -187,9 +187,9 @@ struct ChiTietPhienBanCTW: View {
             if let m = v.description, !m.isEmpty {
                 Text(m).font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary).fixedSize(horizontal: false, vertical: true)
             }
-            CTWThanhTienDo(doan: [CTWDoanTienDo(ten: "Done", giaTri: Double(td.xong), mau: AppColors.success),
-                                  CTWDoanTienDo(ten: "In progress", giaTri: Double(td.dangLam), mau: CTWMauChuoi.mau(0)),
-                                  CTWDoanTienDo(ten: "To do", giaTri: Double(td.chuaLam), mau: CTWMauChuoi.khac)], cao: 10)
+            CTWThanhTienDo(doan: [CTWDoanTienDo(ten: String(localized: "Done"), giaTri: Double(td.xong), mau: AppColors.success),
+                                  CTWDoanTienDo(ten: String(localized: "In progress"), giaTri: Double(td.dangLam), mau: CTWMauChuoi.mau(0)),
+                                  CTWDoanTienDo(ten: String(localized: "To do"), giaTri: Double(td.chuaLam), mau: CTWMauChuoi.khac)], cao: 10)
             HStack(spacing: 14) {
                 demNhom("Done", td.xong, AppColors.success)
                 demNhom("In progress", td.dangLam, CTWMauChuoi.mau(0))
@@ -201,7 +201,7 @@ struct ChiTietPhienBanCTW: View {
         .ctwThe(16)
     }
 
-    private func demNhom(_ t: String, _ n: Int, _ m: Color) -> some View {
+    private func demNhom(_ t: LocalizedStringKey, _ n: Int, _ m: Color) -> some View {
         HStack(spacing: 5) {
             RoundedRectangle(cornerRadius: 2).fill(m).frame(width: 9, height: 9)
             Text("\(n)").font(.ctw(size: 13, weight: .bold).monospacedDigit()).foregroundColor(AppColors.textPrimary)
@@ -215,17 +215,17 @@ struct ChiTietPhienBanCTW: View {
     private var bieuDo: some View {
         let b = vm.burnup
         let diem = (b?.points ?? []).compactMap { p in NgayCTW.ngay(p.day).map { (d: $0, p: p) } }
-        let donVi = vm.theoSoThe ? "issues" : ((b?.unit == "HOURS") ? "hours" : "points")
         let phu: String = {
-            if let f = NgayCTW.ngay(b?.forecast) { return "Forecast to finish \(NgayCTW.day(f)) at the recent pace" }
-            return "Scope vs. completed \(donVi) over time"
+            if let f = NgayCTW.ngay(b?.forecast) { return String(localized: "Forecast to finish \(NgayCTW.day(f)) at the recent pace") }
+            if vm.theoSoThe { return String(localized: "Scope vs. completed issues over time") }
+            return b?.unit == "HOURS" ? String(localized: "Scope vs. completed hours over time") : String(localized: "Scope vs. completed points over time")
         }()
         return CTWKhungBieuDo(
-            tieuDe: "Release burnup", phu: phu,
-            chuGiai: [CTWMucChuGiai(ten: "Scope", mau: CTWMauChuoi.mau(0)),
-                      CTWMucChuGiai(ten: "Done", mau: CTWMauChuoi.mau(2)),
-                      CTWMucChuGiai(ten: "Ideal", mau: AppColors.textTertiary, netDut: true)],
-            cot: ["Day", "Scope", "Done"],
+            tieuDe: String(localized: "Release burnup"), phu: phu,
+            chuGiai: [CTWMucChuGiai(ten: String(localized: "Scope"), mau: CTWMauChuoi.mau(0)),
+                      CTWMucChuGiai(ten: String(localized: "Done"), mau: CTWMauChuoi.mau(2)),
+                      CTWMucChuGiai(ten: String(localized: "Ideal"), mau: AppColors.textTertiary, netDut: true)],
+            cot: [String(localized: "Day"), String(localized: "Scope"), String(localized: "Done")],
             hang: diem.map { CTWHangBang(nhan: NgayCTW.ngan($0.d), giaTri: [CTWSo.gon($0.p.scope ?? 0), CTWSo.gon($0.p.done ?? 0)]) }
         ) {
             VStack(spacing: 8) {
@@ -272,7 +272,7 @@ struct ChiTietPhienBanCTW: View {
 
     private func ghiChu(_ v: PhienBanCTW) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            CTWSectionHeader("doc.richtext", "Release notes", trailing: quanLy ? AnyView(
+            CTWSectionHeader("doc.richtext", String(localized: "Release notes"), trailing: quanLy ? AnyView(
                 Button("Edit") { tamPhu = .ghiChu }.font(.ctw(size: 14, weight: .semibold))
             ) : nil)
             if let n = v.releaseNotes, !n.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -292,13 +292,13 @@ struct ChiTietPhienBanCTW: View {
 
     private func dsThe(_ the: [CTWIssueCard]) -> some View {
         let nhom: [(String, String, [CTWIssueCard])] = [
-            ("In progress", "circle.lefthalf.filled", the.filter { $0.resolvedAt == nil && vm.nhom($0.statusId) == "IN_PROGRESS" }),
-            ("To do", "circle", the.filter { $0.resolvedAt == nil && vm.nhom($0.statusId) != "IN_PROGRESS" && vm.nhom($0.statusId) != "DONE" }),
-            ("Done", "checkmark.circle.fill", the.filter { $0.resolvedAt != nil || vm.nhom($0.statusId) == "DONE" }),
+            (String(localized: "In progress"), "circle.lefthalf.filled", the.filter { $0.resolvedAt == nil && vm.nhom($0.statusId) == "IN_PROGRESS" }),
+            (String(localized: "To do"), "circle", the.filter { $0.resolvedAt == nil && vm.nhom($0.statusId) != "IN_PROGRESS" && vm.nhom($0.statusId) != "DONE" }),
+            (String(localized: "Done"), "checkmark.circle.fill", the.filter { $0.resolvedAt != nil || vm.nhom($0.statusId) == "DONE" }),
         ]
         let cfg = vm.cauHinh
         return VStack(alignment: .leading, spacing: 12) {
-            CTWSectionHeader("list.bullet.rectangle", "Issues", count: "\(the.count)")
+            CTWSectionHeader("list.bullet.rectangle", String(localized: "Issues"), count: "\(the.count)")
             if the.isEmpty {
                 Text("No issues are assigned to this version.").font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
             }
@@ -344,7 +344,7 @@ struct SuaGhiChuPBCTW: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                CTWSoanMarkdown(chu: $ban, goiY: "What's new, fixed and changed in this version…", dongToiThieu: 12)
+                CTWSoanMarkdown(chu: $ban, goiY: String(localized: "What's new, fixed and changed in this version…"), dongToiThieu: 12)
                     .padding(Spacing.md)
             }
             .background(AppColors.backgroundPrimary)
@@ -383,7 +383,7 @@ struct PhatHanhPBCTW: View {
         NavigationStack {
             Form {
                 Section {
-                    Label(chuaXong == 0 ? "All issues in this version are done." : "\(chuaXong) issue\(chuaXong == 1 ? " is" : "s are") not done yet.",
+                    Label(chuaXong == 0 ? String(localized: "All issues in this version are done.") : chuaXong == 1 ? String(localized: "1 issue is not done yet.") : String(localized: "\(chuaXong) issues are not done yet."),
                           systemImage: chuaXong == 0 ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
                         .foregroundColor(chuaXong == 0 ? AppColors.success : AppColors.warning)
                 }

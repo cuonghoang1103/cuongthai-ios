@@ -49,7 +49,7 @@ struct ThayDoiCTW: View {
 
     private var chips: [CTWChipLoc] {
         let dem = vm.ds?.totals?.byStatus ?? [:]
-        let dau = CTWChipLoc(id: "ALL", nhan: "All", bat: vm.loc == nil)
+        let dau = CTWChipLoc(id: "ALL", nhan: String(localized: "All"), bat: vm.loc == nil)
         return [dau] + CTWCrLuat.trangThai.map { s in
             CTWChipLoc(id: s, nhan: CTWMauTrangThai.nhan(s) + (dem[s].map { " \($0)" } ?? ""), bat: vm.loc == s)
         }
@@ -61,16 +61,16 @@ struct ThayDoiCTW: View {
                 CTWErrorBanner(text: loi) { vm.loi = nil }.listRowBackground(Color.clear).listRowInsets(EdgeInsets())
             }
             if vm.tatMoDun {
-                GovTatMoDun(ten: "Change requests").listRowBackground(Color.clear)
+                GovTatMoDun(ten: String(localized: "Change requests")).listRowBackground(Color.clear)
             } else if let ds = vm.ds {
                 Section { tongQuan(ds) }
                     .listRowBackground(Color.clear)
                     .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
                 let items = ds.items ?? []
                 if items.isEmpty {
-                    CTWOTrong(bieuTuong: "arrow.triangle.branch", tieuDe: vm.loc == nil ? "No change requests" : "Nothing here",
-                              moTa: "Change requests record scope, schedule and cost changes, and who approved them.",
-                              nut: ds.canEdit == true && vm.loc == nil ? "New change request" : nil,
+                    CTWOTrong(bieuTuong: "arrow.triangle.branch", tieuDe: vm.loc == nil ? String(localized: "No change requests") : String(localized: "Nothing here"),
+                              moTa: String(localized: "Change requests record scope, schedule and cost changes, and who approved them."),
+                              nut: ds.canEdit == true && vm.loc == nil ? String(localized: "New change request") : nil,
                               hanhDong: { tamPhu = .tao })
                         .listRowBackground(Color.clear)
                 } else {
@@ -124,13 +124,13 @@ struct ThayDoiCTW: View {
         let tien = (t?.approvedCost ?? []).compactMap { c in c.amount.map { CTWCrLuat.tien($0, c.currency) } }.joined(separator: " · ")
         return VStack(spacing: 10) {
             HStack(spacing: 10) {
-                CTWODem(so: "\(t?.approvedCount ?? 0)", nhan: "Approved changes", bieuTuong: "checkmark.seal.fill", mau: AppColors.success)
-                CTWODem(so: "\(t?.pending ?? 0)", nhan: "Waiting for a decision", bieuTuong: "hourglass", mau: AppColors.warning)
+                CTWODem(so: "\(t?.approvedCount ?? 0)", nhan: String(localized: "Approved changes"), bieuTuong: "checkmark.seal.fill", mau: AppColors.success)
+                CTWODem(so: "\(t?.pending ?? 0)", nhan: String(localized: "Waiting for a decision"), bieuTuong: "hourglass", mau: AppColors.warning)
             }
             HStack(spacing: 10) {
-                CTWODem(so: (t?.approvedDays ?? 0) == 0 ? "0" : "\((t?.approvedDays ?? 0) > 0 ? "+" : "")\(t?.approvedDays ?? 0)d",
-                        nhan: "Approved schedule impact", bieuTuong: "calendar.badge.clock", mau: AppColors.info)
-                CTWODem(so: tien.isEmpty ? "0" : tien, nhan: "Approved cost impact", bieuTuong: "banknote", mau: AppColors.primary)
+                CTWODem(so: (t?.approvedDays ?? 0) == 0 ? "0" : String(localized: "\((t?.approvedDays ?? 0) > 0 ? "+" : "")\(t?.approvedDays ?? 0)d"),
+                        nhan: String(localized: "Approved schedule impact"), bieuTuong: "calendar.badge.clock", mau: AppColors.info)
+                CTWODem(so: tien.isEmpty ? "0" : tien, nhan: String(localized: "Approved cost impact"), bieuTuong: "banknote", mau: AppColors.primary)
             }
             CTWThanhLoc(chip: chips) { c in
                 vm.loc = c.id == "ALL" ? nil : c.id
@@ -217,8 +217,8 @@ struct ChiTietCrCTW: View {
             case .sua(let ban):
                 FormCrCTW(pid: pid, ban: ban) { moi in c = moi }
             case .xinDuyet(let ban):
-                GovYeuCauDuyetView(cfg: app.cauHinhDuAn, tieuDe: "Request approval",
-                                   moTa: "Approvers sign \(ban.nhanKhoa) “\(ban.title)”. Approval moves it to Approved; one rejection moves it to Rejected.") { ids, tuanTu, han in
+                GovYeuCauDuyetView(cfg: app.cauHinhDuAn, tieuDe: String(localized: "Request approval"),
+                                   moTa: String(localized: "Approvers sign \(ban.nhanKhoa) “\(ban.title)”. Approval moves it to Approved; one rejection moves it to Rejected.")) { ids, tuanTu, han in
                     do {
                         let _: CTWDuyet = try await APIClient.shared.request(CTWAPI.xinDuyetCr(pid: pid, so: so, nguoiDuyet: ids, tuanTu: tuanTu, han: han))
                         await tai()
@@ -235,8 +235,8 @@ struct ChiTietCrCTW: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
                 CTWChipChu(chu: c.status)
-                if let u = c.urgency { CTWNhanNho(chu: "\(CTWMauTrangThai.nhan(u)) urgency", bieuTuong: "flame", mau: CTWMauTrangThai.mau(u)) }
-                if c.clientVisible == true { CTWNhanNho(chu: "Shared with client", bieuTuong: "person.crop.rectangle") }
+                if let u = c.urgency { CTWNhanNho(chu: String(localized: "\(CTWMauTrangThai.nhan(u)) urgency"), bieuTuong: "flame", mau: CTWMauTrangThai.mau(u)) }
+                if c.clientVisible == true { CTWNhanNho(chu: String(localized: "Shared with client"), bieuTuong: "person.crop.rectangle") }
             }
             Text(c.title).font(.ctw(size: 22, weight: .bold)).foregroundColor(AppColors.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -257,7 +257,7 @@ struct ChiTietCrCTW: View {
                     Image(systemName: "hourglass").foregroundColor(AppColors.warning)
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Approval in progress").font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
-                        Text(c.waitingDays.map { "Waiting \($0) day\($0 == 1 ? "" : "s")" } ?? "Tap to see who still needs to sign")
+                        Text(c.waitingDays.map { $0 == 1 ? String(localized: "Waiting 1 day") : String(localized: "Waiting \($0) days") } ?? String(localized: "Tap to see who still needs to sign"))
                             .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                     }
                     Spacer()
@@ -288,24 +288,24 @@ struct ChiTietCrCTW: View {
 
     private func tacDong(_ c: CTWCr) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            CTWSectionHeader("gauge.with.dots.needle.33percent", "Impact")
+            CTWSectionHeader("gauge.with.dots.needle.33percent", String(localized: "Impact"))
             CTWKhoiTruong {
-                CTWHangTruong("Schedule", c.nhanLich ?? "No change", bieuTuong: "calendar.badge.clock")
+                CTWHangTruong(String(localized: "Schedule"), c.nhanLich ?? String(localized: "No change"), bieuTuong: "calendar.badge.clock")
                 Divider()
-                CTWHangTruong("Cost", c.nhanChiPhi ?? "No change", bieuTuong: "banknote")
+                CTWHangTruong(String(localized: "Cost"), c.nhanChiPhi ?? String(localized: "No change"), bieuTuong: "banknote")
                 Divider()
-                CTWHangTruong(nhan: "Owner", bieuTuong: "person") { nguoi(c.owner) }
+                CTWHangTruong(nhan: String(localized: "Owner"), bieuTuong: "person") { nguoi(c.owner) }
                 Divider()
-                CTWHangTruong(nhan: "Requester", bieuTuong: "person.wave.2") { nguoi(c.requester) }
+                CTWHangTruong(nhan: String(localized: "Requester"), bieuTuong: "person.wave.2") { nguoi(c.requester) }
                 if let s = c.sourceIssue {
                     Divider()
                     NavigationLink(value: CTWRoute.the(pid: pid, so: s.number)) {
-                        CTWHangTruong(nhan: "Raised from", bieuTuong: "link") { Text(s.title ?? "#\(s.number)").lineLimit(1) }
+                        CTWHangTruong(nhan: String(localized: "Raised from"), bieuTuong: "link") { Text(s.title ?? "#\(s.number)").lineLimit(1) }
                     }
                     .buttonStyle(.plain)
                 }
                 Divider()
-                CTWHangTruong("Updated", CTW.thoiDiem(c.updatedAt), bieuTuong: "clock")
+                CTWHangTruong(String(localized: "Updated"), CTW.thoiDiem(c.updatedAt), bieuTuong: "clock")
             }
         }
     }
@@ -325,17 +325,19 @@ struct ChiTietCrCTW: View {
         let tacGia = c.createdBy ?? c.requester
         let cuaToi = tacGia?.id == app.currentUser?.id
         if let d = c.descriptionJson, !d.chuTron.isEmpty {
-            CTWSectionHeader("text.alignleft", "Description")
+            CTWSectionHeader("text.alignleft", String(localized: "Description"))
             CTWTipTapView(doc: d, coChu: 15)
                 .padding(14).frame(maxWidth: .infinity, alignment: .leading).ctwThe(14)
                 .ctwMenuBaoCaoChan(khoa: "cr-desc-\(pid)-\(c.number)", noiDung: d.chuTron, nguCanh: "Change request \(c.nhanKhoa)",
                                    tacGia: tacGia, laCuaToi: cuaToi, dich: CTWDichBaoCao("change_request", c.id))
         }
-        ForEach([("Reason", "questionmark.bubble", c.reason), ("Impact on scope", "square.dashed", c.impactScope),
-                 ("Risk", "exclamationmark.shield", c.impactRisk), ("Alternatives considered", "arrow.triangle.swap", c.alternatives)],
+        ForEach([("Reason", "questionmark.bubble", c.reason, String(localized: "Reason")),
+                 ("Impact on scope", "square.dashed", c.impactScope, String(localized: "Impact on scope")),
+                 ("Risk", "exclamationmark.shield", c.impactRisk, String(localized: "Risk")),
+                 ("Alternatives considered", "arrow.triangle.swap", c.alternatives, String(localized: "Alternatives considered"))],
                 id: \.0) { m in
             if let t = m.2?.trimmingCharacters(in: .whitespacesAndNewlines), !t.isEmpty {
-                CTWSectionHeader(m.1, m.0)
+                CTWSectionHeader(m.1, m.3)
                 CTWMarkdownView(markdown: t, coChu: 15)
                     .padding(14).frame(maxWidth: .infinity, alignment: .leading).ctwThe(14)
                     .ctwMenuBaoCaoChan(khoa: "cr-\(m.0.lowercased())-\(pid)-\(c.number)", noiDung: t,
@@ -349,7 +351,7 @@ struct ChiTietCrCTW: View {
     private func lienKet(_ c: CTWCr) -> some View {
         let ds = c.links ?? []
         if !ds.isEmpty {
-            CTWSectionHeader("link", "Linked work", count: "\(ds.count)")
+            CTWSectionHeader("link", String(localized: "Linked work"), count: "\(ds.count)")
             VStack(spacing: 0) {
                 ForEach(ds) { l in
                     Group {
@@ -359,9 +361,9 @@ struct ChiTietCrCTW: View {
                             }
                             .buttonStyle(.plain)
                         } else if let s = l.stage {
-                            hangLienKet("flag.checkered", "Stage \(s.n.map(String.init) ?? "")", s.name ?? "", l.role)
+                            hangLienKet("flag.checkered", String(localized: "Stage \(s.n.map(String.init) ?? "")"), s.name ?? "", l.role)
                         } else if let v = l.version {
-                            hangLienKet("shippingbox", v.name ?? "Release", CTW.ngayNgan(v.releaseDate) ?? "", l.role)
+                            hangLienKet("shippingbox", v.name ?? String(localized: "Release"), CTW.ngayNgan(v.releaseDate) ?? "", l.role)
                         }
                     }
                     if l.id != ds.last?.id { Divider() }
@@ -370,7 +372,7 @@ struct ChiTietCrCTW: View {
             .padding(.horizontal, 14).ctwThe(14)
         }
         if let r = c.risks, !r.isEmpty {
-            CTWSectionHeader("exclamationmark.triangle", "Related risks", count: "\(r.count)")
+            CTWSectionHeader("exclamationmark.triangle", String(localized: "Related risks"), count: "\(r.count)")
             VStack(spacing: 0) {
                 ForEach(r, id: \.number) { x in
                     NavigationLink(value: RouteRaidCTW(pid: pid, so: x.number)) {
@@ -507,10 +509,10 @@ struct FormCrCTW: View {
     private func luu() async {
         let ngay = Int(soNgay.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: "+", with: ""))
         if !soNgay.trimmingCharacters(in: .whitespaces).isEmpty, ngay == nil || abs(ngay!) > 3650 {
-            loi = "Schedule impact must be a whole number of days (up to ±3650)."; return
+            loi = String(localized: "Schedule impact must be a whole number of days (up to ±3650)."); return
         }
         let tien = Double(chiPhi.replacingOccurrences(of: ",", with: "").trimmingCharacters(in: .whitespaces))
-        if !chiPhi.trimmingCharacters(in: .whitespaces).isEmpty, tien == nil { loi = "Cost must be a number."; return }
+        if !chiPhi.trimmingCharacters(in: .whitespaces).isEmpty, tien == nil { loi = String(localized: "Cost must be a number."); return }
         var t: [String: Any] = [
             "title": String(tieuDe.trimmingCharacters(in: .whitespacesAndNewlines).prefix(255)),
             "reason": chuHoacNull(lyDo), "urgency": khan, "impactScope": chuHoacNull(phamVi),
@@ -535,7 +537,7 @@ struct FormCrCTW: View {
         } catch {
             CTWRung.loi()
             if GovLoi.laKhoaSua(error) { khoaSua = true }
-            else if CTW.laXungDot(error) { loi = "Someone else changed this change request. Close, pull to refresh and try again." }
+            else if CTW.laXungDot(error) { loi = String(localized: "Someone else changed this change request. Close, pull to refresh and try again.") }
             else { loi = CTW.loi(error) }
         }
     }

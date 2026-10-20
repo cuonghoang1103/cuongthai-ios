@@ -36,7 +36,7 @@ final class TicketVM: ObservableObject {
         dangLam = true
         defer { dangLam = false }
         do { try await viec(); CTWRung.thanhCong() } catch {
-            loi = CTW.laXungDot(error) ? "Someone else just changed this ticket. Pull to refresh and try again." : DichVuLoi.cau(error)
+            loi = CTW.laXungDot(error) ? String(localized: "Someone else just changed this ticket. Pull to refresh and try again.") : DichVuLoi.cau(error)
             CTWRung.loi()
         }
     }
@@ -114,8 +114,8 @@ struct TicketCTW: View {
                 if let t = vm.the {
                     dau(t)
                     if vm.desk?.enabled == false || (vm.desk != nil && ticket == nil) {
-                        CTWOTrong(bieuTuong: "ticket", tieuDe: "Not a service request",
-                                  moTa: "This issue isn't tracked by the service desk.")
+                        CTWOTrong(bieuTuong: "ticket", tieuDe: String(localized: "Not a service request"),
+                                  moTa: String(localized: "This issue isn't tracked by the service desk."))
                     }
                     if let k = ticket {
                         sla(k)
@@ -138,7 +138,7 @@ struct TicketCTW: View {
             .dvBeRong()
         }
         .background(AppColors.backgroundPrimary)
-        .navigationTitle(vm.the.map { "\(cfg?.key ?? "#")-\($0.number)" } ?? "Ticket")
+        .navigationTitle(vm.the.map { "\(cfg?.key ?? "#")-\($0.number)" } ?? String(localized: "Ticket"))
         .navigationBarTitleDisplayMode(.inline)
         .overlay(alignment: .top) { if vm.dangLam { ProgressView().padding(8) } }
         .refreshable { await vm.tai() }
@@ -169,7 +169,7 @@ struct TicketCTW: View {
                 if let k = ticket {
                     CTWNhanNho(chu: k.requestTypeName ?? CTWMauTrangThai.nhan(k.requestType), bieuTuong: CTWDesk.bieuTuongLoai(k.requestType), mau: AppColors.primary)
                     if let p = k.priority { CTWNhanNho(chu: p, mau: CTWDesk.mauUuTien(p)) }
-                    if k.waiting == true { CTWNhanNho(chu: "Waiting on customer", bieuTuong: "pause.fill") }
+                    if k.waiting == true { CTWNhanNho(chu: String(localized: "Waiting on customer"), bieuTuong: "pause.fill") }
                 }
                 Spacer(minLength: 0)
                 CTWStatusChip(status: cfg?.trangThai(t.statusId))
@@ -189,12 +189,12 @@ struct TicketCTW: View {
 
     private func sla(_ k: CTWDeskTicket) -> some View {
         HStack(spacing: 10) {
-            theSla("First response", k.firstResponse, phu: k.firstResponseAt.flatMap(DichVuLoi.luc).map { "Responded \($0)" })
+            theSla("First response", k.firstResponse, phu: k.firstResponseAt.flatMap(DichVuLoi.luc).map { String(localized: "Responded \($0)") })
             theSla("Resolution", k.resolution, phu: nil)
         }
     }
 
-    private func theSla(_ ten: String, _ s: CTWSla?, phu: String?) -> some View {
+    private func theSla(_ ten: LocalizedStringKey, _ s: CTWSla?, phu: String?) -> some View {
         let m = CTWDesk.mauSla(s)
         return VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 5) {
@@ -203,7 +203,7 @@ struct TicketCTW: View {
             }
             Text(CTWDesk.nhanSla(s)).font(.ctw(size: 19, weight: .bold)).foregroundColor(m)
                 .lineLimit(1).minimumScaleFactor(0.7)
-            Text(phu ?? (s?.dueAt.flatMap(DichVuLoi.luc).map { "Due \($0)" } ?? (s?.stopped == true ? "Stopped" : "No due time")))
+            Text(phu ?? (s?.dueAt.flatMap(DichVuLoi.luc).map { String(localized: "Due \($0)") } ?? (s?.stopped == true ? String(localized: "Stopped") : String(localized: "No due time"))))
                 .font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary).lineLimit(1)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -223,16 +223,16 @@ struct TicketCTW: View {
                                 if s.id == t.statusId { Label(s.name, systemImage: "checkmark") } else { Text(s.name) }
                             }
                         }
-                    } label: { nut("arrow.triangle.2.circlepath", "Status") }
+                    } label: { nut("arrow.triangle.2.circlepath", String(localized: "Status")) }
                 }
-                Button { tamPhu = .giao } label: { nut("person.crop.circle", t.assignee?.ten ?? "Assign") }
+                Button { tamPhu = .giao } label: { nut("person.crop.circle", t.assignee?.ten ?? String(localized: "Assign")) }
                 Menu {
                     ForEach(CTWDesk.uuTien, id: \.self) { p in
                         Button { Task { await vm.suaDesk("priority", p) } } label: {
                             if p == k.priority { Label(p, systemImage: "checkmark") } else { Text(p) }
                         }
                     }
-                } label: { nut("flag", k.priority ?? "Priority") }
+                } label: { nut("flag", k.priority ?? String(localized: "Priority")) }
                 Menu {
                     Section("Impact") {
                         ForEach(CTWDesk.mucDo, id: \.self) { m in
@@ -244,9 +244,9 @@ struct TicketCTW: View {
                             Button(CTWMauTrangThai.nhan(m) + (m == k.urgency ? " ✓" : "")) { Task { await vm.suaDesk("urgency", m) } }
                         }
                     }
-                } label: { nut("gauge.with.dots.needle.50percent", "Impact") }
+                } label: { nut("gauge.with.dots.needle.50percent", String(localized: "Impact")) }
                 Button { Task { await vm.doiCho() } } label: {
-                    nut(k.waiting == true ? "play.circle" : "pause.circle", k.waiting == true ? "Resume SLA" : "Waiting on customer")
+                    nut(k.waiting == true ? "play.circle" : "pause.circle", k.waiting == true ? String(localized: "Resume SLA") : String(localized: "Waiting on customer"))
                 }
             }
             .padding(.vertical, 2)
@@ -266,9 +266,9 @@ struct TicketCTW: View {
 
     private func chiTiet(_ k: CTWDeskTicket) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            CTWSectionHeader("info.circle", "Details")
+            CTWSectionHeader("info.circle", String(localized: "Details"))
             CTWKhoiTruong {
-                CTWHangTruong(nhan: "Requester", bieuTuong: "person") {
+                CTWHangTruong(nhan: String(localized: "Requester"), bieuTuong: "person") {
                     HStack(spacing: 6) {
                         CTWAvatar(user: k.requester, size: 20)
                         Text(k.requester?.ten ?? "—")
@@ -276,26 +276,26 @@ struct TicketCTW: View {
                     }
                 }
                 Divider()
-                CTWHangTruong("Assignee", vm.the?.assignee?.ten ?? "Unassigned", bieuTuong: "person.badge.clock")
+                CTWHangTruong(String(localized: "Assignee"), vm.the?.assignee?.ten ?? String(localized: "Unassigned"), bieuTuong: "person.badge.clock")
                 Divider()
-                CTWHangTruong("Impact · Urgency", "\(CTWMauTrangThai.nhan(k.impact)) · \(CTWMauTrangThai.nhan(k.urgency))", bieuTuong: "gauge")
+                CTWHangTruong(String(localized: "Impact · Urgency"), "\(CTWMauTrangThai.nhan(k.impact)) · \(CTWMauTrangThai.nhan(k.urgency))", bieuTuong: "gauge")
                 Divider()
-                CTWHangTruong("Channel", k.channel == "PORTAL" ? "Client portal" : "Staff", bieuTuong: "arrow.down.message")
+                CTWHangTruong(String(localized: "Channel"), k.channel == "PORTAL" ? String(localized: "Client portal") : String(localized: "Staff"), bieuTuong: "arrow.down.message")
                 ForEach(Array((k.fields ?? []).enumerated()), id: \.offset) { _, f in
                     Divider()
-                    CTWHangTruong(f.label ?? f.key ?? "Field", f.value?.hienThi, bieuTuong: "text.alignleft")
+                    CTWHangTruong(f.label ?? f.key ?? String(localized: "Field"), f.value?.hienThi, bieuTuong: "text.alignleft")
                 }
                 if let p = k.problem {
                     Divider()
-                    CTWHangTruong("Problem", "PRB-\(p.number ?? 0) \(p.title ?? "")", bieuTuong: "ant")
+                    CTWHangTruong(String(localized: "Problem"), "PRB-\(p.number ?? 0) \(p.title ?? "")", bieuTuong: "ant")
                 }
                 if let c = k.changeRequest {
                     Divider()
-                    CTWHangTruong("Change request", "CR-\(c.number ?? 0) \(c.title ?? "")", bieuTuong: "arrow.triangle.2.circlepath")
+                    CTWHangTruong(String(localized: "Change request"), "CR-\(c.number ?? 0) \(c.title ?? "")", bieuTuong: "arrow.triangle.2.circlepath")
                 }
                 if let cs = k.csat, cs.rating != nil || cs.requestedAt != nil {
                     Divider()
-                    CTWHangTruong(nhan: "Satisfaction", bieuTuong: "star") {
+                    CTWHangTruong(nhan: String(localized: "Satisfaction"), bieuTuong: "star") {
                         if let r = cs.rating {
                             HStack(spacing: 2) {
                                 ForEach(1...5, id: \.self) { i in
@@ -316,14 +316,14 @@ struct TicketCTW: View {
 
     private var hoiThoai: some View {
         VStack(alignment: .leading, spacing: 10) {
-            CTWSectionHeader("bubble.left.and.bubble.right", "Conversation", count: vm.binhLuan.map { "\($0.count)" })
+            CTWSectionHeader("bubble.left.and.bubble.right", String(localized: "Conversation"), count: vm.binhLuan.map { "\($0.count)" })
             if let ds = vm.binhLuan {
                 if ds.isEmpty {
                     Text("No replies yet.").font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary)
                 }
                 ForEach(ds) { c in
                     let noiBo = (c.visibility ?? "INTERNAL") != "PUBLIC"
-                    DongBinhLuanTheCTW(pid: pid, so: so, c: c, nhanPhu: noiBo ? "Internal" : "Public", noiBo: noiBo)
+                    DongBinhLuanTheCTW(pid: pid, so: so, c: c, nhanPhu: noiBo ? String(localized: "Internal") : String(localized: "Public"), noiBo: noiBo)
                 }
             }
             if cfg?.coTheBinhLuan ?? true {
@@ -335,8 +335,8 @@ struct TicketCTW: View {
                         }
                         .pickerStyle(.segmented)
                     }
-                    CTWHopSoan(goiY: vm.lamDuoc && !congKhai ? "Add an internal note…" : "Reply to the client…",
-                               nutGui: congKhai ? "Send reply" : "Add note") { chu in
+                    CTWHopSoan(goiY: vm.lamDuoc && !congKhai ? String(localized: "Add an internal note…") : String(localized: "Reply to the client…"),
+                               nutGui: congKhai ? String(localized: "Send reply") : String(localized: "Add note")) { chu in
                         let kq = await vm.gui(chu, congKhai: vm.lamDuoc ? congKhai : nil)
                         if kq == .chuaChiaSe { choChiaSe = chu }
                         return kq == .xong
@@ -349,7 +349,7 @@ struct TicketCTW: View {
 
     private func suKien(_ ev: [CTWDeskTicket.SuKien]) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            CTWSectionHeader("clock.arrow.circlepath", "SLA timeline")
+            CTWSectionHeader("clock.arrow.circlepath", String(localized: "SLA timeline"))
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(ev) { e in
                     let (ten, icon) = CTWDesk.nhanSuKien(e.kind)

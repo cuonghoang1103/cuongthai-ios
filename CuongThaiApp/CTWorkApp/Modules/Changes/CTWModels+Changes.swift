@@ -66,7 +66,8 @@ struct CTWCr: Codable, Hashable, Identifiable {
     /// "+5 days" / "−2 days" / nil.
     var nhanLich: String? {
         guard let d = scheduleDays, d != 0 else { return nil }
-        return "\(d > 0 ? "+" : "−")\(abs(d)) day\(abs(d) == 1 ? "" : "s")"
+        let dau = d > 0 ? "+" : "−"
+        return abs(d) == 1 ? String(localized: "\(dau)1 day") : String(localized: "\(dau)\(abs(d)) days")
     }
 
     var nhanChiPhi: String? {
@@ -111,9 +112,9 @@ enum CTWCrLuat {
 
     static func nhanBuoc(_ den: String) -> String {
         switch den {
-        case "SUBMITTED": return "Submit"
-        case "DRAFT": return "Move back to draft"
-        case "IMPLEMENTED": return "Mark implemented"
+        case "SUBMITTED": return String(localized: "Submit")
+        case "DRAFT": return String(localized: "Move back to draft")
+        case "IMPLEMENTED": return String(localized: "Mark implemented")
         default: return CTWMauTrangThai.nhan(den)
         }
     }
@@ -122,7 +123,7 @@ enum CTWCrLuat {
         let f = NumberFormatter()
         f.numberStyle = .decimal
         f.maximumFractionDigits = v.rounded() == v ? 0 : 2
-        f.locale = Locale(identifier: "en_US")
+        f.locale = CTWDinhDang.locale
         return "\(f.string(from: NSNumber(value: v)) ?? "\(v)") \(cur ?? "")".trimmingCharacters(in: .whitespaces)
     }
 }

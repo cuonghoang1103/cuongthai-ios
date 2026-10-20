@@ -13,8 +13,8 @@ enum CTWAnhSoDo {
         case chuaDung, khongPhaiMermaid, khac(String)
         var errorDescription: String? {
             switch self {
-            case .chuaDung: return "This version hasn't been rendered yet. It gets an image the first time someone opens it in CT Work on the web."
-            case .khongPhaiMermaid: return "This is a freehand whiteboard. Whiteboards are drawn live in the browser and have no image to show here."
+            case .chuaDung: return String(localized: "This version hasn't been rendered yet. It gets an image the first time someone opens it in CT Work on the web.")
+            case .khongPhaiMermaid: return String(localized: "This is a freehand whiteboard. Whiteboards are drawn live in the browser and have no image to show here.")
             case .khac(let s): return s
             }
         }
@@ -27,7 +27,7 @@ enum CTWAnhSoDo {
         if XemThuCTW.man != nil { return anhMau(so: so) }
         #endif
         guard let url = URL(string: APIClient.diaChiGoc + CTWAPI.duongAnhSoDo(pid: pid, so: so, ban: ban)) else {
-            throw Loi.khac("Invalid address.")
+            throw Loi.khac(String(localized: "Invalid address."))
         }
         var r = URLRequest(url: url)
         r.setValue(APIClient.nenTang, forHTTPHeaderField: "X-Client-Platform")
@@ -40,9 +40,9 @@ enum CTWAnhSoDo {
         case "WORK_DIAGRAM_NOT_RENDERED": throw Loi.chuaDung
         case "WORK_DIAGRAM_NOT_MERMAID": throw Loi.khongPhaiMermaid
         default:
-            if ma == 401 { throw Loi.khac("Your session has expired. Please sign in again.") }
-            if ma == 403 || ma == 404 { throw Loi.khac(p?.message ?? "You don't have access to this diagram.") }
-            throw Loi.khac(p?.message ?? "Couldn't load the image (\(ma)).")
+            if ma == 401 { throw Loi.khac(String(localized: "Your session has expired. Please sign in again.")) }
+            if ma == 403 || ma == 404 { throw Loi.khac(p?.message ?? String(localized: "You don't have access to this diagram.")) }
+            throw Loi.khac(p?.message ?? String(localized: "Couldn't load the image (\(ma))."))
         }
     }
 
@@ -108,7 +108,7 @@ struct KhungPhongToCTW: UIViewRepresentable {
         let iv = UIImageView(image: anh)
         iv.contentMode = .scaleAspectFit
         iv.isAccessibilityElement = true
-        iv.accessibilityLabel = "Diagram image. Pinch to zoom."
+        iv.accessibilityLabel = String(localized: "Diagram image. Pinch to zoom.")
         sv.addSubview(iv)
         context.coordinator.iv = iv
         let g = UITapGestureRecognizer(target: context.coordinator, action: #selector(DieuPhoi.chamHai(_:)))

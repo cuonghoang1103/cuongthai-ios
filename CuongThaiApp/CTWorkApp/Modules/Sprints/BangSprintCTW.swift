@@ -47,19 +47,19 @@ struct BangSprintCTW: View {
 
     private var tieuDe: String {
         switch tamPhu {
-        case .tao: return "New sprint"
-        case .sua: return "Edit sprint"
-        case .batDau: return "Start sprint"
-        case .hoanTat: return "Complete sprint"
+        case .tao: return String(localized: "New sprint")
+        case .sua: return String(localized: "Edit sprint")
+        case .batDau: return String(localized: "Start sprint")
+        case .hoanTat: return String(localized: "Complete sprint")
         }
     }
 
     private var nutChinh: String {
         switch tamPhu {
-        case .tao: return "Create"
-        case .sua: return "Save"
-        case .batDau: return "Start"
-        case .hoanTat: return "Complete"
+        case .tao: return String(localized: "Create")
+        case .sua: return String(localized: "Save")
+        case .batDau: return String(localized: "Start")
+        case .hoanTat: return String(localized: "Complete")
         }
     }
 

@@ -39,14 +39,14 @@ final class AnNoiDungCTW: ObservableObject {
 enum CTWBaoCao {
     /// Lý do báo cáo hiện cho người dùng (tiếng Anh) → `ReportReason` của
     /// đường báo cáo chung.
-    static let lyDo: [(ma: String, nhan: String, chung: ReportReason)] = [
-        ("spam", "Spam or advertising", .spam),
-        ("harassment", "Harassment or bullying", .harassment),
-        ("hate", "Hate speech", .harassment),
-        ("sexual", "Sexual content", .other),
-        ("violence", "Violence or threats", .violence),
-        ("other", "Something else", .other),
-    ]
+    static var lyDo: [(ma: String, nhan: String, chung: ReportReason)] { [
+        ("spam", String(localized: "Spam or advertising"), .spam),
+        ("harassment", String(localized: "Harassment or bullying"), .harassment),
+        ("hate", String(localized: "Hate speech"), .harassment),
+        ("sexual", String(localized: "Sexual content"), .other),
+        ("violence", String(localized: "Violence or threats"), .violence),
+        ("other", String(localized: "Something else"), .other),
+    ] }
 
     // Báo cáo tin chat: `CTWorkApp/Modules/Chat/BaoCaoTinCTW.swift` (model chat chỉ có ở app CT Work).
 }

@@ -9,7 +9,7 @@ import Foundation
 struct CTWCodeAi: Codable, Hashable {
     var user: CTWUser?
     var label: String?
-    var ten: String { user?.ten ?? label ?? "unknown" }
+    var ten: String { user?.ten ?? label ?? String(localized: "unknown") }
 }
 
 /// Thẻ được nhắc trong commit/nhánh/PR.
@@ -228,21 +228,21 @@ struct CTWCodeChiTietCommit: Codable {
 
 enum CTWCodeChu {
     static func hanhDong(_ e: CTWCodeSuKien) -> (bieuTuong: String, cau: String) {
-        let ai = e.actor?.ten ?? "Someone"
-        let nhanh = e.ref ?? "a branch"
+        let ai = e.actor?.ten ?? String(localized: "Someone")
+        let nhanh = e.ref ?? String(localized: "a branch")
         let pr = e.prNumber.map { "#\($0)" } ?? ""
         switch e.kind {
         case "PUSH":
             let n = e.commitCount ?? e.commits?.count ?? 0
-            return ("arrow.up.circle", "\(ai) pushed \(n) commit\(n == 1 ? "" : "s") to \(nhanh)")
-        case "COMMIT": return ("smallcircle.filled.circle", "\(ai) committed")
-        case "BRANCH_CREATED": return ("arrow.triangle.branch", "\(ai) created branch \(nhanh)")
-        case "BRANCH_DELETED": return ("trash", "\(ai) deleted branch \(nhanh)")
-        case "PR_OPENED": return ("arrow.triangle.pull", "\(ai) opened pull request \(pr)")
-        case "PR_REOPENED": return ("arrow.triangle.pull", "\(ai) reopened pull request \(pr)")
-        case "PR_MERGED": return ("arrow.triangle.merge", "\(ai) merged pull request \(pr)")
-        case "PR_CLOSED": return ("xmark.circle", "\(ai) closed pull request \(pr)")
-        case "REVIEW_REQUESTED": return ("eye", "\(ai) requested a review on \(pr)")
+            return ("arrow.up.circle", n == 1 ? String(localized: "\(ai) pushed 1 commit to \(nhanh)") : String(localized: "\(ai) pushed \(n) commits to \(nhanh)"))
+        case "COMMIT": return ("smallcircle.filled.circle", String(localized: "\(ai) committed"))
+        case "BRANCH_CREATED": return ("arrow.triangle.branch", String(localized: "\(ai) created branch \(nhanh)"))
+        case "BRANCH_DELETED": return ("trash", String(localized: "\(ai) deleted branch \(nhanh)"))
+        case "PR_OPENED": return ("arrow.triangle.pull", String(localized: "\(ai) opened pull request \(pr)"))
+        case "PR_REOPENED": return ("arrow.triangle.pull", String(localized: "\(ai) reopened pull request \(pr)"))
+        case "PR_MERGED": return ("arrow.triangle.merge", String(localized: "\(ai) merged pull request \(pr)"))
+        case "PR_CLOSED": return ("xmark.circle", String(localized: "\(ai) closed pull request \(pr)"))
+        case "REVIEW_REQUESTED": return ("eye", String(localized: "\(ai) requested a review on \(pr)"))
         default: return ("circle", "\(ai) · \(e.kind.lowercased())")
         }
     }

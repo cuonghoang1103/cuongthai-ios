@@ -62,7 +62,7 @@ final class TroLyAIVM: ObservableObject {
         guard !cau.isEmpty, dangCho == nil else { return true }
         loiLuot = nil
         cauDangHoi = cau
-        dangCho = "Reading the project…"
+        dangCho = String(localized: "Reading the project…")
         defer { dangCho = nil; cauDangHoi = nil }
         var tid = hoiThoai?.id
         do {
@@ -91,7 +91,7 @@ final class TroLyAIVM: ObservableObject {
     func hoiLai(_ m: CTWAITinNhan) async {
         guard dangCho == nil, let tid = hoiThoai?.id else { return }
         loiLuot = nil
-        dangCho = "Asking again…"
+        dangCho = String(localized: "Asking again…")
         defer { dangCho = nil }
         var loiMoi: String?
         do {
@@ -155,12 +155,12 @@ struct TroLyAICTW: View {
     static func loi(_ e: Error) -> String {
         if case APIError.coMa(let ma, let m) = e {
             switch ma {
-            case "WORK_AI_BAD_OUTPUT": return "The AI returned an answer that couldn't be read. Tap Ask again."
-            case "WORK_AI_UNAVAILABLE": return "The AI assistant is temporarily unavailable. Please try again in a few minutes."
-            case "WORK_AI_QUOTA_EXCEEDED", "WORK_AI_TOKEN_CAP": return "You've reached today's AI limit. It resets tomorrow."
-            case "WORK_AI_NOTHING_TO_RETRY": return "This question already has an answer."
-            case "CLIENT_PORTAL_ONLY", "WORK_FORBIDDEN": return "The AI assistant is only available to the project team."
-            default: return CTW.coLoiMoiMua(m) ? "This action isn't available right now." : m
+            case "WORK_AI_BAD_OUTPUT": return String(localized: "The AI returned an answer that couldn't be read. Tap Ask again.")
+            case "WORK_AI_UNAVAILABLE": return String(localized: "The AI assistant is temporarily unavailable. Please try again in a few minutes.")
+            case "WORK_AI_QUOTA_EXCEEDED", "WORK_AI_TOKEN_CAP": return String(localized: "You've reached today's AI limit. It resets tomorrow.")
+            case "WORK_AI_NOTHING_TO_RETRY": return String(localized: "This question already has an answer.")
+            case "CLIENT_PORTAL_ONLY", "WORK_FORBIDDEN": return String(localized: "The AI assistant is only available to the project team.")
+            default: return CTW.coLoiMoiMua(m) ? String(localized: "This action isn't available right now.") : m
             }
         }
         return CTW.loi(e)
@@ -168,9 +168,9 @@ struct TroLyAICTW: View {
 
     private var ma: String { app.luaChon?.maDuAn ?? "" }
     private var mau: [String] {
-        ["What should I work on next, and what do I need to read first?",
-         "Summarize where the current sprint stands and what's at risk.",
-         ma.isEmpty ? "Explain the newest issue assigned to me step by step." : "Explain my most urgent \(ma) issue step by step."]
+        [String(localized: "What should I work on next, and what do I need to read first?"),
+         String(localized: "Summarize where the current sprint stands and what's at risk."),
+         ma.isEmpty ? String(localized: "Explain the newest issue assigned to me step by step.") : String(localized: "Explain my most urgent \(ma) issue step by step.")]
     }
 
     var body: some View {
@@ -237,7 +237,7 @@ struct TroLyAICTW: View {
         }
         .safeAreaInset(edge: .bottom) { oSoan }
         .background(AppColors.backgroundPrimary)
-        .navigationTitle(vm.hoiThoai?.title ?? "AI assistant")
+        .navigationTitle(vm.hoiThoai?.title ?? String(localized: "AI assistant"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .primaryAction) { menuHoiThoai } }
         .environment(\.openURL, OpenURLAction { u in moLink(u) })
@@ -303,7 +303,7 @@ struct TroLyAICTW: View {
                 .accessibilityHint("Sends this question to the AI assistant")
             }
             if !vm.dsHoiThoai.isEmpty {
-                CTWSectionHeader("clock.arrow.circlepath", "Recent conversations").padding(.top, 8)
+                CTWSectionHeader("clock.arrow.circlepath", String(localized: "Recent conversations")).padding(.top, 8)
                 VStack(spacing: 0) {
                     ForEach(vm.dsHoiThoai.prefix(6)) { t in
                         Button { Task { await vm.mo(t.id) } } label: { hangHoiThoai(t) }
@@ -325,7 +325,7 @@ struct TroLyAICTW: View {
                 Text(t.title).font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(2)
                 HStack(spacing: 4) {
                     if t.rieng { Image(systemName: "lock.fill").font(.ctw(size: 10)) }
-                    Text("\(t.createdBy?.ten ?? "Someone") · \(t.messageCount ?? 0) message\((t.messageCount ?? 0) == 1 ? "" : "s") · \(CTW.thoiDiem(t.lastMessageAt))")
+                    Text(dongPhu(t))
                 }
                 .font(.ctw(size: 11.5)).foregroundColor(AppColors.textTertiary).lineLimit(1)
             }
@@ -334,6 +334,12 @@ struct TroLyAICTW: View {
         }
         .padding(.horizontal, 12).padding(.vertical, 10)
         .contentShape(Rectangle())
+    }
+
+    private func dongPhu(_ t: CTWAIHoiThoai) -> String {
+        let ai = t.createdBy?.ten ?? String(localized: "Someone")
+        let n = t.messageCount ?? 0, luc = CTW.thoiDiem(t.lastMessageAt)
+        return n == 1 ? String(localized: "\(ai) · 1 message · \(luc)") : String(localized: "\(ai) · \(n) messages · \(luc)")
     }
 
     // MARK: Menu hội thoại
@@ -477,16 +483,16 @@ struct CongBoAICTW: View {
 // MARK: - Hộp đồng ý trước câu hỏi đầu tiên (5.1.2(i))
 
 enum CongBoAI {
-    static let tieuDe = "Questions are answered by AI"
-    static let noiDung = """
+    static var tieuDe: String { String(localized: "Questions are answered by AI") }
+    static var noiDung: String { String(localized: """
     When you ask the CT Work AI assistant, CT Work sends your question and the project content needed to answer it — issues, comments, Docs pages, attached files and links in this project that you can already see — to a third-party AI model provider (large language models such as Anthropic Claude and OpenAI GPT, reached through our AI gateway). The answer is saved in this project's conversation history.
-    """
-    static let gach: [(String, String)] = [
-        ("eye.slash", "Only content you already have access to in this project is used."),
-        ("person.2", "Shared conversations are visible to your project team; private ones only to you."),
-        ("hand.raised", "The provider uses it only to create the answer. No advertising, no tracking."),
-        ("exclamationmark.bubble", "AI can be wrong. Nothing changes in the project until someone taps Apply."),
-    ]
+    """) }
+    static var gach: [(String, String)] { [
+        ("eye.slash", String(localized: "Only content you already have access to in this project is used.")),
+        ("person.2", String(localized: "Shared conversations are visible to your project team; private ones only to you.")),
+        ("hand.raised", String(localized: "The provider uses it only to create the answer. No advertising, no tracking.")),
+        ("exclamationmark.bubble", String(localized: "AI can be wrong. Nothing changes in the project until someone taps Apply.")),
+    ] }
 }
 
 struct DongYAICTW: View {
@@ -597,7 +603,7 @@ struct TraLoiAICTW: View {
                         .background(Circle().fill(AppColors.primary))
                         .accessibilityHidden(true)
                     Text(m.title ?? "CT Work AI").font(.ctw(size: 13, weight: .semibold)).foregroundColor(AppColors.textPrimary)
-                    CTWNhanAI(chu: "AI-generated")
+                    CTWNhanAI(chu: String(localized: "AI-generated"))
                     Spacer(minLength: 0)
                     Text(CTW.thoiDiem(m.createdAt)).font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
                 }
@@ -636,6 +642,11 @@ struct TraLoiAICTW: View {
         }
     }
 
+    private func nhanDaApDung(_ d: CTWAIDeXuat) -> String {
+        let dau = d.byName.map { String(localized: "Applied by @\($0)") } ?? String(localized: "Applied")
+        return dau + (d.summary.map { " — \($0)" } ?? "")
+    }
+
     @ViewBuilder
     private func deXuat(_ d: CTWAIDeXuat) -> some View {
         let dang = dangApDung.contains("\(m.id)-\(d.index)")
@@ -648,7 +659,7 @@ struct TraLoiAICTW: View {
             }
             switch d.status {
             case "done":
-                Label("Applied\(d.byName.map { " by @\($0)" } ?? "")\(d.summary.map { " — \($0)" } ?? "")", systemImage: "checkmark.circle.fill")
+                Label(nhanDaApDung(d), systemImage: "checkmark.circle.fill")
                     .font(.ctw(size: 12)).foregroundColor(AppColors.success)
             case "dismissed":
                 Text("Dismissed").font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)

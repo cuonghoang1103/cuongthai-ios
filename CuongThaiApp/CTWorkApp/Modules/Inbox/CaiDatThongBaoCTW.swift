@@ -52,13 +52,13 @@ struct CaiDatThongBaoCTW: View {
 
             if let e = email {
                 Section {
-                    congTac("Assigned to me", "person.fill.checkmark", \.assign, "assign", e)
-                    congTac("Comments & replies", "text.bubble", \.comment, "comment", e)
-                    congTac("Mentions", "at", \.mention, "mention", e)
-                    congTac("Approvals waiting for me", "checkmark.seal", \.approval, "approval", e)
-                    congTac("Alerts & meeting reminders", "exclamationmark.circle", \.alert, "alert", e)
-                    congTac("Every new chat message", "bubble.left.and.bubble.right", \.chatAll, "chatAll", e)
-                    congTac("Git activity (pushes, pull requests, reviews)", "chevron.left.forwardslash.chevron.right", \.git, "git", e)
+                    congTac(String(localized: "Assigned to me"), "person.fill.checkmark", \.assign, "assign", e)
+                    congTac(String(localized: "Comments & replies"), "text.bubble", \.comment, "comment", e)
+                    congTac(String(localized: "Mentions"), "at", \.mention, "mention", e)
+                    congTac(String(localized: "Approvals waiting for me"), "checkmark.seal", \.approval, "approval", e)
+                    congTac(String(localized: "Alerts & meeting reminders"), "exclamationmark.circle", \.alert, "alert", e)
+                    congTac(String(localized: "Every new chat message"), "bubble.left.and.bubble.right", \.chatAll, "chatAll", e)
+                    congTac(String(localized: "Git activity (pushes, pull requests, reviews)"), "chevron.left.forwardslash.chevron.right", \.git, "git", e)
                 } header: { Text("Push me about") } footer: {
                     Text("Applies to every device you're signed in on. The inbox keeps everything either way. \"Every new chat message\" only matters for channels set to all messages.")
                 }
@@ -71,7 +71,7 @@ struct CaiDatThongBaoCTW: View {
                         Text("Mentions & replies").tag("MENTIONS")
                     }
                     Menu {
-                        ForEach([("30m", "30 minutes"), ("1h", "1 hour"), ("8h", "8 hours"), ("tomorrow", "Until tomorrow"), ("forever", "Until I turn it back on")], id: \.0) { m in
+                        ForEach([("30m", String(localized: "30 minutes")), ("1h", String(localized: "1 hour")), ("8h", String(localized: "8 hours")), ("tomorrow", String(localized: "Until tomorrow")), ("forever", String(localized: "Until I turn it back on"))], id: \.0) { m in
                             Button(m.1) { Task { await luuChat(["mute": m.0]) } }
                         }
                     } label: {
@@ -80,7 +80,7 @@ struct CaiDatThongBaoCTW: View {
                                   systemImage: dangDung(c) ? "pause.circle.fill" : "pause.circle")
                             Spacer()
                             if dangDung(c) {
-                                Text(c.mutedForever == true ? "Until resumed" : (c.mutedUntil.map { "Until \(CTWChatThoiGian.gio($0))" } ?? ""))
+                                Text(c.mutedForever == true ? String(localized: "Until resumed") : (c.mutedUntil.map { String(localized: "Until \(CTWChatThoiGian.gio($0))") } ?? ""))
                                     .font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
                             }
                         }
@@ -122,7 +122,7 @@ struct CaiDatThongBaoCTW: View {
                             Text(e.timezone ?? TimeZone.current.identifier).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                         }
                     }
-                        Text("During quiet hours, emails wait for the next digest and chat stays silent. " + chuMuiGio(e))
+                        Text(String(localized: "During quiet hours, emails wait for the next digest and chat stays silent. \(chuMuiGio(e))"))
                             .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                     } label: {
                         Label("Email & quiet hours", systemImage: "envelope.badge")
@@ -140,11 +140,11 @@ struct CaiDatThongBaoCTW: View {
 
     private var tenQuyen: String {
         switch quyen {
-        case .authorized: return "On"
-        case .provisional: return "Delivered quietly"
-        case .ephemeral: return "On"
-        case .denied: return "Off"
-        case .notDetermined: return "Not set"
+        case .authorized: return String(localized: "On")
+        case .provisional: return String(localized: "Delivered quietly")
+        case .ephemeral: return String(localized: "On")
+        case .denied: return String(localized: "Off")
+        case .notDetermined: return String(localized: "Not set")
         default: return "…"
         }
     }
@@ -154,8 +154,8 @@ struct CaiDatThongBaoCTW: View {
     private func gio(_ h: Int) -> String { String(format: "%02d:00", h) }
 
     private func chuMuiGio(_ e: CTWCaiDatBao) -> String {
-        if let tz = e.timezone { return "Hours follow \(TimeZone(identifier: tz)?.localizedName(for: .generic, locale: Locale(identifier: "en_US")) ?? tz)." }
-        return "Hours are Vietnam time (GMT+7) until you choose your own time zone."
+        if let tz = e.timezone { return String(localized: "Hours follow \(TimeZone(identifier: tz)?.localizedName(for: .generic, locale: CTWDinhDang.locale) ?? tz).") }
+        return String(localized: "Hours are Vietnam time (GMT+7) until you choose your own time zone.")
     }
 
     /// Một công tắc đẩy theo loại — gửi MỘT khoá (máy chủ gộp với phần còn lại).

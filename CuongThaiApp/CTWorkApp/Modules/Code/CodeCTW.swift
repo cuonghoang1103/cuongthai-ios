@@ -10,10 +10,10 @@ enum TabCodeCTW: String, Hashable, CaseIterable {
     case hoatDong = "activity", nhanh = "branches", pr = "pulls", nguon = "source"
     var ten: String {
         switch self {
-        case .hoatDong: return "Activity"
-        case .nhanh: return "Branches"
-        case .pr: return "Pull requests"
-        case .nguon: return "Source"
+        case .hoatDong: return String(localized: "Activity")
+        case .nhanh: return String(localized: "Branches")
+        case .pr: return String(localized: "Pull requests")
+        case .nguon: return String(localized: "Source")
         }
     }
     var bieuTuong: String {
@@ -116,8 +116,8 @@ struct CodeCTW: View {
     var body: some View {
         KhungTaiCTW(trangThai: vm.tongQuan, thuLai: { Task { await vm.taiTongQuan() } }) { t in
             if t.connected == false {
-                CTWOTrong(bieuTuong: "chevron.left.forwardslash.chevron.right", tieuDe: "No repository connected",
-                          moTa: "A project admin can connect GitHub or GitLab in the project settings. Pushes, branches and pull requests then show up here.")
+                CTWOTrong(bieuTuong: "chevron.left.forwardslash.chevron.right", tieuDe: String(localized: "No repository connected"),
+                          moTa: String(localized: "A project admin can connect GitHub or GitLab in the project settings. Pushes, branches and pull requests then show up here."))
                     .frame(maxHeight: .infinity)
             } else {
                 noiDung(t)
@@ -197,10 +197,10 @@ struct CodeCTW: View {
     @ViewBuilder private var phanHoatDong: some View {
         Section {
             CTWThanhLoc(chip: [
-                CTWChipLoc(id: "", nhan: "All", bat: vm.locLoai == nil),
-                CTWChipLoc(id: "push", nhan: "Pushes", bieuTuong: "arrow.up.circle", bat: vm.locLoai == "push"),
-                CTWChipLoc(id: "branch", nhan: "Branches", bieuTuong: "arrow.triangle.branch", bat: vm.locLoai == "branch"),
-                CTWChipLoc(id: "pr", nhan: "Pull requests", bieuTuong: "arrow.triangle.pull", bat: vm.locLoai == "pr"),
+                CTWChipLoc(id: "", nhan: String(localized: "All"), bat: vm.locLoai == nil),
+                CTWChipLoc(id: "push", nhan: String(localized: "Pushes"), bieuTuong: "arrow.up.circle", bat: vm.locLoai == "push"),
+                CTWChipLoc(id: "branch", nhan: String(localized: "Branches"), bieuTuong: "arrow.triangle.branch", bat: vm.locLoai == "branch"),
+                CTWChipLoc(id: "pr", nhan: String(localized: "Pull requests"), bieuTuong: "arrow.triangle.pull", bat: vm.locLoai == "pr"),
             ]) { c in
                 vm.locLoai = c.id.isEmpty ? nil : c.id
                 Task { await vm.taiHoatDong() }
@@ -217,8 +217,8 @@ struct CodeCTW: View {
         case .xong(let ds):
             if ds.isEmpty {
                 Section {
-                    CTWOTrong(bieuTuong: "waveform.path.ecg", tieuDe: "No activity yet",
-                              moTa: "Pushes, new branches and pull requests appear here as soon as the repository sends them.")
+                    CTWOTrong(bieuTuong: "waveform.path.ecg", tieuDe: String(localized: "No activity yet"),
+                              moTa: String(localized: "Pushes, new branches and pull requests appear here as soon as the repository sends them."))
                 }
                 .listRowBackground(Color.clear)
             } else {
@@ -256,8 +256,8 @@ struct CodeCTW: View {
             let xoa = r.items.filter { $0.deleted == true }
             if r.items.isEmpty {
                 Section {
-                    CTWOTrong(bieuTuong: "arrow.triangle.branch", tieuDe: "No branches yet",
-                              moTa: "Branches show up after the first push. Put an issue key such as \(app.luaChon?.maDuAn ?? "KEY")-12 in the branch name to link it.")
+                    CTWOTrong(bieuTuong: "arrow.triangle.branch", tieuDe: String(localized: "No branches yet"),
+                              moTa: String(localized: "Branches show up after the first push. Put an issue key such as \(app.luaChon?.maDuAn ?? "KEY")-12 in the branch name to link it."))
                 }
                 .listRowBackground(Color.clear)
             }
@@ -276,10 +276,10 @@ struct CodeCTW: View {
         Section {
             let d = vm.pr.giaTri?.counts
             CTWThanhLoc(chip: [
-                CTWChipLoc(id: "open", nhan: "Open\(d?.open.map { " \($0)" } ?? "")", bieuTuong: "arrow.triangle.pull", bat: vm.locPR == "open"),
-                CTWChipLoc(id: "merged", nhan: "Merged\(d?.merged.map { " \($0)" } ?? "")", bieuTuong: "arrow.triangle.merge", bat: vm.locPR == "merged"),
-                CTWChipLoc(id: "closed", nhan: "Closed\(d?.closed.map { " \($0)" } ?? "")", bieuTuong: "xmark.circle", bat: vm.locPR == "closed"),
-                CTWChipLoc(id: "all", nhan: "All", bat: vm.locPR == "all"),
+                CTWChipLoc(id: "open", nhan: String(localized: "Open") + (d?.open.map { " \($0)" } ?? ""), bieuTuong: "arrow.triangle.pull", bat: vm.locPR == "open"),
+                CTWChipLoc(id: "merged", nhan: String(localized: "Merged") + (d?.merged.map { " \($0)" } ?? ""), bieuTuong: "arrow.triangle.merge", bat: vm.locPR == "merged"),
+                CTWChipLoc(id: "closed", nhan: String(localized: "Closed") + (d?.closed.map { " \($0)" } ?? ""), bieuTuong: "xmark.circle", bat: vm.locPR == "closed"),
+                CTWChipLoc(id: "all", nhan: String(localized: "All"), bat: vm.locPR == "all"),
             ]) { c in
                 vm.locPR = c.id
                 Task { await vm.taiPR() }
@@ -296,8 +296,8 @@ struct CodeCTW: View {
         case .xong(let r):
             if r.items.isEmpty {
                 Section {
-                    CTWOTrong(bieuTuong: "arrow.triangle.pull", tieuDe: vm.locPR == "open" ? "No open pull requests" : "No pull requests",
-                              moTa: "Pull requests that mention an issue key are linked to that issue automatically.")
+                    CTWOTrong(bieuTuong: "arrow.triangle.pull", tieuDe: vm.locPR == "open" ? String(localized: "No open pull requests") : String(localized: "No pull requests"),
+                              moTa: String(localized: "Pull requests that mention an issue key are linked to that issue automatically."))
                 }
                 .listRowBackground(Color.clear)
             } else {
@@ -327,7 +327,7 @@ struct DauTrangCodeCTW: View {
                         .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(AppColors.primary))
                         .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(p.repo ?? "Repository not known yet").font(.ctw(size: 15, weight: .semibold))
+                        Text(p.repo ?? String(localized: "Repository not known yet")).font(.ctw(size: 15, weight: .semibold))
                             .foregroundColor(AppColors.textPrimary).lineLimit(1).truncationMode(.middle)
                         Text(p.provider == "GITLAB" ? "GitLab" : "GitHub").font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                     }
@@ -344,10 +344,10 @@ struct DauTrangCodeCTW: View {
             }
             let s = t.stats
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), spacing: 10)], spacing: 10) {
-                CTWODem(so: "\(s?.commits7d ?? 0)", nhan: "Commits · 7 days", bieuTuong: "smallcircle.filled.circle", mau: AppColors.primary)
-                CTWODem(so: "\(s?.pushes7d ?? 0)", nhan: "Pushes · 7 days", bieuTuong: "arrow.up.circle", mau: AppColors.info)
-                CTWODem(so: "\(s?.openPrs ?? 0)", nhan: "Open pull requests", bieuTuong: "arrow.triangle.pull", mau: AppColors.success)
-                CTWODem(so: "\(s?.contributors30d?.count ?? 0)", nhan: "Contributors · 30 days", bieuTuong: "person.2", mau: AppColors.accent)
+                CTWODem(so: "\(s?.commits7d ?? 0)", nhan: String(localized: "Commits · 7 days"), bieuTuong: "smallcircle.filled.circle", mau: AppColors.primary)
+                CTWODem(so: "\(s?.pushes7d ?? 0)", nhan: String(localized: "Pushes · 7 days"), bieuTuong: "arrow.up.circle", mau: AppColors.info)
+                CTWODem(so: "\(s?.openPrs ?? 0)", nhan: String(localized: "Open pull requests"), bieuTuong: "arrow.triangle.pull", mau: AppColors.success)
+                CTWODem(so: "\(s?.contributors30d?.count ?? 0)", nhan: String(localized: "Contributors · 30 days"), bieuTuong: "person.2", mau: AppColors.accent)
             }
             if let d = s?.daily, !d.isEmpty { BieuDoCommitCTW(ngay: d) }
         }
@@ -501,7 +501,7 @@ struct HangSuKienCodeCTW: View {
                         .accessibilityElement(children: .combine)
                     }
                     if cs.count > 4 {
-                        Text("+ \(cs.count - 4) more commit\(cs.count - 4 == 1 ? "" : "s")").font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
+                        Text(cs.count - 4 == 1 ? "+ 1 more commit" : "+ \(cs.count - 4) more commits").font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                     }
                 }
                 .padding(.leading, 38)
@@ -541,7 +541,7 @@ struct HangNhanhCodeCTW: View {
                     .lineLimit(1).truncationMode(.middle)
                 Spacer(minLength: 0)
                 if let p = b.pr { CTWNhanNho(chu: "PR #\(p.number)", bieuTuong: "arrow.triangle.pull", mau: AppColors.success) }
-                if b.deleted == true { CTWNhanNho(chu: "Deleted", mau: AppColors.error) }
+                if b.deleted == true { CTWNhanNho(chu: String(localized: "Deleted"), mau: AppColors.error) }
             }
             if let c = b.lastCommit?.title {
                 Text(c).font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary).lineLimit(2)
@@ -549,7 +549,7 @@ struct HangNhanhCodeCTW: View {
             HStack(spacing: 6) {
                 if let a = b.lastAuthor { CTWAvatar(user: a.user, size: 16); Text(a.ten).lineLimit(1) }
                 if let t = b.lastPushAt { Text("· \(CTW.thoiDiem(t))") }
-                if let n = b.commitCount, n > 0 { Text("· \(n) commit\(n == 1 ? "" : "s")") }
+                if let n = b.commitCount, n > 0 { Text(n == 1 ? "· 1 commit" : "· \(n) commits") }
             }
             .font(.ctw(size: 11.5)).foregroundColor(AppColors.textTertiary)
             HangChipTheCodeCTW(pid: pid, so: b.issueNumbers ?? [], the: the)
@@ -574,7 +574,7 @@ struct HangPRCodeCTW: View {
                 Image(systemName: bieuTuong).font(.ctw(size: 14, weight: .semibold)).foregroundColor(mau)
                     .frame(width: 22).accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(p.title ?? "Pull request").font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                    Text(p.title ?? String(localized: "Pull request")).font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                         .fixedSize(horizontal: false, vertical: true)
                     Text("#\(p.number) · \(dongPhu)").font(.ctw(size: 11.5)).foregroundColor(AppColors.textTertiary)
                 }
@@ -603,7 +603,7 @@ struct HangPRCodeCTW: View {
             HStack(spacing: 10) {
                 if let a = p.additions { Text("+\(a)").foregroundColor(AppColors.success) }
                 if let d = p.deletions { Text("−\(d)").foregroundColor(AppColors.error) }
-                if let f = p.changedFiles { Text("\(f) file\(f == 1 ? "" : "s")").foregroundColor(AppColors.textTertiary) }
+                if let f = p.changedFiles { Text(f == 1 ? "1 file" : "\(f) files").foregroundColor(AppColors.textTertiary) }
                 if let r = p.reviewers, !r.isEmpty {
                     Text("Reviewers: \(r.map(\.ten).joined(separator: ", "))").foregroundColor(AppColors.textTertiary).lineLimit(1)
                 }
@@ -623,11 +623,13 @@ struct HangPRCodeCTW: View {
     }
 
     private var dongPhu: String {
-        let ai = p.author?.ten ?? "someone"
+        let ai = p.author?.ten ?? String(localized: "someone")
         switch p.state {
-        case "merged": return "merged\(p.mergedBy.map { " by \($0.ten)" } ?? "") \(CTW.thoiDiem(p.mergedAt ?? p.openedAt))"
-        case "closed": return "closed \(CTW.thoiDiem(p.closedAt ?? p.openedAt))"
-        default: return "opened by \(ai) \(CTW.thoiDiem(p.openedAt))"
+        case "merged":
+            let luc = CTW.thoiDiem(p.mergedAt ?? p.openedAt)
+            return p.mergedBy.map { String(localized: "merged by \($0.ten) \(luc)") } ?? String(localized: "merged \(luc)")
+        case "closed": return String(localized: "closed \(CTW.thoiDiem(p.closedAt ?? p.openedAt))")
+        default: return String(localized: "opened by \(ai) \(CTW.thoiDiem(p.openedAt))")
         }
     }
     private var bieuTuong: String {

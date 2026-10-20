@@ -44,7 +44,7 @@ struct TrangDuAnCTW: View {
                 .listStyle(.insetGrouped)
                 .refreshable { await app.napCauHinhDuAn() }
             } else {
-                ChuaChonDuAnCTW(lyDo: "Pick the workspace and project you want to work on. CT Work remembers your choice.")
+                ChuaChonDuAnCTW(lyDo: String(localized: "Pick the workspace and project you want to work on. CT Work remembers your choice."))
             }
         }
         .navigationTitle("Projects")

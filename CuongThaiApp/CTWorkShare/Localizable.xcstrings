@@ -1,0 +1,64 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%@ · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "Add as" : {
+
+    },
+    "Attached" : {
+
+    },
+    "CT Work" : {
+
+    },
+    "Cancel" : {
+
+    },
+    "Choose…" : {
+
+    },
+    "Comment" : {
+
+    },
+    "Comment on" : {
+
+    },
+    "Create" : {
+
+    },
+    "Description (optional)" : {
+
+    },
+    "Issue" : {
+
+    },
+    "Issues you opened recently in CT Work appear here." : {
+
+    },
+    "Open CT Work and pick a project once, then share again." : {
+
+    },
+    "Open CT Work and sign in first. Then you can share photos, links and text into your projects." : {
+
+    },
+    "Post" : {
+
+    },
+    "Project" : {
+
+    },
+    "Title" : {
+
+    }
+  },
+  "version" : "1.0"
+}

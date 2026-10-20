@@ -105,7 +105,7 @@ struct CTWMeeting: Codable, Hashable, Identifiable {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id = try c.decode(Int.self, forKey: .id)
         number = try c.decode(Int.self, forKey: .number)
-        title = (try? c.decode(String.self, forKey: .title)) ?? "Meeting"
+        title = (try? c.decode(String.self, forKey: .title)) ?? String(localized: "Meeting")
         key = try? c.decodeIfPresent(String.self, forKey: .key)
         type = try? c.decodeIfPresent(String.self, forKey: .type)
         typeLabel = try? c.decodeIfPresent(String.self, forKey: .typeLabel)
@@ -160,7 +160,7 @@ struct CTWMeeting: Codable, Hashable, Identifiable {
         case "ZOOM": return "Zoom"
         case "TEAMS": return "Microsoft Teams"
         case "JITSI": return "Jitsi Meet"
-        default: return urlHop?.host ?? "Video call"
+        default: return urlHop?.host ?? String(localized: "Video call")
         }
     }
 }

@@ -141,14 +141,25 @@ struct CTWThongBao: Codable, Hashable, Identifiable {
     var cau: String {
         let p = payload
         switch type {
-        case "WORK_ASSIGN": return "assigned you \(p?.issueKey ?? "an issue")" + (p?.title.map { ": \($0)" } ?? "")
+        case "WORK_ASSIGN":
+            let k = p?.issueKey ?? String(localized: "an issue")
+            return p?.title.map { String(localized: "assigned you \(k): \($0)") } ?? String(localized: "assigned you \(k)")
         case "WORK_COMMENT":
-            if laChat { return "replied in \(p?.issueKey ?? "a thread")" + (p?.excerpt.map { ": \($0)" } ?? "") }
-            return (p?.reply == true ? "replied on " : "commented on ") + (p?.issueKey ?? "an issue") + (p?.excerpt.map { ": \($0)" } ?? "")
-        case "WORK_MENTION": return "mentioned you in \(p?.issueKey ?? "an issue")" + (p?.excerpt.map { ": \($0)" } ?? "")
-        case "WORK_ALERT": return "\(p?.issueKey ?? "CT Work"): \(p?.message ?? "needs your attention")"
-        case "WORK_INVITE": return "added you to \(p?.workspaceName ?? "a CT Work workspace")"
-        default: return "has an update"
+            if laChat {
+                let k = p?.issueKey ?? String(localized: "a thread")
+                return p?.excerpt.map { String(localized: "replied in \(k): \($0)") } ?? String(localized: "replied in \(k)")
+            }
+            let k = p?.issueKey ?? String(localized: "an issue")
+            if p?.reply == true {
+                return p?.excerpt.map { String(localized: "replied on \(k): \($0)") } ?? String(localized: "replied on \(k)")
+            }
+            return p?.excerpt.map { String(localized: "commented on \(k): \($0)") } ?? String(localized: "commented on \(k)")
+        case "WORK_MENTION":
+            let k = p?.issueKey ?? String(localized: "an issue")
+            return p?.excerpt.map { String(localized: "mentioned you in \(k): \($0)") } ?? String(localized: "mentioned you in \(k)")
+        case "WORK_ALERT": return "\(p?.issueKey ?? "CT Work"): \(p?.message ?? String(localized: "needs your attention"))"
+        case "WORK_INVITE": return String(localized: "added you to \(p?.workspaceName ?? String(localized: "a CT Work workspace"))")
+        default: return String(localized: "has an update")
         }
     }
 }

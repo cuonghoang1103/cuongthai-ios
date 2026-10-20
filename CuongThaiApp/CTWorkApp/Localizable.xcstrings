@@ -1,0 +1,2435 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "": {},
+    " ": {},
+    "#%lld": {},
+    "#%lld · %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "#%1$lld · %2$@"
+          }
+        }
+      }
+    },
+    "%@": {},
+    "%@ %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ %2$@"
+          }
+        }
+      }
+    },
+    "%@ %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ %2$lld"
+          }
+        }
+      }
+    },
+    "%@ %lld%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ %2$lld%3$@"
+          }
+        }
+      }
+    },
+    "%@ / %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ / %2$@"
+          }
+        }
+      }
+    },
+    "%@ SLA: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ SLA: %2$@"
+          }
+        }
+      }
+    },
+    "%@ of %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ of %2$@"
+          }
+        }
+      }
+    },
+    "%@ of %@ %@ done (linked work)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ of %2$@ %3$@ done (linked work)"
+          }
+        }
+      }
+    },
+    "%@ points": {},
+    "%@ priority": {},
+    "%@ · %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "%@ · %@%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ · %2$@%3$@"
+          }
+        }
+      }
+    },
+    "%@ · %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ · %2$lld"
+          }
+        }
+      }
+    },
+    "%@ · %lld message%@ · %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ · %2$lld message%3$@ · %4$@"
+          }
+        }
+      }
+    },
+    "%@ · %lld%%": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ · %2$lld%%"
+          }
+        }
+      }
+    },
+    "%@ · Updated %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ · Updated %2$@"
+          }
+        }
+      }
+    },
+    "%@ – %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ – %2$@"
+          }
+        }
+      }
+    },
+    "%@%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@%2$@"
+          }
+        }
+      }
+    },
+    "%@, %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@, %2$@"
+          }
+        }
+      }
+    },
+    "%@, %@, %lld additions, %lld deletions": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@, %2$@, %3$lld additions, %4$lld deletions"
+          }
+        }
+      }
+    },
+    "%@, %lld meeting%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@, %2$lld meeting%3$@"
+          }
+        }
+      }
+    },
+    "%@-%lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@-%2$lld"
+          }
+        }
+      }
+    },
+    "%@-%lld %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@-%2$lld %3$@"
+          }
+        }
+      }
+    },
+    "%@-%lld %@, %@ to %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@-%2$lld %3$@, %4$@ to %5$@"
+          }
+        }
+      }
+    },
+    "%@-%lld · %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@-%2$lld · %3$@"
+          }
+        }
+      }
+    },
+    "%@/%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@/%2$@"
+          }
+        }
+      }
+    },
+    "%@/10": {},
+    "%@: %@ %@, %lld percent": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@: %2$@ %3$@, %4$lld percent"
+          }
+        }
+      }
+    },
+    "%@: %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@: %2$lld"
+          }
+        }
+      }
+    },
+    "%@?": {},
+    "%@Your changes were NOT saved, so nothing of theirs was overwritten. Reload the latest version or compare it with yours.": {},
+    "%@h": {},
+    "%lld": {},
+    "%lld / %lld cases": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld / %2$lld cases"
+          }
+        }
+      }
+    },
+    "%lld active": {},
+    "%lld actor%@ · %lld links": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld actor%2$@ · %3$lld links"
+          }
+        }
+      }
+    },
+    "%lld added": {},
+    "%lld answered": {},
+    "%lld attendee%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld attendee%2$@"
+          }
+        }
+      }
+    },
+    "%lld cases · %lld P · %lld F · %lld untested": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld cases · %2$lld P · %3$lld F · %4$lld untested"
+          }
+        }
+      }
+    },
+    "%lld cases · %lld passed · %lld failed · %lld pending": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld cases · %2$lld passed · %3$lld failed · %4$lld pending"
+          }
+        }
+      }
+    },
+    "%lld chars": {},
+    "%lld class comments": {},
+    "%lld defect%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld defect%2$@"
+          }
+        }
+      }
+    },
+    "%lld diagram%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld diagram%2$@"
+          }
+        }
+      }
+    },
+    "%lld file%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld file%2$@"
+          }
+        }
+      }
+    },
+    "%lld files": {},
+    "%lld groups": {},
+    "%lld h": {},
+    "%lld h %lld min": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld h %2$lld min"
+          }
+        }
+      }
+    },
+    "%lld issue%@ not done yet.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld issue%2$@ not done yet."
+          }
+        }
+      }
+    },
+    "%lld issue%@ still open when requested%@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld issue%2$@ still open when requested%3$@."
+          }
+        }
+      }
+    },
+    "%lld item%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld item%2$@"
+          }
+        }
+      }
+    },
+    "%lld link%@ looked broken at the last check.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld link%2$@ looked broken at the last check."
+          }
+        }
+      }
+    },
+    "%lld min": {},
+    "%lld min prep": {},
+    "%lld of %lld approved": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld of %2$lld approved"
+          }
+        }
+      }
+    },
+    "%lld of %lld have a measurable spec (scale, meter, target).": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld of %2$lld have a measurable spec (scale, meter, target)."
+          }
+        }
+      }
+    },
+    "%lld of %lld issues done": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld of %2$lld issues done"
+          }
+        }
+      }
+    },
+    "%lld of %lld issues · %@ / %@ %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld of %2$lld issues · %3$@ / %4$@ %5$@"
+          }
+        }
+      }
+    },
+    "%lld of %lld screens have a prototype · %lld approved": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld of %2$lld screens have a prototype · %3$lld approved"
+          }
+        }
+      }
+    },
+    "%lld of %lld stages done": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld of %2$lld stages done"
+          }
+        }
+      }
+    },
+    "%lld of %lld steps recorded": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld of %2$lld steps recorded"
+          }
+        }
+      }
+    },
+    "%lld of %lld voted": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld of %2$lld voted"
+          }
+        }
+      }
+    },
+    "%lld of %lld votes left": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld of %2$lld votes left"
+          }
+        }
+      }
+    },
+    "%lld of 5 stars": {},
+    "%lld open": {},
+    "%lld overdue": {},
+    "%lld percent": {},
+    "%lld percent done, %lld percent expected by now": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld percent done, %2$lld percent expected by now"
+          }
+        }
+      }
+    },
+    "%lld removed": {},
+    "%lld replies": {},
+    "%lld reported item%@ hidden": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld reported item%2$@ hidden"
+          }
+        }
+      }
+    },
+    "%lld req": {},
+    "%lld resolved · %@h": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld resolved · %2$@h"
+          }
+        }
+      }
+    },
+    "%lld responses": {},
+    "%lld seconds left": {},
+    "%lld selected": {},
+    "%lld steps": {},
+    "%lld students": {},
+    "%lld test case%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld test case%2$@"
+          }
+        }
+      }
+    },
+    "%lld timesheet%@ waiting for review (%@) — not counted yet.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld timesheet%2$@ waiting for review (%3$@) — not counted yet."
+          }
+        }
+      }
+    },
+    "%lld turned in · %lld late · %lld missing · %lld returned": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld turned in · %2$lld late · %3$lld missing · %4$lld returned"
+          }
+        }
+      }
+    },
+    "%lld use cases": {},
+    "%lld version%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld version%2$@"
+          }
+        }
+      }
+    },
+    "%lld votes. Vote for this card": {},
+    "%lld wk": {},
+    "%lld%%": {},
+    "%lld%% of the time elapsed": {},
+    "%lld. %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld. %2$@"
+          }
+        }
+      }
+    },
+    "%lld/%lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld/%2$lld"
+          }
+        }
+      }
+    },
+    "%lld/%lld approved": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld/%2$lld approved"
+          }
+        }
+      }
+    },
+    "%lld/%lld docs": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld/%2$lld docs"
+          }
+        }
+      }
+    },
+    "%lld/%lld done": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld/%2$lld done"
+          }
+        }
+      }
+    },
+    "%lld/%lld issues": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld/%2$lld issues"
+          }
+        }
+      }
+    },
+    "%lld/%lld submitted · %lld/%lld on time": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld/%2$lld submitted · %3$lld/%4$lld on time"
+          }
+        }
+      }
+    },
+    "%lld/10": {},
+    "%lld/1000": {},
+    "%lldd": {},
+    "%lldd idle": {},
+    "%lldd left": {},
+    "%lldd waiting": {},
+    "(%lld mine)": {},
+    "(edited)": {},
+    "(you)": {},
+    "*": {},
+    "+": {},
+    "+ %lld more commit%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "+ %1$lld more commit%2$@"
+          }
+        }
+      }
+    },
+    "+%lld": {},
+    "+%lld more": {},
+    "+%lld −%lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "+%1$lld −%2$lld"
+          }
+        }
+      }
+    },
+    "/": {},
+    "0": {},
+    "1 reply": {},
+    "14 days": {},
+    "1h 30m": {},
+    "2–40 letters, numbers or dashes. Spaces become dashes.": {},
+    "30 days": {},
+    "4Ls (Liked, Learned, Lacked, Longed for)": {},
+    "6-digit code": {},
+    "72 hours after you confirm, your account and personal data are deleted and can't be recovered. You can cancel within those 72 hours.": {},
+    "90 days": {},
+    "@": {},
+    "@%@": {},
+    "A new sprint": {},
+    "A private Jitsi Meet room is created for this meeting.": {},
+    "A private issue": {},
+    "A public reply is visible to the client. Sharing also shows them the ticket's title, status and public replies.": {},
+    "A timer is already running on %@.": {},
+    "ACTIVE": {},
+    "AI agents": {},
+    "AI answers can be wrong — check important facts. Don't share passwords or keys.": {},
+    "AI assistant": {},
+    "AI assistant may use project content": {},
+    "AI team members, status and current work": {},
+    "Accept as issue": {},
+    "Accept or dismiss proposals on the web — accepting creates a requirement issue.": {},
+    "Accept proposal": {},
+    "Acceptance test": {},
+    "Account": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tài khoản"
+          }
+        }
+      }
+    },
+    "Achieved": {},
+    "Across all projects in this workspace": {},
+    "Action": {},
+    "Active": {},
+    "Active (%lld)": {},
+    "Active sprint": {},
+    "Activity": {},
+    "Actual": {},
+    "Actual result (optional)": {},
+    "Actual: %@": {},
+    "Add": {},
+    "Add %@": {},
+    "Add a comment (required to reject)": {},
+    "Add a comment…": {},
+    "Add a decision": {},
+    "Add a link": {},
+    "Add a note…": {},
+    "Add action item": {},
+    "Add attachment": {},
+    "Add card": {},
+    "Add card to %@": {},
+    "Add decision": {},
+    "Add evidence": {},
+    "Add people": {},
+    "Add reaction": {},
+    "Add to Calendar": {},
+    "Add to current sprint": {},
+    "Add to notes": {},
+    "Add video room": {},
+    "Admin": {},
+    "Advanced": {},
+    "Agenda": {},
+    "Agenda (optional)": {},
+    "Agent cost is an estimate in USD. %@ was self-reported by the agents; %@ was measured by CT Work. Treat it as a guide, not a bill.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Agent cost is an estimate in USD. %1$@ was self-reported by the agents; %2$@ was measured by CT Work. Treat it as a guide, not a bill."
+          }
+        }
+      }
+    },
+    "Agent costs are estimates. Most are self-reported by the agent, not measured by CT Work.": {},
+    "Agents in this workspace · %lld": {},
+    "All": {},
+    "All (%lld)": {},
+    "All at once": {},
+    "All issues": {},
+    "All issues in this version are done.": {},
+    "All new messages": {},
+    "All people": {},
+    "All stages complete": {},
+    "All stakeholders": {},
+    "All versions": {},
+    "Allow CT Work to use the microphone in Settings to record voice notes.": {},
+    "Allow and ask": {},
+    "Allow and record": {},
+    "Allow notifications": {},
+    "Allowed": {},
+    "Also add to %@": {},
+    "Alternative flows": {},
+    "Alternatives considered": {},
+    "Anonymous": {},
+    "Anonymous cards": {},
+    "Anonymous hides who wrote each card from everyone, including admins. It can't be turned off later.": {},
+    "Answers are generated by AI. Your question and the project content it needs are sent to our AI model provider to create the answer.": {},
+    "Any sprint (date range)": {},
+    "Anyone": {},
+    "App lock asks for %@ (or your passcode) when you return to CT Work. The AI assistant sends your question and the project content it needs to a third-party AI model provider; turn it off to be asked again before your next question.": {},
+    "Apple Standard EULA": {},
+    "Applied%@%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Applied%1$@%2$@"
+          }
+        }
+      }
+    },
+    "Applies to every device you're signed in on. The inbox keeps everything either way. \"Every new chat message\" only matters for channels set to all messages.": {},
+    "Apply": {},
+    "Apply to notes": {},
+    "Approval": {},
+    "Approval %@": {},
+    "Approval in progress": {},
+    "Approvals": {},
+    "Approve": {},
+    "Approve this request?": {},
+    "Approve this?": {},
+    "Approve use case": {},
+    "Approvers": {},
+    "Approvers sign in the order you pick them.": {},
+    "Approvers · up to 10": {},
+    "Archive": {},
+    "Archive #%@?": {},
+    "Archive channel": {},
+    "Archived": {},
+    "Archived (%lld)": {},
+    "Archived channels become read-only. History is kept.": {},
+    "Ask about issues, docs and the sprint — answers link to the issues": {},
+    "Ask about issues, docs, the sprint…": {},
+    "Ask about this project": {},
+    "Ask again": {},
+    "Assessment": {},
+    "Assets & licenses": {},
+    "Assign to me": {},
+    "Assignee": {},
+    "Attach": {},
+    "Attendees": {},
+    "Attendees · %lld": {},
+    "Attendees' calendars are updated with the cancellation.": {},
+    "Auto transcript": {},
+    "Average": {},
+    "Back to editor": {},
+    "Backlog": {},
+    "Backlog & issues": {},
+    "Before closing": {},
+    "Below the norm in %lld function(s) — need %lld cases for the declared LOC": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Below the norm in %1$lld function(s) — need %2$lld cases for the declared LOC"
+          }
+        }
+      }
+    },
+    "Block": {},
+    "Block %@": {},
+    "Block %@?": {},
+    "Blocked by %lld · blocking %lld in other projects": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Blocked by %1$lld · blocking %2$lld in other projects"
+          }
+        }
+      }
+    },
+    "Blocked users": {},
+    "Blocked users & hidden content": {},
+    "Board": {},
+    "Branch: %@": {},
+    "Budget used": {},
+    "Budget, spending and milestones (read-only)": {},
+    "Bug %@-%lld created": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Bug %1$@-%2$lld created"
+          }
+        }
+      }
+    },
+    "Burndown chart": {},
+    "Burndown, velocity, flow, workload, people vs agents": {},
+    "Burnup chart": {},
+    "By creating an account you agree to the Terms of Use and Privacy Policy.": {},
+    "CT Work": {},
+    "CT Work %@ (%@)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "CT Work %1$@ (%2$@)"
+          }
+        }
+      }
+    },
+    "CT Work AI": {},
+    "CT Work is locked": {},
+    "Calendar": {},
+    "Calendar options": {},
+    "Call in %@": {},
+    "Call in progress": {},
+    "Call in progress. Join": {},
+    "Cancel": {},
+    "Cancel deletion request": {},
+    "Cancel meeting": {},
+    "Cancel recording": {},
+    "Cancel request": {},
+    "Cancel this meeting?": {},
+    "Cancelled": {},
+    "Capped at 24 hours.": {},
+    "Card": {},
+    "Category (e.g. Constraint)": {},
+    "Category (optional)": {},
+    "Change": {},
+    "Change %@'s role to %@?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Change %1$@'s role to %2$@?"
+          }
+        }
+      }
+    },
+    "Change due date": {},
+    "Change final estimate": {},
+    "Change logged time": {},
+    "Change requests": {},
+    "Change role": {},
+    "Changed files": {},
+    "Changes apply right away. Names of projects, statuses and issues stay as your team wrote them.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đổi là áp dụng ngay. Tên dự án, trạng thái và thẻ giữ nguyên như nhóm bạn đã đặt."
+          }
+        }
+      }
+    },
+    "Changes since": {},
+    "Channel": {},
+    "Channel details": {},
+    "Channel options": {},
+    "Channels": {},
+    "Chat": {},
+    "Chat notifications paused": {},
+    "Check in": {},
+    "Check-ins": {},
+    "Checklist item": {},
+    "Choose File": {},
+    "Choose OKR cycle": {},
+    "Choose from Photos": {},
+    "Choose sprint": {},
+    "Claimed %@ · heartbeat %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Claimed %1$@ · heartbeat %2$@"
+          }
+        }
+      }
+    },
+    "Claimed %@%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Claimed %1$@%2$@"
+          }
+        }
+      }
+    },
+    "Class stream, assignments and teaching overview": {},
+    "Classes": {},
+    "Classwork": {},
+    "Clear decision": {},
+    "Clear filter": {},
+    "Clear timer": {},
+    "Client": {},
+    "Client channel": {},
+    "Client portal": {},
+    "Close": {},
+    "Close session": {},
+    "Close this session?": {},
+    "Closed": {},
+    "Code": {},
+    "Coffee break": {},
+    "Collapse": {},
+    "Comment": {},
+    "Comment (required to reject)": {},
+    "Comments and chat messages from blocked users are hidden everywhere in the app.": {},
+    "Comments are turned off for this post.": {},
+    "Comments are visible to project members. Be respectful — you can report or block anyone.": {},
+    "Commit %@": {},
+    "Commits in the last 30 days": {},
+    "Commits in the last 30 days: %lld": {},
+    "Communication": {},
+    "Community rules": {},
+    "Compare": {},
+    "Complete a sprint to see velocity.": {},
+    "Complete sprint": {},
+    "Completed": {},
+    "Confidence": {},
+    "Confidence %@/10": {},
+    "Consensus": {},
+    "Contact us": {},
+    "Content you report is hidden for you immediately.": {},
+    "Contract value: %@": {},
+    "Control CT Work timer": {},
+    "Conversations": {},
+    "Copy": {},
+    "Copy @%@": {},
+    "Copy credit line": {},
+    "Copy file": {},
+    "Copy key": {},
+    "Copy link": {},
+    "Copy path": {},
+    "Copy text": {},
+    "Cost": {},
+    "Cost is self-reported by the agent": {},
+    "Create": {},
+    "Create %lld issue%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Create %1$lld issue%2$@"
+          }
+        }
+      }
+    },
+    "Create a video room": {},
+    "Create an issue for it": {},
+    "Create defect": {},
+    "Create issue": {},
+    "Create issues for %lld open item%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Create issues for %1$lld open item%2$@"
+          }
+        }
+      }
+    },
+    "Create issue…": {},
+    "Create link": {},
+    "Create project overview": {},
+    "Create sprint": {},
+    "Create subscription link": {},
+    "Creates a task in the backlog so the action is tracked.": {},
+    "Current estimate: %@ pts": {},
+    "Current project": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dự án hiện tại"
+          }
+        }
+      }
+    },
+    "Current value": {},
+    "Current: %@": {},
+    "Cycle & lead time": {},
+    "Daily digest at 08:00": {},
+    "Dashboards": {},
+    "Dates": {},
+    "Day": {},
+    "Days from start (cycle) or creation (lead) to done · last %lld days · %lld issues": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Days from start (cycle) or creation (lead) to done · last %1$lld days · %2$lld issues"
+          }
+        }
+      }
+    },
+    "Deck": {},
+    "Default": {},
+    "Definition": {},
+    "Delete": {},
+    "Delete %@": {},
+    "Delete account": {},
+    "Delete conversation": {},
+    "Delete file": {},
+    "Delete meeting": {},
+    "Delete my account": {},
+    "Delete this comment?": {},
+    "Delete this meeting?": {},
+    "Delete this message?": {},
+    "Delete this page?": {},
+    "Delete this sprint?": {},
+    "Delete worklog": {},
+    "Delete “%@”?": {},
+    "Deleted (%lld)": {},
+    "Deliverables": {},
+    "Delivery phases and gate reviews": {},
+    "Describe it — steps, links, what you expected…": {},
+    "Description": {},
+    "Description (optional)": {},
+    "Details": {},
+    "Device language": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Theo máy"
+          }
+        }
+      }
+    },
+    "Diagram editing and document exports open in a secure in-app browser.": {},
+    "Diagrams": {},
+    "Direct messages": {},
+    "Discard changes": {},
+    "Discard this timer?": {},
+    "Discard timer": {},
+    "Discard without logging": {},
+    "Discard your changes?": {},
+    "Dismiss": {},
+    "Dismissed": {},
+    "Docs": {},
+    "Docs & knowledge": {},
+    "Documents": {},
+    "Documents & files": {},
+    "Done": {},
+    "Done issues stay in %@. Unfinished issues and their sub-tasks move to the place you pick.": {},
+    "Drafted by AI from the meeting transcript. Check it before applying — it can be wrong.": {},
+    "Drag issues between columns": {},
+    "Due": {},
+    "Due %@": {},
+    "Due date": {},
+    "Due dates, sprints, releases and meetings": {},
+    "Duplicate for next week": {},
+    "Duration": {},
+    "Each issue%@ needs at least %lld attached file%@%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Each issue%1$@ needs at least %2$lld attached file%3$@%4$@"
+          }
+        }
+      }
+    },
+    "Edit": {},
+    "Edit %@": {},
+    "Edit action item": {},
+    "Edit comment": {},
+    "Edit conflict": {},
+    "Edit meeting": {},
+    "Edit note & activity": {},
+    "Edit release notes": {},
+    "Edit timer": {},
+    "Edit title": {},
+    "Editing": {},
+    "Editing is locked": {},
+    "Editing is locked for this project on your account.": {},
+    "Editing •": {},
+    "Elapsed": {},
+    "Elapsed %@": {},
+    "Elicitation": {},
+    "Email": {},
+    "Email & quiet hours": {},
+    "Email calendar invites": {},
+    "Email for notifications": {},
+    "Email me a summary of unread chat": {},
+    "End": {},
+    "Environment details, data used, anything worth knowing…": {},
+    "Epic %@ · %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Epic %1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "Estimate": {},
+    "Estimate stories together": {},
+    "Every step goes back to To do and actual results are cleared. Linked bugs and evidence stay.": {},
+    "Everyone can sign at the same time.": {},
+    "Everyone can sign at the same time. One rejection ends the request.": {},
+    "Exit criteria · %@": {},
+    "Expand": {},
+    "Expected": {},
+    "Expires in %lld day%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Expires in %1$lld day%2$@"
+          }
+        }
+      }
+    },
+    "Export the full RTM (Excel) from the web.": {},
+    "Facilitator": {},
+    "Facilitator: %@": {},
+    "Feature": {},
+    "Fibonacci": {},
+    "Fibonacci (0, 1, 2, 3, 5, 8…)": {},
+    "File": {},
+    "File %@": {},
+    "File %@, %@. Double tap to preview.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "File %1$@, %2$@. Double tap to preview."
+          }
+        }
+      }
+    },
+    "File history": {},
+    "File options": {},
+    "Files": {},
+    "Files recommended": {},
+    "Files required to finish": {},
+    "Filter and settings": {},
+    "Filter issues": {},
+    "Filters": {},
+    "Filters, %lld active": {},
+    "Finance": {},
+    "Find a channel": {},
+    "Find a project": {},
+    "Finding": {},
+    "Flagged": {},
+    "Flow reports count top-level issues only (no epics, sub-tasks or test cases).": {},
+    "Folder %@": {},
+    "Forgot password?": {},
+    "Format": {},
+    "Forms": {},
+    "Forward": {},
+    "Forward…": {},
+    "From": {},
+    "From %@": {},
+    "From %@ to %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "From %1$@ to %2$@"
+          }
+        }
+      }
+    },
+    "Full Privacy Policy": {},
+    "Full Terms of Use": {},
+    "Gate": {},
+    "Gate approval pending": {},
+    "Generated %@ from live project data.": {},
+    "Generated by AI on the web. It can be inaccurate — check it against the cards.": {},
+    "Git activity, branches, pull requests and source": {},
+    "GitHub": {},
+    "GitLab": {},
+    "Going?": {},
+    "Governance": {},
+    "Group by issue & channel": {},
+    "Groups": {},
+    "Guess from the issue": {},
+    "Guests only see the projects they are added to.": {},
+    "Heading 1": {},
+    "Heading 2": {},
+    "Heading 3": {},
+    "Health: %@": {},
+    "Help": {},
+    "Help & contact": {},
+    "Help & legal": {},
+    "Help articles for the team and clients": {},
+    "Hidden content": {},
+    "Hide closed": {},
+    "Hide from students": {},
+    "Hide unscheduled": {},
+    "High": {},
+    "History": {},
+    "Hours": {},
+    "How likely is the team to hit this by the end of the cycle?": {},
+    "I agree": {},
+    "I couldn't find that issue. Open it once in CT Work, then try again.": {},
+    "Ideal": {},
+    "Image %@": {},
+    "Impact": {},
+    "Impact on scope": {},
+    "Impact: %@": {},
+    "In scope": {},
+    "Inbox": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hộp thư"
+          }
+        }
+      }
+    },
+    "Include done issues": {},
+    "Includes a %@%% late penalty (raw %@)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Includes a %1$@%% late penalty (raw %2$@)"
+          }
+        }
+      }
+    },
+    "Insert": {},
+    "Insert image": {},
+    "Insert link": {},
+    "Inside another page": {},
+    "Inspections with a checklist and defect log": {},
+    "Intake": {},
+    "Interest →": {},
+    "Internal note": {},
+    "Invite": {},
+    "Invite by link": {},
+    "Invite link created": {},
+    "Invite people": {},
+    "Issue": {},
+    "Issue count": {},
+    "Issue title": {},
+    "Issues": {},
+    "Issues can be finished without attaching files.": {},
+    "It won't become an issue. The sender isn't notified.": {},
+    "It's linked to this run, with steps to reproduce, expected and actual results filled in.": {},
+    "Its issues move back to the backlog. Only sprints that haven't started can be deleted.": {},
+    "Its notes, decisions and action items are removed. Issues already created stay.": {},
+    "Join": {},
+    "Join %@": {},
+    "Join call": {},
+    "Join code: %@": {},
+    "Join meeting": {},
+    "Join with %@": {},
+    "Keep (%@)": {},
+    "Keep editing": {},
+    "Keep it": {},
+    "Key result": {},
+    "Knowledge base": {},
+    "Labels": {},
+    "Language": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ngôn ngữ"
+          }
+        }
+      }
+    },
+    "Last %lld days": {},
+    "Last 30 days": {},
+    "Last run: %@": {},
+    "Latest version": {},
+    "Lead": {},
+    "Limits": {},
+    "Line %lld: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Line %1$lld: %2$@"
+          }
+        }
+      }
+    },
+    "Line or location (optional)": {},
+    "Link": {},
+    "Link an issue": {},
+    "Link the issues this page specifies or decides.": {},
+    "Live now": {},
+    "Load more": {},
+    "Load older posts": {},
+    "Loading": {},
+    "Loading branches…": {},
+    "Loading…": {},
+    "Location": {},
+    "Location (optional)": {},
+    "Lock retro": {},
+    "Locked": {},
+    "Log": {},
+    "Log a bug": {},
+    "Log a bug for this step": {},
+    "Log time": {},
+    "Logged %@ on %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Logged %1$@ on %2$@"
+          }
+        }
+      }
+    },
+    "Logged %@ on %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Logged %1$@ on %2$@."
+          }
+        }
+      }
+    },
+    "Logs %@. Under 30 seconds logs nothing.": {},
+    "Long-press a notification to reply, approve, join a meeting or mark it as read without opening the app.": {},
+    "Looking healthy": {},
+    "Low": {},
+    "Mad · Sad · Glad": {},
+    "Make action item": {},
+    "Mark %lld read": {},
+    "Mark all as read": {},
+    "Mark as Read": {},
+    "Mark as done": {},
+    "Mark as read": {},
+    "Mark as unreleased": {},
+    "Mark step %@": {},
+    "Me": {},
+    "Measure": {},
+    "Medium": {},
+    "Meeting options": {},
+    "Meetings": {},
+    "Meets the norm (%lld cases per KLOC)": {},
+    "Members": {},
+    "Members & notifications": {},
+    "Members (%lld selected)": {},
+    "Members (%lld)": {},
+    "Members · %lld": {},
+    "Members, roles, workload and invites": {},
+    "Mention %@": {},
+    "Mentions & replies": {},
+    "Mentions only": {},
+    "Message": {},
+    "Microphone access is off": {},
+    "Mitigation / plan": {},
+    "Mode": {},
+    "Models, priority matrix, RACI & exports": {},
+    "More": {},
+    "More actions": {},
+    "More timer actions": {},
+    "More tools": {},
+    "Move to Trash": {},
+    "Move to…": {},
+    "Move unfinished issues to": {},
+    "Move “%@”": {},
+    "Move…": {},
+    "Mute": {},
+    "Mute channel": {},
+    "Mute for 8 hours": {},
+    "Muted": {},
+    "Muted channels only notify you when someone @mentions you.": {},
+    "My Work": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Việc của tôi"
+          }
+        }
+      }
+    },
+    "My Work Today": {},
+    "N = Normal · A = Abnormal · B = Boundary. “O” marks the conditions and confirmations a test case covers. Edit and export the Excel report on the web.": {},
+    "NEXT RELEASE": {},
+    "Name": {},
+    "Name (e.g. Max file size 20 MB)": {},
+    "Name (e.g. Submit assignment)": {},
+    "Name (optional — defaults to “Sprint N”)": {},
+    "Name, e.g. 1.2.0": {},
+    "Navigates to": {},
+    "Need help instead? Contact %@": {},
+    "Needs a credit line": {},
+    "Never run": {},
+    "New %@": {},
+    "New action item": {},
+    "New change request": {},
+    "New channel": {},
+    "New conversation": {},
+    "New conversation and options": {},
+    "New direct message": {},
+    "New here? Create an account, or continue with Apple.": {},
+    "New meeting": {},
+    "New messages": {},
+    "New page": {},
+    "New poker session": {},
+    "New private conversation": {},
+    "New private conversation — only you will see it": {},
+    "New private group": {},
+    "New request": {},
+    "New retrospective": {},
+    "New subpage": {},
+    "New version": {},
+    "Newest": {},
+    "Next week": {},
+    "No AI agent activity in this period.": {},
+    "No access": {},
+    "No action items.": {},
+    "No active sprint — showing all open issues": {},
+    "No agent activity in this range.": {},
+    "No answer yet": {},
+    "No bugs linked to this run.": {},
+    "No burnup data yet. It appears once the version has issues and a start date.": {},
+    "No cards yet. Tap + to add one.": {},
+    "No cards.": {},
+    "No check-ins yet.": {},
+    "No comments yet.": {},
+    "No consensus": {},
+    "No data yet.": {},
+    "No decisions recorded.": {},
+    "No description.": {},
+    "No differences — this version matches the current page.": {},
+    "No documents shared yet.": {},
+    "No due date": {},
+    "No evidence yet.": {},
+    "No files shared yet.": {},
+    "No files yet. Tap + to add a photo or file.": {},
+    "No files.": {},
+    "No history yet.": {},
+    "No issues": {},
+    "No issues are assigned to this version.": {},
+    "No issues in this sprint": {},
+    "No issues in this sprint yet.": {},
+    "No issues linked to this stage": {},
+    "No issues match these filters.": {},
+    "No issues match “%@”.": {},
+    "No issues match.": {},
+    "No issues.": {},
+    "No matches.": {},
+    "No measurable target yet": {},
+    "No more votes can be cast. Final estimates stay on the issues.": {},
+    "No notes yet.": {},
+    "No notes yet. Tap + to write the minutes.": {},
+    "No one invited yet.": {},
+    "No open issues in this project.": {},
+    "No open issues.": {},
+    "No other members can approve in this project.": {},
+    "No outgoing links": {},
+    "No pages match “%@”.": {},
+    "No projects": {},
+    "No projects in this workspace yet.": {},
+    "No prototype yet": {},
+    "No release notes have been written for this version.": {},
+    "No release notes yet. Tap Edit to write what's new in this version.": {},
+    "No replies yet.": {},
+    "No reply": {},
+    "No runs in this filter.": {},
+    "No scheduled issues.": {},
+    "No stage is active yet": {},
+    "No submission rule": {},
+    "No submitted timesheets yet.": {},
+    "No test cases in this module yet.": {},
+    "No text changes (binary file or rename).": {},
+    "No time logged in this range.": {},
+    "No time logged on this issue yet.": {},
+    "No time logged this week. Start a timer or log time on an issue.": {},
+    "No timer is running.": {},
+    "No timer running": {},
+    "No timer running.": {},
+    "No transitions available": {},
+    "No video": {},
+    "No video link": {},
+    "No workspaces yet": {},
+    "None": {},
+    "Normal flow": {},
+    "Not done": {},
+    "Not now": {},
+    "Not set": {},
+    "Not sure": {},
+    "Not working on anything right now.": {},
+    "Note": {},
+    "Note (optional)": {},
+    "Note and severity": {},
+    "Notes": {},
+    "Nothing assigned to you": {},
+    "Nothing hidden.": {},
+    "Nothing matches this filter.": {},
+    "Nothing matches.": {},
+    "Nothing overdue, stale or overloaded right now.": {},
+    "Nothing overdue. 🎉": {},
+    "Nothing scheduled.": {},
+    "Nothing to trace yet.": {},
+    "Notification settings": {},
+    "Notifications": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thông báo"
+          }
+        }
+      }
+    },
+    "Notify me about": {},
+    "Now": {},
+    "OK": {},
+    "OKRs": {},
+    "Objectives, key results and check-ins": {},
+    "Off": {},
+    "One after another": {},
+    "One item per line.": {},
+    "One rejection ends this request for everyone.": {},
+    "Only in latest": {},
+    "Only in latest: %@": {},
+    "Only in yours": {},
+    "Only in yours: %@": {},
+    "Only my issues": {},
+    "Only the people you add can see a private group.": {},
+    "Only you and your teachers see these.": {},
+    "Open": {},
+    "Open %@": {},
+    "Open (%lld)": {},
+    "Open CT Work and sign in first.": {},
+    "Open SRS on the web": {},
+    "Open Settings": {},
+    "Open bug": {},
+    "Open commit in Safari": {},
+    "Open full issue": {},
+    "Open in CT Work web": {},
+    "Open in Safari": {},
+    "Open issue": {},
+    "Open issue %@": {},
+    "Open issue %@%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Open issue %1$@%2$@"
+          }
+        }
+      }
+    },
+    "Open issues": {},
+    "Open issues assigned to you in any project show up here.": {},
+    "Open on %@": {},
+    "Open on the web": {},
+    "Open only": {},
+    "Open project %@": {},
+    "Open pull request #%lld in Safari": {},
+    "Open queue · %lld": {},
+    "Open repository in Safari": {},
+    "Open test issue": {},
+    "Opens the link": {},
+    "Opens the meeting in %@ and marks you present": {},
+    "Optional note (max 300)": {},
+    "Order": {},
+    "Organized by %@": {},
+    "Organizer": {},
+    "Out of scope": {},
+    "Overall progress": {},
+    "Overloaded": {},
+    "Owner": {},
+    "PAUSED": {},
+    "Page actions": {},
+    "Page title": {},
+    "Pages · %lld": {},
+    "Pages, specs and meeting notes": {},
+    "Parallel": {},
+    "Parent page": {},
+    "Password": {},
+    "Password: at least 12 characters with an uppercase letter, a lowercase letter, a number and a symbol.": {},
+    "Past": {},
+    "Paste a link": {},
+    "Pause": {},
+    "Pause %@?": {},
+    "Pause agent": {},
+    "Pause chat notifications": {},
+    "Pause voice note": {},
+    "Pause, resume or stop the running CT Work timer.": {},
+    "Pending approvers won't be able to sign it any more.": {},
+    "People": {},
+    "Period": {},
+    "Permanently delete your account?": {},
+    "Photo": {},
+    "Photo Library": {},
+    "Pick your card": {},
+    "Picking a sprint adds its unfinished stories and tasks to the session.": {},
+    "Pin %@": {},
+    "Pin the tools you use most — pinned tools appear in %@. Touch and hold a tool to pin or unpin it.": {},
+    "Pin to %@": {},
+    "Pin to channel": {},
+    "Pinch to zoom, double-tap to zoom in": {},
+    "Pinned": {},
+    "Pinned messages": {},
+    "Plan, start and complete sprints · burndown": {},
+    "Plan, track and discuss your team's work.": {},
+    "Planning": {},
+    "Planning poker": {},
+    "Play voice note, %lld seconds": {},
+    "Points": {},
+    "Portfolio & workload": {},
+    "Postconditions": {},
+    "Preconditions": {},
+    "Preview": {},
+    "Previous week": {},
+    "Primary actor": {},
+    "Priority": {},
+    "Privacy & security": {},
+    "Privacy Policy": {},
+    "Private conversation — only you can see it": {},
+    "Private group": {},
+    "Private groups": {},
+    "Probability": {},
+    "Probability %lld × Impact %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Probability %1$lld × Impact %2$lld"
+          }
+        }
+      }
+    },
+    "Probability %lld, impact %lld: %lld open risk%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Probability %1$lld, impact %2$lld: %3$lld open risk%4$@"
+          }
+        }
+      }
+    },
+    "Probability: %@": {},
+    "Progress": {},
+    "Progress is reported by the agent itself.": {},
+    "Project": {},
+    "Project admins will review it and remove it if it breaks the rules.": {},
+    "Project role": {},
+    "Projects": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dự án"
+          }
+        }
+      }
+    },
+    "Proposals stay out of the SRS until a teammate or lecturer accepts them.": {},
+    "Proposals wait in this session until someone accepts them.": {},
+    "Propose": {},
+    "Propose business rule": {},
+    "Propose requirement": {},
+    "Propose use case": {},
+    "Public channel": {},
+    "Push me about": {},
+    "Push notifications": {},
+    "Questions": {},
+    "Quiet hours": {},
+    "R%lld": {},
+    "RAID log": {},
+    "RSVP %@": {},
+    "RUNNING": {},
+    "Range": {},
+    "Reached from": {},
+    "Read": {},
+    "Read all": {},
+    "Reads out today's meetings, due issues and overdue work from CT Work.": {},
+    "Realized": {},
+    "Reason (optional)": {},
+    "Recently updated": {},
+    "Record voice note": {},
+    "Recording voice note": {},
+    "Recurring": {},
+    "Reject": {},
+    "Reject this request?": {},
+    "Reject this?": {},
+    "Release": {},
+    "Release %@": {},
+    "Release date": {},
+    "Release notes": {},
+    "Releases": {},
+    "Release…": {},
+    "Remaining": {},
+    "Remove": {},
+    "Remove %@": {},
+    "Remove %@ from the project?": {},
+    "Remove action item": {},
+    "Remove due date": {},
+    "Remove from project": {},
+    "Remove from version": {},
+    "Remove link": {},
+    "Remove my vote": {},
+    "Rename": {},
+    "Rename page": {},
+    "Replies in the chat thread %@.": {},
+    "Replies on %@ as a threaded comment.": {},
+    "Reply": {},
+    "Reply in thread": {},
+    "Reply to client": {},
+    "Reply type": {},
+    "Reply…": {},
+    "Report": {},
+    "Report 5.1 · Unit test": {},
+    "Report 5.2 · Integration test": {},
+    "Report 5.3 · System test": {},
+    "Report card": {},
+    "Report comment": {},
+    "Report message": {},
+    "Report notes": {},
+    "Report templates": {},
+    "Report this AI answer": {},
+    "Report this AI answer to the moderators": {},
+    "Report this card": {},
+    "Report this comment": {},
+    "Report this content": {},
+    "Report this meeting's notes": {},
+    "Report this message": {},
+    "Reported messages are hidden for you right away.": {},
+    "Reported notes are hidden for you right away.": {},
+    "Reports": {},
+    "Reports are filled with live project data. Edit templates and schedule deliveries on the web.": {},
+    "Reports go to the CT Work moderation team and are reviewed within 24 hours.": {},
+    "Reports go to the CT Work moderation team.": {},
+    "Repos, designs, drives and handy links": {},
+    "Request": {},
+    "Request approval": {},
+    "Request approval…": {},
+    "Request forms and their responses": {},
+    "Requests": {},
+    "Requests from email, Discord, Zalo, Slack": {},
+    "Require %@": {},
+    "Requirement actions": {},
+    "Requirements": {},
+    "Requirements & testing": {},
+    "Requirements lifecycle, features, stakeholders, glossary": {},
+    "Requirements traceability": {},
+    "Reset": {},
+    "Reset pinned tools": {},
+    "Reset run": {},
+    "Reset this run?": {},
+    "Resolved": {},
+    "Resources": {},
+    "Response": {},
+    "Responses": {},
+    "Restore": {},
+    "Restore channel": {},
+    "Restore this version": {},
+    "Restore version %lld?": {},
+    "Results": {},
+    "Resume": {},
+    "Resume %@?": {},
+    "Resume agent": {},
+    "Resume chat notifications": {},
+    "Retro actions": {},
+    "Retrospectives": {},
+    "Retry": {},
+    "Returned: %@": {},
+    "Revert": {},
+    "Review & decide": {},
+    "Review date": {},
+    "Review on": {},
+    "Reviewed by %@%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Reviewed by %1$@%2$@"
+          }
+        }
+      }
+    },
+    "Reviewers: %@": {},
+    "Reviews": {},
+    "Right away": {},
+    "Risk": {},
+    "Risks, assumptions, issues, dependencies": {},
+    "Roadmap of epics, dates and dependencies": {},
+    "Round %lld": {},
+    "Run": {},
+    "Run in cycle": {},
+    "Running for a long time": {},
+    "Runs": {},
+    "S": {},
+    "SLA due first": {},
+    "STAGE %lld": {},
+    "Safety": {},
+    "Save": {},
+    "Save details": {},
+    "Save draft": {},
+    "Save estimate…": {},
+    "Save notes": {},
+    "Schedule": {},
+    "Schedule (days)": {},
+    "Schedule, join, notes and action items": {},
+    "Scope": {},
+    "Scope, schedule and cost changes": {},
+    "Score": {},
+    "Score %@": {},
+    "Score %lld": {},
+    "Score = probability × impact. 15+ is high, 8+ is medium.": {},
+    "Screen authorization": {},
+    "Search": {},
+    "Search #%@": {},
+    "Search articles": {},
+    "Search assets": {},
+    "Search diagrams": {},
+    "Search groups or students": {},
+    "Search in channel": {},
+    "Search issues": {},
+    "Search issues in all projects": {},
+    "Search links": {},
+    "Search pages": {},
+    "Search people": {},
+    "Search requirements": {},
+    "Search terms": {},
+    "Search tests or keys": {},
+    "Search tickets": {},
+    "Search title or key": {},
+    "Search tools": {},
+    "Search transcript": {},
+    "Section": {},
+    "Seen %@": {},
+    "Select for issue creation": {},
+    "Selected": {},
+    "Send": {},
+    "Send a new code": {},
+    "Send comment": {},
+    "Send message": {},
+    "Send question to AI": {},
+    "Send to": {},
+    "Send voice note": {},
+    "Sending…": {},
+    "Sends this question to the AI assistant": {},
+    "Sequential": {},
+    "Series": {},
+    "Service desk": {},
+    "Session actions": {},
+    "Set dates": {},
+    "Set due date": {},
+    "Severity": {},
+    "Share": {},
+    "Share form link": {},
+    "Share image": {},
+    "Share link": {},
+    "Share with client & send": {},
+    "Shared with client": {},
+    "Shared with the project team": {},
+    "Short summary": {},
+    "Short title (at least 3 characters)": {},
+    "Show": {},
+    "Show %lld completed sprint%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Show %1$lld completed sprint%2$@"
+          }
+        }
+      }
+    },
+    "Show all %lld versions": {},
+    "Show archived": {},
+    "Show chart": {},
+    "Show closed": {},
+    "Show data table": {},
+    "Show fewer": {},
+    "Show hidden content again": {},
+    "Showing %lld of %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Showing %1$lld of %2$lld"
+          }
+        }
+      }
+    },
+    "Showing only the AI agents you own. Workspace admins see everyone.": {},
+    "Showing the first %lld of %lld issues.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Showing the first %1$lld of %2$lld issues."
+          }
+        }
+      }
+    },
+    "Showing the first 5,000 issues.": {},
+    "Showing the first 500 tickets. Narrow the view or search to see more.": {},
+    "Showing the latest %lld of %lld.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Showing the latest %1$lld of %2$lld."
+          }
+        }
+      }
+    },
+    "Shown in full on the web dashboard.": {},
+    "Shows channel details": {},
+    "Shows this version": {},
+    "Sign in with your cuongthai.com account": {},
+    "Sign off issues, documents, changes and gates": {},
+    "Sign out": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đăng xuất"
+          }
+        }
+      }
+    },
+    "Sign out of CT Work?": {},
+    "Software, fonts and media with license expiry": {},
+    "Sort": {},
+    "Source: %@": {},
+    "Sprint": {},
+    "Sprint actions": {},
+    "Sprint goal": {},
+    "Sprints": {},
+    "Sprints, backlog and filtered issue lists": {},
+    "Sprints, stages and release dates": {},
+    "Stage %lld, %@, %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Stage %1$lld, %2$@, %3$@"
+          }
+        }
+      }
+    },
+    "Stage %lld: %@ · %lld/%lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Stage %1$lld: %2$@ · %3$lld/%4$lld"
+          }
+        }
+      }
+    },
+    "Stages": {},
+    "Stakeholder": {},
+    "Start": {},
+    "Start Timer": {},
+    "Start Timer on Issue": {},
+    "Start a call": {},
+    "Start a timer on an issue — it keeps running on the web and desktop too.": {},
+    "Start date": {},
+    "Start sprint": {},
+    "Start timer": {},
+    "Start timer on ${the}": {},
+    "Start · Stop · Continue": {},
+    "Started": {},
+    "Started %@": {},
+    "Started at %@%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Started at %1$@%2$@"
+          }
+        }
+      }
+    },
+    "Starting %@ commits its current issues. Only one sprint can be active at a time.": {},
+    "Starting soon": {},
+    "Starts": {},
+    "Starts voting on this issue": {},
+    "Starts your CT Work timer on an issue. A timer running on another issue is stopped and logged first.": {},
+    "State the rule precisely": {},
+    "Status": {},
+    "Status: %@": {},
+    "Status: %@. Change": {},
+    "Step %lld": {},
+    "Still working — long answers can take up to a minute.": {},
+    "Stop": {},
+    "Stop & log": {},
+    "Stop Timer": {},
+    "Stop it, log the time and switch": {},
+    "Stop watching": {},
+    "Stopped. Under 30 seconds, so nothing was logged.": {},
+    "Stops your running CT Work timer and logs the time.": {},
+    "Stream": {},
+    "Subpages are deleted too. Pending approvals are cancelled. You can restore from Trash.": {},
+    "Subscribe in Calendar app…": {},
+    "Subscribe to your CT Work calendar?": {},
+    "Suggested change: %@": {},
+    "Summary": {},
+    "Switch project": {},
+    "Switch project, current %@": {},
+    "T-shirt (XS, S, M, L…)": {},
+    "T-shirt sizes": {},
+    "Take Photo": {},
+    "Tap + to take a photo or attach a screenshot of what you saw.": {},
+    "Tap to see who still needs to sign": {},
+    "Tap your card again to withdraw it. Cards stay hidden until the facilitator reveals them.": {},
+    "Target %@%@. One check-in per week — a second one replaces it.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Target %1$@%2$@. One check-in per week — a second one replaces it."
+          }
+        }
+      }
+    },
+    "Teacher: %@": {},
+    "Teaching": {},
+    "Team": {},
+    "Team channels and private groups": {},
+    "Terms of Use": {},
+    "Test cycles, run tests on your phone, FPT reports": {},
+    "Test run": {},
+    "Tests": {},
+    "Text": {},
+    "The agent can pick up and change work again.": {},
+    "The assistant reads the issues and docs it needs first.": {},
+    "The assistant reads the project's issues, docs and files before it answers, and links every issue it mentions.": {},
+    "The backlog is empty": {},
+    "The card is hidden for you right away. Our moderators review reports within 24 hours.": {},
+    "The change is recorded in the requirement's history.": {},
+    "The content changed after it was sent for approval. Review it before deciding.": {},
+    "The content changed after it was signed. The signature covers the earlier version.": {},
+    "The content changed after this request was sent. Check the latest version before you sign.": {},
+    "The current content is kept in history, so this can be undone.": {},
+    "The description is filled in for you: cycle, environment and build, preconditions, steps to reproduce, expected and actual result.": {},
+    "The elapsed time will not be logged.": {},
+    "The message and a link back to it become the issue description. A note is posted in the thread.": {},
+    "The page and its subpages go to Trash. You can restore them from Docs › Trash.": {},
+    "The page changed after it was signed.": {},
+    "The page starts as a Draft. You can write it right after it's created.": {},
+    "The queue is empty.": {},
+    "The rule is added as a proposal for the team to review.": {},
+    "The screen-flow diagram and the access grid are easier to edit on the web.": {},
+    "The system shall…": {},
+    "They keep their workspace membership. Issues stay assigned to them until you reassign them.": {},
+    "This amount is logged instead of the measured time.": {},
+    "This assignee is an AI agent operated by its owner. It will be able to read this issue.": {},
+    "This channel is archived.": {},
+    "This commit is large — some changes are not shown here.": {},
+    "This diff is too large to show.": {},
+    "This is a group assignment. Join a group in the class first.": {},
+    "This is the start of #%@": {},
+    "This is the start of %@": {},
+    "This is the start of your conversation with %@": {},
+    "This key result updates itself from linked issues. Just record how confident you are.": {},
+    "This message was deleted.": {},
+    "This page changed while you were editing": {},
+    "This page is empty.": {},
+    "This page is empty. Tap Edit to start writing.": {},
+    "This project has no board columns.": {},
+    "This retro is read-only. Action items can still be added.": {},
+    "This run uses version %lld of the test; the test is now at version %lld. Reset the run to pick up the new steps.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "This run uses version %1$lld of the test; the test is now at version %2$lld. Reset the run to pick up the new steps."
+          }
+        }
+      }
+    },
+    "This sprint hasn't started yet.": {},
+    "This test has no steps. Set the overall result from the web, or add steps to the test.": {},
+    "This test hasn't been run yet.": {},
+    "This ticket isn't shared with the client yet": {},
+    "This version": {},
+    "This week": {},
+    "Thread": {},
+    "Ticket": {},
+    "Tickets, SLAs and client replies": {},
+    "Time spent": {},
+    "Time tracking": {},
+    "Time zone": {},
+    "Timeline": {},
+    "Timer": {},
+    "Timer started on %@.": {},
+    "Timer, log time and your week": {},
+    "Title": {},
+    "To": {},
+    "Today": {},
+    "Top level": {},
+    "Topic (optional)": {},
+    "Total: %@": {},
+    "Touch and hold a member to change their role or remove them from the project.": {},
+    "Touch and hold the message to report it.": {},
+    "Transcribing…": {},
+    "Transcript": {},
+    "Trash": {},
+    "Trend": {},
+    "Trigger (what tells us it's happening)": {},
+    "Try again": {},
+    "Turn in": {},
+    "Turn in late": {},
+    "Turn on in Settings": {},
+    "Turn the top-voted cards into action items so they don't get lost.": {},
+    "Turned in %@%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Turned in %1$@%2$@"
+          }
+        }
+      }
+    },
+    "Turning in now applies a %@%% late penalty.": {},
+    "Type": {},
+    "Type “1h 30m”, “1.5h”, “90m” or “1:30”. Up to 24 hours per entry.": {},
+    "Unassigned": {},
+    "Unblock": {},
+    "Under 30 seconds — nothing was logged.": {},
+    "Unfinished issues can't stay in a released version.": {},
+    "Unfinished issues go to": {},
+    "Unhide": {},
+    "Unlink": {},
+    "Unlock": {},
+    "Unlock retro": {},
+    "Unlock with %@": {},
+    "Unmute": {},
+    "Unpin": {},
+    "Unpin %@": {},
+    "Unpin from %@": {},
+    "Unread": {},
+    "Unsubmit": {},
+    "Unsubmit this work?": {},
+    "Until %@": {},
+    "Until resumed": {},
+    "Until you unmute": {},
+    "Untitled": {},
+    "Up to %lld people": {},
+    "Upcoming": {},
+    "Updated %@": {},
+    "Updated by %@": {},
+    "Uploading image…": {},
+    "Urgency": {},
+    "Use a negative number of days if the change saves time.": {},
+    "Use cases, business rules, screens and traceability": {},
+    "Use this device's time zone": {},
+    "VND": {},
+    "Value": {},
+    "Verify": {},
+    "Verify your email": {},
+    "Version": {},
+    "Version %lld": {},
+    "Version actions": {},
+    "Version history": {},
+    "Versions, progress and release notes": {},
+    "Video": {},
+    "View": {},
+    "View burndown & progress": {},
+    "View full screen": {},
+    "View options": {},
+    "View options, filtered": {},
+    "View thread": {},
+    "View, zoom and discuss project diagrams": {},
+    "Votes": {},
+    "Votes per person: %lld": {},
+    "Voting hasn't started": {},
+    "Voting in progress": {},
+    "WORKSPACE": {},
+    "Waiting %lld day%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Waiting %1$lld day%2$@"
+          }
+        }
+      }
+    },
+    "Waiting for approval": {},
+    "Waiting for network": {},
+    "Waiting for rating": {},
+    "Waiting on customer": {},
+    "Waiting on me%@": {},
+    "Watch": {},
+    "We emailed a 6-digit code to verify your address. Enter it below to finish.": {},
+    "Week": {},
+    "Week of %@": {},
+    "Week of %@: %@, %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Week of %1$@: %2$@, %3$@"
+          }
+        }
+      }
+    },
+    "Welcome to CT Work": {},
+    "What are you working on? (optional)": {},
+    "What changed this week? (optional)": {},
+    "What did you do? (optional)": {},
+    "What do you need?": {},
+    "What happens": {},
+    "What needs to happen?": {},
+    "What to notify me about": {},
+    "What was decided?": {},
+    "What went well, what to improve": {},
+    "What went wrong?": {},
+    "What will the team do?": {},
+    "What your client sees: requests, approvals, documents": {},
+    "When": {},
+    "When a teammate invites you to a CT Work workspace, it appears here.": {},
+    "When a teammate invites you to a CT Work workspace, it shows up here.": {},
+    "Where": {},
+    "While paused the agent can still read the project, but every change it tries is refused.": {},
+    "Who": {},
+    "Who can open this screen. Edit the access grid on the web.": {},
+    "Who has submitted files for their issues": {},
+    "Why are you leaving?": {},
+    "Why is this change needed?": {},
+    "Widgets and report templates": {},
+    "Wiegers": {},
+    "Working now in %@": {},
+    "Workload": {},
+    "Worklogs": {},
+    "Workspace": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không gian làm việc"
+          }
+        }
+      }
+    },
+    "Workspace role": {},
+    "Workspace teams": {},
+    "Wrap lines": {},
+    "Write a reply…": {},
+    "Write your answer or a note to your teacher…": {},
+    "You": {},
+    "You (anonymous)": {},
+    "You already have a subscription link. Creating a new one stops the old link from updating anywhere it's used. Your Calendar app will then show your due dates, sprints, releases and meetings.": {},
+    "You approved": {},
+    "You can also mute or change notifications for a single channel from the channel's details.": {},
+    "You can edit and turn it in again. If the due date has passed, it may be marked late.": {},
+    "You can read this channel but not post in it.": {},
+    "You can set dates when you start the sprint.": {},
+    "You can turn this off later in Account › Privacy.": {},
+    "You can view this issue but not comment on it.": {},
+    "You can view this project but not move issues": {},
+    "You can view this run but not record results.": {},
+    "You haven't blocked anyone.": {},
+    "You rejected": {},
+    "You reported this answer. It's hidden for you.": {},
+    "You turned on read-only mode for this project.": {},
+    "You won't see their cards, comments or messages anymore.": {},
+    "You won't see their comments or messages anywhere in the app.": {},
+    "You won't see their comments, replies or messages anywhere in CT Work.": {},
+    "You won't see their messages or comments anymore.": {},
+    "You won't see their messages, comments or meeting notes anymore.": {},
+    "You're offline — messages will send when you reconnect.": {},
+    "Your Calendar app will show your due dates, sprints, releases and meetings, and keep them updated. The link is private to you.": {},
+    "Your account and personal data will be permanently deleted 72 hours after the request. Until then you can keep using CT Work and cancel the request.": {},
+    "Your account is scheduled for deletion %@.": {},
+    "Your decision": {},
+    "Your decision is recorded with the time and the content version you saw.": {},
+    "Your notes are added to the end of the meeting minutes. Formatting written on the web is kept.": {},
+    "Your signature records the exact version you're approving.": {},
+    "Zoom": {},
+    "auto": {},
+    "avg %@": {},
+    "day left": {},
+    "days left": {},
+    "days over": {},
+    "e.g. Sprint 6 retro": {},
+    "e.g. Sprint 7 refinement": {},
+    "e.g. design-review": {},
+    "e.g. release-planning": {},
+    "ended": {},
+    "ends %@": {},
+    "est.": {},
+    "from issues": {},
+    "from points": {},
+    "https://meet.google.com/…": {},
+    "https://…": {},
+    "issues": {},
+    "measured": {},
+    "open": {},
+    "or": {},
+    "renamed from %@": {},
+    "self-reported": {},
+    "v%lld": {},
+    "v%lld%@%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "v%1$lld%2$@%3$@"
+          }
+        }
+      }
+    },
+    "§ %@": {},
+    "·": {},
+    "· %@": {},
+    "· %@ pts": {},
+    "· %lld commit%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "· %1$lld commit%2$@"
+          }
+        }
+      }
+    },
+    "· %lld steps": {},
+    "· Overdue": {},
+    "–": {},
+    "—": {},
+    "“%@”": {},
+    "•": {},
+    "… %lld more lines": {},
+    "↑ Influence": {},
+    "−": {},
+    "−%lld": {},
+    "✓": {}
+  },
+  "version": "1.0"
+}

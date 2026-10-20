@@ -150,8 +150,8 @@ struct HopThuCTW: View {
                     .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
             }
             if vm.daTai && hien.isEmpty {
-                CTWOTrong(bieuTuong: "bell.slash", tieuDe: chiChuaDoc || loai != "all" ? "You're all caught up" : "No notifications yet",
-                          moTa: "Assignments, mentions, comments, approvals and alerts from your projects appear here.")
+                CTWOTrong(bieuTuong: "bell.slash", tieuDe: chiChuaDoc || loai != "all" ? String(localized: "You're all caught up") : String(localized: "No notifications yet"),
+                          moTa: String(localized: "Assignments, mentions, comments, approvals and alerts from your projects appear here."))
                 .listRowBackground(Color.clear)
             }
             if gop {
@@ -223,10 +223,10 @@ struct HopThuCTW: View {
     }
 
     private var chip: [CTWChipLoc] {
-        let ds: [(String, String, String)] = [("all", "All", "tray"), ("mentions", "Mentions", "at"), ("assigned", "Assigned", "person.fill.checkmark"),
-                                             ("comments", "Replies", "text.bubble"), ("approvals", "Approvals", "checkmark.seal"), ("alerts", "Alerts", "exclamationmark.circle")]
+        let ds: [(String, String, String)] = [("all", String(localized: "All"), "tray"), ("mentions", String(localized: "Mentions"), "at"), ("assigned", String(localized: "Assigned"), "person.fill.checkmark"),
+                                             ("comments", String(localized: "Replies"), "text.bubble"), ("approvals", String(localized: "Approvals"), "checkmark.seal"), ("alerts", String(localized: "Alerts"), "exclamationmark.circle")]
             // Chip "Code" chỉ khi có thông báo Git (dự án nối GitHub/GitLab) — không làm rối hộp thư của nhóm không dùng.
-            + (vm.ds.contains { $0.laGit } ? [("code", "Code", "chevron.left.forwardslash.chevron.right")] : [])
+            + (vm.ds.contains { $0.laGit } ? [("code", String(localized: "Code"), "chevron.left.forwardslash.chevron.right")] : [])
         return ds.map { x in
             let so = x.0 == "all" ? 0 : vm.ds.filter { $0.loai == x.0 && !$0.isRead }.count
             return CTWChipLoc(id: x.0, nhan: so > 0 ? "\(x.1) \(so)" : x.1, bieuTuong: x.2, bat: loai == x.0)
@@ -373,7 +373,7 @@ struct TraLoiNhanhCTW: View {
                 .padding(12)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .ctwThe(12)
-                Text(tb.laChat ? "Replies in the chat thread \(tb.payload?.issueKey ?? "")." : "Replies on \(tb.payload?.issueKey ?? "the issue") as a threaded comment.")
+                Text(tb.laChat ? "Replies in the chat thread \(tb.payload?.issueKey ?? "")." : "Replies on \(tb.payload?.issueKey ?? String(localized: "the issue")) as a threaded comment.")
                     .font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
                 TextField("Write a reply…", text: $chu, axis: .vertical)
                     .lineLimit(3...8)

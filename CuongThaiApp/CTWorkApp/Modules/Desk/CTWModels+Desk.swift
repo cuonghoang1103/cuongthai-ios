@@ -111,15 +111,15 @@ struct CTWDeskChiTiet: Codable {
 
 enum CTWDesk {
     /// Bộ xem của hàng chờ — thứ tự chip trên màn.
-    static let cheDo: [(ma: String, nhan: String, bieuTuong: String)] = [
-        ("open", "Open", "tray.full"),
-        ("unassigned", "Unassigned", "person.crop.circle.badge.questionmark"),
-        ("mine", "Mine", "person.fill"),
-        ("at_risk", "At risk", "exclamationmark.triangle"),
-        ("breached", "Breached", "flame"),
-        ("waiting", "Waiting", "pause.circle"),
-        ("resolved", "Resolved", "checkmark.circle"),
-    ]
+    static var cheDo: [(ma: String, nhan: String, bieuTuong: String)] { [
+        ("open", String(localized: "Open"), "tray.full"),
+        ("unassigned", String(localized: "Unassigned"), "person.crop.circle.badge.questionmark"),
+        ("mine", String(localized: "Mine"), "person.fill"),
+        ("at_risk", String(localized: "At risk"), "exclamationmark.triangle"),
+        ("breached", String(localized: "Breached"), "flame"),
+        ("waiting", String(localized: "Waiting"), "pause.circle"),
+        ("resolved", String(localized: "Resolved"), "checkmark.circle"),
+    ] }
 
     static let mucDo = ["HIGH", "MEDIUM", "LOW"]
     static let uuTien = ["P1", "P2", "P3", "P4"]
@@ -148,7 +148,7 @@ enum CTWDesk {
     static func nhanSla(_ s: CTWSla?) -> String {
         guard let s else { return "—" }
         if let l = s.label, !l.isEmpty { return l }
-        if s.paused == true { return "Paused" }
+        if s.paused == true { return String(localized: "Paused") }
         return CTWMauTrangThai.nhan(s.status)
     }
 
@@ -164,13 +164,13 @@ enum CTWDesk {
 
     static func nhanSuKien(_ k: String?) -> (String, String) {
         switch k {
-        case "START": return ("Ticket opened", "play.circle")
-        case "PAUSE": return ("Waiting on customer", "pause.circle")
-        case "RESUME": return ("Resumed", "play.circle")
-        case "FIRST_RESPONSE": return ("First response", "arrowshape.turn.up.left")
-        case "RESOLVE": return ("Resolved", "checkmark.circle")
-        case "REOPEN": return ("Reopened", "arrow.uturn.backward.circle")
-        case "PRIORITY": return ("Priority changed", "flag")
+        case "START": return (String(localized: "Ticket opened"), "play.circle")
+        case "PAUSE": return (String(localized: "Waiting on customer"), "pause.circle")
+        case "RESUME": return (String(localized: "Resumed"), "play.circle")
+        case "FIRST_RESPONSE": return (String(localized: "First response"), "arrowshape.turn.up.left")
+        case "RESOLVE": return (String(localized: "Resolved"), "checkmark.circle")
+        case "REOPEN": return (String(localized: "Reopened"), "arrow.uturn.backward.circle")
+        case "PRIORITY": return (String(localized: "Priority changed"), "flag")
         default: return (CTWMauTrangThai.nhan(k), "circle")
         }
     }

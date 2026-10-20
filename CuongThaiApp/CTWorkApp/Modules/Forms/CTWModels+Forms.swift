@@ -92,9 +92,9 @@ enum CTWFormNhan {
 
     static func lyDoDong(_ s: String?) -> String? {
         switch s {
-        case "CLOSED": return "Closed"
-        case "EXPIRED": return "Past closing date"
-        case "FULL": return "Response limit reached"
+        case "CLOSED": return String(localized: "Closed")
+        case "EXPIRED": return String(localized: "Past closing date")
+        case "FULL": return String(localized: "Response limit reached")
         default: return nil
         }
     }

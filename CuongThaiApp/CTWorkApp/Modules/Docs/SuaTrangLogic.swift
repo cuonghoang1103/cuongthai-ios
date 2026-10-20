@@ -33,19 +33,19 @@ enum CTWSuaTrang {
         func di(_ n: [String: Any], trongBang: Bool) {
             guard lyDo == nil else { return }
             let kieu = n["type"] as? String ?? ""
-            if kieu == "mention" { lyDo = "This page @mentions people. Editing it here would turn mentions into plain text."; return }
-            if !nutGiuDuoc.contains(kieu) { lyDo = "This page contains content the mobile editor can't keep yet (\(kieu))."; return }
+            if kieu == "mention" { lyDo = String(localized: "This page @mentions people. Editing it here would turn mentions into plain text."); return }
+            if !nutGiuDuoc.contains(kieu) { lyDo = String(localized: "This page contains content the mobile editor can't keep yet (\(kieu))."); return }
             for d in (n["marks"] as? [[String: Any]]) ?? [] {
                 let t = d["type"] as? String ?? ""
-                if t == "commentAnchor" { lyDo = "This page has inline comment threads. Editing here would detach them."; return }
-                if !dauGiuDuoc.contains(t) { lyDo = "This page uses text formatting the mobile editor can't keep (\(t))."; return }
+                if t == "commentAnchor" { lyDo = String(localized: "This page has inline comment threads. Editing here would detach them."); return }
+                if !dauGiuDuoc.contains(t) { lyDo = String(localized: "This page uses text formatting the mobile editor can't keep (\(t))."); return }
             }
             if kieu == "tableCell" || kieu == "tableHeader" {
                 let a = n["attrs"] as? [String: Any] ?? [:]
                 let gop = ((a["colspan"] as? Int) ?? 1) > 1 || ((a["rowspan"] as? Int) ?? 1) > 1
                 let con = (n["content"] as? [[String: Any]]) ?? []
                 let phucTap = con.count > 1 || con.contains { ($0["type"] as? String) != "paragraph" }
-                if gop || phucTap { lyDo = "This page has a table with merged or multi-line cells, which would be flattened."; return }
+                if gop || phucTap { lyDo = String(localized: "This page has a table with merged or multi-line cells, which would be flattened."); return }
             }
             for c in (n["content"] as? [[String: Any]]) ?? [] { di(c, trongBang: trongBang || kieu == "table") }
         }
@@ -138,7 +138,7 @@ enum CTWTaiAnhTaiLieu {
         case quaLon, hong(String)
         var errorDescription: String? {
             switch self {
-            case .quaLon: return "Images must be 10 MB or smaller."
+            case .quaLon: return String(localized: "Images must be 10 MB or smaller.")
             case .hong(let m): return m
             }
         }
@@ -161,7 +161,7 @@ enum CTWTaiAnhTaiLieu {
         guard du.count <= tranByte else { throw Loi.quaLon }
         var c = URLComponents(string: APIClient.diaChiGoc + "/api/v1/work/projects/\(pid)/images")
         c?.queryItems = [URLQueryItem(name: "name", value: ten)]
-        guard let url = c?.url else { throw Loi.hong("Upload failed. Please try again.") }
+        guard let url = c?.url else { throw Loi.hong(String(localized: "Upload failed. Please try again.")) }
         var r = URLRequest(url: url)
         r.httpMethod = "POST"
         r.setValue("image/jpeg", forHTTPHeaderField: "Content-Type")
@@ -173,7 +173,7 @@ enum CTWTaiAnhTaiLieu {
         struct Bao: Decodable { var success: Bool?; var data: CTWAnhTaiLieu?; var message: String? }
         let bao = try? JSONDecoder().decode(Bao.self, from: data)
         guard (200..<300).contains(ma), let anh = bao?.data else {
-            throw Loi.hong(bao?.message ?? "Upload failed (\(ma)). Please try again.")
+            throw Loi.hong(bao?.message ?? String(localized: "Upload failed (\(ma)). Please try again."))
         }
         return anh
     }

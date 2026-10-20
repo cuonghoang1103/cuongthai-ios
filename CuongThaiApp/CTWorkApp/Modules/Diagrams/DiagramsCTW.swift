@@ -19,7 +19,7 @@ final class DiagramsVM: ObservableObject {
         do { du = try await APIClient.shared.request(CTWAPI.dsSoDo(pid: pid)); loi = nil }
         catch {
             if case APIError.coMa(let ma, _) = error, ma == "WORK_INTERNAL_ONLY" {
-                loi = "Diagrams are only available to the project team."
+                loi = String(localized: "Diagrams are only available to the project team.")
             } else { loi = CTW.loi(error) }
         }
     }
@@ -71,18 +71,18 @@ struct DiagramsCTW: View {
             }
             if let ds = vm.du?.items {
                 if ds.isEmpty {
-                    CTWOTrong(bieuTuong: "square.on.square.dashed", tieuDe: "No diagrams yet",
-                              moTa: "Sequence, use case, ERD and activity diagrams your team draws show up here to view and discuss.")
+                    CTWOTrong(bieuTuong: "square.on.square.dashed", tieuDe: String(localized: "No diagrams yet"),
+                              moTa: String(localized: "Sequence, use case, ERD and activity diagrams your team draws show up here to view and discuss."))
                         .listRowBackground(Color.clear)
                 } else {
                     Section {
-                        CTWThanhLoc(chip: [("", "All"), ("APPROVED", "Approved"), ("DRAFT", "Draft"), ("PROPOSED", "Proposed")].map {
+                        CTWThanhLoc(chip: [("", String(localized: "All")), ("APPROVED", String(localized: "Approved")), ("DRAFT", String(localized: "Draft")), ("PROPOSED", String(localized: "Proposed"))].map {
                             CTWChipLoc(id: $0.0, nhan: $0.1, bat: loc == $0.0)
                         }) { loc = $0.id }
                         .listRowInsets(EdgeInsets(top: 0, leading: -16, bottom: 0, trailing: -16))
                     }
                     .listRowBackground(Color.clear)
-                    Section("\(hienThi.count) diagram\(hienThi.count == 1 ? "" : "s")") {
+                    Section(hienThi.count == 1 ? String(localized: "1 diagram") : String(localized: "\(hienThi.count) diagrams")) {
                         ForEach(hienThi) { d in
                             NavigationLink(value: RouteSoDoCTW(pid: nguCanh.pid, so: d.number, ten: d.title)) { hang(d) }
                         }
@@ -104,7 +104,7 @@ struct DiagramsCTW: View {
             guard let d = app.dichCho, d.moDun == "diagrams" else { return }
             defer { app.dichCho = nil }
             if let so = d.duongDan.phanCon.first.flatMap(Int.init) {
-                nganXep.duong.append(RouteSoDoCTW(pid: nguCanh.pid, so: so, ten: "Diagram"))
+                nganXep.duong.append(RouteSoDoCTW(pid: nguCanh.pid, so: so, ten: String(localized: "Diagram")))
             }
         }
         #if DEBUG
@@ -133,7 +133,7 @@ struct DiagramsCTW: View {
                     if let v = d.currentVersion { Text("v\(v)").font(.ctw(size: 12).monospacedDigit()).foregroundColor(AppColors.textTertiary) }
                     if d.aiModel != nil || d.updatedBy?.isAgent == true { CTWNhanAI(chu: "AI") }
                 }
-                let lk = [d.useCase?.key, d.issue?.key, d.page.map { _ in "Doc" }].compactMap { $0 }
+                let lk = [d.useCase?.key, d.issue?.key, d.page.map { _ in String(localized: "Doc") }].compactMap { $0 }
                 if !lk.isEmpty || (d.openComments ?? 0) > 0 {
                     HStack(spacing: 6) {
                         ForEach(lk, id: \.self) { CTWNhanNho(chu: $0, bieuTuong: "link") }
@@ -198,7 +198,8 @@ struct SoDoChiTietCTW: View {
                     Menu {
                         Picker("Version", selection: Binding(get: { ban ?? d.banMacDinh ?? 0 }, set: { doiBan($0) })) {
                             ForEach(vs) { v in
-                                Text("v\(v.number)\(v.number == d.approvedVersion ? " · approved" : "")\(v.number == d.currentVersion && v.number != d.approvedVersion ? " · latest" : "")")
+                                Text(v.number == d.approvedVersion ? String(localized: "v\(v.number) · approved")
+                                     : v.number == d.currentVersion ? String(localized: "v\(v.number) · latest") : "v\(v.number)")
                                     .tag(v.number)
                             }
                         }
@@ -231,12 +232,12 @@ struct SoDoChiTietCTW: View {
             HStack(spacing: 6) {
                 CTWChipChu(chu: d.status)
                 if let t = d.typeLabel { CTWNhanNho(chu: t, bieuTuong: CTWSoDoHienThi.bieuTuong(d.type)) }
-                if d.aiModel != nil { CTWNhanAI(chu: "AI-generated") }
+                if d.aiModel != nil { CTWNhanAI(chu: String(localized: "AI-generated")) }
             }
             if let u = d.updatedBy {
                 HStack(spacing: 6) {
                     CTWAvatar(user: u.nguoi, size: 18)
-                    Text("Updated by \(u.name ?? "someone")").font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
+                    Text("Updated by \(u.name ?? String(localized: "someone"))").font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                     if u.isAgent == true { CTWNhanAI() }
                     if let t = d.updatedAt { Text("· \(CTW.thoiDiem(t))").font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary) }
                 }
@@ -290,19 +291,19 @@ struct SoDoChiTietCTW: View {
         if co {
             CTWKhoiTruong {
                 if let uc = d.useCase {
-                    CTWHangTruong("Use case", [uc.key, uc.name].compactMap { $0 }.joined(separator: " "), bieuTuong: "person.2.wave.2")
+                    CTWHangTruong(String(localized: "Use case"), [uc.key, uc.name].compactMap { $0 }.joined(separator: " "), bieuTuong: "person.2.wave.2")
                 }
                 if let t = d.issue, let so = t.number {
                     if d.useCase != nil { Divider() }
                     NavigationLink(value: CTWRoute.the(pid: r.pid, so: so)) {
-                        CTWHangTruong("Issue", [t.key, t.title].compactMap { $0 }.joined(separator: " "), bieuTuong: "checkmark.square")
+                        CTWHangTruong(String(localized: "Issue"), [t.key, t.title].compactMap { $0 }.joined(separator: " "), bieuTuong: "checkmark.square")
                     }
                     .buttonStyle(.plain)
                 }
                 if let p = d.page, let so = p.number {
                     if d.useCase != nil || d.issue != nil { Divider() }
-                    NavigationLink(value: RouteTaiLieuCTW(pid: r.pid, so: so, ten: p.title ?? "Page")) {
-                        CTWHangTruong("Document", p.title, bieuTuong: "doc.text")
+                    NavigationLink(value: RouteTaiLieuCTW(pid: r.pid, so: so, ten: p.title ?? String(localized: "Page"))) {
+                        CTWHangTruong(String(localized: "Document"), p.title, bieuTuong: "doc.text")
                     }
                     .buttonStyle(.plain)
                 }
@@ -314,7 +315,7 @@ struct SoDoChiTietCTW: View {
     private func phienBan(_ d: CTWSoDoChiTiet) -> some View {
         let vs = d.versions ?? []
         if !vs.isEmpty {
-            CTWSectionHeader("clock.arrow.circlepath", "Versions", count: "\(vs.count)")
+            CTWSectionHeader("clock.arrow.circlepath", String(localized: "Versions"), count: "\(vs.count)")
             VStack(spacing: 0) {
                 ForEach(Array((xemHetPhienBan ? vs : Array(vs.prefix(4))).enumerated()), id: \.element.id) { i, v in
                     if i > 0 { Divider() }
@@ -324,7 +325,7 @@ struct SoDoChiTietCTW: View {
                                 .foregroundColor((ban ?? d.banMacDinh) == v.number ? AppColors.primary : AppColors.textPrimary)
                                 .frame(width: 36, alignment: .leading)
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(v.note?.isEmpty == false ? v.note! : "No note").font(.ctw(size: 14))
+                                Text(v.note?.isEmpty == false ? v.note! : String(localized: "No note")).font(.ctw(size: 14))
                                     .foregroundColor(v.note?.isEmpty == false ? AppColors.textPrimary : AppColors.textTertiary).lineLimit(2)
                                 HStack(spacing: 4) {
                                     Text(v.author?.name ?? "—")
@@ -334,7 +335,7 @@ struct SoDoChiTietCTW: View {
                                 .font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
                             }
                             Spacer(minLength: 4)
-                            if v.number == d.approvedVersion { CTWNhanNho(chu: "Approved", mau: AppColors.success) }
+                            if v.number == d.approvedVersion { CTWNhanNho(chu: String(localized: "Approved"), mau: AppColors.success) }
                             if (ban ?? d.banMacDinh) == v.number { Image(systemName: "eye.fill").foregroundColor(AppColors.primary).font(.ctw(size: 12)) }
                         }
                         .padding(.vertical, 10)
@@ -357,7 +358,7 @@ struct SoDoChiTietCTW: View {
     @ViewBuilder
     private func binhLuan(_ d: CTWSoDoChiTiet) -> some View {
         let ds = (d.comments ?? []).sorted { ($0.createdAt ?? "") < ($1.createdAt ?? "") }
-        CTWSectionHeader("bubble.left.and.bubble.right", "Comments", count: "\(ds.count)")
+        CTWSectionHeader("bubble.left.and.bubble.right", String(localized: "Comments"), count: "\(ds.count)")
         if ds.isEmpty {
             Text("No comments yet.").font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary)
         }
@@ -365,13 +366,13 @@ struct SoDoChiTietCTW: View {
             CTWBinhLuanDong(
                 khoa: "diagram-comment-\(c.id)", tacGia: c.author?.nguoi, noiDung: c.body ?? "",
                 thoiDiem: c.createdAt,
-                nhanPhu: c.resolved == true ? "Resolved" : (c.versionNumber.map { "v\($0)" }),
+                nhanPhu: c.resolved == true ? String(localized: "Resolved") : (c.versionNumber.map { "v\($0)" }),
                 nguCanh: "\(app.luaChon?.maDuAn ?? "") · \(d.key ?? "diagram") \(d.title)",
                 themMuc: c.mine == true ? AnyView(Button(role: .destructive) { Task { await xoa(c) } } label: { Label("Delete", systemImage: "trash") }) : nil,
                 dich: CTWDichBaoCao("diagram_comment", c.id))
         }
         if d.canComment == true {
-            CTWHopSoan(goiY: "Comment on v\(ban ?? d.banMacDinh ?? 1)…") { chu in await gui(chu) }
+            CTWHopSoan(goiY: String(localized: "Comment on v\(ban ?? d.banMacDinh ?? 1)…")) { chu in await gui(chu) }
         }
     }
 

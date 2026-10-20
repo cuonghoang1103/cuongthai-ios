@@ -16,11 +16,11 @@ struct BieuDoBurndownCTW: View {
 
     var body: some View {
         CTWKhungBieuDo(
-            tieuDe: "Burndown",
-            phu: "Remaining \(DonViSprintCTW.tenDai(unit)) per day",
-            chuGiai: [CTWMucChuGiai(ten: "Remaining", mau: mauCon),
-                      CTWMucChuGiai(ten: "Ideal", mau: mauLyTuong, netDut: true)],
-            cot: ["Day", "Remaining", "Ideal"],
+            tieuDe: String(localized: "Burndown"),
+            phu: String(localized: "Remaining \(DonViSprintCTW.tenDai(unit)) per day"),
+            chuGiai: [CTWMucChuGiai(ten: String(localized: "Remaining"), mau: mauCon),
+                      CTWMucChuGiai(ten: String(localized: "Ideal"), mau: mauLyTuong, netDut: true)],
+            cot: [String(localized: "Day"), String(localized: "Remaining"), String(localized: "Ideal")],
             hang: diem.map { CTWHangBang(nhan: NgayCTW.ngan($0.ngay),
                                          giaTri: [$0.conLai.map(CTWSo.gon) ?? "—", $0.lyTuong.map(CTWSo.gon) ?? "—"]) },
             cao: cao
@@ -80,11 +80,11 @@ struct BieuDoBurnupCTW: View {
     var body: some View {
         let ds = diem.filter { $0.tong != nil }
         CTWKhungBieuDo(
-            tieuDe: "Burnup",
-            phu: "Scope vs completed \(DonViSprintCTW.tenDai(unit)) — scope changes show as steps",
-            chuGiai: [CTWMucChuGiai(ten: "Scope", mau: CTWMauChuoi.mau(1)),
-                      CTWMucChuGiai(ten: "Completed", mau: AppColors.success)],
-            cot: ["Day", "Scope", "Completed"],
+            tieuDe: String(localized: "Burnup"),
+            phu: String(localized: "Scope vs completed \(DonViSprintCTW.tenDai(unit)) — scope changes show as steps"),
+            chuGiai: [CTWMucChuGiai(ten: String(localized: "Scope"), mau: CTWMauChuoi.mau(1)),
+                      CTWMucChuGiai(ten: String(localized: "Completed"), mau: AppColors.success)],
+            cot: [String(localized: "Day"), String(localized: "Scope"), String(localized: "Completed")],
             hang: ds.map { CTWHangBang(nhan: NgayCTW.ngan($0.ngay), giaTri: [$0.tong.map(CTWSo.gon) ?? "—", $0.xong.map(CTWSo.gon) ?? "—"]) },
             cao: cao
         ) {

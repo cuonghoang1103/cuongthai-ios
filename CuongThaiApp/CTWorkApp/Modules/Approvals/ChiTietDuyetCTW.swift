@@ -50,7 +50,7 @@ struct ChiTietDuyetCTW: View {
         }
         .scrollDismissesKeyboard(.interactively)
         .background(AppColors.backgroundPrimary)
-        .navigationTitle(a?.nhanDoiTuong ?? "Approval")
+        .navigationTitle(a?.nhanDoiTuong ?? String(localized: "Approval"))
         .navigationBarTitleDisplayMode(.inline)
         .refreshable { await tai() }
         .task { if a == nil { await tai() } }
@@ -73,9 +73,9 @@ struct ChiTietDuyetCTW: View {
 
     private var tieuDeHoi: String {
         switch hoi {
-        case .dongY: return "Approve “\(a?.title ?? "this")”?"
-        case .tuChoi: return "Reject “\(a?.title ?? "this")”?"
-        case .huy: return "Cancel this approval request?"
+        case .dongY: return a?.title.map { String(localized: "Approve “\($0)”?") } ?? String(localized: "Approve “this”?")
+        case .tuChoi: return a?.title.map { String(localized: "Reject “\($0)”?") } ?? String(localized: "Reject “this”?")
+        case .huy: return String(localized: "Cancel this approval request?")
         case nil: return ""
         }
     }
@@ -86,10 +86,10 @@ struct ChiTietDuyetCTW: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
                 CTWChipChu(chu: a.status)
-                CTWNhanNho(chu: a.tuanTu ? "Sequential" : "Parallel", bieuTuong: a.tuanTu ? "arrow.down" : "arrow.left.and.right")
+                CTWNhanNho(chu: a.tuanTu ? String(localized: "Sequential") : String(localized: "Parallel"), bieuTuong: a.tuanTu ? "arrow.down" : "arrow.left.and.right")
                 Text("\(a.soDaDuyet) of \(a.dsBuoc.count) approved").font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
             }
-            Text(a.title ?? "Approval").font(.ctw(size: 22, weight: .bold)).foregroundColor(AppColors.textPrimary)
+            Text(a.title ?? String(localized: "Approval")).font(.ctw(size: 22, weight: .bold)).foregroundColor(AppColors.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityAddTraits(.isHeader)
             CTWThanhPhanDoan(doan: [
@@ -118,7 +118,7 @@ struct ChiTietDuyetCTW: View {
         CTWKhoiTruong {
             doiTuong(a)
             Divider()
-            CTWHangTruong(nhan: "Requested by", bieuTuong: "person") {
+            CTWHangTruong(nhan: String(localized: "Requested by"), bieuTuong: "person") {
                 HStack(spacing: 6) {
                     CTWAvatar(user: a.createdBy, size: 20)
                     Text(a.createdBy?.ten ?? "—")
@@ -126,24 +126,24 @@ struct ChiTietDuyetCTW: View {
                 }
             }
             Divider()
-            CTWHangTruong("Requested", CTW.thoiDiem(a.createdAt), bieuTuong: "clock")
+            CTWHangTruong(String(localized: "Requested"), CTW.thoiDiem(a.createdAt), bieuTuong: "clock")
             if a.dueAt != nil {
                 Divider()
-                CTWHangTruong(nhan: "Due", bieuTuong: "calendar") {
+                CTWHangTruong(nhan: String(localized: "Due"), bieuTuong: "calendar") {
                     Text(CTW.ngayNgan(a.dueAt) ?? "—").foregroundColor(a.quaHan ? AppColors.error : AppColors.textPrimary)
                 }
             }
-            if a.decidedAt != nil { Divider(); CTWHangTruong("Decided", CTW.thoiDiem(a.decidedAt), bieuTuong: "checkmark.circle") }
+            if a.decidedAt != nil { Divider(); CTWHangTruong(String(localized: "Decided"), CTW.thoiDiem(a.decidedAt), bieuTuong: "checkmark.circle") }
         }
         if let m = a.description?.trimmingCharacters(in: .whitespacesAndNewlines), !m.isEmpty {
-            CTWSectionHeader("text.alignleft", "Description")
+            CTWSectionHeader("text.alignleft", String(localized: "Description"))
             CTWMarkdownView(markdown: m, coChu: 15)
                 .padding(14).ctwThe(14)
                 .ctwMenuBaoCaoChan(khoa: "approval-\(a.id)", noiDung: m, nguCanh: "Approval \(a.nhanDoiTuong)",
                                    tacGia: a.createdBy, laCuaToi: a.createdBy?.id == app.currentUser?.id)
         }
         if let n = a.clientNote?.trimmingCharacters(in: .whitespacesAndNewlines), !n.isEmpty {
-            CTWSectionHeader("person.crop.rectangle", "Note for the client")
+            CTWSectionHeader("person.crop.rectangle", String(localized: "Note for the client"))
             Text(n).font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary)
                 .frame(maxWidth: .infinity, alignment: .leading).padding(14).ctwThe(14)
         }
@@ -156,25 +156,25 @@ struct ChiTietDuyetCTW: View {
             Text(a.nhanDoiTuong).lineLimit(1)
         }
         if a.targetType == "DOC", let p = a.page {
-            NavigationLink(value: RouteTaiLieuCTW(pid: pid, so: p.number, ten: p.title ?? "Page")) {
-                CTWHangTruong(nhan: "Document", bieuTuong: "link") { nhan }
+            NavigationLink(value: RouteTaiLieuCTW(pid: pid, so: p.number, ten: p.title ?? String(localized: "Page"))) {
+                CTWHangTruong(nhan: String(localized: "Document"), bieuTuong: "link") { nhan }
             }.buttonStyle(.plain)
         } else if a.targetType == "CR", let c = a.changeRequest {
             NavigationLink(value: RouteCrCTW(pid: pid, so: c.number)) {
-                CTWHangTruong(nhan: "Change request", bieuTuong: "link") { nhan }
+                CTWHangTruong(nhan: String(localized: "Change request"), bieuTuong: "link") { nhan }
             }.buttonStyle(.plain)
         } else if let i = a.issue {
             NavigationLink(value: CTWRoute.the(pid: pid, so: i.number)) {
-                CTWHangTruong(nhan: a.targetType == "UAT" ? "UAT issue" : "Issue", bieuTuong: "link") { nhan }
+                CTWHangTruong(nhan: a.targetType == "UAT" ? String(localized: "UAT issue") : String(localized: "Issue"), bieuTuong: "link") { nhan }
             }.buttonStyle(.plain)
         } else {
-            CTWHangTruong(nhan: a.targetType == "STAGE_GATE" ? "Stage" : "Target", bieuTuong: "scope") { nhan }
+            CTWHangTruong(nhan: a.targetType == "STAGE_GATE" ? String(localized: "Stage") : String(localized: "Target"), bieuTuong: "scope") { nhan }
         }
     }
 
     @ViewBuilder
     private func bangChung(_ ev: CTWDuyetBangChung) -> some View {
-        CTWSectionHeader("tray.full", "Gate evidence", count: ev.issueTotal.map { "\(ev.issueDone ?? 0)/\($0)" })
+        CTWSectionHeader("tray.full", String(localized: "Gate evidence"), count: ev.issueTotal.map { "\(ev.issueDone ?? 0)/\($0)" })
         VStack(alignment: .leading, spacing: 10) {
             if let c = ev.criteria {
                 HStack(alignment: .top, spacing: 8) {
@@ -205,17 +205,19 @@ struct ChiTietDuyetCTW: View {
                 .buttonStyle(.plain)
             }
             ForEach(ev.pages ?? [], id: \.number) { p in
-                NavigationLink(value: RouteTaiLieuCTW(pid: pid, so: p.number, ten: p.title ?? "Page")) {
-                    Label(p.title ?? "Page", systemImage: "doc.text").font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary)
+                NavigationLink(value: RouteTaiLieuCTW(pid: pid, so: p.number, ten: p.title ?? String(localized: "Page"))) {
+                    Label(p.title ?? String(localized: "Page"), systemImage: "doc.text").font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary)
                         .frame(maxWidth: .infinity, minHeight: 32, alignment: .leading)
                 }
                 .buttonStyle(.plain)
             }
             ForEach(ev.files ?? []) { f in
-                Label(f.fileName ?? "File", systemImage: "paperclip").font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary)
+                Label(f.fileName ?? String(localized: "File"), systemImage: "paperclip").font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary)
             }
             if let o = ev.openAtRequest, o > 0 {
-                Text("\(o) issue\(o == 1 ? "" : "s") still open when requested\(ev.openReason.map { " — “\($0)”" } ?? "").")
+                Text(o == 1
+                     ? (ev.openReason.map { String(localized: "1 issue still open when requested — “\($0)”.") } ?? String(localized: "1 issue still open when requested."))
+                     : (ev.openReason.map { String(localized: "\(o) issues still open when requested — “\($0)”.") } ?? String(localized: "\(o) issues still open when requested.")))
                     .font(.ctw(size: 12)).foregroundColor(AppColors.warning)
             }
         }
@@ -225,7 +227,7 @@ struct ChiTietDuyetCTW: View {
 
     @ViewBuilder
     private func cacBuoc(_ a: CTWDuyet) -> some View {
-        CTWSectionHeader("person.2.badge.gearshape", "Approvers", count: "\(a.dsBuoc.count)")
+        CTWSectionHeader("person.2.badge.gearshape", String(localized: "Approvers"), count: "\(a.dsBuoc.count)")
         VStack(spacing: 10) {
             ForEach(Array(a.dsBuoc.enumerated()), id: \.element.id) { i, b in
                 VStack(alignment: .leading, spacing: 8) {
@@ -237,7 +239,7 @@ struct ChiTietDuyetCTW: View {
                         CTWAvatar(user: b.approver, size: 28)
                         VStack(alignment: .leading, spacing: 2) {
                             HStack(spacing: 5) {
-                                Text(b.approver?.ten ?? "Approver").font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                                Text(b.approver?.ten ?? String(localized: "Approver")).font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                                 if b.approverId == app.currentUser?.id { Text("(you)").font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary) }
                             }
                             if let d = b.decidedAt {
@@ -247,7 +249,7 @@ struct ChiTietDuyetCTW: View {
                         }
                         Spacer(minLength: 0)
                         if (b.decision == nil || b.decision == "PENDING"), let u = b.approverId, a.dangChoAi.contains(u) {
-                            CTWNhanNho(chu: "Their turn", bieuTuong: "hourglass", mau: AppColors.warning)
+                            CTWNhanNho(chu: String(localized: "Their turn"), bieuTuong: "hourglass", mau: AppColors.warning)
                         } else {
                             CTWChipChu(chu: b.decision ?? "PENDING")
                         }
@@ -266,7 +268,7 @@ struct ChiTietDuyetCTW: View {
 
     private func hopQuyetDinh(_ a: CTWDuyet) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            CTWSectionHeader("signature", "Your decision")
+            CTWSectionHeader("signature", String(localized: "Your decision"))
             TextField("Comment (required to reject)", text: $yKien, axis: .vertical)
                 .lineLimit(2...6)
                 .focused($dangGo)
@@ -276,7 +278,7 @@ struct ChiTietDuyetCTW: View {
             HStack(spacing: 10) {
                 Button {
                     if yKien.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                        loi = "Add a comment explaining why you're rejecting."
+                        loi = String(localized: "Add a comment explaining why you're rejecting.")
                         dangGo = true
                         CTWRung.loi()
                     } else { hoi = .tuChoi }

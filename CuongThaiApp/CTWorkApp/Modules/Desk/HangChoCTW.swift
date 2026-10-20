@@ -53,15 +53,15 @@ struct HangChoCTW: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 if let b = vm.biChan {
-                    CTWOTrong(bieuTuong: "lock.shield", tieuDe: "Service desk unavailable", moTa: b)
+                    CTWOTrong(bieuTuong: "lock.shield", tieuDe: String(localized: "Service desk unavailable"), moTa: b)
                 } else {
                     CTWThanhLoc(chip: chip) { c in vm.cheDo = c.id }
                         .padding(.horizontal, -Spacing.md)
                     if let l = vm.loi { CTWErrorBanner(text: l) { vm.loi = nil } }
                     if let ds = vm.du?.items {
                         if ds.isEmpty {
-                            CTWOTrong(bieuTuong: "tray", tieuDe: tim.isEmpty ? "No tickets here" : "No matches",
-                                      moTa: tim.isEmpty ? "Tickets in this view will show up here." : "Try a different search.")
+                            CTWOTrong(bieuTuong: "tray", tieuDe: tim.isEmpty ? String(localized: "No tickets here") : String(localized: "No matches"),
+                                      moTa: tim.isEmpty ? String(localized: "Tickets in this view will show up here.") : String(localized: "Try a different search."))
                         } else {
                             LazyVStack(spacing: 10) {
                                 ForEach(ds) { t in
@@ -134,7 +134,7 @@ struct HangTicketCTW: View {
                 Text(t.key ?? "#\(t.number)").font(.ctw(size: 12, weight: .semibold).monospacedDigit())
                     .foregroundColor(AppColors.textSecondary)
                 if let p = t.priority { CTWNhanNho(chu: p, mau: CTWDesk.mauUuTien(p)) }
-                if t.channel == "PORTAL" { CTWNhanNho(chu: "Portal", bieuTuong: "globe") }
+                if t.channel == "PORTAL" { CTWNhanNho(chu: String(localized: "Portal"), bieuTuong: "globe") }
                 Spacer(minLength: 0)
                 if let s = t.status {
                     CTWChipChu(chu: s.name, mau: s.color.map { CTW.mau($0) } ?? CTW.mauNhom(s.category))
@@ -143,8 +143,8 @@ struct HangTicketCTW: View {
             Text(t.title).font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                 .lineLimit(2).fixedSize(horizontal: false, vertical: true)
             HStack(spacing: 6) {
-                VienSla(ten: "Response", s: t.firstResponse)
-                VienSla(ten: "Resolve", s: t.resolution)
+                VienSla(ten: String(localized: "Response"), s: t.firstResponse)
+                VienSla(ten: String(localized: "Resolve"), s: t.resolution)
                 Spacer(minLength: 0)
                 if t.waiting == true { Image(systemName: "pause.circle.fill").foregroundColor(AppColors.textSecondary).accessibilityLabel("Waiting on customer") }
                 CTWAvatar(user: t.requester, size: 22)

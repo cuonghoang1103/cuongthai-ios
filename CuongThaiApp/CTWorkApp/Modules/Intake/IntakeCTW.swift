@@ -19,7 +19,7 @@ struct IntakeCTW: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 if let b = biChan {
-                    CTWOTrong(bieuTuong: "lock.shield", tieuDe: "Intake unavailable", moTa: b)
+                    CTWOTrong(bieuTuong: "lock.shield", tieuDe: String(localized: "Intake unavailable"), moTa: b)
                 } else {
                     CTWThanhLoc(chip: CTWIntake.trangThai.map { t in
                         let n = du?.counts?[t.ma]
@@ -29,10 +29,12 @@ struct IntakeCTW: View {
                     if let loi { CTWErrorBanner(text: loi) { self.loi = nil } }
                     if let ds = du?.proposals {
                         if ds.isEmpty {
-                            CTWOTrong(bieuTuong: "tray", tieuDe: trangThai == "PENDING" ? "Inbox zero" : "Nothing here",
+                            CTWOTrong(bieuTuong: "tray", tieuDe: trangThai == "PENDING" ? String(localized: "Inbox zero") : String(localized: "Nothing here"),
                                       moTa: trangThai == "PENDING"
-                                        ? "Messages sent to the project's intake channels show up here for triage."
-                                        : "No \(trangThai.lowercased()) requests.")
+                                        ? String(localized: "Messages sent to the project's intake channels show up here for triage.")
+                                        : trangThai == "ACCEPTED" ? String(localized: "No accepted requests.")
+                                        : trangThai == "REJECTED" ? String(localized: "No rejected requests.")
+                                        : String(localized: "No \(trangThai.lowercased()) requests."))
                         } else {
                             LazyVStack(spacing: 10) {
                                 ForEach(ds) { d in
@@ -90,7 +92,7 @@ private struct HangDeXuat: View {
                 HStack(spacing: 6) {
                     Text("\(CTWIntake.tenNguon(d.source)) · \(d.nguoiGui)").font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
                         .lineLimit(1)
-                    if d.simulated == true { CTWNhanNho(chu: "Test") }
+                    if d.simulated == true { CTWNhanNho(chu: String(localized: "Test")) }
                     Spacer(minLength: 0)
                     if let k = d.issue?.key { CTWNhanNho(chu: k, bieuTuong: "checkmark", mau: AppColors.success) }
                     Text(CTW.thoiDiem(d.createdAt)).font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
@@ -127,25 +129,25 @@ struct DeXuatCTW: View {
                 if let loi { CTWErrorBanner(text: loi) { self.loi = nil } }
                 HStack(spacing: 6) {
                     CTWNhanNho(chu: CTWIntake.tenNguon(dx.source), bieuTuong: CTWIntake.bieuTuongNguon(dx.source), mau: AppColors.primary)
-                    if dx.simulated == true { CTWNhanNho(chu: "Test message") }
+                    if dx.simulated == true { CTWNhanNho(chu: String(localized: "Test message")) }
                     Spacer(minLength: 0)
                     CTWChipChu(chu: dx.status)
                 }
                 Text(dx.title).font(.ctw(size: 21, weight: .bold)).foregroundColor(AppColors.textPrimary)
                     .fixedSize(horizontal: false, vertical: true)
                 CTWKhoiTruong {
-                    CTWHangTruong("From", dx.nguoiGui, bieuTuong: "person")
-                    if let h = dx.senderHandle, h != dx.nguoiGui { Divider(); CTWHangTruong("Address", h, bieuTuong: "at") }
+                    CTWHangTruong(String(localized: "From"), dx.nguoiGui, bieuTuong: "person")
+                    if let h = dx.senderHandle, h != dx.nguoiGui { Divider(); CTWHangTruong(String(localized: "Address"), h, bieuTuong: "at") }
                     Divider()
-                    CTWHangTruong("Received", DichVuLoi.luc(dx.createdAt), bieuTuong: "clock")
+                    CTWHangTruong(String(localized: "Received"), DichVuLoi.luc(dx.createdAt), bieuTuong: "clock")
                     if let by = dx.decidedBy {
                         Divider()
-                        CTWHangTruong("Decided by", "\(by)\(DichVuLoi.luc(dx.decidedAt).map { " · \($0)" } ?? "")", bieuTuong: "checkmark.circle")
+                        CTWHangTruong(String(localized: "Decided by"), "\(by)\(DichVuLoi.luc(dx.decidedAt).map { " · \($0)" } ?? "")", bieuTuong: "checkmark.circle")
                     }
-                    if let n = dx.decisionNote, !n.isEmpty { Divider(); CTWHangTruong("Note", n, bieuTuong: "text.bubble") }
+                    if let n = dx.decisionNote, !n.isEmpty { Divider(); CTWHangTruong(String(localized: "Note"), n, bieuTuong: "text.bubble") }
                 }
                 if let b = dx.body, !b.isEmpty {
-                    CTWSectionHeader("text.alignleft", "Message")
+                    CTWSectionHeader("text.alignleft", String(localized: "Message"))
                     Text(b).font(.ctw(size: 15)).foregroundColor(AppColors.textPrimary)
                         .textSelection(.enabled)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -156,7 +158,7 @@ struct DeXuatCTW: View {
                 }
                 if let so = dx.issue?.number {
                     NavigationLink(value: CTWRoute.the(pid: pid, so: so)) {
-                        Label("Open \(dx.issue?.key ?? "issue")", systemImage: "arrow.up.right.square")
+                        Label("Open \(dx.issue?.key ?? String(localized: "issue"))", systemImage: "arrow.up.right.square")
                             .frame(maxWidth: .infinity, minHeight: 44)
                     }
                     .buttonStyle(.bordered)
@@ -239,7 +241,7 @@ private struct NhanDeXuatSheet: View {
                     Picker("Assignee", selection: $nguoi) {
                         Text("Unassigned").tag(0)
                         ForEach((cfg?.dsThanhVien ?? []).filter(\.giaoDuoc)) { u in
-                            Text(u.laAgent ? "\(u.ten) (AI agent)" : u.ten).tag(u.id)
+                            Text(u.laAgent ? String(localized: "\(u.ten) (AI agent)") : u.ten).tag(u.id)
                         }
                     }
                 }

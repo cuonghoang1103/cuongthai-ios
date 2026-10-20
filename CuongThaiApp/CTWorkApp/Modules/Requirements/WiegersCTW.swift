@@ -51,8 +51,8 @@ struct WiegersCTW: View {
     var body: some View {
         List {
             if kho.noiBo {
-                CTWOTrong(bieuTuong: "lock.doc", tieuDe: "Team only",
-                          moTa: "The Wiegers requirements workspace is only available to the project team and lecturers.")
+                CTWOTrong(bieuTuong: "lock.doc", tieuDe: String(localized: "Team only"),
+                          moTa: String(localized: "The Wiegers requirements workspace is only available to the project team and lecturers."))
                     .listRowBackground(Color.clear)
             } else {
                 if let r = kho.swr {
@@ -116,15 +116,15 @@ struct WiegersCTW: View {
     private func tomTat(_ r: CTWSwrRequirementList) -> some View {
         let bl = r.counts?.byLifecycle ?? [:]
         return LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: 10)], spacing: 10) {
-            CTWODem(so: "\(r.counts?.total ?? r.requirements?.count ?? 0)", nhan: "Requirements", bieuTuong: "list.bullet.rectangle.portrait")
-            CTWODem(so: "\(bl["APPROVED"] ?? 0)", nhan: "Approved", bieuTuong: "checkmark.seal", mau: AppColors.success)
-            CTWODem(so: "\(bl["PROPOSED"] ?? 0)", nhan: "Proposed", bieuTuong: "sparkles", mau: AppColors.accent)
-            CTWODem(so: "\(r.counts?.unclassified ?? 0)", nhan: "Unclassified", bieuTuong: "questionmark.square.dashed", mau: AppColors.warning)
+            CTWODem(so: "\(r.counts?.total ?? r.requirements?.count ?? 0)", nhan: String(localized: "Requirements"), bieuTuong: "list.bullet.rectangle.portrait")
+            CTWODem(so: "\(bl["APPROVED"] ?? 0)", nhan: String(localized: "Approved"), bieuTuong: "checkmark.seal", mau: AppColors.success)
+            CTWODem(so: "\(bl["PROPOSED"] ?? 0)", nhan: String(localized: "Proposed"), bieuTuong: "sparkles", mau: AppColors.accent)
+            CTWODem(so: "\(r.counts?.unclassified ?? 0)", nhan: String(localized: "Unclassified"), bieuTuong: "questionmark.square.dashed", mau: AppColors.warning)
         }
         .padding(.horizontal, 2)
     }
 
-    private func muc(_ r: RouteWiegersCTW, _ icon: String, _ ten: String, _ moTa: String, dem: Int? = nil) -> some View {
+    private func muc(_ r: RouteWiegersCTW, _ icon: String, _ ten: LocalizedStringKey, _ moTa: LocalizedStringKey, dem: Int? = nil) -> some View {
         NavigationLink(value: r) {
             HStack(spacing: 13) {
                 Image(systemName: icon)
@@ -167,11 +167,11 @@ struct WYeuCauCTW: View {
             if let r = kho.swr {
                 Section {
                     VStack(spacing: 6) {
-                        CTWThanhLoc(chip: [CTWChipLoc(id: "", nhan: "All types", bat: loai == nil)] + Self.cacLoai.compactMap { t in
+                        CTWThanhLoc(chip: [CTWChipLoc(id: "", nhan: String(localized: "All types"), bat: loai == nil)] + Self.cacLoai.compactMap { t in
                             let n = t == "UNCLASSIFIED" ? (r.counts?.unclassified ?? 0) : (r.counts?.byType?[t] ?? 0)
                             return n > 0 ? CTWChipLoc(id: t, nhan: "\(CTWVongDoiYeuCau.tenLoai(t == "UNCLASSIFIED" ? nil : t)) \(n)", bat: loai == t) : nil
                         }) { c in loai = c.id.isEmpty ? nil : c.id }
-                        CTWThanhLoc(chip: [CTWChipLoc(id: "", nhan: "Any status", bat: vongDoi == nil)] + CTWVongDoiYeuCau.tatCa.compactMap { v in
+                        CTWThanhLoc(chip: [CTWChipLoc(id: "", nhan: String(localized: "Any status"), bat: vongDoi == nil)] + CTWVongDoiYeuCau.tatCa.compactMap { v in
                             let n = r.counts?.byLifecycle?[v] ?? 0
                             return n > 0 ? CTWChipLoc(id: v, nhan: "\(CTWMauTrangThai.nhan(v)) \(n)", bat: vongDoi == v) : nil
                         }) { c in vongDoi = c.id.isEmpty ? nil : c.id }
@@ -181,8 +181,8 @@ struct WYeuCauCTW: View {
                 let ds = loc(r.requirements ?? [])
                 Section {
                     if ds.isEmpty {
-                        CTWOTrong(bieuTuong: "list.bullet.rectangle.portrait", tieuDe: (r.requirements ?? []).isEmpty ? "No requirements yet" : "No matches",
-                                  moTa: (r.requirements ?? []).isEmpty ? "Requirement issues your team creates show up here." : "Change the filters to see more.")
+                        CTWOTrong(bieuTuong: "list.bullet.rectangle.portrait", tieuDe: (r.requirements ?? []).isEmpty ? String(localized: "No requirements yet") : String(localized: "No matches"),
+                                  moTa: (r.requirements ?? []).isEmpty ? String(localized: "Requirement issues your team creates show up here.") : String(localized: "Change the filters to see more."))
                             .listRowBackground(Color.clear)
                     }
                     ForEach(ds) { q in
@@ -273,27 +273,27 @@ struct WYeuCauChiTietCTW: View {
                     dau(r)
                     hanhDong(r)
                     if let t = r.text, !t.isEmpty {
-                        CTWSectionHeader("text.alignleft", "Requirement")
+                        CTWSectionHeader("text.alignleft", String(localized: "Requirement"))
                         Text(t).font(.ctw(size: 15)).foregroundColor(AppColors.textPrimary)
                             .textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
                             .padding(14).frame(maxWidth: .infinity, alignment: .leading).ctwThe(14)
                     }
                     CTWKhoiTruong {
-                        CTWHangTruong("Type", CTWVongDoiYeuCau.tenLoai(r.reqType) + (r.subtype.map { " · \(CTWMauTrangThai.nhan($0))" } ?? ""),
+                        CTWHangTruong(String(localized: "Type"), CTWVongDoiYeuCau.tenLoai(r.reqType) + (r.subtype.map { " · \(CTWMauTrangThai.nhan($0))" } ?? ""),
                                       bieuTuong: "tag")
                         Divider()
-                        CTWHangTruong("Source", r.source, bieuTuong: "person.wave.2")
+                        CTWHangTruong(String(localized: "Source"), r.source, bieuTuong: "person.wave.2")
                         Divider()
-                        CTWHangTruong("Owner", kho.swr?.owners?.first { $0.id == r.ownerId }?.name, bieuTuong: "person.crop.circle")
+                        CTWHangTruong(String(localized: "Owner"), kho.swr?.owners?.first { $0.id == r.ownerId }?.name, bieuTuong: "person.crop.circle")
                         Divider()
-                        CTWHangTruong("Stability", r.stability.map { CTWMauTrangThai.nhan($0) }, bieuTuong: "waveform.path")
+                        CTWHangTruong(String(localized: "Stability"), r.stability.map { CTWMauTrangThai.nhan($0) }, bieuTuong: "waveform.path")
                         Divider()
-                        CTWHangTruong("Version", r.reqVersion.map { "v\($0)" }, bieuTuong: "number")
+                        CTWHangTruong(String(localized: "Version"), r.reqVersion.map { "v\($0)" }, bieuTuong: "number")
                         Divider()
-                        CTWHangTruong("Issue status", r.status?.name, bieuTuong: "circle.dashed")
+                        CTWHangTruong(String(localized: "Issue status"), r.status?.name, bieuTuong: "circle.dashed")
                     }
                     if let ra = r.rationale, !ra.isEmpty {
-                        CTWSectionHeader("lightbulb", "Rationale")
+                        CTWSectionHeader("lightbulb", String(localized: "Rationale"))
                         Text(ra).font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary).fixedSize(horizontal: false, vertical: true)
                             .padding(14).frame(maxWidth: .infinity, alignment: .leading).ctwThe(14)
                     }
@@ -306,10 +306,10 @@ struct WYeuCauChiTietCTW: View {
                     .buttonStyle(.plain)
                     .foregroundColor(AppColors.primary)
                     khoiLichSu()
-                    CTWSectionHeader("text.bubble", "Discussion")
+                    CTWSectionHeader("text.bubble", String(localized: "Discussion"))
                     ThaoLuanTheCTW(pid: pid, so: r.number, nguCanh: "\(r.key ?? "") \(r.title ?? "")")
                 } else if kho.swr != nil {
-                    CTWOTrong(bieuTuong: "questionmark.folder", tieuDe: "Requirement not found")
+                    CTWOTrong(bieuTuong: "questionmark.folder", tieuDe: String(localized: "Requirement not found"))
                 } else {
                     CTWKhungTai(soHang: 4, coAvatar: false)
                 }
@@ -319,7 +319,7 @@ struct WYeuCauChiTietCTW: View {
             .frame(maxWidth: .infinity)
         }
         .background(AppColors.backgroundPrimary)
-        .navigationTitle(r?.key ?? "Requirement")
+        .navigationTitle(r?.key ?? String(localized: "Requirement"))
         .navigationBarTitleDisplayMode(.inline)
         .refreshable { await taiMotMuc(); await kho.taiSwr(); await taiLichSu() }
         .task {
@@ -348,7 +348,7 @@ struct WYeuCauChiTietCTW: View {
             HStack(spacing: 6) {
                 CTWChipChu(chu: r.lifecycle ?? "PROPOSED", mau: mauVongDoi(r.lifecycle))
                 if let p = CTWNhanYeuCau.nhanUuTien(r.priority) {
-                    CTWNhanNho(chu: "\(p) priority", bieuTuong: "flag.fill", mau: CTWNhanYeuCau.mauUuTien(r.priority))
+                    CTWNhanNho(chu: String(localized: "\(p) priority"), bieuTuong: "flag.fill", mau: CTWNhanYeuCau.mauUuTien(r.priority))
                 }
                 if let u = CTW.ngayNgan(r.updatedAt) { Text("Updated \(u)").font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary) }
             }
@@ -378,7 +378,7 @@ struct WYeuCauChiTietCTW: View {
     @ViewBuilder
     private func khoiLichSu() -> some View {
         if let ls = lichSu, !ls.isEmpty {
-            CTWSectionHeader("clock.arrow.circlepath", "History", count: "\(ls.count)")
+            CTWSectionHeader("clock.arrow.circlepath", String(localized: "History"), count: "\(ls.count)")
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(ls.prefix(20)) { h in
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
@@ -386,7 +386,7 @@ struct WYeuCauChiTietCTW: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(moTa(h)).font(.ctw(size: 13)).foregroundColor(AppColors.textPrimary).fixedSize(horizontal: false, vertical: true)
                             HStack(spacing: 4) {
-                                Text("\(h.actor ?? "Someone") · \(CTW.thoiDiem(h.at))").font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
+                                Text("\(h.actor ?? String(localized: "Someone")) · \(CTW.thoiDiem(h.at))").font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
                                 if h.actorKind == "AGENT" { CTWNhanAI() }
                             }
                         }
@@ -403,10 +403,10 @@ struct WYeuCauChiTietCTW: View {
     private func moTa(_ h: CTWSwrHistoryRow) -> String {
         let truong = CTWMauTrangThai.nhan(h.field).lowercased()
         switch (h.from, h.to) {
-        case (nil, let t?): return "Set \(truong) to \(CTWMauTrangThai.nhan(t))"
-        case (let f?, let t?): return "Changed \(truong): \(CTWMauTrangThai.nhan(f)) → \(CTWMauTrangThai.nhan(t))"
-        case (_?, nil): return "Cleared \(truong)"
-        default: return "Updated \(truong)"
+        case (nil, let t?): return String(localized: "Set \(truong) to \(CTWMauTrangThai.nhan(t))")
+        case (let f?, let t?): return String(localized: "Changed \(truong): \(CTWMauTrangThai.nhan(f)) → \(CTWMauTrangThai.nhan(t))")
+        case (_?, nil): return String(localized: "Cleared \(truong)")
+        default: return String(localized: "Updated \(truong)")
         }
     }
 

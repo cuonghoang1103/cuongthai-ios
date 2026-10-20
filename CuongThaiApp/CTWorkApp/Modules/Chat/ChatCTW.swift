@@ -43,9 +43,9 @@ struct ChatCTW: View {
                 let dm = tatCa.filter(\.laDM)
                 let dangGoi = tatCa.filter { $0.call != nil }
                 if tatCa.isEmpty {
-                    CTWOTrong(bieuTuong: "number", tieuDe: tim.isEmpty ? "No channels yet" : "No matching channels",
-                              moTa: tim.isEmpty ? "Create a channel to start talking with your team." : "Try another name.",
-                              nut: tim.isEmpty && dsKenh?.me?.canCreate == true ? "New channel" : nil) { tamPhu = .tao(false) }
+                    CTWOTrong(bieuTuong: "number", tieuDe: tim.isEmpty ? String(localized: "No channels yet") : String(localized: "No matching channels"),
+                              moTa: tim.isEmpty ? String(localized: "Create a channel to start talking with your team.") : String(localized: "Try another name."),
+                              nut: tim.isEmpty && dsKenh?.me?.canCreate == true ? String(localized: "New channel") : nil) { tamPhu = .tao(false) }
                         .listRowBackground(Color.clear)
                 }
                 if !dangGoi.isEmpty {
@@ -182,7 +182,7 @@ struct ChatCTW: View {
             loi = nil
         } catch {
             if case APIError.coMa(let ma, _) = error, ma == "MODULE_DISABLED" {
-                loi = "Chat is turned off for this project."
+                loi = String(localized: "Chat is turned off for this project.")
             } else {
                 loi = CTW.loi(error)
             }
@@ -195,7 +195,7 @@ struct ChatCTW: View {
             guard let ai = k.dmVoi ?? k.idNguoiKiaDM(toi: toi) else { return k }
             var c = k
             c.dmVoi = ai
-            c.name = thanhVien.first { $0.id == ai }?.ten ?? "Direct message"
+            c.name = thanhVien.first { $0.id == ai }?.ten ?? String(localized: "Direct message")
             return c
         }
     }
@@ -210,7 +210,7 @@ struct ChatCTW: View {
             }
         } catch {
             if case APIError.coMa(let ma, _) = error, ma == "USER_BLOCKED" {
-                loi = "You can't message this person because one of you has blocked the other."
+                loi = String(localized: "You can't message this person because one of you has blocked the other.")
             } else { loi = CTW.loi(error) }
         }
     }
@@ -297,11 +297,11 @@ struct HangKenhCTW: View {
     }
 
     private var nhanTroNang: String {
-        var s = (kenh.laRieng ? "Private group " : "Channel ") + kenh.name
-        if let b = kenh.badge, b > 0 { s += ", \(b) unread" }
-        if let m = kenh.mentions, m > 0 { s += ", \(m) mention\(m == 1 ? "" : "s")" }
-        if kenh.muted == true { s += ", muted" }
-        if kenh.call != nil { s += ", call in progress" }
+        var s = kenh.laRieng ? String(localized: "Private group \(kenh.name)") : String(localized: "Channel \(kenh.name)")
+        if let b = kenh.badge, b > 0 { s += String(localized: ", \(b) unread") }
+        if let m = kenh.mentions, m > 0 { s += m == 1 ? String(localized: ", 1 mention") : String(localized: ", \(m) mentions") }
+        if kenh.muted == true { s += String(localized: ", muted") }
+        if kenh.call != nil { s += String(localized: ", call in progress") }
         return s
     }
 }

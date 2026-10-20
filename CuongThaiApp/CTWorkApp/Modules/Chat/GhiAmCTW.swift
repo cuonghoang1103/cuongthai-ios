@@ -117,8 +117,6 @@ final class GhiAmCTW: NSObject, ObservableObject, AVAudioRecorderDelegate {
 
 /// Câu công bố trước lần ghi đầu (5.1.2(i)) — dùng chung cho hộp đồng ý.
 enum CongBoGiongNoiCTW {
-    static let tieuDe = "Voice notes are transcribed"
-    static let noiDung = """
-    When you send a voice note, CT Work stores the recording for people in this channel and sends the audio to Groq, a third-party speech-to-text service, to create a written transcript that appears under the voice note. Nothing is recorded until you tap the microphone.
-    """
+    static var tieuDe: String { String(localized: "Voice notes are transcribed") }
+    static var noiDung: String { String(localized: "When you send a voice note, CT Work stores the recording for people in this channel and sends the audio to Groq, a third-party speech-to-text service, to create a written transcript that appears under the voice note. Nothing is recorded until you tap the microphone.") }
 }

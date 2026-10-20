@@ -23,21 +23,21 @@ struct GiangDayCTW: View {
                 if let loi { CTWErrorBanner(text: loi) { self.loi = nil } }
                 if let t = du?.totals {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 10)], spacing: 10) {
-                        CTWODem(so: "\(t.groups ?? 0)", nhan: "Groups · \(t.students ?? 0) students", bieuTuong: "person.3")
-                        CTWODem(so: "\(t.red ?? 0)", nhan: "Need attention", bieuTuong: "exclamationmark.octagon", mau: AppColors.error)
-                        CTWODem(so: "\(t.overdue ?? 0)", nhan: "Overdue issues", bieuTuong: "calendar.badge.exclamationmark", mau: AppColors.warning)
-                        CTWODem(so: "\(t.docsMissing ?? 0)", nhan: "Missing documents", bieuTuong: "doc.badge.ellipsis", mau: AppColors.secondary)
+                        CTWODem(so: "\(t.groups ?? 0)", nhan: String(localized: "Groups · \(t.students ?? 0) students"), bieuTuong: "person.3")
+                        CTWODem(so: "\(t.red ?? 0)", nhan: String(localized: "Need attention"), bieuTuong: "exclamationmark.octagon", mau: AppColors.error)
+                        CTWODem(so: "\(t.overdue ?? 0)", nhan: String(localized: "Overdue issues"), bieuTuong: "calendar.badge.exclamationmark", mau: AppColors.warning)
+                        CTWODem(so: "\(t.docsMissing ?? 0)", nhan: String(localized: "Missing documents"), bieuTuong: "doc.badge.ellipsis", mau: AppColors.secondary)
                     }
                     CTWThanhLoc(chip: [
-                        CTWChipLoc(id: "all", nhan: "All", bat: loc == "all"),
-                        CTWChipLoc(id: "red", nhan: "Red \(t.red ?? 0)", bieuTuong: "circle.fill", bat: loc == "red"),
-                        CTWChipLoc(id: "amber", nhan: "Amber \(t.amber ?? 0)", bieuTuong: "circle.fill", bat: loc == "amber"),
-                        CTWChipLoc(id: "green", nhan: "Green \(t.green ?? 0)", bieuTuong: "circle.fill", bat: loc == "green"),
+                        CTWChipLoc(id: "all", nhan: String(localized: "All"), bat: loc == "all"),
+                        CTWChipLoc(id: "red", nhan: String(localized: "Red \(t.red ?? 0)"), bieuTuong: "circle.fill", bat: loc == "red"),
+                        CTWChipLoc(id: "amber", nhan: String(localized: "Amber \(t.amber ?? 0)"), bieuTuong: "circle.fill", bat: loc == "amber"),
+                        CTWChipLoc(id: "green", nhan: String(localized: "Green \(t.green ?? 0)"), bieuTuong: "circle.fill", bat: loc == "green"),
                     ]) { loc = $0.id }
                         .padding(.horizontal, -Spacing.md)
                 }
                 if du != nil {
-                    if nhom.isEmpty { CTWOTrong(bieuTuong: "person.3", tieuDe: "No groups match") }
+                    if nhom.isEmpty { CTWOTrong(bieuTuong: "person.3", tieuDe: String(localized: "No groups match")) }
                     LazyVStack(spacing: 10) {
                         ForEach(nhom) { g in
                             NavigationLink(value: RouteLopCTW.nhom(g)) { HangNhomGiangDay(g: g) }.buttonStyle(.plain)
@@ -68,6 +68,15 @@ struct GiangDayCTW: View {
 
 private func mauSK(_ s: String?) -> Color { CTWMauTrangThai.mau(CTWLopNhan.mauSucKhoe(s)) }
 
+private func tenSK(_ s: String?) -> String {
+    switch s ?? "green" {
+    case "red": return String(localized: "Red")
+    case "amber": return String(localized: "Amber")
+    case "green": return String(localized: "Green")
+    default: return (s ?? "green").capitalized
+    }
+}
+
 struct HangNhomGiangDay: View {
     let g: CTWNhomGiangDay
     var body: some View {
@@ -76,7 +85,7 @@ struct HangNhomGiangDay: View {
                 Circle().fill(mauSK(g.health?.status)).frame(width: 10, height: 10)
                     .accessibilityLabel("Health: \(g.health?.status ?? "green")")
                 Text(g.key ?? "").font(.ctw(size: 12, weight: .bold).monospaced()).foregroundColor(AppColors.textSecondary)
-                Text(g.name ?? "Group").font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                Text(g.name ?? String(localized: "Group")).font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(1)
                 Spacer(minLength: 0)
                 if let c = g.classCode { CTWNhanNho(chu: c) }
             }
@@ -89,7 +98,7 @@ struct HangNhomGiangDay: View {
             .font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
             if let s = g.sprint {
                 HStack(spacing: 8) {
-                    Text(s.name ?? "Sprint").font(.ctw(size: 12, weight: .medium)).foregroundColor(AppColors.textSecondary).lineLimit(1)
+                    Text(s.name ?? String(localized: "Sprint")).font(.ctw(size: 12, weight: .medium)).foregroundColor(AppColors.textSecondary).lineLimit(1)
                     CTWThanhPhanDoan(doan: [(s.done ?? 0, s.atRisk == true ? AppColors.warning : AppColors.primary),
                                             (max(0, (s.total ?? 0) - (s.done ?? 0)), Color.clear)], cao: 5)
                     Text("\(s.done ?? 0)/\(s.total ?? 0)").font(.ctw(size: 11, weight: .semibold).monospacedDigit()).foregroundColor(AppColors.textSecondary)
@@ -112,14 +121,13 @@ struct HangNhomGiangDay: View {
 enum CTWNhomNhan {
     /// Mã lý do sức khoẻ nhóm → câu ngắn tiếng Anh (mã lạ ⇒ tự đổi dạng chữ).
     static func lyDo(_ c: String?, n: Int?) -> String {
-        let so = n.map { "\($0) " } ?? ""
         switch c {
-        case "OVERDUE": return "\(so)overdue"
-        case "SPRINT_AT_RISK": return "Sprint at risk"
-        case "SILENT_MEMBERS", "SILENT": return "\(so)silent members"
-        case "DOCS_MISSING": return "\(so)docs missing"
-        case "QNA_OPEN": return "\(so)open questions"
-        case "HIGH_RISKS": return "\(so)high risks"
+        case "OVERDUE": return n.map { String(localized: "\($0) overdue") } ?? String(localized: "overdue")
+        case "SPRINT_AT_RISK": return String(localized: "Sprint at risk")
+        case "SILENT_MEMBERS", "SILENT": return n.map { String(localized: "\($0) silent members") } ?? String(localized: "silent members")
+        case "DOCS_MISSING": return n.map { String(localized: "\($0) docs missing") } ?? String(localized: "docs missing")
+        case "QNA_OPEN": return n.map { String(localized: "\($0) open questions") } ?? String(localized: "open questions")
+        case "HIGH_RISKS": return n.map { String(localized: "\($0) high risks") } ?? String(localized: "high risks")
         default: return CTWMauTrangThai.nhan(c)
         }
     }
@@ -132,12 +140,12 @@ struct NhomGiangDayCTW: View {
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.md) {
                 HStack(spacing: 8) {
-                    CTWChipChu(chu: (n.health?.status ?? "green").capitalized, mau: mauSK(n.health?.status))
+                    CTWChipChu(chu: tenSK(n.health?.status), mau: mauSK(n.health?.status))
                     if let s = n.subject { CTWNhanNho(chu: s, mau: AppColors.primary) }
                     if let c = n.classCode { CTWNhanNho(chu: c) }
                     if let t = n.term { CTWNhanNho(chu: t) }
                 }
-                Text(n.name ?? "Group").font(.ctw(size: 22, weight: .bold)).foregroundColor(AppColors.textPrimary)
+                Text(n.name ?? String(localized: "Group")).font(.ctw(size: 22, weight: .bold)).foregroundColor(AppColors.textPrimary)
                 if let r = n.health?.reasons, !r.isEmpty {
                     VStack(alignment: .leading, spacing: 4) {
                         ForEach(Array(r.enumerated()), id: \.offset) { _, x in
@@ -147,36 +155,36 @@ struct NhomGiangDayCTW: View {
                     }
                 }
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 10)], spacing: 10) {
-                    CTWODem(so: "\(n.issues?.open ?? 0)", nhan: "Open issues", bieuTuong: "circle.dashed")
-                    CTWODem(so: "\(n.issues?.overdue ?? 0)", nhan: "Overdue", bieuTuong: "calendar.badge.exclamationmark", mau: AppColors.error)
-                    CTWODem(so: "\(n.issues?.done14 ?? 0)", nhan: "Done in 14 days", bieuTuong: "checkmark.circle", mau: AppColors.success)
-                    CTWODem(so: "\(n.qna?.open ?? 0)", nhan: "Open questions", bieuTuong: "questionmark.bubble", mau: AppColors.secondary)
+                    CTWODem(so: "\(n.issues?.open ?? 0)", nhan: String(localized: "Open issues"), bieuTuong: "circle.dashed")
+                    CTWODem(so: "\(n.issues?.overdue ?? 0)", nhan: String(localized: "Overdue"), bieuTuong: "calendar.badge.exclamationmark", mau: AppColors.error)
+                    CTWODem(so: "\(n.issues?.done14 ?? 0)", nhan: String(localized: "Done in 14 days"), bieuTuong: "checkmark.circle", mau: AppColors.success)
+                    CTWODem(so: "\(n.qna?.open ?? 0)", nhan: String(localized: "Open questions"), bieuTuong: "questionmark.bubble", mau: AppColors.secondary)
                 }
                 CTWKhoiTruong {
                     if let s = n.sprint {
-                        CTWHangTruong("Sprint", "\(s.name ?? "") · \(s.done ?? 0)/\(s.total ?? 0) · \(s.daysLeft ?? 0) days left", bieuTuong: "arrow.triangle.2.circlepath")
+                        CTWHangTruong(String(localized: "Sprint"), String(localized: "\(s.name ?? "") · \(s.done ?? 0)/\(s.total ?? 0) · \(s.daysLeft ?? 0) days left"), bieuTuong: "arrow.triangle.2.circlepath")
                         Divider()
                     }
                     if let s = n.stage {
-                        CTWHangTruong("Stage", "\(s.n ?? 0). \(s.name ?? "") (\(s.completed ?? 0)/\(s.total ?? 0) done)", bieuTuong: "flag.checkered")
+                        CTWHangTruong(String(localized: "Stage"), String(localized: "\(s.n ?? 0). \(s.name ?? "") (\(s.completed ?? 0)/\(s.total ?? 0) done)"), bieuTuong: "flag.checkered")
                         Divider()
                     }
-                    CTWHangTruong("Risks", "\(n.risks?.open ?? 0) open · \(n.risks?.high ?? 0) high", bieuTuong: "exclamationmark.shield")
+                    CTWHangTruong(String(localized: "Risks"), String(localized: "\(n.risks?.open ?? 0) open · \(n.risks?.high ?? 0) high"), bieuTuong: "exclamationmark.shield")
                     Divider()
-                    CTWHangTruong("Grades", "\(n.grades?.published ?? 0)/\(n.grades?.total ?? 0) published" + (n.grades?.latestMilestone.map { " · \($0)" } ?? ""), bieuTuong: "rosette")
+                    CTWHangTruong(String(localized: "Grades"), String(localized: "\(n.grades?.published ?? 0)/\(n.grades?.total ?? 0) published") + (n.grades?.latestMilestone.map { " · \($0)" } ?? ""), bieuTuong: "rosette")
                     if let c = n.contrib {
                         Divider()
-                        CTWHangTruong("Last active", c.lastActiveDay.flatMap(CTW.ngayNgan) ?? "—", bieuTuong: "clock")
+                        CTWHangTruong(String(localized: "Last active"), c.lastActiveDay.flatMap(CTW.ngayNgan) ?? "—", bieuTuong: "clock")
                     }
                 }
                 if let d = n.docs, !d.isEmpty {
-                    CTWSectionHeader("doc.on.doc", "FPT documents", count: "\(n.docsSubmitted ?? 0)/\(n.docsExpected ?? 0)")
+                    CTWSectionHeader("doc.on.doc", String(localized: "FPT documents"), count: "\(n.docsSubmitted ?? 0)/\(n.docsExpected ?? 0)")
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 92), spacing: 8)], spacing: 8) {
                         ForEach(d.keys.sorted(), id: \.self) { k in
                             let s = d[k] ?? "NA"
                             VStack(spacing: 3) {
                                 Text(k).font(.ctw(size: 13, weight: .bold).monospaced()).foregroundColor(AppColors.textPrimary)
-                                Text(s == "NA" ? "N/A" : CTWMauTrangThai.nhan(s)).font(.ctw(size: 10, weight: .semibold))
+                                Text(s == "NA" ? String(localized: "N/A") : CTWMauTrangThai.nhan(s)).font(.ctw(size: 10, weight: .semibold))
                                     .foregroundColor(s == "SUBMITTED" ? AppColors.success : (s == "MISSING" ? AppColors.error : AppColors.textSecondary))
                             }
                             .frame(maxWidth: .infinity, minHeight: 50)
@@ -186,13 +194,13 @@ struct NhomGiangDayCTW: View {
                     }
                 }
                 if let ms = n.members, !ms.isEmpty {
-                    CTWSectionHeader("person.3", "Members", count: "\(ms.count)")
+                    CTWSectionHeader("person.3", String(localized: "Members"), count: "\(ms.count)")
                     VStack(spacing: 0) {
                         ForEach(ms) { m in
                             HStack(spacing: 10) {
                                 CTWAvatar(user: CTWUser(id: m.id, username: m.username, fullName: m.name), size: 28)
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(m.name ?? m.username ?? "Member").font(.ctw(size: 14, weight: .medium)).foregroundColor(AppColors.textPrimary)
+                                    Text(m.name ?? m.username ?? String(localized: "Member")).font(.ctw(size: 14, weight: .medium)).foregroundColor(AppColors.textPrimary)
                                     if let sg = m.signals, !sg.isEmpty {
                                         Text(sg.map { CTWMauTrangThai.nhan($0) }.joined(separator: " · "))
                                             .font(.ctw(size: 11)).foregroundColor(AppColors.warning)
@@ -218,7 +226,7 @@ struct NhomGiangDayCTW: View {
             .dvBeRong()
         }
         .background(AppColors.backgroundPrimary)
-        .navigationTitle(n.key ?? "Group")
+        .navigationTitle(n.key ?? String(localized: "Group"))
         .navigationBarTitleDisplayMode(.inline)
     }
 }

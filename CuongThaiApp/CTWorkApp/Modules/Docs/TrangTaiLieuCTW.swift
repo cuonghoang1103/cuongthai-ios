@@ -40,7 +40,7 @@ final class TrangTaiLieuVM: ObservableObject {
             await tai()
         } catch {
             if case APIError.coMa(let ma, _) = error, ma == "WORK_PAGE_APPROVAL_REQUIRED" {
-                loi = "This project uses approvals — use “Request approval” to move the page to review."
+                loi = String(localized: "This project uses approvals — use “Request approval” to move the page to review.")
             } else { loi = CTW.loi(error) }
             CTWRung.loi()
         }
@@ -97,7 +97,7 @@ final class TrangTaiLieuVM: ObservableObject {
         do {
             try await APIClient.shared.send(CTWAPI.xinDuyetTrang(pid: pid, so: so, nguoiDuyet: nguoi, tuanTu: tuanTu))
             CTWRung.thanhCong()
-            thongBao = "Approval requested. The page is now In review."
+            thongBao = String(localized: "Approval requested. The page is now In review.")
             await tai()
             return true
         } catch { loi = CTW.loi(error); CTWRung.loi(); return false }
@@ -180,7 +180,7 @@ struct TrangTaiLieuCTW: View {
         .sheet(item: $tamPhu) { t in
             switch t {
             case .chonThe:
-                ChonTheCTW(pid: pid, tieuDe: "Link an issue") { the in Task { await vm.ganThe(the.number) } }
+                ChonTheCTW(pid: pid, tieuDe: String(localized: "Link an issue")) { the in Task { await vm.ganThe(the.number) } }
             case .xinDuyet:
                 XinDuyetTrangCTW(thanhVien: (cfg?.dsThanhVien ?? []).filter { !$0.laAgent && $0.role != "VIEWER" && $0.id != app.currentUser?.id }) { nguoi, tuanTu in
                     await vm.xinDuyet(nguoi: nguoi, tuanTu: tuanTu)
@@ -272,8 +272,8 @@ struct TrangTaiLieuCTW: View {
             .accessibilityAddTraits(.isHeader)
         HStack(spacing: 8) {
             CTWChipChu(chu: c.status ?? "DRAFT")
-            if c.visibility == "CLIENT" { CTWNhanNho(chu: "Client", bieuTuong: "person.2.wave.2") }
-            if c.aiAssisted == true { CTWNhanAI(chu: "AI-assisted") }
+            if c.visibility == "CLIENT" { CTWNhanNho(chu: String(localized: "Client"), bieuTuong: "person.2.wave.2") }
+            if c.aiAssisted == true { CTWNhanAI(chu: String(localized: "AI-assisted")) }
             if let u = c.lastEditedBy ?? c.owner {
                 CTWAvatar(user: u, size: 18)
                 Text(u.ten).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1)
@@ -308,7 +308,7 @@ struct TrangTaiLieuCTW: View {
     @ViewBuilder
     private func khoiTrangCon(_ c: CTWPageDetail) -> some View {
         if let con = c.children, !con.isEmpty {
-            CTWSectionHeader("doc.on.doc", "Subpages", count: "\(con.count)").padding(.top, 8)
+            CTWSectionHeader("doc.on.doc", String(localized: "Subpages"), count: "\(con.count)").padding(.top, 8)
             VStack(spacing: 0) {
                 ForEach(con) { r in
                     NavigationLink(value: RouteTaiLieuCTW(pid: pid, so: r.number, ten: r.title)) {
@@ -334,7 +334,7 @@ struct TrangTaiLieuCTW: View {
     private func khoiThe(_ c: CTWPageDetail) -> some View {
         let ds = c.issues ?? []
         if !ds.isEmpty || suaDuoc {
-            CTWSectionHeader("link", "Linked issues", count: ds.isEmpty ? nil : "\(ds.count)",
+            CTWSectionHeader("link", String(localized: "Linked issues"), count: ds.isEmpty ? nil : "\(ds.count)",
                              trailing: suaDuoc ? AnyView(Button { tamPhu = .chonThe } label: {
                                  Image(systemName: "plus.circle.fill").font(.ctw(size: 20))
                              }.accessibilityLabel("Link an issue")) : nil)
@@ -382,7 +382,7 @@ struct TrangTaiLieuCTW: View {
     @ViewBuilder
     private func khoiBinhLuan(_ c: CTWPageDetail) -> some View {
         let ds = vm.binhLuan ?? []
-        CTWSectionHeader("bubble.left.and.bubble.right", "Comments", count: ds.isEmpty ? nil : "\(ds.count)").padding(.top, 8)
+        CTWSectionHeader("bubble.left.and.bubble.right", String(localized: "Comments"), count: ds.isEmpty ? nil : "\(ds.count)").padding(.top, 8)
         if ds.isEmpty && vm.binhLuan != nil {
             Text("No comments yet.").font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
         }
@@ -391,7 +391,7 @@ struct TrangTaiLieuCTW: View {
                 khoa: "page-comment-\(b.id)", tacGia: b.author,
                 noiDung: b.bodyText ?? b.bodyJson?.chuTron ?? "", doc: b.bodyJson,
                 thoiDiem: b.createdAt,
-                nhanPhu: b.anchor?.quote.map { "On “\($0.prefix(24))…”" },
+                nhanPhu: b.anchor?.quote.map { String(localized: "On “\(String($0.prefix(24)))…”") },
                 nguCanh: "Page \(app.luaChon?.maDuAn ?? "")-DOC-\(so) · \(c.title)",
                 themMuc: b.canDelete == true ? AnyView(Button(role: .destructive) { Task { await vm.xoaBinhLuan(b) } } label: {
                     Label("Delete", systemImage: "trash")
@@ -399,7 +399,7 @@ struct TrangTaiLieuCTW: View {
                 dich: CTWDichBaoCao("page_comment", b.id))
         }
         if c.canComment == true {
-            CTWHopSoan(goiY: "Comment on this page…") { await vm.guiBinhLuan($0) }
+            CTWHopSoan(goiY: String(localized: "Comment on this page…")) { await vm.guiBinhLuan($0) }
                 .padding(.top, 4)
         }
     }
@@ -421,7 +421,7 @@ struct TrangTaiLieuCTW: View {
                 nganXep.duong.append(CTWRoute.the(pid: pid, so: n)); return .handled
             }
             if d.doan == "docs", let n = d.phanCon.first.flatMap(Int.init) {
-                nganXep.duong.append(RouteTaiLieuCTW(pid: pid, so: n, ten: "Page")); return .handled
+                nganXep.duong.append(RouteTaiLieuCTW(pid: pid, so: n, ten: String(localized: "Page"))); return .handled
             }
         }
         DinhTuyenCTW.mo(duongDan: p)

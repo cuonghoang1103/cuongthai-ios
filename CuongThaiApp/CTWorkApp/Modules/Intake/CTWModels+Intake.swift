@@ -25,7 +25,7 @@ struct CTWDeXuat: Codable, Hashable, Identifiable {
     var decidedAt: String?
     var decisionNote: String?
 
-    var nguoiGui: String { sender ?? senderName ?? senderHandle ?? "Unknown sender" }
+    var nguoiGui: String { sender ?? senderName ?? senderHandle ?? String(localized: "Unknown sender") }
 }
 
 struct CTWDsDeXuat: Codable {
@@ -35,7 +35,7 @@ struct CTWDsDeXuat: Codable {
 }
 
 enum CTWIntake {
-    static let trangThai: [(ma: String, nhan: String)] = [("PENDING", "Pending"), ("ACCEPTED", "Accepted"), ("REJECTED", "Rejected")]
+    static var trangThai: [(ma: String, nhan: String)] { [("PENDING", String(localized: "Pending")), ("ACCEPTED", String(localized: "Accepted")), ("REJECTED", String(localized: "Rejected"))] }
 
     static func bieuTuongNguon(_ s: String?) -> String {
         switch s {
@@ -49,11 +49,11 @@ enum CTWIntake {
 
     static func tenNguon(_ s: String?) -> String {
         switch s {
-        case "EMAIL": return "Email"
+        case "EMAIL": return String(localized: "Email")
         case "DISCORD": return "Discord"
         case "ZALO": return "Zalo"
         case "SLACK": return "Slack"
-        default: return "Channel"
+        default: return String(localized: "Channel")
         }
     }
 }

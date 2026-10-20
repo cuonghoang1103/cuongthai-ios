@@ -102,7 +102,7 @@ struct ChonDuAnCTW: View {
                 .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(AppColors.primary.opacity(0.12)))
             VStack(alignment: .leading, spacing: 3) {
                 Text(p.name).font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
-                Text([p.type?.capitalized, p.openIssues.map { $0 == 1 ? "1 open issue" : "\($0) open issues" }]
+                Text([p.type?.capitalized, p.openIssues.map { $0 == 1 ? String(localized: "1 open issue") : String(localized: "\($0) open issues") }]
                     .compactMap { $0 }.joined(separator: " · "))
                     .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
             }

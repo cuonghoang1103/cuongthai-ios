@@ -124,9 +124,9 @@ struct SprintsCTW: View {
                     .listRowBackground(Color.clear).listRowInsets(EdgeInsets())
             }
             if ds.isEmpty {
-                CTWOTrong(bieuTuong: "flag.checkered", tieuDe: "No sprints yet",
-                          moTa: "Sprints group the work your team commits to for a few weeks.",
-                          nut: quanLy ? "Create sprint" : nil, hanhDong: quanLy ? { tamPhu = .tao } : nil)
+                CTWOTrong(bieuTuong: "flag.checkered", tieuDe: String(localized: "No sprints yet"),
+                          moTa: String(localized: "Sprints group the work your team commits to for a few weeks."),
+                          nut: quanLy ? String(localized: "Create sprint") : nil, hanhDong: quanLy ? { tamPhu = .tao } : nil)
                     .listRowBackground(Color.clear)
             }
             ForEach(dangChay) { s in
@@ -136,12 +136,12 @@ struct SprintsCTW: View {
                         .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
                         .listRowBackground(Color.clear)
                         .contextMenu { menu(s) }
-                } header: { tieuDe("Active", "flag.fill", nil) }
+                } header: { tieuDe(String(localized: "Active"), "flag.fill", nil) }
             }
             if !keHoach.isEmpty {
                 Section {
                     ForEach(keHoach) { s in hang(s) }
-                } header: { tieuDe("Planned", "calendar", keHoach.count) }
+                } header: { tieuDe(String(localized: "Planned"), "calendar", keHoach.count) }
             }
             if !daDong.isEmpty {
                 Section {
@@ -149,11 +149,11 @@ struct SprintsCTW: View {
                         ForEach(daDong) { s in hang(s) }
                     } else {
                         Button { withAnimation { hienDaDong = true } } label: {
-                            Label("Show \(daDong.count) completed sprint\(daDong.count == 1 ? "" : "s")", systemImage: "chevron.down")
+                            Label(daDong.count == 1 ? String(localized: "Show 1 completed sprint") : String(localized: "Show \(daDong.count) completed sprints"), systemImage: "chevron.down")
                                 .font(.ctw(size: 14, weight: .medium))
                         }
                     }
-                } header: { tieuDe("Completed", "checkmark.seal", daDong.count) }
+                } header: { tieuDe(String(localized: "Completed"), "checkmark.seal", daDong.count) }
             }
         }
         .listStyle(.insetGrouped)
@@ -203,7 +203,7 @@ struct SprintsCTW: View {
         if let a = NgayCTW.ngayCua(s.startAt).flatMap(NgayCTW.nganTu), let b = NgayCTW.ngayCua(s.endAt).flatMap(NgayCTW.nganTu) {
             p.append("\(a) – \(b)")
         } else if s.chuaBatDau {
-            p.append("Not started")
+            p.append(String(localized: "Not started"))
         }
         if let g = s.goal, !g.isEmpty { p.append(g) }
         return p.joined(separator: " · ")

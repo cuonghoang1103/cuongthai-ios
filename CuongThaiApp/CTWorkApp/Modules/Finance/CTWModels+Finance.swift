@@ -126,7 +126,7 @@ enum CTWTien {
         let m = (ma ?? "").uppercased()
         let f = NumberFormatter()
         f.numberStyle = .decimal
-        f.locale = Locale(identifier: "en_US")
+        f.locale = CTWDinhDang.locale
         let khongLe = m == "VND" || m == "JPY" || m == "KRW"
         f.maximumFractionDigits = khongLe ? 0 : 2
         f.minimumFractionDigits = khongLe ? 0 : (v.rounded() == v ? 0 : 2)
@@ -161,9 +161,9 @@ enum CTWTien {
 
     static func nhanCanhBao(_ a: String) -> String {
         switch a {
-        case "OVER": return "Over budget"
-        case "WARN": return "Near budget limit"
-        case "FORECAST_OVER": return "Forecast over budget"
+        case "OVER": return String(localized: "Over budget")
+        case "WARN": return String(localized: "Near budget limit")
+        case "FORECAST_OVER": return String(localized: "Forecast over budget")
         default: return CTWMauTrangThai.nhan(a)
         }
     }

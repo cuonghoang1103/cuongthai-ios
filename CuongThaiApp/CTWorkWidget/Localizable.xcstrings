@@ -1,0 +1,107 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%@ %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@"
+          }
+        }
+      }
+    },
+    "%@ · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "%lld" : {
+
+    },
+    "+%lld more" : {
+
+    },
+    "Action" : {
+
+    },
+    "All clear today" : {
+
+    },
+    "CT Work timer" : {
+
+    },
+    "CT Work: %lld today" : {
+
+    },
+    "CT Work: all clear" : {
+
+    },
+    "Control CT Work timer" : {
+
+    },
+    "My work today" : {
+
+    },
+    "No timer" : {
+
+    },
+    "No timer running" : {
+
+    },
+    "Nothing due" : {
+
+    },
+    "Open CT Work once to set up this widget." : {
+
+    },
+    "Open CT Work to refresh" : {
+
+    },
+    "Pause" : {
+
+    },
+    "Pause, resume or stop the running CT Work timer." : {
+
+    },
+    "Paused" : {
+
+    },
+    "Resume" : {
+
+    },
+    "Running" : {
+
+    },
+    "Sign in to CT Work" : {
+
+    },
+    "Sign in to CT Work to see your day." : {
+
+    },
+    "Stop & log" : {
+
+    },
+    "Timer" : {
+
+    },
+    "Timer paused" : {
+
+    },
+    "Today" : {
+
+    },
+    "Today's meetings, issues due and overdue work." : {
+
+    },
+    "Your running CT Work timer." : {
+
+    }
+  },
+  "version" : "1.0"
+}

@@ -1,0 +1,60 @@
+{
+  "sourceLanguage": "en",
+  "version": "1.0",
+  "strings": {
+    "NSCameraUsageDescription": {
+      "comment": "Info.plist NSCameraUsageDescription",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CT Work uses the camera only when you choose \"Take Photo\" to attach a picture to an issue or a chat message."
+          }
+        }
+      }
+    },
+    "NSFaceIDUsageDescription": {
+      "comment": "Info.plist NSFaceIDUsageDescription",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If you turn on Face ID lock in Account › Security, CT Work asks for Face ID when you open the app."
+          }
+        }
+      }
+    },
+    "NSMicrophoneUsageDescription": {
+      "comment": "Info.plist NSMicrophoneUsageDescription",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CT Work uses the microphone only while you record a voice note to send in a team chat channel."
+          }
+        }
+      }
+    },
+    "CFBundleDisplayName": {
+      "comment": "Tên dưới biểu tượng — giữ 'CT Work' ở mọi ngôn ngữ",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CT Work"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CT Work"
+          }
+        }
+      }
+    }
+  }
+}

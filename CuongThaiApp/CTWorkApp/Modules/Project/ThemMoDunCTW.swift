@@ -82,11 +82,11 @@ struct ManThemCTW: View {
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: Spacing.lg) {
-                Text("Pin the tools you use most — pinned tools appear in \(beRong == .regular ? "the sidebar" : "Projects"). Touch and hold a tool to pin or unpin it.")
+                Text(beRong == .regular ? "Pin the tools you use most — pinned tools appear in the sidebar. Touch and hold a tool to pin or unpin it." : "Pin the tools you use most — pinned tools appear in Projects. Touch and hold a tool to pin or unpin it.")
                     .font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
                 if nhom.isEmpty {
-                    CTWOTrong(bieuTuong: "magnifyingglass", tieuDe: "No tools match “\(tim)”")
+                    CTWOTrong(bieuTuong: "magnifyingglass", tieuDe: String(localized: "No tools match “\(tim)”"))
                 }
                 ForEach(nhom, id: \.nhom) { n in
                     VStack(alignment: .leading, spacing: 10) {
@@ -146,11 +146,11 @@ private struct OMoDunCTW: View {
             .buttonStyle(.plain)
             .contextMenu {
                 Button { ghim.doi(m.id) } label: {
-                    Label(daGhim ? "Unpin from \(beRong == .regular ? "sidebar" : "Projects")" : "Pin to \(beRong == .regular ? "sidebar" : "Projects")",
+                    Label(daGhim ? (beRong == .regular ? String(localized: "Unpin from sidebar") : String(localized: "Unpin from Projects")) : (beRong == .regular ? String(localized: "Pin to sidebar") : String(localized: "Pin to Projects")),
                           systemImage: daGhim ? "pin.slash" : "pin")
                 }
             }
-            .accessibilityLabel("\(m.ten)\(daGhim ? ", pinned" : "")")
+            .accessibilityLabel(daGhim ? String(localized: "\(m.ten), pinned") : m.ten)
             .accessibilityHint(m.moTa)
             .accessibilityIdentifier("more.\(m.id)")
             Button { ghim.doi(m.id) } label: {

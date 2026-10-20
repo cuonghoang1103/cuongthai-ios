@@ -31,7 +31,7 @@ final class KhoaAppVM: ObservableObject {
     func datBat(_ v: Bool) async {
         if v {
             // Bật: xác thực một lần trước — máy không có Face ID/mật mã thì không bật được.
-            guard await xacThuc(lyDo: "Turn on Face ID lock for CT Work") else { return }
+            guard await xacThuc(lyDo: String(localized: "Turn on Face ID lock for CT Work")) else { return }
         }
         bat = v
         UserDefaults.standard.set(v, forKey: Self.khoaBat)
@@ -47,18 +47,18 @@ final class KhoaAppVM: ObservableObject {
         #endif
         dangHoi = true
         defer { dangHoi = false }
-        if await xacThuc(lyDo: "Unlock CT Work") { dangKhoa = false; loi = nil }
+        if await xacThuc(lyDo: String(localized: "Unlock CT Work")) { dangKhoa = false; loi = nil }
     }
 
     private func xacThuc(lyDo: String) async -> Bool {
         let c = LAContext()
         var e: NSError?
         guard c.canEvaluatePolicy(.deviceOwnerAuthentication, error: &e) else {
-            loi = "Set a passcode or Face ID in Settings to use this."
+            loi = String(localized: "Set a passcode or Face ID in Settings to use this.")
             return false
         }
         do { return try await c.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: lyDo) }
-        catch { loi = (error as? LAError)?.code == .userCancel ? nil : "Couldn't verify it's you. Try again."; return false }
+        catch { loi = (error as? LAError)?.code == .userCancel ? nil : String(localized: "Couldn't verify it's you. Try again."); return false }
     }
 }
 

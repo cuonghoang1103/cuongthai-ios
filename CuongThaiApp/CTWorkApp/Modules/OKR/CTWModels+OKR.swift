@@ -123,12 +123,12 @@ enum OkrTinh {
 
     static func tenTrangThai(_ s: String?) -> String {
         switch s {
-        case "ON_TRACK": return "On track"
-        case "AT_RISK": return "At risk"
-        case "OFF_TRACK": return "Off track"
-        case "DONE": return "Done"
-        case "SCORED": return "Scored"
-        default: return "Not started"
+        case "ON_TRACK": return String(localized: "On track")
+        case "AT_RISK": return String(localized: "At risk")
+        case "OFF_TRACK": return String(localized: "Off track")
+        case "DONE": return String(localized: "Done")
+        case "SCORED": return String(localized: "Scored")
+        default: return String(localized: "Not started")
         }
     }
 
@@ -144,7 +144,7 @@ enum OkrTinh {
 
     /// "12 / 20 %" · "Yes/No".
     static func giaTri(_ k: CTWOkrKR) -> String {
-        if k.metric == "BOOLEAN" { return (k.currentValue ?? 0) >= 1 ? "Done" : "Not yet" }
+        if k.metric == "BOOLEAN" { return (k.currentValue ?? 0) >= 1 ? String(localized: "Done") : String(localized: "Not yet") }
         let u = k.unit.map { $0 == "%" ? "%" : " \($0)" } ?? ""
         return "\(CTWSo.gon(k.currentValue ?? 0)) / \(CTWSo.gon(k.targetValue ?? 0))\(u)"
     }

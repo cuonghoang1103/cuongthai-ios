@@ -19,10 +19,10 @@ struct KhoKienThucCTW: View {
                 if let t = du.totals {
                     Section {
                         LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 10)], spacing: 10) {
-                            CTWODem(so: "\(t.articles ?? 0)", nhan: "Articles", bieuTuong: "doc.richtext")
-                            CTWODem(so: "\(t.forClients ?? 0)", nhan: "Visible to clients", bieuTuong: "person.2.wave.2", mau: AppColors.secondary)
-                            CTWODem(so: "\(t.views ?? 0)", nhan: "Views", bieuTuong: "eye", mau: AppColors.info)
-                            CTWODem(so: "\(t.deflected ?? 0)", nhan: "Questions answered by an article", bieuTuong: "checkmark.bubble", mau: AppColors.success)
+                            CTWODem(so: "\(t.articles ?? 0)", nhan: String(localized: "Articles"), bieuTuong: "doc.richtext")
+                            CTWODem(so: "\(t.forClients ?? 0)", nhan: String(localized: "Visible to clients"), bieuTuong: "person.2.wave.2", mau: AppColors.secondary)
+                            CTWODem(so: "\(t.views ?? 0)", nhan: String(localized: "Views"), bieuTuong: "eye", mau: AppColors.info)
+                            CTWODem(so: "\(t.deflected ?? 0)", nhan: String(localized: "Questions answered by an article"), bieuTuong: "checkmark.bubble", mau: AppColors.success)
                         }
                         .listRowInsets(EdgeInsets()).listRowBackground(Color.clear)
                     }
@@ -30,7 +30,7 @@ struct KhoKienThucCTW: View {
                 let dm = du.categories ?? []
                 if !dm.isEmpty {
                     Section {
-                        CTWThanhLoc(chip: [CTWChipLoc(id: "all", nhan: "All", bat: danhMuc == nil)] + dm.map {
+                        CTWThanhLoc(chip: [CTWChipLoc(id: "all", nhan: String(localized: "All"), bat: danhMuc == nil)] + dm.map {
                             CTWChipLoc(id: "\($0.id)", nhan: "\($0.name) · \($0.articles ?? 0)", bat: danhMuc == $0.id)
                         }) { c in danhMuc = c.id == "all" ? nil : Int(c.id) }
                         .listRowInsets(EdgeInsets()).listRowBackground(Color.clear)
@@ -39,12 +39,12 @@ struct KhoKienThucCTW: View {
                 let ds = loc(du.articles ?? [])
                 Section {
                     if ds.isEmpty {
-                        CTWOTrong(bieuTuong: "books.vertical", tieuDe: (du.articles ?? []).isEmpty ? "No articles yet" : "No matches",
-                                  moTa: (du.articles ?? []).isEmpty ? "Admins publish Docs pages as help articles on the web." : "")
+                        CTWOTrong(bieuTuong: "books.vertical", tieuDe: (du.articles ?? []).isEmpty ? String(localized: "No articles yet") : String(localized: "No matches"),
+                                  moTa: (du.articles ?? []).isEmpty ? String(localized: "Admins publish Docs pages as help articles on the web.") : "")
                             .listRowBackground(Color.clear)
                     }
                     ForEach(ds) { a in
-                        NavigationLink(value: RouteTaiLieuCTW(pid: pid, so: a.pageNumber, ten: a.title ?? "Article")) { hang(a) }
+                        NavigationLink(value: RouteTaiLieuCTW(pid: pid, so: a.pageNumber, ten: a.title ?? String(localized: "Article"))) { hang(a) }
                     }
                 }
             }
@@ -71,16 +71,16 @@ struct KhoKienThucCTW: View {
     private func hang(_ a: CTWKb.BaiViet) -> some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack(spacing: 6) {
-                Text(a.title ?? "Untitled").font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(2)
+                Text(a.title ?? String(localized: "Untitled")).font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(2)
                 Spacer(minLength: 4)
-                if a.published != true { CTWNhanNho(chu: "Unpublished", mau: AppColors.warning) }
+                if a.published != true { CTWNhanNho(chu: String(localized: "Unpublished"), mau: AppColors.warning) }
             }
             if let e = a.excerpt, !e.isEmpty {
                 Text(e).font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary).lineLimit(2)
             }
             HStack(spacing: 8) {
                 if let c = a.category?.name { CTWNhanNho(chu: c, bieuTuong: "folder") }
-                CTWNhanNho(chu: a.audience == "CLIENT" ? "Clients" : "Team", bieuTuong: a.audience == "CLIENT" ? "person.2.wave.2" : "person.3",
+                CTWNhanNho(chu: a.audience == "CLIENT" ? String(localized: "Clients") : String(localized: "Team"), bieuTuong: a.audience == "CLIENT" ? "person.2.wave.2" : "person.3",
                            mau: a.audience == "CLIENT" ? AppColors.secondary : AppColors.textSecondary)
                 Label("\(a.views ?? 0)", systemImage: "eye").font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
                 if let h = a.helpfulPercent {
@@ -95,7 +95,7 @@ struct KhoKienThucCTW: View {
         do { du = try await APIClient.shared.request(CTWAPI.kb(pid: pid)); loi = nil }
         catch {
             if case APIError.coMa(let ma, _) = error, ma == "MODULE_DISABLED" {
-                loi = "Docs are turned off for this project, so the knowledge base is unavailable."
+                loi = String(localized: "Docs are turned off for this project, so the knowledge base is unavailable.")
             } else { loi = CTW.loi(error) }
         }
     }

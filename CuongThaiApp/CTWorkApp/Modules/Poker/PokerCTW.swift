@@ -38,9 +38,9 @@ enum PokerTinh {
 
     /// "Estimated 4 of 6 · 21 pts".
     static func tomTat(_ p: CTWPokerDs.Phien) -> String {
-        var s = "Estimated \(p.estimated ?? 0) of \(p.items ?? 0)"
-        if let d = p.points, d > 0 { s += " · \(CTWSo.gon(d)) pts" }
-        return s
+        let e = p.estimated ?? 0, n = p.items ?? 0
+        if let d = p.points, d > 0 { return String(localized: "Estimated \(e) of \(n) · \(CTWSo.gon(d)) pts") }
+        return String(localized: "Estimated \(e) of \(n)")
     }
 }
 
@@ -59,9 +59,9 @@ struct PokerCTW: View {
                 let dong = (d.sessions ?? []).filter { $0.status == "CLOSED" }
                 if mo.isEmpty && dong.isEmpty {
                     Section {
-                        CTWOTrong(bieuTuong: "suit.spade", tieuDe: "No poker sessions yet",
-                                  moTa: "Estimate stories together: everyone picks a card, then reveal at once.",
-                                  nut: d.canCreate == true ? "New session" : nil) { moTao = true }
+                        CTWOTrong(bieuTuong: "suit.spade", tieuDe: String(localized: "No poker sessions yet"),
+                                  moTa: String(localized: "Estimate stories together: everyone picks a card, then reveal at once."),
+                                  nut: d.canCreate == true ? String(localized: "New session") : nil) { moTao = true }
                     }
                     .listRowBackground(Color.clear)
                 }
@@ -100,7 +100,7 @@ struct PokerCTW: View {
             guard let d = app.dichCho, d.moDun == "poker" else { return }
             defer { app.dichCho = nil }
             if let s = Int(d.duongDan.tham["s"] ?? d.duongDan.phanCon.first ?? "") {
-                nganXep.duong.append(RoutePokerCTW(pid: nguCanh.pid, sid: s, ten: "Poker"))
+                nganXep.duong.append(RoutePokerCTW(pid: nguCanh.pid, sid: s, ten: String(localized: "Poker")))
             }
         }
         #if DEBUG
@@ -113,20 +113,20 @@ struct PokerCTW: View {
     }
 
     private func hang(_ p: CTWPokerDs.Phien) -> some View {
-        NavigationLink(value: RoutePokerCTW(pid: nguCanh.pid, sid: p.id, ten: p.title ?? "Poker")) {
+        NavigationLink(value: RoutePokerCTW(pid: nguCanh.pid, sid: p.id, ten: p.title ?? String(localized: "Poker"))) {
             HStack(spacing: 12) {
                 Image(systemName: p.deck == "TSHIRT" ? "tshirt" : "suit.spade.fill")
                     .font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.primary)
                     .frame(width: 36, height: 36)
                     .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(AppColors.primary.opacity(0.12)))
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(p.title ?? "Poker").font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                    Text(p.title ?? String(localized: "Poker")).font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                     Text([p.sprint?.name, PokerTinh.tomTat(p)].compactMap { $0 }.joined(separator: " · "))
                         .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1)
                     let tong = max(p.items ?? 0, 1)
                     CTWThanhTienDo(doan: [
-                        CTWDoanTienDo(ten: "Estimated", giaTri: Double(p.estimated ?? 0), mau: AppColors.success),
-                        CTWDoanTienDo(ten: "Remaining", giaTri: Double(tong - (p.estimated ?? 0)), mau: AppColors.backgroundTertiary),
+                        CTWDoanTienDo(ten: String(localized: "Estimated"), giaTri: Double(p.estimated ?? 0), mau: AppColors.success),
+                        CTWDoanTienDo(ten: String(localized: "Remaining"), giaTri: Double(tong - (p.estimated ?? 0)), mau: AppColors.backgroundTertiary),
                     ], cao: 5)
                 }
             }
@@ -169,7 +169,7 @@ struct TaoPokerCTW: View {
                 Section {
                     Picker("Sprint", selection: $sprintId) {
                         Text("None").tag(Int?.none)
-                        ForEach(sprints) { s in Text(s.name + (s.state == "ACTIVE" ? " (active)" : "")).tag(Int?.some(s.id)) }
+                        ForEach(sprints) { s in Text(s.state == "ACTIVE" ? String(localized: "\(s.name) (active)") : s.name).tag(Int?.some(s.id)) }
                     }
                 } footer: { Text("Picking a sprint adds its unfinished stories and tasks to the session.") }
                 if let loi { Section { Text(loi).foregroundColor(AppColors.error) } }

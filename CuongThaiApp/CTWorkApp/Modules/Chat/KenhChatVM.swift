@@ -253,9 +253,9 @@ final class KenhChatVM: ObservableObject {
         let ten = dangGo.values.sorted { $0.luc < $1.luc }.map(\.nguoi.ten)
         switch ten.count {
         case 0: return nil
-        case 1: return "\(ten[0]) is typing…"
-        case 2: return "\(ten[0]) and \(ten[1]) are typing…"
-        default: return "Several people are typing…"
+        case 1: return String(localized: "\(ten[0]) is typing…")
+        case 2: return String(localized: "\(ten[0]) and \(ten[1]) are typing…")
+        default: return String(localized: "Several people are typing…")
         }
     }
 

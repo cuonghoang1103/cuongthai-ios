@@ -43,8 +43,8 @@ struct CTWAgentHoSo: Codable, Hashable, Identifiable {
     var canManage: Bool?
     var projects: [CTWAgentDuAn]?
 
-    var ten: String { user?.ten ?? "Agent #\(id)" }
-    var tenRuntime: String { runtime == "BUILTIN" ? "Built-in (runs on CT Work)" : "External (MCP token)" }
+    var ten: String { user?.ten ?? String(localized: "Agent #\(id)") }
+    var tenRuntime: String { runtime == "BUILTIN" ? String(localized: "Built-in (runs on CT Work)") : String(localized: "External (MCP token)") }
 }
 
 /// Lịch sử nhận việc — `GET /workspaces/:wsId/agents/:id/leases`.
@@ -79,10 +79,10 @@ enum CTWAgentHienThi {
     /// ACTIVE còn hạn + có % ⇒ "working · 72%"; EXPIRED hoặc ACTIVE quá hạn ⇒ "stalled".
     static func chip(status: String?, expiresAt: String?, pct: Double?, bayGio: Date = Date()) -> (chu: String, ket: Bool) {
         let het = thoiDiem(expiresAt).map { $0 < bayGio } ?? false
-        if status == "EXPIRED" || (status == "ACTIVE" && het) { return ("stalled", true) }
+        if status == "EXPIRED" || (status == "ACTIVE" && het) { return (String(localized: "stalled"), true) }
         if status == "ACTIVE" {
-            if let pct { return ("working · \(Int(pct.rounded()))%", false) }
-            return ("working", false)
+            if let pct { return (String(localized: "working · \(Int(pct.rounded()))%"), false) }
+            return (String(localized: "working"), false)
         }
         return ((status ?? "done").lowercased(), false)
     }
@@ -100,9 +100,9 @@ enum CTWAgentHienThi {
     static func truoc(_ s: String?, bayGio: Date = Date()) -> String? {
         guard let d = thoiDiem(s) else { return nil }
         let giay = bayGio.timeIntervalSince(d)
-        if giay < 60 { return "just now" }
-        if giay < 3600 { return "\(Int(giay / 60)) min ago" }
-        if giay < 86400 { return "\(Int(giay / 3600)) h ago" }
+        if giay < 60 { return String(localized: "just now") }
+        if giay < 3600 { return String(localized: "\(Int(giay / 60)) min ago") }
+        if giay < 86400 { return String(localized: "\(Int(giay / 3600)) h ago") }
         return CTW.ngayNgan(s)
     }
 

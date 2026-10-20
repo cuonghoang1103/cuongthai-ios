@@ -70,8 +70,8 @@ enum TinhGioCTW {
     static func chuPhut(_ p: Int) -> String {
         let p = max(p, 0)
         let h = p / 60, m = p % 60
-        if h == 0 { return "\(m)m" }
-        return m == 0 ? "\(h)h" : "\(h)h \(m)m"
+        if h == 0 { return String(localized: "\(m)m") }
+        return m == 0 ? String(localized: "\(h)h") : String(localized: "\(h)h \(m)m")
     }
 
     /// "1h 30m" / "1.5h" / "90m" / "90" / "1:30" → phút (nil nếu không hiểu hoặc ngoài 1…1440).

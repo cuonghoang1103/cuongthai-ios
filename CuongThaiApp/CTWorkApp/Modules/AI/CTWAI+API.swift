@@ -87,24 +87,24 @@ struct CTWAIDeXuat: Codable, Hashable {
     /// Câu mô tả đề xuất cho người dùng (tiếng Anh).
     func moTa(ma: String) -> String {
         let a = action
-        let the = a?.number.map { "\(ma)-\($0)" } ?? "an issue"
+        let the = a?.number.map { "\(ma)-\($0)" } ?? String(localized: "an issue")
         switch a?.type {
-        case "create_issue": return "Create \((a?.issueType ?? "issue").lowercased()) “\(a?.title ?? "")”"
+        case "create_issue": return String(localized: "Create \((a?.issueType ?? String(localized: "issue")).lowercased()) “\(a?.title ?? "")”")
         case "update_issue":
             var phan: [String] = []
-            if let s = a?.status { phan.append("status → \(s)") }
-            if let s = a?.assignee { phan.append("assignee → @\(s)") }
-            if let s = a?.dueDate { phan.append("due → \(s)") }
-            if let s = a?.sprint { phan.append("sprint → \(s)") }
-            if a?.title != nil { phan.append("title") }
-            return "Update \(the)" + (phan.isEmpty ? "" : ": " + phan.joined(separator: ", "))
-        case "add_comment": return "Comment on \(the)"
-        case "move_to_sprint": return "Move \(a?.numbers?.count ?? 0) issue(s) to \(a?.sprint ?? "a sprint")"
-        case "create_test": return "Create test case “\(a?.title ?? "")”"
-        case "draft_page": return "Draft Docs page “\(a?.title ?? "")”"
-        case "update_page_section": return "Update section “\(a?.heading ?? "")” of Docs #\(a?.number ?? 0)"
-        case "command": return a?.summary ?? (a?.command ?? "Run a project command")
-        default: return a?.summary ?? "Suggested change"
+            if let s = a?.status { phan.append(String(localized: "status → \(s)")) }
+            if let s = a?.assignee { phan.append(String(localized: "assignee → @\(s)")) }
+            if let s = a?.dueDate { phan.append(String(localized: "due → \(s)")) }
+            if let s = a?.sprint { phan.append(String(localized: "sprint → \(s)")) }
+            if a?.title != nil { phan.append(String(localized: "title")) }
+            return phan.isEmpty ? String(localized: "Update \(the)") : String(localized: "Update \(the): \(phan.joined(separator: ", "))")
+        case "add_comment": return String(localized: "Comment on \(the)")
+        case "move_to_sprint": return String(localized: "Move \(a?.numbers?.count ?? 0) issue(s) to \(a?.sprint ?? String(localized: "a sprint"))")
+        case "create_test": return String(localized: "Create test case “\(a?.title ?? "")”")
+        case "draft_page": return String(localized: "Draft Docs page “\(a?.title ?? "")”")
+        case "update_page_section": return String(localized: "Update section “\(a?.heading ?? "")” of Docs #\(a?.number ?? 0)")
+        case "command": return a?.summary ?? (a?.command ?? String(localized: "Run a project command"))
+        default: return a?.summary ?? String(localized: "Suggested change")
         }
     }
 }
