@@ -336,7 +336,7 @@ struct BoLocCTW: View {
                 }
                 Section("Status") {
                     ForEach(trangThai) { s in
-                        chon(s.name, loc.status.contains(s.id)) { doi(&loc.status, s.id) }
+                        chon(CTWTen.trangThai(s.name), loc.status.contains(s.id)) { doi(&loc.status, s.id) }
                     }
                     Toggle("Include done issues", isOn: $loc.includeDone)
                 }
@@ -355,7 +355,7 @@ struct BoLocCTW: View {
                 }
                 Section("Type") {
                     ForEach(cauHinh.dsLoai) { t in
-                        chon(t.name, loc.type.contains(t.id)) { doi(&loc.type, t.id) }
+                        chon(CTWTen.loai(t.name), loc.type.contains(t.id)) { doi(&loc.type, t.id) }
                     }
                 }
                 if !(cauHinh.labels ?? []).isEmpty {

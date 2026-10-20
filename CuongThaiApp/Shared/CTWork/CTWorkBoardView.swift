@@ -78,7 +78,7 @@ final class CTWBoardVM: ObservableObject {
               let the = bang?.issues?.first(where: { $0.number == soThe }) else { return false }
         if (c.statusIds ?? []).contains(the.statusId) { return false }
         guard let st = cfg.trangThaiTrongCot(c, loai: the.typeId, tu: the.statusId) else {
-            loi = String(localized: "\(cfg.key)-\(the.number) can't move to \(c.name) — the workflow doesn't allow it.")
+            loi = String(localized: "\(cfg.key)-\(the.number) can't move to \(CTWTen.trangThai(c.name)) — the workflow doesn't allow it.")
             return false
         }
         await chuyen(the, sang: st.id)
@@ -399,7 +399,7 @@ struct CTWBoardView: View {
         return VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 7) {
                 CTWStatusGlyph(category: c.category, co: CTWCoChu.co(12))
-                Text(verbatim: CTWKieuWeb.chuCau(c.name))
+                Text(verbatim: CTWTen.trangThaiCau(c.name))
                     .font(.ctw(size: 14, weight: .semibold))
                     .foregroundColor(AppColors.textPrimary)
                     .lineLimit(1)
@@ -492,7 +492,7 @@ struct CTWBoardView: View {
                 Section("Move to…") {
                     ForEach(dich) { s in
                         Button { Task { await vm.chuyen(t, sang: s.id) } } label: {
-                            Label { Text(verbatim: CTWKieuWeb.chuCau(s.name)) } icon: { Image(systemName: Self.bieuTuongNhom(s.category)) }
+                            Label { Text(verbatim: CTWTen.trangThaiCau(s.name)) } icon: { Image(systemName: Self.bieuTuongNhom(s.category)) }
                         }
                     }
                 }

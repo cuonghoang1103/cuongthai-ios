@@ -227,6 +227,8 @@ struct CTWProjectConfig: Codable {
     var modules: CTWBangCo?
     /// PERSONAL | SCHOOL | SOFTWARE | CLIENT
     var kind: String?
+    /// BLANK | SWR302 | SWT301 | SWP391 | FREELANCE | COMPANY | CAPSTONE — bộ mô-đun cốt lõi theo mẫu (ghim, đợt B).
+    var template: String?
 
     // MARK: Tra cứu
 
@@ -289,6 +291,8 @@ struct CTWIssueCard: Codable, Hashable, Identifiable {
     var parentId: Int?
     var parentNumber: Int?
     var sprintId: Int?
+    /// Bộ phận phụ trách (mô-đun teams) — lọc board theo bộ phận.
+    var teamId: Int?
     var priority: Int?
     var assigneeId: Int?
     var reporterId: Int?

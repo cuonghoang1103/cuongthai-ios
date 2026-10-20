@@ -88,7 +88,7 @@ struct CTWChonTrangThaiMenu: View {
         Menu {
             ForEach(cauHinh.trangThaiDich(loai: loai, tu: hienTai)) { s in
                 Button { chon(s) } label: {
-                    if s.id == hienTai { Label(s.name, systemImage: "checkmark") } else { Text(s.name) }
+                    if s.id == hienTai { Label(CTWTen.trangThai(s.name), systemImage: "checkmark") } else { Text(verbatim: CTWTen.trangThai(s.name)) }
                 }
             }
         } label: {
@@ -97,7 +97,7 @@ struct CTWChonTrangThaiMenu: View {
                 Image(systemName: "chevron.up.chevron.down").font(.ctw(size: 10)).foregroundColor(AppColors.textTertiary)
             }
         }
-        .accessibilityLabel("Status: \(cauHinh.trangThai(hienTai)?.name ?? "")")
+        .accessibilityLabel("Status: \(cauHinh.trangThai(hienTai).map { CTWTen.trangThai($0.name) } ?? "")")
     }
 }
 

@@ -147,7 +147,7 @@ struct AgendaCuaToiCTW: View {
             p.append(NgayCTW.thoiDiem(i.endsAt).map { "\(NgayCTW.gio(a)) – \(NgayCTW.gio($0))" } ?? NgayCTW.gio(a))
         }
         if let k = i.key { p.append(k) }
-        if let s = i.status?.name { p.append(s) }
+        if let s = i.status?.name { p.append(CTWTen.trangThai(s)) }
         if let k = i.project?.key { p.append(k) }
         if let l = i.location, !l.isEmpty { p.append(l) }
         return p.joined(separator: " · ")
