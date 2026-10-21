@@ -519,6 +519,9 @@ Mẫu: hai video chủ app gửi 21/10 (app giao hàng "Parcel": hero minh hoạ
 - **Màn thử CT Work**: `CT_XEM_MAN=dangnhap CT_XEM_KHOIDONG=1` ⇒ màn khởi động ⇒ đăng nhập; máy chủ giả trả `/auth/login` sau 1,2 s
   (mật khẩu "wrong" ⇒ `INVALID_CREDENTIALS`). ⚠️ Đăng nhập thử GHI token giả vào Keychain máy mô phỏng — mở app thường sau đó sẽ gọi
   máy chủ thật bằng token giả (401 ⇒ tự đăng xuất). Quay video luồng thật: `xcrun simctl keychain <U> reset` trước.
+  Thêm `CT_XEM_TU_CHAY=1` ⇒ màn đăng nhập TỰ gõ (sai mật khẩu ⇒ lỗi + lắc ⇒ đúng ⇒ vào màn chính) — để quay cả luồng bằng
+  `simctl io recordVideo` (app chính cũng có, cùng tên biến). `CT_XEM_KHOIDONG=giu` ⇒ màn khởi động đứng chờ tới khi chạm;
+  `CT_XEM_CHO_DANGNHAP=<giây>` ⇒ /auth/login giả trả chậm hơn (UI test dùng 3 s).
 - **Kiểm thử**: `CTWorkTests/KhoiDongCTWTests.swift` (lịch: khôi phục trước/giữa/sau, trần, bỏ qua; bộ điều phối chạy thật; điều kiện
   dựng; âm trong gói; công tắc mặc định; pháo) + `CTWorkUITests/KhoiDongDangNhapUITests.swift` (mở nguội ⇒ màn khởi động tự thoát ⇒
   sai mật khẩu ⇒ lỗi ⇒ đúng ⇒ My Work; chạm bỏ qua; đổi sang Đăng ký và lại).
