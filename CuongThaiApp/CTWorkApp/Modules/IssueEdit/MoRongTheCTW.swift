@@ -4,6 +4,7 @@ import SwiftUI
 //
 // · Ghi giờ ngay trong thẻ: `NutGhiGioTheCTW` (mô-đun Time — Start timer / Log time, chung đồng hồ + Live Activity).
 // · Mở tài liệu liên kết: đẩy `RouteTaiLieuCTW` (đích của mô-đun Docs, đăng ký ở `ctwDichDen`).
+// · Nút "CuongMini" cạnh trạng thái (`NutCuongMiniTheCTW`, Modules/AI/CuongMiniCTW.swift) — việc một chạm + hỏi về thẻ.
 // App chính không có hai mô-đun đó ⇒ `CTWIssueView(moRong: nil)` tự ẩn phần tương ứng.
 
 extension CTWIssueMoRong {
@@ -15,6 +16,9 @@ extension CTWIssueMoRong {
             },
             lienKetTrang: { pid, so, ten, nhan in
                 AnyView(NavigationLink(value: RouteTaiLieuCTW(pid: pid, so: so, ten: ten)) { nhan }.buttonStyle(.plain))
+            },
+            nutCuongMini: { cfg, so, loai, tieuDe in
+                nutCuongMini(cfg: cfg, the: TheCuongMini(so: so, loai: loai, tieuDe: tieuDe))
             })
     }
 }

@@ -36,14 +36,21 @@ struct TrangDuAnCTW: View {
         Group {
             if let l = app.luaChon {
                 VStack(spacing: 0) {
-                    Picker("Project view", selection: $che) {
-                        ForEach(CheDo.allCases) { c in Text(c.ten).tag(c) }
+                    // 21/10/2026: nút ✦ CuongMini cạnh công tắc ⇒ luôn trong tầm tay ở Board · Backlog · List · More. KHÔNG đặt
+                    // trên thanh điều hướng: Board có 3 nút bên phải, thêm một nút bên trái là đè lên menu tên dự án (đã chụp).
+                    HStack(spacing: 8) {
+                        Picker("Project view", selection: $che) {
+                            ForEach(CheDo.allCases) { c in Text(c.ten).tag(c) }
+                        }
+                        .pickerStyle(.segmented)
+                        .accessibilityIdentifier("project.views")
+                        if CuongMini.coTheDung(app.cauHinhDuAn) {
+                            NutCuongMiniCTW(pid: l.pid, maDuAn: l.maDuAn)
+                        }
                     }
-                    .pickerStyle(.segmented)
                     .padding(.horizontal, Spacing.md)
                     .padding(.top, 4)
                     .padding(.bottom, 8)
-                    .accessibilityIdentifier("project.views")
                     .onChange(of: che) { _, _ in CTWRung.chon() }
 
                     switch che {
@@ -146,14 +153,21 @@ struct TrangDuAnCTW: View {
 
     @ObservedObject private var ghim = GhimMoDunCTW.shared
 
-    /// Mô-đun đã ghim, thuộc trang dự án, trừ Board/Backlog (đã có trên công tắc). Chat là tab riêng trên iPhone.
+    /// Mô-đun đã ghim, thuộc trang dự án, trừ Board/Backlog (đã có trên công tắc) và CuongMini (thẻ nổi bật ở đầu).
+    /// Chat là tab riêng trên iPhone.
     private var ghimDuoc: [CTWModule] {
-        CTWDangKyMoDun.daGhim(app.cauHinhDuAn).filter { $0.viTriIPhone == .trangDuAn && $0.id != "board" && $0.id != "backlog" }
+        CTWDangKyMoDun.daGhim(app.cauHinhDuAn).filter { $0.viTriIPhone == .trangDuAn && !["board", "backlog", "ai"].contains($0.id) }
     }
 
     private func congCu(_ l: LuaChonCTW) -> some View {
         List {
-            Section { dau(l) }
+            Section {
+                dau(l)
+                // CuongMini nổi bật ở đầu (thay dòng "AI assistant" lẫn giữa các mô-đun — chủ app không tìm thấy, 21/10/2026).
+                if CuongMini.coTheDung(app.cauHinhDuAn) {
+                    TheCuongMiniCTW(pid: l.pid, maDuAn: l.maDuAn).padding(.bottom, 4)
+                }
+            }
                 .listRowInsets(EdgeInsets())
                 .listRowBackground(Color.clear)
             Section {

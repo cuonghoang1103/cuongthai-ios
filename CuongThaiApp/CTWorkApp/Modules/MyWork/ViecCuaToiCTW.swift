@@ -50,11 +50,17 @@ struct ViecCuaToiCTW: View {
 
 extension ViecCuaToiCTW {
     fileprivate var congTac: some View {
-        Picker("View", selection: $che) {
-            Text("Issues").tag(0)
-            Text("Agenda").tag(1)
+        VStack(spacing: 10) {
+            Picker("View", selection: $che) {
+                Text("Issues").tag(0)
+                Text("Agenda").tag(1)
+            }
+            .pickerStyle(.segmented)
+            // "Hôm nay tôi nên làm gì?" (21/10/2026): mở CuongMini của dự án đang chọn và hỏi ngay.
+            if let l = app.luaChon, CuongMini.coTheDung(app.cauHinhDuAn) {
+                TheCuongMiniCTW(pid: l.pid, maDuAn: l.maDuAn, tenDuAn: l.tenDuAn, homNay: true)
+            }
         }
-        .pickerStyle(.segmented)
         .padding(.bottom, 4)
     }
 }

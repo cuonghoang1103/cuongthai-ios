@@ -11,6 +11,8 @@ struct CTWIssueMoRong {
     var nutGhiGio: ((_ pid: Int, _ so: Int, _ tieuDe: String, _ daGhi: @escaping () -> Void) -> AnyView)?
     /// Liên kết mở một trang tài liệu (đích điều hướng của mô-đun Docs).
     var lienKetTrang: ((_ pid: Int, _ so: Int, _ ten: String, _ nhan: AnyView) -> AnyView)?
+    /// Nút "CuongMini" cạnh trạng thái (trợ lý AI của app CT Work — việc một chạm + hỏi về thẻ). App chính không có.
+    var nutCuongMini: ((_ cfg: CTWProjectConfig, _ so: Int, _ loai: String?, _ tieuDe: String) -> AnyView)?
 }
 
 /// Chọn NHIỀU (nhãn, component, trường nhiều lựa chọn).

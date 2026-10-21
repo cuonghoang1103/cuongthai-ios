@@ -25,9 +25,11 @@ final class TroLyAIVM: ObservableObject {
     @Published var taiDs = true
     @Published var hanMuc: CTWAIHanMuc?
     @Published var dangApDung: Set<String> = []
+    /// Thẻ đang bàn (mở từ chi tiết thẻ / hội thoại gắn thẻ) ⇒ mọi câu hỏi gửi kèm `issueNumber` (như ngăn AI của web).
+    @Published var the: TheCuongMini?
     private var viec: Task<Void, Never>?
 
-    init(pid: Int) { self.pid = pid }
+    init(pid: Int, the: TheCuongMini? = nil) { self.pid = pid; self.the = the }
 
     var tinNhan: [CTWAITinNhan] { hoiThoai?.messages ?? [] }
     /// Câu hỏi gần nhất chưa được trả lời (máy chủ đã lưu kèm `error`).
@@ -44,6 +46,8 @@ final class TroLyAIVM: ObservableObject {
             let t: CTWAIHoiThoai = try await APIClient.shared.request(CTWAPI.aiHoiThoai(pid: pid, id: id))
             hoiThoai = t
             loiLuot = nil
+            // Hội thoại gắn một thẻ ⇒ câu hỏi tiếp theo vẫn bàn về thẻ đó (bỏ được bằng ✕ trên chip ngữ cảnh).
+            if the == nil, let n = t.issueNumber { the = TheCuongMini(so: n) }
         } catch {
             loi = TroLyAICTW.loi(error)
         }
@@ -67,7 +71,7 @@ final class TroLyAIVM: ObservableObject {
         var tid = hoiThoai?.id
         do {
             if tid == nil {
-                let t: CTWAIHoiThoai = try await APIClient.shared.request(CTWAPI.aiTaoHoiThoai(pid: pid, tieuDe: cau, rieng: rieng))
+                let t: CTWAIHoiThoai = try await APIClient.shared.request(CTWAPI.aiTaoHoiThoai(pid: pid, tieuDe: cau, rieng: rieng, so: the?.so))
                 hoiThoai = t
                 tid = t.id
             }
@@ -75,14 +79,14 @@ final class TroLyAIVM: ObservableObject {
             // Bản stream trước; máy chủ chưa có tuyến ⇒ lặng lẽ về `/ai/chat` (và nhớ trong phiên).
             if !LuongAICTW.khongCoLuong {
                 do {
-                    try await chayLuong(LuongAICTW.than(cauHoi: cau, threadId: tid), tid: tid)
+                    try await chayLuong(LuongAICTW.than(cauHoi: cau, threadId: tid, so: the?.so), tid: tid)
                     CTWRung.thanhCong()
                     return true
                 } catch LoiLuongAI.khongHoTro {
                     xoaNhap()
                 }
             }
-            let kq: CTWAIKetQua = try await APIClient.shared.request(CTWAPI.aiHoi(pid: pid, cauHoi: cau, threadId: tid))
+            let kq: CTWAIKetQua = try await APIClient.shared.request(CTWAPI.aiHoi(pid: pid, cauHoi: cau, threadId: tid, so: the?.so))
             if let q = kq.quota { hanMuc = q }
             await mo(tid)
             CTWRung.thanhCong()
@@ -136,6 +140,38 @@ final class TroLyAIVM: ObservableObject {
         }
         await moLang(tid)
         loiLuot = loiMoi
+    }
+
+    /// Việc một chạm trên thẻ đang bàn (`POST /ai/quick`) — ghi vào hội thoại đang mở (chưa có ⇒ tạo, gắn thẻ) như web
+    /// `AiPanelHost`: một dòng "câu hỏi" = nhãn việc · mã thẻ, câu trả lời có tiêu đề = nhãn. Không có bản stream.
+    func chayNhanh(_ m: MucNhanhCuongMini, ma: String, rieng: Bool) async {
+        guard dangCho == nil, let the else { return }
+        let nhan = m.nhan
+        let cau = ma.isEmpty ? nhan : "\(nhan) · \(ma)-\(the.so)"
+        loiLuot = nil
+        cauDangHoi = cau
+        dangCho = ma.isEmpty ? String(localized: "CuongMini is reading the issue…") : String(localized: "CuongMini is reading \(ma)-\(the.so)…")
+        defer { dangCho = nil; cauDangHoi = nil }
+        var tid = hoiThoai?.id
+        do {
+            if tid == nil {
+                let t: CTWAIHoiThoai = try await APIClient.shared.request(CTWAPI.aiTaoHoiThoai(pid: pid, tieuDe: cau, rieng: rieng, so: the.so))
+                hoiThoai = t
+                tid = t.id
+            }
+            guard let tid else { return }
+            let kq: CTWAIKetQua = try await APIClient.shared.request(CTWAPI.aiViecNhanh(pid: pid, viec: m.viec, so: the.so, threadId: tid, nhan: nhan))
+            if let q = kq.quota { hanMuc = q }
+            ghep(kq, tid: tid)
+            CTWRung.thanhCong()
+        } catch {
+            let huy = error is CancellationError || Task.isCancelled || (error as? URLError)?.code == .cancelled
+            if let tid { await moLang(tid) }
+            if !huy {
+                CTWRung.loi()
+                loiLuot = TroLyAICTW.loi(error)
+            }
+        }
     }
 
     // MARK: Luồng (SSE)
@@ -265,6 +301,11 @@ final class TroLyAIVM: ObservableObject {
 
 struct TroLyAICTW: View {
     let pid: Int
+    /// Mã dự án của `pid` — thẻ mở từ My Work có thể thuộc dự án khác dự án đang chọn.
+    private let maDuAn: String?
+    /// Việc mở sẵn (hỏi "hôm nay", việc một chạm trên thẻ) — chạy MỘT lần, sau hộp đồng ý nếu chưa đồng ý.
+    private let khoiDau: KhoiDauCuongMini?
+    @State private var daKhoiDau = false
     @StateObject private var vm: TroLyAIVM
     @EnvironmentObject private var app: AppState
     @EnvironmentObject private var nganXep: NganXepCTW
@@ -275,9 +316,11 @@ struct TroLyAICTW: View {
     @FocusState private var dangGo: Bool
     @State private var demLucHien = 0
 
-    init(pid: Int) {
+    init(pid: Int, maDuAn: String? = nil, the: TheCuongMini? = nil, khoiDau: KhoiDauCuongMini? = nil) {
         self.pid = pid
-        _vm = StateObject(wrappedValue: TroLyAIVM(pid: pid))
+        self.maDuAn = maDuAn
+        self.khoiDau = khoiDau
+        _vm = StateObject(wrappedValue: TroLyAIVM(pid: pid, the: the))
     }
 
     /// Câu lỗi cho người dùng — KHÔNG để lọt câu mời mua của máy chủ (3.1.1).
@@ -299,11 +342,17 @@ struct TroLyAICTW: View {
         return CTW.loi(e)
     }
 
-    private var ma: String { app.luaChon?.maDuAn ?? "" }
+    private var ma: String { maDuAn ?? (app.luaChon?.pid == pid ? app.luaChon?.maDuAn : nil) ?? "" }
+    /// Câu mẫu của màn trống — "Hôm nay tôi nên làm gì?" ĐẦU TIÊN (câu chủ app hỏi nhiều nhất). Đang bàn một thẻ ⇒ câu về thẻ.
     private var mau: [String] {
-        [String(localized: "What should I work on next, and what do I need to read first?"),
-         String(localized: "Summarize where the current sprint stands and what's at risk."),
-         ma.isEmpty ? String(localized: "Explain the newest issue assigned to me step by step.") : String(localized: "Explain my most urgent \(ma) issue step by step.")]
+        if vm.the != nil { return CuongMini.goiYThe }
+        return [CuongMini.cauHomNay,
+                String(localized: "What should I work on next, and what do I need to read first?"),
+                String(localized: "Summarize where the current sprint stands and what's at risk."),
+                ma.isEmpty ? String(localized: "Explain the newest issue assigned to me step by step.") : String(localized: "Explain my most urgent \(ma) issue step by step.")]
+    }
+    private var bieuTuongMau: [String] {
+        vm.the != nil ? ["list.number", "book", "checkmark.seal"] : ["sun.max", "checklist", "chart.line.uptrend.xyaxis", "list.number"]
     }
 
     var body: some View {
@@ -377,11 +426,17 @@ struct TroLyAICTW: View {
         }
         .safeAreaInset(edge: .bottom) { oSoan }
         .background(AppColors.backgroundPrimary)
-        .navigationTitle(vm.hoiThoai?.title ?? String(localized: "AI assistant"))
+        .navigationTitle(vm.hoiThoai?.title ?? "CuongMini")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .primaryAction) { menuHoiThoai } }
         .environment(\.openURL, OpenURLAction { u in moLink(u) })
         .task { await vm.taiDanhSach() }
+        .task {
+            // Việc mở sẵn chạy MỘT lần (quay lại từ một thẻ đẩy từ link thì không chạy lại).
+            guard let k = khoiDau, !daKhoiDau else { return }
+            daKhoiDau = true
+            chay(k)
+        }
         .onAppear { demLucHien = nganXep.duong.count }
         // Rời màn (quay lại) ⇒ đóng luồng — máy chủ thôi gọi model. Đẩy một thẻ từ link trong câu trả lời (ngăn xếp DÀI ra)
         // hoặc đổi tab (giữ nguyên) thì để câu trả lời chạy tiếp.
@@ -389,11 +444,11 @@ struct TroLyAICTW: View {
         // MỘT `.sheet(item:)` cho cả hai tấm phủ (CLAUDE.md C5: hai `.sheet` trên một view ⇒ chỉ cái cuối chạy).
         .sheet(item: $tamPhu) { t in
             switch t {
-            case .dongY(let cau):
+            case .dongY(let viec):
                 DongYAICTW {
                     daDongY = true
                     tamPhu = nil
-                    guiDi(cau)
+                    thucHien(viec)
                 } huy: { tamPhu = nil }
                 .presentationDetents([.large])
             case .web(let u): SafariCTW(url: u)
@@ -410,7 +465,7 @@ struct TroLyAICTW: View {
             case "loi"?:
                 if let t = vm.dsHoiThoai.first(where: { $0.title.contains("velocity") }) { await vm.mo(t.id) }
                 vm.loiLuot = TroLyAICTW.loi(APIError.coMa(ma: "WORK_AI_BAD_OUTPUT", thongDiep: ""))
-            case "dongy"?: daDongY = false; tamPhu = .dongY(mau[0])
+            case "dongy"?: daDongY = false; tamPhu = .dongY(.hoi(mau[0]))
             // Bản stream qua máy chủ giả (XemThuCTW+LuongAI): hỏi thật một câu ⇒ chụp lúc đọc / đang viết / xong.
             case "stream"?:
                 daDongY = true
@@ -425,6 +480,17 @@ struct TroLyAICTW: View {
                 let t = AIGia.traLoiBang
                 vm.datThu(cau: String(localized: "How is Sprint 6 going, and what should I do first?"), tienDo: nil,
                           nhap: String(t.prefix(t.count * 55 / 100)))
+            // CuongMini (21/10/2026): "Hôm nay tôi nên làm gì?" (câu trả lời dài tiếng Việt — kiểm độ dễ đọc) · bàn một thẻ ·
+            // việc một chạm "Tóm tắt"/"Chia thành việc con" trên thẻ.
+            case "homnay"?:
+                daDongY = true
+                guiDi(CuongMini.cauHomNay)
+            case "the"?:
+                vm.the = TheCuongMini(so: 12, loai: "STORY", tieuDe: "Push notifications open the right issue")
+            case "nhanh"?, "chia"?:
+                daDongY = true
+                vm.the = TheCuongMini(so: 12, loai: "STORY", tieuDe: "Push notifications open the right issue")
+                thucHien(.nhanh(MucNhanhCuongMini(viec: XemThuCTW.conCua("ai") == "chia" ? .split : .summarize)))
             default: break
             }
         }
@@ -436,15 +502,24 @@ struct TroLyAICTW: View {
     private var manTrong: some View {
         VStack(alignment: .leading, spacing: 12) {
             VStack(alignment: .leading, spacing: 6) {
-                Text("Ask about this project").font(.ctw(size: 22, weight: .bold)).foregroundColor(AppColors.textPrimary)
-                Text("The assistant reads the project's issues, docs and files before it answers, and links every issue it mentions.")
+                if let t = vm.the, !ma.isEmpty {
+                    Text("Ask CuongMini about \(ma)-\(t.so)").font(.ctw(size: 22, weight: .bold)).foregroundColor(AppColors.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if let td = t.tieuDe {
+                        Text(verbatim: td).font(.ctw(size: 14, weight: .medium)).foregroundColor(AppColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                } else {
+                    Text("Ask CuongMini").font(.ctw(size: 22, weight: .bold)).foregroundColor(AppColors.textPrimary)
+                }
+                Text("CuongMini reads the project's issues, docs and files before it answers, and links every issue it mentions.")
                     .font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             ForEach(Array(mau.enumerated()), id: \.offset) { i, c in
                 Button { thuHoi(c) } label: {
                     HStack(alignment: .top, spacing: 10) {
-                        Image(systemName: ["checklist", "chart.line.uptrend.xyaxis", "list.number"][i])
+                        Image(systemName: bieuTuongMau[min(i, bieuTuongMau.count - 1)])
                             .font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.primary).frame(width: 22)
                             .accessibilityHidden(true)
                         Text(c).font(.ctw(size: 15)).foregroundColor(AppColors.textPrimary)
@@ -458,7 +533,32 @@ struct TroLyAICTW: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("ai.sample.\(i)")
-                .accessibilityHint("Sends this question to the AI assistant")
+                .accessibilityHint("Sends this question to CuongMini")
+            }
+            // Đang bàn một thẻ ⇒ việc một chạm theo loại thẻ ngay trong màn trống (như bảng của nút "CuongMini" trong thẻ).
+            if let t = vm.the {
+                CTWSectionHeader("bolt", String(localized: "Quick tasks")).padding(.top, 8)
+                VStack(spacing: 0) {
+                    let ds = CuongMini.mucNhanh(loai: t.loai)
+                    ForEach(ds) { m in
+                        Button { chay(.nhanh(m)) } label: {
+                            HStack(spacing: 10) {
+                                Image(systemName: m.bieuTuong).font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.primary)
+                                    .frame(width: 22).accessibilityHidden(true)
+                                Text(m.nhan).font(.ctw(size: 15)).foregroundColor(AppColors.textPrimary)
+                                Spacer(minLength: 0)
+                                Image(systemName: "chevron.right").font(.ctw(size: 12, weight: .semibold)).foregroundColor(AppColors.textTertiary)
+                                    .accessibilityHidden(true)
+                            }
+                            .padding(.horizontal, 12).frame(minHeight: 44)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("ai.quick.\(m.id)")
+                        if m.id != ds.last?.id { Divider().padding(.leading, 44) }
+                    }
+                }
+                .ctwThe(14)
             }
             if !vm.dsHoiThoai.isEmpty {
                 CTWSectionHeader("clock.arrow.circlepath", String(localized: "Recent conversations")).padding(.top, 8)
@@ -526,12 +626,30 @@ struct TroLyAICTW: View {
 
     private var oSoan: some View {
         VStack(spacing: 6) {
+            if let t = vm.the {
+                HStack(spacing: 6) {
+                    Image(systemName: "number").font(.ctw(size: 11, weight: .semibold))
+                    Text(ma.isEmpty ? String(localized: "About this issue") : String(localized: "About \(ma)-\(t.so)"))
+                        .font(.ctw(size: 12, weight: .semibold))
+                    Button { vm.the = nil } label: {
+                        Image(systemName: "xmark.circle.fill").font(.ctw(size: 14))
+                            .frame(width: 30, height: 30).contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Stop asking about this issue")
+                }
+                .foregroundColor(AppColors.primary)
+                .padding(.leading, 10)
+                .background(Capsule().fill(AppColors.primary.opacity(0.10)))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityIdentifier("ai.issueContext")
+            }
             if rieng && vm.hoiThoai == nil {
                 Label("New private conversation — only you will see it", systemImage: "lock.fill")
                     .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
             }
             HStack(alignment: .bottom, spacing: 8) {
-                TextField("Ask about issues, docs, the sprint…", text: $soan, axis: .vertical)
+                TextField(vm.the != nil ? "Ask CuongMini about this issue…" : "Ask CuongMini about issues, docs, the sprint…", text: $soan, axis: .vertical)
                     .lineLimit(1...5)
                     .font(.ctw(size: 15))
                     .focused($dangGo)
@@ -557,7 +675,7 @@ struct TroLyAICTW: View {
                             .frame(width: 44, height: 44)
                     }
                     .disabled(soan.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    .accessibilityLabel("Send question to AI")
+                    .accessibilityLabel("Send question to CuongMini")
                     .accessibilityIdentifier("ai.send")
                 }
             }
@@ -571,10 +689,27 @@ struct TroLyAICTW: View {
 
     private func thuHoi(_ c: String) {
         let cau = c.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !cau.isEmpty, vm.dangCho == nil else { return }
-        // 5.1.2(i): đồng ý TRƯỚC khi gửi lần đầu.
-        guard daDongY else { tamPhu = .dongY(cau); return }
-        guiDi(cau)
+        guard !cau.isEmpty else { return }
+        chay(.hoi(cau))
+    }
+
+    /// Mọi việc gửi cho AI (câu hỏi gõ/mẫu, việc mở sẵn, việc một chạm) đi qua đây — 5.1.2(i): đồng ý TRƯỚC lần gửi đầu.
+    private func chay(_ v: KhoiDauCuongMini) {
+        guard vm.dangCho == nil else { return }
+        guard daDongY else { tamPhu = .dongY(v); return }
+        thucHien(v)
+    }
+
+    private func thucHien(_ v: KhoiDauCuongMini) {
+        switch v {
+        case .hoi(let cau): guiDi(cau)
+        case .nhanh(let m):
+            dangGo = false
+            vm.luot = Task {
+                await vm.chayNhanh(m, ma: ma, rieng: rieng)
+                await vm.taiDanhSach()
+            }
+        }
     }
 
     private func guiDi(_ cau: String) {
@@ -615,10 +750,10 @@ struct TroLyAICTW: View {
 }
 
 enum TamPhuAI: Identifiable {
-    case dongY(String), web(URL)
+    case dongY(KhoiDauCuongMini), web(URL)
     var id: String {
         switch self {
-        case .dongY(let c): return "dy-\(c)"
+        case .dongY(let v): return "dy-\(v.hashValue)"
         case .web(let u): return u.absoluteString
         }
     }
@@ -636,10 +771,10 @@ struct CongBoAICTW: View {
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
-                    Text("CT Work AI").font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                    Text(verbatim: "CuongMini").font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                     CTWNhanAI(chu: "AI")
                 }
-                Text("Answers are generated by AI. Your question and the project content it needs are sent to our AI model provider to create the answer.")
+                Text("CuongMini is CT Work's AI assistant. Answers are generated by AI. Your question and the project content it needs are sent to our AI model provider to create the answer.")
                     .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -655,7 +790,7 @@ struct CongBoAICTW: View {
 enum CongBoAI {
     static var tieuDe: String { String(localized: "Questions are answered by AI") }
     static var noiDung: String { String(localized: """
-    When you ask the CT Work AI assistant, CT Work sends your question and the project content needed to answer it — issues, comments, Docs pages, attached files and links in this project that you can already see — to a third-party AI model provider (large language models such as Anthropic Claude and OpenAI GPT, reached through our AI gateway). The answer is saved in this project's conversation history.
+    When you ask CuongMini, the CT Work AI assistant, CT Work sends your question and the project content needed to answer it — issues, comments, Docs pages, attached files and links in this project that you can already see — to a third-party AI model provider (large language models such as Anthropic Claude and OpenAI GPT, reached through our AI gateway). The answer is saved in this project's conversation history.
     """) }
     static var gach: [(String, String)] { [
         ("eye.slash", String(localized: "Only content you already have access to in this project is used.")),
@@ -772,7 +907,8 @@ struct TraLoiAICTW: View {
                         .frame(width: 22, height: 22)
                         .background(Circle().fill(AppColors.primary))
                         .accessibilityHidden(true)
-                    Text(m.title ?? "CT Work AI").font(.ctw(size: 13, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                    Text(verbatim: m.title ?? "CuongMini").font(.ctw(size: 13, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                        .lineLimit(2)
                     CTWNhanAI(chu: String(localized: "AI-generated"))
                     Spacer(minLength: 0)
                     Text(CTW.thoiDiem(m.createdAt)).font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
@@ -863,7 +999,7 @@ struct DangNghiAICTW: View {
                 Text(chu).font(.ctw(size: 14, weight: .medium)).foregroundColor(AppColors.textPrimary)
                     .fixedSize(horizontal: false, vertical: true)
                     .contentTransition(.opacity)
-                Text(giay < 20 ? "The assistant reads the issues and docs it needs first." : "Still working — long answers can take up to a minute.")
+                Text(giay < 20 ? "CuongMini reads the issues and docs it needs first." : "Still working — long answers can take up to a minute.")
                     .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -896,7 +1032,7 @@ struct TraLoiDangVietAICTW: View {
                     .frame(width: 22, height: 22)
                     .background(Circle().fill(AppColors.primary))
                     .accessibilityHidden(true)
-                Text(verbatim: "CT Work AI").font(.ctw(size: 13, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                Text(verbatim: "CuongMini").font(.ctw(size: 13, weight: .semibold)).foregroundColor(AppColors.textPrimary)
                 CTWNhanAI(chu: String(localized: "AI-generated"))
                 Spacer(minLength: 0)
                 ProgressView().controlSize(.small)

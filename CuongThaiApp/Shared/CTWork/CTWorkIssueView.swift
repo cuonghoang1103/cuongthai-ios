@@ -778,6 +778,9 @@ struct CTWIssueView: View {
             HStack(spacing: 8) {
                 menuTrangThai(t, cfg)
                 Spacer(minLength: 0)
+                if let nut = moRong?.nutCuongMini {
+                    nut(cfg, t.number, cfg.loai(t.typeId).map { $0.key ?? $0.name }, t.title)
+                }
                 Button { Task { await vm.doiTheoDoi() } } label: {
                     HStack(spacing: 4) {
                         Image(systemName: t.isWatching == true ? "eye.fill" : "eye")

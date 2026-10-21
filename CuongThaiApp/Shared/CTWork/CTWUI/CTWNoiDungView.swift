@@ -33,10 +33,25 @@ struct CTWKhoiView: View {
     private var gianDong: CGFloat { max(2, coChu * 0.22) }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: max(8, coChu * 0.7)) {
-            ForEach(Array(khoi.enumerated()), id: \.offset) { _, k in mot(k) }
+        VStack(alignment: .leading, spacing: 0) {
+            ForEach(Array(khoi.enumerated()), id: \.offset) { i, k in
+                mot(k).padding(.top, i == 0 ? 0 : CTWKhoiView.khoangTruoc(k, sau: khoi[i - 1], coChu: coChu))
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// Khoảng trống TRƯỚC một khối, theo khối liền trên (21/10/2026 — câu trả lời CuongMini dài): mục danh sách liền nhau
+    /// sát hơn (đọc thành MỘT danh sách), đoạn ↔ đoạn thoáng hơn, tiêu đề tách hẳn khỏi phần trên. Trước đây mọi khối cách
+    /// đều 0,7× cỡ chữ nên danh sách rời rạc như các đoạn riêng mà tiêu đề lại dính phần trước.
+    static func khoangTruoc(_ k: CTWKhoi, sau truoc: CTWKhoi, coChu: CGFloat) -> CGFloat {
+        func laMuc(_ x: CTWKhoi) -> Bool {
+            switch x { case .muc, .viec: return true; default: return false }
+        }
+        if case .tieuDe(_, let cap) = k { return coChu * (cap <= 2 ? 1.1 : 0.9) }
+        if case .tieuDe = truoc { return coChu * 0.45 }
+        if laMuc(k) && laMuc(truoc) { return coChu * 0.4 }
+        return max(8, coChu * 0.75)
     }
 
     /// Kiểu chữ trong dòng: `mã` ⇒ chữ đơn cách trên nền nhạt (Text không có nền theo đoạn ⇒ dùng thuộc tính
@@ -66,10 +81,9 @@ struct CTWKhoiView: View {
                 .textSelection(.enabled)
         case .tieuDe(let a, let cap):
             Text(kieu(a))
-                .font(.ctw(size: cap <= 1 ? coChu + 7 : (cap == 2 ? coChu + 4 : coChu + 2), weight: .bold))
+                .font(.ctw(size: cap <= 1 ? coChu + 6 : (cap == 2 ? coChu + 3.5 : coChu + 1.5), weight: .bold))
                 .foregroundColor(AppColors.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
-                .padding(.top, cap <= 2 ? 6 : 2)
                 .accessibilityAddTraits(.isHeader)
         case .muc(let a, let nhan, let cap):
             // Nhãn có cột cố định (số "10." không đẩy chữ lệch hàng) + thụt theo cấp; dòng thứ hai thẳng hàng với chữ.
@@ -402,11 +416,12 @@ enum CTWMarkdown {
                 out.append(.muc(CTWKhoiView.dong(String(gon.dropFirst(2))), nhan: "•", cap: thut))
                 continue
             }
-            if let cham = gon.firstIndex(of: "."), gon[..<cham].allSatisfy(\.isNumber), !gon[..<cham].isEmpty,
+            // "1. " và "1) " (model hay viết kiểu sau khi trả lời tiếng Việt).
+            if let cham = gon.firstIndex(where: { $0 == "." || $0 == ")" }), gon[..<cham].allSatisfy(\.isNumber), !gon[..<cham].isEmpty,
                gon.index(after: cham) < gon.endIndex, gon[gon.index(after: cham)] == " " {
                 xaDoan()
                 out.append(.muc(CTWKhoiView.dong(String(gon[gon.index(cham, offsetBy: 2)...])),
-                                nhan: String(gon[...cham]), cap: thut))
+                                nhan: String(gon[..<cham]) + ".", cap: thut))
                 continue
             }
             // Dòng thụt đầu nối tiếp mục danh sách ngay trên (mục nhiều dòng) ⇒ gộp vào mục đó, không thành đoạn rời.

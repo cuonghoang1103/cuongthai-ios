@@ -85,6 +85,12 @@ struct ManMoDunCTW: View {
         if let m = CTWDangKyMoDun.moDun(id), let l = app.luaChon {
             m.man(CTWNguCanh(pid: l.pid, slug: l.slug, maDuAn: l.maDuAn, tenDuAn: l.tenDuAn))
                 .id("\(id)-\(l.pid)")
+                // Board/Backlog mở như một màn riêng (iPad thanh bên, More tools) ⇒ nút ✦ CuongMini như trang dự án iPhone.
+                .toolbar {
+                    if (id == "board" || id == "backlog") && CuongMini.coTheDung(app.cauHinhDuAn) {
+                        ToolbarItem(placement: .topBarLeading) { NutCuongMiniCTW(pid: l.pid, maDuAn: l.maDuAn) }
+                    }
+                }
         } else {
             ChuaChonDuAnCTW(lyDo: String(localized: "Pick a project to continue."))
         }

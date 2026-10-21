@@ -16,8 +16,16 @@ extension CTWAPI {
     }
     static func aiHoiThoai(pid: Int, id: Int) -> APIEndpoint { get("/projects/\(pid)/ai/threads/\(id)") }
     /// Tạo hội thoại TRƯỚC câu hỏi đầu (câu đầu hỏng thì vẫn biết hội thoại nào có nút "Ask again").
-    static func aiTaoHoiThoai(pid: Int, tieuDe: String, rieng: Bool) -> APIEndpoint {
-        goi("/projects/\(pid)/ai/threads", "POST", ["title": String(tieuDe.prefix(2000)), "visibility": rieng ? "PRIVATE" : "PROJECT"])
+    /// `so` = thẻ đang bàn (hỏi CuongMini từ một thẻ) ⇒ hội thoại gắn `issueNumber` như web.
+    static func aiTaoHoiThoai(pid: Int, tieuDe: String, rieng: Bool, so: Int? = nil) -> APIEndpoint {
+        var t: [String: Any] = ["title": String(tieuDe.prefix(2000)), "visibility": rieng ? "PRIVATE" : "PROJECT"]
+        if let so { t["issueNumber"] = so }
+        return goi("/projects/\(pid)/ai/threads", "POST", t)
+    }
+    /// Việc một chạm của CuongMini trên một thẻ (`POST /ai/quick`, web `AiIssueMenu`) — trả cùng hình dạng `/ai/chat`
+    /// (`question` + `answer` đã lưu vào hội thoại `threadId`). Chạy một lượt model dài ⇒ `thoiGianCho` 180 s.
+    static func aiViecNhanh(pid: Int, viec: ViecNhanhCuongMini, so: Int, threadId: Int, nhan: String) -> APIEndpoint {
+        goi("/projects/\(pid)/ai/quick", "POST", CuongMini.thanViecNhanh(viec: viec, so: so, threadId: threadId, nhan: nhan))
     }
     static func aiXoaHoiThoai(pid: Int, id: Int) -> APIEndpoint { goi("/projects/\(pid)/ai/threads/\(id)", "DELETE", nil) }
     /// Chạy lâu (đọc thẻ/Docs/tệp rồi mới trả lời; tới vài lượt gọi model) — `APIEndpoint.thoiGianCho` = 180 s.

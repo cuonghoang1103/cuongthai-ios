@@ -1132,7 +1132,8 @@ enum APIEndpoint {
         case .voHanTra: return 75
         // Trợ lý AI CT Work (mentor, 18/10/2026): đọc thẻ/Docs/tệp tới 3 vòng rồi mới trả lời — mỗi lượt model
         // tới 90 s ở máy chủ. 60 s mặc định là app bỏ cuộc trong khi câu trả lời vẫn được lưu ở máy chủ.
-        case .workGoi(let d, let m, _, _) where m == "POST" && (d.hasSuffix("/ai/chat") || (d.contains("/ai/messages/") && d.hasSuffix("/retry"))):
+        // `/ai/quick` (việc một chạm của CuongMini trên thẻ, 21/10/2026): một lượt model tới 5000 token ra — cùng trần.
+        case .workGoi(let d, let m, _, _) where m == "POST" && (d.hasSuffix("/ai/chat") || d.hasSuffix("/ai/quick") || (d.contains("/ai/messages/") && d.hasSuffix("/retry"))):
             return 180
         default: return nil
         }

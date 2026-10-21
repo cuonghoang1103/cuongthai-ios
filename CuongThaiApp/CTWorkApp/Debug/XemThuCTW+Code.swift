@@ -41,7 +41,8 @@ enum DuLieuGiaCode {
         case ("GET", "/work/ai/quota"): return ["pro": false, "used": 3, "limit": NSNull(), "remaining": NSNull(), "available": true]
         case ("GET", pr + "/ai/threads"): return AIGia.ds()
         case ("POST", pr + "/ai/threads"): return AIGia.tao(b)
-        case ("POST", pr + "/ai/chat"): return AIGia.hoi(b)
+        case ("POST", pr + "/ai/chat"): return AIGia.hoi(b, traLoi: AIGia.traLoiCho(b["message"] as? String ?? ""))
+        case ("POST", pr + "/ai/quick"): return AIGia.nhanh(b)
         default: break
         }
         if m == "GET", p.hasPrefix(pr + "/code/source/commit/") { return chiTietCommit }
@@ -333,7 +334,7 @@ enum AIGia {
     static func tao(_ b: [String: Any]) -> [String: Any] {
         idKe += 1
         let t: [String: Any] = ["id": idKe, "title": (b["title"] as? String) ?? "New conversation", "visibility": b["visibility"] ?? "PROJECT", "mode": "CHAT",
-                                "issueNumber": NSNull(), "messageCount": 0, "lastMessageAt": G.iso(0), "createdAt": G.iso(0), "createdById": 1, "createdBy": G.toi,
+                                "issueNumber": b["issueNumber"] ?? NSNull(), "messageCount": 0, "lastMessageAt": G.iso(0), "createdAt": G.iso(0), "createdById": 1, "createdBy": G.toi,
                                 "participants": [Any](), "mine": true, "canManage": true, "messages": [Any]()]
         hoiThoai.insert(t, at: 0)
         return t
@@ -366,6 +367,90 @@ enum AIGia {
 
     _Kiến thức chung:_ giữ bộ định tuyến là hàm thuần để kiểm thử không cần máy thật.
     """
+
+    /// Câu trả lời DÀI tiếng Việt cho "Hôm nay tôi nên làm gì?" — kiểm độ dễ đọc (tiêu đề, danh sách số + gạch đầu dòng lồng,
+    /// chữ đậm, link thẻ, mục "Còn lại", đoạn nhiều dòng) như câu trả lời thật của CuongMini (21/10/2026).
+    static let traLoiHomNay = """
+    Chào Alex! Hôm nay bạn có **3 việc** trong Sprint 6, trong đó **1 việc quá hạn**. Làm theo thứ tự dưới đây là kịp sprint.
+
+    ## Ưu tiên số 1 — làm ngay buổi sáng
+    1. **[NW-12 — Push notifications open the right issue](/work/northwind/NW/issue/12)** — hạn **hôm nay**, đang làm, 5 điểm.
+       - Đọc trước: [Docs #3 — Notification payloads](/work/northwind/NW/docs/3) (mục "Cold start").
+       - Việc còn thiếu: thử chạm thông báo khi app **đã tắt hẳn** trên iPad.
+       - Xong khi: cả 3 tiêu chí chấp nhận trong thẻ đều đạt, kèm ảnh chụp màn hình.
+    2. **[NW-14 — Crash when attaching a HEIC photo](/work/northwind/NW/issue/14)** — **quá hạn 1 ngày**, bug ưu tiên cao.
+       - Hỏi @linh file HEIC mẫu gây lỗi rồi gắn vào thẻ.
+       - Sửa ở `CTWTaiLen.swift`: đổi HEIC sang JPEG trước khi tải lên.
+
+    ## Buổi chiều
+    3. [NW-17 — Offline cache for My Work](/work/northwind/NW/issue/17) — chưa bắt đầu, hạn 28/10.
+       Chỉ cần chốt danh sách màn phải chạy khi mất mạng, rồi chia thành việc con.
+
+    ### Còn lại trong tuần
+    - [NW-19 — Release notes for 1.2](/work/northwind/NW/issue/19) — chờ NW-12 xong.
+    - Họp review sprint **thứ Sáu 15:00** — chuẩn bị demo NW-12.
+
+    > Mẹo: ghi giờ (Log time) ngay trên từng thẻ khi làm xong để báo cáo tuần tự cộng.
+
+    _Kiến thức chung:_ làm việc quá hạn nhỏ trước giúp sprint không bị dồn vào cuối tuần.
+    """
+
+    /// Câu trả lời của việc một chạm "Tóm tắt" / "Chia thành việc con" (tiếng Việt, có đề xuất áp dụng).
+    static func traLoiNhanh(_ task: String, so: Int) -> String {
+        switch task {
+        case "split":
+            return """
+            Mình chia **NW-\(so)** thành 3 việc con, mỗi việc làm xong trong một buổi:
+
+            1. **Tách đường dẫn thông báo** — hàm thuần `tach(duongDan:)`, có unit test.
+            2. **Mở đúng màn** — `/issue/<n>` vào My Work, `/chat?c=` vào kênh.
+            3. **Thử khởi động nguội** trên iPhone và iPad, chụp màn hình làm bằng chứng.
+
+            Bấm **Apply** dưới từng đề xuất để tạo việc con (chưa có gì thay đổi cho tới khi bạn bấm).
+            """
+        default:
+            return """
+            ### Tóm tắt NW-\(so)
+            - **Mục tiêu:** chạm thông báo đẩy là mở đúng thẻ / kênh chat.
+            - **Trạng thái:** đang làm, còn **2 ngày** tới hạn, 5 điểm.
+            - **Đã xong:** tách đường dẫn, mở thẻ khi app đang chạy.
+            - **Còn lại:** khởi động nguội trên iPad; @linh đang chờ bạn trả lời bình luận.
+
+            **Rủi ro:** nếu chưa thử trên máy thật thì dễ sót lỗi lúc app tắt hẳn.
+            """
+        }
+    }
+
+    /// Câu trả lời giả theo câu hỏi.
+    static func traLoiCho(_ cau: String) -> String {
+        let c = cau.lowercased()
+        if c.contains("hôm nay") || c.contains("today") { return traLoiHomNay }
+        return traLoiMau
+    }
+
+    /// `POST /ai/quick` — cùng hình dạng `/ai/chat` (ai.service.ts `quick`).
+    static func nhanh(_ b: [String: Any]) -> Any {
+        let tid = b["threadId"] as? Int ?? 0
+        let so = b["issueNumber"] as? Int ?? 12
+        let task = b["task"] as? String ?? "summarize"
+        let nhan = b["label"] as? String ?? task
+        idKe += 1
+        var q = tin(idKe, tid, "user", "\(nhan) · NW-\(so)", author: G.toi, gio: 0)
+        q["issueNumber"] = so
+        them(tid, q)
+        idKe += 1
+        let tl = traLoiNhanh(task, so: so)
+        let acts: [[String: Any]] = task == "split" ? [
+            ["index": 0, "status": "pending", "action": ["type": "create_issue", "issueType": "Sub-task", "title": "Tách đường dẫn thông báo"]],
+            ["index": 1, "status": "pending", "action": ["type": "create_issue", "issueType": "Sub-task", "title": "Thử khởi động nguội trên iPad"]],
+        ] : []
+        var a = tin(idKe, tid, "assistant", tl, author: nil, actions: acts, gio: 0)
+        a["title"] = nhan
+        a["issueNumber"] = so
+        them(tid, a)
+        return ["reply": tl, "actions": acts.map { $0["action"] ?? [:] }, "threadId": tid, "question": q, "answer": a,
+                "quota": ["pro": false, "used": 5, "limit": NSNull(), "remaining": NSNull(), "available": true]]
+    }
 
     /// Id câu hỏi cuối của hội thoại (máy chủ giả trả ở `preparing.questionId`).
     static func idCauHoiCuoi(_ tid: Int) -> Int? {

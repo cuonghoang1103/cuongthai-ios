@@ -50,7 +50,7 @@ enum DuLieuGiaLuongAI {
         ra.append((0.05, Data("retry: 5000\n\n".utf8)))
 
         // Máy chủ LƯU câu hỏi trước rồi mới gọi model ⇒ có `questionId` ngay ở `preparing`.
-        let kq: Any = retry.map { AIGia.hoiLai($0) } ?? AIGia.hoi(["threadId": tid, "message": cau], traLoi: AIGia.traLoiBang)
+        let kq: Any = retry.map { AIGia.hoiLai($0) } ?? AIGia.hoi(["threadId": tid, "message": cau], traLoi: AIGia.traLoiCho(cau) == AIGia.traLoiHomNay ? AIGia.traLoiHomNay : AIGia.traLoiBang)
         let qid = retry ?? AIGia.idCauHoiCuoi(tid) ?? 0
         phat(["type": "progress", "phase": "preparing", "threadId": tid, "questionId": qid], sau: 0.15)
         if cau.contains("#fail") {

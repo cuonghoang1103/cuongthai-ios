@@ -373,3 +373,33 @@ trước khi `simctl launch` (giá trị `system` | `vi` | `en`).
 - ⚠️ Chụp màn tiếng Việt khi app ĐÃ có tệp prefs trong container (vd sau khi chạy test): `simctl spawn … defaults write`
   ghi vào miền khác, app vẫn đọc "system" ⇒ sửa thẳng `<container>/Library/Preferences/com.cuongthai.ctwork.plist`
   (khoá có dấu chấm ⇒ dùng `plistlib`, không dùng `plutil -replace`).
+
+## 17. CuongMini — lối vào trợ lý AI (21/10/2026)
+
+Phản hồi chủ app: "không tìm thấy chat AI" (trước đó chỉ là MỘT dòng "AI assistant" giữa ~40 mô-đun). Trợ lý giờ tên
+**CuongMini** ("Hỏi CuongMini" / "Ask CuongMini"; mô-đun id vẫn `ai` — ghim `navPins` của web dùng id đó). Mọi lối vào đẩy
+`RouteCuongMiniCTW(pid, maDuAn, the, khoiDau)` vào ngăn xếp đang đứng; đích đăng ký ở `MoDunAI.dichDen` ⇒
+`TroLyAICTW(pid:maDuAn:the:khoiDau:)`. Mã: `Modules/AI/CuongMiniCTW.swift`.
+
+| Lối vào | Ở đâu |
+|---|---|
+| Nút ✦ (`NutCuongMiniCTW`, id `cuongmini.toolbar`) | iPhone: cạnh công tắc Board · Backlog · List · More của trang dự án (`TrangDuAnCTW`) — ⛔ không đặt trên thanh điều hướng (Board có 3 nút phải ⇒ đè menu tên dự án). iPad/More tools: màn Board/Backlog (`ManMoDunCTW`) |
+| Thẻ nổi bật "Hỏi CuongMini" (`TheCuongMiniCTW`, `cuongmini.card`) | ĐẦU trang More (thay dòng mô-đun "ai" trong danh sách ghim) |
+| "Hôm nay tôi nên làm gì?" (`TheCuongMiniCTW(homNay: true)`, `cuongmini.today`) | My Work (dưới công tắc Issues/Agenda) ⇒ CuongMini của `app.luaChon` + hỏi ngay qua chat (KHÔNG `/ai/daily-brief`: tuyến đó viết bản tin cho CẢ NHÓM và ghi đè `settings.dailyBrief`) |
+| Nút "CuongMini" trong thẻ (`NutCuongMiniTheCTW`, `cuongmini.issue`) | Hàng trạng thái của `CTWIssueView` — móc `CTWIssueMoRong.nutCuongMini` (Shared; app chính để `nil`) ⇒ bảng: việc một chạm theo loại thẻ + 3 câu gợi ý + "Hỏi câu khác…" |
+| Mô-đun "CuongMini" | Thanh bên iPad / More tools như mọi mô-đun |
+
+- **Việc một chạm** = `CuongMini.mucNhanh(loai:)` (port `AiIssueMenu.tsx` `itemsFor`: Summarize luôn có; EPIC ⇒ split "Chia thành story";
+  STORY/TASK/BUG ⇒ split; STORY/REQUIREMENT ⇒ generate_tests + review_story; BUG ⇒ improve_bug) ⇒ `POST /ai/quick
+  {task, issueNumber, threadId, label}` (`thoiGianCho` 180 s). `label` = nhãn theo ngôn ngữ app. Trả cùng hình dạng `/ai/chat`
+  ⇒ `ghep` vào hội thoại (tạo trước, gắn `issueNumber`). Không có bản stream.
+- **Ngữ cảnh thẻ** (`TroLyAIVM.the`): mọi câu hỏi + hội thoại mới gửi `issueNumber`; chip "Về NW-12 ✕" trên ô soạn bỏ được;
+  mở hội thoại có `issueNumber` ⇒ tự gắn lại. Màn trống đổi sang câu gợi ý về thẻ + việc một chạm.
+- **Đồng ý 5.1.2(i)**: việc mở sẵn (`khoiDau`) và việc một chạm cũng đi qua `chay(_:)` ⇒ chưa đồng ý thì hiện `DongYAICTW` trước,
+  đồng ý xong mới chạy (`TamPhuAI.dongY(KhoiDauCuongMini)`). Nhãn AI + Report giữ nguyên trên mọi câu trả lời.
+- **Markdown câu trả lời dài** (`CTWKhoiView.khoangTruoc`): mục danh sách liền nhau cách 0,4× cỡ chữ, đoạn 0,75×, trước tiêu đề
+  1,1× (H1/H2) — danh sách đọc thành một khối, tiêu đề tách phần trên; `1)` đọc như `1.`; tiêu đề nhỏ lại (+6/+3,5/+1,5).
+- Màn thử: `mod:ai/homnay` (câu trả lời dài tiếng Việt) · `mod:ai/the` · `mod:ai/nhanh` · `mod:ai/chia` · `the:cuongmini` (mở bảng
+  trong thẻ). Máy chủ giả: `/ai/quick` + `AIGia.traLoiHomNay` (`Debug/XemThuCTW+Code.swift`).
+- Kiểm thử: `CTWorkTests/CuongMiniTests.swift`; `CTWorkUITests/ChupCuongMiniUITests.swift` (bấm thật các lối vào; chụp khi có
+  `TEST_RUNNER_CTW_CHUP_CM=<thư mục>`).
