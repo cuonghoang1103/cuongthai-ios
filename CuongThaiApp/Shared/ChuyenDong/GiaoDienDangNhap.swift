@@ -31,6 +31,8 @@ struct BoCucDangNhap<Hero: View, Tam: View, LopCho: View>: View {
     @Environment(\.colorScheme) private var cheDo
     @State private var daTruot = false
     @State private var lac: CGFloat = 0
+    /// Nội dung đã cuộn lên (đầu hero lọt dưới thanh trạng thái) ⇒ hiện dải nền sau thanh trạng thái.
+    @State private var daCuon = false
     @ObservedObject private var khoiDong = KhoiDongChung.shared
 
     static var mauTam: Color {
@@ -55,6 +57,11 @@ struct BoCucDangNhap<Hero: View, Tam: View, LopCho: View>: View {
                                 .frame(height: caoHero + g.safeAreaInsets.top)
                                 .frame(maxWidth: .infinity)
                                 .clipped()
+                                // Đo vị trí đầu hero trong khung ScrollView (iOS 17 chưa có onScrollGeometryChange).
+                                .background(GeometryReader { h in
+                                    Color.clear.preference(key: DinhHeroDangNhap.self,
+                                                           value: h.frame(in: .global).minY)
+                                })
                             VStack(spacing: 0) {
                                 tam()
                                     .frame(maxWidth: 520)
@@ -90,8 +97,28 @@ struct BoCucDangNhap<Hero: View, Tam: View, LopCho: View>: View {
                         }
                     }
                 }
+                .onPreferenceChange(DinhHeroDangNhap.self) { y in
+                    let moi = y < -2
+                    if moi != daCuon { withAnimation(.easeOut(duration: 0.18)) { daCuon = moi } }
+                }
                 .blur(radius: dangDangNhap ? 9 : 0)
                 .allowsHitTesting(!dangDangNhap)
+
+                // Dải nền SAU THANH TRẠNG THÁI: đang gõ/đã cuộn ⇒ tiêu đề "Chào mừng trở lại" cuộn lên không đè lên
+                // đồng hồ. Cùng dải màu hero + lớp mờ (sáng/tối tự theo `nenHero` và vật liệu hệ thống).
+                VStack(spacing: 0) {
+                    ZStack {
+                        Rectangle().fill(nenHero)
+                        Rectangle().fill(.ultraThinMaterial)
+                    }
+                    .frame(height: g.safeAreaInsets.top)
+                    .overlay(alignment: .bottom) { Rectangle().fill(AppColors.border).frame(height: 0.5) }
+                    Spacer(minLength: 0)
+                }
+                .ignoresSafeArea(edges: .top)
+                .opacity((daCuon || dangGo) && !dangDangNhap ? 1 : 0)
+                .animation(.easeOut(duration: 0.18), value: dangGo)
+                .allowsHitTesting(false)
 
                 if dangDangNhap {
                     ZStack {
@@ -123,6 +150,12 @@ extension BoCucDangNhap {
             daTruot = true
         }
     }
+}
+
+/// Vị trí đầu hero trong khung cuộn (để biết nội dung đã cuộn lên chưa).
+private struct DinhHeroDangNhap: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = nextValue() }
 }
 
 // MARK: Ô nhập với viền tập trung chạy quanh
