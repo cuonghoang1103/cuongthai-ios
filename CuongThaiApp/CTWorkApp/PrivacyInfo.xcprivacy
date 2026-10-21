@@ -71,15 +71,24 @@
             <key>NSPrivacyCollectedDataTypePurposes</key><array><string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string></array>
         </dict>
         <dict>
-            <!-- Tin nhắn kênh chat nhóm. -->
+            <!-- Tin nhắn kênh chat nhóm + tin nhắn riêng 1-1 (Messenger). -->
             <key>NSPrivacyCollectedDataType</key><string>NSPrivacyCollectedDataTypeEmailsOrTextMessages</string>
             <key>NSPrivacyCollectedDataTypeLinked</key><true/>
             <key>NSPrivacyCollectedDataTypeTracking</key><false/>
             <key>NSPrivacyCollectedDataTypePurposes</key><array><string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string></array>
         </dict>
         <dict>
-            <!-- Thẻ, bình luận, tài liệu, tệp đính kèm khác. -->
+            <!-- Thẻ, bình luận, tài liệu, tệp đính kèm khác, báo cáo vi phạm, câu hỏi/brief gửi CuongMini (AI). -->
             <key>NSPrivacyCollectedDataType</key><string>NSPrivacyCollectedDataTypeOtherUserContent</string>
+            <key>NSPrivacyCollectedDataTypeLinked</key><true/>
+            <key>NSPrivacyCollectedDataTypeTracking</key><false/>
+            <key>NSPrivacyCollectedDataTypePurposes</key><array><string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string></array>
+        </dict>
+        <dict>
+            <!-- Build 5 (21/10/2026): trạng thái hoạt động — app gửi nhịp `POST /users/status` khi ở tiền cảnh, máy chủ
+                 lưu `lastActiveAt` ("Đang hoạt động" / "Hoạt động 5 phút trước", tắt được ở Account › Privacy & security,
+                 luật đối ứng) + nhật ký lượt dùng CuongMini (đếm token theo người, để giữ hạn mức). Linked, App Functionality. -->
+            <key>NSPrivacyCollectedDataType</key><string>NSPrivacyCollectedDataTypeProductInteraction</string>
             <key>NSPrivacyCollectedDataTypeLinked</key><true/>
             <key>NSPrivacyCollectedDataTypeTracking</key><false/>
             <key>NSPrivacyCollectedDataTypePurposes</key><array><string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string></array>

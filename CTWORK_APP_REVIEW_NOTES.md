@@ -42,7 +42,7 @@ Gọn kiểu "hiện dần" (phản hồi người dùng "rối"): Projects/than
 | 4.7 / 1.2 (AI) | Thành viên AI agent luôn có nhãn "AI agent" + ✦ trên avatar ở bình luận, chat, người làm, lịch sử, bộ chọn người, gợi ý @nhắc, thành viên kênh, người dự họp, hộp thư; bình luận AI soạn có nhãn "AI-drafted"; bản nháp biên bản họp do AI đề xuất có nhãn "AI-generated" + câu "check before applying"; bản phiên âm voice note có nhãn "Auto transcript"; báo cáo được như mọi nội dung | `CTWNhanAI`, `CTWAvatar`, `ChiTietHopCTW.banNhapAI`, `GiongNoiChatCTW` |
 | 5.1.2(i) — AI assistant (19/10) | Trước câu hỏi ĐẦU TIÊN hiện hộp "Questions are answered by AI": nói rõ gửi gì (câu hỏi + thẻ/bình luận/Docs/tệp/link trong dự án mà người dùng vốn xem được), gửi cho ai (nhà cung cấp mô hình AI bên thứ ba — Anthropic Claude / OpenAI GPT qua cổng AI), để làm gì; chỉ gửi khi bấm "Allow and ask". Rút lại: Account › Privacy. Đăng xuất ⇒ xoá đồng ý. Dải "CT Work AI · AI" luôn ở đầu khung; mọi câu trả lời nhãn "AI-generated" + nút Report (ẩn ngay) + Copy; câu hỏi của đồng đội: nhấn giữ ⇒ Report/Block. Hết hạn mức ⇒ câu riêng của app, KHÔNG lọt "Upgrade to Pro" (3.1.1); link trong câu trả lời trỏ trang mua bị chặn. ⚠️ Chủ app: Privacy Policy web thêm mục "AI assistant" (nhà cung cấp mô hình) | `Modules/AI/TroLyAICTW.swift` (`DongYAICTW`, `CongBoAI`), `TaiKhoanCTW.swift` |
 | 5.1.2(i) | Voice note trong chat — máy chủ gửi âm thanh cho **Groq** (chuyển giọng nói thành chữ) để đồng đội đọc được. Trước lần ghi ĐẦU TIÊN app hiện hộp "Voice notes are transcribed" nói rõ tên Groq và mục đích; chỉ ghi khi người dùng bấm "Allow and record". App KHÔNG gọi "đề xuất biên bản AI" / "gợi ý việc AI" (các nút đó chỉ có trên web). Agent do admin workspace thêm trên web — ghi rõ ở Privacy + chọn người làm. ⚠️ Chủ app: thêm Groq vào Privacy Policy (mục bên thứ ba) | `Modules/Chat/GhiAmCTW.swift` (`CongBoGiongNoiCTW`), `SoanTinCTW.swift`, `TrangPhapLyView` |
-| 5.1.1 / 5.1.2 | `PrivacyInfo.xcprivacy` riêng (UserDefaults CA92.1, FileTimestamp C617.1; dữ liệu thu: email, tên, user ID, device ID, ảnh/tệp, **âm thanh (voice note)**, tin nhắn, nội dung khác — đều Linked, không tracking). HAI chuỗi quyền: máy ảnh (chụp ảnh đính kèm thẻ/tin chat) và **micro (chỉ khi ghi voice note chat)**. Chọn ảnh = PhotosPicker (không cần quyền), chọn tệp = fileImporter. Họp video mở app Meet/Zoom/Teams/Jitsi (hoặc Safari) bằng hệ thống ⇒ KHÔNG camera/micro cho cuộc gọi, KHÔNG VoIP/CallKit, KHÔNG background mode. "Add to Calendar" = EventKitUI ngoài tiến trình ⇒ KHÔNG quyền Lịch | `CTWorkApp/PrivacyInfo.xcprivacy`, `Info.plist` |
+| 5.1.1 / 5.1.2 | `PrivacyInfo.xcprivacy` riêng (UserDefaults CA92.1, FileTimestamp C617.1; dữ liệu thu: email, tên, user ID, device ID, ảnh/tệp, **âm thanh (voice note)**, tin nhắn (kênh + 1-1), nội dung khác (gồm câu hỏi/brief gửi CuongMini), **tương tác sản phẩm** (trạng thái hoạt động — thêm ở build 5) — đều Linked, không tracking). HAI chuỗi quyền: máy ảnh (chụp ảnh đính kèm thẻ/tin chat) và **micro (chỉ khi ghi voice note chat)**. Chọn ảnh = PhotosPicker (không cần quyền), chọn tệp = fileImporter. Họp video mở app Meet/Zoom/Teams/Jitsi (hoặc Safari) bằng hệ thống ⇒ KHÔNG camera/micro cho cuộc gọi, KHÔNG VoIP/CallKit, KHÔNG background mode. "Add to Calendar" = EventKitUI ngoài tiến trình ⇒ KHÔNG quyền Lịch | `CTWorkApp/PrivacyInfo.xcprivacy`, `Info.plist` |
 | 3.1.1 (web trong app) | Lối "Open CT Work on the web" chung ĐÃ GỠ (Account, Help, trang Projects). Lối web còn lại (trình soạn Docs đầy đủ, sơ đồ, SRS, Wiegers, dashboard) mở bằng `TrinhDuyetCuongThaiCTW` (WKWebView) — CHẶN điều hướng tới `/pro`, `/pricing`, `/checkout`, `/nang-cap`, cổng thanh toán, và ẨN mọi link trỏ tới đó (web CT Work có nút "Upgrade to Pro" ở bảng AI/agent/báo cáo tuần). Không câu nào bảo "mua trên web" | `Modules/Account/TrinhDuyetCTW.swift` |
 | 5.1.1 Face ID | `NSFaceIDUsageDescription` — CHỈ vì khoá Face ID tuỳ chọn (Account → Security, mặc định TẮT, lùi về mật mã máy) | `Modules/Account/KhoaAppCTW.swift` |
 | Widget / Share / Spotlight | Bản sao dữ liệu CỦA CHÍNH người dùng, chỉ trên máy (App Group `group.com.cuongthai.ctwork`): việc hôm nay, đồng hồ, dự án, thẻ đã xem (chỉ mã + tiêu đề vào chỉ mục Spotlight). Widget không gọi mạng. Share Extension đọc token từ Keychain chia sẻ. Đăng xuất ⇒ xoá hết + xoá chỉ mục Spotlight + kết thúc Live Activity | `CTWorkShared/NhomCTW.swift`, `App/ChiaSeNhomCTW.swift` |
@@ -68,7 +68,8 @@ Gọn kiểu "hiện dần" (phản hồi người dùng "rối"): Projects/than
    danh mục **Productivity** (phụ: Business).
 4. Privacy Policy URL `https://cuongthai.com/chinh-sach-bao-mat`; **Support URL** (bắt buộc).
 5. App Privacy: khai ĐÚNG danh sách ở `PrivacyInfo.xcprivacy` — Email, Name, User ID,
-   Device ID, Photos or Videos, **Audio Data** (voice note → Groq phiên âm), Emails or Text Messages, Other User Content;
+   Device ID, Photos or Videos, **Audio Data** (voice note → Groq phiên âm), Emails or Text Messages, Other User Content, **Product Interaction** (build 5: trạng thái hoạt động `lastActiveAt` +
+   nhật ký lượt dùng CuongMini);
    Linked, không Tracking, App Functionality. ⚠️ Audio Data hay bị quên — đã có trong bản khai, phải khai cả trên ASC.
 6. Age rating: có **nội dung người dùng tạo** (chat/bình luận) — khai trung thực.
 7. Ảnh màn hình: iPhone 6.9" và iPad 13" (chụp bằng `CT_XEM_MAN`, xem KIEN_TRUC.md mục 7).
@@ -93,114 +94,48 @@ trên web, không cần chạm DB):
 
 ## Cho người duyệt (dán vào App Review Notes)
 
+Viết lại 21/10/2026 cho **build 1.0.0 (4)** (CuongMini, Create with CuongMini, Tìm ⌘K, Thành viên + tin nhắn riêng 1-1
+có Report/Block, trạng thái hoạt động + công tắc, âm thông báo, Code với kho demo công khai). **3914 ký tự** (tính xuống
+dòng là CRLF thì 3946) — trần 4000. Đếm lại: `python3 -c "print(len(open('f').read().rstrip()))"`.
+Tài khoản demo: `~/Documents/ctwork-appstore/TAI-KHOAN-DEMO.md` (KHÔNG đưa vào git). Đăng nhập bằng **username**
+(máy chủ tra username, không tra email). Kho GitHub demo: https://github.com/cuonghoang1103/ctwork-demo-app.
+⚠️ Trước khi dán: dữ liệu demo phải đã dựng xong (`~/Documents/ctwork-appstore/demo-seed/seed-demo.mjs`) — nhất là
+GitHub đã nối (mục Code) và CuongMini trả lời được bằng tài khoản demo.
+
 ```
-CT Work is a team work-management app (issues, boards, sprints, comments,
-team chat and project docs) for teams that use CT Work on cuongthai.com.
+CT Work is a free team work-management app (issues, boards, sprints, chat, direct messages, meetings, docs, Code, CuongMini AI assistant) for teams on cuongthai.com. No purchases, prices or purchase links (3.1.1).
 
-=== SIGNING IN ===
-Use the demo account in the Sign-In Information fields. It belongs to the
-"CT Work Demo" workspace, which already contains a project with a sprint,
-issues, comments, files, chat messages and documents.
-Sign in with Apple is also offered.
+SIGN IN
+Enter the demo USERNAME (not the email) and password from Sign-In Information. The account is in the "CT Work Demo" workspace, project DEMO: an active sprint, issues in every status, comments with a photo, chat, a direct conversation, an upcoming meeting, a doc, an approval waiting for this account and a connected public GitHub repo. A second member, "Minh (Demo)", wrote the "other person" content. Sign in with Apple is also offered (4.8).
 
-=== WHAT TO TRY ===
-- My Work: issues assigned to you, grouped by due date.
-- Projects > Board: touch and hold a card, then drag it to another column
-  (or use the card's context menu "Move to...").
-- Projects > Backlog & issues: sprints, backlog, and "All issues" with filters.
-- Open any issue: change status / assignee / priority / due date, add a
-  comment, attach a photo or file (+ next to Attachments), see History.
-- Chat tab: team channels and private groups. Send a message, a photo, a
-  file or a voice note; react, pin, search, reply in a thread. Messages
-  typed while offline are queued and sent when the connection returns.
-- Projects > Meetings: upcoming meetings, RSVP, "Join with Google Meet /
-  Zoom / Teams / Jitsi" (opens that app or Safari), notes, decisions,
-  action items -> "Create issues", transcript, Add to Calendar.
-- Inbox: CT Work notifications (assignments, mentions, replies, approvals,
-  alerts). Reply, Approve / Reject and Mark as read right from the inbox.
-- Projects > Docs: read, search, create and edit pages (formatting bar,
-  photos from the camera or Photos, issue links), version history, comments.
-  The editor never overwrites a teammate's newer edit: it shows a conflict
-  screen instead.
-- Projects > More tools > Approvals: approve or reject (a comment is required to reject).
-- Projects > More tools > Tests: open a test cycle, run a test step by step
-  (Pass / Fail / Blocked), attach a photo as evidence, create a bug from a
-  failed step.
-- Projects > More tools > Change requests, RAID, Reviews, Requirements, Service desk,
-  Team, AI agents, Diagrams (pinch to zoom), Finance (read-only).
-- My Work > Agenda: today and the next two weeks across all projects
-  (due dates, meetings with a Join button, sprint and release dates).
-- Time tracking: start a timer on an issue; it appears as a Live Activity on
-  the Lock Screen / Dynamic Island with Pause and Stop buttons.
-- Widgets: add "My work today" or "Timer" from the Home Screen widget gallery.
-- Siri / Shortcuts: "What's on my plate in CT Work", "Start a CT Work timer",
-  "Stop my CT Work timer".
-- Share sheet: share a photo, link or text from another app to "CT Work" to
-  create an issue or comment on a recent issue.
-- Spotlight: issues you opened recently can be found from Home Screen search.
-- Account > Security: optional Face ID lock (off by default).
-- Projects shows the core tools; every other tool (sprints, reports, OKRs,
-  approvals, tests, service desk, etc.) is under Projects > More tools, where
-  it can be searched and pinned.
-- Projects > Code (projects connected to GitHub/GitLab): Git activity
-  timeline (tap an issue key to open the issue), branches, pull requests,
-  and the source browser (folders, files with line numbers, commit diffs).
-- Projects > AI assistant: tap one of the sample questions. The answer links
-  to the issues and docs it mentions (tap to open them in the app). Suggested
-  changes only run when someone taps Apply.
+WHAT TO TRY
+- My Work: issues assigned to you; Agenda; "What should I work on today?" asks CuongMini.
+- Projects: Board (touch and hold a card, drag it), Backlog, List, More (all other tools). Open an issue to edit fields, comment, attach a photo, log time.
+- CuongMini (AI): the sparkle button on the project page, the "Ask CuongMini" card under More, or the CuongMini button inside any issue (Summarize, Split, Generate tests...). Answers stream in and link to issues/docs.
+- Create with CuongMini: Projects > project picker > + > Create with CuongMini drafts a project plan from a short brief; nothing is created until you review it.
+- Search: magnifying glass on any main screen (Cmd+K on iPad).
+- Chat tab: Channels, Messages (1-1 with Minh: photos, files, replies, reactions, unsend within 5 min, read receipts) and Members (online dot / "Active 5m ago").
+- Projects > More > Code: Git activity from github.com/cuonghoang1103/ctwork-demo-app (tap a DEMO key to open the issue), branches, the open pull request, source and diffs.
+- Inbox: reply, Approve/Reject. Account > Sounds and Notification settings.
+- Timer on an issue: Live Activity with Pause/Stop. Widgets "My work today" and "Timer"; Siri "What's on my plate in CT Work"; Share Extension; Spotlight.
 
-=== USER-GENERATED CONTENT (Guideline 1.2) ===
-- Community rules must be accepted on first launch.
-- Comments: touch and hold > Report comment / Block user.
-- Page comments, approval comments, ticket replies, class stream comments,
-  intake messages and form responses: touch and hold > Report / Block.
-- Chat messages (channels and threads): touch and hold > Report message /
-  Block user.
-- Meeting notes: Meetings > open a meeting > ... > Report notes / Block.
-- Reported content is hidden for the reporter immediately; reports reach our
-  moderation queue and are reviewed within 24 hours.
-- Blocked users: Account > Blocked users & hidden content.
-- Contact: Account > Help & contact (cuongthaihnhe176322@gmail.com).
+USER-GENERATED CONTENT (1.2)
+Community rules are accepted on first launch. Comments, chat messages and AI answers: touch and hold > Report / Block user. Direct conversation: ... > Report conversation or Block (a blocked user cannot message you, their content is hidden and you don't see each other's active status). Reported content is hidden for the reporter at once; we review every report within 24 hours and remove the content or the offending account. Blocked users: Account > Blocked users & hidden content. Contact: Account > Help & contact.
 
-=== AI (Guidelines 4.7 and 5.1.2) ===
-- AI assistant: before the first question the app explains that the question
-  and the project content needed to answer it are sent to a third-party AI
-  model provider, and asks for permission ("Allow and ask"). The permission
-  can be withdrawn in Account > Privacy. Every answer is labelled
-  "AI-generated" and has a Report button (the answer is hidden for the
-  reporter immediately and reviewed within 24 hours).
-- AI agents: workspace admins can add AI agents as members on the web.
-  Anything an agent writes is labelled "AI agent" (and a sparkle badge on its
-  avatar) everywhere in the app, and can be reported like any other content.
-- Voice notes are transcribed by Groq after a separate consent.
+PRIVACY AND AI (4.7, 5.1.2)
+- Active status: Account > Privacy & security > "Show active status". Off = others don't see when you're active and you don't see theirs.
+- CuongMini is AI and says so. Before the first request the app explains that the request and the project content needed to answer it (issues, comments, docs, files; for Create with CuongMini the brief, attached files and team member names/emails) go to our server and then to a third-party AI model provider (e.g. OpenAI or Anthropic, via an AI gateway) only to produce the answer. Nothing is sent until "Allow and ask"; consent can be withdrawn in Account > Privacy & security and is cleared on sign-out. Every answer is labelled "AI-generated" with Report.
+- Voice notes in chat: a separate consent names Groq (speech-to-text); nothing is recorded before "Allow and record".
+- AI agents added on the web are labelled "AI agent".
+No data is used for ads or tracking. Policy: cuongthai.com/chinh-sach-bao-mat
 
-=== ACCOUNT DELETION (Guideline 5.1.1(v)) ===
-Account tab > Delete account. The account and personal data are erased 72
-hours after the request (the user can cancel within that window).
+ACCOUNT DELETION (5.1.1(v))
+Account > Delete account. Erased 72 hours after the request; can be cancelled within that window.
 
-=== OTHER ===
-- No purchases, prices or external purchase links anywhere in the app.
-  Accounts are free.
-- Camera permission is requested only when the user taps "Take Photo" to
-  attach a picture to an issue or chat message. Photo Library uses the
-  system picker.
-- Microphone permission is requested only when the user taps the microphone
-  to record a voice note in chat. Before the first recording the app asks
-  for consent: voice notes are transcribed by Groq (a third-party
-  speech-to-text service). Video meetings open in Google Meet / Zoom /
-  Teams / Jitsi (or Safari); the app itself does not access the camera or
-  microphone for calls.
-- Add to Calendar uses the system event editor; no calendar permission.
-- Push notifications: assignments, mentions, comments, approvals and meeting
-  reminders. Long-press a notification to Reply, Approve / Reject or Join the
-  meeting. Which ones you get is set in Inbox > ... > Notification settings.
-- Face ID is used only if the user turns on the optional app lock
-  (Account > Security). It is off by default.
-- Widgets, Siri and Spotlight use a copy of the user's own data stored on the
-  device only; signing out deletes it.
-- There are no purchases in the app. Pages opened from the app on
-  cuongthai.com hide and block any upgrade or payment links.
-- iPad uses a dedicated split-view layout.
+PERMISSIONS
+Camera only for "Take Photo"; microphone only for voice notes; Face ID only for the optional app lock (off by default). Photos and Add to Calendar use system pickers.
+
+4.3: a separate product from our "CuongThai" learning app: own bundle ID, icon and privacy manifest; none of its courses, social feed or finance.
 ```
 
 ## 5. Phần BACKEND còn thiếu / nên có (không sửa ở phiên app)
@@ -407,8 +342,14 @@ app, with a different audience, purpose and feature set:
    - Spotlight search for recently opened issues.
    - A Code view for teams that connect GitHub or GitLab: activity, branches,
      pull requests and a source browser with commit diffs.
-   - A project AI assistant that answers with links into the app's own issue
-     and document screens.
+   - CuongMini, a project AI assistant available on the project, inside
+     every issue (summarize, split into stories, generate test cases,
+     improve a bug report) and in My Work ("What should I work on today?"),
+     answering with links into the app's own issue and document screens;
+     and "Create with CuongMini", which drafts a whole project plan from a
+     short brief for the team to review.
+   - Board, backlog and list views with drag and drop, bulk edit and
+     JQL-style filters, plus a global search (Cmd+K on iPad keyboards).
    - Actionable notifications: reply to a comment, approve or reject a
      request, or join a meeting directly from the notification.
    - A client portal view, so a project's clients can follow shared issues,
@@ -428,7 +369,13 @@ We are happy to provide a short screen recording of these features if that
 helps. Thank you.
 ```
 
-## 7. Checklist dữ liệu DEMO cho reviewer (KHÔNG tự tạo trên prod — chủ app làm trên web)
+## 7. Checklist dữ liệu DEMO cho reviewer (KHÔNG sửa DB prod — chỉ qua web/API công khai)
+
+> **21/10/2026 (build 4):** chủ app duyệt cho Claude dựng dữ liệu demo TRÊN PRODUCTION bằng API công khai. Đã làm:
+> đăng ký 2 tài khoản (`ctworkreview` + `ctworkpeer` "Minh (Demo)", mật khẩu ở `~/Documents/ctwork-appstore/TAI-KHOAN-DEMO.md`),
+> tạo kho công khai https://github.com/cuonghoang1103/ctwork-demo-app. Mọi mục dưới đây (kể cả nối GitHub qua webhook,
+> tin nhắn riêng 1-1, thử CuongMini) do `~/Documents/ctwork-appstore/demo-seed/seed-demo.mjs` dựng — idempotent, chạy
+> lại được; cần 2 tài khoản đã xác thực email trước. Trạng thái thật: `demo-seed/state.json` + `NOP-HOM-NAY.md` bước 7.
 
 Mục tiêu: reviewer mở MỌI tab chính đều thấy dữ liệu, không gặp màn trống. Tài khoản demo vào sẵn workspace
 "CT Work Demo", dự án Scrum **DEMO**:

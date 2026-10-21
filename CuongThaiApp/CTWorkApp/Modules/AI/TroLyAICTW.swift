@@ -795,6 +795,8 @@ enum CongBoAI {
     static var gach: [(String, String)] { [
         ("eye.slash", String(localized: "Only content you already have access to in this project is used.")),
         ("person.2", String(localized: "Shared conversations are visible to your project team; private ones only to you.")),
+        // 5.1.2(i) — Create with CuongMini dùng CHUNG hộp đồng ý này, mà nó gửi thêm tên + email thành viên người dùng nhập.
+        ("person.3", String(localized: "Create with CuongMini also sends your brief, the files you attach and the names and emails of the team members you enter.")),
         ("hand.raised", String(localized: "The provider uses it only to create the answer. No advertising, no tracking.")),
         ("exclamationmark.bubble", String(localized: "AI can be wrong. Nothing changes in the project until someone taps Apply.")),
     ] }

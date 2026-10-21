@@ -9443,6 +9443,16 @@
         }
       }
     },
+    "Create with CuongMini also sends your brief, the files you attach and the names and emails of the team members you enter.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tạo cùng CuongMini còn gửi bản mô tả của bạn, tệp bạn đính kèm, cùng tên và email của các thành viên bạn nhập."
+          }
+        }
+      }
+    },
     "Create your account": {
       "localizations": {
         "vi": {
