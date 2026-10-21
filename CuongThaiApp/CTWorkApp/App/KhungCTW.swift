@@ -38,7 +38,8 @@ struct KhungCTW: View {
     @Environment(\.horizontalSizeClass) private var beRong
 
     var body: some View {
-        if beRong == .regular { KhungRongCTW() } else { KhungTabCTW() }
+        Group { if beRong == .regular { KhungRongCTW() } else { KhungTabCTW() } }
+            .ctwTimKiemToanCuc()   // ⌘K + tấm phủ "Tìm mọi thứ" (Modules/Search)
     }
 }
 
@@ -93,6 +94,17 @@ struct KhungRongCTW: View {
         NavigationSplitView {
             List(selection: Binding<MucCTW?>(get: { app.muc }, set: { if let m = $0 { app.muc = m } })) {
                 Section {
+                    // Tìm mọi thứ (⌘K) — Modules/Search/TimKiemCTW.swift.
+                    Button { DieuHuongTimCTW.shared.moTimKiem() } label: {
+                        HStack {
+                            Label("Search", systemImage: "magnifyingglass")
+                            Spacer()
+                            Text(verbatim: "⌘K").font(.ctw(size: 12, weight: .medium)).foregroundColor(AppColors.textTertiary)
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("sidebar.search")
                     Button { moChon = true } label: {
                         HStack(spacing: 10) {
                             Text(app.luaChon?.maDuAn ?? "—")
@@ -162,6 +174,8 @@ private struct CotNganXepCTW: View {
     var body: some View {
         NavigationStack(path: $nganXep.duong) {
             noiDung
+                // Kính lúp "Tìm mọi thứ" ở thanh trên của MỌI màn gốc (Modules/Search) — mô-đun không phải tự gắn.
+                .toolbar { ToolbarItem(placement: .topBarTrailing) { NutTimKiemCTW() } }
                 .ctwDichDen()
         }
         .environmentObject(nganXep)

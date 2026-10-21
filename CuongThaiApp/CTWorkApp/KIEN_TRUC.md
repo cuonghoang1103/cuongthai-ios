@@ -373,3 +373,27 @@ trước khi `simctl launch` (giá trị `system` | `vi` | `en`).
 - ⚠️ Chụp màn tiếng Việt khi app ĐÃ có tệp prefs trong container (vd sau khi chạy test): `simctl spawn … defaults write`
   ghi vào miền khác, app vẫn đọc "system" ⇒ sửa thẳng `<container>/Library/Preferences/com.cuongthai.ctwork.plist`
   (khoá có dấu chấm ⇒ dùng `plistlib`, không dùng `plutil -replace`).
+
+## 17. Tìm mọi thứ (⌘K) — như bảng lệnh của web (21/10/2026)
+
+- **Lối vào:** kính lúp ở thanh trên của MỌI màn gốc (gắn MỘT chỗ ở `CotNganXepCTW`, KhungCTW.swift — mô-đun không tự gắn) ·
+  iPad: dòng "Search ⌘K" đầu thanh bên · phím ⌘K (nút ẩn trong `GanTimKiemCTW`, ⌘K lần nữa / Esc đóng). Không làm kéo-xuống-để-tìm
+  ở trang dự án (Board cuộn ngang/kéo thả tranh cử chỉ).
+- **Tệp:** `Modules/Search/TimKiemLogicCTW.swift` (THUẦN: `CTWBoDau` bỏ dấu kể cả đ · `CTWKhopTim` điểm trùng > đầu chuỗi > đầu từ >
+  chứa > từng từ · `CTWMaTheGo` nhận `ABC-12`/`12`/`#12` · `CTWTuKhoaMoDun` từ khoá KHÔNG DẤU theo id mô-đun · `CTWHaiNgu` tên vi+en
+  đọc thẳng `vi.lproj` · `MucTimCTW`/`CTWXepHangTim` màn cấp app + lệnh) · `DieuHuongTimCTW.swift` (tấm phủ duy nhất `tamPhu`, đi tới
+  kết quả, `DungNhieuCTW` đếm "hay dùng") · `TimKiemCTW.swift` (màn + VM).
+- **Nguồn:** chức năng = `CTWDangKyMoDun.hienDuoc(cfg)` + màn app (My Work, Agenda, Inbox, Cài đặt thông báo, Account, More tools) ·
+  lệnh (Tạo thẻ theo `coTheTao`, Đổi dự án, Tạo cùng CuongMini / Dự án mới theo vai không gian, Đổi ngôn ngữ) · dự án + không gian
+  `GET /work/search/facets` · thẻ `GET /work/search` (≥ 2 ký tự, chờ 250 ms; một lượt `project = KEY` lên trước + một lượt mọi dự án) ·
+  tài liệu `GET /work/search/docs` · thành viên = `cauHinhDuAn.members` (chưa có màn hồ sơ ⇒ mở List thẻ đang mở của họ).
+- **Đi tới:** thẻ ⇒ `ctWorkDich` (tab My Work, như thông báo) · mô-đun ⇒ `muc` + `dichCho` có `tham["tk"]` mới mỗi lần, tự gỡ sau 2 s
+  nếu mô-đun không đọc · dự án ⇒ `luaChon` rồi Board · tài liệu ⇒ `DinhTuyenCTW.mo("/work/…/docs/n")` · "Tìm nâng cao (JQL)" ⇒
+  `jqlCho` + `/backlog/list` (TrangDuAnCTW bật công tắc List, BacklogCTW sang All issues, DanhSachCTW nhận câu) · "Tìm mọi thẻ khớp…" ⇒
+  `chuMyWork` (ô tìm My Work + bộ lọc).
+- **Mô-đun mới:** tự vào kết quả (tên vi+en). Thêm từ khoá hay gõ ⇒ MỘT dòng `"<id>": ["…không dấu…"]` trong `CTWTuKhoaMoDun.bang`.
+  Màn cấp app mới (tab mới, vd Tin nhắn/Thành viên) ⇒ thêm vào `CTWXepHangTim.manApp` + một case `DichTimCTW`.
+- **Ô trống:** tìm gần đây (`TimGanDayCTW`, chung với My Work) · thẻ xem gần đây (`TheGanDayCTW`, App Group) · hay dùng
+  (`DungNhieuCTW` — đếm khi mở qua màn tìm + mỗi lần `ManMoDunCTW` hiện; chưa có ⇒ mô-đun đã ghim) · lệnh.
+- **Màn thử:** `CT_XEM_MAN=tim` (+ `CT_XEM_TIM=<chữ>`); máy chủ giả `Debug/XemThuCTW+TimKiem.swift` (lọc theo chữ, bỏ dấu).
+  Kiểm thử: `CTWorkTests/TimKiemCTWTests.swift` · `CTWorkUITests/TimKiemUITests.swift` (`TEST_RUNNER_CTW_CHUP_TIM=<thư mục>` ⇒ chụp).

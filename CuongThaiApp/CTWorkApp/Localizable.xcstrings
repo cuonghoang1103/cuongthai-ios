@@ -4860,6 +4860,16 @@
         }
       }
     },
+    "Advanced search (JQL)…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tìm nâng cao (JQL)…"
+          }
+        }
+      }
+    },
     "Agenda": {
       "localizations": {
         "vi": {
@@ -7335,6 +7345,16 @@
         }
       }
     },
+    "Change language": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đổi ngôn ngữ"
+          }
+        }
+      }
+    },
     "Change logged time": {
       "localizations": {
         "vi": {
@@ -8089,6 +8109,16 @@
         }
       }
     },
+    "Close search": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đóng tìm kiếm"
+          }
+        }
+      }
+    },
     "Close session": {
       "localizations": {
         "vi": {
@@ -8245,6 +8275,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sắp tới"
+          }
+        }
+      }
+    },
+    "Commands": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lệnh"
           }
         }
       }
@@ -10351,6 +10391,16 @@
         }
       }
     },
+    "Describe your project — CuongMini drafts the plan": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mô tả dự án — CuongMini soạn kế hoạch"
+          }
+        }
+      }
+    },
     "Description": {
       "localizations": {
         "vi": {
@@ -11641,6 +11691,16 @@
         }
       }
     },
+    "Every tool of this project — pin your favourites": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mọi công cụ của dự án — ghim cái hay dùng"
+          }
+        }
+      }
+    },
     "Everyone": {
       "localizations": {
         "vi": {
@@ -12167,6 +12227,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tính năng"
+          }
+        }
+      }
+    },
+    "Features & screens": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chức năng"
           }
         }
       }
@@ -14277,6 +14347,16 @@
         }
       }
     },
+    "Issues assigned to you across projects": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thẻ giao cho bạn ở mọi dự án"
+          }
+        }
+      }
+    },
     "Issues can be finished without attaching files.": {
       "localizations": {
         "vi": {
@@ -14543,6 +14623,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Vào bằng %@"
+          }
+        }
+      }
+    },
+    "Jump to": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chuyển tới"
           }
         }
       }
@@ -17022,6 +17112,16 @@
         }
       }
     },
+    "New story, task or bug in this project": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Story, task hay bug mới trong dự án này"
+          }
+        }
+      }
+    },
     "New subpage": {
       "localizations": {
         "vi": {
@@ -19484,6 +19584,16 @@
         }
       }
     },
+    "Notifications and mentions": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thông báo và lượt nhắc tên"
+          }
+        }
+      }
+    },
     "Notify me about": {
       "localizations": {
         "vi": {
@@ -19976,6 +20086,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Thẻ đang mở"
+          }
+        }
+      }
+    },
+    "Open issues assigned to them": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thẻ đang mở giao cho người này"
           }
         }
       }
@@ -22616,6 +22736,16 @@
         }
       }
     },
+    "Recently viewed": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thẻ xem gần đây"
+          }
+        }
+      }
+    },
     "Record the review decision.": {
       "localizations": {
         "vi": {
@@ -25008,6 +25138,26 @@
         }
       }
     },
+    "Search %@ and all features, issues, projects…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tìm trong %@ và mọi chức năng, thẻ, dự án…"
+          }
+        }
+      }
+    },
+    "Search all issues for “%@”": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tìm mọi thẻ khớp “%@”"
+          }
+        }
+      }
+    },
     "Search articles": {
       "localizations": {
         "vi": {
@@ -25044,6 +25194,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tìm sơ đồ"
+          }
+        }
+      }
+    },
+    "Search everything": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tìm mọi thứ"
+          }
+        }
+      }
+    },
+    "Search failed. Try again.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tìm không được. Thử lại."
+          }
+        }
+      }
+    },
+    "Search features, issues, projects…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tìm chức năng, thẻ, dự án…"
           }
         }
       }
@@ -25581,6 +25761,16 @@
         }
       }
     },
+    "Settings, privacy, Face ID, sign out": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cài đặt, quyền riêng tư, Face ID, đăng xuất"
+          }
+        }
+      }
+    },
     "Several people are typing…": {
       "localizations": {
         "vi": {
@@ -25797,6 +25987,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Hiện %lld sprint đã xong"
+          }
+        }
+      }
+    },
+    "Show %lld more": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hiện thêm %lld"
           }
         }
       }
@@ -26849,6 +27049,16 @@
         }
       }
     },
+    "Start an empty project": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bắt đầu một dự án trống"
+          }
+        }
+      }
+    },
     "Start date": {
       "localizations": {
         "vi": {
@@ -26900,6 +27110,7 @@
       }
     },
     "Start timer on ${the}": {
+      "extractionState": "stale",
       "localizations": {
         "vi": {
           "stringUnit": {
@@ -29563,6 +29774,16 @@
         }
       }
     },
+    "Today, this week and overdue — across projects": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hôm nay, tuần này và quá hạn — mọi dự án"
+          }
+        }
+      }
+    },
     "Token": {
       "localizations": {
         "vi": {
@@ -29879,6 +30100,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Thử tên khác."
+          }
+        }
+      }
+    },
+    "Try another word, an issue key like NW-12, or a feature name like “board” or “báo cáo”.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thử từ khác, mã thẻ như NW-12, hoặc tên chức năng như “board”, “báo cáo”."
           }
         }
       }
@@ -31947,6 +32178,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nhóm trong không gian"
+          }
+        }
+      }
+    },
+    "Workspaces": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không gian"
           }
         }
       }

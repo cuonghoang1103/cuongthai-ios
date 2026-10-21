@@ -43,6 +43,8 @@ struct BacklogCTW: View {
         }
         .background(AppColors.backgroundPrimary)
         .modifier(TieuDeBacklog(bat: !nhung))
+        // Màn Tìm mọi thứ gửi một câu JQL cho dự án này ⇒ sang "All issues" (DanhSachCTW nhận câu đó).
+        .onReceive(DieuHuongTimCTW.shared.$jqlCho) { j in if let j, j.pid == pid { cheDo = .tatCa } }
         #if DEBUG
         .onAppear { if XemThuCTW.man?.lowercased() == "list" { cheDo = .tatCa } }
         #endif

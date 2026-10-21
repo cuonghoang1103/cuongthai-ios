@@ -39,6 +39,8 @@ final class DanhSachVM: ObservableObject {
         daChay = jql
         do {
             let r: CTWKetQuaJql = try await APIClient.shared.request(CTWAPI.timTheoJql(pid: pid, jql: jql, limit: 100))
+            // Hai lượt chồng nhau (câu mặc định lúc mở + câu từ màn Tìm mọi thứ) ⇒ chỉ lượt của câu MỚI NHẤT được ghi.
+            guard daChay == jql else { return }
             ds = r.items ?? []
             tong = r.total ?? ds.count
             loiJql = nil
@@ -289,6 +291,13 @@ struct DanhSachCTW: View {
         }
         .ctwXemTep($tepXuat)
         .refreshable { await vm.chay(jql); await vm.taiBoLoc() }
+        // Câu JQL từ màn Tìm mọi thứ (Tìm nâng cao / Thành viên) — nhận rồi xoá cờ.
+        .onReceive(DieuHuongTimCTW.shared.$jqlCho) { j in
+            guard let j, j.pid == pid else { return }
+            DieuHuongTimCTW.shared.jqlCho = nil
+            jql = j.jql
+            Task { await vm.chay(j.jql) }
+        }
         .task {
             if vm.daChay.isEmpty {
                 await vm.chay(jql)

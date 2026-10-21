@@ -78,7 +78,8 @@ struct TrangDuAnCTW: View {
         .task(id: app.dichCho) {
             guard let d = app.dichCho, let m = CTWDangKyMoDun.moDun(d.moDun), m.viTriIPhone == .trangDuAn else { return }
             if m.id == "board" || m.id == "backlog" {
-                che = m.id == "board" ? .board : .backlog
+                // `/backlog/list` (màn Tìm mọi thứ › Tìm nâng cao JQL, Thành viên) ⇒ công tắc List.
+                che = m.id == "board" ? .board : (d.duongDan.phanCon.first == "list" ? .list : .backlog)
                 nganXep.duong = NavigationPath()
                 app.dichCho = nil
                 return

@@ -85,6 +85,7 @@ struct ManMoDunCTW: View {
         if let m = CTWDangKyMoDun.moDun(id), let l = app.luaChon {
             m.man(CTWNguCanh(pid: l.pid, slug: l.slug, maDuAn: l.maDuAn, tenDuAn: l.tenDuAn))
                 .id("\(id)-\(l.pid)")
+                .onAppear { DungNhieuCTW.dem("mod:\(id)") }   // "hay dùng" của màn Tìm mọi thứ
         } else {
             ChuaChonDuAnCTW(lyDo: String(localized: "Pick a project to continue."))
         }

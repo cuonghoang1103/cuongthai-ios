@@ -26,6 +26,14 @@ struct ViecCuaToiCTW: View {
         .navigationTitle("My Work")
         .searchable(text: $tim, isPresented: $timMo, prompt: "Search issues in all projects")
         .onSubmit(of: .search) { TimGanDayCTW.shared.them(tim) }
+        // "Tìm mọi thẻ khớp …" từ màn Tìm mọi thứ ⇒ mở ô tìm này với chữ sẵn.
+        .onReceive(DieuHuongTimCTW.shared.$chuMyWork) { c in
+            guard let c else { return }
+            DieuHuongTimCTW.shared.chuMyWork = nil
+            nganXep.veDau()
+            tim = c
+            timMo = true
+        }
         #if DEBUG
         .onAppear { if XemThuCTW.man?.lowercased() == "timkiem" { timMo = true; locTim.nhom = ["TODO", "IN_PROGRESS"]; locTim.capNhat = 7; tim = "push" } }
         #endif
