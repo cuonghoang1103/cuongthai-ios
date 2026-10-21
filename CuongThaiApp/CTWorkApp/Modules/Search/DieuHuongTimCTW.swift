@@ -9,7 +9,8 @@ import SwiftUI
 //   · ⌘K trên bàn phím (iPad/iPhone có bàn phím rời) — nút ẩn ở `GanTimKiemCTW`.
 // Màn tìm là MỘT tấm phủ của khung (`DieuHuongTimCTW.tamPhu`); chọn kết quả ⇒ đóng tấm phủ rồi đi bằng các lối có sẵn:
 //   thẻ ⇒ `AppState.ctWorkDich` (như thông báo đẩy) · mô-đun ⇒ `AppState.muc` + `dichCho` (như deep link) ·
-//   dự án ⇒ `AppState.luaChon` · List/JQL ⇒ `jqlCho` (DanhSachCTW nhận) · tìm mọi thẻ ⇒ `chuMyWork` (ô tìm My Work).
+//   dự án ⇒ `AppState.luaChon` · List/JQL ⇒ `jqlCho` (DanhSachCTW nhận) · tìm mọi thẻ ⇒ `chuMyWork` (ô tìm My Work) ·
+//   Tin nhắn/Thành viên (cấp ứng dụng) ⇒ `KhoTinNhanCTW.moMoDun` (iPhone: phân đoạn của tab Chat) · người ⇒ hồ sơ / chat 1-1.
 
 /// Câu JQL chờ màn List (Backlog › All issues) của dự án `pid` nhận. `id` mới mỗi lần ⇒ cùng câu vẫn chạy lại.
 struct JqlChoCTW: Equatable {
@@ -85,6 +86,8 @@ final class DieuHuongTimCTW: ObservableObject {
     /// Mô-đun của dự án đang chọn. iPhone: tab Projects đẩy màn mô-đun (`TrangDuAnCTW` đọc `dichCho`); iPad: mục thanh bên.
     func moMoDun(_ id: String, phanCon: [String] = []) {
         guard let m = CTWDangKyMoDun.moDun(id) else { return }
+        // Mô-đun cấp ứng dụng (Tin nhắn, Thành viên): không cần dự án, không đọc `dichCho`.
+        if m.capUngDung { KhoTinNhanCTW.shared.moMoDun(m.id); return }
         guard let l = app.luaChon else { app.muc = .moDun(id); return }
         // `tk` mới mỗi lần ⇒ `.task(id: dichCho)` luôn chạy lại dù vừa mở đúng mô-đun này.
         let d = DuongDanCTW(slug: l.slug, maDuAn: l.maDuAn, doan: m.doanWeb ?? m.id, phanCon: phanCon, tham: ["tk": UUID().uuidString])

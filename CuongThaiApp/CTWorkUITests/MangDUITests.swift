@@ -7,6 +7,7 @@ final class MangDUITests: XCTestCase {
     private func mo(_ man: String) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchEnvironment["CT_XEM_MAN"] = man
+        app.launchArguments += ["-com.cuongthai.ctwork.ngonNgu", "en"]   // app nhớ ngôn ngữ của lớp chạy trước
         app.launch()
         return app
     }

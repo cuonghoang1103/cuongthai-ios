@@ -20,6 +20,9 @@ final class ToanBoMoDunUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchEnvironment["CT_XEM_MAN"] = man
         for (k, v) in env { app.launchEnvironment[k] = v }
+        // Câu chữ kiểm ở đây là tiếng Anh. App NHỚ ngôn ngữ đã chọn ⇒ lớp chạy trước bằng `vi` (TimKiemUITests,
+        // ThanhVienUITests khi chụp) làm cả lớp này đỏ nếu không ép lại.
+        app.launchArguments += ["-com.cuongthai.ctwork.ngonNgu", "en"]
         app.launch()
         return app
     }
@@ -125,22 +128,36 @@ final class ToanBoMoDunUITests: XCTestCase {
         if b.waitForExistence(timeout: 3) { b.tap() }
     }
 
+    /// Câu trả lời đến bằng SSE (máy chủ giả phát mẩu 23 byte — mục 16) ⇒ link ở cuối câu dài chỉ có khi stream xong.
+    /// Xong = nút Dừng (`ai.stop`) biến mất.
+    private func choHetStream(_ app: XCUIApplication) {
+        XCTAssertTrue(app.buttons["ai.stop"].waitForNonExistence(timeout: 40), "câu trả lời phải viết xong")
+    }
+
     func testAIDongYTruocKhiHoi() throws {
         let app = mo("mod:ai/dongy")
         XCTAssertTrue(app.staticTexts["Questions are answered by AI"].waitForExistence(timeout: 8), "5.1.2(i): phải hỏi đồng ý trước câu đầu")
         XCTAssertTrue(chua(app, "third-party AI model provider").exists)
         app.buttons["ai.consent.allow"].tap()
-        XCTAssertTrue(chua(app, "You have 3 open issues").waitForExistence(timeout: 10))
+        // Câu mở sẵn của `mod:ai/dongy` là câu mẫu ĐẦU — từ đợt CuongMini (21/10) là "What should I work on today?" ⇒ máy chủ
+        // giả trả `AIGia.traLoiHomNay` (tiếng Việt, có link NW-12/NW-14/NW-17), không còn câu "You have 3 open issues".
+        XCTAssertTrue(chua(app, "Sprint 6").waitForExistence(timeout: 10), "câu trả lời phải hiện sau khi đồng ý")
+        choHetStream(app)
+        XCTAssertTrue(app.links.matching(NSPredicate(format: "label CONTAINS 'NW-12'")).firstMatch.exists, "câu trả lời có link thẻ")
         XCTAssertTrue(app.staticTexts["AI-generated"].exists || chua(app, "AI-generated").exists, "4.7: nhãn AI")
     }
 
     func testAICauMauLinkMoTheVaBaoCao() throws {
         let app = mo("mod:ai")
-        let mau = app.buttons["ai.sample.0"]
+        // Câu mẫu thứ hai ("What should I work on next…"). Từ mảng C câu hỏi đi bản STREAM ⇒ máy chủ giả trả
+        // `AIGia.traLoiBang` (có bảng Sprint 6 + link NW-12/NW-17), không còn `traLoiMau` "You have 3 open issues"; câu mẫu
+        // đầu giờ là "…today?" ⇒ `traLoiHomNay` (KIEN_TRUC mục 16, 17).
+        let mau = app.buttons["ai.sample.1"]
         XCTAssertTrue(mau.waitForExistence(timeout: 8))
         mau.tap()
         dongYNeuHoi(app)
-        XCTAssertTrue(chua(app, "You have 3 open issues").waitForExistence(timeout: 10))
+        XCTAssertTrue(chua(app, "Sprint 6").waitForExistence(timeout: 10), "câu trả lời phải hiện")
+        choHetStream(app)
         // Link Markdown /work/<ws>/NW/issue/17 ⇒ mở thẻ trong app.
         let link = app.links.matching(NSPredicate(format: "label CONTAINS 'NW-17'")).firstMatch
         XCTAssertTrue(link.waitForExistence(timeout: 5))
@@ -179,7 +196,11 @@ final class ToanBoMoDunUITests: XCTestCase {
         XCTAssertTrue(ct.exists, "công tắc đẩy 'Git activity' (push.git)")
         let app2 = mo("hopthu")
         let tb = chua(app2, "requested your review on PR #48")
-        XCTAssertTrue(tb.waitForExistence(timeout: 8))
+        // Hộp thư giờ có hàng cao (nút Approve/Reject, Reply, Join meeting) ⇒ thông báo Git nằm dưới mép màn; danh sách lười
+        // chưa tạo phần tử cho tới khi cuộn tới.
+        XCTAssertTrue(app2.staticTexts["Inbox"].waitForExistence(timeout: 8))
+        for _ in 0..<6 where !(tb.exists && tb.isHittable) { app2.swipeUp() }
+        XCTAssertTrue(tb.waitForExistence(timeout: 8), "thông báo Git (REVIEW_REQUESTED) trong Hộp thư")
         tb.tap()
         XCTAssertTrue(chua(app2, "NW-12: open the right issue from a notification").waitForExistence(timeout: 10), "thông báo Git mở thẳng tab PR của Code")
     }
@@ -192,6 +213,7 @@ final class HienDanUITests: XCTestCase {
     func testMoreTimVaGhim() throws {
         let app = XCUIApplication()
         app.launchEnvironment["CT_XEM_MAN"] = "them"
+        app.launchArguments += ["-com.cuongthai.ctwork.ngonNgu", "en"]   // app nhớ ngôn ngữ của lớp chạy trước
         app.launch()
         XCTAssertTrue(app.buttons["more.board"].waitForExistence(timeout: 10), "lưới More tools mở")
         // Tìm (lưới lười: ô ngoài màn chưa có phần tử ⇒ tìm thay vì cuộn).

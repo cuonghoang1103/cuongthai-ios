@@ -112,6 +112,8 @@ struct TimKiemCTW: View {
     @EnvironmentObject private var app: AppState
     @ObservedObject private var ganDay = TimGanDayCTW.shared
     @ObservedObject private var ngonNgu = NgonNguApCTW.shared
+    /// Danh bạ Thành viên (mọi người cùng không gian + trạng thái) — để gõ tên ra hồ sơ / nhắn tin.
+    @ObservedObject private var kho = KhoTinNhanCTW.shared
     @StateObject private var vm = TimKiemVM()
     @State private var q = ""
     @State private var moRongChucNang = false
@@ -131,7 +133,8 @@ struct TimKiemCTW: View {
 
     private var tatCaChucNang: [MucTimCTW] {
         let mod = CTWDangKyMoDun.hienDuoc(cfg).filter { m in m.id != "code" || app.codeDaNoi == true }
-        return CTWXepHangTim.manApp + mod.map(CTWXepHangTim.muc)
+        // `hienDuoc` bỏ mô-đun cấp ứng dụng (Tin nhắn, Thành viên — không thuộc dự án) ⇒ thêm riêng, ngay sau màn cấp app.
+        return CTWXepHangTim.manApp + CTWDangKyMoDun.capUngDung.map(CTWXepHangTim.muc) + mod.map(CTWXepHangTim.muc)
     }
 
     private var dsLenh: [MucTimCTW] {
@@ -168,12 +171,17 @@ struct TimKiemCTW: View {
         return Array(ds.prefix(4)).map { (slug: $0.0, ten: $0.1) }
     }
 
+    /// Người khớp tên: danh bạ Thành viên (mọi không gian) trước, rồi thành viên dự án đang chọn chưa có trong đó.
     private var nguoiKhop: [CTWUser] {
         let f = CTWBoDau.chuan(chu)
         guard f.count >= 2 else { return [] }
-        return (cfg?.dsThanhVien ?? []).filter { u in
-            CTWKhopTim.diem(f, ten: [CTWBoDau.chuan(u.ten), CTWBoDau.chuan(u.username ?? "")]) != nil
-        }.prefix(5).map { $0 }
+        var thay = Set<Int>()
+        var ds: [CTWUser] = []
+        for u in kho.danhBa.map(\.nguoi) + (cfg?.dsThanhVien ?? []) where !thay.contains(u.id) {
+            thay.insert(u.id)
+            if CTWKhopTim.diem(f, ten: [CTWBoDau.chuan(u.ten), CTWBoDau.chuan(u.username ?? "")]) != nil { ds.append(u) }
+        }
+        return Array(ds.prefix(5))
     }
 
     /// Thẻ khớp đúng mã đang gõ (đã có trong kết quả máy chủ) — để dòng "Chuyển tới" có tiêu đề.
@@ -213,6 +221,7 @@ struct TimKiemCTW: View {
                 .opacity(0).frame(width: 0, height: 0).accessibilityHidden(true)
         }
         .task { await vm.napNen() }
+        .task { if kho.danhBa.isEmpty { await kho.taiDanhBa() } }
         .task(id: "\(chu)|\(app.luaChon?.maDuAn ?? "")") { await vm.tim(chu, maDuAn: app.luaChon?.maDuAn) }
         .task {
             // Tự đặt con trỏ vào ô tìm — đợi tấm phủ trượt lên xong (đặt sớm bị bỏ qua).
@@ -411,19 +420,40 @@ struct TimKiemCTW: View {
         if !nguoiKhop.isEmpty {
             Section {
                 ForEach(nguoiKhop) { u in
-                    Button { chonDich("person") { moNguoi(u) } } label: {
-                        HStack(spacing: 12) {
-                            CTWAvatar(user: u, size: 30)
-                            VStack(alignment: .leading, spacing: 2) {
-                                HStack(spacing: 6) {
-                                    Text(verbatim: u.ten).font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(1)
-                                    if u.laAgent { CTWNhanAI() }
+                    let trongDanhBa = kho.thanhVien(u.id) != nil
+                    let moc = kho.moc(u.id)
+                    HStack(spacing: 8) {
+                        // Chạm tên ⇒ hồ sơ (Thành viên: Nhắn tin · thẻ được giao · Chặn · Báo cáo); ngoài danh bạ ⇒ thẻ của họ.
+                        Button { chonDich("person") { moNguoi(u) } } label: {
+                            HStack(spacing: 12) {
+                                AvatarHoatDongCTW(user: u, size: 30, moc: moc)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    HStack(spacing: 6) {
+                                        Text(verbatim: u.ten).font(.ctw(size: 15, weight: .medium)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                                        if u.laAgent { CTWNhanAI() }
+                                    }
+                                    Text(trongDanhBa ? phuNguoi(moc) : String(localized: "Open issues assigned to them"))
+                                        .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1)
                                 }
-                                Text("Open issues assigned to them").font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1)
+                                Spacer(minLength: 0)
                             }
-                            Spacer(minLength: 0)
+                            .contentShape(Rectangle())
                         }
-                        .contentShape(Rectangle())
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("search.person.\(u.id)")
+                        // Nhắn tin thẳng (chat 1-1) — không cho agent / chính mình.
+                        if trongDanhBa, !u.laAgent, u.id != app.currentUser?.id {
+                            Button { chonDich("person") { nhanTin(u) } } label: {
+                                Image(systemName: "bubble.left.fill")
+                                    .font(.ctw(size: 15, weight: .semibold))
+                                    .foregroundColor(AppColors.primary)
+                                    .frame(width: 44, height: 44)
+                                    .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.borderless)
+                            .accessibilityLabel(Text("Message \(u.ten)"))
+                            .accessibilityIdentifier("search.dm.\(u.id)")
+                        }
                     }
                 }
             } header: { Text("Members") }
@@ -494,7 +524,7 @@ struct TimKiemCTW: View {
         Button { chonMuc(m) } label: {
             hang(bieuTuong: m.bieuTuong, tieuDe: Text(verbatim: m.ten), phu: m.moTa,
                  mauBieuTuong: m.nhom == .lenh ? AppColors.success : AppColors.primary) {
-                if case .moDun(let id) = m.dich, let l = app.luaChon, CTWDangKyMoDun.moDun(id) != nil {
+                if case .moDun(let id) = m.dich, let l = app.luaChon, CTWDangKyMoDun.moDun(id).map({ !$0.capUngDung }) == true {
                     Text(verbatim: l.maDuAn).font(.ctw(size: 11, weight: .semibold).monospaced()).foregroundColor(AppColors.textTertiary)
                 }
             }
@@ -597,10 +627,25 @@ struct TimKiemCTW: View {
         dh.moTrang(slug: slug, ma: ma, so: p.number)
     }
 
-    /// Chưa có màn hồ sơ thành viên ⇒ mở List thẻ đang mở của người đó (hữu ích hơn trang Team chung).
+    /// Người trong danh bạ ⇒ hồ sơ ở Thành viên (có Nhắn tin + thẻ được giao). Ngoài danh bạ (chưa tải được) ⇒ List thẻ
+    /// đang mở của người đó như trước.
     private func moNguoi(_ u: CTWUser) {
+        if kho.thanhVien(u.id) != nil { kho.moHoSo(u.id); return }
         guard let un = u.username else { dh.moMoDun("team"); return }
         dh.moJql("assignee = \(CTWJql.boc(un)) AND statusCategory != Done ORDER BY updated DESC")
+    }
+
+    /// Mở (tạo nếu chưa có) hội thoại 1-1 rồi vào màn chat; lỗi ⇒ hồ sơ (ở đó có nút Nhắn tin + câu lỗi).
+    private func nhanTin(_ u: CTWUser) {
+        Task { @MainActor in
+            do { kho.moHoiThoai(try await kho.moVoi(u.id).id) } catch { kho.moHoSo(u.id) }
+        }
+    }
+
+    /// Dòng phụ của một người trong danh bạ: trạng thái hoạt động ("Đang hoạt động", "Hoạt động 5 phút trước"…) hoặc "Xem hồ sơ".
+    private func phuNguoi(_ moc: TrangThaiHoatDongCTW.Moc) -> String {
+        let c = TrangThaiHoatDongCTW.chu(moc)
+        return c.isEmpty ? String(localized: "View profile") : c
     }
 
     /// Return trên bàn phím ⇒ mở kết quả đầu tiên (như Enter của web).

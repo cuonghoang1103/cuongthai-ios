@@ -29,6 +29,8 @@ final class KhoTinNhanCTW: ObservableObject {
     @Published private(set) var dangGo: [Int: Set<Int>] = [:]
     /// Hội thoại cần mở (thông báo đẩy / "Nhắn tin" từ hồ sơ) — danh sách hội thoại đẩy màn chat rồi xoá.
     @Published var canMo: Int?
+    /// Hồ sơ thành viên cần mở (màn Tìm mọi thứ) — danh sách Thành viên mở tấm phủ hồ sơ rồi xoá.
+    @Published var hoSoCanMo: Int?
     /// Phân đoạn đang chọn của tab Chat (iPhone): kenh | tinNhan | thanhVien.
     @Published var phan: String = UserDefaults.standard.string(forKey: "ctw.hubChat.phan") ?? "kenh" {
         didSet { UserDefaults.standard.set(phan, forKey: "ctw.hubChat.phan") }
@@ -89,7 +91,7 @@ final class KhoTinNhanCTW: ObservableObject {
     }
 
     func xoaHet() {
-        danhBa = []; hoiThoai = []; socketOnline = []; vuaRoi = [:]; dangGo = [:]; canMo = nil
+        danhBa = []; hoiThoai = []; socketOnline = []; vuaRoi = [:]; dangGo = [:]; canMo = nil; hoSoCanMo = nil
         daTaiDanhBa = false; daTaiHoiThoai = false; toiHienTrangThai = true
         Self.hoiThoaiDangMo = nil
     }
@@ -157,6 +159,19 @@ final class KhoTinNhanCTW: ObservableObject {
         phan = "tinNhan"
         AppState.shared.muc = .moDun("tin-nhan")
         canMo = id
+    }
+
+    /// Mở mô-đun Tin nhắn / Thành viên (màn Tìm mọi thứ): iPhone ⇒ tab Chat đúng phân đoạn, iPad ⇒ mục thanh bên.
+    /// Đặt `phan` TRỰC TIẾP — `app.muc` có thể đã là mô-đun đó (người dùng tự đổi phân đoạn sau) ⇒ `onChange` không chạy.
+    func moMoDun(_ id: String) {
+        phan = id == "tin-nhan" ? "tinNhan" : "thanhVien"
+        AppState.shared.muc = .moDun(id)
+    }
+
+    /// Mở hồ sơ một người trong Thành viên (màn Tìm mọi thứ gõ tên).
+    func moHoSo(_ userId: Int) {
+        moMoDun("thanh-vien")
+        hoSoCanMo = userId
     }
 
     func hoiThoai(_ id: Int) -> MessageThread? { hoiThoai.first { $0.id == id } }

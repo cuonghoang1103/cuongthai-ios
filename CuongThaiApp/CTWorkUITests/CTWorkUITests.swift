@@ -12,6 +12,8 @@ final class CTWorkUITests: XCTestCase {
     private func mo(_ man: String) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchEnvironment["CT_XEM_MAN"] = man
+        // Câu chữ của các phép kiểm dưới đây là tiếng Anh — ép ngôn ngữ app (máy mô phỏng có thể còn nhớ `vi` từ lượt chụp).
+        app.launchArguments += ["-com.cuongthai.ctwork.ngonNgu", "en"]
         app.launch()
         return app
     }
@@ -50,7 +52,16 @@ final class CTWorkUITests: XCTestCase {
         app.buttons["Backlog"].tap()
         XCTAssertTrue(app.staticTexts["Sprint 6 — Beta polish"].waitForExistence(timeout: 5))
         app.buttons["List"].tap()
-        XCTAssertTrue(app.staticTexts["Open issues"].waitForExistence(timeout: 5))
+        // 20/10/2026: List = ô JQL (mặc định chỉ thẻ chưa xong) + Saved filters/Sort/Fields + dòng đếm "N issues"
+        // (không còn tiêu đề "Open issues").
+        let jql = app.descendants(matching: .any)["list.jql"]
+        XCTAssertTrue(jql.waitForExistence(timeout: 5), "thiếu ô JQL của List")
+        XCTAssertTrue((jql.value as? String ?? "").contains("statusCategory != Done"), "JQL mặc định phải lọc thẻ chưa xong: \(jql.value ?? "")")
+        XCTAssertTrue(app.descendants(matching: .any)["list.saved"].exists)
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label MATCHES %@", "^[0-9]+ issues?$")).firstMatch.waitForExistence(timeout: 5),
+                      "thiếu dòng đếm “N issues”")
+        XCTAssertTrue(app.buttons.containing(NSPredicate(format: "label CONTAINS 'Crash when attaching'")).firstMatch.exists
+                      || app.staticTexts["Crash when attaching a HEIC photo on iOS 17"].exists, "List phải có thẻ đang mở")
         app.buttons["More"].tap()
         XCTAssertTrue(nut(app, "More tools").waitForExistence(timeout: 5))
         app.buttons["Board"].tap()
@@ -135,9 +146,17 @@ final class CTWorkUITests: XCTestCase {
             XCTAssertTrue(moi.waitForExistence(timeout: 5))
             XCTAssertEqual(moi.frame.midX, cotDich.frame.midX, accuracy: max(cotDich.frame.width, 160))
         } else {
-            let toDo = app.descendants(matching: .any)
-                .matching(NSPredicate(format: "label BEGINSWITH 'To do' AND label CONTAINS '2 issues'")).firstMatch
-            XCTAssertTrue(toDo.waitForExistence(timeout: 5), "cột To Do còn 2 thẻ")
+            // Đầu cột (đợt 20/10) là các phần tử RỜI: chữ "To do" + huy hiệu số có nhãn "N issues" cùng hàng bên phải.
+            let toDo = app.staticTexts["To do"].firstMatch
+            XCTAssertTrue(toDo.waitForExistence(timeout: 5), "thiếu đầu cột To do")
+            let hai = app.staticTexts.matching(NSPredicate(format: "label == '2 issues'"))
+            let cungHang = NSPredicate { _, _ in
+                hai.allElementsBoundByIndex.contains { e in
+                    abs(e.frame.midY - toDo.frame.midY) < 14 && e.frame.minX >= toDo.frame.maxX - 2
+                }
+            }
+            expectation(for: cungHang, evaluatedWith: NSObject())
+            waitForExpectations(timeout: 5)   // cột To Do còn 2 thẻ (trước khi đổi: 3)
         }
     }
 

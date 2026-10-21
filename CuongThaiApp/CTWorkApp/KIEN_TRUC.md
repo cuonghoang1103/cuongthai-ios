@@ -416,17 +416,24 @@ Phản hồi chủ app: "không tìm thấy chat AI" (trước đó chỉ là M�
 - **Nguồn:** chức năng = `CTWDangKyMoDun.hienDuoc(cfg)` + màn app (My Work, Agenda, Inbox, Cài đặt thông báo, Account, More tools) ·
   lệnh (Tạo thẻ theo `coTheTao`, Đổi dự án, Tạo cùng CuongMini / Dự án mới theo vai không gian, Đổi ngôn ngữ) · dự án + không gian
   `GET /work/search/facets` · thẻ `GET /work/search` (≥ 2 ký tự, chờ 250 ms; một lượt `project = KEY` lên trước + một lượt mọi dự án) ·
-  tài liệu `GET /work/search/docs` · thành viên = `cauHinhDuAn.members` (chưa có màn hồ sơ ⇒ mở List thẻ đang mở của họ).
+  tài liệu `GET /work/search/docs` · người = danh bạ Thành viên (`KhoTinNhanCTW.danhBa`, mọi không gian) ∪ `cauHinhDuAn.members`:
+  chạm tên ⇒ hồ sơ trong Thành viên (`KhoTinNhanCTW.moHoSo` ⇒ `hoSoCanMo`), nút 💬 (`search.dm.<id>`) ⇒ chat 1-1; người ngoài danh bạ ⇒
+  List thẻ đang mở của họ (JQL).
 - **Đi tới:** thẻ ⇒ `ctWorkDich` (tab My Work, như thông báo) · mô-đun ⇒ `muc` + `dichCho` có `tham["tk"]` mới mỗi lần, tự gỡ sau 2 s
   nếu mô-đun không đọc · dự án ⇒ `luaChon` rồi Board · tài liệu ⇒ `DinhTuyenCTW.mo("/work/…/docs/n")` · "Tìm nâng cao (JQL)" ⇒
   `jqlCho` + `/backlog/list` (TrangDuAnCTW bật công tắc List, BacklogCTW sang All issues, DanhSachCTW nhận câu) · "Tìm mọi thẻ khớp…" ⇒
   `chuMyWork` (ô tìm My Work + bộ lọc).
-- **Mô-đun mới:** tự vào kết quả (tên vi+en). Thêm từ khoá hay gõ ⇒ MỘT dòng `"<id>": ["…không dấu…"]` trong `CTWTuKhoaMoDun.bang`.
-  Màn cấp app mới (tab mới, vd Tin nhắn/Thành viên) ⇒ thêm vào `CTWXepHangTim.manApp` + một case `DichTimCTW`.
+- **Mô-đun mới:** tự vào kết quả (tên vi+en). Thêm từ khoá hay gõ ⇒ MỘT dòng `"<id>": ["…không dấu…"]` trong `CTWTuKhoaMoDun.bang`
+  (khoá PHẢI là id mô-đun thật — `testKhoaTuKhoaLaIdMoDunThat`; "tin nhắn"/"nhắn tin" thuộc `tin-nhan`, không khai lại ở `chat`).
+  Mô-đun CẤP ỨNG DỤNG (`capUngDung`: Tin nhắn `tin-nhan`, Thành viên `thanh-vien` — mục 19) không có trong `hienDuoc` ⇒ màn tìm thêm
+  `CTWDangKyMoDun.capUngDung` ngay sau màn cấp app; `moMoDun` của chúng đi `KhoTinNhanCTW.moMoDun` (iPhone: tab Chat + đặt THẲNG
+  phân đoạn; iPad: mục thanh bên), không đặt `dichCho`. Deep link/tìm tới `chat` ⇒ `HubChatCTW` về phân đoạn Kênh.
+  Màn cấp app khác (không phải mô-đun) ⇒ thêm vào `CTWXepHangTim.manApp` + một case `DichTimCTW`.
 - **Ô trống:** tìm gần đây (`TimGanDayCTW`, chung với My Work) · thẻ xem gần đây (`TheGanDayCTW`, App Group) · hay dùng
   (`DungNhieuCTW` — đếm khi mở qua màn tìm + mỗi lần `ManMoDunCTW` hiện; chưa có ⇒ mô-đun đã ghim) · lệnh.
 - **Màn thử:** `CT_XEM_MAN=tim` (+ `CT_XEM_TIM=<chữ>`); máy chủ giả `Debug/XemThuCTW+TimKiem.swift` (lọc theo chữ, bỏ dấu).
-  Kiểm thử: `CTWorkTests/TimKiemCTWTests.swift` · `CTWorkUITests/TimKiemUITests.swift` (`TEST_RUNNER_CTW_CHUP_TIM=<thư mục>` ⇒ chụp).
+  Kiểm thử: `CTWorkTests/TimKiemCTWTests.swift` · `CTWorkUITests/TimKiemUITests.swift` (`test04…`: "thanh vien" ⇒ phân đoạn Thành
+  viên, "nhan tin" ⇒ Tin nhắn, tên người ⇒ 💬 ⇒ chat 1-1, "cuongmini" ⇒ CuongMini; `TEST_RUNNER_CTW_CHUP_TIM=<thư mục>` ⇒ chụp).
 
 ## 19. Thành viên + Tin nhắn riêng kiểu Messenger (21/10/2026)
 
@@ -452,6 +459,7 @@ Phản hồi chủ app: "không tìm thấy chat AI" (trước đó chỉ là M�
   xem" (`/threads/:id/reads` + socket `thread:read`), "đang gõ…" (`thread:typing`, tự tắt 6 s). 1.2: menu "…" Báo cáo hội thoại
   (`/threads/:id/report {reason, category}`) + Chặn/Bỏ chặn (`/messages/blocks`, `ModerationStore`); đã chặn ⇒ khoá ô soạn, ẩn hội thoại
   khỏi danh sách. Hồ sơ thành viên: Nhắn tin (`POST /threads/user/:id`), thẻ đang mở được giao trong dự án đang chọn (JQL), Chặn, Báo cáo.
+  Màn Tìm mọi thứ (mục 18) mở thẳng phân đoạn/mục, hồ sơ một người hoặc chat 1-1 với họ.
   Đồng nghiệp cùng không gian nhắn được người đã tắt "nhận tin từ người lạ" (máy chủ, 21/10/2026).
 - **Đẩy:** tin nhắn riêng giữa hai người cùng không gian CT Work ⇒ kênh `ctwork` (tới app này nếu đã cài, không bắn đôi sang app chính);
   gói `{loai: "tin-nhan", threadId}` ⇒ chạm mở `ctwork://dm/<threadId>` (`DinhTuyenCTW`). Ở tiền cảnh: đang mở đúng hội thoại đó
