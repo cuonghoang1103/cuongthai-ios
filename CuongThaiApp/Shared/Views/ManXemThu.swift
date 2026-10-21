@@ -118,6 +118,9 @@ struct ManXemThu: View {
             case "tim": SearchView()
             // Tiền nong — xem ThuTienDebug.swift (cần máy ảo RIÊNG + CT_TOKEN_THU).
             case let s where s.hasPrefix("tien"): ThuTienView(cheDo: s)
+            // Cả luồng đăng nhập (21/10/2026): màn đăng nhập mới ⇒ "Đang đăng nhập…" ⇒ Trang chủ giả. Máy chủ GIẢ —
+            // gõ tên bất kỳ; mật khẩu "wrong" ⇒ báo sai (tấm lắc). Kèm màn khởi động: thêm CT_XEM_KHOIDONG=1.
+            case "dangnhap": ThuLuongDangNhap()
 
             default:
                 VStack(spacing: Spacing.sm) {
@@ -450,6 +453,31 @@ struct ThuTongQuan: View {
 ///
 /// Bốn tab kia để trống có chủ đích: thứ cần kiểm là CHIỀU CAO mà thanh tab
 /// chừa lại cho trang chủ, không phải nội dung của các tab khác.
+/// Đăng nhập thử bằng máy chủ GIẢ: `AuthView` gọi `thuDangNhap` thay cho máy chủ và `thuSauDangNhap` thay cho
+/// `appState.login` — không chạm Keychain, không cần tài khoản.
+private struct ThuLuongDangNhap: View {
+    @State private var daVao = false
+    var body: some View {
+        Group {
+            if daVao {
+                ThuTongQuanTab().transition(.opacity.combined(with: .scale(scale: 1.03)))
+            } else {
+                AuthView().transition(.opacity)
+            }
+        }
+        .animation(.easeInOut(duration: 0.35), value: daVao)
+        .toolbar(.hidden, for: .navigationBar)
+        .onAppear {
+            AuthView.thuDangNhap = { _, matKhau in
+                try await Task.sleep(nanoseconds: 1_200_000_000)
+                if matKhau == "wrong" { throw APIError.serverError("Sai tên đăng nhập hoặc mật khẩu") }
+                return AuthResponse(token: "xem-thu", refreshToken: nil)
+            }
+            AuthView.thuSauDangNhap = { _ in daVao = true }
+        }
+    }
+}
+
 struct ThuTongQuanTab: View {
     var body: some View {
         TabView {

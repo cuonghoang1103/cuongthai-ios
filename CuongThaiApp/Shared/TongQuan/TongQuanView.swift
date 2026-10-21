@@ -55,17 +55,19 @@ struct TongQuanView: View {
                 // học: sắp tới học gì → hôm nay phải làm gì → nhờ được ai →
                 // mấy hôm tới có gì. Bản cũ để lời chào, robot, ô chat và bốn
                 // thẻ số lên trước, nên buổi học kế tiếp nằm dưới màn hình.
+                // 21/10/2026: các khối hiện LẦN LƯỢT (mờ + trượt lên) ở lần mở đầu — Shared/ChuyenDong; đợi màn
+                // khởi động thoát xong mới chạy, Giảm chuyển động ⇒ chỉ mờ dần.
                 VStack(alignment: .leading, spacing: Spacing.lg) {
-                    dauTrang
-                    theKeTiep
+                    dauTrang.xuatHienLanLuot(0)
+                    theKeTiep.xuatHienLanLuot(1)
                     // Thẻ trên đã nói buổi gần nhất rồi — in lại nguyên dòng
                     // đó ngay dưới là nói hai lần trong một màn hình.
-                    if !hocHomNayConLai.isEmpty { khoiHocHomNay }
-                    khoiViec
-                    theCuongMini
-                    if !vm.viecSapToi.isEmpty { khoiSapToi }
-                    thanhTienDo
-                    khoiDiNhanh
+                    if !hocHomNayConLai.isEmpty { khoiHocHomNay.xuatHienLanLuot(2) }
+                    khoiViec.xuatHienLanLuot(3)
+                    theCuongMini.xuatHienLanLuot(4)
+                    if !vm.viecSapToi.isEmpty { khoiSapToi.xuatHienLanLuot(5) }
+                    thanhTienDo.xuatHienLanLuot(6)
+                    khoiDiNhanh.xuatHienLanLuot(7)
                 }
                 .padding(.horizontal, Spacing.md)
                 .padding(.top, Spacing.sm)
@@ -464,7 +466,19 @@ struct TongQuanView: View {
                 .strokeBorder(AppColors.border, lineWidth: 1))
 
             if vm.dangTai && vm.viec.isEmpty {
-                ProgressView().frame(maxWidth: .infinity).padding(.vertical, Spacing.lg)
+                // Khung xương có ánh lướt thay vòng quay (21/10/2026).
+                VStack(alignment: .leading, spacing: 12) {
+                    ForEach(0..<3, id: \.self) { i in
+                        HStack(spacing: 10) {
+                            SkeletonBox(height: 20, width: 20, radius: 6)
+                            SkeletonBox(height: 13, width: i == 1 ? 160 : 220)
+                            Spacer(minLength: 0)
+                        }
+                    }
+                }
+                .anhLuot()
+                .padding(.vertical, Spacing.sm)
+                .accessibilityLabel(T("Đang tải..."))
             } else if let loi = vm.loi, vm.viec.isEmpty {
                 // Lỗi nạp trước đây KHÔNG hiện ở đâu cả: danh sách rỗng trông
                 // y hệt "chưa có việc nào", nên mất mạng nhìn như ngày rảnh.

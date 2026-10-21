@@ -48,9 +48,17 @@ struct CuongThaiApp: App {
     @StateObject private var giaoDien = QuanLyGiaoDien.shared
     @StateObject private var ngonNgu = QuanLyNgonNguApp.shared
     @Environment(\.scenePhase) private var scenePhase
+    /// Màn khởi động động (iOS/KhoiDong) — chỉ lần mở nguội; sống ở App nên `.id(ngôn ngữ)` không dựng lại nó.
+    @State private var hienKhoiDong = KhoiDongApp.nenHien()
+
+    /// Khôi phục phiên coi như xong: chưa đồng ý quy tắc / chưa đăng nhập (vào thẳng màn đó) hoặc đã có hồ sơ.
+    private var khoiPhucXong: Bool {
+        !StorageManager.shared.hasAcceptedTerms || !appState.isAuthenticated || appState.currentUser != nil
+    }
 
     init() {
         NhatKy.xoaCu()
+        KhoiDongChung.shared.dangChieu = KhoiDongApp.nenHien()
         // ⚠️ Phải nghe `Transaction.updates` từ lúc app mở, KHÔNG đợi người
         // dùng vào màn mua. Đó là đường Apple giao những giao dịch xảy ra
         // ngoài app: mua lúc app đang tắt, "Hỏi để mua" được phụ huynh duyệt
@@ -74,6 +82,14 @@ struct CuongThaiApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(appState)
+                .overlay {
+                    if hienKhoiDong {
+                        ManKhoiDongApp(khoiPhucXong: khoiPhucXong) {
+                            hienKhoiDong = false
+                            KhoiDongChung.shared.dangChieu = false
+                        }
+                    }
+                }
                 // Kho Vở (SwiftData). Gắn ở gốc để mọi màn con — kể cả màn
                 // viết mở bằng `fullScreenCover` — đều thấy cùng một kho.
                 .modelContainer(KhoSwiftData.chung)

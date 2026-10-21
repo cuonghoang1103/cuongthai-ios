@@ -100,6 +100,9 @@ struct AppleSignInService {
 struct AppleSignInButton: View {
     let onSignedIn: (AuthResponse) -> Void
     let onError: (String) -> Void
+    /// Kiểu nút (21/10/2026 — màn đăng nhập mới dùng đen/trắng theo chế độ sáng/tối) + bo hình viên thuốc.
+    var kieu: SignInWithAppleButton.Style = .white
+    var vienThuoc = false
 
     var body: some View {
         SignInWithAppleButton(.signIn) { request in
@@ -125,8 +128,8 @@ struct AppleSignInButton: View {
                 onError(error.localizedDescription)
             }
         }
-        .signInWithAppleButtonStyle(.white)
-        .frame(height: 48)
-        .cornerRadius(CornerRadius.medium)
+        .signInWithAppleButtonStyle(kieu)
+        .frame(height: vienThuoc ? 52 : 48)
+        .clipShape(RoundedRectangle(cornerRadius: vienThuoc ? 26 : CornerRadius.medium, style: .continuous))
     }
 }
