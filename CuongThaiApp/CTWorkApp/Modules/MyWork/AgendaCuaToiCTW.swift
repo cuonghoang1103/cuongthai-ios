@@ -185,6 +185,7 @@ struct HangGiuChoCTW: View {
             }
         }
         .foregroundColor(AppColors.backgroundTertiary)
+        .anhLuot()   // ánh lướt (Shared/ChuyenDong) — Giảm chuyển động ⇒ đứng yên
         .padding(.vertical, 6)
         .accessibilityHidden(true)
     }

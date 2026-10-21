@@ -56,8 +56,6 @@ struct CTWOLoi: View {
 struct CTWKhungTai: View {
     var soHang = 6
     var coAvatar = true
-    @State private var sang = false
-    @Environment(\.accessibilityReduceMotion) private var giamChuyenDong
 
     var body: some View {
         VStack(spacing: 0) {
@@ -74,14 +72,50 @@ struct CTWKhungTai: View {
             }
         }
         .foregroundColor(AppColors.backgroundTertiary)
+        .anhLuot()   // 21/10/2026: ánh lướt thay cho nhấp nháy (Shared/ChuyenDong) — Giảm chuyển động ⇒ đứng yên
         .padding(.horizontal, 16)
         .ctwThe(14)
         .padding(Spacing.md)
-        .opacity(sang ? 0.55 : 1)
-        .onAppear {
-            guard !giamChuyenDong else { return }
-            withAnimation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)) { sang = true }
+        .accessibilityLabel("Loading")
+    }
+}
+
+/// KHUNG TẢI của BẢNG: vài cột, mỗi cột tiêu đề + 3 thẻ xám có ánh lướt — thay vòng quay giữa màn (21/10/2026).
+struct CTWKhungTaiBang: View {
+    var soCot = 3
+    var body: some View {
+        GeometryReader { g in
+            let rong = g.size.width > 600 ? 280 : max(240, g.size.width * 0.82)
+            HStack(alignment: .top, spacing: 12) {
+                ForEach(0..<soCot, id: \.self) { c in
+                    VStack(alignment: .leading, spacing: 10) {
+                        RoundedRectangle(cornerRadius: 5).frame(width: 96, height: 14).padding(.bottom, 4)
+                        ForEach(0..<(3 - c % 2), id: \.self) { i in
+                            VStack(alignment: .leading, spacing: 8) {
+                                RoundedRectangle(cornerRadius: 4).frame(height: 12)
+                                RoundedRectangle(cornerRadius: 4).frame(width: i % 2 == 0 ? 150 : 110, height: 12)
+                                HStack {
+                                    RoundedRectangle(cornerRadius: 4).frame(width: 54, height: 10)
+                                    Spacer()
+                                    Circle().frame(width: 22, height: 22)
+                                }
+                            }
+                            .padding(12)
+                            .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(AppColors.backgroundCard))
+                        }
+                    }
+                    .padding(10)
+                    .frame(width: rong, alignment: .top)
+                    .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(AppColors.backgroundSecondary.opacity(0.6)))
+                }
+            }
+            .foregroundColor(AppColors.backgroundTertiary)
+            .anhLuot()
+            .padding(.horizontal, Spacing.md)
+            .padding(.top, Spacing.sm)
         }
+        .clipped()
+        .accessibilityElement(children: .ignore)
         .accessibilityLabel("Loading")
     }
 }

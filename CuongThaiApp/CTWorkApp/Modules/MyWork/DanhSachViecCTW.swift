@@ -26,6 +26,8 @@ struct DanhSachViecCTW: View {
     @State private var loc: Loc?
     @State private var moHet: Set<String> = []
     @State private var tamPhu: TamPhu?
+    /// Hàng hiện lần lượt CHỈ ở lần nạp đầu (sau đăng nhập/mở app) — tắt sau ~1,2 s để cuộn không làm hàng nhảy lại.
+    @State private var hieuUngDau = true
 
     enum NhomTheo: String, CaseIterable, Identifiable {
         case han, duAn, trangThai
@@ -72,7 +74,7 @@ struct DanhSachViecCTW: View {
         List {
             Section {
                 if let dau { dau }
-                if let c = vm.duLieu?.counts { oDem(c) }
+                if let c = vm.duLieu?.counts { oDem(c).xuatHienLanLuot(0, bat: hieuUngDau) }
                 if vm.duLieu != nil, !(vm.duLieu?.items ?? []).isEmpty { hangDieuKhien }
                 if let loi = vm.loi {
                     VStack(spacing: 10) {
@@ -109,6 +111,10 @@ struct DanhSachViecCTW: View {
         .animation(.snappy(duration: 0.25), value: loc)
         .refreshable { await vm.tai() }
         .task { if vm.duLieu == nil { await vm.tai() } }
+        .onChange(of: vm.duLieu != nil) { _, coDuLieu in
+            guard coDuLieu, hieuUngDau else { return }
+            Task { @MainActor in try? await Task.sleep(nanoseconds: 1_200_000_000); hieuUngDau = false }
+        }
         .sheet(item: $tamPhu) { t in
             switch t {
             case .chuyen(let i):
@@ -302,7 +308,10 @@ struct DanhSachViecCTW: View {
         let hetCho = moHet.contains(n.id) || n.items.count <= Self.gioiHan + 3
         Section {
             if !gon {
-                ForEach(hetCho ? n.items : Array(n.items.prefix(Self.gioiHan))) { i in hang(i) }
+                let thuTuNhom = dsNhom.firstIndex { $0.id == n.id } ?? 0
+                ForEach(Array((hetCho ? n.items : Array(n.items.prefix(Self.gioiHan))).enumerated()), id: \.element.id) { k, i in
+                    hang(i).xuatHienLanLuot(thuTuNhom * 3 + k + 1, bat: hieuUngDau)
+                }
                 if !hetCho {
                     Button { moHet.insert(n.id) } label: {
                         HStack {
@@ -616,6 +625,7 @@ struct ChuyenNhanhCTW: View {
         do {
             try await APIClient.shared.send(.workChuyenThe(pid: pid, so: t.number, than: than))
             CTWRung.thanhCong()
+            if s.category == "DONE" { CTWNoXong.shared.phat() }
             xong()
             dong()
         } catch {

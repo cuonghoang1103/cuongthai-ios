@@ -31,13 +31,26 @@ struct CTWorkApp: App {
     @UIApplicationDelegateAdaptor(AppDelegateCTW.self) private var delegate
     @StateObject private var appState = AppState.shared
     @Environment(\.scenePhase) private var scenePhase
+    /// Màn khởi động động (App/KhoiDong) — CHỈ lần mở nguội: trạng thái sống ở App (ngoài `GocCTW` vốn bị `.id`
+    /// dựng lại khi đổi ngôn ngữ/cỡ chữ) nên không bao giờ hiện lại trong cùng một tiến trình.
+    @State private var hienKhoiDong = KhoiDongCTW.nenHien()
 
     init() {
         // Ngôn ngữ (Account › Language): tráo Bundle.main + locale hiển thị TRƯỚC khi dựng view nào.
         NgonNguApCTW.khoiDong()
+        AmThanhCTW.dangKyMacDinh()
+        KhoiDongChung.shared.dangChieu = KhoiDongCTW.nenHien()
+        // Pháo "Xong!" (thẻ sang DONE) phát âm xong.caf nếu công tắc Account › Âm thanh bật.
+        CTWNoXong.shared.amThanh = { AmThanhCTW.phatXong() }
         #if DEBUG
         XemThuCTW.batNeuCan()
         #endif
+    }
+
+    /// Khôi phục phiên coi như XONG khi: chưa đồng ý quy tắc / chưa đăng nhập (vào thẳng màn đó) hoặc đã có hồ sơ.
+    /// Hồ sơ tải chậm thì màn khởi động chỉ đợi tới mốc trần của `LichKhoiDong` rồi nhường chỗ.
+    private var khoiPhucXong: Bool {
+        !appState.daDongYDieuKhoan || !appState.isAuthenticated || appState.currentUser != nil
     }
 
     var body: some Scene {
@@ -46,6 +59,15 @@ struct CTWorkApp: App {
                 .environmentObject(appState)
                 // Khoá Face ID (tuỳ chọn, mặc định TẮT — Account → Security).
                 .overlay { KhoaAppCTW() }
+                .ctwLopNoXong()
+                .overlay {
+                    if hienKhoiDong {
+                        ManKhoiDongCTW(khoiPhucXong: khoiPhucXong) {
+                            hienKhoiDong = false
+                            KhoiDongChung.shared.dangChieu = false
+                        }
+                    }
+                }
                 .tint(AppColors.primary)
                 .onOpenURL { DinhTuyenCTW.mo(url: $0) }
                 // Universal Link https://cuongthai.com/work/... (cần AASA ở máy chủ).

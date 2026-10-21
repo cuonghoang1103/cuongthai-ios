@@ -97,6 +97,8 @@ final class CTWBoardVM: ObservableObject {
         do {
             try await APIClient.shared.send(.workChuyenThe(pid: pid, so: the.number, than: than))
             CTWRung.thanhCong()
+            // Vừa sang nhóm DONE ⇒ pháo "Xong!" (+ âm nếu bật) — chỉ app CT Work vẽ (CTWUI/CTWNoXong.swift).
+            if CTWNoXong.laXong(statusId, cfg: cauHinh) { CTWNoXong.shared.phat() }
             await napBang()   // lấy `version`/`rank` mới
         } catch {
             bang?.issues = cu
@@ -211,7 +213,7 @@ struct CTWBoardView: View {
             if vm.cauHinh != nil {
                 if nhom == .none { cacCot } else { cacLan }
             } else if vm.loi == nil {
-                ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
+                CTWKhungTaiBang()   // khung xương có ánh lướt thay vòng quay (21/10/2026)
             } else {
                 Spacer()
             }

@@ -120,6 +120,9 @@ struct TaiKhoanCTW: View {
     /// 5.1.2(i): đồng ý gửi câu hỏi + nội dung dự án cho nhà cung cấp AI (Modules/AI/TroLyAICTW.swift).
     @AppStorage("com.cuongthai.ctwork.ai.dongY") private var aiDongY = false
     @ObservedObject private var ngonNgu = NgonNguApCTW.shared
+    /// Âm thanh trong app (App/KhoiDong/AmThanhCTW.swift) — mặc định bật, đều tôn trọng nút gạt im lặng.
+    @AppStorage(AmThanhCTW.khoaKhoiDong) private var amKhoiDong = true
+    @AppStorage(AmThanhCTW.khoaHieuUng) private var amHieuUng = true
 
     enum TamPhu: Identifiable {
         case phapLy(TrangPhapLyCTW), chonDuAn, web(URL)
@@ -187,6 +190,16 @@ struct TaiKhoanCTW: View {
                     Button {
                         if let u = URL(string: UIApplication.openNotificationSettingsURLString) { UIApplication.shared.open(u) }
                     } label: { Label("Notification settings", systemImage: "bell.badge") }
+                }
+
+                // 21/10/2026 — âm "ting! CT Work!" lúc mở app + âm khi thẻ sang Done.
+                Section {
+                    Toggle(isOn: $amKhoiDong) { Label("Launch sound", systemImage: "speaker.wave.2") }
+                        .accessibilityIdentifier("account.launchSound")
+                    Toggle(isOn: $amHieuUng) { Label("Sound effects", systemImage: "checkmark.seal") }
+                        .accessibilityIdentifier("account.soundEffects")
+                } header: { Text("Sounds") } footer: {
+                    Text("Plays the CT Work chime when the app opens, and a short sound when an issue moves to Done. Follows your silent switch.")
                 }
 
                 // 19/10/2026 — gom theo chủ đề (8 khối ⇒ 6): Quyền riêng tư & bảo mật · Trợ giúp & pháp lý.

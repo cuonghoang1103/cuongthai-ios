@@ -61,6 +61,13 @@ struct DongYQuyTacCTW: View {
 }
 
 // MARK: - Đăng nhập / tạo tài khoản
+//
+// 21/10/2026 — giao diện mới kiểu "hero + tấm trượt lên" (vỏ dùng chung: Shared/ChuyenDong/GiaoDienDangNhap.swift):
+// hero là linh vật CT Work vẽ bằng Path + vài thẻ việc lơ lửng; tấm trắng có ô nhập viền chạy quanh khi chạm,
+// nút viên thuốc, "Ghi nhớ tên đăng nhập", "Quên mật khẩu?", Sign in with Apple; bấm gửi ⇒ nền mờ + linh vật
+// tích việc + "Đang đăng nhập…"; lỗi ⇒ tấm lắc + băng lỗi. LOGIC GIỮ NGUYÊN: cùng `gui()` (login/register),
+// cùng `apple(_:)`, cùng `cauLoi`, cùng bước xác thực email — chỉ đổi phần vẽ. Chế độ đăng ký chuyển bằng liên kết
+// "Chưa có tài khoản? Đăng ký" ở cuối tấm (thay bộ chọn phân đoạn cũ).
 
 struct DangNhapCTW: View {
     @EnvironmentObject private var app: AppState
@@ -83,95 +90,160 @@ struct DangNhapCTW: View {
     /// Bước xác thực email (mã 6 số) — máy chủ CHẶN đăng nhập khi email chưa
     /// xác thực (`EMAIL_NOT_VERIFIED`), nên đăng ký xong phải nhập mã ngay.
     @State private var xacThuc: XacThucEmail?
+    /// Tăng mỗi lần lỗi ⇒ tấm form lắc.
+    @State private var lanLac = 0
+    /// Ghi nhớ TÊN ĐĂNG NHẬP cho lần sau (phiên đăng nhập vốn đã giữ trong Keychain — công tắc này không đổi điều đó).
+    @AppStorage("ctw.dangNhap.nhoTen") private var nhoTen = true
+    @AppStorage("ctw.dangNhap.tenDaNho") private var tenDaNho = ""
     @Environment(\.openURL) private var moURL
     @FocusState private var o: O?
     enum O { case ten, email, hoTen, matKhau }
 
+    /// Lớp "Đang đăng nhập…" hiện ít nhất chừng này — máy chủ trả nhanh thì lớp không loé rồi tắt.
+    static let choToiThieu: TimeInterval = 0.9
+
+    private var mauNut: LinearGradient {
+        LinearGradient(colors: [AppColors.primaryLight, AppColors.primary, AppColors.primaryDark],
+                       startPoint: .topLeading, endPoint: .bottomTrailing)
+    }
+
     var body: some View {
-        ScrollView {
-            VStack(spacing: Spacing.lg) {
-                VStack(spacing: 10) {
-                    Image("LogoCTWork").resizable().scaledToFit().frame(width: 76, height: 76)
-                        .accessibilityHidden(true)
-                    Text("CT Work").font(.ctw(size: 30, weight: .bold)).foregroundColor(AppColors.textPrimary)
-                    Text("Sign in with your cuongthai.com account")
-                        .font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary)
+        BoCucDangNhap(
+            nenHero: AnyShapeStyle(LinearGradient(
+                colors: cheDo == .dark
+                    ? [Color(red: 0.13, green: 0.14, blue: 0.30), Color(red: 0.06, green: 0.20, blue: 0.22)]
+                    : [Color(red: 0.89, green: 0.90, blue: 1.0), Color(red: 0.86, green: 0.96, blue: 0.95)],
+                startPoint: .topLeading, endPoint: .bottomTrailing)),
+            dangGo: o != nil,
+            cuonToi: o.map { AnyHashable("o-\($0)") },
+            dangDangNhap: dangGui,
+            lanLac: lanLac,
+            hero: { gon in HeroDangNhapCTW(gon: gon) },
+            tam: { tam },
+            lopCho: {
+                LopDangDangNhap(chu: cheDoForm == .dangKy ? String(localized: "Creating your account…") : String(localized: "Signing you in…"),
+                                mau: mauNut) {
+                    LinhVatTichViecCTW().frame(width: 104, height: 104)
                 }
-                .padding(.top, Spacing.xl)
+            })
+        // Gắn trên khối TRONG (không cùng chỗ với `.sheet` — bẫy C5).
+        .fullScreenCover(item: $xacThuc) { x in
+            XacThucEmailCTW(email: x.email, tokenCho: x.token) { tk in
+                xacThuc = nil
+                if let tk { app.login(token: tk.token, refreshToken: tk.refreshToken) }
+                else { cheDoForm = .dangNhap; loi = String(localized: "Email verified. Please sign in.") }
+            } huy: { xacThuc = nil }
+        }
+        .background(Color.clear.sheet(item: $tamPhu) { t in NavigationStack { TrangPhapLyView(trang: t) } })
+        .onAppear { if nhoTen, ten.isEmpty { ten = tenDaNho } }
+    }
 
-                Picker("Mode", selection: $cheDoForm) {
-                    ForEach(CheDo.allCases) { Text($0.ten).tag($0) }
-                }
-                .pickerStyle(.segmented)
+    // MARK: Tấm form
 
-                if let loi { CTWErrorBanner(text: loi) { self.loi = nil } }
+    private var tam: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(cheDoForm == .dangKy ? "Create your account" : "Welcome back")
+                    .font(.ctw(size: 28, weight: .bold)).foregroundColor(AppColors.textPrimary)
+                    .accessibilityAddTraits(.isHeader)
+                Text(cheDoForm == .dangKy ? "One account for CT Work and cuongthai.com." : "Sign in with your cuongthai.com account")
+                    .font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary)
+            }
+            .id(cheDoForm)
+            .transition(.opacity)
 
-                VStack(spacing: 0) {
-                    o("Username", text: $ten, kieu: .ten)
-                        .textContentType(.username)
-                    if cheDoForm == .dangKy {
-                        Divider()
-                        o("Email", text: $email, kieu: .email)
-                            .textContentType(.emailAddress)
-                            .keyboardType(.emailAddress)
-                        Divider()
-                        o("Full name (optional)", text: $hoTen, kieu: .hoTen)
-                            .textContentType(.name)
-                            .textInputAutocapitalization(.words)
-                    }
-                    Divider()
-                    SecureField("Password", text: $matKhau)
-                        .textContentType(cheDoForm == .dangKy ? .newPassword : .password)
-                        .focused($o, equals: .matKhau)
-                        .submitLabel(.go)
-                        .onSubmit { Task { await gui() } }
-                        .padding(.horizontal, 14).frame(minHeight: 50)
-                }
-                .ctwThe(14)
+            if let loi { CTWErrorBanner(text: loi) { self.loi = nil }.transition(.opacity.combined(with: .move(edge: .top))) }
 
-                Button { Task { await gui() } } label: {
-                    Group {
-                        if dangGui { ProgressView().tint(.white) } else { Text(cheDoForm.ten) }
-                    }
-                    .font(.ctw(size: 17, weight: .semibold))
-                    .frame(maxWidth: .infinity).padding(.vertical, 14)
-                }
-                .buttonStyle(.borderedProminent)
-                .buttonBorderShape(.roundedRectangle(radius: 14))
-                .disabled(dangGui || !hopLe)
-
+            VStack(spacing: 12) {
+                ODangNhap(bieuTuong: "person", goiY: String(localized: "Username"), chu: $ten, tapTrung: $o, gia: .ten,
+                          maDinhDanh: "dangNhap.ten")
+                    .textContentType(.username)
+                    .textInputAutocapitalization(.never).autocorrectionDisabled()
+                    .submitLabel(.next)
+                    .onSubmit { o = cheDoForm == .dangKy ? .email : .matKhau }
+                    .id(AnyHashable("o-\(O.ten)"))
                 if cheDoForm == .dangKy {
-                    Text("Password: at least 12 characters with an uppercase letter, a lowercase letter, a number and a symbol.")
-                        .font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                } else {
+                    ODangNhap(bieuTuong: "envelope", goiY: String(localized: "Email"), chu: $email, tapTrung: $o, gia: .email,
+                              maDinhDanh: "dangNhap.email")
+                        .textContentType(.emailAddress).keyboardType(.emailAddress)
+                        .textInputAutocapitalization(.never).autocorrectionDisabled()
+                        .submitLabel(.next)
+                        .onSubmit { o = .hoTen }
+                        .id(AnyHashable("o-\(O.email)"))
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                    ODangNhap(bieuTuong: "person.text.rectangle", goiY: String(localized: "Full name (optional)"), chu: $hoTen,
+                              tapTrung: $o, gia: .hoTen, maDinhDanh: "dangNhap.hoTen")
+                        .textContentType(.name).textInputAutocapitalization(.words)
+                        .submitLabel(.next)
+                        .onSubmit { o = .matKhau }
+                        .id(AnyHashable("o-\(O.hoTen)"))
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+                ODangNhap(bieuTuong: "lock", goiY: String(localized: "Password"), chu: $matKhau, an: true, tapTrung: $o, gia: .matKhau,
+                          nhanHien: String(localized: "Show password"), nhanAn: String(localized: "Hide password"),
+                          maDinhDanh: "dangNhap.matKhau")
+                    .textContentType(cheDoForm == .dangKy ? .newPassword : .password)
+                    .textInputAutocapitalization(.never).autocorrectionDisabled()
+                    .submitLabel(.go)
+                    .onSubmit { Task { await gui() } }
+                    .id(AnyHashable("o-\(O.matKhau)"))
+            }
+
+            if cheDoForm == .dangKy {
+                Text("Password: at least 12 characters with an uppercase letter, a lowercase letter, a number and a symbol.")
+                    .font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                HStack(spacing: 8) {
+                    OTich(nhan: String(localized: "Remember username"), bat: $nhoTen)
+                    Spacer(minLength: 4)
                     Button("Forgot password?") {
                         if let u = URL(string: APIClient.diaChiGoc + "/forgot-password") { moURL(u) }
                     }
-                    .font(.footnote)
+                    .font(.ctw(size: 14, weight: .semibold))
+                    .foregroundColor(AppColors.primary)
                 }
+            }
 
-                HStack {
-                    Rectangle().fill(AppColors.divider).frame(height: 0.5)
-                    Text("or").font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
-                    Rectangle().fill(AppColors.divider).frame(height: 0.5)
+            NutVienThuoc(nhan: cheDoForm.ten, nen: mauNut, dangChay: dangGui, bat: hopLe, maDinhDanh: "dangNhap.gui") {
+                Task { await gui() }
+            }
+            .shadow(color: AppColors.primary.opacity(hopLe ? 0.32 : 0), radius: 14, y: 7)
+            .padding(.top, 2)
+
+            HStack(spacing: 10) {
+                Rectangle().fill(AppColors.divider).frame(height: 0.5)
+                Text("or continue with").font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary).fixedSize()
+                Rectangle().fill(AppColors.divider).frame(height: 0.5)
+            }
+
+            // 4.8: lựa chọn đăng nhập riêng tư của Apple.
+            SignInWithAppleButton(.continue) { r in
+                r.requestedScopes = [.fullName, .email]
+            } onCompletion: { kq in
+                Task { await apple(kq) }
+            }
+            .signInWithAppleButtonStyle(cheDo == .dark ? .white : .black)
+            .frame(height: 52)
+            .clipShape(Capsule())
+
+            HStack(spacing: 4) {
+                Text(cheDoForm == .dangKy ? "Already have an account?" : "Don't have an account?")
+                    .foregroundColor(AppColors.textSecondary)
+                Button(cheDoForm == .dangKy ? "Sign in" : "Sign up") { doiCheDo() }
+                    .fontWeight(.semibold)
+                    .foregroundColor(AppColors.primary)
+                    .accessibilityIdentifier("dangNhap.doiCheDo")
+            }
+            .font(.ctw(size: 14))
+            .frame(maxWidth: .infinity)
+
+            VStack(spacing: 6) {
+                if cheDoForm == .dangKy {
+                    Text("By creating an account you agree to the Terms of Use and Privacy Policy.")
+                        .font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
+                        .multilineTextAlignment(.center)
                 }
-
-                // 4.8: lựa chọn đăng nhập riêng tư của Apple.
-                SignInWithAppleButton(.continue) { r in
-                    r.requestedScopes = [.fullName, .email]
-                } onCompletion: { kq in
-                    Task { await apple(kq) }
-                }
-                .signInWithAppleButtonStyle(cheDo == .dark ? .white : .black)
-                .frame(height: 50)
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-
-                Text(cheDoForm == .dangKy
-                     ? "By creating an account you agree to the Terms of Use and Privacy Policy."
-                     : "New here? Create an account, or continue with Apple.")
-                    .font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
-                    .multilineTextAlignment(.center)
                 HStack(spacing: Spacing.md) {
                     Button("Terms of Use") { tamPhu = .dieuKhoan }
                     Text("·").foregroundColor(AppColors.textTertiary)
@@ -181,30 +253,18 @@ struct DangNhapCTW: View {
                 }
                 .font(.footnote)
             }
-            .padding(.horizontal, Spacing.lg)
-            .padding(.bottom, Spacing.xl)
-            .frame(maxWidth: 460)
             .frame(maxWidth: .infinity)
-            // Gắn trên khối TRONG (không cùng chỗ với `.sheet` ở ngoài — bẫy C5).
-            .fullScreenCover(item: $xacThuc) { x in
-                XacThucEmailCTW(email: x.email, tokenCho: x.token) { tk in
-                    xacThuc = nil
-                    if let tk { app.login(token: tk.token, refreshToken: tk.refreshToken) }
-                    else { cheDoForm = .dangNhap; loi = String(localized: "Email verified. Please sign in.") }
-                } huy: { xacThuc = nil }
-            }
         }
-        .scrollDismissesKeyboard(.interactively)
-        .background(AppColors.backgroundPrimary.ignoresSafeArea())
-        .sheet(item: $tamPhu) { t in NavigationStack { TrangPhapLyView(trang: t) } }
+        .animation(.snappy(duration: 0.28), value: cheDoForm)
+        .animation(.easeOut(duration: 0.2), value: loi)
     }
 
-    private func o(_ nhan: LocalizedStringKey, text: Binding<String>, kieu: O) -> some View {
-        TextField(nhan, text: text)
-            .textInputAutocapitalization(.never)
-            .autocorrectionDisabled()
-            .focused($o, equals: kieu)
-            .padding(.horizontal, 14).frame(minHeight: 50)
+    private func doiCheDo() {
+        RungNhe.cham()
+        withAnimation(.snappy(duration: 0.28)) {
+            cheDoForm = cheDoForm == .dangKy ? .dangNhap : .dangKy
+            loi = nil
+        }
     }
 
     private var hopLe: Bool {
@@ -213,11 +273,26 @@ struct DangNhapCTW: View {
         return t.count >= 3 && email.contains("@") && matKhau.count >= 12
     }
 
+    /// Lỗi ⇒ tấm lắc + rung + băng lỗi.
+    private func baoLoi(_ chu: String) {
+        loi = chu
+        lanLac += 1
+        RungNhe.loi()
+    }
+
+    /// Giữ lớp "Đang đăng nhập…" đủ lâu để đọc được (chỉ là thời gian hiển thị — không đổi luồng xác thực).
+    private func doiToiThieu(tu batDau: Date) async {
+        let con = Self.choToiThieu - Date().timeIntervalSince(batDau)
+        if con > 0 { try? await Task.sleep(nanoseconds: UInt64(con * 1_000_000_000)) }
+    }
+
     private func gui() async {
         guard hopLe, !dangGui else { return }
+        o = nil
         dangGui = true
         loi = nil
         defer { dangGui = false }
+        let batDau = Date()
         let t = ten.trimmingCharacters(in: .whitespaces)
         do {
             let res: AuthResponse
@@ -229,15 +304,19 @@ struct DangNhapCTW: View {
                 res = try await APIClient.shared.request(.login(username: t, password: matKhau, captchaToken: nil))
             }
             matKhau = ""
+            tenDaNho = nhoTen ? t : ""
+            await doiToiThieu(tu: batDau)
             if cheDoForm == .dangKy {
                 xacThuc = XacThucEmail(email: email.trimmingCharacters(in: .whitespaces), token: res)
             } else {
+                RungNhe.xong()
                 app.login(token: res.token, refreshToken: res.refreshToken)
             }
         } catch APIError.coMa(let ma, _) where ma == "EMAIL_NOT_VERIFIED" {
             xacThuc = XacThucEmail(email: t.contains("@") ? t : "", token: nil)
         } catch {
-            loi = Self.cauLoi(error)
+            await doiToiThieu(tu: batDau)
+            baoLoi(Self.cauLoi(error))
         }
     }
 
@@ -247,17 +326,20 @@ struct DangNhapCTW: View {
             guard let c = a.credential as? ASAuthorizationAppleIDCredential else { return }
             dangGui = true
             defer { dangGui = false }
+            let batDau = Date()
             do {
                 let res = try await AppleSignInService.authenticate(with: c)
+                await doiToiThieu(tu: batDau)
+                RungNhe.xong()
                 app.login(token: res.token, refreshToken: res.refreshToken)
             } catch AppleSignInError.noEmail {
-                loi = String(localized: "Apple didn't share an email address. Go to Settings › Apple ID › Sign in with Apple › CT Work › Stop Using, then try again.")
+                baoLoi(String(localized: "Apple didn't share an email address. Go to Settings › Apple ID › Sign in with Apple › CT Work › Stop Using, then try again."))
             } catch {
-                loi = Self.cauLoi(error)
+                baoLoi(Self.cauLoi(error))
             }
         case .failure(let e):
             if (e as NSError).code == ASAuthorizationError.canceled.rawValue { return }
-            loi = String(localized: "Sign in with Apple didn't complete. Please try again.")
+            baoLoi(String(localized: "Sign in with Apple didn't complete. Please try again."))
         }
     }
 
@@ -273,6 +355,62 @@ struct DangNhapCTW: View {
         if thap.contains("khoá") || thap.contains("locked") || thap.contains("banned") { return String(localized: "This account is locked. Contact support.") }
         if goc.unicodeScalars.contains(where: { $0.value > 0x2FF }) { return String(localized: "Couldn't sign in. Please check your details and try again.") }
         return goc
+    }
+}
+
+// MARK: Hero — linh vật + thẻ việc lơ lửng
+
+struct HeroDangNhapCTW: View {
+    let gon: Bool
+    @Environment(\.colorScheme) private var cheDo
+    @Environment(\.accessibilityReduceMotion) private var giam
+
+    var body: some View {
+        GeometryReader { g in
+            let co = gon ? min(84, g.size.height * 0.62) : min(150, g.size.height * 0.6)
+            let cx = g.size.width * 0.56
+            // Chip không bao giờ tràn mép màn (iPhone hẹp): kẹp tâm trong [74, rộng − 74].
+            let kep = { (x: CGFloat) in min(max(x, 74), g.size.width - 74) }
+            ZStack {
+                // Quầng mềm sau linh vật.
+                Circle().fill(Color.white.opacity(cheDo == .dark ? 0.06 : 0.55))
+                    .frame(width: co * 1.7, height: co * 1.7).blur(radius: 30)
+                    .position(x: cx, y: g.size.height * 0.56)
+                LinhVatCTWView()
+                    .frame(width: co, height: co)
+                    .shadow(color: AppColors.primary.opacity(0.28), radius: 18, y: 10)
+                    .noiLoLung(bienDo: 5, chuKy: 3.6)
+                    .position(x: cx, y: g.size.height * 0.56)
+                if !gon {
+                    ChipNoi(bieuTuong: "checkmark.circle.fill", chu: "NW-12 · Done", mau: Color(red: 0.13, green: 0.6, blue: 0.3))
+                        .noiLoLung(bienDo: 7, chuKy: 3.0, lech: 0.25)
+                        .position(x: kep(cx - co * 0.98), y: g.size.height * 0.40)
+                    ChipNoi(bieuTuong: "flag.fill", chu: "Sprint 6", mau: AppColors.primary)
+                        .noiLoLung(bienDo: 6, chuKy: 3.4, lech: 0.6)
+                        .position(x: kep(cx + co * 0.85), y: g.size.height * 0.26)
+                    ChipNoi(bieuTuong: "arrow.triangle.branch", chu: "In review", mau: Color(red: 0.9, green: 0.5, blue: 0.1))
+                        .noiLoLung(bienDo: 6, chuKy: 2.8, lech: 0.1)
+                        .position(x: kep(cx + co * 0.7), y: g.size.height * 0.86)
+                    Image(systemName: "sparkle")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(MauLinhVatCTW.vang)
+                        .noiLoLung(bienDo: 4, chuKy: 2.2, lech: 0.4)
+                        .position(x: cx - co * 0.62, y: g.size.height * 0.82)
+                        .accessibilityHidden(true)
+                }
+                // Dấu thương hiệu góc trên trái.
+                HStack(spacing: 8) {
+                    LinhVatCTWView().frame(width: 30, height: 30)
+                    Text(verbatim: "CT Work").font(.system(size: 18, weight: .bold, design: .rounded))
+                        .foregroundColor(cheDo == .dark ? .white : Color(red: 0.12, green: 0.13, blue: 0.27))
+                }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(Text(verbatim: "CT Work"))
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .padding(.leading, 24)
+                .padding(.top, 8)
+            }
+        }
     }
 }
 

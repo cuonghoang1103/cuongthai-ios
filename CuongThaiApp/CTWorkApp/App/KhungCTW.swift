@@ -15,13 +15,16 @@ struct GocCTW: View {
                 DongYQuyTacCTW { app.dongYDieuKhoan() }
             } else if !app.isAuthenticated {
                 DangNhapCTW()
+                    .transition(.opacity)
             } else {
+                // Vào màn chính: mờ dần + phóng nhẹ từ 1,03 (cùng nhịp hàng My Work hiện lần lượt — Shared/ChuyenDong).
                 KhungCTW()
+                    .transition(.asymmetric(insertion: .opacity.combined(with: .scale(scale: 1.03)), removal: .opacity))
             }
         }
         .id("\(coChuHeThong)-\(ngonNgu.ma)")
         .environment(\.locale, ngonNgu.locale)
-        .animation(.easeInOut(duration: 0.2), value: app.isAuthenticated)
+        .animation(.easeInOut(duration: 0.35), value: app.isAuthenticated)
         .animation(.easeInOut(duration: 0.2), value: app.daDongYDieuKhoan)
     }
 }

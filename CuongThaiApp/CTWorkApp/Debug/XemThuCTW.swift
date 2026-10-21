@@ -47,6 +47,8 @@ enum XemThuCTW {
         case "dangnhap":
             app.daDongYDieuKhoan = true
             app.isAuthenticated = false
+            // Đăng nhập xong (máy chủ giả trả token) ⇒ My Work có dữ liệu mẫu như các màn khác.
+            UserDefaults.standard.set(0, forKey: "ctw.myWork.che")
             return
         default: break
         }
@@ -111,7 +113,8 @@ final class MayChuGia: URLProtocol {
         let res = HTTPURLResponse(url: u, statusCode: ma, httpVersion: "HTTP/1.1",
                                   headerFields: ["Content-Type": "application/json"])!
         // Trợ lý AI "nghĩ" lâu hơn ⇒ thấy được trạng thái chờ khi chụp/kiểm.
-        let cho = u.path.hasSuffix("/ai/chat") || u.path.hasSuffix("/retry") ? 1.2 : 0.15
+        // Đăng nhập chờ 1,2 s ⇒ thấy lớp "Đang đăng nhập…" khi chụp/kiểm.
+        let cho = u.path.hasSuffix("/ai/chat") || u.path.hasSuffix("/retry") || u.path.hasSuffix("/auth/login") ? 1.2 : 0.15
         DispatchQueue.global().asyncAfter(deadline: .now() + cho) {
             self.client?.urlProtocol(self, didReceive: res, cacheStoragePolicy: .notAllowed)
             self.client?.urlProtocol(self, didLoad: data)
@@ -199,6 +202,12 @@ enum DuLieuGia {
         // Dữ liệu mẫu của các mô-đun đặt ở tệp riêng (XemThuCTW+MoDun.swift) — hỏi trước.
         if let r = DuLieuGiaMoDun.route(m, p, b) { return r }
         switch (m, p) {
+        // Đăng nhập thử (màn `dangnhap`, 21/10/2026): mật khẩu "wrong" ⇒ lỗi sai mật khẩu như máy chủ thật; khác ⇒ token giả.
+        case ("POST", "/auth/login"):
+            if b["password"] as? String == "wrong" {
+                return LoiGiaCTW(trangThai: 400, ma: "INVALID_CREDENTIALS", thongDiep: "Invalid credentials")
+            }
+            return ["token": "xem-thu-token", "refreshToken": "xem-thu-refresh"]
         case ("GET", "/profile"):
             return ["id": 1, "username": "alex", "email": "alex@northwind.example", "fullName": "Alex Morgan", "displayName": NSNull(), "avatarUrl": NSNull()]
         case ("GET", "/messages/blocks"): return [Any]()
