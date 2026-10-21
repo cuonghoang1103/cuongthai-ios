@@ -160,6 +160,7 @@ final class AppState: ObservableObject {
                 await DayCTW.shared.xinQuyenVaDangKy()
                 RealtimeCTW.shared.noi()
                 NhipHoatDongCTW.shared.batDau()
+                _ = KhoTinNhanCTW.shared   // nghe socket tin nhắn riêng ngay từ đầu (huy hiệu theo kịp dù chưa mở tab)
                 await taiSoChuaDoc()
                 if cauHinhDuAn == nil { await napCauHinhDuAn() }
                 return
