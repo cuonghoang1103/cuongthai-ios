@@ -270,8 +270,16 @@ targets:
       Release: CuongThaiApp/CTWorkApp/PhienBanCTW.xcconfig
     sources:
       - path: CuongThaiApp/CTWorkApp
-        # Tài liệu kiến trúc + xcconfig KHÔNG được chép vào gói app.
-        excludes: ["**/*.md", "**/*.xcconfig"]
+        # Tài liệu kiến trúc + xcconfig KHÔNG được chép vào gói app. Âm thanh khai riêng ngay dưới.
+        excludes: ["**/*.md", "**/*.xcconfig", "Resources/Sounds/**"]
+      # Âm thông báo của app CT Work (21/10/2026): máy chủ gửi `aps.sound = "ctwork.caf"` cho topic com.cuongthai.ctwork
+      # (api-backend goiDayCtw.ts › AM_THANH_CTWORK). Thả `ctwork.caf` vào thư mục này ⇒ nó vào GỐC gói app (nhóm thường,
+      # không phải folder reference) — iOS chỉ tìm âm ở gốc gói / Library/Sounds. Chưa có tệp ⇒ iOS phát âm mặc định.
+      # Định dạng: KIEN_TRUC.md mục 17.
+      - path: CuongThaiApp/CTWorkApp/Resources/Sounds
+        optional: true
+        buildPhase: resources
+        excludes: [".gitkeep"]
       # Kiểu dùng chung với widget + Share Extension (App Group, Keychain chia sẻ, Live Activity).
       - path: CuongThaiApp/CTWorkShared
       - path: CuongThaiApp/Shared/CTWork

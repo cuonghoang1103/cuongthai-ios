@@ -116,16 +116,27 @@ struct CTWModule: Identifiable {
     let man: @MainActor (CTWNguCanh) -> AnyView
     /// Đăng ký `navigationDestination` cho các route con của mô-đun.
     var dichDen: (@MainActor (AnyView) -> AnyView)?
+    /// Mô-đun CẤP ỨNG DỤNG (không cần dự án — vd Thành viên, Tin nhắn riêng): không nằm trong trang dự án / More tools,
+    /// iPad hiện ở khối đầu thanh bên (cạnh My Work, Inbox), `man` nhận bối cảnh rỗng (pid 0).
+    var capUngDung: Bool = false
+    /// iPhone: mô-đun này sống TRONG tab của mô-đun khác (vd `tin-nhan`/`thanh-vien` nằm trong tab `chat`) — chọn nó
+    /// (deep link, thông báo) ⇒ khung chuyển sang tab đó.
+    var tabIPhone: String?
+    /// iPhone: gốc riêng cho TAB của mô-đun `.tabRieng` (vd tab Chat = Kênh · Tin nhắn · Thành viên). nil ⇒ `man`.
+    var manTabIPhone: (@MainActor () -> AnyView)?
 
     init(id: String, ten: LocalizedStringResource, bieuTuong: String, nhom: CTWNhomMoDun,
          moTa: LocalizedStringResource = "", thuTu: Int = 100, viTriIPhone: ViTriIPhone = .trangDuAn,
          doanWeb: String? = nil,
          hien: @escaping @MainActor (CTWProjectConfig?) -> Bool = { _ in true },
+         capUngDung: Bool = false, tabIPhone: String? = nil,
+         manTabIPhone: (@MainActor () -> AnyView)? = nil,
          man: @escaping @MainActor (CTWNguCanh) -> AnyView,
          dichDen: (@MainActor (AnyView) -> AnyView)? = nil) {
         self.id = id; self.tenNguon = ten; self.bieuTuong = bieuTuong; self.nhom = nhom
         self.moTaNguon = moTa; self.thuTu = thuTu; self.viTriIPhone = viTriIPhone; self.doanWeb = doanWeb
         self.hien = hien; self.man = man; self.dichDen = dichDen
+        self.capUngDung = capUngDung; self.tabIPhone = tabIPhone; self.manTabIPhone = manTabIPhone
     }
 
     /// Dịch theo ngôn ngữ app đang chọn (không theo `Locale.current` của máy).

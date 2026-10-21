@@ -88,7 +88,12 @@ final class DayCTW: NSObject, ObservableObject, UNUserNotificationCenterDelegate
     nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter,
                                             willPresent notification: UNNotification,
                                             withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
-        completionHandler([.banner, .sound, .list])
+        // Tin nhắn riêng (21/10/2026): đang mở ĐÚNG hội thoại đó ⇒ không hiện băng/không kêu (tin đã hiện ngay trong
+        // khung chat qua socket); hội thoại khác / màn khác ⇒ băng + âm như mọi thông báo.
+        let info = notification.request.content.userInfo
+        let tid = (info["loai"] as? String) == "tin-nhan" ? ((info["threadId"] as? Int) ?? Int("\(info["threadId"] ?? "")")) : nil
+        let dangMo = KhoTinNhanCTW.hoiThoaiDangMo
+        completionHandler(tid != nil && tid == dangMo ? [] : [.banner, .sound, .list])
         Task { @MainActor in await AppState.shared.taiSoChuaDoc() }
     }
 
@@ -123,6 +128,15 @@ final class DayCTW: NSObject, ObservableObject, UNUserNotificationCenterDelegate
             return
         }
         completionHandler()
+        // Tin nhắn riêng (gói `loai: tin-nhan`, `threadId` — messages.service.ts) ⇒ mở hội thoại trong app này.
+        if (info["loai"] as? String) == "tin-nhan",
+           let tid = (info["threadId"] as? Int) ?? Int("\(info["threadId"] ?? "")") {
+            DispatchQueue.main.async {
+                DayCTW.duongCho = "ctwork://dm/\(tid)"
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { DayCTW.apDung() }
+            }
+            return
+        }
         // Có `duongDan` thì theo nó (mở cả kênh chat); chỉ có `maThe` thì tìm thẻ theo mã.
         guard let duong = duong ?? maThe.map({ "ctwork://issue/" + $0 }) else { return }
         DispatchQueue.main.async {

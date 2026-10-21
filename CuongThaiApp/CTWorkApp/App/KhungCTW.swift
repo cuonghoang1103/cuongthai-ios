@@ -54,6 +54,8 @@ struct KhungTabCTW: View {
     private var chon: Binding<MucCTW> {
         Binding(
             get: {
+                // Mô-đun sống trong tab của mô-đun khác (Tin nhắn/Thành viên ⇒ tab Chat).
+                if case .moDun(let id) = app.muc, let t = CTWDangKyMoDun.moDun(id)?.tabIPhone { return .moDun(t) }
                 if case .moDun(let id) = app.muc, CTWDangKyMoDun.moDun(id)?.viTriIPhone != .tabRieng { return .duAn }
                 if app.muc == .them { return .duAn }
                 return app.muc
@@ -68,8 +70,9 @@ struct KhungTabCTW: View {
             CotCTW(muc: .duAn).tabItem { Label(MucCTW.duAn.ten, systemImage: MucCTW.duAn.bieuTuong) }
                 .tag(MucCTW.duAn)
             ForEach(moDunTab) { m in
-                CotCTW(muc: .moDun(m.id)).tabItem { Label(m.ten, systemImage: m.bieuTuong) }
-                    .badge(m.id == "chat" ? app.chatChuaDoc : 0)
+                CotCTW(muc: .moDun(m.id), goc: m.manTabIPhone).tabItem { Label(m.ten, systemImage: m.bieuTuong) }
+                    // Tab Chat (iPhone) gồm cả Tin nhắn riêng ⇒ huy hiệu cộng cả hai.
+                    .badge(m.id == "chat" ? app.chatChuaDoc + app.tinNhanChuaDoc : 0)
                     .tag(MucCTW.moDun(m.id))
             }
             CotCTW(muc: .hopThu).tabItem { Label(MucCTW.hopThu.ten, systemImage: MucCTW.hopThu.bieuTuong) }
@@ -114,6 +117,8 @@ struct KhungRongCTW: View {
                     .accessibilityLabel("Switch project")
                     muc(.viecCuaToi)
                     muc(.hopThu)
+                    // Mô-đun cấp ứng dụng (Tin nhắn, Thành viên) — không cần dự án.
+                    ForEach(CTWDangKyMoDun.capUngDung) { m in muc(.moDun(m.id)) }
                 }
                 // "Hiện dần" (19/10/2026): chỉ mô-đun ĐÃ GHIM (mặc định = cốt lõi); còn lại trong "More tools".
                 Section("Project") {
@@ -138,7 +143,9 @@ struct KhungRongCTW: View {
     private func muc(_ m: MucCTW) -> some View {
         NavigationLink(value: m) {
             Label(m.ten, systemImage: m.bieuTuong)
-                .badge(m == .hopThu ? app.hopThuChuaDoc : (m == .moDun("chat") ? app.chatChuaDoc : 0))
+                .badge(m == .hopThu ? app.hopThuChuaDoc
+                       : m == .moDun("chat") ? app.chatChuaDoc
+                       : m == .moDun("tin-nhan") ? app.tinNhanChuaDoc : 0)
         }
     }
 }
@@ -148,20 +155,23 @@ struct CotCTW: View {
     let muc: MucCTW
     /// iPad: ngăn xếp do `KhungRongCTW` giữ và gắn vào CẢ NavigationSplitView (xem dưới). iPhone: nil ⇒ cột tự giữ.
     var nganXepNgoai: NganXepCTW? = nil
+    /// iPhone: gốc riêng của tab (`CTWModule.manTabIPhone`) — nil ⇒ theo `muc`.
+    var goc: (@MainActor () -> AnyView)? = nil
     @StateObject private var rieng = NganXepCTW()
 
     var body: some View {
-        CotNganXepCTW(muc: muc, nganXep: nganXepNgoai ?? rieng)
+        CotNganXepCTW(muc: muc, nganXep: nganXepNgoai ?? rieng, goc: goc)
     }
 }
 
 private struct CotNganXepCTW: View {
     let muc: MucCTW
     @ObservedObject var nganXep: NganXepCTW
+    var goc: (@MainActor () -> AnyView)? = nil
 
     var body: some View {
         NavigationStack(path: $nganXep.duong) {
-            noiDung
+            Group { if let goc { goc() } else { noiDung } }
                 .ctwDichDen()
         }
         .environmentObject(nganXep)

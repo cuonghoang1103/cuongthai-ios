@@ -78,6 +78,9 @@ final class AppState: ObservableObject {
     /// Số thông báo CT Work chưa đọc (chỉ loại WORK_*), cho huy hiệu tab Inbox.
     @Published var hopThuChuaDoc = 0
     @Published var chatChuaDoc = 0
+    /// Tin nhắn riêng (Messenger chung với web) chưa đọc — `GET /messages/unread-count`. Huy hiệu tab Chat (iPhone) /
+    /// mục Tin nhắn (iPad) và cộng vào huy hiệu biểu tượng (cùng công thức máy chủ gắn vào gói đẩy, 21/10/2026).
+    @Published var tinNhanChuaDoc = 0
     @Published var daDongYDieuKhoan: Bool
 
     private let storage = StorageManager.shared
@@ -136,6 +139,9 @@ final class AppState: ObservableObject {
         DuAnGanDayCTW.xoaHet()   // dự án gần đây là của người vừa đăng xuất
         hopThuChuaDoc = 0
         chatChuaDoc = 0
+        tinNhanChuaDoc = 0
+        KhoTinNhanCTW.shared.xoaHet()
+        NhipHoatDongCTW.shared.dungLai()
         muc = .viecCuaToi
         cauHinhDuAn = nil
         codeDaNoi = nil
@@ -153,6 +159,7 @@ final class AppState: ObservableObject {
                 await ModerationStore.shared.refreshBlocks()
                 await DayCTW.shared.xinQuyenVaDangKy()
                 RealtimeCTW.shared.noi()
+                NhipHoatDongCTW.shared.batDau()
                 await taiSoChuaDoc()
                 if cauHinhDuAn == nil { await napCauHinhDuAn() }
                 return
@@ -211,6 +218,9 @@ final class AppState: ObservableObject {
             }
         }
         if docDuoc { hopThuChuaDoc = so }
-        DayCTW.datHuyHieu(hopThuChuaDoc)
+        if let r: CTWSoTinNhanChuaDoc = try? await APIClient.shared.request(.getUnreadMessageCount) { tinNhanChuaDoc = r.count ?? 0 }
+        // Huy hiệu biểu tượng = WORK_* chưa đọc + tin nhắn riêng chưa đọc — đúng số máy chủ gắn vào gói APNs của app này
+        // (notification.service.ts + messages.service.ts, 21/10/2026).
+        DayCTW.datHuyHieu(hopThuChuaDoc + tinNhanChuaDoc)
     }
 }

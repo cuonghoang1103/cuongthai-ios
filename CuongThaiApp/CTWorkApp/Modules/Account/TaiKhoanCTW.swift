@@ -192,6 +192,7 @@ struct TaiKhoanCTW: View {
                 // 19/10/2026 — gom theo chủ đề (8 khối ⇒ 6): Quyền riêng tư & bảo mật · Trợ giúp & pháp lý.
                 Section {
                     KhoaAppCongTacCTW()
+                    CongTacTrangThaiHoatDongCTW()   // 21/10/2026 — Thành viên/Tin nhắn (Modules/ThanhVien)
                     Toggle(isOn: $aiDongY) { Label("AI assistant may use project content", systemImage: "sparkles") }
                         .accessibilityIdentifier("account.aiConsent")
                     NavigationLink { DanhSachChanCTW() } label: { Label("Blocked users & hidden content", systemImage: "hand.raised") }

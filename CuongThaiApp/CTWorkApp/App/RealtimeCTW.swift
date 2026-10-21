@@ -23,6 +23,15 @@ struct SuKienChatCTW {
     var message: CTWChatMessage?
 }
 
+/// `message:updated` của tin nhắn riêng — chỉ khoá THỰC SỰ đổi (nil = không đổi).
+struct SuKienTinNhanDoiCTW {
+    var threadId: Int
+    var messageId: Int
+    var camXuc: [MessageReaction]?
+    var thuHoi: Bool?
+    var daXoa: Bool?
+}
+
 @MainActor
 final class RealtimeCTW: ObservableObject {
     static let shared = RealtimeCTW()
@@ -31,6 +40,14 @@ final class RealtimeCTW: ObservableObject {
     /// "Đang gõ…" trong kênh đã vào (`work:chat:typing`) — mô-đun Chat.
     let suKienGo = PassthroughSubject<SuKienGoCTW, Never>()
     @Published private(set) var daNoi = false
+    /// Tin nhắn riêng (Messenger chung với web — `messaging.socket.ts`), 21/10/2026: máy chủ tự cho socket vào phòng
+    /// mọi hội thoại của mình lúc bắt tay. Kho `KhoTinNhanCTW` nghe các luồng này.
+    let tinNhanMoi = PassthroughSubject<(threadId: Int, tin: Message), Never>()
+    let tinNhanDoi = PassthroughSubject<SuKienTinNhanDoiCTW, Never>()
+    let tinNhanDaDoc = PassthroughSubject<(threadId: Int, readerId: Int, readAt: Date), Never>()
+    let tinNhanDangGo = PassthroughSubject<(threadId: Int, userId: Int, dangGo: Bool), Never>()
+    /// `presence:update` — chỉ phát cho bạn bè ∪ người đã có hội thoại, và KHÔNG phát cho người tắt trạng thái.
+    let hienDien = PassthroughSubject<(userId: Int, online: Bool), Never>()
 
     private var manager: SocketManager?
     private var socket: SocketIOClient?
@@ -98,6 +115,7 @@ final class RealtimeCTW: ObservableObject {
         s.on("social:notification") { _, _ in
             Task { @MainActor in await AppState.shared.taiSoChuaDoc() }
         }
+        ngheTinNhan(s)
         s.connect(withPayload: ["token": token])
     }
 
@@ -128,6 +146,60 @@ final class RealtimeCTW: ObservableObject {
         var d: [String: Any] = ["projectId": pid, "channelId": cid, "typing": dangGo]
         if let chuoi { d["threadId"] = chuoi }
         socket.emit("work:chat:typing", d)
+    }
+
+    /// "Đang gõ…" trong tin nhắn riêng (`thread:typing`; máy chủ chỉ chuyển trong phòng hội thoại mình thuộc).
+    func baoDangGoTinNhan(threadId: Int, dangGo: Bool) {
+        guard let socket, socket.status == .connected else { return }
+        socket.emit("thread:typing", ["threadId": threadId, "isTyping": dangGo])
+    }
+
+    /// Hội thoại vừa tạo SAU lúc bắt tay ⇒ xin vào phòng (máy chủ kiểm mình có trong hội thoại).
+    func vaoHoiThoai(_ threadId: Int) {
+        guard let socket, socket.status == .connected else { return }
+        socket.emit("thread:join", ["threadId": threadId])
+    }
+
+    private func ngheTinNhan(_ s: SocketIOClient) {
+        s.on("thread:new-message") { [weak self] data, _ in
+            guard let d = data.first as? [String: Any], let tid = d["threadId"] as? Int, let raw = d["message"],
+                  let j = try? JSONSerialization.data(withJSONObject: raw),
+                  let tin = try? JSONDecoder().decode(Message.self, from: j) else { return }
+            Task { @MainActor in self?.tinNhanMoi.send((threadId: tid, tin: tin)) }
+        }
+        s.on("message:updated") { [weak self] data, _ in
+            guard let d = data.first as? [String: Any], let tid = d["threadId"] as? Int, let mid = d["messageId"] as? Int else { return }
+            let doi = d["changes"] as? [String: Any] ?? [:]
+            var camXuc: [MessageReaction]?
+            if let r = doi["reactions"], let j = try? JSONSerialization.data(withJSONObject: r) {
+                camXuc = try? JSONDecoder().decode([MessageReaction].self, from: j)
+            }
+            // Khoá vắng mặt giữ nil — thả cảm xúc không có `recalled`, đọc thiếu thành false là "bỏ thu hồi" nhầm.
+            let sk = SuKienTinNhanDoiCTW(threadId: tid, messageId: mid, camXuc: camXuc,
+                                         thuHoi: doi["recalled"] as? Bool, daXoa: doi["deleted"] as? Bool)
+            Task { @MainActor in self?.tinNhanDoi.send(sk) }
+        }
+        s.on("thread:read") { [weak self] data, _ in
+            guard let d = data.first as? [String: Any], let tid = d["threadId"] as? Int, let ai = d["readerId"] as? Int else { return }
+            // `readAt` khi là chuỗi ISO, khi là số mili giây — nhận cả hai.
+            let moc: Date? = (d["readAt"] as? String).flatMap(Date.tuChuoiISO)
+                ?? (d["readAt"] as? Double).map { Date(timeIntervalSince1970: $0 / 1000) }
+            guard let moc else { return }
+            Task { @MainActor in self?.tinNhanDaDoc.send((threadId: tid, readerId: ai, readAt: moc)) }
+        }
+        s.on("thread:typing") { [weak self] data, _ in
+            guard let d = data.first as? [String: Any], let tid = d["threadId"] as? Int, let ai = d["userId"] as? Int else { return }
+            let go = d["isTyping"] as? Bool ?? false
+            Task { @MainActor in self?.tinNhanDangGo.send((threadId: tid, userId: ai, dangGo: go)) }
+        }
+        s.on("presence:update") { [weak self] data, _ in
+            guard let d = data.first as? [String: Any], let ai = d["userId"] as? Int else { return }
+            let online = (d["online"] as? Bool) ?? false
+            Task { @MainActor in self?.hienDien.send((userId: ai, online: online)) }
+        }
+        s.on("thread:created") { _, _ in
+            Task { @MainActor in await KhoTinNhanCTW.shared.taiHoiThoai() }
+        }
     }
 
     private func vaoPhong(pid: Int, cid: Int) {
