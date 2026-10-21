@@ -26,6 +26,7 @@ enum CTWDangKyMoDun {
         .sprints, .reports, .dashboards,
         .time, .poker, .retros, .okrs, .workspace,
         .timeline, .releases, .stages, .calendar,
+        .tinNhan, .thanhVien,
     ]
 
     static func moDun(_ id: String) -> CTWModule? { dangKyMoDun.first { $0.id == id } }
@@ -33,7 +34,7 @@ enum CTWDangKyMoDun {
     /// Mô-đun hiện được với dự án đang chọn, đã sắp.
     @MainActor
     static func hienDuoc(_ cfg: CTWProjectConfig?) -> [CTWModule] {
-        dangKyMoDun.filter { $0.hien(cfg) }.sorted { ($0.nhom.rawValue, $0.thuTu) < ($1.nhom.rawValue, $1.thuTu) }
+        dangKyMoDun.filter { !$0.capUngDung && $0.hien(cfg) }.sorted { ($0.nhom.rawValue, $0.thuTu) < ($1.nhom.rawValue, $1.thuTu) }
     }
 
     @MainActor
@@ -44,6 +45,9 @@ enum CTWDangKyMoDun {
             return m.isEmpty ? nil : (nhom: n, ds: m)
         }
     }
+
+    /// Mô-đun cấp ứng dụng (không cần dự án) — iPad: khối đầu thanh bên.
+    static var capUngDung: [CTWModule] { dangKyMoDun.filter(\.capUngDung).sorted { $0.thuTu < $1.thuTu } }
 
     /// Mô-đun nhận đoạn đường dẫn web này (deep link / thông báo).
     static func moDun(choDoan doan: String) -> CTWModule? {
@@ -82,7 +86,9 @@ struct ManMoDunCTW: View {
     @EnvironmentObject private var app: AppState
 
     var body: some View {
-        if let m = CTWDangKyMoDun.moDun(id), let l = app.luaChon {
+        if let m = CTWDangKyMoDun.moDun(id), m.capUngDung {
+            m.man(CTWNguCanh(pid: 0, slug: "", maDuAn: "", tenDuAn: ""))
+        } else if let m = CTWDangKyMoDun.moDun(id), let l = app.luaChon {
             m.man(CTWNguCanh(pid: l.pid, slug: l.slug, maDuAn: l.maDuAn, tenDuAn: l.tenDuAn))
                 .id("\(id)-\(l.pid)")
                 // Board/Backlog mở như một màn riêng (iPad thanh bên, More tools) ⇒ nút ✦ CuongMini như trang dự án iPhone.

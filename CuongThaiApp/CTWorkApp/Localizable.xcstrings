@@ -212,6 +212,22 @@
         }
       }
     },
+    "%@ +%lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ +%2$lld"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ +%2$lld"
+          }
+        }
+      }
+    },
     "%@ / %@": {
       "localizations": {
         "en": {
@@ -4255,12 +4271,62 @@
         }
       }
     },
+    "Active %lldd ago": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hoạt động %lld ngày trước"
+          }
+        }
+      }
+    },
+    "Active %lldh ago": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hoạt động %lld giờ trước"
+          }
+        }
+      }
+    },
+    "Active %lldm ago": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hoạt động %lld phút trước"
+          }
+        }
+      }
+    },
+    "Active %lldw ago": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hoạt động %lld tuần trước"
+          }
+        }
+      }
+    },
     "Active (%lld)": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Đang hoạt động (%lld)"
+          }
+        }
+      }
+    },
+    "Active now": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang hoạt động"
           }
         }
       }
@@ -4281,6 +4347,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sprint đang chạy"
+          }
+        }
+      }
+    },
+    "Active yesterday": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hoạt động hôm qua"
           }
         }
       }
@@ -5272,6 +5348,16 @@
         }
       }
     },
+    "Also block %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chặn luôn %@"
+          }
+        }
+      }
+    },
     "Also: %@": {
       "localizations": {
         "vi": {
@@ -6074,6 +6160,26 @@
         }
       }
     },
+    "Assigned issues": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thẻ được giao"
+          }
+        }
+      }
+    },
+    "Assigned issues · %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thẻ được giao · %@"
+          }
+        }
+      }
+    },
     "Assigned to me": {
       "localizations": {
         "vi": {
@@ -6554,6 +6660,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bị %lld thẻ chặn · đang chặn %lld thẻ ở dự án khác"
+          }
+        }
+      }
+    },
+    "Blocked people can't message you and you won't see their messages or active status.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Người bị chặn không nhắn tin được cho bạn, và bạn sẽ không thấy tin nhắn hay trạng thái hoạt động của họ."
           }
         }
       }
@@ -7160,6 +7276,16 @@
         }
       }
     },
+    "Camera": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Máy ảnh"
+          }
+        }
+      }
+    },
     "Can't edit here": {
       "localizations": {
         "vi": {
@@ -7226,6 +7352,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Huỷ ghi âm"
+          }
+        }
+      }
+    },
+    "Cancel reply": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Huỷ trả lời"
           }
         }
       }
@@ -9631,6 +9767,16 @@
         }
       }
     },
+    "CuongThai support": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hỗ trợ CuongThai"
+          }
+        }
+      }
+    },
     "Currency": {
       "localizations": {
         "vi": {
@@ -10579,6 +10725,16 @@
         }
       }
     },
+    "Details (optional)": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chi tiết (không bắt buộc)"
+          }
+        }
+      }
+    },
     "Details…": {
       "localizations": {
         "vi": {
@@ -10665,6 +10821,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tin nhắn riêng"
+          }
+        }
+      }
+    },
+    "Direct messages with your teammates": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nhắn tin riêng với đồng đội"
           }
         }
       }
@@ -11875,6 +12041,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mọi người trong không gian làm việc này. %@"
+          }
+        }
+      }
+    },
+    "Everyone in your workspaces, with who is active now": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mọi người trong không gian của bạn, ai đang hoạt động"
           }
         }
       }
@@ -15501,6 +15677,16 @@
         }
       }
     },
+    "Load earlier messages": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tải tin nhắn cũ hơn"
+          }
+        }
+      }
+    },
     "Load more": {
       "localizations": {
         "vi": {
@@ -16083,6 +16269,16 @@
         }
       }
     },
+    "Member not found": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không tìm thấy thành viên"
+          }
+        }
+      }
+    },
     "Members": {
       "localizations": {
         "vi": {
@@ -16219,6 +16415,46 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nhắn %@"
+          }
+        }
+      }
+    },
+    "Message a teammate from Members.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nhắn cho đồng đội từ mục Thành viên."
+          }
+        }
+      }
+    },
+    "Message unsent": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tin nhắn đã bị thu hồi"
+          }
+        }
+      }
+    },
+    "Messages": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tin nhắn"
+          }
+        }
+      }
+    },
+    "Messages (%lld)": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tin nhắn (%lld)"
           }
         }
       }
@@ -17126,6 +17362,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cuộc họp mới"
+          }
+        }
+      }
+    },
+    "New message": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tin nhắn mới"
           }
         }
       }
@@ -18441,6 +18687,16 @@
         }
       }
     },
+    "No open issues assigned to them in your current project.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không có thẻ đang mở nào được giao cho họ trong dự án hiện tại."
+          }
+        }
+      }
+    },
     "No open issues in this project.": {
       "localizations": {
         "vi": {
@@ -18968,6 +19224,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Không có bộ phận"
+          }
+        }
+      }
+    },
+    "No teammates yet": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa có đồng đội"
           }
         }
       }
@@ -21218,6 +21484,16 @@
         }
       }
     },
+    "People who share a workspace with you appear here.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Người cùng không gian với bạn sẽ hiện ở đây."
+          }
+        }
+      }
+    },
     "People · hours": {
       "localizations": {
         "vi": {
@@ -21289,6 +21565,16 @@
       }
     },
     "Photo Library": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thư viện ảnh"
+          }
+        }
+      }
+    },
+    "Photo library": {
       "localizations": {
         "vi": {
           "stringUnit": {
@@ -21744,6 +22030,16 @@
         }
       }
     },
+    "Pretending to be someone else": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giả mạo người khác"
+          }
+        }
+      }
+    },
     "Preview": {
       "localizations": {
         "vi": {
@@ -22138,6 +22434,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dự án"
+          }
+        }
+      }
+    },
+    "Projects in common": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dự án chung"
           }
         }
       }
@@ -23311,6 +23617,16 @@
         }
       }
     },
+    "Remove file": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bỏ tệp"
+          }
+        }
+      }
+    },
     "Remove flag": {
       "localizations": {
         "vi": {
@@ -23387,6 +23703,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Rút phiếu của tôi"
+          }
+        }
+      }
+    },
+    "Remove photo": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bỏ ảnh"
           }
         }
       }
@@ -23541,6 +23867,26 @@
         }
       }
     },
+    "Replying to %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang trả lời %@"
+          }
+        }
+      }
+    },
+    "Replying to yourself": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang trả lời chính bạn"
+          }
+        }
+      }
+    },
     "Reply…": {
       "localizations": {
         "vi": {
@@ -23617,6 +23963,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Báo cáo bình luận"
+          }
+        }
+      }
+    },
+    "Report conversation": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Báo cáo cuộc trò chuyện"
           }
         }
       }
@@ -23777,6 +24133,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Báo cáo được gửi tới đội kiểm duyệt CT Work và được xem trong vòng 24 giờ."
+          }
+        }
+      }
+    },
+    "Reports go to the CT Work moderation team, who review them within 24 hours. The person isn't told who reported them.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Báo cáo được gửi tới đội kiểm duyệt CT Work và được xem xét trong 24 giờ. Người bị báo cáo không biết ai đã báo cáo."
           }
         }
       }
@@ -25026,6 +25392,16 @@
         }
       }
     },
+    "Say hi 👋": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gửi lời chào 👋"
+          }
+        }
+      }
+    },
     "Scenario": {
       "localizations": {
         "vi": {
@@ -25456,6 +25832,26 @@
         }
       }
     },
+    "Search members": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tìm thành viên"
+          }
+        }
+      }
+    },
+    "Search messages": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tìm tin nhắn"
+          }
+        }
+      }
+    },
     "Search or type a key, e.g. %@-12": {
       "localizations": {
         "vi": {
@@ -25582,6 +25978,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mục"
+          }
+        }
+      }
+    },
+    "Seen": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã xem"
           }
         }
       }
@@ -26185,6 +26591,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Hiện 1 sprint đã xong"
+          }
+        }
+      }
+    },
+    "Show active status": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hiển thị trạng thái hoạt động"
           }
         }
       }
@@ -28936,6 +29352,26 @@
         }
       }
     },
+    "They won't be able to message you, and you won't see their active status.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Họ sẽ không nhắn tin được cho bạn, và bạn sẽ không thấy trạng thái hoạt động của họ."
+          }
+        }
+      }
+    },
+    "They won't be able to message you. You can unblock them in Account › Blocked users.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Họ sẽ không nhắn tin được cho bạn. Bạn có thể bỏ chặn ở Tài khoản › Người đã chặn."
+          }
+        }
+      }
+    },
     "Thinking…": {
       "localizations": {
         "vi": {
@@ -30502,6 +30938,16 @@
         }
       }
     },
+    "Unblock to message": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bỏ chặn để nhắn tin"
+          }
+        }
+      }
+    },
     "Unclassified": {
       "localizations": {
         "vi": {
@@ -30722,6 +31168,16 @@
         }
       }
     },
+    "Unsend": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thu hồi"
+          }
+        }
+      }
+    },
     "Unsubmit": {
       "localizations": {
         "vi": {
@@ -30930,6 +31386,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tải đề bài, mã nguồn, danh sách thành viên và hạn chót lên — CuongMini dựng epic, thẻ, sprint, phân công và tài liệu cho bạn. Bạn xem lại trước khi có gì được tạo."
+          }
+        }
+      }
+    },
+    "Uploading %lld/%lld…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Uploading %1$lld/%2$lld…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang tải lên %1$lld/%2$lld…"
           }
         }
       }
@@ -31360,6 +31832,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tuỳ chọn hiển thị"
+          }
+        }
+      }
+    },
+    "View profile": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xem hồ sơ"
           }
         }
       }
@@ -31840,6 +32322,16 @@
         }
       }
     },
+    "What happened?": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chuyện gì đã xảy ra?"
+          }
+        }
+      }
+    },
     "What happens": {
       "localizations": {
         "vi": {
@@ -32050,6 +32542,16 @@
         }
       }
     },
+    "When off, teammates won't see when you're active, and you won't see theirs.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khi tắt, đồng đội sẽ không thấy khi nào bạn hoạt động, và bạn cũng không thấy của họ."
+          }
+        }
+      }
+    },
     "When someone asks you to sign off an issue, document, change request or stage gate, it shows up here.": {
       "localizations": {
         "vi": {
@@ -32166,6 +32668,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Vì sao bạn rời đi?"
+          }
+        }
+      }
+    },
+    "Why are you reporting %@?": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vì sao bạn báo cáo %@?"
           }
         }
       }
@@ -32550,6 +33062,16 @@
         }
       }
     },
+    "Yesterday %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hôm qua %@"
+          }
+        }
+      }
+    },
     "You": {
       "localizations": {
         "vi": {
@@ -32616,6 +33138,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bạn bị đăng xuất ở mọi nơi — trên web và trong mọi app."
+          }
+        }
+      }
+    },
+    "You blocked %@.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn đã chặn %@."
           }
         }
       }
@@ -32960,6 +33492,16 @@
         }
       }
     },
+    "You unsent a message": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn đã thu hồi một tin nhắn"
+          }
+        }
+      }
+    },
     "You won't see their cards, comments or messages anymore.": {
       "localizations": {
         "vi": {
@@ -33060,6 +33602,16 @@
         }
       }
     },
+    "You: %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn: %@"
+          }
+        }
+      }
+    },
     "Your Calendar app will show your due dates, sprints, releases and meetings, and keep them updated. The link is private to you.": {
       "localizations": {
         "vi": {
@@ -33096,6 +33648,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tài khoản của bạn được lên lịch xoá %@."
+          }
+        }
+      }
+    },
+    "Your active status is off, so you can't see when others are active either.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trạng thái hoạt động của bạn đang tắt, nên bạn cũng không thấy khi nào người khác hoạt động."
           }
         }
       }
@@ -34952,6 +35514,16 @@
         }
       }
     },
+    "typing…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "đang soạn tin…"
+          }
+        }
+      }
+    },
     "unassigned": {
       "localizations": {
         "vi": {
@@ -35168,6 +35740,26 @@
     },
     "✓": {
       "shouldTranslate": false
+    },
+    "📎 File": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "📎 Tệp"
+          }
+        }
+      }
+    },
+    "📷 Photo": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "📷 Ảnh"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

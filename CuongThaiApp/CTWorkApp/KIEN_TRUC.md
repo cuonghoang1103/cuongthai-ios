@@ -427,3 +427,43 @@ Phản hồi chủ app: "không tìm thấy chat AI" (trước đó chỉ là M�
   (`DungNhieuCTW` — đếm khi mở qua màn tìm + mỗi lần `ManMoDunCTW` hiện; chưa có ⇒ mô-đun đã ghim) · lệnh.
 - **Màn thử:** `CT_XEM_MAN=tim` (+ `CT_XEM_TIM=<chữ>`); máy chủ giả `Debug/XemThuCTW+TimKiem.swift` (lọc theo chữ, bỏ dấu).
   Kiểm thử: `CTWorkTests/TimKiemCTWTests.swift` · `CTWorkUITests/TimKiemUITests.swift` (`TEST_RUNNER_CTW_CHUP_TIM=<thư mục>` ⇒ chụp).
+
+## 19. Thành viên + Tin nhắn riêng kiểu Messenger (21/10/2026)
+
+- **Chỗ ở:** `Modules/ThanhVien/`. Hai mô-đun **cấp ứng dụng** (`CTWModule.capUngDung = true` — không cần dự án, không vào trang dự án /
+  More tools): `tin-nhan` (Tin nhắn) và `thanh-vien` (Thành viên). iPad: hai mục ở khối đầu thanh bên (cạnh My Work, Inbox).
+  iPhone: **nằm trong tab Chat** (`tabIPhone: "chat"`) — tab Chat có gốc riêng `HubChatCTW` (`CTWModule.manTabIPhone`) với thanh phân
+  đoạn **Kênh · Tin nhắn · Thành viên** (nhớ ở `ctw.hubChat.phan`). Không thêm tab thứ 6: iPhone chỉ hiện 5 tab, tab thứ 6 đẩy Inbox +
+  Account vào "More" (và vỡ `CTWorkUITests` bấm hai tab đó). Huy hiệu tab Chat = kênh chưa đọc + tin nhắn riêng chưa đọc.
+- **Máy chủ:** Messenger CHUNG web /messages + app chính (`/api/v1/messages/*`, model `MessageThread`/`Message` của Shared/Models). Danh bạ
+  + trạng thái: `GET /api/v1/work/me/people` (api-backend `services/work/people.service.ts`): mọi người cùng không gian (khách cổng chỉ thấy
+  người trong dự án của mình, không gian bị cổng 2FA chặn bị bỏ qua), dự án chung, `blocked`, `presence {visible, online, lastActiveAt}`.
+- **Trạng thái hoạt động** (`TrangThaiHoatDongCTW.swift`): "Đang hoạt động" / "Hoạt động 5 phút trước" / "… 2 giờ trước" / "… hôm qua" /
+  "… N ngày/tuần trước", > 4 tuần ⇒ im. Chấm xanh viền nền ở góc avatar (`AvatarHoatDongCTW`), vừa rời < 1 giờ ⇒ nhãn "5ph". Nguồn: máy
+  chủ (đúng lúc mở màn, làm mới 30 s) + socket `presence:update` (realtime — chỉ phát cho bạn bè ∪ người đã có hội thoại). App gửi nhịp
+  `POST /users/status` 45 s/lần ở tiền cảnh (`NhipHoatDongCTW`); máy chủ ghi `lastActiveAt` khi socket cuối ngắt.
+- **Riêng tư (luật đối ứng như Messenger, ÁP Ở MÁY CHỦ):** `User.showActiveStatus` tắt ⇒ máy chủ không trả mốc, socket không phát; NGƯỜI XEM
+  tắt ⇒ `/work/me/people` ẩn trạng thái của mọi người và `/messages/online` trả rỗng. App áp lại luật cho dữ liệu từ socket/hội thoại
+  (`KhoTinNhanCTW.moc`). Chặn (bất kỳ chiều) / agent ⇒ không trạng thái; người chặn mình không có trong danh bạ. Công tắc: Account ›
+  Quyền riêng tư & bảo mật › "Hiển thị trạng thái hoạt động" (`PUT /profile {showActiveStatus}` — cùng trường app chính sửa ở Chỉnh sửa
+  hồ sơ) ⇒ nối lại socket (máy chủ đọc cờ lúc bắt tay).
+- **Chat 1-1** (`ChatRiengCTW.swift`): bong bóng theo nhóm + mốc giờ > 15 phút, ảnh (máy ảnh `MayAnh` + thư viện, ≤ 6) và tệp (≤ 5, Xem
+  nhanh) qua `POST /messages/upload` ⇒ `fileIds`, trả lời (`parentMessageId`), cảm xúc (nhấn giữ), thu hồi ≤ 5 phút (luật máy chủ), "Đã
+  xem" (`/threads/:id/reads` + socket `thread:read`), "đang gõ…" (`thread:typing`, tự tắt 6 s). 1.2: menu "…" Báo cáo hội thoại
+  (`/threads/:id/report {reason, category}`) + Chặn/Bỏ chặn (`/messages/blocks`, `ModerationStore`); đã chặn ⇒ khoá ô soạn, ẩn hội thoại
+  khỏi danh sách. Hồ sơ thành viên: Nhắn tin (`POST /threads/user/:id`), thẻ đang mở được giao trong dự án đang chọn (JQL), Chặn, Báo cáo.
+  Đồng nghiệp cùng không gian nhắn được người đã tắt "nhận tin từ người lạ" (máy chủ, 21/10/2026).
+- **Đẩy:** tin nhắn riêng giữa hai người cùng không gian CT Work ⇒ kênh `ctwork` (tới app này nếu đã cài, không bắn đôi sang app chính);
+  gói `{loai: "tin-nhan", threadId}` ⇒ chạm mở `ctwork://dm/<threadId>` (`DinhTuyenCTW`). Ở tiền cảnh: đang mở đúng hội thoại đó
+  (`KhoTinNhanCTW.hoiThoaiDangMo`) ⇒ không băng/không âm, khác ⇒ băng + âm. Huy hiệu biểu tượng = WORK_* chưa đọc + tin nhắn riêng chưa đọc
+  (máy chủ cùng công thức).
+- **Âm thông báo riêng:** máy chủ gửi `aps.sound = "ctwork.caf"` cho topic `com.cuongthai.ctwork` (một hằng: api-backend
+  `services/push/goiDayCtw.ts › AM_THANH_CTWORK`). Thả tệp vào `CTWorkApp/Resources/Sounds/ctwork.caf` (project.yml đã khai thư mục, vào GỐC
+  gói) rồi `xcodegen generate`. Chưa có tệp ⇒ iOS phát âm mặc định (an toàn). Định dạng: `.caf` / `.aiff` / `.wav`, PCM tuyến tính hoặc
+  IMA4/µLaw/aLaw, **≤ 30 giây** (dài hơn ⇒ iOS phát âm mặc định). Chuyển: `afconvert -f caff -d LEI16@44100 in.wav ctwork.caf`.
+- **Màn thử:** `mod:thanh-vien` · `mod:thanh-vien/hoso` · `mod:tin-nhan` · `mod:tin-nhan/chat` · `account` (+ `CT_XEM_TAT_TT=1` ⇒ người xem đã
+  tắt trạng thái). Dữ liệu mẫu: `Debug/XemThuCTW+ThanhVien.swift`. Kiểm thử: `CTWorkTests/ThanhVienCTWTests.swift` (chữ vi/en, luật riêng
+  tư, thân yêu cầu, thu hồi/Đã xem, giải mã, đăng ký mô-đun) + `CTWorkUITests/ThanhVienUITests.swift` (danh bạ → hồ sơ → Nhắn tin → gửi;
+  công tắc trạng thái; `TEST_RUNNER_CTW_CHUP_TV=<thư mục>` lưu ảnh chụp tiếng Việt).
+- ⚠️ Chạy unit test SAU khi chụp màn tiếng Việt: app trong máy mô phỏng nhớ ngôn ngữ `vi` ⇒ vài test cũ giả định tiếng Anh đỏ
+  (ToChucCTWTests). `xcrun simctl uninstall <U> com.cuongthai.ctwork` trước khi chạy test.

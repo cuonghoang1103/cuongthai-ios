@@ -195,6 +195,7 @@ enum DuLieuGia {
     // swiftlint:disable:next cyclomatic_complexity
     static func route(_ m: String, _ p: String, _ b: [String: Any]) -> Any {
         if let r = DuLieuGiaGiaoTiep.route(m, p, b) { return r }
+        if let r = DuLieuGiaThanhVien.route(m, p, b) { return r }   // Thành viên + Tin nhắn riêng (XemThuCTW+ThanhVien.swift)
         // Dữ liệu mẫu của các mô-đun đặt ở tệp riêng (XemThuCTW+MoDun.swift) — hỏi trước.
         if let r = DuLieuGiaMoDun.route(m, p, b) { return r }
         switch (m, p) {

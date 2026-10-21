@@ -21,6 +21,12 @@ enum DinhTuyenCTW {
         if url.scheme == "ctwork" {
             // Widget "My work today" / "Timer" khi không có thẻ cụ thể.
             if url.host == "mywork" { AppState.shared.muc = .viecCuaToi; return }
+            // `ctwork://dm/<threadId>` — tin nhắn riêng (chạm thông báo đẩy), `ctwork://members` — Thành viên.
+            if url.host == "dm", let tid = url.pathComponents.dropFirst().first.flatMap(Int.init) {
+                KhoTinNhanCTW.shared.moHoiThoai(tid)
+                return
+            }
+            if url.host == "members" { AppState.shared.muc = .moDun("thanh-vien"); return }
             if url.host == "issue" {
                 let khoa = url.pathComponents.dropFirst().first ?? ""
                 Task { await moTheoKhoa(khoa) }

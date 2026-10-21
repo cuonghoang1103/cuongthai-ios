@@ -60,8 +60,9 @@ struct CTWorkApp: App {
                 .onChange(of: scenePhase) { _, moi in
                     KhoaAppCTW.doiPha(moi)
                     guard appState.isAuthenticated else { return }
-                    if moi == .background { CTWChiaSeNhom.dongBoToken() }
+                    if moi == .background { CTWChiaSeNhom.dongBoToken(); NhipHoatDongCTW.shared.dungLai() }
                     guard moi == .active else { return }
+                    NhipHoatDongCTW.shared.batDau()   // "Đang hoạt động" cho đồng nghiệp (Thành viên) — POST /users/status
                     DayCTW.apDung()
                     CTWChiaSeNhom.dongBoToken()
                     Task {
