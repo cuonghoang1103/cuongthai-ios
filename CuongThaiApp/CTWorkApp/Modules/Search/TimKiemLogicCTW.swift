@@ -84,7 +84,7 @@ struct CTWMaTheGo: Equatable {
 //
 // Viết KHÔNG DẤU, cả tiếng Việt lẫn tiếng Anh (tên vi/en của mô-đun đã tự khớp — đây là phần NGƯỜI DÙNG hay gõ mà
 // tên không có: "kanban" ⇒ Board, "hop" ⇒ Meetings). Mô-đun mới: thêm một dòng theo id. Khoá của mô-đun CHƯA đăng ký
-// bị bỏ qua — nên khai trước được cho nhánh song song (vd Thành viên / Tin nhắn của ctw-msg) mà không hỏng gì.
+// bị bỏ qua (`TimKiemCTWTests` bắt khoá không khớp mô-đun nào).
 enum CTWTuKhoaMoDun {
     static let bang: [String: [String]] = [
         "board": ["kanban", "bang", "bang keo tha", "cot", "columns", "drag", "keo tha", "sprint board", "bang cong viec"],
@@ -94,8 +94,10 @@ enum CTWTuKhoaMoDun {
         "meetings": ["hop", "cuoc hop", "meeting", "bien ban", "minutes", "standup", "lich hop", "meet"],
         "docs": ["tai lieu", "docs", "trang", "page", "wiki", "spec", "ghi chu", "notes", "van ban"],
         "kb": ["kien thuc", "knowledge", "help center", "bai viet", "faq", "huong dan"],
-        "chat": ["chat", "tin nhan", "nhan tin", "message", "messenger", "kenh", "channel", "tro chuyen"],
-        "ai": ["ai", "cuongmini", "cuong mini", "tro ly", "assistant", "hoi ai", "ask ai", "gpt", "chatbot"],
+        // Kênh nhóm. "tin nhắn"/"nhắn tin" thuộc Tin nhắn riêng (`tin-nhan`) — đừng khai lại ở đây (ngang điểm thì Chat thắng).
+        "chat": ["chat", "kenh", "channel", "tro chuyen", "group chat", "chat nhom", "kenh chat"],
+        "ai": ["ai", "cuongmini", "cuong mini", "tro ly", "assistant", "hoi ai", "ask ai", "hoi cuongmini", "ask cuongmini", "gpt",
+               "chatbot", "hom nay lam gi", "hom nay toi nen lam gi", "nen lam gi", "what should i do today", "today plan"],
         "ai-usage": ["ai", "cuongmini", "chi phi ai", "token", "usage", "su dung ai"],
         "agents": ["ai agent", "agent", "bot", "cuongmini", "tac tu"],
         "reports": ["bao cao", "report", "burndown", "velocity", "thong ke", "chart", "bieu do", "workload"],
@@ -127,10 +129,11 @@ enum CTWTuKhoaMoDun {
         "portal": ["cong khach hang", "portal", "khach", "client"],
         "classes": ["lop hoc", "class", "bai tap", "assignment", "giang day", "hoc"],
         "submit": ["nop bai", "san pham ban giao", "deliverable", "nop", "submission"],
-        // Khai sẵn cho nhánh song song (ctw-msg: tab Thành viên / Tin nhắn) — id đoán trước, mô-đun chưa đăng ký thì bỏ qua.
-        "members": ["thanh vien", "members", "nguoi", "team", "ho so", "profile"],
-        "messages": ["tin nhan", "nhan tin", "message", "messenger", "chat rieng", "dm"],
-        "messenger": ["tin nhan", "nhan tin", "message", "messenger", "chat rieng", "dm"],
+        // Mô-đun CẤP ỨNG DỤNG (Modules/ThanhVien): iPhone = phân đoạn Tin nhắn / Thành viên của tab Chat, iPad = mục thanh bên.
+        "tin-nhan": ["tin nhan", "nhan tin", "tin nhan rieng", "message", "messages", "messenger", "chat rieng", "dm",
+                     "direct message", "inbox chat", "hoi thoai"],
+        "thanh-vien": ["thanh vien", "members", "dong nghiep", "nguoi", "danh ba", "people", "contacts", "online",
+                       "dang hoat dong", "active now", "ho so", "profile", "ai dang online"],
     ]
 
     static func cua(_ id: String) -> [String] { bang[id] ?? [] }

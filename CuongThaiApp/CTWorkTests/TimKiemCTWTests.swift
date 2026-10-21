@@ -99,15 +99,66 @@ final class TimKiemCTWTests: XCTestCase {
     func testTuKhoaHayGoDanDungCho() {
         let mong: [(String, String)] = [
             ("sprint", "mod:sprints"), ("bảng", "mod:board"), ("kanban", "mod:board"), ("lịch", "mod:calendar"),
-            ("họp", "mod:meetings"), ("tài liệu", "mod:docs"), ("chat", "mod:chat"), ("tin nhắn", "mod:chat"),
+            ("họp", "mod:meetings"), ("tài liệu", "mod:docs"), ("chat", "mod:chat"), ("tin nhắn", "mod:tin-nhan"),
             ("ai", "mod:ai"), ("cuongmini", "mod:ai"), ("báo cáo", "mod:reports"), ("bao cao", "mod:reports"),
-            ("thời gian", "mod:time"), ("thanh vien", "mod:team"), ("github", "mod:code"), ("rủi ro", "mod:raid"),
+            ("thời gian", "mod:time"), ("thanh vien", "mod:thanh-vien"), ("team", "mod:team"), ("github", "mod:code"), ("rủi ro", "mod:raid"),
             ("thông báo", "app:inbox"), ("việc của tôi", "app:mywork"), ("cài đặt", "app:account"), ("face id", "app:account"),
         ]
         for (q, id) in mong {
             let kq = ids(q)
             XCTAssertTrue(kq.prefix(3).contains(id), "“\(q)” ⇒ \(id) phải trong 3 đầu, được \(kq.prefix(4))")
         }
+    }
+
+    /// Thành viên / Tin nhắn riêng (mô-đun CẤP ỨNG DỤNG của ctw-msg) và CuongMini phải đứng ĐẦU với những chữ người
+    /// dùng hay gõ — trước đây "Thành viên" ra Team, "Tin nhắn" ra Chat (từ khoá đặt dưới id đoán `members`/`messages`).
+    func testThanhVienTinNhanCuongMiniDungDau() {
+        let mong: [(String, String)] = [
+            ("thanh vien", "mod:thanh-vien"), ("Thành viên", "mod:thanh-vien"), ("members", "mod:thanh-vien"),
+            ("online", "mod:thanh-vien"), ("đang hoạt động", "mod:thanh-vien"), ("đồng nghiệp", "mod:thanh-vien"),
+            ("tin nhan", "mod:tin-nhan"), ("Tin nhắn", "mod:tin-nhan"), ("nhắn tin", "mod:tin-nhan"),
+            ("chat riêng", "mod:tin-nhan"), ("messages", "mod:tin-nhan"), ("dm", "mod:tin-nhan"),
+            ("kênh", "mod:chat"), ("channel", "mod:chat"),
+            ("cuongmini", "mod:ai"), ("CuongMini", "mod:ai"), ("hỏi ai", "mod:ai"), ("hom nay lam gi", "mod:ai"),
+            ("Hôm nay tôi nên làm gì?", "mod:ai"),
+        ]
+        for (q, id) in mong {
+            XCTAssertEqual(ids(q).first, id, "“\(q)” ⇒ \(id) phải đứng đầu, được \(ids(q).prefix(4))")
+        }
+    }
+
+    /// Từ khoá chỉ có tác dụng khi khoá trùng id một mô-đun đã đăng ký — khoá đoán sai (vd `members`) là chết câm.
+    func testKhoaTuKhoaLaIdMoDunThat() {
+        let co = Set(CTWDangKyMoDun.dangKyMoDun.map(\.id))
+        for id in CTWTuKhoaMoDun.bang.keys { XCTAssertTrue(co.contains(id), "từ khoá khai dưới id “\(id)” không có mô-đun") }
+        XCTAssertTrue(CTWDangKyMoDun.moDun("tin-nhan")?.capUngDung == true)
+        XCTAssertTrue(CTWDangKyMoDun.moDun("thanh-vien")?.capUngDung == true)
+    }
+
+    /// Mở Thành viên / Tin nhắn từ màn tìm ⇒ đúng mục (iPad) + đúng phân đoạn tab Chat (iPhone), kể cả khi `muc` đã là
+    /// mô-đun đó và người dùng tự đổi phân đoạn sau (onChange không chạy ⇒ phải đặt `phan` trực tiếp).
+    func testMoThanhVienTinNhanTuTimKiem() {
+        let app = AppState.shared, kho = KhoTinNhanCTW.shared
+        let mucCu = app.muc, phanCu = kho.phan
+        defer { app.muc = mucCu; kho.phan = phanCu; kho.hoSoCanMo = nil }
+
+        DieuHuongTimCTW.shared.moMoDun("thanh-vien")
+        XCTAssertEqual(app.muc, .moDun("thanh-vien"))
+        XCTAssertEqual(kho.phan, "thanhVien")
+        XCTAssertNotEqual(app.dichCho?.moDun, "thanh-vien", "mô-đun cấp ứng dụng không đặt dichCho")
+
+        kho.phan = "kenh"   // người dùng tự đổi sang Kênh
+        DieuHuongTimCTW.shared.moMoDun("thanh-vien")
+        XCTAssertEqual(kho.phan, "thanhVien")
+
+        DieuHuongTimCTW.shared.moMoDun("tin-nhan")
+        XCTAssertEqual(app.muc, .moDun("tin-nhan"))
+        XCTAssertEqual(kho.phan, "tinNhan")
+
+        kho.moHoSo(5)
+        XCTAssertEqual(app.muc, .moDun("thanh-vien"))
+        XCTAssertEqual(kho.phan, "thanhVien")
+        XCTAssertEqual(kho.hoSoCanMo, 5)
     }
 
     func testMoiKhoaTuKhoaKhongDau() {

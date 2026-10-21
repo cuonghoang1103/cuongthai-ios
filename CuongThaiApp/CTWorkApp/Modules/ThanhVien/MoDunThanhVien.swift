@@ -62,5 +62,10 @@ struct HubChatCTW: View {
             if m == .moDun("tin-nhan") { kho.phan = "tinNhan" }
             if m == .moDun("thanh-vien") { kho.phan = "thanhVien" }
         }
+        // Deep link / màn Tìm mọi thứ tới mô-đun Chat (kênh) ⇒ phân đoạn Kênh, để ChatCTW hiện và đọc `dichCho`.
+        // (Bấm tab Chat bằng tay không đặt `dichCho` ⇒ phân đoạn đã nhớ giữ nguyên.)
+        .onChange(of: app.dichCho?.moDun, initial: true) { _, m in
+            if m == "chat" { kho.phan = "kenh" }
+        }
     }
 }

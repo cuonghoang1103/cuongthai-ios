@@ -8,6 +8,7 @@ import SwiftUI
 
 struct DanhSachThanhVienCTW: View {
     @ObservedObject private var kho = KhoTinNhanCTW.shared
+    @EnvironmentObject private var nganXep: NganXepCTW
     @ObservedObject private var kd = ModerationStore.shared
     @State private var tim = ""
     @State private var hoSo: CTWThanhVien?
@@ -84,6 +85,15 @@ struct DanhSachThanhVienCTW: View {
             if XemThuCTW.conCua("thanh-vien") == "hoso", hoSo == nil, let n = kho.danhBa.first { hoSo = n }
         }
         #endif
+        // Hồ sơ cần mở từ màn Tìm mọi thứ (gõ tên người) ⇒ về gốc ngăn xếp rồi mở tấm phủ hồ sơ; xoá cờ ở CUỐI (mục 6).
+        .task(id: kho.hoSoCanMo) {
+            guard let id = kho.hoSoCanMo else { return }
+            defer { kho.hoSoCanMo = nil }
+            nganXep.veDau()
+            if kho.thanhVien(id) == nil { await kho.taiDanhBa() }
+            try? await Task.sleep(for: .milliseconds(150))
+            if let n = kho.thanhVien(id) { hoSo = n }
+        }
         .sheet(item: $hoSo) { n in
             NavigationStack { HoSoThanhVienCTW(userId: n.id, laTamPhu: true) }
                 .presentationDetents([.medium, .large])
