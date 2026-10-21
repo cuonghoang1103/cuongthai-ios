@@ -136,17 +136,45 @@ struct DangNhapCTW: View {
         }
         .background(Color.clear.sheet(item: $tamPhu) { t in NavigationStack { TrangPhapLyView(trang: t) } })
         .onAppear { if nhoTen, ten.isEmpty { ten = tenDaNho } }
+        #if DEBUG
+        .task { await tuChayThu() }
+        #endif
     }
+
+    #if DEBUG
+    /// Màn thử `CT_XEM_TU_CHAY=1` (chỉ DEBUG, cùng máy chủ giả `CT_XEM_MAN=dangnhap`): tự gõ tên + mật khẩu SAI ⇒ lỗi + lắc,
+    /// rồi mật khẩu đúng ⇒ vào My Work — để quay video cả luồng bằng `simctl` (không có ngón tay nào gõ được).
+    private func tuChayThu() async {
+        guard ProcessInfo.processInfo.environment["CT_XEM_TU_CHAY"] == "1" else { return }
+        func ngu(_ s: Double) async { try? await Task.sleep(nanoseconds: UInt64(s * 1_000_000_000)) }
+        while KhoiDongChung.shared.dangChieu { await ngu(0.1) }
+        await ngu(1.0)
+        func go(_ chu: String, vao o: O, _ gan: (String) -> Void) async {
+            self.o = o
+            await ngu(0.45)
+            var da = ""
+            for c in chu { da.append(c); gan(da); await ngu(0.07) }
+        }
+        await go("alex", vao: .ten) { ten = $0 }
+        await go("wrong", vao: .matKhau) { matKhau = $0 }
+        await ngu(0.5)
+        await gui()
+        await ngu(1.6)
+        await go("secret-pass", vao: .matKhau) { matKhau = $0 }
+        await ngu(0.5)
+        await gui()
+    }
+    #endif
 
     // MARK: Tấm form
 
     private var tam: some View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 6) {
-                Text(cheDoForm == .dangKy ? "Create your account" : "Welcome back")
+                Text(cheDoForm == .dangKy ? String(localized: "Create your account") : String(localized: "Welcome back"))
                     .font(.ctw(size: 28, weight: .bold)).foregroundColor(AppColors.textPrimary)
                     .accessibilityAddTraits(.isHeader)
-                Text(cheDoForm == .dangKy ? "One account for CT Work and cuongthai.com." : "Sign in with your cuongthai.com account")
+                Text(cheDoForm == .dangKy ? String(localized: "One account for CT Work and cuongthai.com.") : String(localized: "Sign in with your cuongthai.com account"))
                     .font(.ctw(size: 14)).foregroundColor(AppColors.textSecondary)
             }
             .id(cheDoForm)
@@ -228,9 +256,9 @@ struct DangNhapCTW: View {
             .clipShape(Capsule())
 
             HStack(spacing: 4) {
-                Text(cheDoForm == .dangKy ? "Already have an account?" : "Don't have an account?")
+                Text(cheDoForm == .dangKy ? String(localized: "Already have an account?") : String(localized: "Don't have an account?"))
                     .foregroundColor(AppColors.textSecondary)
-                Button(cheDoForm == .dangKy ? "Sign in" : "Sign up") { doiCheDo() }
+                Button(cheDoForm == .dangKy ? String(localized: "Sign in") : String(localized: "Sign up")) { doiCheDo() }
                     .fontWeight(.semibold)
                     .foregroundColor(AppColors.primary)
                     .accessibilityIdentifier("dangNhap.doiCheDo")

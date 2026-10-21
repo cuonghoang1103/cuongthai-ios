@@ -72,7 +72,35 @@ struct AuthView: View {
             }
         }
         .onAppear { if nhoTen, tenDangNhap.isEmpty { tenDangNhap = tenDaNho } }
+        #if DEBUG
+        .task { await tuChayThu() }
+        #endif
     }
+
+    #if DEBUG
+    /// Màn thử `CT_XEM_MAN=dangnhap CT_XEM_TU_CHAY=1` (chỉ DEBUG): tự gõ, sai mật khẩu ⇒ lắc, rồi đúng ⇒ Trang chủ giả —
+    /// để quay video cả luồng bằng `simctl`.
+    private func tuChayThu() async {
+        guard ProcessInfo.processInfo.environment["CT_XEM_TU_CHAY"] == "1", Self.thuDangNhap != nil else { return }
+        func ngu(_ s: Double) async { try? await Task.sleep(nanoseconds: UInt64(s * 1_000_000_000)) }
+        while KhoiDongChung.shared.dangChieu { await ngu(0.1) }
+        await ngu(1.0)
+        func go(_ chu: String, vao o: O, _ gan: (String) -> Void) async {
+            oDangGo = o
+            await ngu(0.45)
+            var da = ""
+            for c in chu { da.append(c); gan(da); await ngu(0.07) }
+        }
+        await go("cuongthai", vao: .tenDangNhap) { tenDangNhap = $0 }
+        await go("wrong", vao: .matKhau) { matKhau = $0 }
+        await ngu(0.5)
+        await gui()
+        await ngu(1.6)
+        await go("secret-pass", vao: .matKhau) { matKhau = $0 }
+        await ngu(0.5)
+        await gui()
+    }
+    #endif
 
     // MARK: Tấm form
 

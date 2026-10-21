@@ -114,7 +114,9 @@ final class MayChuGia: URLProtocol {
                                   headerFields: ["Content-Type": "application/json"])!
         // Trợ lý AI "nghĩ" lâu hơn ⇒ thấy được trạng thái chờ khi chụp/kiểm.
         // Đăng nhập chờ 1,2 s ⇒ thấy lớp "Đang đăng nhập…" khi chụp/kiểm.
-        let cho = u.path.hasSuffix("/ai/chat") || u.path.hasSuffix("/retry") || u.path.hasSuffix("/auth/login") ? 1.2 : 0.15
+        // `CT_XEM_CHO_DANGNHAP=<giây>` kéo dài riêng /auth/login (UI test cần lớp chờ đứng đủ lâu để XCUITest kịp thấy).
+        let choDN = Double(ProcessInfo.processInfo.environment["CT_XEM_CHO_DANGNHAP"] ?? "") ?? 1.2
+        let cho = u.path.hasSuffix("/auth/login") ? choDN : u.path.hasSuffix("/ai/chat") || u.path.hasSuffix("/retry") ? 1.2 : 0.15
         DispatchQueue.global().asyncAfter(deadline: .now() + cho) {
             self.client?.urlProtocol(self, didReceive: res, cacheStoragePolicy: .notAllowed)
             self.client?.urlProtocol(self, didLoad: data)

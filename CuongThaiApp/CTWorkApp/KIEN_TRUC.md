@@ -475,3 +475,50 @@ Phản hồi chủ app: "không tìm thấy chat AI" (trước đó chỉ là M�
   công tắc trạng thái; `TEST_RUNNER_CTW_CHUP_TV=<thư mục>` lưu ảnh chụp tiếng Việt).
 - ⚠️ Chạy unit test SAU khi chụp màn tiếng Việt: app trong máy mô phỏng nhớ ngôn ngữ `vi` ⇒ vài test cũ giả định tiếng Anh đỏ
   (ToChucCTWTests). `xcrun simctl uninstall <U> com.cuongthai.ctwork` trước khi chạy test.
+
+## 20. Khởi động, đăng nhập & chuyển động (21/10/2026)
+
+Mẫu: hai video chủ app gửi 21/10 (app giao hàng "Parcel": hero minh hoạ + tấm trắng trượt lên + lớp "Signing you in…";
+"NoShot": logo vẽ bằng nét phát sáng ⇒ tô màu + nhoè sắc ⇒ phóng VÀO logo để sang màn sau). Áp cho CẢ app CT Work lẫn app CuongThai.
+
+- **Lớp dùng chung `Shared/ChuyenDong/`** (cả hai app; target CTWorkApp khai riêng đường này trong project.yml):
+  `ChuyenDong.swift` — `.buttonStyle(.nhan)`/`KieuNutNhan` (co 0,96 + rung nhẹ), `.xuatHienLanLuot(i, bat:)` (mờ + trượt 14pt, trễ
+  theo thứ tự, CHỈ lần nạp đầu — đợi màn khởi động thoát), `.anhLuot()` (ánh lướt cho khung xương), `RungLac` (lắc khi lỗi),
+  `ThanhTienDoVoHan`, `LichKhoiDong` + `DieuPhoiKhoiDong` (lịch màn khởi động, có kiểm thử), `KhoiDongChung.dangChieu`, `DuongCong`.
+  `GiaoDienDangNhap.swift` — vỏ `BoCucDangNhap` (hero ~36% + tấm bo 32pt trượt lên; đang gõ ⇒ hero thu nhỏ + cuộn ô đang gõ vào
+  giữa; iPad ⇒ tấm ≤ 520pt; lỗi ⇒ lắc; đang gửi ⇒ nền mờ + `lopCho`), `ODangNhap` (viền chạy quanh khi chạm, hiện/ẩn mật khẩu),
+  `NutVienThuoc`, `OTich`, `LopDangDangNhap`, `ChipNoi`, `.noiLoLung` (lơ lửng bằng hoạt hình lặp — không dựng lại view).
+  Chữ truyền vào ĐÃ DỊCH (CT Work: catalog; app chính: `T(...)`).
+- **Mọi chuyển động tôn trọng Giảm chuyển động** (mờ dần thay trượt/phóng, khung xương đứng yên, không bắn hạt) và không chặn gì.
+- **Màn khởi động CT Work** (`App/KhoiDong/ManKhoiDongCTW.swift`, linh vật vector `LinhVatCTW.swift` = `LogoCTWork` vẽ lại bằng Path
+  trong hệ 100×100): bút ngọc/indigo vẽ nét ⇒ tô màu + nhoè sắc ⇒ 2 ngôi sao bật ⇒ dấu tích "tách" + âm `ctwork.caf` + rung mềm ở
+  1,05 s ⇒ chữ "CT Work" + khẩu hiệu ⇒ PHÓNG VÀO logo. Chế độ tối: nét neon trên nền tối. Phủ ở `CTWorkAppMain` (ngoài `GocCTW` ⇒
+  đổi ngôn ngữ không hiện lại), CHỈ lần mở nguội. Chạm ⇒ bỏ qua (trước nhịp tích thì im lặng).
+  **Lịch (`LichKhoiDong`)**: khôi phục phiên (không token / chưa đồng ý / đã có hồ sơ) xong SỚM ⇒ thoát ngay khi logo hiện đủ (1,5 s
+  + 0,4 s phóng); xong muộn ⇒ đợi, nhưng tối đa tới 2,3 s. Đồng hồ là đồng hồ ẢO (mỗi nhịp ≤ 50 ms) — lần mở nguội luồng chính nghẽn
+  vài trăm ms, đồng hồ tường sẽ nhảy cóc qua đoạn vẽ nét. Không dựng khi: unit test (`XCTestConfigurationFilePath`), màn thử
+  `CT_XEM_MAN` (trừ `CT_XEM_KHOIDONG=1`), `CT_KHONG_KHOIDONG=1`.
+- **Âm thanh** (`App/KhoiDong/AmThanhCTW.swift`): phiên `.ambient` + mixWithOthers (theo nút gạt im lặng, không cắt nhạc). Account ›
+  **Sounds**: "Launch sound" (`ctw.amThanh.khoiDong`) + "Sound effects" (`ctw.amThanh.hieuUng`, pháo Xong!) — mặc định bật.
+  Bảy tệp `Resources/Sounds/*.caf` (ctwork · tin-nhan · giao-the · nhac-ten · han-chot · xong · cuongmini) vào GỐC gói — cũng là
+  âm thông báo đẩy (§19). `KhoiDongCTWTests.testBayTepAmThanhNamOGocGoiApp` đỏ nếu thiếu.
+- **Đăng nhập CT Work** (`Modules/Account/DangNhapCTW.swift`): hero = linh vật + chip "NW-12 · Done"/"Sprint 6"/"In review" lơ lửng,
+  dấu thương hiệu góc trái; tấm: "Welcome back", ô Username/Password (id `dangNhap.ten`/`dangNhap.matKhau`), "Remember username"
+  (CHỈ nhớ tên đăng nhập — phiên vẫn giữ trong Keychain như cũ), "Forgot password?", nút `dangNhap.gui`, Sign in with Apple (4.8),
+  "Don't have an account? Sign up" (thay bộ chọn phân đoạn). **Logic không đổi**: cùng `gui()`/`apple()`/`cauLoi`/xác thực email.
+  Lớp "Signing you in…" (linh vật tích 3 dòng việc) hiện ít nhất 0,9 s; lỗi ⇒ lắc + băng lỗi. Vào màn chính: mờ + phóng từ 1,03,
+  hàng My Work hiện lần lượt.
+- **Pháo "Xong!"** (`Shared/CTWork/CTWUI/CTWNoXong.swift`): Board (`CTWBoardVM.chuyen`) + chuyển nhanh My Work gọi
+  `CTWNoXong.shared.phat()` SAU khi máy chủ nhận, nếu trạng thái đích thuộc nhóm DONE. Chỉ app CT Work gắn lớp vẽ (`.ctwLopNoXong()`).
+- **Khung tải**: `CTWKhungTai` (Inbox…) + `HangGiuChoCTW` (My Work) có ánh lướt; Board thay vòng quay bằng `CTWKhungTaiBang`.
+- **App CuongThai**: màn khởi động `iOS/KhoiDong/ManKhoiDongApp.swift` (khung đầu = LaunchScreen.storyboard: logo 120pt; logo thu về
+  cạnh chữ "CuongThai", Bip ngoi lên + vẫy + "Xin chào!", phóng xuyên qua Bip; không âm thanh); đăng nhập `Shared/Views/AuthView.swift`
+  cùng vỏ (Bip vẫy giữa chip học tập, Apple + Google giữ nguyên hai nút cũ, lớp chờ = Bip nhảy); Tổng quan hiện lần lượt + khung
+  tải ánh lướt. Ảnh `LinhVatBip` (Resources/Assets.xcassets). Chữ qua `T(...)` + `BangDich`. Màn thử (DEBUG): `CT_XEM_MAN=dangnhap`
+  (+ `CT_XEM_KHOIDONG=1`) — máy chủ giả, mật khẩu "wrong" ⇒ lỗi.
+- **Màn thử CT Work**: `CT_XEM_MAN=dangnhap CT_XEM_KHOIDONG=1` ⇒ màn khởi động ⇒ đăng nhập; máy chủ giả trả `/auth/login` sau 1,2 s
+  (mật khẩu "wrong" ⇒ `INVALID_CREDENTIALS`). ⚠️ Đăng nhập thử GHI token giả vào Keychain máy mô phỏng — mở app thường sau đó sẽ gọi
+  máy chủ thật bằng token giả (401 ⇒ tự đăng xuất). Quay video luồng thật: `xcrun simctl keychain <U> reset` trước.
+- **Kiểm thử**: `CTWorkTests/KhoiDongCTWTests.swift` (lịch: khôi phục trước/giữa/sau, trần, bỏ qua; bộ điều phối chạy thật; điều kiện
+  dựng; âm trong gói; công tắc mặc định; pháo) + `CTWorkUITests/KhoiDongDangNhapUITests.swift` (mở nguội ⇒ màn khởi động tự thoát ⇒
+  sai mật khẩu ⇒ lỗi ⇒ đúng ⇒ My Work; chạm bỏ qua; đổi sang Đăng ký và lại).

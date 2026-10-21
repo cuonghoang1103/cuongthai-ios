@@ -275,7 +275,8 @@ targets:
       # Âm thông báo của app CT Work (21/10/2026): máy chủ gửi `aps.sound = "ctwork.caf"` cho topic com.cuongthai.ctwork
       # (api-backend goiDayCtw.ts › AM_THANH_CTWORK). Thả `ctwork.caf` vào thư mục này ⇒ nó vào GỐC gói app (nhóm thường,
       # không phải folder reference) — iOS chỉ tìm âm ở gốc gói / Library/Sounds. Chưa có tệp ⇒ iOS phát âm mặc định.
-      # Định dạng: KIEN_TRUC.md mục 19.
+      # Định dạng: KIEN_TRUC.md mục 19. Từ 21/10 thư mục có đủ 7 tệp (ctwork · tin-nhan · giao-the · nhac-ten · han-chot ·
+      # xong · cuongmini); `ctwork.caf` cũng là âm màn khởi động, `xong.caf` là âm pháo "Xong!" (KIEN_TRUC mục 20).
       - path: CuongThaiApp/CTWorkApp/Resources/Sounds
         optional: true
         buildPhase: resources

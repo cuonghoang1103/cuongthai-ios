@@ -26,9 +26,17 @@ enum KhoiDongCTW {
         if env["XCTestConfigurationFilePath"] != nil { return false }
         if env["CT_KHONG_KHOIDONG"] == "1" { return false }
         #if DEBUG
-        if let m = env["CT_XEM_MAN"], !m.isEmpty, env["CT_XEM_KHOIDONG"] != "1" { return false }
+        if let m = env["CT_XEM_MAN"], !m.isEmpty, env["CT_XEM_KHOIDONG"] != "1", env["CT_XEM_KHOIDONG"] != "giu" { return false }
         #endif
         return true
+    }
+
+    /// Lịch dùng thật. DEBUG: `CT_XEM_KHOIDONG=giu` ⇒ màn khởi động ĐỨNG CHỜ tới khi chạm (kiểm "chạm để bỏ qua" không đua giờ).
+    static func lichDung(giam: Bool, _ env: [String: String] = ProcessInfo.processInfo.environment) -> LichKhoiDong {
+        #if DEBUG
+        if env["CT_XEM_KHOIDONG"] == "giu" { return LichKhoiDong(toiThieu: 120, tuNhien: 120, tran: 120, thoat: 0.4) }
+        #endif
+        return giam ? lichGiam : lich
     }
 }
 
@@ -44,7 +52,7 @@ struct ManKhoiDongCTW: View {
     init(khoiPhucXong: Bool, giamChuyenDong: Bool = UIAccessibility.isReduceMotionEnabled, xong: @escaping () -> Void) {
         self.khoiPhucXong = khoiPhucXong
         self.xong = xong
-        _dieuPhoi = StateObject(wrappedValue: DieuPhoiKhoiDong(lich: giamChuyenDong ? KhoiDongCTW.lichGiam : KhoiDongCTW.lich))
+        _dieuPhoi = StateObject(wrappedValue: DieuPhoiKhoiDong(lich: KhoiDongCTW.lichDung(giam: giamChuyenDong)))
     }
 
     var body: some View {

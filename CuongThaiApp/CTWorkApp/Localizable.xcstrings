@@ -5328,6 +5328,16 @@
         }
       }
     },
+    "Already have an account?": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã có tài khoản?"
+          }
+        }
+      }
+    },
     "Already linked": {
       "localizations": {
         "vi": {
@@ -9433,6 +9443,16 @@
         }
       }
     },
+    "Create your account": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tạo tài khoản"
+          }
+        }
+      }
+    },
     "Create, edit and move issues": {
       "localizations": {
         "vi": {
@@ -9577,6 +9597,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Đang tạo trong CT Work…"
+          }
+        }
+      }
+    },
+    "Creating your account…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang tạo tài khoản…"
           }
         }
       }
@@ -11035,6 +11065,16 @@
         }
       }
     },
+    "Don't have an account?": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa có tài khoản?"
+          }
+        }
+      }
+    },
     "Done": {
       "localizations": {
         "vi": {
@@ -11091,6 +11131,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Chọn xong"
+          }
+        }
+      }
+    },
+    "Double-tap to skip": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chạm hai lần để bỏ qua"
           }
         }
       }
@@ -13873,6 +13923,16 @@
         }
       }
     },
+    "Hide password": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ẩn mật khẩu"
+          }
+        }
+      }
+    },
     "Hide unscheduled": {
       "localizations": {
         "vi": {
@@ -15307,6 +15367,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Phiên bản mới nhất"
+          }
+        }
+      }
+    },
+    "Launch sound": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Âm thanh khởi động"
           }
         }
       }
@@ -20168,6 +20238,16 @@
         }
       }
     },
+    "One account for CT Work and cuongthai.com.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Một tài khoản cho CT Work và cuongthai.com."
+          }
+        }
+      }
+    },
     "One after another": {
       "localizations": {
         "vi": {
@@ -21850,6 +21930,16 @@
         }
       }
     },
+    "Plan, track and ship together.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lên kế hoạch, theo dõi và về đích cùng nhau."
+          }
+        }
+      }
+    },
     "Planned": {
       "localizations": {
         "vi": {
@@ -21906,6 +21996,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Phát tin nhắn thoại, %lld giây"
+          }
+        }
+      }
+    },
+    "Plays the CT Work chime when the app opens, and a short sound when an issue moves to Done. Follows your silent switch.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phát nhạc hiệu CT Work khi mở app và một âm ngắn khi thẻ chuyển sang Done. Tuân theo nút gạt im lặng."
           }
         }
       }
@@ -23542,6 +23642,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Còn lại %@ mỗi ngày"
+          }
+        }
+      }
+    },
+    "Remember username": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ghi nhớ tên đăng nhập"
           }
         }
       }
@@ -26705,6 +26815,16 @@
         }
       }
     },
+    "Show password": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hiện mật khẩu"
+          }
+        }
+      }
+    },
     "Showing %lld of %lld": {
       "localizations": {
         "en": {
@@ -26893,6 +27013,16 @@
         }
       }
     },
+    "Sign up": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đăng ký"
+          }
+        }
+      }
+    },
     "Sign-off requests for you appear here.": {
       "localizations": {
         "vi": {
@@ -26919,6 +27049,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Thành viên đã đăng nhập"
+          }
+        }
+      }
+    },
+    "Signing you in…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang đăng nhập…"
           }
         }
       }
@@ -27199,6 +27339,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sắp xếp kết quả"
+          }
+        }
+      }
+    },
+    "Sound effects": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hiệu ứng âm thanh"
+          }
+        }
+      }
+    },
+    "Sounds": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Âm thanh"
           }
         }
       }
@@ -32262,6 +32422,16 @@
         }
       }
     },
+    "Welcome back": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chào mừng trở lại"
+          }
+        }
+      }
+    },
     "Welcome to CT Work": {
       "localizations": {
         "vi": {
@@ -34982,6 +35152,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "hoặc"
+          }
+        }
+      }
+    },
+    "or continue with": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "hoặc tiếp tục với"
           }
         }
       }
