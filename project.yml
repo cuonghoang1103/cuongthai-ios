@@ -288,6 +288,8 @@ targets:
       - path: CuongThaiApp/Shared/Storage/KeychainStore.swift
       - path: CuongThaiApp/Shared/Storage/StorageManager.swift
       - path: CuongThaiApp/Shared/Theme.swift
+      # Lớp chuyển động dùng chung (nút nhấn, xuất hiện lần lượt, ánh lướt, lịch màn khởi động, vỏ đăng nhập) — 21/10/2026.
+      - path: CuongThaiApp/Shared/ChuyenDong
       - path: CuongThaiApp/Shared/Extensions/TimeFormatter.swift
       - path: CuongThaiApp/Shared/NgoaiTuyen/KhoNgoaiTuyen.swift
       - path: CuongThaiApp/Shared/Services/ModerationStore.swift
