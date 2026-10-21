@@ -372,7 +372,7 @@ helps. Thank you.
 ## 7. Checklist dữ liệu DEMO cho reviewer (KHÔNG sửa DB prod — chỉ qua web/API công khai)
 
 > **21/10/2026 (build 4):** chủ app duyệt cho Claude dựng dữ liệu demo TRÊN PRODUCTION bằng API công khai. Đã làm:
-> đăng ký 2 tài khoản (`ctworkreview` + `ctworkpeer` "Minh (Demo)", mật khẩu ở `~/Documents/ctwork-appstore/TAI-KHOAN-DEMO.md`),
+> đăng ký 2 tài khoản (`ctworkdemo` + `ctworkminh` "Minh (Demo)", mật khẩu ở `~/Documents/ctwork-appstore/TAI-KHOAN-DEMO.md`),
 > tạo kho công khai https://github.com/cuonghoang1103/ctwork-demo-app. Mọi mục dưới đây (kể cả nối GitHub qua webhook,
 > tin nhắn riêng 1-1, thử CuongMini) do `~/Documents/ctwork-appstore/demo-seed/seed-demo.mjs` dựng — idempotent, chạy
 > lại được; cần 2 tài khoản đã xác thực email trước. Trạng thái thật: `demo-seed/state.json` + `NOP-HOM-NAY.md` bước 7.
