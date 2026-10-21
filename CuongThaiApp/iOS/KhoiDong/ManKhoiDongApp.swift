@@ -67,6 +67,12 @@ struct ManKhoiDongApp: View {
         .onDisappear { dieuPhoi.dung() }
     }
 
+    /// Vùng an toàn đáy của cửa sổ (màn này `ignoresSafeArea` nên GeometryReader báo 0).
+    private static var dayAnToan: CGFloat {
+        let w = UIApplication.shared.connectedScenes.compactMap { ($0 as? UIWindowScene)?.windows.first }.first
+        return w?.safeAreaInsets.bottom ?? 0
+    }
+
     private func canh(t: Double, e: Double) -> some View {
         GeometryReader { g in
             let cx = g.size.width / 2
@@ -79,6 +85,13 @@ struct ManKhoiDongApp: View {
                 quang(t: t, g: g.size)
                 if giam { tinh(cx: cx, cy: cy, coBip: coBip, bipY: bipY, hangY: hangY, t: t, e: e) }
                 else { dong(cx: cx, cy: cy, coBip: coBip, bipY: bipY, hangY: hangY, t: t, e: e) }
+                // Chữ chân của LaunchScreen.storyboard (13pt, xám 50%, cách đáy vùng an toàn 30pt) — giữ đúng chỗ rồi mờ đi,
+                // để khung đầu khớp màn tĩnh, không "nháy".
+                Text(verbatim: "cuongthai.com")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(Color(white: 0.5))
+                    .opacity(1 - DuongCong.doan(t, 0.1, 0.4))
+                    .position(x: cx, y: g.size.height - Self.dayAnToan - 30 - 8)
             }
             .frame(width: g.size.width, height: g.size.height)
         }

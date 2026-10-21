@@ -50,6 +50,7 @@ struct BoCucDangNhap<Hero: View, Tam: View, LopCho: View>: View {
                     ScrollView {
                         VStack(spacing: 0) {
                             hero(dangGo)
+                                .id("boCucDangNhap.dau")
                                 .padding(.top, g.safeAreaInsets.top)
                                 .frame(height: caoHero + g.safeAreaInsets.top)
                                 .frame(maxWidth: .infinity)
@@ -77,7 +78,11 @@ struct BoCucDangNhap<Hero: View, Tam: View, LopCho: View>: View {
                     .scrollBounceBehavior(.basedOnSize)
                     .ignoresSafeArea(.container, edges: [.top, .bottom])
                     .onChange(of: cuonToi) { _, moi in
-                        guard let moi else { return }
+                        // Hết gõ (bàn phím xuống, đang gửi…) ⇒ trả về đầu: hero nở lại, không để màn lưng chừng.
+                        guard let moi else {
+                            withAnimation(.easeOut(duration: 0.3)) { cuon.scrollTo("boCucDangNhap.dau", anchor: .top) }
+                            return
+                        }
                         // Đợi bàn phím lên xong (~0,3 s) rồi mới cuộn — cuộn sớm thì vùng nhìn thấy còn tính cả chỗ bàn phím.
                         Task { @MainActor in
                             try? await Task.sleep(nanoseconds: 320_000_000)

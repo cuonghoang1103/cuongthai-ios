@@ -67,7 +67,7 @@ struct ManKhoiDongCTW: View {
         .onTapGesture { boQua() }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(verbatim: "CT Work"))
-        .accessibilityHint(Text("Double-tap to skip"))
+        .accessibilityHint(Text(String(localized: "Double-tap to skip")))
         .accessibilityAddTraits(.isButton)
         .accessibilityAction { boQua() }
         .accessibilityIdentifier("khoiDong")
@@ -184,7 +184,9 @@ struct ManKhoiDongCTW: View {
                                                 startPoint: .leading, endPoint: .trailing))
                 .opacity(p1)
                 .offset(y: giam ? 0 : 18 * (1 - p1))
-            Text("Plan, track and ship together.")
+            // String(localized:) — màn này phủ NGOÀI `GocCTW` (không có `.environment(\.locale)` của app) nên `Text("…")` sẽ
+            // tra theo ngôn ngữ máy; String(localized:) đi qua Bundle đã tráo theo lựa chọn Account › Language.
+            Text(String(localized: "Plan, track and ship together."))
                 .font(.system(size: 15, weight: .medium))
                 .foregroundColor(AppColors.textSecondary)
                 .opacity(p2)
