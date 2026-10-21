@@ -148,7 +148,8 @@ final class KhoTinNhanCTW: ObservableObject {
     /// Mở (tạo nếu chưa có) hội thoại 1-1 với một người rồi trả hội thoại.
     func moVoi(_ userId: Int) async throws -> MessageThread {
         if let t = hoiThoai.first(where: { $0.peer?.id == userId && $0.laNhanRieng }) { return t }
-        let t: MessageThread = try await APIClient.shared.request(.openThread(peerId: userId))
+        let tho: MessageThread = try await APIClient.shared.request(.openThread(peerId: userId))
+        let t = tho.voiNguoiKia(userId)
         if !hoiThoai.contains(where: { $0.id == t.id }) { hoiThoai.insert(t, at: 0) }
         RealtimeCTW.shared.vaoHoiThoai(t.id)
         return t
