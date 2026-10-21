@@ -91,6 +91,7 @@ struct ManMoDunCTW: View {
                         ToolbarItem(placement: .topBarLeading) { NutCuongMiniCTW(pid: l.pid, maDuAn: l.maDuAn) }
                     }
                 }
+                .onAppear { DungNhieuCTW.dem("mod:\(id)") }   // "hay dùng" của màn Tìm mọi thứ
         } else {
             ChuaChonDuAnCTW(lyDo: String(localized: "Pick a project to continue."))
         }
