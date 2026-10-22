@@ -81,37 +81,64 @@ struct DanhSachTinNhanCTW: View {
     }
 }
 
+/// Một hàng hội thoại.
+///
+/// ⚠️ KHÔNG giữ `MessageThread` làm thuộc tính: `MessageThread ==` chỉ so `id` (để `navigationDestination(item:)` không
+/// đẩy lại màn khi tin mới về) ⇒ SwiftUI so hàng cũ/mới bằng `==`, thấy "bằng nhau" và KHÔNG vẽ lại — dòng tin cuối +
+/// giờ đứng nguyên "Say hi 👋 · Wed" sau khi gửi tin cho tới lần mở app sau (ảnh lỗi 08, 22/10/2026), dù kho đã có
+/// tin mới. App chính né cùng bẫy bằng `.id(...)` ở MessagesView. Ở đây hàng chỉ giữ GIÁ TRỊ đã rút ra (so sánh đủ).
 struct HangHoiThoaiCTW: View {
-    let t: MessageThread
     let ten: String
     let moc: TrangThaiHoatDongCTW.Moc
     var dangGo = false
-    var toi: Int?
+    private let nguoi: CTWUser
+    private let chuaDoc: Bool
+    private let soChuaDoc: Int
+    private let tatThongBao: Bool
+    private let thoiDiem: Date?
+    private let xemTruoc: String
+
+    init(t: MessageThread, ten: String, moc: TrangThaiHoatDongCTW.Moc, dangGo: Bool = false, toi: Int? = nil) {
+        self.ten = ten
+        self.moc = moc
+        self.dangGo = dangGo
+        nguoi = CTWUser(id: t.peer?.id ?? 0, username: t.peer?.username, displayName: ten, avatarUrl: t.peer?.avatarUrl)
+        chuaDoc = t.chuaDoc
+        soChuaDoc = t.unreadCount
+        tatThongBao = t.daTatThongBao
+        thoiDiem = t.lastMessage?.ngayGio ?? t.updatedAt.flatMap(Date.tuChuoiISO)
+        xemTruoc = Self.xemTruoc(t.lastMessage, toi: toi)
+    }
+
+    static func xemTruoc(_ m: Message?, toi: Int?) -> String {
+        guard let m else { return String(localized: "Say hi 👋") }
+        let tom = ChatRiengCTW.tomTat(m)
+        return m.senderId == toi ? String(localized: "You: \(tom)") : tom
+    }
 
     var body: some View {
         HStack(spacing: 12) {
-            AvatarHoatDongCTW(user: CTWUser(id: t.peer?.id ?? 0, username: t.peer?.username, displayName: ten, avatarUrl: t.peer?.avatarUrl),
-                              size: 52, moc: moc)
+            AvatarHoatDongCTW(user: nguoi, size: 52, moc: moc)
             VStack(alignment: .leading, spacing: 3) {
                 HStack {
-                    Text(ten).font(.ctw(size: 16, weight: t.chuaDoc ? .bold : .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(1)
-                    if t.daTatThongBao { Image(systemName: "bell.slash.fill").font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary) }
+                    Text(ten).font(.ctw(size: 16, weight: chuaDoc ? .bold : .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                    if tatThongBao { Image(systemName: "bell.slash.fill").font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary) }
                     Spacer(minLength: 4)
-                    if let d = t.lastMessage?.ngayGio ?? t.updatedAt.flatMap(Date.tuChuoiISO) {
-                        Text(ChatRiengCTW.gioNgan(d)).font(.ctw(size: 12)).foregroundColor(t.chuaDoc ? AppColors.primary : AppColors.textTertiary)
+                    if let d = thoiDiem {
+                        Text(ChatRiengCTW.gioNgan(d)).font(.ctw(size: 12)).foregroundColor(chuaDoc ? AppColors.primary : AppColors.textTertiary)
                     }
                 }
                 HStack {
                     Text(dangGo ? String(localized: "typing…") : xemTruoc)
-                        .font(.ctw(size: 14, weight: t.chuaDoc ? .semibold : .regular))
-                        .foregroundColor(dangGo ? AppColors.primary : (t.chuaDoc ? AppColors.textPrimary : AppColors.textSecondary))
+                        .font(.ctw(size: 14, weight: chuaDoc ? .semibold : .regular))
+                        .foregroundColor(dangGo ? AppColors.primary : (chuaDoc ? AppColors.textPrimary : AppColors.textSecondary))
                         .lineLimit(1)
                     Spacer(minLength: 4)
-                    if t.unreadCount > 0 {
-                        Text("\(t.unreadCount)").font(.ctw(size: 12, weight: .bold)).foregroundColor(.white)
+                    if soChuaDoc > 0 {
+                        Text("\(soChuaDoc)").font(.ctw(size: 12, weight: .bold)).foregroundColor(.white)
                             .padding(.horizontal, 7).padding(.vertical, 2)
                             .background(Capsule().fill(AppColors.primary))
-                    } else if t.chuaDoc {
+                    } else if chuaDoc {
                         Circle().fill(AppColors.primary).frame(width: 10, height: 10)
                     }
                 }
@@ -119,12 +146,6 @@ struct HangHoiThoaiCTW: View {
         }
         .padding(.vertical, 4)
         .accessibilityElement(children: .combine)
-    }
-
-    private var xemTruoc: String {
-        guard let m = t.lastMessage else { return String(localized: "Say hi 👋") }
-        let tom = ChatRiengCTW.tomTat(m)
-        return m.senderId == toi ? String(localized: "You: \(tom)") : tom
     }
 }
 
