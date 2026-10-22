@@ -147,8 +147,12 @@ final class BangTinUITests: XCTestCase {
         app.terminate()
 
         app = mo(vi: true)
+        XCTAssertTrue(phanTu(app, "feed.post.2").waitForExistence(timeout: 15))
+        sleep(2)
+        // Bài video (số 3) nằm sau bài 4 ảnh ⇒ cuộn tới khi nút phát vào màn.
         var lan = 0
-        while !phanTu(app, "feed.post.3").exists && lan < 6 { app.swipeUp(); lan += 1 }
+        let phat = phanTu(app, "feed.post.3").descendants(matching: .any).matching(identifier: "feed.media.0").firstMatch
+        while !(phat.exists && phat.isHittable && phat.frame.maxY < app.frame.maxY - 120) && lan < 8 { app.swipeUp(velocity: .slow); lan += 1 }
         sleep(2)
         chup(app, "03-bai-video")
         app.terminate()

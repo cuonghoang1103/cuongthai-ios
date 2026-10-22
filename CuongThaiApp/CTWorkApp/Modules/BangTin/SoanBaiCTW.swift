@@ -466,7 +466,11 @@ struct SoanBaiCTW: View {
             #if DEBUG
             XemThuBangTin.mauSoan(vm)
             #endif
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) { goChu = true }
+            var tuGo = true
+            #if DEBUG
+            tuGo = XemThuBangTin.mo != "soan"   // ảnh chụp ô soạn: không bật bàn phím (thấy đủ ảnh đính kèm)
+            #endif
+            if tuGo { DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) { goChu = true } }
         }
         .interactiveDismissDisabled(dangDang)
     }
@@ -622,13 +626,15 @@ struct SoanBaiCTW: View {
     private func oTep(ten: String, anh: UIImage?, a: CTWFeedAttachment?, tienDo: Double?, loi: String?, laVideo: Bool = false,
                       laTep: Bool = false, bo: @escaping () -> Void) -> some View {
         let tep = laTep || a?.laTep == true
-        return ZStack {
+        // Khung CỐ ĐỊNH theo ô lưới (Color.clear + overlay) — ảnh `scaledToFill` không được nới rộng ô (tràn lề, đo 22/10).
+        return Color.clear.frame(maxWidth: .infinity).frame(height: 100).overlay { ZStack {
             if let anh { Image(uiImage: anh).resizable().scaledToFill() }
             else if let a, !tep { AnhTepBangTinCTW(a: a, kieu: "thumb") }
             else {
                 VStack(spacing: 6) {
-                    Image(systemName: a.map(ChipTepCTW.bieuTuong) ?? "doc").font(.ctw(size: 24)).foregroundColor(AppColors.primary)
-                    Text(ten).font(.ctw(size: 11)).lineLimit(2).multilineTextAlignment(.center).padding(.horizontal, 6)
+                    Image(systemName: tep ? (a.map(ChipTepCTW.bieuTuong) ?? "doc") : (laVideo ? "video" : "photo"))
+                        .font(.ctw(size: 24)).foregroundColor(AppColors.primary)
+                    if tep { Text(ten).font(.ctw(size: 11)).lineLimit(2).multilineTextAlignment(.center).padding(.horizontal, 6) }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(AppColors.backgroundSecondary)
@@ -652,8 +658,7 @@ struct SoanBaiCTW: View {
                     .padding(5).background(Circle().fill(.black.opacity(0.5)))
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading).padding(6)
             }
-        }
-        .frame(height: 100)
+        } }
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(alignment: .topTrailing) {
             Button(action: bo) {

@@ -128,7 +128,7 @@ struct ChiTietBaiCTW: View {
             }
         }
         .background(AppColors.backgroundPrimary)
-        .navigationTitle("Post")
+        .navigationTitle("Feed post")
         .navigationBarTitleDisplayMode(.inline)
         .ctwTamPhuBangTin(dp, vm)
         .task {

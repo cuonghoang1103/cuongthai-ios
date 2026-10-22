@@ -13101,6 +13101,16 @@
         }
       }
     },
+    "Feed post": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bài viết"
+          }
+        }
+      }
+    },
     "Fibonacci": {
       "localizations": {
         "vi": {

@@ -466,7 +466,7 @@ struct KhungBinhLuanCTW: View {
                 if let r = traLoi ?? dangSua {
                     HStack(spacing: 6) {
                         Image(systemName: dangSua != nil ? "pencil" : "arrowshape.turn.up.left").font(.ctw(size: 11, weight: .bold))
-                        Text(dangSua != nil ? String(localized: "Editing your comment") : String(localized: "Replying to \(r.author?.ten ?? "")"))
+                        Text(dangSua != nil ? String(localized: "Editing your comment") : String(localized: "Replying to \(r.author?.tenNgan ?? "")"))
                             .font(.ctw(size: 12, weight: .semibold))
                         Spacer()
                         Button { traLoi = nil; if dangSua != nil { dangSua = nil; chu = "" } } label: {
