@@ -141,6 +141,7 @@ final class AppState: ObservableObject {
         chatChuaDoc = 0
         tinNhanChuaDoc = 0
         KhoTinNhanCTW.shared.xoaHet()
+        KhoBangTinCTW.shared.xoaHet()
         NhipHoatDongCTW.shared.dungLai()
         muc = .viecCuaToi
         cauHinhDuAn = nil
@@ -163,6 +164,9 @@ final class AppState: ObservableObject {
                 _ = KhoTinNhanCTW.shared   // nghe socket tin nhắn riêng ngay từ đầu (huy hiệu theo kịp dù chưa mở tab)
                 await taiSoChuaDoc()
                 if cauHinhDuAn == nil { await napCauHinhDuAn() }
+                // Bảng tin: máy chủ có tuyến chưa (app 1.1 chạy cả với máy chủ cũ) + phạm vi đọc/đăng được.
+                await KhoBangTinCTW.shared.kiemHoTro()
+                RealtimeCTW.shared.dangKyBangTin()
                 return
             } catch {
                 if case APIError.unauthorized = error { logout(); return }

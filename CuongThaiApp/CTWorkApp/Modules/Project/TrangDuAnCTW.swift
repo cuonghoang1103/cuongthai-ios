@@ -157,7 +157,7 @@ struct TrangDuAnCTW: View {
     /// Mô-đun đã ghim, thuộc trang dự án, trừ Board/Backlog (đã có trên công tắc) và CuongMini (thẻ nổi bật ở đầu).
     /// Chat là tab riêng trên iPhone.
     private var ghimDuoc: [CTWModule] {
-        CTWDangKyMoDun.daGhim(app.cauHinhDuAn).filter { $0.viTriIPhone == .trangDuAn && !["board", "backlog", "ai"].contains($0.id) }
+        CTWDangKyMoDun.daGhim(app.cauHinhDuAn).filter { $0.viTriIPhone == .trangDuAn && !["board", "backlog", "ai", "feed"].contains($0.id) }
     }
 
     private func congCu(_ l: LuaChonCTW) -> some View {
@@ -167,6 +167,10 @@ struct TrangDuAnCTW: View {
                 // CuongMini nổi bật ở đầu (thay dòng "AI assistant" lẫn giữa các mô-đun — chủ app không tìm thấy, 21/10/2026).
                 if CuongMini.coTheDung(app.cauHinhDuAn) {
                     TheCuongMiniCTW(pid: l.pid, maDuAn: l.maDuAn).padding(.bottom, 4)
+                }
+                // Bảng tin dự án (21/10/2026) — thẻ nổi bật ngay dưới CuongMini; ẩn với CLIENT / máy chủ chưa có bảng tin.
+                if CTWModule.feed.hien(app.cauHinhDuAn) {
+                    TheBangTinDuAnCTW(pid: l.pid).padding(.bottom, 4)
                 }
             }
                 .listRowInsets(EdgeInsets())

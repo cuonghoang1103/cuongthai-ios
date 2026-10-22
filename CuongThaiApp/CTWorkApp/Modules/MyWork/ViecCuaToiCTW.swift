@@ -9,8 +9,10 @@ struct ViecCuaToiCTW: View {
     /// Ô tìm đang mở ⇒ hiện tìm gần đây + bộ lọc (đợt B, như trang Search của web).
     @State private var timMo = false
     @State private var locTim = BoLocTimCTW()
-    /// 0 = Issues (My Work của lõi) · 1 = Agenda (`/me/agenda`, xuyên dự án).
+    /// 0 = Issues (My Work của lõi) · 1 = Agenda (`/me/agenda`, xuyên dự án) · 2 = Bảng tin (gộp mọi không gian/dự án —
+    /// Modules/BangTin; chỉ khi máy chủ có bảng tin và người dùng đọc được ít nhất một phạm vi).
     @AppStorage("ctw.myWork.che") private var che = 0
+    @ObservedObject private var kho = KhoBangTinCTW.shared
 
     var body: some View {
         Group {
@@ -19,7 +21,13 @@ struct ViecCuaToiCTW: View {
             } else {
                 // Công tắc nằm TRONG danh sách (hàng đầu) ⇒ cùng lề với ô tìm và các thẻ — trước 20/10 nó đệm 16 pt
                 // riêng nên rộng hơn ô tìm và lệch với ô đếm (ảnh chủ app trên iPhone Pro Max, lề hệ thống 20 pt).
-                if che == 1 { AgendaCuaToiCTW(dau: AnyView(congTac)) } else { DanhSachViecCTW(dau: AnyView(congTac)) }
+                if che == 2 && kho.hien {
+                    BangTinCTW(cheDo: .gop, loc: .gop, dau: AnyView(congTac))
+                } else if che == 1 {
+                    AgendaCuaToiCTW(dau: AnyView(congTac))
+                } else {
+                    DanhSachViecCTW(dau: AnyView(congTac))
+                }
             }
         }
         .background(AppColors.backgroundPrimary)
@@ -39,6 +47,18 @@ struct ViecCuaToiCTW: View {
         #endif
         // Đích từ thông báo/đường dẫn. `.task(id:)` vì cờ có thể được đặt
         // TRƯỚC khi màn tồn tại (mở nguội từ thông báo).
+        // Bảng tin: bài cần mở (thông báo đẩy, đường dẫn sâu) / bảng tin không gian (bảng chọn dự án). Xoá cờ ở CUỐI.
+        .task(id: kho.canMo) {
+            guard let r = kho.canMo else { return }
+            defer { kho.canMo = nil }
+            tim = ""
+            timMo = false
+            var p = NavigationPath()
+            p.append(r)
+            nganXep.duong = p
+        }
+        // Máy chủ cũ (không có bảng tin) / mất quyền ⇒ phân đoạn Bảng tin biến mất, về Issues.
+        .onChange(of: kho.hien) { _, co in if !co && che == 2 { che = 0 } }
         .task(id: app.ctWorkDich) {
             guard let d = app.ctWorkDich else { return }
             app.ctWorkDich = nil
@@ -62,10 +82,12 @@ extension ViecCuaToiCTW {
             Picker("View", selection: $che) {
                 Text("Issues").tag(0)
                 Text("Agenda").tag(1)
+                if kho.hien { Text("Feed").tag(2) }
             }
             .pickerStyle(.segmented)
-            // "Hôm nay tôi nên làm gì?" (21/10/2026): mở CuongMini của dự án đang chọn và hỏi ngay.
-            if let l = app.luaChon, CuongMini.coTheDung(app.cauHinhDuAn) {
+            .accessibilityIdentifier("mywork.views")
+            // "Hôm nay tôi nên làm gì?" (21/10/2026): mở CuongMini của dự án đang chọn và hỏi ngay. Không ở Bảng tin.
+            if che != 2, let l = app.luaChon, CuongMini.coTheDung(app.cauHinhDuAn) {
                 TheCuongMiniCTW(pid: l.pid, maDuAn: l.maDuAn, tenDuAn: l.tenDuAn, homNay: true)
             }
         }

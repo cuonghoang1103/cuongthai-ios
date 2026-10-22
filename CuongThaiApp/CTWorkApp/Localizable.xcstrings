@@ -90,6 +90,22 @@
       },
       "shouldTranslate": false
     },
+    "%@ %lld of %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ %2$lld of %3$lld"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ %2$lld/%3$lld"
+          }
+        }
+      }
+    },
     "%@ %lld, you reacted": {
       "localizations": {
         "en": {
@@ -1918,6 +1934,26 @@
         }
       }
     },
+    "%lld more": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "thêm %lld"
+          }
+        }
+      }
+    },
+    "%lld new posts": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld bài mới"
+          }
+        }
+      }
+    },
     "%lld objectives · %lld key results": {
       "localizations": {
         "en": {
@@ -2264,6 +2300,16 @@
         }
       }
     },
+    "%lld photos or videos": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld ảnh hoặc video"
+          }
+        }
+      }
+    },
     "%lld planned people waiting to join": {
       "localizations": {
         "vi": {
@@ -2294,6 +2340,16 @@
         }
       }
     },
+    "%lld reactions": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld cảm xúc"
+          }
+        }
+      }
+    },
     "%lld removed": {
       "localizations": {
         "vi": {
@@ -2320,6 +2376,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Đã ẩn %lld nội dung bị báo cáo"
+          }
+        }
+      }
+    },
+    "%lld reports": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld báo cáo"
+          }
+        }
+      }
+    },
+    "%lld reports to review": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld báo cáo cần xem xét"
           }
         }
       }
@@ -2558,6 +2634,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld phiên bản"
+          }
+        }
+      }
+    },
+    "%lld votes": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld lượt bình chọn"
           }
         }
       }
@@ -3176,6 +3262,16 @@
         }
       }
     },
+    "1 comment": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 bình luận"
+          }
+        }
+      }
+    },
     "1 day": {
       "localizations": {
         "vi": {
@@ -3336,6 +3432,16 @@
         }
       }
     },
+    "1 new post": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 bài mới"
+          }
+        }
+      }
+    },
     "1 open bug": {
       "localizations": {
         "vi": {
@@ -3356,6 +3462,16 @@
         }
       }
     },
+    "1 photo or video": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 ảnh hoặc video"
+          }
+        }
+      }
+    },
     "1 project": {
       "localizations": {
         "vi": {
@@ -3366,12 +3482,32 @@
         }
       }
     },
+    "1 reaction": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 cảm xúc"
+          }
+        }
+      }
+    },
     "1 reply": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "1 trả lời"
+          }
+        }
+      }
+    },
+    "1 report to review": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 báo cáo cần xem xét"
           }
         }
       }
@@ -3452,6 +3588,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "1 phiên bản"
+          }
+        }
+      }
+    },
+    "1 vote": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 lượt bình chọn"
           }
         }
       }
@@ -3705,6 +3851,26 @@
         }
       }
     },
+    "A poll needs 2–6 options of up to 120 characters.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bình chọn cần 2–6 lựa chọn, mỗi lựa chọn tối đa 120 ký tự."
+          }
+        }
+      }
+    },
+    "A post can have up to 10 photos or videos and 5 files.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mỗi bài tối đa 10 ảnh/video và 5 tệp."
+          }
+        }
+      }
+    },
     "A private Jitsi Meet room is created for this meeting.": {
       "localizations": {
         "vi": {
@@ -3891,6 +4057,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "AI agent không làm được việc này."
+          }
+        }
+      }
+    },
+    "AI agents can't use the team feed.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI agent không dùng được Bảng tin."
           }
         }
       }
@@ -4721,6 +4897,16 @@
         }
       }
     },
+    "Add option": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thêm lựa chọn"
+          }
+        }
+      }
+    },
     "Add people": {
       "localizations": {
         "vi": {
@@ -5138,6 +5324,16 @@
         }
       }
     },
+    "All %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tất cả %@"
+          }
+        }
+      }
+    },
     "All %lld": {
       "localizations": {
         "vi": {
@@ -5204,6 +5400,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mọi tin nhắn mới"
+          }
+        }
+      }
+    },
+    "All new posts": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mọi bài mới"
           }
         }
       }
@@ -5314,6 +5520,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cho phép thông báo"
+          }
+        }
+      }
+    },
+    "Allow several answers": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cho chọn nhiều đáp án"
           }
         }
       }
@@ -6322,6 +6538,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Đính kèm tệp"
+          }
+        }
+      }
+    },
+    "Attach an issue": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gắn thẻ"
           }
         }
       }
@@ -7406,6 +7632,16 @@
         }
       }
     },
+    "Cancel upload": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Huỷ tải lên"
+          }
+        }
+      }
+    },
     "Cancelled": {
       "localizations": {
         "vi": {
@@ -7462,6 +7698,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nhóm (không bắt buộc)"
+          }
+        }
+      }
+    },
+    "Celebrate": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chúc mừng"
           }
         }
       }
@@ -7909,6 +8155,26 @@
         }
       }
     },
+    "Choose a workspace or project": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn không gian hoặc dự án"
+          }
+        }
+      }
+    },
+    "Choose all new posts, only mentions, or nothing for each workspace and project.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn nhận mọi bài mới, chỉ khi được nhắc, hoặc tắt cho từng không gian và dự án."
+          }
+        }
+      }
+    },
     "Choose an epic": {
       "localizations": {
         "vi": {
@@ -7949,12 +8215,32 @@
         }
       }
     },
+    "Choose several": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn nhiều"
+          }
+        }
+      }
+    },
     "Choose sprint": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Chọn sprint"
+          }
+        }
+      }
+    },
+    "Choose where to post": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn nơi đăng"
           }
         }
       }
@@ -8327,6 +8613,16 @@
         }
       }
     },
+    "Closes %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đóng %@"
+          }
+        }
+      }
+    },
     "Code": {
       "localizations": {
         "vi": {
@@ -8497,6 +8793,16 @@
         }
       }
     },
+    "Comment from someone you blocked": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bình luận từ người bạn đã chặn"
+          }
+        }
+      }
+    },
     "Comment on %@": {
       "localizations": {
         "vi": {
@@ -8583,6 +8889,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bình luận về use case nằm ở thẻ liên kết với nó. Liên kết một thẻ với %@ trên web để bắt đầu thảo luận."
+          }
+        }
+      }
+    },
+    "Comments, replies and reactions on your own posts always notify you. Mentions follow these settings — Off silences mentions too.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bình luận, trả lời và cảm xúc trên bài của bạn luôn được báo. Lượt nhắc tên theo cài đặt này — Tắt thì cũng không báo khi được nhắc."
           }
         }
       }
@@ -9117,6 +9433,16 @@
         }
       }
     },
+    "Couldn't post": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa đăng được"
+          }
+        }
+      }
+    },
     "Couldn't read %@.": {
       "localizations": {
         "vi": {
@@ -9133,6 +9459,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Không đọc được tệp đó."
+          }
+        }
+      }
+    },
+    "Couldn't read this file.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không đọc được tệp này."
           }
         }
       }
@@ -9383,6 +9719,16 @@
         }
       }
     },
+    "Create post": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tạo bài viết"
+          }
+        }
+      }
+    },
     "Create project": {
       "localizations": {
         "vi": {
@@ -9429,6 +9775,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tạo test case “%@”"
+          }
+        }
+      }
+    },
+    "Create the first post": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tạo bài viết đầu tiên"
           }
         }
       }
@@ -10379,6 +10735,16 @@
         }
       }
     },
+    "Delete post": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xoá bài viết"
+          }
+        }
+      }
+    },
     "Delete sub-task": {
       "localizations": {
         "vi": {
@@ -10425,6 +10791,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Xoá trang này?"
+          }
+        }
+      }
+    },
+    "Delete this post?": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xoá bài viết này?"
           }
         }
       }
@@ -10875,12 +11251,32 @@
         }
       }
     },
+    "Discard": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bỏ"
+          }
+        }
+      }
+    },
     "Discard changes": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Bỏ thay đổi"
+          }
+        }
+      }
+    },
+    "Discard post": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bỏ bài viết"
           }
         }
       }
@@ -11145,6 +11541,16 @@
         }
       }
     },
+    "Double-tap to like. Use actions to choose another reaction.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chạm hai lần để thích. Dùng tác vụ để chọn cảm xúc khác."
+          }
+        }
+      }
+    },
     "Double-tap to skip": {
       "localizations": {
         "vi": {
@@ -11181,6 +11587,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Soạn nháp trang Tài liệu “%@”"
+          }
+        }
+      }
+    },
+    "Draft restored": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã khôi phục bản nháp"
           }
         }
       }
@@ -11527,6 +11943,16 @@
         }
       }
     },
+    "Edit post": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sửa bài viết"
+          }
+        }
+      }
+    },
     "Edit release notes": {
       "localizations": {
         "vi": {
@@ -11563,6 +11989,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sửa tiêu đề"
+          }
+        }
+      }
+    },
+    "Edited": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã chỉnh sửa"
           }
         }
       }
@@ -11623,6 +12059,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dự án đang khoá chỉnh sửa. Mở khoá để thay đổi."
+          }
+        }
+      }
+    },
+    "Editing your comment": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang sửa bình luận của bạn"
           }
         }
       }
@@ -12135,6 +12581,16 @@
         }
       }
     },
+    "Everywhere": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mọi nơi"
+          }
+        }
+      }
+    },
     "Evidence": {
       "localizations": {
         "vi": {
@@ -12611,6 +13067,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tính năng xác định phạm vi sản phẩm trong tài liệu tầm nhìn."
+          }
+        }
+      }
+    },
+    "Feed": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bảng tin"
+          }
+        }
+      }
+    },
+    "Feed notifications": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thông báo Bảng tin"
+          }
+        }
+      }
+    },
+    "Feed notifications by workspace & project": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thông báo Bảng tin theo không gian & dự án"
           }
         }
       }
@@ -13733,6 +14219,16 @@
         }
       }
     },
+    "Haha": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Haha"
+          }
+        }
+      }
+    },
     "Harassment or bullying": {
       "localizations": {
         "vi": {
@@ -13939,6 +14435,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ẩn mật khẩu"
+          }
+        }
+      }
+    },
+    "Hide post": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ẩn bài viết"
           }
         }
       }
@@ -14861,12 +15367,32 @@
         }
       }
     },
+    "It may have been deleted, or you no longer have access to it.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bài có thể đã bị xoá, hoặc bạn không còn quyền xem."
+          }
+        }
+      }
+    },
     "It moves to the project's trash. Admins can restore it from the web.": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Thẻ vào thùng rác của dự án. Quản trị có thể khôi phục trên web."
+          }
+        }
+      }
+    },
+    "It will be removed for everyone, with its comments and reactions.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bài sẽ bị xoá với mọi người, kèm bình luận và cảm xúc."
           }
         }
       }
@@ -15031,6 +15557,16 @@
         }
       }
     },
+    "Just now": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vừa xong"
+          }
+        }
+      }
+    },
     "Keep (%@)": {
       "localizations": {
         "vi": {
@@ -15097,6 +15633,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Giữ hài lòng"
+          }
+        }
+      }
+    },
+    "Keep this post as a draft?": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giữ bài này làm bản nháp?"
+          }
+        }
+      }
+    },
+    "Keep writing": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Viết tiếp"
           }
         }
       }
@@ -15541,6 +16097,16 @@
         }
       }
     },
+    "Like": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thích"
+          }
+        }
+      }
+    },
     "Liked": {
       "localizations": {
         "vi": {
@@ -15777,6 +16343,16 @@
         }
       }
     },
+    "Load more comments": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tải thêm bình luận"
+          }
+        }
+      }
+    },
     "Load older posts": {
       "localizations": {
         "vi": {
@@ -16005,6 +16581,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Đang ổn"
+          }
+        }
+      }
+    },
+    "Love": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yêu thích"
           }
         }
       }
@@ -16399,6 +16985,16 @@
         }
       }
     },
+    "Members of this project": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thành viên dự án này"
+          }
+        }
+      }
+    },
     "Members · %lld": {
       "localizations": {
         "vi": {
@@ -16415,6 +17011,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Thành viên, vai trò, khối lượng việc và lời mời"
+          }
+        }
+      }
+    },
+    "Mention": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nhắc tên"
           }
         }
       }
@@ -17093,6 +17699,16 @@
         }
       }
     },
+    "My posts": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bài của tôi"
+          }
+        }
+      }
+    },
     "My timer": {
       "localizations": {
         "vi": {
@@ -17482,6 +18098,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Phiên poker mới"
+          }
+        }
+      }
+    },
+    "New post": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đăng bài"
+          }
+        }
+      }
+    },
+    "New posts & reactions in Feed": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bài mới & cảm xúc trong Bảng tin"
           }
         }
       }
@@ -18032,6 +18668,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Chưa có bài tập"
+          }
+        }
+      }
+    },
+    "No comments yet": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa có bình luận"
           }
         }
       }
@@ -18617,6 +19263,16 @@
         }
       }
     },
+    "No matching issues": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không có thẻ khớp"
+          }
+        }
+      }
+    },
     "No measurable target yet": {
       "localizations": {
         "vi": {
@@ -18928,6 +19584,16 @@
         }
       }
     },
+    "No posts with this hashtag": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa có bài nào với hashtag này"
+          }
+        }
+      }
+    },
     "No posts yet": {
       "localizations": {
         "vi": {
@@ -19078,6 +19744,16 @@
         }
       }
     },
+    "No reports here": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không có báo cáo nào"
+          }
+        }
+      }
+    },
     "No repository connected": {
       "localizations": {
         "vi": {
@@ -19174,6 +19850,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Chưa có bộ lọc nào được lưu"
+          }
+        }
+      }
+    },
+    "No saved posts": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa lưu bài nào"
           }
         }
       }
@@ -19908,6 +20594,16 @@
         }
       }
     },
+    "Nothing here yet": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa có gì ở đây"
+          }
+        }
+      }
+    },
     "Nothing hidden.": {
       "localizations": {
         "vi": {
@@ -20278,6 +20974,16 @@
         }
       }
     },
+    "One of the attachments is no longer available. Remove it and add it again.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Một tệp đính kèm không còn dùng được. Gỡ ra rồi thêm lại."
+          }
+        }
+      }
+    },
     "One project": {
       "localizations": {
         "vi": {
@@ -20374,6 +21080,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Chỉ thành viên được mời"
+          }
+        }
+      }
+    },
+    "Only mentions": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chỉ khi được nhắc"
           }
         }
       }
@@ -20774,6 +21490,16 @@
         }
       }
     },
+    "Opens a preview": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mở xem trước"
+          }
+        }
+      }
+    },
     "Opens the link": {
       "localizations": {
         "vi": {
@@ -20800,6 +21526,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mở trợ lý AI của dự án"
+          }
+        }
+      }
+    },
+    "Opens their profile": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mở hồ sơ của họ"
+          }
+        }
+      }
+    },
+    "Option %lld": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lựa chọn %lld"
           }
         }
       }
@@ -21674,6 +22420,26 @@
         }
       }
     },
+    "Photo or video": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ảnh hoặc video"
+          }
+        }
+      }
+    },
+    "Photos & videos": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ảnh & video"
+          }
+        }
+      }
+    },
     "Photos and files are uploaded only when you choose to attach them. The camera is used only when you tap “Take Photo”.": {
       "localizations": {
         "vi": {
@@ -21794,6 +22560,16 @@
         }
       }
     },
+    "Pin to top": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ghim lên đầu"
+          }
+        }
+      }
+    },
     "Pinch to zoom, double-tap to zoom in": {
       "localizations": {
         "vi": {
@@ -21820,6 +22596,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tin đã ghim"
+          }
+        }
+      }
+    },
+    "Pinned to the top of this feed": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã ghim lên đầu bảng tin"
           }
         }
       }
@@ -22000,6 +22786,16 @@
         }
       }
     },
+    "Play video": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phát video"
+          }
+        }
+      }
+    },
     "Play voice note, %lld seconds": {
       "localizations": {
         "vi": {
@@ -22036,6 +22832,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Poker"
+          }
+        }
+      }
+    },
+    "Poll": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bình chọn"
+          }
+        }
+      }
+    },
+    "Poll closed": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã đóng bình chọn"
           }
         }
       }
@@ -22080,12 +22896,82 @@
         }
       }
     },
+    "Post": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đăng"
+          }
+        }
+      }
+    },
     "Post comment": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Đăng bình luận"
+          }
+        }
+      }
+    },
+    "Post deleted": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã xoá bài viết"
+          }
+        }
+      }
+    },
+    "Post hidden. You won't see it in your feed.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã ẩn bài viết. Bạn sẽ không thấy bài này nữa."
+          }
+        }
+      }
+    },
+    "Post options": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tuỳ chọn bài viết"
+          }
+        }
+      }
+    },
+    "Post text": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nội dung bài viết"
+          }
+        }
+      }
+    },
+    "Post to": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đăng vào"
+          }
+        }
+      }
+    },
+    "Post to: %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đăng vào: %@"
           }
         }
       }
@@ -22106,6 +22992,46 @@
           "stringUnit": {
             "state": "translated",
             "value": "Đăng bởi"
+          }
+        }
+      }
+    },
+    "Posting…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang đăng…"
+          }
+        }
+      }
+    },
+    "Posts from every workspace and project you're in": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bài từ mọi không gian và dự án bạn tham gia"
+          }
+        }
+      }
+    },
+    "Posts from everyone in %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bài của mọi người trong %@"
+          }
+        }
+      }
+    },
+    "Posts with photos, videos or files will show up here.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bài có ảnh, video hoặc tệp sẽ hiện ở đây."
           }
         }
       }
@@ -22454,6 +23380,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Quản trị dự án sẽ xem xét và gỡ nếu vi phạm quy định."
+          }
+        }
+      }
+    },
+    "Project feed": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bảng tin dự án"
           }
         }
       }
@@ -23040,6 +23976,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "Đi tới từ"
+          }
+        }
+      }
+    },
+    "React with %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bày tỏ %@"
+          }
+        }
+      }
+    },
+    "Reaction: %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cảm xúc: %@"
+          }
+        }
+      }
+    },
+    "Reactions": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cảm xúc"
           }
         }
       }
@@ -23716,6 +24682,16 @@
         }
       }
     },
+    "Remove content": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gỡ nội dung"
+          }
+        }
+      }
+    },
     "Remove date": {
       "localizations": {
         "vi": {
@@ -23757,6 +24733,16 @@
         }
       }
     },
+    "Remove for everyone": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gỡ với mọi người"
+          }
+        }
+      }
+    },
     "Remove from epic": {
       "localizations": {
         "vi": {
@@ -23783,6 +24769,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Gỡ khỏi dự án"
+          }
+        }
+      }
+    },
+    "Remove from saved": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bỏ lưu"
           }
         }
       }
@@ -23827,6 +24823,16 @@
         }
       }
     },
+    "Remove option": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xoá lựa chọn"
+          }
+        }
+      }
+    },
     "Remove photo": {
       "localizations": {
         "vi": {
@@ -23837,12 +24843,72 @@
         }
       }
     },
+    "Remove poll": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bỏ bình chọn"
+          }
+        }
+      }
+    },
+    "Remove reaction": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bỏ cảm xúc"
+          }
+        }
+      }
+    },
+    "Remove the attachments to post in another workspace.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gỡ tệp đính kèm để đăng ở không gian khác."
+          }
+        }
+      }
+    },
     "Removed": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Đã gỡ"
+          }
+        }
+      }
+    },
+    "Removed by an admin": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã bị quản trị viên gỡ"
+          }
+        }
+      }
+    },
+    "Removed by an admin. Only the author and admins can see it.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã bị quản trị viên gỡ. Chỉ tác giả và quản trị viên còn thấy."
+          }
+        }
+      }
+    },
+    "Removed from saved": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã bỏ lưu"
           }
         }
       }
@@ -23933,6 +24999,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Trả lời ở %@ dưới dạng bình luận trong luồng."
+          }
+        }
+      }
+    },
+    "Replies to it are deleted too.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Các trả lời của nó cũng bị xoá."
           }
         }
       }
@@ -24117,6 +25193,16 @@
         }
       }
     },
+    "Report post": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Báo cáo bài viết"
+          }
+        }
+      }
+    },
     "Report templates": {
       "localizations": {
         "vi": {
@@ -24247,6 +25333,16 @@
         }
       }
     },
+    "Reports from members about posts and comments in spaces you manage show up here.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Báo cáo của thành viên về bài viết và bình luận trong các không gian bạn quản trị sẽ hiện ở đây."
+          }
+        }
+      }
+    },
     "Reports go to the CT Work moderation team and are reviewed within 24 hours.": {
       "localizations": {
         "vi": {
@@ -24273,6 +25369,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Báo cáo được gửi tới đội kiểm duyệt CT Work."
+          }
+        }
+      }
+    },
+    "Reports go to the admins of this space and the CT Work moderation team, who review them within 24 hours. The author isn't told who reported them.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Báo cáo được gửi tới quản trị viên của không gian này và nhóm kiểm duyệt CT Work, xử lý trong vòng 24 giờ. Tác giả không biết ai đã báo cáo."
           }
         }
       }
@@ -24733,6 +25839,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Khôi phục kênh"
+          }
+        }
+      }
+    },
+    "Restore comment": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khôi phục bình luận"
+          }
+        }
+      }
+    },
+    "Restore post": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khôi phục bài viết"
           }
         }
       }
@@ -25442,6 +26568,26 @@
         }
       }
     },
+    "Save post": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lưu bài viết"
+          }
+        }
+      }
+    },
+    "Save posts from the ••• menu to read them later.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lưu bài từ menu ••• để đọc lại sau."
+          }
+        }
+      }
+    },
     "Saved": {
       "localizations": {
         "vi": {
@@ -25478,6 +26624,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Phiên bản đã lưu"
+          }
+        }
+      }
+    },
+    "Saved. Find it under Saved in the filter.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã lưu. Xem lại ở bộ lọc Đã lưu."
           }
         }
       }
@@ -26102,6 +27258,16 @@
         }
       }
     },
+    "See more": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xem thêm"
+          }
+        }
+      }
+    },
     "Seen": {
       "localizations": {
         "vi": {
@@ -26525,6 +27691,36 @@
         }
       }
     },
+    "Share an update in the team feed": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chia sẻ cập nhật trên Bảng tin của nhóm"
+          }
+        }
+      }
+    },
+    "Share an update with your team…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chia sẻ cập nhật với nhóm…"
+          }
+        }
+      }
+    },
+    "Share an update with your team… Type @ to mention someone.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chia sẻ cập nhật với nhóm… Gõ @ để nhắc ai đó."
+          }
+        }
+      }
+    },
     "Share feedback": {
       "localizations": {
         "vi": {
@@ -26565,12 +27761,32 @@
         }
       }
     },
+    "Share progress, demos or questions with your team.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chia sẻ tiến độ, bản demo hoặc câu hỏi với nhóm."
+          }
+        }
+      }
+    },
     "Share to channel": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Chia sẻ vào kênh"
+          }
+        }
+      }
+    },
+    "Share wins, sprint demos, photos from the office or a question for the team.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chia sẻ thành quả, demo sprint, ảnh văn phòng hay một câu hỏi cho cả nhóm."
           }
         }
       }
@@ -26641,6 +27857,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Công việc được chia sẻ và yêu cầu của bạn sẽ hiện ở đây."
+          }
+        }
+      }
+    },
+    "Share…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chia sẻ…"
           }
         }
       }
@@ -26835,6 +28061,16 @@
         }
       }
     },
+    "Show posts from: %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hiện bài từ: %@"
+          }
+        }
+      }
+    },
     "Showing %lld of %lld": {
       "localizations": {
         "en": {
@@ -26959,6 +28195,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Xem phiên bản này"
+          }
+        }
+      }
+    },
+    "Shows who reacted": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xem ai đã bày tỏ cảm xúc"
           }
         }
       }
@@ -27873,6 +29119,16 @@
         }
       }
     },
+    "Start the conversation.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hãy là người mở lời."
+          }
+        }
+      }
+    },
     "Start timer": {
       "localizations": {
         "vi": {
@@ -28662,6 +29918,16 @@
         }
       }
     },
+    "Team updates, photos, files and polls": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cập nhật, ảnh, tệp và bình chọn của nhóm"
+          }
+        }
+      }
+    },
     "Teams": {
       "localizations": {
         "vi": {
@@ -28998,6 +30264,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Số quá lớn."
+          }
+        }
+      }
+    },
+    "That's too long — posts are up to 10,000 characters, comments 4,000.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quá dài — bài viết tối đa 10.000 ký tự, bình luận 4.000."
           }
         }
       }
@@ -29492,6 +30768,16 @@
         }
       }
     },
+    "The upload didn't finish. Please try again.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tải lên chưa xong. Hãy thử lại."
+          }
+        }
+      }
+    },
     "Their turn": {
       "localizations": {
         "vi": {
@@ -29772,12 +31058,52 @@
         }
       }
     },
+    "This file is empty.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tệp này trống."
+          }
+        }
+      }
+    },
+    "This file is too large (max %lld MB).": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tệp quá lớn (tối đa %lld MB)."
+          }
+        }
+      }
+    },
     "This file is too large to show": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Tệp này quá lớn để hiển thị"
+          }
+        }
+      }
+    },
+    "This file is too large.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tệp quá lớn."
+          }
+        }
+      }
+    },
+    "This file type isn't supported.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không hỗ trợ loại tệp này."
           }
         }
       }
@@ -29932,6 +31258,16 @@
         }
       }
     },
+    "This link can't be previewed.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không xem trước được liên kết này."
+          }
+        }
+      }
+    },
     "This link is already added.": {
       "localizations": {
         "vi": {
@@ -30058,6 +31394,46 @@
           "stringUnit": {
             "state": "translated",
             "value": "Phần này của dự án chỉ dành cho nhóm và giảng viên."
+          }
+        }
+      }
+    },
+    "This person's profile isn't available.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không xem được hồ sơ của người này."
+          }
+        }
+      }
+    },
+    "This poll is closed.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bình chọn này đã đóng."
+          }
+        }
+      }
+    },
+    "This post is no longer available": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bài viết không còn nữa"
+          }
+        }
+      }
+    },
+    "This post is no longer available.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bài viết không còn nữa."
           }
         }
       }
@@ -30948,6 +32324,16 @@
         }
       }
     },
+    "Turn off comments": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tắt bình luận"
+          }
+        }
+      }
+    },
     "Turn on Face ID lock for CT Work": {
       "localizations": {
         "vi": {
@@ -31048,6 +32434,16 @@
         }
       }
     },
+    "Type an issue key or a few words of its title.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gõ mã thẻ hoặc vài chữ trong tiêu đề."
+          }
+        }
+      }
+    },
     "Type at least 2 characters, or pick a filter above.": {
       "localizations": {
         "vi": {
@@ -31134,6 +32530,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dưới 30 giây — không ghi giờ."
+          }
+        }
+      }
+    },
+    "Undo": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hoàn tác"
+          }
+        }
+      }
+    },
+    "Undo vote": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rút phiếu"
           }
         }
       }
@@ -31294,6 +32710,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bỏ ghim khỏi thanh bên"
+          }
+        }
+      }
+    },
+    "Unpinned": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã bỏ ghim"
           }
         }
       }
@@ -31530,6 +32956,16 @@
         }
       }
     },
+    "Updates, demos, photos and polls from the team": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cập nhật, demo, ảnh và bình chọn của nhóm"
+          }
+        }
+      }
+    },
     "Upload failed (%lld). Please try again.": {
       "localizations": {
         "vi": {
@@ -31556,6 +32992,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tải đề bài, mã nguồn, danh sách thành viên và hạn chót lên — CuongMini dựng epic, thẻ, sprint, phân công và tài liệu cho bạn. Bạn xem lại trước khi có gì được tạo."
+          }
+        }
+      }
+    },
+    "Uploading %lld%%": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang tải lên %lld%%"
           }
         }
       }
@@ -31976,6 +33422,36 @@
         }
       }
     },
+    "View %lld more replies": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xem thêm %lld trả lời"
+          }
+        }
+      }
+    },
+    "View 1 more reply": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xem thêm 1 trả lời"
+          }
+        }
+      }
+    },
+    "View all %lld comments": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xem tất cả %lld bình luận"
+          }
+        }
+      }
+    },
     "View burndown & progress": {
       "localizations": {
         "vi": {
@@ -32052,6 +33528,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Lượt xem"
+          }
+        }
+      }
+    },
+    "Violence or dangerous content": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạo lực hoặc nội dung nguy hiểm"
           }
         }
       }
@@ -32842,6 +34328,16 @@
         }
       }
     },
+    "Whole workspace": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cả không gian"
+          }
+        }
+      }
+    },
     "Why are you leaving?": {
       "localizations": {
         "vi": {
@@ -32858,6 +34354,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Vì sao bạn báo cáo %@?"
+          }
+        }
+      }
+    },
+    "Why are you reporting this comment?": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vì sao bạn báo cáo bình luận này?"
+          }
+        }
+      }
+    },
+    "Why are you reporting this post?": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vì sao bạn báo cáo bài viết này?"
           }
         }
       }
@@ -33062,12 +34578,32 @@
         }
       }
     },
+    "Workspace feed": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bảng tin không gian"
+          }
+        }
+      }
+    },
     "Workspace objectives appear here once an admin adds them.": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Mục tiêu của không gian sẽ hiện ở đây khi quản trị thêm vào."
+          }
+        }
+      }
+    },
+    "Workspace posts": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bài cấp không gian"
           }
         }
       }
@@ -33102,6 +34638,16 @@
         }
       }
     },
+    "Wow": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wow"
+          }
+        }
+      }
+    },
     "Wrap lines": {
       "localizations": {
         "vi": {
@@ -33132,6 +34678,16 @@
         }
       }
     },
+    "Write a comment…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Viết bình luận…"
+          }
+        }
+      }
+    },
     "Write a reply…": {
       "localizations": {
         "vi": {
@@ -33158,6 +34714,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Viết biên bản họp, đặc tả hay hướng dẫn — ngay trên điện thoại."
+          }
+        }
+      }
+    },
+    "Write something or add a photo first.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hãy viết gì đó hoặc thêm ảnh trước."
           }
         }
       }
@@ -33392,6 +34958,16 @@
         }
       }
     },
+    "You can pin up to 5 posts here. Unpin one first.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mỗi nơi ghim tối đa 5 bài. Hãy bỏ ghim một bài trước."
+          }
+        }
+      }
+    },
     "You can read this channel but not post in it.": {
       "localizations": {
         "vi": {
@@ -33492,6 +35068,16 @@
         }
       }
     },
+    "You can't report your own post.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn không thể báo cáo bài của chính mình."
+          }
+        }
+      }
+    },
     "You can't see AI usage here.": {
       "localizations": {
         "vi": {
@@ -33548,6 +35134,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bạn không có quyền truy cập mục này."
+          }
+        }
+      }
+    },
+    "You don't have permission to do that here.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn không có quyền làm việc này ở đây."
           }
         }
       }
@@ -33612,6 +35208,26 @@
         }
       }
     },
+    "You haven't posted yet": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn chưa đăng bài nào"
+          }
+        }
+      }
+    },
+    "You hid this post. It doesn't show in your feed.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn đã ẩn bài này. Bài không hiện trong bảng tin của bạn."
+          }
+        }
+      }
+    },
     "You need finance access in this project.": {
       "localizations": {
         "vi": {
@@ -33648,6 +35264,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bạn đã báo cáo câu trả lời này. Nó đã bị ẩn với bạn."
+          }
+        }
+      }
+    },
+    "You reported this comment. It's hidden for you.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn đã báo cáo bình luận này. Nó đã được ẩn với bạn."
           }
         }
       }
@@ -33732,6 +35358,16 @@
         }
       }
     },
+    "You won't see their posts, and their comments will be collapsed. They won't be told.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn sẽ không thấy bài của họ, bình luận của họ được thu gọn. Họ không được thông báo."
+          }
+        }
+      }
+    },
     "You're all caught up": {
       "localizations": {
         "vi": {
@@ -33748,6 +35384,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bạn đang ngoại tuyến — tin nhắn sẽ được gửi khi có mạng lại."
+          }
+        }
+      }
+    },
+    "You're posting too fast. Wait a moment and try again.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn đăng nhanh quá. Đợi một chút rồi thử lại."
           }
         }
       }

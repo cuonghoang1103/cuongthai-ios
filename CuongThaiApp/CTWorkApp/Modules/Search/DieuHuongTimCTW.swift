@@ -31,6 +31,8 @@ final class DieuHuongTimCTW: ObservableObject {
         case caiDatThongBao
         case taoCuongMini(CTWWorkspace, CTWDauVaoCM?)
         case duAnMoi(CTWWorkspace)
+        /// Ô soạn bài Bảng tin (lệnh "Đăng bài").
+        case dangBai
 
         var id: String {
             switch self {
@@ -40,6 +42,7 @@ final class DieuHuongTimCTW: ObservableObject {
             case .caiDatThongBao: return "tb"
             case .taoCuongMini(let w, _): return "cm-\(w.id)"
             case .duAnMoi(let w): return "moi-\(w.id)"
+            case .dangBai: return "dangBai"
             }
         }
     }
@@ -197,6 +200,8 @@ struct GanTimKiemCTW: ViewModifier {
                     ChonDuAnCTW()
                 case .caiDatThongBao:
                     CaiDatThongBaoTamPhuCTW()
+                case .dangBai:
+                    SoanBaiCTW(noi: nil)
                 case .taoCuongMini(let w, let dv):
                     TaoCuongMiniCTW(ws: w, mangSang: dv) { p in chonDuAnMoi(w, id: p.id, ma: p.key, ten: p.name) }
                 case .duAnMoi(let w):

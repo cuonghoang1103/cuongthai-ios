@@ -9,6 +9,7 @@ import UserNotifications
 //   · Trả lời — theo `url` của thông báo:
 //       `/work/<ws>/<KEY>/issue/<n>?comment=<c>` ⇒ bình luận trả lời trong luồng (`parentId = c`)
 //       `/work/<ws>/<KEY>/chat?c=<kênh>&m=<tin>&t=<chuỗi>` ⇒ trả lời trong chuỗi (`parentId = t ?? m`)
+//       `/work/<ws>/feed?post=<id>&comment=<c>` ⇒ bình luận vào bài Bảng tin (`parentId = c`)
 //   · Duyệt / Từ chối — `POST /projects/:pid/approvals/:aid/decide` (`approvalId` trong payload)
 // `pid` lấy bằng `GET /work/resolve/<ws>/<KEY>` (không đổi dự án đang chọn của người dùng).
 //
@@ -38,7 +39,15 @@ enum HanhDongThongBaoCTW {
     /// Trả lời đúng chỗ thông báo trỏ tới (bình luận thẻ hoặc chuỗi chat).
     static func traLoi(duongDan: String, chu: String) async throws {
         let s = chu.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !s.isEmpty, let d = DuongDanCTW.tach(duongDan) else { throw Loi.khongRo }
+        guard !s.isEmpty else { throw Loi.khongRo }
+        // Bảng tin (hợp đồng §9): `duongDan` = `/work/<ws>/feed?post=<feedPostId>&comment=<feedCommentId>` ⇒ bình luận
+        // vào BÀI (`parentId` = bình luận được trả lời; máy chủ tự gắn vào gốc) — KHÔNG vào bình luận thẻ.
+        if let f = DichBangTin.tach(duongDan) {
+            let _: CTWFeedComment = try await APIClient.shared.request(
+                CTWAPI.guiBinhLuan(f.post, chu: s, cha: f.comment, khoa: TrangBangTin.khoaMoi()))
+            return
+        }
+        guard let d = DuongDanCTW.tach(duongDan) else { throw Loi.khongRo }
         let pid = try await timPid(d)
         switch d.doan {
         case "issue":

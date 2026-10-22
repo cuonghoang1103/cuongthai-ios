@@ -24,6 +24,7 @@ struct CaiDatThongBaoCTW: View {
     @State private var imDen = 7
     @State private var loi: String?
     @State private var daNap = false
+    @ObservedObject private var bangTin = KhoBangTinCTW.shared
 
     var body: some View {
         Form {
@@ -59,8 +60,23 @@ struct CaiDatThongBaoCTW: View {
                     congTac(String(localized: "Alerts & meeting reminders"), "exclamationmark.circle", \.alert, "alert", e)
                     congTac(String(localized: "Every new chat message"), "bubble.left.and.bubble.right", \.chatAll, "chatAll", e)
                     congTac(String(localized: "Git activity (pushes, pull requests, reviews)"), "chevron.left.forwardslash.chevron.right", \.git, "git", e)
+                    if bangTin.hien {
+                        congTac(String(localized: "New posts & reactions in Feed"), "newspaper", \.feed, "feed", e)
+                    }
                 } header: { Text("Push me about") } footer: {
                     Text("Applies to every device you're signed in on. The inbox keeps everything either way. \"Every new chat message\" only matters for channels set to all messages.")
+                }
+            }
+
+            // Bảng tin: mức theo dõi từng không gian/dự án (`PUT /feed/follow`).
+            if bangTin.hien {
+                Section {
+                    NavigationLink { CaiDatBangTinCTW() } label: {
+                        Label("Feed notifications by workspace & project", systemImage: "newspaper")
+                    }
+                    .accessibilityIdentifier("settings.feed")
+                } header: { Text("Feed") } footer: {
+                    Text("Choose all new posts, only mentions, or nothing for each workspace and project.")
                 }
             }
 

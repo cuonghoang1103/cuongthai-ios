@@ -134,7 +134,9 @@ struct TimKiemCTW: View {
     private var tatCaChucNang: [MucTimCTW] {
         let mod = CTWDangKyMoDun.hienDuoc(cfg).filter { m in m.id != "code" || app.codeDaNoi == true }
         // `hienDuoc` bỏ mô-đun cấp ứng dụng (Tin nhắn, Thành viên — không thuộc dự án) ⇒ thêm riêng, ngay sau màn cấp app.
-        return CTWXepHangTim.manApp + CTWDangKyMoDun.capUngDung.map(CTWXepHangTim.muc) + mod.map(CTWXepHangTim.muc)
+        // Bảng tin gộp chỉ khi máy chủ có bảng tin và người dùng đọc được ít nhất một phạm vi (KhoBangTinCTW.hien).
+        let man = CTWXepHangTim.manApp.filter { $0.id != "app:feed" || KhoBangTinCTW.shared.hien }
+        return man + CTWDangKyMoDun.capUngDung.map(CTWXepHangTim.muc) + mod.map(CTWXepHangTim.muc)
     }
 
     private var dsLenh: [MucTimCTW] {
@@ -578,6 +580,16 @@ struct TimKiemCTW: View {
                 app.muc = .viecCuaToi
             }
         case .hopThu: dh.dongRoi { app.muc = .hopThu }
+        case .bangTin:
+            dh.dongRoi {
+                UserDefaults.standard.set(2, forKey: "ctw.myWork.che")
+                app.muc = .viecCuaToi
+            }
+        case .dangBai:
+            // Về My Work › Bảng tin (bài tạm hiện ngay sau khi Đăng) rồi mở ô soạn (tấm phủ của khung).
+            UserDefaults.standard.set(2, forKey: "ctw.myWork.che")
+            app.muc = .viecCuaToi
+            dh.doiTamPhu(.dangBai)
         case .taiKhoan: dh.dongRoi { app.muc = .taiKhoan }
         case .congCuKhac: dh.dongRoi { app.muc = .them }
         case .caiDatThongBao: dh.doiTamPhu(.caiDatThongBao)

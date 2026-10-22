@@ -27,6 +27,7 @@ enum CTWDangKyMoDun {
         .time, .poker, .retros, .okrs, .workspace,
         .timeline, .releases, .stages, .calendar,
         .tinNhan, .thanhVien,
+        .feed,
     ]
 
     static func moDun(_ id: String) -> CTWModule? { dangKyMoDun.first { $0.id == id } }

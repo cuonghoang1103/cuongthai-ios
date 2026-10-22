@@ -55,16 +55,22 @@ struct KhungTabCTW: View {
     @EnvironmentObject private var app: AppState
 
     /// Tab đang chọn: mô-đun thuộc trang dự án ⇒ tab Projects.
+    private var tabHienTai: MucCTW {
+        // Mô-đun sống trong tab của mô-đun khác (Tin nhắn/Thành viên ⇒ tab Chat).
+        if case .moDun(let id) = app.muc, let t = CTWDangKyMoDun.moDun(id)?.tabIPhone { return .moDun(t) }
+        if case .moDun(let id) = app.muc, CTWDangKyMoDun.moDun(id)?.viTriIPhone != .tabRieng { return .duAn }
+        if app.muc == .them { return .duAn }
+        return app.muc
+    }
+
     private var chon: Binding<MucCTW> {
         Binding(
-            get: {
-                // Mô-đun sống trong tab của mô-đun khác (Tin nhắn/Thành viên ⇒ tab Chat).
-                if case .moDun(let id) = app.muc, let t = CTWDangKyMoDun.moDun(id)?.tabIPhone { return .moDun(t) }
-                if case .moDun(let id) = app.muc, CTWDangKyMoDun.moDun(id)?.viTriIPhone != .tabRieng { return .duAn }
-                if app.muc == .them { return .duAn }
-                return app.muc
-            },
-            set: { app.muc = $0 })
+            get: { tabHienTai },
+            set: { moi in
+                // Chạm lại tab đang mở ⇒ màn gốc cuộn lên đầu (Bảng tin của My Work — như Facebook/X).
+                if moi == tabHienTai { ChamLaiTabCTW.suKien.send(moi) }
+                app.muc = moi
+            })
     }
 
     var body: some View {
@@ -93,6 +99,7 @@ struct KhungTabCTW: View {
 struct KhungRongCTW: View {
     @EnvironmentObject private var app: AppState
     @ObservedObject private var ghim = GhimMoDunCTW.shared
+    @ObservedObject private var bangTin = KhoBangTinCTW.shared
     @State private var moChon = false
     @StateObject private var nganXepChiTiet = NganXepCTW()
 
@@ -138,6 +145,8 @@ struct KhungRongCTW: View {
                 // "Hiện dần" (19/10/2026): chỉ mô-đun ĐÃ GHIM (mặc định = cốt lõi); còn lại trong "More tools".
                 Section("Project") {
                     ForEach(CTWDangKyMoDun.daGhim(app.cauHinhDuAn)) { m in muc(.moDun(m.id)) }
+                    // Bảng tin dự án luôn trong tầm tay (kể cả khi chưa ghim) — ẩn với CLIENT / máy chủ cũ.
+                    if CTWModule.feed.hien(app.cauHinhDuAn) && !ghim.ghim.contains("feed") { muc(.moDun("feed")) }
                     muc(.them)
                 }
                 Section { muc(.taiKhoan) }

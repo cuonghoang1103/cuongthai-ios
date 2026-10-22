@@ -183,6 +183,8 @@ struct CTWCaiDatBao: Codable, Hashable {
         var chatAll: Bool?
         /// Hoạt động Git: push, PR mở/merge, yêu cầu review (18/10/2026).
         var git: Bool?
+        /// Bảng tin: bài mới + cảm xúc trên bài của tôi (hợp đồng feed §9, 21/10/2026). @nhắc/bình luận theo `mention`/`comment`.
+        var feed: Bool?
     }
     /// INSTANT | DIGEST | OFF
     var emailMode: String?

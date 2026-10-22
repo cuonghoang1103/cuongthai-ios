@@ -45,6 +45,7 @@ struct ChonDuAnCTW: View {
     @State private var tim = ""
     /// Tạo dự án / Tạo cùng CuongMini (21/10/2026) — MỘT tấm phủ theo enum (CLAUDE.md C5).
     @State private var tao: TaoMoiCTW?
+    @ObservedObject private var bangTin = KhoBangTinCTW.shared
 
     /// Dự án gần đây còn tồn tại (đối chiếu danh sách vừa tải — dự án đã lưu trữ/bị rời thì bỏ).
     private var dsGanDay: [(ws: CTWWorkspace, p: CTWProjectSummary)] {
@@ -86,6 +87,30 @@ struct ChonDuAnCTW: View {
                     let ds = n.duAn.filter { tim.isEmpty || $0.name.localizedCaseInsensitiveContains(tim) || $0.key.localizedCaseInsensitiveContains(tim) }
                     if !ds.isEmpty || tim.isEmpty {
                         Section {
+                            // Bảng tin của KHÔNG GIAN (mọi bài cấp không gian + dự án mình thấy trong đó).
+                            if tim.isEmpty, bangTin.hoTro == true, let s = bangTin.khongGian(n.ws.id) {
+                                Button {
+                                    dong()
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { bangTin.moKhongGian(s.workspace) }
+                                } label: {
+                                    HStack(spacing: 12) {
+                                        Image(systemName: "newspaper.fill").font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.primary)
+                                            .frame(width: 38, height: 38)
+                                            .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(AppColors.primary.opacity(0.12)))
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text("Workspace feed").font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                                            Text("Posts from everyone in \(n.ws.name)").font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
+                                                .lineLimit(1)
+                                        }
+                                        Spacer()
+                                        Image(systemName: "chevron.right").font(.ctw(size: 12, weight: .semibold)).foregroundColor(AppColors.textTertiary)
+                                    }
+                                    .padding(.vertical, 2)
+                                    .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityIdentifier("workspace.feed.\(n.ws.slug)")
+                            }
                             if ds.isEmpty {
                                 Text("No projects").foregroundColor(AppColors.textTertiary)
                             }

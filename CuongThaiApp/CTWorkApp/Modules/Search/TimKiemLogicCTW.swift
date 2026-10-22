@@ -96,6 +96,9 @@ enum CTWTuKhoaMoDun {
         "kb": ["kien thuc", "knowledge", "help center", "bai viet", "faq", "huong dan"],
         // Kênh nhóm. "tin nhắn"/"nhắn tin" thuộc Tin nhắn riêng (`tin-nhan`) — đừng khai lại ở đây (ngang điểm thì Chat thắng).
         "chat": ["chat", "kenh", "channel", "tro chuyen", "group chat", "chat nhom", "kenh chat"],
+        // Bảng tin dự án (Modules/BangTin). Bảng tin GỘP của My Work là màn cấp app `app:feed`.
+        "feed": ["bang tin", "feed", "bai viet", "dang bai", "news feed", "newsfeed", "team feed", "tin nhom", "post", "posts",
+                 "cap nhat", "thong bao nhom", "anh nhom", "binh chon", "poll"],
         "ai": ["ai", "cuongmini", "cuong mini", "tro ly", "assistant", "hoi ai", "ask ai", "hoi cuongmini", "ask cuongmini", "gpt",
                "chatbot", "hom nay lam gi", "hom nay toi nen lam gi", "nen lam gi", "what should i do today", "today plan"],
         "ai-usage": ["ai", "cuongmini", "chi phi ai", "token", "usage", "su dung ai"],
@@ -169,6 +172,8 @@ enum DichTimCTW: Hashable {
     /// Mô-đun cấp dự án theo id (`CTWDangKyMoDun`).
     case moDun(String)
     case viecCuaToi, agenda, hopThu, taiKhoan, congCuKhac, caiDatThongBao
+    /// My Work › Bảng tin (gộp) · mở ô soạn bài.
+    case bangTin, dangBai
     case taoThe, taoCuongMini, duAnMoi, doiDuAn
     case ngonNgu(NgonNguCTW.CheDo)
 }
@@ -232,6 +237,12 @@ enum CTWXepHangTim {
             MucTimCTW(id: "app:agenda", nhom: .chucNang, tenNguon: "Agenda", moTaNguon: "Today, this week and overdue — across projects",
                       bieuTuong: "calendar.day.timeline.left", tuKhoa: ["lich trinh", "hom nay", "today", "tuan nay", "qua han", "overdue"],
                       dich: .agenda),
+            // Lọc khi máy chủ chưa có bảng tin: `TimKiemCTW.tatCaChucNang`.
+            MucTimCTW(id: "app:feed", nhom: .chucNang, tenNguon: "Feed", moTaNguon: "Posts from every workspace and project you're in",
+                      bieuTuong: "newspaper",
+                      tuKhoa: ["bang tin", "feed", "bai viet", "news feed", "newsfeed", "team feed", "tin nhom", "posts", "dang bai",
+                               "bai dang", "cap nhat nhom", "hashtag"],
+                      dich: .bangTin),
             MucTimCTW(id: "app:inbox", nhom: .chucNang, tenNguon: "Inbox", moTaNguon: "Notifications and mentions",
                       bieuTuong: "bell", tuKhoa: ["thong bao", "notifications", "hop thu", "mention", "nhac ten", "nhac toi"],
                       dich: .hopThu),
@@ -257,6 +268,13 @@ enum CTWXepHangTim {
             ds.append(MucTimCTW(id: "act:create", nhom: .lenh, tenNguon: "Create issue", moTaNguon: "New story, task or bug in this project",
                                 bieuTuong: "plus.square", tuKhoa: ["tao the", "new issue", "tao viec", "them viec", "task moi", "bug moi", "add"],
                                 dich: .taoThe))
+        }
+        if KhoBangTinCTW.shared.coTheDang {
+            ds.append(MucTimCTW(id: "act:post", nhom: .lenh, tenNguon: "New post", moTaNguon: "Share an update in the team feed",
+                                bieuTuong: "square.and.pencil",
+                                tuKhoa: ["dang bai", "bai viet moi", "viet bai", "new post", "post", "share", "chia se", "bang tin", "feed",
+                                         "dang anh", "dang video"],
+                                dich: .dangBai))
         }
         ds.append(MucTimCTW(id: "act:switch", nhom: .lenh, tenNguon: "Switch project", moTaNguon: coDuAn ? "All projects…" : "Choose a project",
                             bieuTuong: "arrow.left.arrow.right", tuKhoa: ["doi du an", "chon du an", "all projects", "tat ca du an", "projects"],

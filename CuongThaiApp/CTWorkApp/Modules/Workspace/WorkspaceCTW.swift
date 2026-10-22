@@ -14,6 +14,7 @@ struct WorkspaceCTW: View {
     @State private var tab: Tab = .portfolio
     @State private var ws: Int?
     @State private var khongCoWs = false
+    @ObservedObject private var bangTin = KhoBangTinCTW.shared
 
     enum Tab: String, Hashable { case portfolio, workload, teams, agents }
 
@@ -46,6 +47,17 @@ struct WorkspaceCTW: View {
         .background(AppColors.backgroundPrimary)
         .navigationTitle(app.luaChon?.tenKhongGian ?? String(localized: "Workspace"))
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            // Bảng tin của không gian (Modules/BangTin) — chỉ khi máy chủ có và người dùng đọc được không gian này.
+            if let ws, let s = bangTin.khongGian(ws), bangTin.hoTro == true {
+                ToolbarItem(placement: .primaryAction) {
+                    NavigationLink(value: RouteBangTinCTW.khongGian(ws: ws, ten: s.workspace.name ?? "")) {
+                        Label("Feed", systemImage: "newspaper")
+                    }
+                    .accessibilityIdentifier("workspace.feed")
+                }
+            }
+        }
         .task { await timWs() }
         #if DEBUG
         .onAppear {

@@ -14,6 +14,7 @@ import Foundation
 //      chọn đúng dự án, chuyển tới chỗ của mô-đun, đặt `AppState.dichCho` để
 //      mô-đun tự mở phần con. Mô-đun mới nhận deep link KHÔNG cần sửa tệp này.
 //   3. Không mô-đun nào nhận ⇒ mở bảng của dự án.
+//   (Bảng tin: `/work/<ws>/feed?post=` ⇒ `KhoBangTinCTW.moBai` — My Work đẩy màn bài.)
 
 enum DinhTuyenCTW {
     @MainActor
@@ -44,6 +45,19 @@ enum DinhTuyenCTW {
         if duongDan.hasPrefix("ctwork://"), let u = URL(string: duongDan) { mo(url: u); return }
         let app = AppState.shared
         guard app.isAuthenticated, let d = DuongDanCTW.tach(duongDan) else { return }
+
+        // Bảng tin: `/work/<ws>/feed?post=<id>(&comment=<cid>)` — MỌI bài (cả bài dự án) dùng đường cấp không gian
+        // (hợp đồng api-backend `docs/ctw-feed-hop-dong-api.md` §9) ⇒ My Work đẩy màn bài, cuộn tới bình luận.
+        if let f = DichBangTin.tach(duongDan) {
+            KhoBangTinCTW.shared.moBai(f)
+            return
+        }
+        // `/work/<ws>/feed` (trang bảng tin không gian của web) ⇒ bảng tin không gian; chưa biết phạm vi ⇒ My Work › Bảng tin.
+        if d.maDuAn == "feed", d.doan == nil {
+            if let s = KhoBangTinCTW.shared.khongGian(slug: d.slug) { KhoBangTinCTW.shared.moKhongGian(s.workspace) }
+            else { UserDefaults.standard.set(2, forKey: "ctw.myWork.che"); app.muc = .viecCuaToi }
+            return
+        }
 
         if d.doan == "issue", let ma = d.maDuAn, let so = d.phanCon.first.flatMap(Int.init) {
             app.muc = .viecCuaToi
