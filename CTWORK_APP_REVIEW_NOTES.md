@@ -94,7 +94,14 @@ trên web, không cần chạm DB):
 
 ## Cho người duyệt (dán vào App Review Notes)
 
-Viết lại 22/10/2026 cho **bản nộp 1.0.0 (6)** — bản đầu lên App Store gồm TẤT CẢ: Board, CuongMini, Tìm ⌘K, **Bảng tin**
+**Build 1.0.0 (7) — 22/10/2026:** khối dưới là bản ĐANG DÙNG, giữ TRÙNG KHÍT với `~/Documents/ctwork-appstore/APP-STORE-CONNECT.md`
+§6. Thêm so với build 6: **Sign in with Google** (Apple vẫn đứng đầu — 4.8), đoạn **bộ lọc nội dung phía máy chủ** + hàng chờ
+kiểm duyệt có báo admin tức thì (api-backend 346b9465 + 48d4d79a, nhánh `ctw-review-fix`), **báo cáo một tin nhắn ⇒ ẩn tin đó
+với người báo cáo**, GIF lọc **PG** (1b58f966, trước là PG-13). **3883 ký tự** (CRLF: 3913) — trần 4000.
+⚠️ Các đoạn này chỉ ĐÚNG khi backend nhánh `ctw-review-fix` (lọc nội dung, messageId, GIF PG, aud Google 00a6c513) đã deploy
+TRƯỚC khi bấm Submit.
+
+Ghi chú từ build 6 (vẫn đúng — bản 6 viết lại 22/10/2026): bản đầu lên App Store gồm TẤT CẢ: Board, CuongMini, Tìm ⌘K, **Bảng tin**
 (My Work › Bảng tin + từng dự án), **Hồ sơ** (đổi ảnh đại diện/bìa đồng bộ web; hồ sơ người khác), **tin nhắn kiểu Messenger**
 (cảm xúc, trả lời, chuyển tiếp, GIF/nhãn dán, tin thoại, thu hồi, Đã xem, đang gõ), Thành viên/trạng thái hoạt động.
 **3838 ký tự** (xuống dòng CRLF: 3868) — trần 4000. Đếm lại: `python3 -c "print(len(open('f').read().rstrip()))"`.
@@ -110,24 +117,24 @@ không lưu truy vấn).
 CT Work is a free team work-management app (issues, boards, sprints, team feed, chat and direct messages, meetings, docs, Code, CuongMini AI assistant) for teams on cuongthai.com. No purchases, prices or purchase links (3.1.1).
 
 SIGN IN
-Enter the USERNAME ctworkdemo (not the email) and the password from Sign-In Information. The account owns the "CT Work Demo" workspace, project DEMO: active sprint, issues in every status, a pinned feed post, a poll, comments, chat, a direct conversation with GIFs and reactions, a meeting, a doc, an approval and a connected public GitHub repo. A second member, "Minh (Demo)", wrote the "other person" content. Sign in with Apple is also offered (4.8).
+Enter the USERNAME ctworkdemo (not the email) and the password from Sign-In Information. The account owns the "CT Work Demo" workspace, project DEMO: active sprint, issues in every status, a pinned feed post, a poll, comments, chat, a direct conversation with GIFs and reactions, a meeting, a doc, an approval and a connected public GitHub repo. "Minh (Demo)" wrote the "other person" content. Sign in with Apple (shown first, 4.8) and Sign in with Google are also offered.
 
 WHERE THINGS ARE
 - Board: Projects tab (touch and hold a card to drag it); Backlog, List, More.
-- CuongMini (AI): sparkle button on the project page, "Ask CuongMini" under More, the CuongMini button inside any issue, and "What should I work on today?" in My Work. Answers stream in, link to issues and reply in the language of the question.
+- CuongMini (AI): sparkle button on the project page, "Ask CuongMini" under More, the CuongMini button in any issue, "What should I work on today?" in My Work.
 - Search: magnifying glass on main screens (Cmd+K on iPad).
-- Chat tab: Channels, Messages (Messenger-style: touch and hold for reactions, Reply, Forward, Unsend within 5 min, Report; GIFs, stickers, voice messages, read receipts, typing) and Members (Active now).
-- Feed: My Work > Feed (all spaces), or a project > More > Feed. Post text, photos, videos, files, polls; react, comment and reply.
-- Profiles: tap any avatar (chat, feed, members, issues). Your own: Account > tap your name to change photo, cover, name and bio (synced with the website).
-- Projects > More > Code: Git activity, branches, pull request, source and diffs.
+- Chat tab: Channels, Messages (direct messages with your teammates and contacts on cuongthai.com, same inbox as the website; touch and hold for reactions, Reply, Forward, Unsend within 5 min, Report; GIFs, stickers, voice messages, read receipts) and Members.
+- Feed: My Work > Feed, or a project > More > Feed. Text, photos, videos, files, polls; react, comment, reply.
+- Profiles: tap any avatar. Your own: Account > tap your name (photo, cover, name, bio; synced with the website).
+- Projects > More > Code: Git activity, branches, pull requests, diffs.
 
 USER-GENERATED CONTENT (1.2)
-Community rules are accepted on first launch. Report is on every feed post and comment (... menu), every chat or direct message (touch and hold), every conversation (i > Report) and every profile (... > Report). Feed posts can also be hidden ("Hide post"). Block user is available from posts, comments, messages, conversations and profiles: a blocked user cannot message you and their posts, comments, messages and active status are hidden. Reported content is hidden for the reporter at once. Feed reports go to the space admins (report queue at the top of the feed, "N reports to review") and to our moderation team; all reports are reviewed within 24 hours and the content or the account is removed. Blocked users: Account > Blocked users & hidden content.
+Community rules (zero tolerance) are accepted on first launch. A server-side filter rejects posts, comments, direct messages, chat messages, display names and bios that contain profanity, slurs, explicit sexual terms or threats (Vietnamese and English) before they are saved. Report is on every feed post and comment (... menu), every chat or direct message (touch and hold; a reported message is hidden for the reporter at once), every conversation (i > Report) and every profile (... > Report). Every report goes to our moderation queue with an instant admin alert and is reviewed within 24 hours: the content is removed and the offending account is locked from the same screen. Block user (posts, comments, messages, conversations, profiles): a blocked user cannot message you and their content and active status are hidden. Account > Blocked users & hidden content.
 
 PRIVACY AND AI (4.7, 5.1.2)
-- CuongMini is AI and says so. Before the first request the app explains that the request and the project content needed to answer (issues, comments, docs, files; for Create with CuongMini the brief, files and member names/emails) go to our server and then to a third-party AI model provider (e.g. OpenAI or Anthropic, via an AI gateway) only to produce the answer. Nothing is sent before "Allow and ask"; consent can be withdrawn in Account > Privacy & security. Answers are labelled "AI-generated" with Report.
-- Voice: voice notes in project channels are transcribed by Groq after a separate consent naming Groq ("Allow and record"). Voice messages in direct messages are NOT transcribed or sent to any third party.
-- GIF search goes through our server to GIPHY (search text only, no account data, PG-13).
+- CuongMini is AI and says so. Before the first request the app explains that the request and the project content needed to answer (issues, comments, docs, files; for Create with CuongMini the brief, files and member names/emails) go to our server and are processed by third-party AI model providers (OpenAI GPT, Anthropic Claude) through third-party AI gateway services, only to produce the answer. Nothing is sent before "Allow and ask"; consent can be withdrawn in Account > Privacy & security. Answers are labelled "AI-generated" with Report.
+- Voice notes in project channels are transcribed by Groq after a separate consent naming Groq. Voice messages in direct messages are NOT transcribed or sent to any third party.
+- GIF search goes through our server to GIPHY (search text only, no account data; results rated PG).
 - Active status can be turned off: Account > Privacy & security.
 No data is used for ads or tracking. Policy: cuongthai.com/chinh-sach-bao-mat
 

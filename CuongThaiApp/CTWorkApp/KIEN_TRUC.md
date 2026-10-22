@@ -659,3 +659,27 @@ Bản soát: `~/Documents/ctwork-appstore/AUDIT-REVIEW.md`. Kiểm thử: `CTWor
   hội thoại hỗ trợ + người đã rời nhóm mà web vẫn hiện). Màn danh sách + mô tả mô-đun ghi rõ "Direct messages with your
   teammates and contacts on cuongthai.com".
 
+
+## 25. Build 1.0.0 (7) — Đăng nhập Google · báo cáo một tin · bộ lọc nội dung (22/10/2026)
+
+Kiểm thử: `CTWorkTests/Build7GoogleKiemDuyetTests.swift` · UI: `KhoiDongDangNhapUITests` (Google: vào My Work, huỷ im lặng,
+lỗi, vi/en; `TEST_RUNNER_CTW_CHUP_DN=<thư mục>` lưu ảnh) + `MessengerHoSoUITests` (báo cáo một tin, tin bị chặn giữ nháp).
+- **Google**: `Shared/Auth/GoogleSignIn.swift` biên dịch vào CẢ HAI app (target CTWorkApp khai riêng đường + gói `GoogleSignIn`/
+  `GoogleSignInSwift` trong project.yml). Client iOS RIÊNG (`GIDClientID` + scheme đảo ngược trong `CTWorkApp/Info.plist`; máy
+  chủ nhận `aud` này từ api-backend 00a6c513). `layThongTin()` (cửa sổ Google) tách khỏi `POST /auth/oauth/token` ⇒ lớp
+  "Đang đăng nhập…" chỉ hiện SAU khi cửa sổ Google đóng; huỷ ⇒ `CancellationError` ⇒ im lặng. Nút `NutGoogleCTW` (DangNhapCTW)
+  tự dựng theo quy định thương hiệu Google (trắng/viền #747775 · tối #131314/#8E918F, chữ G CHÍNH HÃNG lấy từ
+  `GoogleSignIn_GoogleSignIn.bundle` — `GoogleSignInService.logoG`), đứng SAU nút Apple, cùng cỡ (4.8). `GoogleSignInButtonView`
+  của app chính nằm trong `#if !CTWORK_APP` (dùng `Haptics` của app chính). `onOpenURL` tách theo scheme
+  (`laURLChuyenHuong`) ⇒ `ctwork://`/Universal Link không bao giờ lọt vào SDK. Màn thử (`CT_XEM_MAN`): KHÔNG mở SDK, trả thân
+  giả; `CT_XEM_GOOGLE=huy|loi`.
+- **R4 — báo cáo MỘT tin nhắn riêng**: nhấn giữ › Report ⇒ `BaoCaoNguoiCTW(tin:)` ⇒ `POST /messages/threads/:id/report
+  {reason, category, messageId}` (api-backend 48d4d79a) ⇒ tin biến khỏi khung chat ngay + khoá ẩn tại máy
+  `TinNhanAPI.khoaAnTin` (`AnNoiDungChungCTW`) ⇒ máy chủ cũ còn trả tin đó thì `locDaAn` vẫn lọc; socket dội lại không hiện.
+  Báo cáo cả hội thoại (ⓘ, hồ sơ) giữ như cũ.
+- **422 `CONTENT_BLOCKED`** (bộ lọc của máy chủ, câu SONG NGỮ "vi · en"): `CTWLoiDich.noiDungBiChan` lấy nửa theo ngôn ngữ app
+  (đi qua `CTW.loi`, `TroLyAICTW.loi`, `DangNhapCTW.cauLoi`); `laNoiDungBiChan(e)` cho nơi cần xử lý riêng. Luật: báo TẠI CHỖ,
+  GIỮ bản nháp, KHÔNG "Thử lại" (gửi lại y nguyên vẫn bị chặn). Bài Bảng tin (đăng lạc quan): bài tạm hiện câu lỗi + "Sửa"
+  (mở lại ô soạn với `NhapBaiCTW` ghi lúc bị chặn). Bình luận bài / bình luận thẻ (+ tấm sửa) / tin nhắn riêng (bong bóng chờ bỏ,
+  chữ + tệp về ô soạn qua `nhapTraLai`) / tin kênh + chuỗi (`HangChoGuiCTW.themKQ` ⇒ `.biChan`, rời hàng chờ) / hồ sơ: dải
+  `CTWErrorBanner` id `ctw.noiDungBiChan` ngay trên ô soạn. Máy chủ giả: chữ chứa `badword` ở mọi cửa ghi ⇒ 422 thật.
