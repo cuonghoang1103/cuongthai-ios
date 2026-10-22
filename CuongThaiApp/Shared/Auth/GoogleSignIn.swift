@@ -33,6 +33,15 @@ enum GoogleSignInError: LocalizedError {
     case that(String)
 
     var errorDescription: String? {
+        #if CTWORK_APP
+        // App CT Work: chữ qua catalog (vi + en, đổi ngay trong app) — khoá là câu tiếng Anh (KIEN_TRUC mục 13).
+        switch self {
+        case .chuaCauHinh: return String(localized: "Sign in with Google isn't set up for this app.")
+        case .khongCoEmail: return String(localized: "Your Google account didn't share an email address, so we couldn't sign you in.")
+        case .khongMoDuocManHinh: return String(localized: "Couldn't open the Google sign-in window.")
+        case .that(let m): return m
+        }
+        #else
         switch self {
         case .chuaCauHinh:
             return "Chưa cấu hình Google Sign-In cho ứng dụng này."
@@ -43,6 +52,7 @@ enum GoogleSignInError: LocalizedError {
         case .that(let m):
             return m
         }
+        #endif
     }
 }
 
@@ -63,6 +73,15 @@ enum GoogleSignInService {
     /// Mở luồng Google rồi đổi lấy phiên của backend.
     @MainActor
     static func dangNhap() async throws -> AuthResponse {
+        let payload = try await layThongTin()
+        return try await APIClient.shared.request(.oauthToken(payload))
+    }
+
+    /// Bước 1 (chỉ phía Google): mở cửa sổ Google, trả thân `POST /auth/oauth/token`. Tách khỏi bước đổi phiên để màn
+    /// đăng nhập CT Work chỉ hiện lớp "Đang đăng nhập…" SAU khi cửa sổ Google đóng (như luồng Apple).
+    /// Người dùng huỷ ⇒ `CancellationError`.
+    @MainActor
+    static func layThongTin() async throws -> [String: Any] {
         guard let clientID else { throw GoogleSignInError.chuaCauHinh }
         guard let vc = manHinhDangHien() else { throw GoogleSignInError.khongMoDuocManHinh }
 
@@ -84,7 +103,11 @@ enum GoogleSignInService {
             throw GoogleSignInError.khongCoEmail
         }
         guard let providerId = nguoiDung.userID else {
+            #if CTWORK_APP
+            throw GoogleSignInError.that(String(localized: "Google didn't return an account ID. Please try again."))
+            #else
             throw GoogleSignInError.that("Google không trả về mã người dùng.")
+            #endif
         }
 
         var payload: [String: Any] = [
@@ -106,8 +129,7 @@ enum GoogleSignInService {
         // endpoint bỏ qua trường thừa, nên gửi trước thì sau này không phải
         // cập nhật app. Giống hệt cách làm với Sign in with Apple.
         if let idToken = nguoiDung.idToken?.tokenString { payload["idToken"] = idToken }
-
-        return try await APIClient.shared.request(.oauthToken(payload))
+        return payload
     }
 
     /// Google cần một UIViewController để trình bày. Lấy từ scene đang hiện,
@@ -125,11 +147,39 @@ enum GoogleSignInService {
     static func nhanURL(_ url: URL) -> Bool {
         GIDSignIn.sharedInstance.handle(url)
     }
+
+    /// URL này là chuyển hướng của Google Sign-In (scheme = client ID đảo ngược `com.googleusercontent.apps.<…>`)?
+    /// Kiểm theo SCHEME chứ không đưa mọi URL cho `GIDSignIn.handle` trước: deep link `ctwork://…` và Universal Link
+    /// không bao giờ được rơi vào SDK (CT Work, build 7).
+    static func laURLChuyenHuong(_ url: URL) -> Bool {
+        guard let sc = url.scheme?.lowercased() else { return false }
+        if let id = clientID {
+            let dao = id.components(separatedBy: ".").reversed().joined(separator: ".").lowercased()
+            if sc == dao { return true }
+        }
+        return sc.hasPrefix("com.googleusercontent.apps.")
+    }
+
+    /// Chữ "G" bốn màu CHÍNH HÃNG — ảnh nằm trong gói tài nguyên của SDK (`GoogleSignIn_GoogleSignIn.bundle/google.png`,
+    /// cùng ảnh `GoogleSignInButton` vẽ). Dùng cho nút tự dựng của CT Work (chữ theo ngôn ngữ app); KHÔNG tự vẽ lại.
+    static var logoG: UIImage? {
+        let ten = "GoogleSignIn_GoogleSignIn"
+        let goi = Bundle.main.path(forResource: ten, ofType: "bundle").flatMap(Bundle.init(path:))
+            ?? Bundle(for: GIDSignIn.self).path(forResource: ten, ofType: "bundle").flatMap(Bundle.init(path:))
+            ?? Bundle.main.path(forResource: "GoogleSignIn", ofType: "bundle").flatMap(Bundle.init(path:))
+        guard let goi else { return nil }
+        return UIImage(named: "google", in: goi, compatibleWith: nil)
+            ?? goi.path(forResource: "google@3x", ofType: "png").flatMap(UIImage.init(contentsOfFile:))
+            ?? goi.path(forResource: "google", ofType: "png").flatMap(UIImage.init(contentsOfFile:))
+    }
     #endif
 }
 
 // MARK: - Nút
 
+#if !CTWORK_APP
+// Nút của APP CHÍNH (`Haptics` chỉ có ở app chính). App CT Work dựng nút riêng ở `DangNhapCTW` — chữ "Continue with
+// Google" phải đổi theo ngôn ngữ trong app, còn nút của SDK chỉ theo ngôn ngữ máy.
 struct GoogleSignInButtonView: View {
     let onSignedIn: (AuthResponse) -> Void
     let onError: (String) -> Void
@@ -175,3 +225,4 @@ struct GoogleSignInButtonView: View {
     }
     #endif
 }
+#endif

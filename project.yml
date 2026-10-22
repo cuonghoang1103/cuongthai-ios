@@ -295,6 +295,9 @@ targets:
       - path: CuongThaiApp/Shared/NgoaiTuyen/KhoNgoaiTuyen.swift
       - path: CuongThaiApp/Shared/Services/ModerationStore.swift
       - path: CuongThaiApp/Shared/Auth/AppleSignIn.swift
+      # Đăng nhập Google (build 7, 22/10/2026): CÙNG dịch vụ với app chính, client iOS RIÊNG của CT Work
+      # (GIDClientID trong CTWorkApp/Info.plist). Nút của app CT Work tự dựng ở DangNhapCTW (chữ theo ngôn ngữ app).
+      - path: CuongThaiApp/Shared/Auth/GoogleSignIn.swift
       - path: CuongThaiApp/Shared/Components/UserAvatarView.swift
       # Máy ảnh (UIImagePickerController) — tự đứng, chỉ UIKit.
       - path: CuongThaiApp/Shared/Views/MayAnh.swift
@@ -330,6 +333,13 @@ targets:
       - package: Kingfisher
       - package: SocketIO
         product: SocketIO
+      # Đăng nhập Google (build 7). GoogleSignIn 8.x có PrivacyInfo.xcprivacy riêng (cả GoogleSignInSwift, AppAuth,
+      # GTMAppAuth, GTMSessionFetcher) — Xcode gộp vào báo cáo quyền riêng tư của app. Chữ G chính hãng lấy từ gói
+      # tài nguyên của SDK (`GoogleSignIn_GoogleSignIn.bundle/google.png`), không tự vẽ.
+      - package: GoogleSignIn
+        product: GoogleSignIn
+      - package: GoogleSignIn
+        product: GoogleSignInSwift
     entitlements:
       path: CuongThaiApp/CTWorkApp/CTWorkApp.entitlements
       properties:

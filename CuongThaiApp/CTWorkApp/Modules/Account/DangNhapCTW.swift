@@ -87,6 +87,10 @@ struct DangNhapCTW: View {
     @State private var hoTen = ""
     @State private var matKhau = ""
     @State private var dangGui = false
+    /// Đang đổi phiên bằng Apple/Google ⇒ lớp chờ luôn nói "Đang đăng nhập…" (kể cả khi tấm đang ở chế độ Đăng ký).
+    @State private var dangOAuth = false
+    /// Cửa sổ Google đang mở (trước khi có lớp chờ) — chặn bấm hai lần.
+    @State private var dangMoGoogle = false
     @State private var loi: String?
     @State private var tamPhu: TrangPhapLyCTW?
     /// Bước xác thực email (mã 6 số) — máy chủ CHẶN đăng nhập khi email chưa
@@ -123,7 +127,7 @@ struct DangNhapCTW: View {
             hero: { gon in HeroDangNhapCTW(gon: gon) },
             tam: { tam },
             lopCho: {
-                LopDangDangNhap(chu: cheDoForm == .dangKy ? String(localized: "Creating your account…") : String(localized: "Signing you in…"),
+                LopDangDangNhap(chu: cheDoForm == .dangKy && !dangOAuth ? String(localized: "Creating your account…") : String(localized: "Signing you in…"),
                                 mau: mauNut) {
                     LinhVatTichViecCTW().frame(width: 104, height: 104)
                 }
@@ -256,6 +260,14 @@ struct DangNhapCTW: View {
             .signInWithAppleButtonStyle(cheDo == .dark ? .white : .black)
             .frame(height: 52)
             .clipShape(Capsule())
+            .accessibilityIdentifier("dangNhap.apple")
+
+            // Google (build 7) — SAU Apple, cùng cỡ (4.8: đã có Sign in with Apple). Nút theo quy định thương hiệu Google:
+            // nền trắng/viền xám (sáng) · nền #131314/viền #8E918F (tối), chữ G chính hãng của SDK.
+            if GoogleSignInService.duocCauHinh {
+                NutGoogleCTW(dangChay: dangMoGoogle, toi: cheDo == .dark) { Task { await google() } }
+                    .disabled(dangGui || dangMoGoogle)
+            }
 
             HStack(spacing: 4) {
                 Text(cheDoForm == .dangKy ? String(localized: "Already have an account?") : String(localized: "Don't have an account?"))
@@ -355,7 +367,8 @@ struct DangNhapCTW: View {
         case .success(let a):
             guard let c = a.credential as? ASAuthorizationAppleIDCredential else { return }
             dangGui = true
-            defer { dangGui = false }
+            dangOAuth = true
+            defer { dangGui = false; dangOAuth = false }
             let batDau = Date()
             do {
                 let res = try await AppleSignInService.authenticate(with: c)
@@ -373,9 +386,73 @@ struct DangNhapCTW: View {
         }
     }
 
+    /// Đăng nhập Google (build 7): cửa sổ Google ⇒ (đóng) lớp "Đang đăng nhập…" ⇒ `POST /auth/oauth/token` ⇒ cùng
+    /// `app.login` như Apple. Huỷ ⇒ im lặng. Cổng quy tắc cộng đồng đứng TRƯỚC màn này (`KhungCTW`) nên đã đồng ý rồi.
+    private func google() async {
+        guard !dangGui, !dangMoGoogle else { return }
+        o = nil
+        loi = nil
+        dangMoGoogle = true
+        let payload: [String: Any]
+        do {
+            payload = try await Self.layThongTinGoogle()
+        } catch is CancellationError {
+            dangMoGoogle = false
+            return
+        } catch {
+            dangMoGoogle = false
+            baoLoi(Self.cauLoiGoogle(error))
+            return
+        }
+        dangMoGoogle = false
+        dangGui = true
+        dangOAuth = true
+        defer { dangGui = false; dangOAuth = false }
+        let batDau = Date()
+        do {
+            let res: AuthResponse = try await APIClient.shared.request(.oauthToken(payload))
+            await doiToiThieu(tu: batDau)
+            RungNhe.xong()
+            app.login(token: res.token, refreshToken: res.refreshToken)
+        } catch {
+            await doiToiThieu(tu: batDau)
+            baoLoi(Self.cauLoi(error))
+        }
+    }
+
+    /// Bước phía Google. DEBUG + máy chủ giả (`CT_XEM_MAN`): không mở SDK (máy mô phỏng/UI test không lái được cửa sổ
+    /// web của Google) — trả thân giả; `CT_XEM_GOOGLE=huy` ⇒ như bấm Huỷ, `=loi` ⇒ lỗi phía Google.
+    @MainActor
+    static func layThongTinGoogle() async throws -> [String: Any] {
+        #if DEBUG
+        if XemThuCTW.man != nil {
+            try? await Task.sleep(nanoseconds: 400_000_000)
+            switch ProcessInfo.processInfo.environment["CT_XEM_GOOGLE"] {
+            case "huy": throw CancellationError()
+            case "loi": throw GoogleSignInError.khongCoEmail
+            default:
+                return ["email": "alex@northwind.example", "provider": "google", "providerId": "xem-thu-google",
+                        "fullName": "Alex Morgan", "idToken": "xem-thu-id-token"]
+            }
+        }
+        #endif
+        return try await GoogleSignInService.layThongTin()
+    }
+
+    /// Lỗi phía Google (trước khi tới máy chủ) — câu của `GoogleSignInError` đã qua catalog; lỗi khác của SDK ⇒ câu chung.
+    static func cauLoiGoogle(_ e: Error) -> String {
+        if let g = e as? GoogleSignInError {
+            if case .that = g { return String(localized: "Sign in with Google didn't complete. Please try again.") }
+            return g.localizedDescription
+        }
+        return String(localized: "Sign in with Google didn't complete. Please try again.")
+    }
+
     /// Lỗi đăng nhập của máy chủ có thể là tiếng Việt (app chính) — app này
     /// chỉ tiếng Anh, nên dịch những câu hay gặp.
     static func cauLoi(_ e: Error) -> String {
+        // Bộ lọc nội dung (422 CONTENT_BLOCKED) — vd tên hiển thị khi đăng ký có từ cấm: câu song ngữ của máy chủ.
+        if case APIError.coMa(let ma, let m) = e, ma == "CONTENT_BLOCKED" { return CTWLoiDich.noiDungBiChan(m) }
         let goc = CTW.loi(e)
         let thap = goc.lowercased()
         if thap.contains("sai tên đăng nhập") || thap.contains("mật khẩu") || thap.contains("invalid credentials") {
@@ -385,6 +462,44 @@ struct DangNhapCTW: View {
         if thap.contains("khoá") || thap.contains("locked") || thap.contains("banned") { return String(localized: "This account is locked. Contact support.") }
         if goc.unicodeScalars.contains(where: { $0.value > 0x2FF }) { return String(localized: "Couldn't sign in. Please check your details and try again.") }
         return goc
+    }
+}
+
+// MARK: Nút "Tiếp tục với Google" — theo quy định thương hiệu Google Sign-In
+//
+// developers.google.com/identity/branding-guidelines: sáng = nền #FFFFFF, viền 1pt #747775, chữ #1F1F1F; tối = nền #131314,
+// viền #8E918F, chữ #E3E3E3; chữ G CHÍNH HÃNG (ảnh trong gói SDK — `GoogleSignInService.logoG`) không đổi màu/không tự vẽ;
+// chữ "Continue with Google" (một trong ba câu được phép). Dáng viên thuốc được phép ⇒ cùng dáng + cao với nút Apple.
+// Chữ đi qua catalog ⇒ đổi ngay theo ngôn ngữ trong app (nút dựng sẵn của SDK chỉ theo ngôn ngữ máy).
+
+struct NutGoogleCTW: View {
+    let dangChay: Bool
+    let toi: Bool
+    let bam: () -> Void
+
+    var body: some View {
+        Button(action: bam) {
+            HStack(spacing: 10) {
+                if dangChay {
+                    ProgressView().tint(toi ? Color(white: 0.89) : Color(white: 0.12)).frame(width: 20, height: 20)
+                } else if let g = GoogleSignInService.logoG {
+                    Image(uiImage: g).resizable().interpolation(.high).scaledToFit().frame(width: 20, height: 20)
+                        .accessibilityHidden(true)
+                }
+                Text("Continue with Google")
+                    .font(.system(size: 19, weight: .medium))
+                    .lineLimit(1).minimumScaleFactor(0.7)
+            }
+            .foregroundColor(toi ? Color(red: 0xE3 / 255, green: 0xE3 / 255, blue: 0xE3 / 255)
+                                 : Color(red: 0x1F / 255, green: 0x1F / 255, blue: 0x1F / 255))
+            .frame(maxWidth: .infinity, minHeight: 52)
+            .background(Capsule().fill(toi ? Color(red: 0x13 / 255, green: 0x13 / 255, blue: 0x14 / 255) : Color.white))
+            .overlay(Capsule().strokeBorder(toi ? Color(red: 0x8E / 255, green: 0x91 / 255, blue: 0x8F / 255)
+                                                : Color(red: 0x74 / 255, green: 0x77 / 255, blue: 0x75 / 255), lineWidth: 1))
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.nhan)
+        .accessibilityIdentifier("dangNhap.google")
     }
 }
 

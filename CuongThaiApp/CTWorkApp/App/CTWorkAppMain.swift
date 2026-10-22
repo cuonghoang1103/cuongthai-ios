@@ -69,7 +69,12 @@ struct CTWorkApp: App {
                     }
                 }
                 .tint(AppColors.primary)
-                .onOpenURL { DinhTuyenCTW.mo(url: $0) }
+                // Chuyển hướng của Google Sign-In (scheme client ID đảo ngược) ⇒ SDK; mọi URL khác (ctwork://…) ⇒ bộ định tuyến
+                // như cũ. Tách theo scheme (`laURLChuyenHuong`) ⇒ deep link không bao giờ lọt vào SDK (build 7).
+                .onOpenURL { u in
+                    if GoogleSignInService.laURLChuyenHuong(u) { _ = GoogleSignInService.nhanURL(u); return }
+                    DinhTuyenCTW.mo(url: u)
+                }
                 // Universal Link https://cuongthai.com/work/... (cần AASA ở máy chủ).
                 .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { act in
                     if let u = act.webpageURL { DinhTuyenCTW.mo(url: u) }

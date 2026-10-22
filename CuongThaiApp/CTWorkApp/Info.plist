@@ -68,14 +68,23 @@
     <key>CTWNhomKeychain</key><string>$(AppIdentifierPrefix)com.cuongthai.ctwork.shared</string>
     <key>NSMicrophoneUsageDescription</key><string>CT Work uses the microphone only while you hold the microphone button to record a voice message for a team chat channel or a direct message.</string>
     <key>NSPhotoLibraryAddUsageDescription</key><string>CT Work adds a photo to your library only when you choose &quot;Save photo&quot; on a chat message.</string>
+    <!-- Đăng nhập Google (build 7, 22/10/2026): client loại iOS RIÊNG của app này (project Google 20442169272, Bundle ID
+         com.cuongthai.ctwork — tệp client_…plist tải từ Google Cloud). Máy chủ chấp nhận `aud` này (api-backend
+         auth AUD_GOOGLE, 00a6c513). Scheme đảo ngược bên dưới nhận chuyển hướng của Google (`GIDSignIn.handle`). -->
+    <key>GIDClientID</key><string>20442169272-u34g5m8cu3icggucjmmdmcb6cakc20u5.apps.googleusercontent.com</string>
     <!-- `ctwork://issue/KEY-12`, `ctwork://work/<ws>/<KEY>/issue/12` — app chính
-         (và thông báo) mở thẳng một thẻ. -->
+         (và thông báo) mở thẳng một thẻ. Mục thứ hai: chuyển hướng của Google Sign-In. -->
     <key>CFBundleURLTypes</key>
     <array>
         <dict>
             <key>CFBundleURLName</key><string>com.cuongthai.ctwork</string>
             <key>CFBundleURLSchemes</key>
             <array><string>ctwork</string></array>
+        </dict>
+        <dict>
+            <key>CFBundleURLName</key><string>com.cuongthai.ctwork.google</string>
+            <key>CFBundleURLSchemes</key>
+            <array><string>com.googleusercontent.apps.20442169272-u34g5m8cu3icggucjmmdmcb6cakc20u5</string></array>
         </dict>
     </array>
 </dict>
