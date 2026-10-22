@@ -168,6 +168,7 @@ struct ChatRiengCTW: View {
     @ObservedObject private var kho = KhoTinNhanCTW.shared
     @ObservedObject private var kd = ModerationStore.shared
     @State private var chu = ""
+    @State private var ghimDay = GhimDayChatCTW()
     @State private var traLoi: Message?
     @State private var anhChon: [PhotosPickerItem] = []
     @State private var anhCho: [Data] = []
@@ -238,17 +239,30 @@ struct ChatRiengCTW: View {
                     Color.clear.frame(height: 4).id("cuoi")
                 }
                 .padding(.top, 8)
+                // Ảnh tải xong (khung theo tỉ lệ thật) làm nội dung cao thêm ⇒ giữ dính đáy (cùng luật kênh chat).
+                .onGeometryChange(for: CGRect.self) { $0.frame(in: .named("dm.cuon")) } action: { khung in
+                    if ghimDay.doNoiDung(khung) { cuon.scrollTo("cuoi", anchor: .bottom) }
+                }
             }
+            .coordinateSpace(.named("dm.cuon"))
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { cao in
+                if ghimDay.doKhung(cao) { cuon.scrollTo("cuoi", anchor: .bottom) }
+            }
+            .modifier(PhaCuonChatCTW(ghim: ghimDay))
             .scrollDismissesKeyboard(.interactively)
             .defaultScrollAnchor(.bottom)   // mở hội thoại ở tin mới nhất
             .onChange(of: vm.tin.last?.id) { _, _ in withAnimation { cuon.scrollTo("cuoi", anchor: .bottom) } }
-            .onChange(of: vm.dangTai) { _, _ in cuon.scrollTo("cuoi", anchor: .bottom) }
+            .onChange(of: vm.dangTai) { _, dang in
+                if !dang { ghimDay.batDauNap() }
+                cuon.scrollTo("cuoi", anchor: .bottom)
+            }
         }
         .overlay {
             if vm.dangTai && vm.tin.isEmpty { ProgressView() }
             else if let l = vm.loi, vm.tin.isEmpty { CTWOLoi(loi: l) { Task { await vm.tai() } } }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) { oSoan }
+        .modifier(BoFocusKhiAnBanPhimCTW(dangGo: $dangSoan))
         .background(AppColors.backgroundPrimary)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)   // như Messenger: khung chat chiếm trọn màn
@@ -596,9 +610,21 @@ struct BongTinCTW: View {
         .accessibilityElement(children: .combine)
     }
 
-    private var luoiAnh: some View {
+    @ViewBuilder private var luoiAnh: some View {
         let ds = m.anh.compactMap { DuongDanAnh.urlAnh($0) ?? URL(string: $0) }
-        return LazyVGrid(columns: Array(repeating: GridItem(.fixed(ds.count == 1 ? 220 : 108), spacing: 4), count: min(2, max(1, ds.count))), spacing: 4) {
+        if ds.count == 1, let u = ds.first {
+            // Một ảnh: đúng tỉ lệ ảnh (aspect-fit như Messenger), không cắt vuông 220×220.
+            AnhVuaTiLeCTW(url: u, khoa: "dm-\(u.absoluteString)", toiDa: CGSize(width: 240, height: 300), bo: 16) { ProgressView() }
+                .contentShape(Rectangle())
+                .onTapGesture { xemAnh(u) }
+                .accessibilityLabel("Photo")
+        } else {
+            luoiNhieuAnh(ds)
+        }
+    }
+
+    private func luoiNhieuAnh(_ ds: [URL]) -> some View {
+        LazyVGrid(columns: Array(repeating: GridItem(.fixed(ds.count == 1 ? 220 : 108), spacing: 4), count: min(2, max(1, ds.count))), spacing: 4) {
             ForEach(ds, id: \.self) { u in
                 KFImage(u).placeholder { Rectangle().fill(AppColors.backgroundSecondary).overlay(ProgressView()) }
                     .resizable().scaledToFill()

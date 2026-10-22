@@ -20,6 +20,36 @@ struct TepNhapCTW: Identifiable, Equatable {
     var tep: CTWChatFile? { if case .xong(let f) = tt { return f }; return nil }
 }
 
+/// iPad: người dùng ẨN bàn phím ảo (phím ⌨︎↓) mà ô soạn VẪN giữ con trỏ ⇒ iPadOS còn báo một khung bàn phím thấp (thanh
+/// phím tắt thu nhỏ) và SwiftUI chừa chỗ cho nó ⇒ ô soạn lơ lửng trên một dải trống (ảnh lỗi 11, 22/10/2026). Thấy bàn phím
+/// ĐANG cao (> 200pt) mà thu còn thấp (< 120pt) khi ô vẫn focus ⇒ bỏ focus như Messenger ⇒ khung bàn phím về 0, ô soạn về đáy.
+/// Gõ bằng bàn phím rời từ đầu (bàn phím ảo chưa từng cao) thì không đụng tới. Chỉ iPad — iPhone không có trạng thái này.
+struct BoFocusKhiAnBanPhimCTW: ViewModifier {
+    var dangGo: FocusState<Bool>.Binding
+    @State private var caoTruoc: CGFloat = 0
+
+    func body(content: Content) -> some View {
+        content.onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillChangeFrameNotification)) { n in
+            guard UIDevice.current.userInterfaceIdiom == .pad,
+                  let cuoi = (n.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue else { return }
+            let man = (n.object as? UIScreen)?.bounds ?? CGRect(x: 0, y: 0, width: cuoi.width, height: cuoi.maxY)
+            let cao = Self.caoHien(khung: cuoi, man: man)
+            if Self.nenBoFocus(caoTruoc: caoTruoc, caoMoi: cao, dangFocus: dangGo.wrappedValue) { dangGo.wrappedValue = false }
+            caoTruoc = cao
+        }
+    }
+
+    /// Phần bàn phím đè lên màn (từ mép trên khung bàn phím tới đáy màn).
+    static func caoHien(khung: CGRect, man: CGRect) -> CGFloat {
+        guard !khung.isNull, khung.width > 0 else { return 0 }
+        return max(0, min(khung.height, man.maxY - khung.minY))
+    }
+
+    static func nenBoFocus(caoTruoc: CGFloat, caoMoi: CGFloat, dangFocus: Bool) -> Bool {
+        dangFocus && caoTruoc > 200 && caoMoi < 120
+    }
+}
+
 struct SoanTinCTW: View {
     let pid: Int
     let cid: Int
@@ -95,6 +125,7 @@ struct SoanTinCTW: View {
             if ghi.trangThai == .dangGhi { hangGhiAm } else { hangNhapChu }
         }
         .background(.bar)
+        .modifier(BoFocusKhiAnBanPhimCTW(dangGo: $dangGo))
         .onChange(of: chu) { _, s in chuDoi?(s) }
         .alert(CongBoGiongNoiCTW.tieuDe, isPresented: $hoiDongY) {
             Button("Allow and record") {

@@ -59,6 +59,8 @@ struct KenhChatCTW: View {
     @State private var tamPhu: TamPhuChatCTW?
     @State private var xemNhanh: URL?
     @State private var dangMoTep = false
+    /// Dính đáy khi nội dung đổi cao (ảnh tải xong) — lớp tham chiếu, đổi không vẽ lại view.
+    @State private var ghimDay = GhimDayChatCTW()
     @Environment(\.horizontalSizeClass) private var beRong
     @Environment(\.openURL) private var moUrl
 
@@ -213,7 +215,18 @@ struct KenhChatCTW: View {
                 .padding(.top, 8)
                 .frame(maxWidth: 820)
                 .frame(maxWidth: .infinity)
+                // Ảnh tải xong / tin dựng lười làm nội dung CAO thêm SAU lần cuộn xuống đáy đầu tiên ⇒ tin cuối bị đẩy
+                // khuất (ảnh lỗi 10/10b, iPad). Đang dính đáy (và người dùng không đang cuộn) ⇒ cuộn lại xuống đáy.
+                .onGeometryChange(for: CGRect.self) { $0.frame(in: .named("kenhChat.cuon")) } action: { khung in
+                    if ghimDay.doNoiDung(khung), vm.cuonToi == nil { cuon.scrollTo("day", anchor: .bottom) }
+                }
             }
+            .coordinateSpace(.named("kenhChat.cuon"))
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { cao in
+                // Khung đổi cao (bàn phím, băng lỗi, dải "đang gõ") khi đang ở đáy ⇒ giữ tin cuối trong tầm nhìn.
+                if ghimDay.doKhung(cao), vm.cuonToi == nil { cuon.scrollTo("day", anchor: .bottom) }
+            }
+            .modifier(PhaCuonChatCTW(ghim: ghimDay))
             .scrollDismissesKeyboard(.interactively)
             .defaultScrollAnchor(.bottom)
             .refreshable { await vm.tai() }
@@ -221,7 +234,11 @@ struct KenhChatCTW: View {
             // Lần nạp đầu: dữ liệu đến SAU khi ScrollView đã dựng ⇒ `defaultScrollAnchor`
             // không áp ⇒ cuộn tay xuống tin mới nhất (trừ khi deep link đòi một tin cụ thể).
             .onChange(of: vm.daTai) { _, xong in
-                guard xong, vm.cuonToi == nil, toiTin == nil else { return }
+                guard xong, vm.cuonToi == nil, toiTin == nil else {
+                    if toiTin != nil { ghimDay.dinh = false }
+                    return
+                }
+                ghimDay.batDauNap()
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { cuon.scrollTo("day", anchor: .bottom) }
             }
             .onChange(of: vm.tin.last?.id) { _, _ in
@@ -517,5 +534,76 @@ enum CuocGoiCTW {
     @MainActor
     static func mo(_ u: URL, moUrl: OpenURLAction) {
         moUrl(u)
+    }
+}
+
+// MARK: - Dính đáy khung chat (22/10/2026)
+//
+// Ảnh lỗi 10/10b (iPad): mở kênh ⇒ cuộn xuống đáy ⇒ ẢNH trong tin tải xong (khung đổi theo tỉ lệ thật) / hàng LazyVStack
+// dựng xong cao hơn ước lượng ⇒ nội dung cao thêm, vị trí cuộn giữ nguyên ⇒ mấy tin cuối nằm khuất dưới ô soạn tới khi
+// người dùng tự cuộn. Luật: đang DÍNH ĐÁY (cách đáy ≤ 80pt) mà nội dung đổi cao và người dùng KHÔNG đang cuộn ⇒ cuộn lại
+// xuống đáy; người dùng cuộn lên ⇒ thôi dính (đọc tin cũ không bị giật xuống).
+// Biết "người dùng đang cuộn" nhờ `onScrollPhaseChange` (iOS 18+). iOS 17 không có ⇒ chỉ tự dính trong `cuaSoIOS17`
+// giây đầu sau khi nạp (lúc ảnh đang tải), sau đó không tự cuộn khi đổi cao — tránh giành cuộn với người dùng khi
+// LazyVStack dựng hàng phía trên.
+
+@MainActor
+final class GhimDayChatCTW {
+    static let cuaSoIOS17: TimeInterval = 6
+
+    var dinh = true
+    var nguoiDangCuon = false
+    /// iOS 18+: `nguoiDangCuon` có thật (từ pha cuộn).
+    var coPha = false
+    private(set) var caoKhung: CGFloat = 0
+    private var khungTruoc: CGRect?
+    private var hanTuGhim: Date = .distantFuture
+
+    func batDauNap() {
+        dinh = true
+        hanTuGhim = Date().addingTimeInterval(Self.cuaSoIOS17)
+    }
+
+    /// Khung nội dung (trong hệ toạ độ của ScrollView) vừa đổi. Trả `true` nếu nên cuộn xuống đáy.
+    func doNoiDung(_ moi: CGRect) -> Bool {
+        defer { khungTruoc = moi }
+        guard let cu = khungTruoc, caoKhung > 0 else { return false }
+        let dangCuon = nguoiDangCuon || (!coPha && Date() > hanTuGhim)
+        let kq = Self.luat(dinh: dinh, doiCao: abs(moi.height - cu.height) > 0.5,
+                           cachDay: moi.maxY - caoKhung, nguoiDangCuon: dangCuon)
+        dinh = kq.dinh
+        return kq.cuon
+    }
+
+    /// Khung nhìn của ScrollView đổi cao. Trả `true` nếu nên cuộn xuống đáy (đang dính đáy).
+    func doKhung(_ cao: CGFloat) -> Bool {
+        let doi = caoKhung > 0 && abs(cao - caoKhung) > 0.5
+        caoKhung = cao
+        return doi && dinh && !nguoiDangCuon
+    }
+
+    /// Luật thuần (có kiểm thử): nội dung đổi cao khi người dùng không cuộn ⇒ giữ trạng thái dính, cuộn nếu đang dính;
+    /// còn lại (vị trí cuộn đổi) ⇒ dính khi cách đáy ≤ ngưỡng.
+    nonisolated static func luat(dinh: Bool, doiCao: Bool, cachDay: CGFloat, nguoiDangCuon: Bool,
+                                 nguong: CGFloat = 80) -> (dinh: Bool, cuon: Bool) {
+        if doiCao && !nguoiDangCuon { return (dinh, dinh && cachDay > 0.5) }
+        return (cachDay <= nguong, false)
+    }
+}
+
+/// iOS 18+: báo cho `GhimDayChatCTW` lúc người dùng đang kéo/trôi (không tự cuộn giành tay).
+struct PhaCuonChatCTW: ViewModifier {
+    let ghim: GhimDayChatCTW
+
+    func body(content: Content) -> some View {
+        if #available(iOS 18.0, *) {
+            content
+                .onAppear { ghim.coPha = true }
+                .onScrollPhaseChange { _, pha in
+                    ghim.nguoiDangCuon = pha == .interacting || pha == .decelerating || pha == .tracking
+                }
+        } else {
+            content
+        }
     }
 }
