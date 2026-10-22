@@ -19,7 +19,7 @@ CuongThaiApp/
 │  │   CTWAPI+<Ten>.swift           đường API của mô-đun
 │  │   CTWModels+<Ten>.swift        model Codable của mô-đun
 │  │   <Ten>CTW.swift …             màn
-│  │   (hiện có: MyWork · Project · Board · Backlog · Docs · Chat · Meetings · Inbox · Account …)
+│  │   (hiện có: MyWork · Project · Board · Backlog · Docs · Chat · Meetings · Inbox · Account · BangTin …)
 │  ├─ Debug/XemThuCTW.swift         máy chủ GIẢ + dữ liệu mẫu (chỉ #if DEBUG)
 │  ├─ Info.plist · PrivacyInfo.xcprivacy · CTWorkApp.entitlements (xcodegen sinh) · Assets.xcassets
 │  └─ KIEN_TRUC.md                  (tệp này — bị loại khỏi gói, xem project.yml `excludes`)
@@ -525,3 +525,50 @@ Mẫu: hai video chủ app gửi 21/10 (app giao hàng "Parcel": hero minh hoạ
 - **Kiểm thử**: `CTWorkTests/KhoiDongCTWTests.swift` (lịch: khôi phục trước/giữa/sau, trần, bỏ qua; bộ điều phối chạy thật; điều kiện
   dựng; âm trong gói; công tắc mặc định; pháo) + `CTWorkUITests/KhoiDongDangNhapUITests.swift` (mở nguội ⇒ màn khởi động tự thoát ⇒
   sai mật khẩu ⇒ lỗi ⇒ đúng ⇒ My Work; chạm bỏ qua; đổi sang Đăng ký và lại).
+
+## 22. Bảng tin (Team Feed) — bản 1.1 (22/10/2026)
+
+Hợp đồng: `api-backend/docs/ctw-feed-hop-dong-api.md` (nhánh `ctw-feed`). Mã: `Modules/BangTin/`. Hai cấp **không gian + dự án**;
+CLIENT không bao giờ thấy; AI agent không đọc/ghi (máy chủ 403).
+
+| Lối vào | Ở đâu |
+|---|---|
+| My Work › phân đoạn **Bảng tin** (`ctw.myWork.che = 2`) | `ViecCuaToiCTW` ⇒ `BangTinCTW(cheDo: .gop)` — GỘP mọi phạm vi; chip lọc: Mọi nơi/không gian/dự án (menu) · Tất cả · Bài của tôi · Ảnh & video · Đã lưu · Tệp |
+| Mô-đun dự án `feed` (`MoDunBangTin.swift`, nhóm Giao tiếp) | trang dự án › More: thẻ nổi bật `TheBangTinDuAnCTW` (dưới CuongMini) · iPad: mục "Bảng tin" trong khối Project (kể cả khi chưa ghim) · More tools · ⌘K |
+| Bảng tin KHÔNG GIAN | bảng chọn dự án (dòng "Bảng tin không gian" đầu mỗi không gian ⇒ `KhoBangTinCTW.moKhongGian`) · nút "Feed" trên Portfolio & workload |
+| ⌘K | `app:feed` (Bảng tin) + lệnh `act:post` (Đăng bài ⇒ tấm phủ `DieuHuongTimCTW.TamPhu.dangBai`) + từ khoá `feed` trong `CTWTuKhoaMoDun` |
+
+- **Máy chủ cũ (1.1 chạy với backend chưa có tuyến):** `KhoBangTinCTW.kiemHoTro()` tự gọi `GET /feed/scopes` (cần MÃ HTTP —
+  `APIClient` bỏ mã trên đường lỗi): 404/405/501 ⇒ `hoTro = false` (nhớ qua lần mở) ⇒ ẩn MỌI lối vào (phân đoạn, mô-đun, ⌘K,
+  cài đặt thông báo, socket không `work:feed:subscribe`). 5xx/mất mạng ⇒ giữ kết luận cũ. `hien` = có tuyến + ≥ 1 phạm vi đọc được.
+- **Tệp:** `KhoBangTinCTW` (trạng thái chung, đăng lạc quan, đích chờ `canMo`, nháp) · `BangTinVM` (trang con trỏ, ghim, socket,
+  thao tác lạc quan) · `BangTinLogic.swift` (THUẦN, có kiểm thử: cảm xúc, gộp trang/chống trùng, bài tạm, bố cục lưới, đường dẫn sâu,
+  @nhắc/#tag/link/mã thẻ, @ đang gõ) · `TheBaiCTW` (thẻ bài + nút Thích/bảng 6 cảm xúc) · `PhuongTienBaiCTW` (lưới 1/2/3/4+ "+N",
+  xem toàn màn: lật trang + UIScrollView phóng to + kéo xuống để đóng, video AVPlayer chạm-để-phát, tệp ⇒ Xem nhanh, thẻ link, thẻ CT
+  Work, bình chọn) · `BinhLuanBaiCTW` (tấm phủ bình luận + `KhungBinhLuanCTW` dùng lại ở màn chi tiết, "Ai đã bày tỏ") ·
+  `SoanBaiCTW` (ô soạn) · `DieuPhoiBaiCTW` (MỘT tấm phủ + định tuyến link) · `BaoCaoBangTinCTW` (báo cáo + hàng chờ kiểm duyệt) ·
+  `CaiDatBangTinCTW` (mức theo dõi) · `MoDunBangTin` (mô-đun, màn dự án/không gian/chi tiết bài, `RouteBangTinCTW`).
+- **URL ký sống 10 phút:** ảnh đệm theo khoá CỐ ĐỊNH `ctwfeed-<id>-<kiểu>` (Kingfisher); hết hạn ⇒ `GET /feed/attachments/:id/url`.
+- **Ô soạn:** nơi đăng theo `canPost`; tệp tải NGAY khi chọn (ảnh nén cạnh dài ≤ 2048 px JPEG 0,82 ⇒ đường A multipart; video ≤ 200 MB
+  ⇒ đường B URL ký + ảnh bìa `AVAssetImageGenerator`; tệp ≤ 25 MB đường A, ≤ 100 MB đường B), % + huỷ (`URLSession.shared.upload(…,
+  delegate:)` — task delegate để máy chủ giả vẫn chặn được). Tệp nháp thuộc MỘT không gian ⇒ đã có tệp thì chỉ đổi nơi đăng trong cùng
+  không gian. Đóng lỡ tay ⇒ nháp (`NhapBaiCTW`, theo user id). Đăng ⇒ đóng ngay, bài TẠM (id âm, `khoaTam`) lên đầu mọi bảng tin khớp
+  phạm vi, `POST` kèm `clientKey`; hỏng ⇒ "Thử lại" gửi lại CÙNG khoá (máy chủ không tạo bài thứ hai).
+- **1.2 (UGC):** mọi bài/bình luận của người khác có Báo cáo (`/feed/posts|comments/:id/report`, 6 lý do của hợp đồng + "chặn luôn"),
+  Ẩn bài (`/hide`, Hoàn tác), Chặn tác giả (chặn của SITE — `ModerationStore`); bình luận của người đã chặn thu gọn. Quản trị: Ghim
+  (≤ 5), Gỡ/Khôi phục, Xoá, hàng chờ `/feed/reports` (dải "N báo cáo cần xem xét").
+- **Thời gian thực:** `RealtimeCTW.suKienBangTin` (`work:feed:event`; gửi `work:feed:subscribe` sau MỖI lần nối) ⇒ viên "N bài mới",
+  bộ đếm bình luận, tải lại một bài (gộp sự kiện). Mất socket ⇒ `/feed/new-count` mỗi 60 s khi màn đang hiện.
+- **Thông báo:** đường dẫn sâu `/work/<ws>/feed?post=<id>&comment=<cid>` (`DichBangTin.tach`) ⇒ `DinhTuyenCTW` ⇒ `KhoBangTinCTW.moBai`
+  ⇒ My Work đẩy `ChiTietBaiCTW` (cuộn + tô sáng bình luận). Nút Reply trên thông báo ⇒ `HanhDongThongBaoCTW.traLoi` bình luận vào BÀI
+  (`parentId` = bình luận được trả lời). Cài đặt thông báo: công tắc `push.feed` + "Thông báo Bảng tin theo không gian & dự án"
+  (`PUT /feed/follow` ALL/MENTIONS/OFF). Chạm lại tab My Work ⇒ `ChamLaiTabCTW` ⇒ bảng tin cuộn lên đầu.
+- **Bố cục:** cột giữa ≤ 680 pt (iPad như LinkedIn), ô soạn = sheet lớn (iPhone) / form sheet (iPad), khung xương `.anhLuot()`, thẻ hiện
+  lần lượt ở lần nạp đầu, ô trống có minh hoạ + "Tạo bài viết đầu tiên". VoiceOver: nút Thích có 6 tác vụ "Bày tỏ …", ảnh đọc alt +
+  "Ảnh 2/5".
+- **Màn thử** (`Debug/XemThuCTW+BangTin.swift`): `bangtin` · `mod:feed` · `mod:feed/bai` + `CT_XEM_FEED_MO=binhluan|soan|xemanh|video`,
+  `CT_XEM_FEED_MOI=3` (viên bài mới), `CT_XEM_FEED_TRONG=1`, `CT_XEM_FEED=0` (máy chủ cũ ⇒ 404), `CT_XEM_FEED_ANH=1` (nút Ảnh thêm ảnh mẫu
+  — UI test không lái bảng chọn ảnh hệ thống).
+- **Kiểm thử:** `CTWorkTests/BangTinCTWTests.swift` (giải mã ví dụ JSON của hợp đồng + dữ liệu mẫu, logic thuần, máy chủ cũ, định tuyến) ·
+  `CTWorkUITests/BangTinUITests.swift` (cuộn/tải trang sau, Thích + giữ ⇒ Love, bình luận, đăng bài có ảnh, báo cáo, máy chủ cũ;
+  `TEST_RUNNER_CTW_CHUP_FEED=<thư mục>` ⇒ ảnh chụp tiếng Việt).
