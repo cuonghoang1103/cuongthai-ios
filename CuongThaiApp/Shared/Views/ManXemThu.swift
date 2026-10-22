@@ -33,6 +33,8 @@ struct ManXemThu: View {
             case "tudien": TuDienView(ngonNgu: tiengNhat)
             case "lotrinh": LoTrinhView(ngonNgu: tiengNhat)
             case "phongthi": PhongThiView()
+            // Phòng thi đợt 2 (PE, xem lại, kết quả…) — `CT_XEM_MAN=thi-<kiểu>`, xem `ThuPhongThi`.
+            case let k where k.hasPrefix("thi-"): ThuPhongThi(kieu: k)
             case "noidungthi": ThuNoiDungThi()
             case "logo": ThuLogo()
             // Chế độ nói chuyện với AI. Không có cửa này thì không soi được:

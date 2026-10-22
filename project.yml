@@ -444,6 +444,28 @@ targets:
         Debug:
           SWIFT_ACTIVE_COMPILATION_CONDITIONS: $(inherited) DEBUG
 
+  # Kiểm thử đơn vị của APP CHÍNH (22/10/2026 — bắt đầu từ Phòng thi): giải mã
+  # khoan dung dữ liệu đề/bản xem lại, bộ ghi .zip, thân multipart.
+  CuongThaiAppTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: CuongThaiApp/CuongThaiAppTests
+    dependencies:
+      - target: CuongThaiApp
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.cuongthai.app.tests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/CuongThaiApp.app/CuongThaiApp
+        BUNDLE_LOADER: $(TEST_HOST)
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: "UR32PFUQ38"
+      configs:
+        Debug:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: $(inherited) DEBUG
+
   CTWorkAppUITests:
     type: bundle.ui-testing
     platform: iOS
@@ -505,6 +527,8 @@ schemes:
       storeKitConfiguration: CuongThaiApp/Pro.storekit
     test:
       config: Debug
+      targets:
+        - CuongThaiAppTests
     profile:
       config: Release
     analyze:

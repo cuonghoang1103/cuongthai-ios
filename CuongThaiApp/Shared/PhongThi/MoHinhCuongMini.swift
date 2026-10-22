@@ -270,3 +270,28 @@ struct BinhLuanCauHoi: Codable, Identifiable, Hashable {
         ds.reduce(0) { $0 + 1 + $1.traLoi.count }
     }
 }
+
+// MARK: - Nối với màn luyện chương (Academy)
+
+extension ViecHoiAI {
+    /// Bảy chip của màn luyện chương → chế độ CuongMini tương ứng.
+    var cheDoCuongMini: CheDoHoi {
+        switch self {
+        case .vaoDe:     return .cachLam
+        case .viSaoSai:  return .viSaoSai
+        case .kienThuc:  return .kienThuc
+        case .ghiNho:    return .cachNho
+        case .loiHayGap: return .loiHayGap
+        case .viDu:      return .viDuTuongTu
+        case .quyTac:    return .tomTatQuyTac
+        }
+    }
+}
+
+extension HoiVeCau {
+    /// id câu đề thi thật khi `HoiVeCau` dựng từ `CauLuyen` (`"luyen-<id>"`).
+    var maCauLuyen: Int? {
+        guard id.hasPrefix("luyen-") else { return nil }
+        return Int(id.dropFirst("luyen-".count))
+    }
+}
