@@ -138,6 +138,18 @@ Camera only for "Take Photo"; microphone only for voice notes; Face ID only for 
 4.3: a separate product from our "CuongThai" learning app: own bundle ID, icon and privacy manifest; none of its courses, social feed or finance.
 ```
 
+### Bản 1.1 — sửa các dòng sau trong khối trên trước khi nộp (2.3: tính năng mới phải khai CỤ THỂ)
+
+Hồ sơ + Tin nhắn kiểu Messenger (KIEN_TRUC §23). Thay dòng "Chat tab" và "PERMISSIONS", thêm dòng "Profile":
+
+```
+- Profile: Account > tap your name. Change your profile photo or cover (photo library or camera, then crop), edit name and bio — the same profile as on cuongthai.com. Tap anyone's avatar (chat, members, feed, issues) to open their profile: Message, View work, and ... > Mute / Copy profile link / Block / Report.
+- Chat tab > Messages: conversation list with Active now, Unread filter, swipe to pin/mute/mark unread/delete for me. In a conversation: touch and hold a message for reactions, Reply, Copy, Forward, Save photo, Unsend (within 5 min) or Report; GIFs and stickers (GIPHY results are rated PG-13 by the server); hold the microphone to record a voice message (slide left to cancel); the i button has mute, nickname, block, report and delete.
+PERMISSIONS
+Camera only for "Take Photo" (attachments and profile photo); microphone only while recording a voice note / voice message; "Save photo" adds a chat photo to your library (add-only); Face ID only for the optional app lock (off by default). Voice messages in direct messages are not transcribed or sent to third parties.
+```
+Đếm lại tổng ký tự (trần 4000) sau khi thay — có thể phải rút gọn dòng "WHAT TO TRY" khác.
+
 ## 5. Phần BACKEND còn thiếu / nên có (không sửa ở phiên app)
 
 > **Cập nhật 18/10/2026 (phiên backend):** mục đánh dấu ✅ đã có trong mã backend — ĐÃ LÊN PROD (commit `d9c35114`

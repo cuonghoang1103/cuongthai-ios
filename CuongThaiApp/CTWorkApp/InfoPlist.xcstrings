@@ -1,7 +1,24 @@
 {
   "sourceLanguage": "en",
-  "version": "1.0",
   "strings": {
+    "CFBundleDisplayName": {
+      "comment": "Tên dưới biểu tượng — giữ 'CT Work' ở mọi ngôn ngữ",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CT Work"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CT Work"
+          }
+        }
+      }
+    },
     "NSCameraUsageDescription": {
       "comment": "Info.plist NSCameraUsageDescription",
       "extractionState": "manual",
@@ -9,13 +26,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "CT Work uses the camera only when you choose \"Take Photo\" to attach a picture to an issue or a chat message."
+            "value": "CT Work uses the camera only when you choose \"Take Photo\" to attach a picture to an issue or a chat message, or to take a new profile photo."
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "CT Work chỉ dùng máy ảnh khi bạn chọn \"Chụp ảnh\" để đính kèm ảnh vào một thẻ hoặc tin nhắn chat."
+            "value": "CT Work chỉ dùng máy ảnh khi bạn chọn \"Chụp ảnh\" để đính kèm ảnh vào một thẻ hoặc tin nhắn chat, hoặc để chụp ảnh đại diện mới."
           }
         }
       }
@@ -45,34 +62,35 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "CT Work uses the microphone only while you record a voice note to send in a team chat channel."
+            "value": "CT Work uses the microphone only while you hold the microphone button to record a voice message for a team chat channel or a direct message."
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "CT Work chỉ dùng micro khi bạn ghi một tin nhắn thoại để gửi vào kênh chat của nhóm."
+            "value": "CT Work chỉ dùng micro khi bạn giữ nút micro để ghi một tin nhắn thoại gửi vào kênh chat của nhóm hoặc tin nhắn riêng."
           }
         }
       }
     },
-    "CFBundleDisplayName": {
-      "comment": "Tên dưới biểu tượng — giữ 'CT Work' ở mọi ngôn ngữ",
+    "NSPhotoLibraryAddUsageDescription": {
+      "comment": "Info.plist NSPhotoLibraryAddUsageDescription",
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "CT Work"
+            "value": "CT Work adds a photo to your library only when you choose \"Save photo\" on a chat message."
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "CT Work"
+            "value": "CT Work chỉ thêm ảnh vào thư viện khi bạn chọn \"Lưu ảnh\" trên một tin nhắn chat."
           }
         }
       }
     }
-  }
+  },
+  "version": "1.0"
 }

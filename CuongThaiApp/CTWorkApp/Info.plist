@@ -12,6 +12,9 @@
   · Chọn ảnh dùng `PhotosPicker` — chạy ngoài tiến trình, KHÔNG cần
     NSPhotoLibraryUsageDescription. Khai thừa = bị trả về (CLAUDE.md A14).
   · Chọn tệp dùng `fileImporter` — không cần quyền.
+  · 1.1 (22/10/2026): NSPhotoLibraryAddUsageDescription — CHỈ THÊM ảnh vào thư viện khi người dùng chọn "Lưu ảnh" trên
+    một tin nhắn (UIImageWriteToSavedPhotosAlbum — quyền "chỉ thêm", không đọc thư viện). Micro: thêm tin nhắn thoại
+    trong tin nhắn riêng (KHÔNG phiên âm, không gửi bên thứ ba). Máy ảnh: thêm chụp ảnh đại diện.
   · Không vị trí, không nhận giọng nói trên máy: app này không dùng.
   · "Add to Calendar" dùng EventKitUI chạy ngoài tiến trình (iOS 17) ⇒ KHÔNG cần quyền Lịch.
   · Mảng D (18/10/2026): NSFaceIDUsageDescription — khoá app bằng Face ID (TUỲ CHỌN, mặc định tắt,
@@ -59,11 +62,12 @@
         <string>UIInterfaceOrientationLandscapeLeft</string>
         <string>UIInterfaceOrientationLandscapeRight</string>
     </array>
-    <key>NSCameraUsageDescription</key><string>CT Work uses the camera only when you choose "Take Photo" to attach a picture to an issue or a chat message.</string>
+    <key>NSCameraUsageDescription</key><string>CT Work uses the camera only when you choose &quot;Take Photo&quot; to attach a picture to an issue or a chat message, or to take a new profile photo.</string>
     <key>NSFaceIDUsageDescription</key><string>If you turn on Face ID lock in Account › Security, CT Work asks for Face ID when you open the app.</string>
     <key>NSSupportsLiveActivities</key><true/>
     <key>CTWNhomKeychain</key><string>$(AppIdentifierPrefix)com.cuongthai.ctwork.shared</string>
-    <key>NSMicrophoneUsageDescription</key><string>CT Work uses the microphone only while you record a voice note to send in a team chat channel.</string>
+    <key>NSMicrophoneUsageDescription</key><string>CT Work uses the microphone only while you hold the microphone button to record a voice message for a team chat channel or a direct message.</string>
+    <key>NSPhotoLibraryAddUsageDescription</key><string>CT Work adds a photo to your library only when you choose &quot;Save photo&quot; on a chat message.</string>
     <!-- `ctwork://issue/KEY-12`, `ctwork://work/<ws>/<KEY>/issue/12` — app chính
          (và thông báo) mở thẳng một thẻ. -->
     <key>CFBundleURLTypes</key>

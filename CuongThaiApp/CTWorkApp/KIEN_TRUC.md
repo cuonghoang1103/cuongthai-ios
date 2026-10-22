@@ -597,3 +597,38 @@ CLIENT không bao giờ thấy; AI agent không đọc/ghi (máy chủ 403).
 - **Kiểm thử:** `CTWorkTests/BangTinCTWTests.swift` (giải mã ví dụ JSON của hợp đồng + dữ liệu mẫu, logic thuần, máy chủ cũ, định tuyến) ·
   `CTWorkUITests/BangTinUITests.swift` (cuộn/tải trang sau, Thích + giữ ⇒ Love, bình luận, đăng bài có ảnh, báo cáo, máy chủ cũ;
   `TEST_RUNNER_CTW_CHUP_FEED=<thư mục>` ⇒ ảnh chụp tiếng Việt).
+
+## 23. Hồ sơ & Tin nhắn kiểu Messenger — bản 1.1 (22/10/2026)
+
+Phản hồi chủ app (ảnh 22/10): danh sách hội thoại trơn, bong bóng phẳng, mốc ngày trên GẦN NHƯ MỌI tin, ô soạn chỉ "+" và ô chữ;
+muốn hồ sơ kiểu Facebook/X/Instagram, đổi ảnh đại diện ngay trong app (đồng bộ web). Mã: `Modules/ThanhVien/`.
+
+| Tệp | Việc |
+|---|---|
+| `TinNhanLogicCTW.swift` | THUẦN, có kiểm thử: `NhomTinCTW` (cùng người ≤ 3 phút ⇒ một nhóm; mốc thời gian CHỈ khi cách > 1 giờ/khác ngày; nhãn dán/emoji lớn/thu hồi đứng riêng) · `GocBongCTW` (góc nối bo 5, còn lại 19) · `ThoiGianNganCTW` ("Vừa xong", "2 phút", "Thứ 4", "12/10") · `NhanMocCTW` · `CamXucCTW` · `TrichDanCTW` · `TomTatTinCTW` · `EmojiLonCTW` · `LienKetCTW` · `TrangGifCTW` · `HoSoAPICTW` · `ChuyenTiepCTW` · `TatThongBaoCTW` · `SapHoiThoaiCTW` · `CatAnhCTW` |
+| `ChatRiengCTW.swift` | VM (gửi LẠC QUAN `TinChoRiengCTW` — hỏng ⇒ Thử lại/Xoá, không mất chữ) + màn: nhóm, "Đã xem" = avatar 15 pt dưới tin cuối người kia đọc tới, "Đã gửi", bong bóng "đang nhập", nút xuống cuối + số tin mới, ⓘ |
+| `BongTinRiengCTW.swift` | bong bóng (trích dẫn ⇒ chạm cuộn tới tin gốc, ảnh aspect-fit §21, GIF `KFAnimatedImage`, nhãn dán, tin thoại `ThoaiCTW` + `TrinhPhatThoaiCTW`, thẻ tệp ⇒ Xem nhanh, emoji lớn, link, viên cảm xúc ⇒ "Ai đã bày tỏ"), mốc, "đang nhập" |
+| `MenuGiuTinRiengCTW.swift` | nhấn giữ: thanh ❤️😂😮😢😡👍 + ＋ (`BangEmojiCTW`), Trả lời · Sao chép · Chuyển tiếp (`ChuyenTiepTinRiengCTW`, như web) · Lưu ảnh · Thu hồi (≤ 5 phút) · Báo cáo |
+| `OSoanTinRiengCTW.swift` | ＋ (Tệp, Nhãn dán) · Máy ảnh · Ảnh · Micro (GIỮ để ghi, trượt trái huỷ, thả gửi — tái dùng `GhiAmCTW`) · ô chữ tự giãn + GIF + 😊 · 👍 khi trống; đang gõ ⇒ thu về "›" |
+| `BangChonGifCTW.swift` | GIF (`/gifs?q=&offset=`, cuộn vô tận, "Powered by GIPHY") + Nhãn dán (`/stickers/packs`) ⇒ `media:{url,kind}` |
+| `ThongTinHoiThoaiCTW.swift` | ⓘ: hồ sơ, tắt thông báo theo thời lượng (`mute-for`), biệt danh, chặn, báo cáo, xoá phía tôi (`/threads/:id/hard`) |
+| `DanhSachTinNhanCTW.swift` | hàng "Đang hoạt động" (chạm ⇒ chat), chip Tất cả · Chưa đọc, ghim lên đầu, vuốt: Đọc/Chưa đọc + Ghim (trái), Xoá + Tắt thông báo (phải), menu nhấn giữ |
+| `HoSoNguoiCTW.swift` | hồ sơ người khác (`HoSoThanhVienCTW` — giữ tên cũ ⇒ mọi lối vào cũ tự lên bản mới): bìa + avatar + trạng thái, @username, chức danh, giới thiệu (`GET /users/:id`), chip vai theo không gian/dự án, Nhắn tin · Xem việc (JQL thẻ đang mở trong dự án chung), menu "…" (Tắt thông báo · Sao chép link `/profile/:id` · Chặn · Báo cáo), Dự án chung, Bài viết gần đây (`/feed?author=`); `.ctwHoSoTamPhu()` |
+| `HoSoCuaToiCTW.swift` | hồ sơ của tôi (Account › thẻ tên): đổi ảnh đại diện/bìa (thư viện · máy ảnh ⇒ `CatAnhView` vuông/ngang ⇒ `POST /files/upload` category `avatars`/`covers` ⇒ `PUT /profile {avatarUrl|coverPhotoUrl}` — CÙNG đường web /settings/profile + app chính ⇒ đồng bộ mọi nơi), sửa tên + giới thiệu, công tắc trạng thái (cùng Account › Quyền riêng tư), lối tắt, không gian & dự án |
+
+- **Chạm avatar ⇒ hồ sơ ở MỌI chỗ:** `Shared/CTWork/CTWUI/CTWMoHoSo.swift` — `.ctwChamMoHoSo(id)` (dùng chung, app chính không cài
+  ⇒ không đổi hành vi) + môi trường `\.ctwMoHoSo` do `.ctwHoSoTamPhu()` đặt ở gốc mỗi cột (`CotNganXepCTW`) và trong tấm phủ của
+  kênh chat. Đã gắn: bong bóng/đầu khung chat 1-1, danh sách hội thoại (menu), Thành viên, Bảng tin (sẵn), kênh chat (avatar tác giả),
+  thẻ (người báo cáo, bình luận). ⚠️ Màn trong `.sheet` muốn mở hồ sơ ⇒ gắn `.ctwHoSoTamPhu()` vào NỘI DUNG sheet đó (sheet chồng sheet).
+- **Không làm (thiếu máy chủ):** sửa tin nhắn riêng (Messenger chung chưa có đường sửa — chỉ thu hồi ≤ 5 phút), xem trước link (máy
+  chủ không trả), chủ đề màu khung chat (không lưu ở máy chủ), "ảnh/tệp đã chia sẻ" của hội thoại (không có API liệt kê), GIF trong
+  kênh dự án (tuyến kênh chỉ nhận `body` chữ). Tin thoại web ghi bằng `audio/webm` (Chrome) iOS không phát ⇒ bong bóng báo "mở tệp".
+- **Quyền mới:** `NSPhotoLibraryAddUsageDescription` ("Lưu ảnh" — chỉ thêm, `UIImageWriteToSavedPhotosAlbum`); chuỗi micro/máy ảnh
+  nói thêm tin nhắn thoại riêng + chụp ảnh đại diện. Tin thoại riêng KHÔNG chép lời (khác voice note kênh ⇒ không cần đồng ý 5.1.2(i)).
+- **Máy chủ:** mọi đường đã có trên production, trừ `offset` của `/api/v1/gifs` (nhánh `ctw-msg2-be`, a52af490) — máy chủ cũ bỏ qua
+  ⇒ `TrangGifCTW` lọc trùng rồi dừng (chỉ 24 GIF / lần tìm).
+- **Màn thử:** `mod:tin-nhan` · `mod:tin-nhan/chat` (+ `CT_XEM_DM=giu|traloi|gif|info|camxuc`, `CT_XEM_DM_GO=1`) · `mod:thanh-vien/hoso`
+  · `hoso` (+ `CT_XEM_ANH_MAU=1` ⇒ "Chọn ảnh" dùng ảnh mẫu). GIF/nhãn dán mẫu do app TỰ VẼ (`/api/v1/__gia/gif|sticker/<n>`,
+  `MediaGiaCTW`) — không đưa GIF người thật vào ảnh chụp; Kingfisher được cấu hình đi qua máy chủ giả (phiên riêng của nó).
+- **Kiểm thử:** `CTWorkTests/MessengerHoSoTests.swift` · `CTWorkUITests/MessengerHoSoUITests.swift` (avatar ⇒ hồ sơ, đổi ảnh đại diện,
+  nhấn giữ thả cảm xúc, trả lời, gửi GIF, lọc Chưa đọc).
