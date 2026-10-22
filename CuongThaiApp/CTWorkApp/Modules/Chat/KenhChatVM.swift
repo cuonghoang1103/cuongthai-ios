@@ -49,6 +49,11 @@ final class KenhChatVM: ObservableObject {
             .filter { [pid, cid = kenh.id] in $0.0.pid == pid && $0.0.cid == cid && $0.0.parentId == nil }
             .sink { [weak self] cap in self?.chen(cap.1) }
             .store(in: &huy)
+        // Tin trong hàng chờ bị bộ lọc chặn lúc gửi lại (có mạng trở lại / Thử lại) ⇒ báo tại chỗ.
+        HangChoGuiCTW.shared.biChan
+            .filter { [pid, cid = kenh.id] in $0.0.pid == pid && $0.0.cid == cid && $0.0.parentId == nil }
+            .sink { [weak self] cap in self?.loi = cap.1 }
+            .store(in: &huy)
     }
 
     // MARK: Vòng đời
@@ -134,9 +139,17 @@ final class KenhChatVM: ObservableObject {
         RealtimeCTW.shared.baoDangGo(pid: pid, cid: kenh.id, chuoi: nil, dangGo: false)
         lanBaoGo = .distantPast
         if tep.isEmpty {
-            if let m = await HangChoGuiCTW.shared.them(pid: pid, cid: kenh.id, parentId: nil, body: s) { chen(m) }
-            CTWRung.chon()
-            return true
+            switch await HangChoGuiCTW.shared.themKQ(pid: pid, cid: kenh.id, parentId: nil, body: s) {
+            case .daGui(let m):
+                if let m { chen(m) }
+                CTWRung.chon()
+                return true
+            case .biChan(let l):
+                // 1.2: bộ lọc nội dung — `false` ⇒ ô soạn trả lại chữ; câu lỗi ở dải lỗi trên ô soạn.
+                loi = l
+                CTWRung.loi()
+                return false
+            }
         }
         dangGui = true
         defer { dangGui = false }

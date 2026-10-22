@@ -333,6 +333,7 @@ struct TroLyAICTW: View {
             case "WORK_AI_NOTHING_TO_RETRY": return String(localized: "This question already has an answer.")
             case "WORK_AI_CANCELLED": return String(localized: "The answer was stopped before it was ready. Tap Ask again.")
             case "CLIENT_PORTAL_ONLY", "WORK_FORBIDDEN": return String(localized: "The AI assistant is only available to the project team.")
+            case CTWLoiDich.maNoiDungBiChan: return CTWLoiDich.noiDungBiChan(m)
             default: return CTW.coLoiMoiMua(m) ? String(localized: "This action isn't available right now.") : m
             }
         }

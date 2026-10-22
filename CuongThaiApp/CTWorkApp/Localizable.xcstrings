@@ -4469,16 +4469,6 @@
         }
       }
     },
-    "Content that breaks these rules is removed, and the users who post it are suspended or banned.": {
-      "localizations": {
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nội dung vi phạm các quy tắc này sẽ bị gỡ, và người đăng sẽ bị đình chỉ hoặc cấm vĩnh viễn."
-          }
-        }
-      }
-    },
     "Achieved": {
       "localizations": {
         "vi": {
@@ -9348,6 +9338,16 @@
         }
       }
     },
+    "Content that breaks these rules is removed, and the users who post it are suspended or banned.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nội dung vi phạm các quy tắc này sẽ bị gỡ, và người đăng sẽ bị đình chỉ hoặc cấm vĩnh viễn."
+          }
+        }
+      }
+    },
     "Content you report is hidden for you immediately.": {
       "localizations": {
         "vi": {
@@ -9364,6 +9364,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tiếp tục"
+          }
+        }
+      }
+    },
+    "Continue with Google": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiếp tục với Google"
           }
         }
       }
@@ -9644,6 +9654,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Không tải được ảnh (%lld)."
+          }
+        }
+      }
+    },
+    "Couldn't open the Google sign-in window.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không mở được cửa sổ đăng nhập Google."
           }
         }
       }
@@ -11516,6 +11536,26 @@
         }
       }
     },
+    "Direct messages with your teammates and contacts on cuongthai.com.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tin nhắn riêng với đồng đội và người liên hệ trên cuongthai.com."
+          }
+        }
+      }
+    },
+    "Direct messages: your conversations with your teammates and contacts on cuongthai.com — the same inbox as on the website.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tin nhắn riêng: các cuộc trò chuyện của bạn với đồng đội và người liên hệ trên cuongthai.com — cùng hộp thư với trang web."
+          }
+        }
+      }
+    },
     "Discard": {
       "localizations": {
         "vi": {
@@ -12756,22 +12796,22 @@
         }
       }
     },
-    "Every post, comment, message and profile can be reported. Reported content is hidden for you right away and reviewed by moderators within 24 hours.": {
-      "localizations": {
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mọi bài đăng, bình luận, tin nhắn và hồ sơ đều có thể bị báo cáo. Nội dung bị báo cáo sẽ ẩn với bạn ngay lập tức và được người kiểm duyệt xem xét trong vòng 24 giờ."
-          }
-        }
-      }
-    },
     "Every new chat message": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Mọi tin nhắn chat mới"
+          }
+        }
+      }
+    },
+    "Every post, comment, message and profile can be reported. Reported content is hidden for you right away and reviewed by moderators within 24 hours.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mọi bài đăng, bình luận, tin nhắn và hồ sơ đều có thể bị báo cáo. Nội dung bị báo cáo sẽ ẩn với bạn ngay lập tức và được người kiểm duyệt xem xét trong vòng 24 giờ."
           }
         }
       }
@@ -14218,6 +14258,16 @@
         }
       }
     },
+    "GIF search: the words you type in GIF search are sent through CT Work's server to GIPHY, a third-party service, to find GIFs. Your name and account details are not sent to GIPHY.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tìm GIF: chữ bạn gõ vào ô tìm GIF được gửi qua máy chủ CT Work tới GIPHY, một dịch vụ bên thứ ba, để tìm GIF. Tên và thông tin tài khoản của bạn không được gửi tới GIPHY."
+          }
+        }
+      }
+    },
     "GIFs": {
       "localizations": {
         "vi": {
@@ -14460,6 +14510,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tham dự?"
+          }
+        }
+      }
+    },
+    "Google didn't return an account ID. Please try again.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google không trả về mã tài khoản. Vui lòng thử lại."
           }
         }
       }
@@ -20963,6 +21023,16 @@
         }
       }
     },
+    "Not available in the app": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không có trong app"
+          }
+        }
+      }
+    },
     "Not carried over: %@": {
       "localizations": {
         "vi": {
@@ -24074,6 +24144,16 @@
         }
       }
     },
+    "Profile photo": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ảnh đại diện"
+          }
+        }
+      }
+    },
     "Progress": {
       "localizations": {
         "vi": {
@@ -26119,6 +26199,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Biên bản bị báo cáo được ẩn với bạn ngay lập tức."
+          }
+        }
+      }
+    },
+    "Reported. The message is hidden for you.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã báo cáo. Tin nhắn đã được ẩn với bạn."
           }
         }
       }
@@ -29170,6 +29260,26 @@
         }
       }
     },
+    "Sign in with Google didn't complete. Please try again.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đăng nhập bằng Google chưa hoàn tất. Vui lòng thử lại."
+          }
+        }
+      }
+    },
+    "Sign in with Google isn't set up for this app.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ứng dụng này chưa được cấu hình đăng nhập bằng Google."
+          }
+        }
+      }
+    },
     "Sign in with your cuongthai.com account": {
       "localizations": {
         "vi": {
@@ -30888,6 +30998,16 @@
         }
       }
     },
+    "Team Feed: posts, comments, reactions, polls, photos, videos and files you share in the feed are visible only to members of the workspace or project you post to — never public. You can hide or report any post and block its author.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bảng tin: bài đăng, bình luận, cảm xúc, bình chọn, ảnh, video và tệp bạn chia sẻ trên bảng tin chỉ thành viên của không gian hoặc dự án nơi bạn đăng mới thấy — không bao giờ công khai. Bạn có thể ẩn hoặc báo cáo mọi bài và chặn người đăng."
+          }
+        }
+      }
+    },
     "Team channels and private groups": {
       "localizations": {
         "vi": {
@@ -31588,6 +31708,16 @@
         }
       }
     },
+    "The message will be hidden for you. Reports go to the CT Work moderation team, who review them within 24 hours. The person isn't told who reported them.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tin nhắn sẽ được ẩn với bạn. Báo cáo được gửi tới đội kiểm duyệt CT Work và được xem xét trong vòng 24 giờ. Người bị báo cáo không biết ai đã báo cáo."
+          }
+        }
+      }
+    },
     "The microphone is used only while you record a voice note in chat. Voice notes are stored for the people in that channel and sent to Groq, a third-party speech-to-text service, to create a transcript — the app asks for your consent before your first voice note.": {
       "extractionState": "stale",
       "localizations": {
@@ -31645,16 +31775,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Trang bắt đầu ở dạng Nháp. Bạn có thể viết ngay sau khi tạo."
-          }
-        }
-      }
-    },
-    "These services use it only to create the answer. No advertising, no tracking.": {
-      "localizations": {
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Các dịch vụ này chỉ dùng nội dung để tạo câu trả lời. Không quảng cáo, không theo dõi."
           }
         }
       }
@@ -31819,6 +31939,26 @@
         }
       }
     },
+    "There is zero tolerance for objectionable content and abusive users — in posts, comments, messages and profiles.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không khoan nhượng với nội dung phản cảm và người dùng lạm dụng — trong bài đăng, bình luận, tin nhắn và hồ sơ."
+          }
+        }
+      }
+    },
+    "These services use it only to create the answer. No advertising, no tracking.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Các dịch vụ này chỉ dùng nội dung để tạo câu trả lời. Không quảng cáo, không theo dõi."
+          }
+        }
+      }
+    },
     "They keep their workspace membership. Issues stay assigned to them until you reassign them.": {
       "localizations": {
         "vi": {
@@ -31920,16 +32060,6 @@
         }
       }
     },
-    "Work you shared with your team — issues, comments, feed posts, messages, documents and files — stays so your teammates keep their work, but it is shown under an anonymous name. This applies to your whole cuongthai.com account and can't be undone once it takes effect.": {
-      "localizations": {
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nội dung bạn đã chia sẻ với nhóm — thẻ, bình luận, bài đăng Bảng tin, tin nhắn, tài liệu và tệp — vẫn được giữ để đồng đội không mất việc, nhưng hiện dưới một tên ẩn danh. Việc này áp dụng cho toàn bộ tài khoản cuongthai.com của bạn và không thể hoàn tác sau khi có hiệu lực."
-          }
-        }
-      }
-    },
     "This area is only for the project team.": {
       "localizations": {
         "vi": {
@@ -31986,6 +32116,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Commit này lớn — một số thay đổi không hiện ở đây."
+          }
+        }
+      }
+    },
+    "This contains words that aren't allowed in CT Work (profanity, slurs, sexual or threatening language). Please edit it.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nội dung có từ ngữ không được phép trong CT Work (tục tĩu, xúc phạm, tình dục hoặc đe doạ). Vui lòng sửa lại."
           }
         }
       }
@@ -32346,6 +32486,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Trang này có @nhắc tới người khác. Sửa ở đây sẽ biến lời nhắc thành chữ thường."
+          }
+        }
+      }
+    },
+    "This page can't be opened in CT Work.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trang này không mở được trong CT Work."
           }
         }
       }
@@ -35451,6 +35601,16 @@
         }
       }
     },
+    "Why are you reporting this message from %@?": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vì sao bạn báo cáo tin nhắn này của %@?"
+          }
+        }
+      }
+    },
     "Why are you reporting this post?": {
       "localizations": {
         "vi": {
@@ -35557,6 +35717,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sản phẩm công việc"
+          }
+        }
+      }
+    },
+    "Work you shared with your team — issues, comments, feed posts, messages, documents and files — stays so your teammates keep their work, but it is shown under an anonymous name. This applies to your whole cuongthai.com account and can't be undone once it takes effect.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nội dung bạn đã chia sẻ với nhóm — thẻ, bình luận, bài đăng Bảng tin, tin nhắn, tài liệu và tệp — vẫn được giữ để đồng đội không mất việc, nhưng hiện dưới một tên ẩn danh. Việc này áp dụng cho toàn bộ tài khoản cuongthai.com của bạn và không thể hoàn tác sau khi có hiệu lực."
           }
         }
       }
@@ -35957,16 +36127,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bạn chịu trách nhiệm về nội dung mình đăng. Không đăng nội dung vi phạm pháp luật, quấy rối, thù ghét, tình dục, bạo lực hoặc xâm phạm quyền của người khác."
-          }
-        }
-      }
-    },
-    "Your devices' notification tokens, your CT Work API and calendar tokens, connected accounts and your private AI conversations are deleted, and you are signed out everywhere — on the web and in every app.": {
-      "localizations": {
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mã thông báo đẩy của các thiết bị, token API và token lịch CT Work, các tài khoản đã kết nối và hội thoại AI riêng tư của bạn bị xoá, và bạn bị đăng xuất ở mọi nơi — trên web và trong mọi app."
           }
         }
       }
@@ -36571,6 +36731,16 @@
         }
       }
     },
+    "Your Google account didn't share an email address, so we couldn't sign you in.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tài khoản Google của bạn không chia sẻ địa chỉ email nên không thể đăng nhập."
+          }
+        }
+      }
+    },
     "Your access": {
       "localizations": {
         "vi": {
@@ -36587,6 +36757,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tài khoản và dữ liệu cá nhân của bạn sẽ bị xoá vĩnh viễn 72 giờ sau khi yêu cầu; nội dung bạn đã chia sẻ với nhóm được giữ dưới một tên ẩn danh. Trước thời điểm đó bạn vẫn dùng CT Work được và có thể huỷ yêu cầu."
+          }
+        }
+      }
+    },
+    "Your account is deleted about 72 hours after you confirm. Until then you can keep using CT Work and cancel the request here.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tài khoản của bạn bị xoá khoảng 72 giờ sau khi bạn xác nhận. Trước thời điểm đó bạn vẫn dùng CT Work được và có thể huỷ yêu cầu ngay tại đây."
           }
         }
       }
@@ -36651,22 +36831,22 @@
         }
       }
     },
+    "Your devices' notification tokens, your CT Work API and calendar tokens, connected accounts and your private AI conversations are deleted, and you are signed out everywhere — on the web and in every app.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mã thông báo đẩy của các thiết bị, token API và token lịch CT Work, các tài khoản đã kết nối và hội thoại AI riêng tư của bạn bị xoá, và bạn bị đăng xuất ở mọi nơi — trên web và trong mọi app."
+          }
+        }
+      }
+    },
     "Your drafts": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Bản nháp của bạn"
-          }
-        }
-      }
-    },
-    "Your personal data is erased: name, username, email, bio, profile photo and cover photo. You can no longer sign in.": {
-      "localizations": {
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dữ liệu cá nhân của bạn bị xoá: họ tên, tên đăng nhập, email, giới thiệu, ảnh đại diện và ảnh bìa. Bạn không thể đăng nhập nữa."
           }
         }
       }
@@ -36701,22 +36881,22 @@
         }
       }
     },
+    "Your personal data is erased: name, username, email, bio, profile photo and cover photo. You can no longer sign in.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dữ liệu cá nhân của bạn bị xoá: họ tên, tên đăng nhập, email, giới thiệu, ảnh đại diện và ảnh bìa. Bạn không thể đăng nhập nữa."
+          }
+        }
+      }
+    },
     "Your profile photo, cover photo, display name and bio are the same as on cuongthai.com — changing them in the app changes them everywhere. Photos are saved to your library only when you choose “Save photo”.": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Ảnh đại diện, ảnh bìa, tên hiển thị và giới thiệu của bạn giống hệt trên cuongthai.com — đổi trong app là đổi ở mọi nơi. Ảnh chỉ được lưu vào thư viện khi bạn chọn “Lưu ảnh”."
-          }
-        }
-      }
-    },
-    "Your account is deleted about 72 hours after you confirm. Until then you can keep using CT Work and cancel the request here.": {
-      "localizations": {
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tài khoản của bạn bị xoá khoảng 72 giờ sau khi bạn xác nhận. Trước thời điểm đó bạn vẫn dùng CT Work được và có thể huỷ yêu cầu ngay tại đây."
           }
         }
       }
@@ -38807,86 +38987,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "🪄 Nhãn dán"
-          }
-        }
-      }
-    },
-    "Team Feed: posts, comments, reactions, polls, photos, videos and files you share in the feed are visible only to members of the workspace or project you post to — never public. You can hide or report any post and block its author.": {
-      "localizations": {
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bảng tin: bài đăng, bình luận, cảm xúc, bình chọn, ảnh, video và tệp bạn chia sẻ trên bảng tin chỉ thành viên của không gian hoặc dự án nơi bạn đăng mới thấy — không bao giờ công khai. Bạn có thể ẩn hoặc báo cáo mọi bài và chặn người đăng."
-          }
-        }
-      }
-    },
-    "GIF search: the words you type in GIF search are sent through CT Work's server to GIPHY, a third-party service, to find GIFs. Your name and account details are not sent to GIPHY.": {
-      "localizations": {
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tìm GIF: chữ bạn gõ vào ô tìm GIF được gửi qua máy chủ CT Work tới GIPHY, một dịch vụ bên thứ ba, để tìm GIF. Tên và thông tin tài khoản của bạn không được gửi tới GIPHY."
-          }
-        }
-      }
-    },
-    "Direct messages: your conversations with your teammates and contacts on cuongthai.com — the same inbox as on the website.": {
-      "localizations": {
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tin nhắn riêng: các cuộc trò chuyện của bạn với đồng đội và người liên hệ trên cuongthai.com — cùng hộp thư với trang web."
-          }
-        }
-      }
-    },
-    "Not available in the app": {
-      "localizations": {
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Không có trong app"
-          }
-        }
-      }
-    },
-    "This page can't be opened in CT Work.": {
-      "localizations": {
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Trang này không mở được trong CT Work."
-          }
-        }
-      }
-    },
-    "There is zero tolerance for objectionable content and abusive users — in posts, comments, messages and profiles.": {
-      "localizations": {
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Không khoan nhượng với nội dung phản cảm và người dùng lạm dụng — trong bài đăng, bình luận, tin nhắn và hồ sơ."
-          }
-        }
-      }
-    },
-    "Direct messages with your teammates and contacts on cuongthai.com.": {
-      "localizations": {
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tin nhắn riêng với đồng đội và người liên hệ trên cuongthai.com."
-          }
-        }
-      }
-    },
-    "Profile photo": {
-      "localizations": {
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ảnh đại diện"
           }
         }
       }

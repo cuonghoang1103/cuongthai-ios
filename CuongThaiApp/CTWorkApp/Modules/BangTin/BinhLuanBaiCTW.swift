@@ -19,6 +19,8 @@ final class BinhLuanVM: ObservableObject {
     @Published private(set) var dangGui = false
     @Published private(set) var goiY: [CTWUser] = []
     @Published var bang: String?
+    /// Bộ lọc nội dung từ chối bình luận (422 CONTENT_BLOCKED) — hiện TẠI CHỖ trên ô soạn, chữ vẫn nằm trong ô.
+    @Published var loiChan: String?
 
     private var huy = Set<AnyCancellable>()
     private var timNhacTask: Task<Void, Never>?
@@ -108,7 +110,12 @@ final class BinhLuanVM: ObservableObject {
                 if c.parentId == nil { b.comments = Array(((b.comments ?? []) + [c]).suffix(2)) }
             }
             CTWRung.chon()
+            loiChan = nil
             return true
+        } catch where CTWLoiDich.laNoiDungBiChan(error) {
+            CTWRung.loi()
+            loiChan = BangTinLoi.chu(error)
+            return false
         } catch {
             CTWRung.loi()
             bang = BangTinLoi.chu(error)
@@ -120,7 +127,12 @@ final class BinhLuanVM: ObservableObject {
         do {
             let m: CTWFeedComment = try await APIClient.shared.request(CTWAPI.suaBinhLuanBai(c.id, chu: chu))
             ds = BinhLuanLogic.thay(ds, m)
+            loiChan = nil
             return true
+        } catch where CTWLoiDich.laNoiDungBiChan(error) {
+            CTWRung.loi()
+            loiChan = BangTinLoi.chu(error)
+            return false
         } catch {
             bang = BangTinLoi.chu(error)
             return false
@@ -463,6 +475,11 @@ struct KhungBinhLuanCTW: View {
                     .frame(maxWidth: .infinity).padding(14)
             } else {
                 if !vm.goiY.isEmpty && NhacDangGo.dangGo(chu) != nil { goiYNhac }
+                if let l = vm.loiChan {
+                    CTWErrorBanner(text: l) { vm.loiChan = nil }
+                        .accessibilityIdentifier("ctw.noiDungBiChan")
+                        .padding(.horizontal, 12).padding(.top, 8)
+                }
                 if let r = traLoi ?? dangSua {
                     HStack(spacing: 6) {
                         Image(systemName: dangSua != nil ? "pencil" : "arrowshape.turn.up.left").font(.ctw(size: 11, weight: .bold))

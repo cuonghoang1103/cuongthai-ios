@@ -28,6 +28,8 @@ struct HanhDongBaiCTW {
     var moTep: (CTWFeedAttachment) -> Void = { _ in }
     var thuLai: (String) -> Void = { _ in }
     var boTam: (String) -> Void = { _ in }
+    /// Bài tạm bị bộ lọc chặn ⇒ mở lại ô soạn với bản nháp.
+    var suaTam: (CTWFeedPost) -> Void = { _ in }
     var boAn: (CTWFeedPost) -> Void = { _ in }
     var moBai: (CTWFeedPost) -> Void = { _ in }
 }
@@ -368,7 +370,24 @@ struct TheBaiCTW: View {
 
     @ViewBuilder private var trangThaiTam: some View {
         HStack(spacing: 10) {
-            if p.dangHong == true {
+            if p.dangHong == true, let l = p.loiChan {
+                // 1.2 — bộ lọc nội dung: câu của máy chủ tại chỗ, bản nháp giữ ⇒ "Sửa" (gửi lại y nguyên vô ích).
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(alignment: .top, spacing: 8) {
+                        Image(systemName: "exclamationmark.circle.fill").foregroundColor(AppColors.error)
+                        Text(l).font(.ctw(size: 13)).foregroundColor(AppColors.error)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityIdentifier("bangTin.loiChan")
+                    }
+                    HStack {
+                        Spacer()
+                        Button("Discard") { if let k = p.khoaTam { hd.boTam(k) } }.font(.ctw(size: 13))
+                        Button("Edit") { hd.suaTam(p) }.font(.ctw(size: 13, weight: .semibold))
+                            .buttonStyle(.borderedProminent).controlSize(.small)
+                            .accessibilityIdentifier("bangTin.suaBiChan")
+                    }
+                }
+            } else if p.dangHong == true {
                 Image(systemName: "exclamationmark.circle.fill").foregroundColor(AppColors.error)
                 Text("Couldn't post").font(.ctw(size: 13, weight: .semibold)).foregroundColor(AppColors.error)
                 Spacer()

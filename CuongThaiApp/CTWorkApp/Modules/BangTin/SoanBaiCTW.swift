@@ -367,7 +367,7 @@ final class SoanBaiVM: ObservableObject {
                                    multi: nhieuLuaChon, closed: false, totalVotes: 0, voters: 0, myVotes: [])
         }
         daDang = true
-        KhoBangTinCTW.shared.dang(than: than, tam: tam)
+        KhoBangTinCTW.shared.dang(than: than, tam: tam, nhap: nhap)
         NhapBaiCTW.ghi(nil)
         return true
     }

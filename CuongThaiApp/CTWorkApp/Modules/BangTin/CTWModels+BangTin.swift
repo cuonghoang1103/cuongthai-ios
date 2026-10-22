@@ -203,6 +203,8 @@ struct CTWFeedPost: Codable, Hashable, Identifiable {
     var khoaTam: String?
     /// Bài tạm đăng hỏng (hiện nút Thử lại / Bỏ).
     var dangHong: Bool?
+    /// Bài tạm bị bộ lọc nội dung chặn (422 CONTENT_BLOCKED): câu lỗi hiện ngay trên thẻ + nút "Sửa" thay "Thử lại".
+    var loiChan: String?
 
     enum CodingKeys: String, CodingKey {
         case id, workspace, project, author, authorRole, body, mentions, hashtags, attachments, linkPreview, refs, poll

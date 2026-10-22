@@ -115,6 +115,33 @@ enum CTWLoiDich {
         }
     }
 
+    // MARK: Bộ lọc nội dung (App Store 1.2 — 422 `CONTENT_BLOCKED`, build 7)
+    //
+    // Máy chủ (api-backend `services/locNoiDung.ts › THONG_BAO_CHAN`) trả MỘT câu SONG NGỮ "<tiếng Việt> · <English>"
+    // cho mọi cửa ghi (bài/bình luận Bảng tin, tin nhắn riêng, tin kênh, bình luận thẻ/trang, tên + giới thiệu hồ sơ).
+    // App hiện NỬA theo ngôn ngữ đang chọn — vẫn là câu của máy chủ, chỉ không bắt người dùng đọc hai thứ tiếng.
+    // Không tách được (máy chủ đổi câu) ⇒ câu catalog cùng nghĩa.
+
+    static let maNoiDungBiChan = "CONTENT_BLOCKED"
+
+    static func noiDungBiChan(_ cau: String) -> String {
+        let phan = cau.components(separatedBy: " · ").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+        if phan.count == 2 {
+            // Nửa nào là tiếng Việt: nửa có chữ có dấu (ký tự Latin mở rộng). Không đoán theo vị trí — máy chủ có thể đảo.
+            let coDau: (String) -> Bool = { $0.unicodeScalars.contains { (0x00C0...0x1EFF).contains($0.value) } }
+            let vi = phan.first(where: coDau) ?? phan[0]
+            let en = phan.first(where: { !coDau($0) }) ?? phan[1]
+            return CTWDinhDang.laTiengViet ? vi : en
+        }
+        return String(localized: "This contains words that aren't allowed in CT Work (profanity, slurs, sexual or threatening language). Please edit it.")
+    }
+
+    /// Lỗi này là bộ lọc nội dung từ chối (giữ nguyên bản nháp, báo tại chỗ — không "Thử lại" vô ích).
+    static func laNoiDungBiChan(_ e: Error) -> Bool {
+        if case APIError.coMa(let ma, _) = e { return ma == maNoiDungBiChan }
+        return false
+    }
+
     /// Câu máy chủ ⇒ câu theo ngôn ngữ app (chỉ khi tiếng Việt). nil = giữ câu gốc.
     static func dich(ma: String?, cau: String) -> String? {
         guard CTWDinhDang.laTiengViet else { return nil }

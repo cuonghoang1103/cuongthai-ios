@@ -141,6 +141,10 @@ struct BaoCaoNguoiCTW: View {
     let ten: String
     let userId: Int
     var threadId: Int?
+    /// Báo cáo MỘT tin (nhấn giữ › Báo cáo, build 7 — R4): gửi `messageId`, tin ẩn với tôi ngay khi gửi xong.
+    var tin: Message?
+    /// Gọi sau khi máy chủ nhận báo cáo một tin (id tin) — màn chat bỏ tin khỏi danh sách.
+    var daBaoCaoTin: (Int) -> Void = { _ in }
     @ObservedObject private var kho = KhoTinNhanCTW.shared
     @Environment(\.dismiss) private var dong
     @State private var loai = "harassment"
@@ -160,21 +164,33 @@ struct BaoCaoNguoiCTW: View {
     var body: some View {
         NavigationStack {
             Form {
+                if let tin {
+                    Section("Message") {
+                        Text(verbatim: TomTatTinCTW.chu(tin))
+                            .font(.ctw(size: 15)).foregroundColor(AppColors.textPrimary)
+                            .lineLimit(4)
+                            .accessibilityIdentifier("dm.report.preview")
+                    }
+                }
                 Section {
                     Picker("Reason", selection: $loai) { ForEach(cacLoai, id: \.0) { Text($0.1).tag($0.0) } }
                         .pickerStyle(.inline).labelsHidden()
-                } header: { Text("Why are you reporting \(ten)?") }
+                } header: {
+                    Text(tin != nil ? String(localized: "Why are you reporting this message from \(ten)?") : String(localized: "Why are you reporting \(ten)?"))
+                }
                 Section("Details (optional)") {
                     TextField("What happened?", text: $chiTiet, axis: .vertical).lineLimit(3...6)
                 }
                 Section {
                     Toggle("Also block \(ten)", isOn: $chanLuon)
                 } footer: {
-                    Text("Reports go to the CT Work moderation team, who review them within 24 hours. The person isn't told who reported them.")
+                    Text(tin != nil
+                         ? String(localized: "The message will be hidden for you. Reports go to the CT Work moderation team, who review them within 24 hours. The person isn't told who reported them.")
+                         : String(localized: "Reports go to the CT Work moderation team, who review them within 24 hours. The person isn't told who reported them."))
                 }
                 if let loi { Section { CTWErrorBanner(text: loi) } }
             }
-            .navigationTitle("Report")
+            .navigationTitle(tin != nil ? String(localized: "Report message") : String(localized: "Report"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dong() } }
@@ -192,7 +208,11 @@ struct BaoCaoNguoiCTW: View {
         let lyDo = chiTiet.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nhan : "\(nhan): \(chiTiet)"
         do {
             if let threadId {
-                try await APIClient.shared.send(TinNhanAPI.baoCao(threadId: threadId, lyDo: lyDo, loai: loai))
+                try await APIClient.shared.send(TinNhanAPI.baoCao(threadId: threadId, lyDo: lyDo, loai: loai, tinId: tin?.id))
+                if let id = tin?.id {
+                    AnNoiDungChungCTW.shared.an(TinNhanAPI.khoaAnTin(id))
+                    daBaoCaoTin(id)
+                }
             } else {
                 // Chưa có hội thoại ⇒ đường báo cáo chung (hàng chờ kiểm duyệt của quản trị).
                 try await ModerationStore.shared.baoCaoNoiDung(nhan: "Người dùng", noiDung: "@\(ten) (id \(userId))",

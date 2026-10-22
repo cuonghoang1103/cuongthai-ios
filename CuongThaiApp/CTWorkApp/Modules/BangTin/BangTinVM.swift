@@ -187,6 +187,9 @@ final class BangTinVM: ObservableObject {
             guard bai.contains(where: { $0.khoaTam == khoa }) else { return }
             bai = TrangBangTin.danhDauHong(bai, khoa: khoa)
             bang = BangNho(chu: loi)
+        case .biChan(let khoa, let loi):
+            guard bai.contains(where: { $0.khoaTam == khoa }) else { return }
+            bai = TrangBangTin.danhDauBiChan(bai, khoa: khoa, loi: loi)
         case .bo(let khoa):
             bai = TrangBangTin.boTam(bai, khoa: khoa)
         }

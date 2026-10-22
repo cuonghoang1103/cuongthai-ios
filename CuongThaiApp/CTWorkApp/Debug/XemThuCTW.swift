@@ -215,13 +215,38 @@ enum DuLieuGia {
     }
 
     // swiftlint:disable:next cyclomatic_complexity
+    /// Bộ lọc nội dung GIẢ (build 7) — như `locNoiDung.ts › chanNoiDungXau` của máy chủ: mọi cửa ghi có chữ chứa từ thử
+    /// `badword` ⇒ 422 CONTENT_BLOCKED với ĐÚNG câu song ngữ của máy chủ (`THONG_BAO_CHAN`). Không dùng từ tục thật.
+    static let tuThuBiChan = "badword"
+    static let cauBiChan = "Nội dung có từ ngữ không được phép trong CT Work (tục tĩu, xúc phạm, tình dục hoặc đe doạ). Vui lòng sửa lại. · "
+        + "This contains words that aren't allowed in CT Work (profanity, slurs, sexual or threatening language). Please edit it."
+
+    static func coTuBiChan(_ v: Any) -> Bool {
+        if let s = v as? String { return s.lowercased().contains(tuThuBiChan) }
+        if let d = v as? [String: Any] { return d.values.contains(where: coTuBiChan) }
+        if let a = v as? [Any] { return a.contains(where: coTuBiChan) }
+        return false
+    }
+
+    /// Tin nhắn riêng đã báo cáo kèm `messageId` — máy chủ thật (48d4d79a) không trả lại cho người báo cáo.
+    nonisolated(unsafe) static var tinDaBaoCao: Set<Int> = []
+
     static func route(_ m: String, _ p: String, _ b: [String: Any]) -> Any {
+        if m != "GET", !p.hasSuffix("/report"), coTuBiChan(b) {
+            return LoiGiaCTW(trangThai: 422, ma: "CONTENT_BLOCKED", thongDiep: cauBiChan)
+        }
+        if m == "POST", p.hasPrefix("/messages/threads/"), p.hasSuffix("/report"), let id = b["messageId"] as? Int {
+            khoa.lock(); tinDaBaoCao.insert(id); khoa.unlock()
+        }
         if let r = DuLieuGiaGiaoTiep.route(m, p, b) { return r }
         if let r = DuLieuGiaThanhVien.route(m, p, b) { return r }   // Thành viên + Tin nhắn riêng (XemThuCTW+ThanhVien.swift)
         // Dữ liệu mẫu của các mô-đun đặt ở tệp riêng (XemThuCTW+MoDun.swift) — hỏi trước.
         if let r = DuLieuGiaMoDun.route(m, p, b) { return r }
         switch (m, p) {
         // Đăng nhập thử (màn `dangnhap`, 21/10/2026): mật khẩu "wrong" ⇒ lỗi sai mật khẩu như máy chủ thật; khác ⇒ token giả.
+        // Đăng nhập Google/Apple thử (build 7): `/auth/oauth/token` ⇒ token giả (DangNhapCTW không mở SDK khi có `CT_XEM_MAN`).
+        case ("POST", "/auth/oauth/token"):
+            return ["token": "xem-thu-token", "refreshToken": "xem-thu-refresh"]
         case ("POST", "/auth/login"):
             if b["password"] as? String == "wrong" {
                 return LoiGiaCTW(trangThai: 400, ma: "INVALID_CREDENTIALS", thongDiep: "Invalid credentials")

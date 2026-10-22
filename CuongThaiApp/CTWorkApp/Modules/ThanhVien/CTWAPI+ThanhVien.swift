@@ -32,13 +32,27 @@ enum TinNhanAPI {
     /// Mã loại báo cáo máy chủ nhận (`ALLOWED_BLOCK_REASONS` — messaging-safety.service.ts).
     static let loaiBaoCao = ["spam", "harassment", "hate", "impersonation", "other"]
 
-    static func thanBaoCao(lyDo: String, loai: String) -> [String: Any] {
+    /// `tinId` (build 7, R4): báo cáo MỘT tin trong hội thoại — máy chủ (api-backend 48d4d79a) ghi `thread_reports.message_id`,
+    /// báo admin kèm nguyên văn tin và ẨN tin đó với người báo cáo ở mọi lần tải sau. nil = báo cáo cả hội thoại (như cũ).
+    static func thanBaoCao(lyDo: String, loai: String, tinId: Int? = nil) -> [String: Any] {
         let l = loaiBaoCao.contains(loai) ? loai : "other"
-        return ["reason": String(lyDo.trimmingCharacters(in: .whitespacesAndNewlines).prefix(200)), "category": l]
+        var t: [String: Any] = ["reason": String(lyDo.trimmingCharacters(in: .whitespacesAndNewlines).prefix(200)), "category": l]
+        if let tinId, tinId > 0 { t["messageId"] = tinId }
+        return t
     }
 
-    static func baoCao(threadId: Int, lyDo: String, loai: String) -> APIEndpoint {
-        .tuyChinh(duong: goc("/threads/\(threadId)/report"), phuongThuc: "POST", than: thanBaoCao(lyDo: lyDo, loai: loai))
+    static func baoCao(threadId: Int, lyDo: String, loai: String, tinId: Int? = nil) -> APIEndpoint {
+        .tuyChinh(duong: goc("/threads/\(threadId)/report"), phuongThuc: "POST", than: thanBaoCao(lyDo: lyDo, loai: loai, tinId: tinId))
+    }
+
+    /// Khoá ẩn tại máy của một tin đã báo cáo (`AnNoiDungChungCTW`) — ẩn NGAY, và vẫn ẩn khi máy chủ cũ (chưa có
+    /// `messageId`) còn trả tin đó ở lần tải sau.
+    static func khoaAnTin(_ id: Int) -> String { "dm-msg-\(id)" }
+
+    /// Bỏ tin đã báo cáo (ẩn tại máy) khỏi danh sách.
+    @MainActor static func locDaAn(_ ds: [Message]) -> [Message] {
+        let an = AnNoiDungChungCTW.shared
+        return ds.filter { !an.biAn(khoaAnTin($0.id)) }
     }
 
     /// `PUT /profile` chỉ một trường — máy chủ bỏ qua mọi trường vắng (`auth.service › updateProfile`, `!== undefined`).

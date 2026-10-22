@@ -77,6 +77,10 @@ final class DieuPhoiBaiCTW: ObservableObject {
         h.moTep = { [weak self] a in Task { await self?.moTep(a) } }
         h.thuLai = { KhoBangTinCTW.shared.thuLai($0) }
         h.boTam = { KhoBangTinCTW.shared.boBaiTam($0) }
+        h.suaTam = { p in
+            guard let k = p.khoaTam, let w = p.workspace else { return }
+            KhoBangTinCTW.shared.suaBaiBiChan(k, noi: NoiDangBangTin(ws: w, duAn: p.project))
+        }
         h.boAn = { [weak vm] p in Task { await vm?.boAn(p) } }
         h.moBai = { [weak self] p in self?.day(RouteBangTinCTW.bai(id: p.id, binhLuan: nil)) }
         return h

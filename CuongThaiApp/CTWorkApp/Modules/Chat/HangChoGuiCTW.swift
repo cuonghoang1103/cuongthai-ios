@@ -38,6 +38,11 @@ final class HangChoGuiCTW: ObservableObject {
 
     /// Tin vừa gửi xong từ hàng chờ (màn kênh/chuỗi chèn vào danh sách của mình).
     let daGui = PassthroughSubject<(TinChoGuiCTW, CTWChatMessage), Never>()
+    /// Tin bị bộ lọc nội dung của máy chủ chặn (422 CONTENT_BLOCKED, build 7): RỜI hàng chờ (gửi lại y nguyên vẫn bị chặn)
+    /// ⇒ màn kênh/chuỗi trả chữ về ô soạn + báo tại chỗ. Kèm câu lỗi đã theo ngôn ngữ app.
+    let biChan = PassthroughSubject<(TinChoGuiCTW, String), Never>()
+    /// Lần `them` gần nhất bị chặn ⇒ id tin (để `them` báo lại cho nơi gọi đang chờ).
+    private var vuaChan: [String: String] = [:]
 
     private let khoa = "com.cuongthai.ctwork.hangChoGui"
     private let monitor = NWPathMonitor()
@@ -71,11 +76,21 @@ final class HangChoGuiCTW: ObservableObject {
     /// Thêm một tin rồi thử gửi ngay. Trả về tin máy chủ đã lưu nếu gửi được liền.
     @discardableResult
     func them(pid: Int, cid: Int, parentId: Int?, body: String) async -> CTWChatMessage? {
+        if case .daGui(let m) = await themKQ(pid: pid, cid: cid, parentId: parentId, body: body) { return m }
+        return nil
+    }
+
+    enum KetQuaThem { case daGui(CTWChatMessage?), biChan(String) }
+
+    /// Như `them` nhưng nói rõ khi máy chủ CHẶN nội dung — nơi gọi giữ lại chữ trong ô soạn.
+    func themKQ(pid: Int, cid: Int, parentId: Int?, body: String) async -> KetQuaThem {
         let t = TinChoGuiCTW(id: "ios-\(UUID().uuidString.prefix(23))", pid: pid, cid: cid, parentId: parentId,
                              body: body, taoLuc: Date())
         ds.append(t)
         luu()
-        return await gui(t.id)
+        let m = await gui(t.id)
+        if let l = vuaChan.removeValue(forKey: t.id) { return .biChan(l) }
+        return .daGui(m)
     }
 
     func thuLai(_ id: String) async {
@@ -118,6 +133,13 @@ final class HangChoGuiCTW: ObservableObject {
             luu()
             daGui.send((t, m))
             return m
+        } catch where CTWLoiDich.laNoiDungBiChan(error) {
+            let l = CTW.loi(error)
+            ds.removeAll { $0.id == id }
+            luu()
+            vuaChan[id] = l
+            biChan.send((t, l))
+            return nil
         } catch {
             guard let j = ds.firstIndex(where: { $0.id == id }) else { return nil }
             if error is URLError {

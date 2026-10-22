@@ -28,6 +28,9 @@ final class CTWIssueVM: ObservableObject {
     @Published var lichSu: [CTWHistory]?
     @Published var nhatKyGio: [CTWWorklogThe]?
     @Published var loi: String?
+    /// Bộ lọc nội dung của máy chủ chặn bình luận (422 CONTENT_BLOCKED) — hiện NGAY TRÊN ô bình luận (dải lỗi đầu màn
+    /// nằm khuất khi đang gõ ở cuối thẻ); chữ vẫn trong ô.
+    @Published var loiBinhLuan: String?
     @Published var dangGui = false
     @Published var dangTaiLen = false
     /// Thẻ đã bị xoá / chuyển đi ⇒ màn tự đóng.
@@ -207,8 +210,13 @@ final class CTWIssueVM: ObservableObject {
                 .workThemBinhLuan(pid: pid, so: so, than: ["bodyJson": CTWNode.docTuChu(s)]))
             binhLuan.append(c)
             loi = nil
+            loiBinhLuan = nil
             CTWRung.thanhCong()
             return true
+        } catch where CTWLoiDich.laNoiDungBiChan(error) {
+            loiBinhLuan = CTW.loi(error)
+            CTWRung.loi()
+            return false
         } catch {
             loi = CTW.loi(error)
             return false
@@ -228,7 +236,12 @@ final class CTWIssueVM: ObservableObject {
                 binhLuan[i] = m
             }
             loi = nil
+            loiBinhLuan = nil
             return true
+        } catch where CTWLoiDich.laNoiDungBiChan(error) {
+            loiBinhLuan = CTW.loi(error)
+            CTWRung.loi()
+            return false
         } catch {
             loi = CTW.loi(error)
             return false
@@ -512,7 +525,7 @@ struct CTWIssueView: View {
     private func tamPhuView(_ tp: TamPhuThe) -> some View {
         switch tp {
         case .suaBinhLuan(let c):
-            CTWSuaBinhLuanView(chuBanDau: c.bodyJson?.chuTron ?? "") { chu in
+            CTWSuaBinhLuanView(chuBanDau: c.bodyJson?.chuTron ?? "", layLoi: { vm.loiBinhLuan ?? vm.loi }) { chu in
                 await vm.suaBinhLuan(c, chu: chu)
             }
         case .mayAnh:
@@ -1009,6 +1022,10 @@ struct CTWIssueView: View {
     @ViewBuilder
     private func oSoanBinhLuan(_ cfg: CTWProjectConfig) -> some View {
         if cfg.coTheBinhLuan {
+            if let l = vm.loiBinhLuan {
+                CTWErrorBanner(text: l) { vm.loiBinhLuan = nil }
+                    .accessibilityIdentifier("ctw.noiDungBiChan")
+            }
             HStack(alignment: .bottom, spacing: 8) {
                 TextField("Add a comment…", text: $binhLuanNhap, axis: .vertical)
                     .lineLimit(1...6)
@@ -1092,14 +1109,18 @@ struct CTWIssueView: View {
 
 struct CTWSuaBinhLuanView: View {
     let chuBanDau: String
+    /// Câu lỗi tại chỗ sau một lần Lưu hỏng (vd bộ lọc nội dung — 422 CONTENT_BLOCKED); chữ giữ nguyên trong ô.
+    var layLoi: () -> String? = { nil }
     let luu: (String) async -> Bool
     @Environment(\.dismiss) private var dong
     @State private var chu = ""
     @State private var dangLuu = false
+    @State private var loi: String?
 
     var body: some View {
         NavigationStack {
             Form {
+                if let loi { Section { CTWErrorBanner(text: loi).accessibilityIdentifier("ctw.noiDungBiChan") } }
                 TextField("Comment", text: $chu, axis: .vertical).lineLimit(3...14)
             }
             .navigationTitle("Edit comment")
@@ -1111,7 +1132,8 @@ struct CTWSuaBinhLuanView: View {
                         Button("Save") {
                             Task {
                                 dangLuu = true
-                                if await luu(chu) { dong() }
+                                loi = nil
+                                if await luu(chu) { dong() } else { loi = layLoi() }
                                 dangLuu = false
                             }
                         }

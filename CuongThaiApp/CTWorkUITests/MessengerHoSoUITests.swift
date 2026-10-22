@@ -122,4 +122,43 @@ final class MessengerHoSoUITests: XCTestCase {
         XCTAssertTrue(phanTu(app, "dm.102").waitForExistence(timeout: 4), "Minh có 2 tin chưa đọc")
         XCTAssertFalse(phanTu(app, "dm.103").exists, "hội thoại đã đọc bị lọc")
     }
+
+    // MARK: Build 7 — báo cáo MỘT tin (R4) + bộ lọc nội dung
+
+    /// Nhấn giữ tin của người kia ⇒ Report ⇒ tấm "Report message" có trích tin ⇒ Send ⇒ tin biến khỏi khung chat ngay.
+    func testBaoCaoMotTinAnNgay() {
+        let app = mo("mod:tin-nhan/chat")
+        let tin = app.staticTexts["Đã xem, ổn rồi. Merge PR #42 đi em 👍"]
+        XCTAssertTrue(tin.waitForExistence(timeout: 10))
+        tin.press(forDuration: 0.9)
+        let bc = app.buttons["dm.menu.report"]
+        XCTAssertTrue(bc.waitForExistence(timeout: 4), "tin của người kia có Report")
+        bc.tap()
+        XCTAssertTrue(app.navigationBars["Report message"].waitForExistence(timeout: 4))
+        XCTAssertTrue(phanTu(app, "dm.report.preview").exists, "tấm báo cáo trích đúng tin")
+        chup(app, "07-bao-cao-mot-tin")
+        app.buttons["Send"].tap()
+        XCTAssertFalse(app.navigationBars["Report message"].waitForExistence(timeout: 3))
+        let mat = NSPredicate(format: "exists == false")
+        expectation(for: mat, evaluatedWith: tin)
+        waitForExpectations(timeout: 6)
+        // Hội thoại vẫn còn (báo cáo một tin KHÔNG chặn/không đóng hội thoại).
+        XCTAssertTrue(phanTu(app, "dm.composer").exists)
+    }
+
+    /// Tin có từ bị bộ lọc chặn (máy chủ giả: "badword") ⇒ câu lỗi tại chỗ, chữ vẫn trong ô soạn, không bong bóng "Not sent".
+    func testTinBiChanGiuNhap() {
+        let app = mo("mod:tin-nhan/chat")
+        let o = phanTu(app, "dm.composer")
+        XCTAssertTrue(o.waitForExistence(timeout: 10))
+        o.tap()
+        app.typeText("this is a badword test")
+        app.buttons["dm.send"].tap()
+        XCTAssertTrue(phanTu(app, "ctw.noiDungBiChan").waitForExistence(timeout: 6), "câu lỗi bộ lọc tại chỗ")
+        XCTAssertFalse(app.buttons["dm.retry"].exists, "không Thử lại vô ích")
+        let giu = app.descendants(matching: .any).matching(NSPredicate(format: "value CONTAINS 'badword test'")).firstMatch
+        XCTAssertTrue(giu.waitForExistence(timeout: 3), "bản nháp về lại ô soạn")
+        chup(app, "08-tin-bi-chan")
+    }
 }
+

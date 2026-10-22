@@ -173,7 +173,10 @@ enum DuLieuGiaThanhVien {
         if phan.count >= 3, phan[1] == "threads", let tid = Int(phan[2]) {
             if phan.count == 3 { return hoiThoai.first { ($0["id"] as? Int) == tid } ?? hoiThoai[0] }
             switch (m, phan[3]) {
-            case ("GET", "messages"): return tid == 101 ? tinNhan : [Any]()
+            case ("GET", "messages"):
+                // Như máy chủ 48d4d79a: tin đã báo cáo (kèm messageId) ẩn với người báo cáo.
+                let an = DuLieuGia.tinDaBaoCao
+                return tid == 101 ? tinNhan.filter { !an.contains($0["id"] as? Int ?? -1) } : [Any]()
             case ("POST", "messages"):
                 let media = (b["media"] as? [String: Any]).flatMap { d -> (String, String)? in
                     guard let u = d["url"] as? String, let k = d["kind"] as? String else { return nil }

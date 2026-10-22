@@ -37,6 +37,9 @@ enum SuKienDangBaiCTW {
     case batDau(CTWFeedPost)
     case xong(khoa: String, bai: CTWFeedPost)
     case hong(khoa: String, loi: String)
+    /// Bộ lọc nội dung từ chối (422 CONTENT_BLOCKED, build 7): bài tạm hiện câu lỗi TẠI CHỖ + nút "Sửa" (mở lại ô soạn
+    /// với bản nháp đã giữ) thay cho "Thử lại" — gửi lại y nguyên thì máy chủ vẫn chặn.
+    case biChan(khoa: String, loi: String)
     case bo(khoa: String)
 }
 
@@ -65,6 +68,8 @@ final class KhoBangTinCTW: ObservableObject {
     private let khoaPhamVi = "ctw.bangTin.phamVi"
     /// Bài đang đăng: khoá ⇒ thân yêu cầu (Thử lại gửi lại CÙNG `clientKey` ⇒ máy chủ không tạo bài thứ hai).
     private var dangCho: [String: [String: Any]] = [:]
+    /// Bản nháp của từng bài đang đăng — bị bộ lọc chặn ⇒ ghi lại thành nháp (`NhapBaiCTW`) để "Sửa" mở đúng nội dung đó.
+    private var nhapCho: [String: NhapBaiCTW] = [:]
 
     private init() {
         if UserDefaults.standard.object(forKey: khoaHoTro) != nil { hoTro = UserDefaults.standard.bool(forKey: khoaHoTro) }
@@ -177,11 +182,12 @@ final class KhoBangTinCTW: ObservableObject {
     // MARK: Đăng bài (lạc quan)
 
     /// Bấm Đăng: chèn bài tạm vào mọi bảng tin khớp phạm vi, gửi `POST /feed/posts` (kèm `clientKey`), thay bằng bài thật.
-    func dang(than: [String: Any], tam: CTWFeedPost) {
+    func dang(than: [String: Any], tam: CTWFeedPost, nhap: NhapBaiCTW? = nil) {
         guard let khoa = tam.khoaTam else { return }
         var t = than
         t["clientKey"] = khoa
         dangCho[khoa] = t
+        nhapCho[khoa] = nhap
         dangBai.send(.batDau(tam))
         Task { await gui(khoa) }
     }
@@ -193,7 +199,17 @@ final class KhoBangTinCTW: ObservableObject {
 
     func boBaiTam(_ khoa: String) {
         dangCho[khoa] = nil
+        nhapCho[khoa] = nil
         dangBai.send(.bo(khoa: khoa))
+    }
+
+    /// "Sửa" trên bài bị bộ lọc chặn: bỏ bài tạm, mở lại ô soạn — ô soạn đọc nháp đã ghi lúc bị chặn (chữ, ảnh/tệp đã
+    /// tải, bình chọn, nơi đăng).
+    func suaBaiBiChan(_ khoa: String, noi: NoiDangBangTin?) {
+        let n = NhapBaiCTW.doc()
+        boBaiTam(khoa)
+        moSoan = n?.noi ?? noi
+        yeuCauSoan = true
     }
 
     private func gui(_ khoa: String) async {
@@ -201,8 +217,15 @@ final class KhoBangTinCTW: ObservableObject {
         do {
             let p: CTWFeedPost = try await APIClient.shared.request(CTWAPI.baiMoi(t))
             dangCho[khoa] = nil
+            nhapCho[khoa] = nil
             CTWRung.thanhCong()
             dangBai.send(.xong(khoa: khoa, bai: p))
+        } catch where CTWLoiDich.laNoiDungBiChan(error) {
+            // Giữ bản nháp (ô soạn đã đóng khi bấm Đăng) — người dùng sửa lại từ nút "Sửa" trên bài tạm.
+            CTWRung.loi()
+            if let n = nhapCho[khoa] { NhapBaiCTW.ghi(n) }
+            dangCho[khoa] = nil
+            dangBai.send(.biChan(khoa: khoa, loi: BangTinLoi.chu(error)))
         } catch {
             CTWRung.loi()
             dangBai.send(.hong(khoa: khoa, loi: BangTinLoi.chu(error)))
@@ -228,6 +251,7 @@ final class KhoBangTinCTW: ObservableObject {
         canMo = nil
         daAn = []
         dangCho = [:]
+        nhapCho = [:]
         UserDefaults.standard.removeObject(forKey: khoaPhamVi)
         NhapBaiCTW.xoa()
     }

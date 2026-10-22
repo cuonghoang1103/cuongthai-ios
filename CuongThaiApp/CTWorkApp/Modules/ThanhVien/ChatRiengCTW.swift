@@ -17,6 +17,14 @@ import Kingfisher
 //     nhấn giữ, ⓘ và hồ sơ; người đã chặn ⇒ khoá ô soạn.
 // Realtime: `RealtimeCTW.tinNhan*` (máy chủ tự cho socket vào phòng mọi hội thoại lúc bắt tay).
 
+/// Bản nháp trả lại ô soạn khi máy chủ chặn tin (422 CONTENT_BLOCKED).
+struct NhapTraLaiCTW: Identifiable {
+    let id = UUID()
+    var chu: String
+    var tep: [TepChoGuiCTW]
+    var traLoi: Int?
+}
+
 /// Một tin đang gửi (chưa có id máy chủ).
 struct TinChoRiengCTW: Identifiable {
     enum NoiDung {
@@ -58,6 +66,10 @@ final class ChatRiengVM: ObservableObject {
     @Published var dangCho: [TinChoRiengCTW] = []
     /// Tin mới của người kia về khi đang cuộn ở trên — số trên nút "xuống cuối".
     @Published var moiChuaXem = 0
+    /// Bộ lọc nội dung của máy chủ chặn tin (422 CONTENT_BLOCKED) — câu hiện TẠI CHỖ trên ô soạn.
+    @Published var loiChan: String?
+    /// Bản nháp trả về ô soạn khi tin bị chặn (màn đặt lại `chu`/`cho` rồi xoá cờ).
+    @Published var nhapTraLai: NhapTraLaiCTW?
     var oDay = true
 
     private var huy: [Any] = []
@@ -93,7 +105,7 @@ final class ChatRiengVM: ObservableObject {
         if hoiThoai == nil { hoiThoai = try? await APIClient.shared.request(.layHoiThoai(threadId: threadId)) }
         do {
             let ds: [Message] = try await APIClient.shared.request(.getMessages(threadId: threadId, cursor: nil, limit: 40))
-            tin = ds
+            tin = TinNhanAPI.locDaAn(ds)
             conCu = ds.count >= 40
             loi = nil
         } catch { if tin.isEmpty { loi = CTW.loi(error) } }
@@ -106,12 +118,13 @@ final class ChatRiengVM: ObservableObject {
     func taiCuHon() async {
         guard conCu, let dau = tin.first?.id else { return }
         if let ds: [Message] = try? await APIClient.shared.request(.getMessages(threadId: threadId, cursor: dau, limit: 40)) {
-            tin.insert(contentsOf: ds.filter { m in !tin.contains { $0.id == m.id } }, at: 0)
+            tin.insert(contentsOf: TinNhanAPI.locDaAn(ds).filter { m in !tin.contains { $0.id == m.id } }, at: 0)
             conCu = ds.count >= 40
         }
     }
 
     func them(_ m: Message) {
+        if AnNoiDungChungCTW.shared.biAn(TinNhanAPI.khoaAnTin(m.id)) { return }
         if let i = tin.firstIndex(where: { $0.id == m.id }) { tin[i] = m } else { tin.append(m) }
         KhoTinNhanCTW.shared.capNhatTinCuoi(threadId, m)
     }
@@ -132,6 +145,11 @@ final class ChatRiengVM: ObservableObject {
     }
 
     func bo(_ id: UUID) { dangCho.removeAll { $0.id == id } }
+
+    /// Tin vừa báo cáo (R4) — biến khỏi khung chat ngay; máy chủ mới không trả lại tin đó, máy chủ cũ thì `locDaAn` lọc.
+    func anTin(_ id: Int) {
+        tin.removeAll { $0.id == id }
+    }
 
     private func chay(_ id: UUID) async {
         guard let c = dangCho.first(where: { $0.id == id }) else { return }
@@ -157,7 +175,19 @@ final class ChatRiengVM: ObservableObject {
             }
             dangCho.removeAll { $0.id == id }
             them(m)
+            loiChan = nil
             CTWRung.chon()
+        } catch where CTWLoiDich.laNoiDungBiChan(error) {
+            // 1.2: tin bị bộ lọc chặn — bỏ bong bóng chờ, trả chữ (+ tệp chưa gửi) về ô soạn, báo tại chỗ. "Thử lại" vô ích.
+            tienDoTai = nil
+            dangCho.removeAll { $0.id == id }
+            switch c.noiDung {
+            case .chu(let s): nhapTraLai = NhapTraLaiCTW(chu: s, tep: [], traLoi: c.traLoi)
+            case .tep(let s, let ds): nhapTraLai = NhapTraLaiCTW(chu: s, tep: ds, traLoi: c.traLoi)
+            default: break
+            }
+            loiChan = CTW.loi(error)
+            CTWRung.loi()
         } catch {
             tienDoTai = nil
             if let i = dangCho.firstIndex(where: { $0.id == id }) { dangCho[i].hong = CTW.loi(error) }
@@ -242,10 +272,11 @@ struct ChatRiengCTW: View {
 
     /// MỘT `.sheet(item:)` cho mọi tấm phủ (CLAUDE.md C5 — nhiều `.sheet` trên một view chỉ cái cuối chạy).
     enum TamPhu: Identifiable {
-        case baoCao, hoSo(Int), anh(URL), gif(Int), emoji, camXuc(Message), aiCamXuc(Message), chuyenTiep(Message), thongTin
+        case baoCao, baoCaoTin(Message), hoSo(Int), anh(URL), gif(Int), emoji, camXuc(Message), aiCamXuc(Message), chuyenTiep(Message), thongTin
         var id: String {
             switch self {
             case .baoCao: return "bc"
+            case .baoCaoTin(let m): return "bct\(m.id)"
             case .hoSo(let i): return "hs\(i)"
             case .anh(let u): return u.absoluteString
             case .gif(let p): return "gif\(p)"
@@ -351,6 +382,14 @@ struct ChatRiengCTW: View {
         }
         .ctwXemTep($xemTep)
         .sheet(item: $tamPhu) { t in tamPhuView(t) }
+        // Tin bị bộ lọc nội dung chặn ⇒ bản nháp về lại ô soạn (không đè chữ người dùng đã gõ tiếp).
+        .onChange(of: vm.nhapTraLai?.id) { _, id in
+            guard id != nil, let n = vm.nhapTraLai else { return }
+            vm.nhapTraLai = nil
+            if chu.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { chu = n.chu }
+            if cho.isEmpty { cho = n.tep }
+            if traLoi == nil, let r = n.traLoi { traLoi = vm.tin.first { $0.id == r } }
+        }
     }
 
     // MARK: Danh sách tin
@@ -540,6 +579,11 @@ struct ChatRiengCTW: View {
         } else {
             VStack(spacing: 0) {
                 if let l = vm.loi, !vm.tin.isEmpty { CTWErrorBanner(text: l) { vm.loi = nil }.padding(.horizontal, 12).padding(.vertical, 6) }
+                if let l = vm.loiChan {
+                    CTWErrorBanner(text: l) { vm.loiChan = nil }
+                        .accessibilityIdentifier("ctw.noiDungBiChan")
+                        .padding(.horizontal, 12).padding(.vertical, 6)
+                }
                 OSoanTinRiengCTW(
                     chu: $chu, dangSoan: $dangSoan, cho: $cho,
                     traLoi: traLoi.map { TrichDanCTW.tuTin($0, toi: vm.toi, tenKia: tenKia) },
@@ -591,7 +635,7 @@ struct ChatRiengCTW: View {
             let urls = TomTatTinCTW.anhTep(m).compactMap { DuongDanAnh.urlAnh($0.url) ?? URL(string: $0.url) }
             Task { hien(await LuuAnhCTW.luu(urls) ? String(localized: "Saved to Photos") : String(localized: "Couldn't save the photo")) }
         case .thuHoi: Task { await vm.thuHoi(m) }
-        case .baoCao: tamPhu = .baoCao
+        case .baoCao: tamPhu = .baoCaoTin(m)
         }
     }
 
@@ -605,6 +649,11 @@ struct ChatRiengCTW: View {
     @ViewBuilder private func tamPhuView(_ t: TamPhu) -> some View {
         switch t {
         case .baoCao: BaoCaoNguoiCTW(ten: tenKia, userId: peer?.id ?? 0, threadId: threadId)
+        case .baoCaoTin(let m):
+            BaoCaoNguoiCTW(ten: tenKia, userId: peer?.id ?? m.senderId, threadId: threadId, tin: m) { id in
+                withAnimation(.easeOut(duration: 0.2)) { vm.anTin(id) }
+                hien(String(localized: "Reported. The message is hidden for you."))
+            }
         case .hoSo(let id): NavigationStack { HoSoThanhVienCTW(userId: id, laTamPhu: true) }
         case .anh(let u): XemAnhLonCTW(url: u)
         case .gif(let p):

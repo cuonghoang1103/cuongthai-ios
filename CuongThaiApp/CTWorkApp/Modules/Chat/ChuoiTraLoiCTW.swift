@@ -62,8 +62,14 @@ final class ChuoiTraLoiVM: ObservableObject {
         guard !s.isEmpty || !tep.isEmpty else { return false }
         RealtimeCTW.shared.baoDangGo(pid: pid, cid: cid, chuoi: gocId, dangGo: false)
         if tep.isEmpty {
-            if let m = await HangChoGuiCTW.shared.them(pid: pid, cid: cid, parentId: gocId, body: s) { chen(m) }
-            return true
+            switch await HangChoGuiCTW.shared.themKQ(pid: pid, cid: cid, parentId: gocId, body: s) {
+            case .daGui(let m):
+                if let m { chen(m) }
+                return true
+            case .biChan(let l):
+                loi = l          // bộ lọc nội dung — ô soạn giữ chữ
+                return false
+            }
         }
         do {
             let m: CTWChatMessage = try await APIClient.shared.request(

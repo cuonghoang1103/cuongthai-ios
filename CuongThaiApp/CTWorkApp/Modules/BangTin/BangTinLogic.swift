@@ -121,6 +121,14 @@ enum TrangBangTin {
 
     static func boTam(_ ds: [CTWFeedPost], khoa: String) -> [CTWFeedPost] { ds.filter { $0.khoaTam != khoa } }
 
+    /// Bài tạm bị bộ lọc nội dung chặn ⇒ hỏng + câu lỗi trên thẻ.
+    static func danhDauBiChan(_ ds: [CTWFeedPost], khoa: String, loi: String) -> [CTWFeedPost] {
+        ds.map { p in
+            guard p.khoaTam == khoa else { return p }
+            var q = p; q.dangHong = true; q.loiChan = loi; return q
+        }
+    }
+
     /// `clientKey` ≤ 40 ký tự (hợp đồng §4).
     static func khoaMoi() -> String { "ios-" + UUID().uuidString.lowercased().replacingOccurrences(of: "-", with: "").prefix(32) }
 

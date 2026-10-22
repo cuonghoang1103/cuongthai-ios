@@ -650,6 +650,8 @@ enum CTW {
             case .decodingError: return String(localized: "The server sent an unexpected response. Please update the app or try again later.")
             case .invalidURL, .noData, .unknown: return String(localized: "Something went wrong. Please try again.")
             case .coMa(let ma, let m):
+                // App Store 1.2: bộ lọc nội dung của máy chủ (422) — câu song ngữ ⇒ nửa theo ngôn ngữ app.
+                if ma == CTWLoiDich.maNoiDungBiChan { return CTWLoiDich.noiDungBiChan(m) }
                 // 3.1.1: câu hạn mức của máy chủ có thể mời "nâng cấp" — app iOS không được dẫn đi mua.
                 if ma == "WORK_QUOTA" || ma.hasSuffix("QUOTA_EXCEEDED") || CTW.coLoiMoiMua(m) {
                     return String(localized: "You've reached the limit for this action. Please try again later.")
