@@ -3,12 +3,46 @@ import PhotosUI
 import UniformTypeIdentifiers
 import Kingfisher
 
-// MARK: - Chat 1-1 kiểu Messenger (Messenger chung — `messages.routes.ts`)
+// MARK: - Chat 1-1 kiểu Messenger (Messenger chung — `messages.routes.ts`) — bản 1.1 (22/10/2026)
 //
-// Bong bóng theo nhóm người gửi, avatar người kia ở tin cuối nhóm, mốc giờ khi cách > 15 phút, ảnh (máy ảnh + thư
-// viện), tệp (Xem nhanh), cảm xúc, trả lời, thu hồi (≤ 5 phút — luật máy chủ), "Đã xem", "đang gõ…".
-// 1.2: menu "…" có Báo cáo hội thoại + Chặn/Bỏ chặn; người đã chặn ⇒ khoá ô soạn.
+// Ảnh chủ app gửi 22/10: bong bóng phẳng, mốc ngày trên GẦN NHƯ MỌI tin, ô soạn chỉ có "+" và ô chữ. Bản này:
+//   · gom nhóm như Messenger (`NhomTinCTW`: cùng người, ≤ 3 phút ⇒ bo góc liền, avatar MỘT lần ở cuối nhóm), mốc thời gian
+//     CHỈ khi cách > 1 giờ / khác ngày; chạm tin ⇒ giờ gửi;
+//   · nhấn giữ ⇒ `MenuGiuTinRiengCTW` (thanh cảm xúc ❤️😂😮😢😡👍 + bảng emoji, Trả lời, Sao chép, Chuyển tiếp, Lưu ảnh,
+//     Thu hồi ≤ 5 phút, Báo cáo);
+//   · ô soạn `OSoanTinRiengCTW` (máy ảnh, ảnh, tệp, nhãn dán, GIF, emoji, GIỮ micro để ghi tin thoại, 👍 khi trống);
+//   · gửi LẠC QUAN: tin hiện ngay (mờ, "Đang gửi…"), hỏng ⇒ "Chưa gửi được · Chạm để thử lại" — không mất chữ;
+//   · "Đã xem" = avatar nhỏ dưới tin cuối người kia đã đọc, "Đang nhập…" = bong bóng ba chấm, nút xuống cuối + số tin mới;
+//   · ⓘ = Thông tin hội thoại (hồ sơ, biệt danh, tắt thông báo, chặn, báo cáo, xoá phía tôi). 1.2: báo cáo/chặn có ở menu
+//     nhấn giữ, ⓘ và hồ sơ; người đã chặn ⇒ khoá ô soạn.
 // Realtime: `RealtimeCTW.tinNhan*` (máy chủ tự cho socket vào phòng mọi hội thoại lúc bắt tay).
+
+/// Một tin đang gửi (chưa có id máy chủ).
+struct TinChoRiengCTW: Identifiable {
+    enum NoiDung {
+        case chu(String)
+        case tep(String, [TepChoGuiCTW])
+        case media(String, String)
+        case thoai(Data, Int)
+    }
+    let id = UUID()
+    var noiDung: NoiDung
+    var traLoi: Int?
+    var hong: String?
+
+    var xemTruoc: String {
+        switch noiDung {
+        case .chu(let c): return c
+        case .tep(let c, let ds):
+            let anh = ds.filter(\.laAnh).count
+            let tom = anh == ds.count ? (anh == 1 ? String(localized: "📷 Photo") : String(localized: "📷 \(anh) photos"))
+                : String(localized: "📎 \(ds.count) files")
+            return c.isEmpty ? tom : c
+        case .media(_, let k): return k == "gif" ? String(localized: "🎬 GIF") : String(localized: "🪄 Sticker")
+        case .thoai(_, let ms): return String(localized: "🎤 Voice message \(ThoaiCTW.dongHo(Double(ms) / 1000))")
+        }
+    }
+}
 
 @MainActor
 final class ChatRiengVM: ObservableObject {
@@ -18,10 +52,13 @@ final class ChatRiengVM: ObservableObject {
     @Published var dangTai = true
     @Published var conCu = false
     @Published var loi: String?
-    @Published var dangGui = false
     @Published var tienDoTai: String?
     /// Mốc người kia đã đọc tới — vẽ "Đã xem".
     @Published var hoDocLuc: Date?
+    @Published var dangCho: [TinChoRiengCTW] = []
+    /// Tin mới của người kia về khi đang cuộn ở trên — số trên nút "xuống cuối".
+    @Published var moiChuaXem = 0
+    var oDay = true
 
     private var huy: [Any] = []
     private var lanGoCuoi = Date.distantPast
@@ -32,8 +69,12 @@ final class ChatRiengVM: ObservableObject {
         let r = RealtimeCTW.shared
         huy.append(r.tinNhanMoi.sink { [weak self] e in
             guard let self, e.threadId == threadId else { return }
+            let moi = !tin.contains { $0.id == e.tin.id }
             them(e.tin)
-            if e.tin.senderId != toi { KhoTinNhanCTW.shared.danhDauDaDoc(threadId) }
+            if e.tin.senderId != toi {
+                KhoTinNhanCTW.shared.danhDauDaDoc(threadId)
+                if moi && !oDay { moiChuaXem += 1 }
+            }
         })
         huy.append(r.tinNhanDoi.sink { [weak self] e in
             guard let self, e.threadId == threadId, let i = tin.firstIndex(where: { $0.id == e.messageId }) else { return }
@@ -46,7 +87,7 @@ final class ChatRiengVM: ObservableObject {
     }
 
     var toi: Int? { AppState.shared.currentUser?.id }
-    var nguoiKia: ThreadPeer? { hoiThoai?.peer }
+    var nguoiKia: ThreadPeer? { hoiThoai?.peer ?? KhoTinNhanCTW.shared.hoiThoai(threadId)?.peer }
 
     func tai() async {
         if hoiThoai == nil { hoiThoai = try? await APIClient.shared.request(.layHoiThoai(threadId: threadId)) }
@@ -75,48 +116,61 @@ final class ChatRiengVM: ObservableObject {
         KhoTinNhanCTW.shared.capNhatTinCuoi(threadId, m)
     }
 
-    /// Gửi: tải tệp lên trước (`POST /messages/upload` ⇒ fileId), rồi MỘT tin mang chữ + tệp + trả lời.
-    func gui(chu: String, anh: [Data], tep: [(Data, String, String)], traLoi: Message?) async -> Bool {
-        let noiDung = chu.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !noiDung.isEmpty || !anh.isEmpty || !tep.isEmpty else { return false }
-        dangGui = true; loi = nil
-        defer { dangGui = false; tienDoTai = nil }
+    // MARK: Gửi (lạc quan)
+
+    func gui(_ nd: TinChoRiengCTW.NoiDung, traLoi: Int?) {
         baoGo(false)
+        let c = TinChoRiengCTW(noiDung: nd, traLoi: traLoi)
+        dangCho.append(c)
+        Task { await chay(c.id) }
+    }
+
+    func thuLai(_ id: UUID) {
+        guard let i = dangCho.firstIndex(where: { $0.id == id }) else { return }
+        dangCho[i].hong = nil
+        Task { await chay(id) }
+    }
+
+    func bo(_ id: UUID) { dangCho.removeAll { $0.id == id } }
+
+    private func chay(_ id: UUID) async {
+        guard let c = dangCho.first(where: { $0.id == id }) else { return }
         do {
-            var ids: [Int] = []
-            let tong = anh.count + tep.count
-            for (i, a) in anh.enumerated() {
-                tienDoTai = String(localized: "Uploading \(i + 1)/\(tong)…")
-                ids.append(try await APIClient.shared.taiLenChat(data: a, fileName: "photo-\(i + 1).jpg", mimeType: "image/jpeg").fileId)
+            let m: Message
+            switch c.noiDung {
+            case .chu(let s):
+                m = try await APIClient.shared.request(TinNhanAPI.gui(threadId: threadId, noiDung: s, tepIds: [], traLoi: c.traLoi))
+            case .tep(let s, let ds):
+                var ids: [Int] = []
+                for (i, t) in ds.enumerated() {
+                    tienDoTai = String(localized: "Uploading \(i + 1)/\(ds.count)…")
+                    ids.append(try await APIClient.shared.taiLenChat(data: t.data, fileName: t.ten, mimeType: t.mime).fileId)
+                }
+                tienDoTai = nil
+                m = try await APIClient.shared.request(TinNhanAPI.gui(threadId: threadId, noiDung: s, tepIds: ids, traLoi: c.traLoi))
+            case .media(let u, let k):
+                m = try await APIClient.shared.request(TinNhanAPI.guiMedia(threadId: threadId, url: u, kieu: k, traLoi: c.traLoi))
+            case .thoai(let d, _):
+                let ten = "voice-\(Int(Date().timeIntervalSince1970)).m4a"
+                let f = try await APIClient.shared.taiLenChat(data: d, fileName: ten, mimeType: "audio/mp4").fileId
+                m = try await APIClient.shared.request(TinNhanAPI.gui(threadId: threadId, noiDung: "", tepIds: [f], traLoi: c.traLoi))
             }
-            for (i, t) in tep.enumerated() {
-                tienDoTai = String(localized: "Uploading \(anh.count + i + 1)/\(tong)…")
-                ids.append(try await APIClient.shared.taiLenChat(data: t.0, fileName: t.1, mimeType: t.2).fileId)
-            }
-            let m: Message = try await APIClient.shared.request(TinNhanAPI.gui(threadId: threadId, noiDung: noiDung, tepIds: ids, traLoi: traLoi?.id))
+            dangCho.removeAll { $0.id == id }
             them(m)
             CTWRung.chon()
-            return true
         } catch {
-            loi = CTW.loi(error)
+            tienDoTai = nil
+            if let i = dangCho.firstIndex(where: { $0.id == id }) { dangCho[i].hong = CTW.loi(error) }
             CTWRung.loi()
-            return false
         }
     }
+
+    // MARK: Cảm xúc / thu hồi
 
     func thaCamXuc(_ m: Message, _ e: String) {
         // Lạc quan: đảo ngay, socket `message:updated` sẽ chốt số thật.
         if let i = tin.firstIndex(where: { $0.id == m.id }), let toi {
-            var ds = tin[i].reactions ?? []
-            if let j = ds.firstIndex(where: { $0.emoji == e }) {
-                let c = ds[j]
-                let co = c.userIds.contains(toi)
-                let ids = co ? c.userIds.filter { $0 != toi } : c.userIds + [toi]
-                if ids.isEmpty { ds.remove(at: j) } else { ds[j] = MessageReaction(emoji: e, count: ids.count, userIds: ids) }
-            } else {
-                ds.append(MessageReaction(emoji: e, count: 1, userIds: [toi]))
-            }
-            tin[i] = tin[i].doi(camXuc: ds, thuHoi: nil, daXoa: nil)
+            tin[i] = tin[i].doi(camXuc: CamXucCTW.dao(tin[i].reactions ?? [], emoji: e, toi: toi), thuHoi: nil, daXoa: nil)
         }
         Task { _ = try? await APIClient.shared.send(.toggleMessageReaction(messageId: m.id, emoji: e)) }
     }
@@ -139,7 +193,7 @@ final class ChatRiengVM: ObservableObject {
 
     /// Tin của tôi được thu hồi trong 5 phút sau khi gửi (`RECALL_WINDOW_MS` của máy chủ).
     static func thuHoiDuoc(_ m: Message, toi: Int?, bayGio: Date = Date()) -> Bool {
-        guard m.senderId == toi, !m.daXoaHoacThuHoi, let d = m.ngayGio else { return false }
+        guard m.senderId == toi, !m.daXoaHoacThuHoi, m.id > 0, let d = m.ngayGio else { return false }
         return bayGio.timeIntervalSince(d) < 5 * 60
     }
 
@@ -167,27 +221,42 @@ struct ChatRiengCTW: View {
     @StateObject private var vm: ChatRiengVM
     @ObservedObject private var kho = KhoTinNhanCTW.shared
     @ObservedObject private var kd = ModerationStore.shared
+    @EnvironmentObject private var nganXep: NganXepCTW
+    @Environment(\.horizontalSizeClass) private var beRong
     @State private var chu = ""
     @State private var ghimDay = GhimDayChatCTW()
     @State private var traLoi: Message?
+    @State private var cho: [TepChoGuiCTW] = []
     @State private var anhChon: [PhotosPickerItem] = []
-    @State private var anhCho: [Data] = []
-    @State private var tepCho: [(Data, String, String)] = []
     @State private var moThuVien = false
     @State private var moMayAnh = false
     @State private var moTep = false
-    @State private var hoiChan = false
     @State private var tamPhu: TamPhu?
     @State private var xemTep: URL?
+    @State private var giu: Message?
+    @State private var hienGio: Int?
+    @State private var nhapNhay: Int?
+    @State private var oDay = true
+    @State private var thongBao: String?
+    @FocusState private var dangSoan: Bool
 
-    /// MỘT `.sheet(item:)` cho cả ba tấm phủ (CLAUDE.md C5 — nhiều `.sheet` trên một view chỉ cái cuối chạy).
+    /// MỘT `.sheet(item:)` cho mọi tấm phủ (CLAUDE.md C5 — nhiều `.sheet` trên một view chỉ cái cuối chạy).
     enum TamPhu: Identifiable {
-        case baoCao, hoSo(Int), anh(URL)
+        case baoCao, hoSo(Int), anh(URL), gif(Int), emoji, camXuc(Message), aiCamXuc(Message), chuyenTiep(Message), thongTin
         var id: String {
-            switch self { case .baoCao: return "bc"; case .hoSo(let i): return "hs\(i)"; case .anh(let u): return u.absoluteString }
+            switch self {
+            case .baoCao: return "bc"
+            case .hoSo(let i): return "hs\(i)"
+            case .anh(let u): return u.absoluteString
+            case .gif(let p): return "gif\(p)"
+            case .emoji: return "emoji"
+            case .camXuc(let m): return "cx\(m.id)"
+            case .aiCamXuc(let m): return "ai\(m.id)"
+            case .chuyenTiep(let m): return "ct\(m.id)"
+            case .thongTin: return "tt"
+            }
         }
     }
-    @FocusState private var dangSoan: Bool
 
     init(threadId: Int) {
         self.threadId = threadId
@@ -196,287 +265,365 @@ struct ChatRiengCTW: View {
 
     private var peer: ThreadPeer? { vm.nguoiKia }
     private var tenKia: String {
-        if let p = peer, let n = kho.thanhVien(p.id), vm.hoiThoai?.bietDanh == nil { return n.ten }
-        return peer?.displayName ?? peer?.username ?? String(localized: "Conversation")
+        let t = kho.hoiThoai(threadId) ?? vm.hoiThoai
+        if let p = peer, let n = kho.thanhVien(p.id), t?.bietDanh == nil { return n.ten }
+        return t?.peer?.displayName ?? peer?.username ?? String(localized: "Conversation")
     }
     private var mocKia: TrangThaiHoatDongCTW.Moc { peer.map { kho.moc($0.id, mocHoiThoai: $0.lastActiveAt) } ?? .an }
     private var daChan: Bool { peer.map { kd.blockedUserIds.contains($0.id) } ?? false }
-    private var userKia: CTWUser { CTWUser(id: peer?.id ?? 0, username: peer?.username, displayName: tenKia, avatarUrl: peer?.avatarUrl) }
+    private var userKia: CTWUser {
+        CTWUser(id: peer?.id ?? 0, username: peer?.username, displayName: tenKia,
+                avatarUrl: peer?.avatarUrl ?? peer.flatMap { kho.thanhVien($0.id)?.avatarUrl })
+    }
 
     var body: some View {
         ScrollViewReader { cuon in
-            ScrollView {
-                LazyVStack(spacing: 2) {
-                    if vm.conCu {
-                        Button("Load earlier messages") { Task { await vm.taiCuHon() } }
-                            .font(.ctw(size: 13)).padding(.vertical, 8)
-                    }
-                    dauHoiThoai
-                    let daXem = ChatRiengVM.tinDaXem(vm.tin, toi: vm.toi, hoDocLuc: vm.hoDocLuc)
-                    ForEach(Array(vm.tin.enumerated()), id: \.element.id) { i, m in
-                        if canMocGio(i) { mocGio(m) }
-                        BongTinCTW(m: m, cuaToi: m.senderId == vm.toi, nguoiKia: userKia,
-                                   hienAvatar: cuoiNhom(i), toi: vm.toi,
-                                   xemAnh: { tamPhu = .anh($0) }, moTep: moTepDinhKem)
-                            .contextMenu { menuTin(m) }
-                            .id(m.id)
-                        if m.id == daXem && m.id == vm.tin.last(where: { $0.senderId == vm.toi })?.id {
-                            HStack { Spacer(); Text("Seen").font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary) }
-                                .padding(.trailing, 14).padding(.bottom, 2)
-                                .accessibilityIdentifier("dm.seen")
-                        }
-                    }
-                    if !(kho.dangGo[threadId] ?? []).isEmpty {
-                        HStack(spacing: 8) {
-                            CTWAvatar(user: userKia, size: 26)
-                            Text("typing…").font(.ctw(size: 13).italic()).foregroundColor(AppColors.textSecondary)
-                                .padding(.horizontal, 12).padding(.vertical, 8)
-                                .background(RoundedRectangle(cornerRadius: 18).fill(AppColors.backgroundSecondary))
-                            Spacer()
-                        }
-                        .padding(.horizontal, 12).id("go")
-                    }
-                    Color.clear.frame(height: 4).id("cuoi")
+            danhSach(cuon)
+                .overlay(alignment: .bottomTrailing) { nutXuongCuoi(cuon) }
+                .onChange(of: vm.tin.last?.id) { _, _ in
+                    if vm.tin.last?.senderId == vm.toi || oDay { withAnimation { cuon.scrollTo("cuoi", anchor: .bottom) } }
                 }
-                .padding(.top, 8)
-                // Ảnh tải xong (khung theo tỉ lệ thật) làm nội dung cao thêm ⇒ giữ dính đáy (cùng luật kênh chat).
-                .onGeometryChange(for: CGRect.self) { $0.frame(in: .named("dm.cuon")) } action: { khung in
-                    if ghimDay.doNoiDung(khung) { cuon.scrollTo("cuoi", anchor: .bottom) }
+                .onChange(of: vm.dangCho.count) { _, _ in withAnimation { cuon.scrollTo("cuoi", anchor: .bottom) } }
+                .onChange(of: nhapNhay) { _, id in
+                    guard let id else { return }
+                    withAnimation { cuon.scrollTo(id, anchor: .center) }
+                    Task { try? await Task.sleep(for: .seconds(1.2)); withAnimation { nhapNhay = nil } }
                 }
-            }
-            .coordinateSpace(.named("dm.cuon"))
-            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { cao in
-                if ghimDay.doKhung(cao) { cuon.scrollTo("cuoi", anchor: .bottom) }
-            }
-            .modifier(PhaCuonChatCTW(ghim: ghimDay))
-            .scrollDismissesKeyboard(.interactively)
-            .defaultScrollAnchor(.bottom)   // mở hội thoại ở tin mới nhất
-            .onChange(of: vm.tin.last?.id) { _, _ in withAnimation { cuon.scrollTo("cuoi", anchor: .bottom) } }
-            .onChange(of: vm.dangTai) { _, dang in
-                if !dang { ghimDay.batDauNap() }
-                cuon.scrollTo("cuoi", anchor: .bottom)
-            }
         }
         .overlay {
             if vm.dangTai && vm.tin.isEmpty { ProgressView() }
             else if let l = vm.loi, vm.tin.isEmpty { CTWOLoi(loi: l) { Task { await vm.tai() } } }
         }
+        .overlay(alignment: .top) {
+            if let thongBao {
+                Text(thongBao).font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.onPrimary)
+                    .padding(.horizontal, 16).padding(.vertical, 9)
+                    .background(Capsule().fill(AppColors.textPrimary.opacity(0.88)))
+                    .padding(.top, 8).transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
         .safeAreaInset(edge: .bottom, spacing: 0) { oSoan }
+        .overlay { if let g = giu { menuGiu(g) } }
         .modifier(BoFocusKhiAnBanPhimCTW(dangGo: $dangSoan))
         .background(AppColors.backgroundPrimary)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar(.hidden, for: .tabBar)   // như Messenger: khung chat chiếm trọn màn
+        .toolbar(beRong == .compact ? .hidden : .automatic, for: .tabBar)   // như Messenger: khung chat chiếm trọn màn (iPhone)
         .toolbar {
-            ToolbarItem(placement: .principal) {
-                Button { if let p = peer { tamPhu = .hoSo(p.id) } } label: {
-                    HStack(spacing: 8) {
-                        AvatarHoatDongCTW(user: userKia, size: 32, moc: mocKia)
-                        VStack(alignment: .leading, spacing: 0) {
-                            Text(tenKia).font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(1)
-                            let c = TrangThaiHoatDongCTW.chu(mocKia)
-                            if !c.isEmpty { Text(c).font(.ctw(size: 11)).foregroundColor(AppColors.textSecondary).lineLimit(1) }
-                        }
-                    }
-                }
-                .buttonStyle(.plain)
-                .disabled(peer == nil || kho.thanhVien(peer!.id) == nil)
-            }
+            ToolbarItem(placement: .principal) { dauKhung }
             ToolbarItem(placement: .primaryAction) {
-                Menu {
-                    if let p = peer, kho.thanhVien(p.id) != nil {
-                        Button { tamPhu = .hoSo(p.id) } label: { Label("View profile", systemImage: "person.crop.circle") }
-                    }
-                    Button { tamPhu = .baoCao } label: { Label("Report conversation", systemImage: "exclamationmark.bubble") }
-                    if peer != nil {
-                        if daChan {
-                            Button { Task { if let p = peer { try? await kd.unblock(userId: p.id) } } } label: {
-                                Label("Unblock", systemImage: "hand.raised.slash")
-                            }
-                        } else {
-                            Button(role: .destructive) { hoiChan = true } label: { Label("Block", systemImage: "hand.raised") }
-                        }
-                    }
-                } label: { Image(systemName: "ellipsis.circle") }
-                    .accessibilityLabel("More")
+                Button { tamPhu = .thongTin } label: { Image(systemName: "info.circle") }
+                    .accessibilityLabel("Conversation details")
+                    .accessibilityIdentifier("dm.info")
             }
         }
-        .task { await vm.tai() }
+        .task { await vm.tai(); moManThu() }
         .onAppear { KhoTinNhanCTW.hoiThoaiDangMo = threadId }
         .onDisappear {
             if KhoTinNhanCTW.hoiThoaiDangMo == threadId { KhoTinNhanCTW.hoiThoaiDangMo = nil }
             vm.baoGo(false)
+            TrinhPhatThoaiCTW.shared.dung()
         }
         .photosPicker(isPresented: $moThuVien, selection: $anhChon, maxSelectionCount: 6, matching: .images)
         .onChange(of: anhChon) { _, ds in
+            guard !ds.isEmpty else { return }
             Task {
-                var kq: [Data] = []
-                for it in ds {
-                    if let d = try? await it.loadTransferable(type: Data.self), let u = UIImage(data: d),
-                       let j = u.jpegData(compressionQuality: 0.8) { kq.append(j) }
+                for (i, it) in ds.enumerated() {
+                    if let d = try? await it.loadTransferable(type: Data.self), let u = UIImage(data: d), let j = Self.nen(u) {
+                        cho.append(TepChoGuiCTW(data: j, ten: "photo-\(i + 1).jpg", mime: "image/jpeg"))
+                    }
                 }
-                anhCho += kq
                 anhChon = []
             }
         }
-        .fullScreenCover(isPresented: $moMayAnh) { MayAnh { anhCho.append($0) }.ignoresSafeArea() }
+        .fullScreenCover(isPresented: $moMayAnh) {
+            MayAnh { d in cho.append(TepChoGuiCTW(data: d, ten: "camera.jpg", mime: "image/jpeg")) }.ignoresSafeArea()
+        }
         .fileImporter(isPresented: $moTep, allowedContentTypes: [.item], allowsMultipleSelection: true) { r in
             guard case .success(let urls) = r else { return }
             for u in urls.prefix(5) {
                 let truyCap = u.startAccessingSecurityScopedResource()
                 defer { if truyCap { u.stopAccessingSecurityScopedResource() } }
                 guard let d = try? Data(contentsOf: u) else { continue }
+                guard d.count <= 10 * 1024 * 1024 else { hien(String(localized: "Files must be 10 MB or smaller")); continue }
                 let mime = UTType(filenameExtension: u.pathExtension)?.preferredMIMEType ?? "application/octet-stream"
-                tepCho.append((d, u.lastPathComponent, mime))
+                cho.append(TepChoGuiCTW(data: d, ten: u.lastPathComponent, mime: mime))
             }
         }
         .ctwXemTep($xemTep)
-        .sheet(item: $tamPhu) { t in
-            switch t {
-            case .baoCao: BaoCaoNguoiCTW(ten: tenKia, userId: peer?.id ?? 0, threadId: threadId)
-            case .hoSo(let id): NavigationStack { HoSoThanhVienCTW(userId: id, laTamPhu: true) }
-            case .anh(let u): XemAnhLonCTW(url: u)
-            }
-        }
-        .confirmationDialog("Block \(tenKia)?", isPresented: $hoiChan, titleVisibility: .visible) {
-            Button("Block", role: .destructive) {
-                Task { if let p = peer { try? await kd.block(userId: p.id, reason: nil); await kho.taiDanhBa() } }
-            }
-        } message: { Text("They won't be able to message you, and you won't see their active status.") }
+        .sheet(item: $tamPhu) { t in tamPhuView(t) }
     }
 
-    // MARK: Phần
+    // MARK: Danh sách tin
+
+    private func danhSach(_ cuon: ScrollViewProxy) -> some View {
+        ScrollView {
+            LazyVStack(spacing: 0) {
+                if vm.conCu {
+                    ProgressView().padding(.vertical, 12)
+                        .onAppear {
+                            let dau = vm.tin.first?.id
+                            Task { await vm.taiCuHon(); if let dau { cuon.scrollTo(dau, anchor: .top) } }
+                        }
+                }
+                dauHoiThoai
+                let bc = NhomTinCTW.boCuc(vm.tin.map(Self.muc))
+                let daXem = ChatRiengVM.tinDaXem(vm.tin, toi: vm.toi, hoDocLuc: vm.hoDocLuc)
+                let cuoiCuaToi = vm.tin.last(where: { $0.senderId == vm.toi })?.id
+                ForEach(Array(vm.tin.enumerated()), id: \.element.id) { i, m in
+                    let b = i < bc.count ? bc[i] : BoCucTinCTW(viTri: .don, mocThoiGian: false)
+                    VStack(spacing: 0) {
+                        if b.mocThoiGian, let d = m.ngayGio { MocThoiGianTinCTW(d: d) }
+                        bong(m, b.viTri)
+                            .padding(.top, b.viTri.laDau && !b.mocThoiGian ? 7 : 1)
+                            .background(nhapNhay == m.id ? AppColors.primary.opacity(0.12) : .clear)
+                        if m.id == daXem && vm.dangCho.isEmpty {
+                            HStack { Spacer(); CTWAvatar(user: userKia, size: 15) }
+                                .padding(.trailing, 12).padding(.top, 3)
+                                .accessibilityElement(children: .ignore)
+                                .accessibilityLabel(String(localized: "Seen by \(tenKia)"))
+                                .accessibilityIdentifier("dm.seen")
+                        } else if m.id == cuoiCuaToi && vm.dangCho.isEmpty && !m.daXoaHoacThuHoi {
+                            HStack(spacing: 3) {
+                                Spacer()
+                                Image(systemName: "checkmark.circle").font(.ctw(size: 11))
+                                Text("Sent").font(.ctw(size: 11))
+                            }
+                            .foregroundColor(AppColors.textTertiary).padding(.trailing, 12).padding(.top, 3)
+                            .accessibilityIdentifier("dm.sent")
+                        }
+                    }
+                    .id(m.id)
+                }
+                ForEach(vm.dangCho) { c in tinCho(c) }
+                if !(kho.dangGo[threadId] ?? []).isEmpty { BongDangGoCTW(nguoi: userKia).id("go") }
+                Color.clear.frame(height: 6).id("cuoi")
+                    .onAppear { oDay = true; vm.oDay = true; vm.moiChuaXem = 0 }
+                    .onDisappear { oDay = false; vm.oDay = false }
+            }
+            .padding(.top, 8)
+            // Ảnh tải xong (khung theo tỉ lệ thật) làm nội dung cao thêm ⇒ giữ dính đáy (cùng luật kênh chat — §21).
+            .onGeometryChange(for: CGRect.self) { $0.frame(in: .named("dm.cuon")) } action: { khung in
+                if ghimDay.doNoiDung(khung) { cuon.scrollTo("cuoi", anchor: .bottom) }
+            }
+        }
+        .coordinateSpace(.named("dm.cuon"))
+        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { cao in
+            if ghimDay.doKhung(cao) { cuon.scrollTo("cuoi", anchor: .bottom) }
+        }
+        .modifier(PhaCuonChatCTW(ghim: ghimDay))
+        .scrollDismissesKeyboard(.interactively)
+        .defaultScrollAnchor(.bottom)
+        .onChange(of: vm.dangTai) { _, dang in
+            if !dang { ghimDay.batDauNap() }
+            cuon.scrollTo("cuoi", anchor: .bottom)
+        }
+    }
+
+    static func muc(_ m: Message) -> NhomTinCTW.Muc {
+        NhomTinCTW.Muc(nguoi: m.senderId, luc: m.ngayGio,
+                       dungRieng: m.daXoaHoacThuHoi || TomTatTinCTW.laNhanDan(m) || EmojiLonCTW.la(m.content))
+    }
+
+    private func bong(_ m: Message, _ v: ViTriNhomCTW) -> some View {
+        BongTinRiengCTW(
+            m: m, cuaToi: m.senderId == vm.toi, viTri: v, nguoiKia: userKia, tenKia: tenKia, toi: vm.toi,
+            hienGio: hienGio == m.id,
+            cham: { withAnimation(.easeOut(duration: 0.15)) { hienGio = hienGio == m.id ? nil : m.id } },
+            giu: { dangSoan = false; withAnimation(.easeOut(duration: 0.12)) { giu = m } },
+            xemAnh: { tamPhu = .anh($0) },
+            moTep: moTepDinhKem,
+            moHoSo: { if let p = peer { tamPhu = .hoSo(p.id) } },
+            xemCamXuc: { tamPhu = .aiCamXuc(m) },
+            denTinGoc: { id in if vm.tin.contains(where: { $0.id == id }) { nhapNhay = id } })
+    }
+
+    private func tinCho(_ c: TinChoRiengCTW) -> some View {
+        VStack(alignment: .trailing, spacing: 3) {
+            HStack {
+                Spacer(minLength: 48)
+                Text(verbatim: c.xemTruoc)
+                    .font(.ctw(size: 16)).foregroundColor(AppColors.onPrimary)
+                    .padding(.horizontal, 13).padding(.vertical, 8)
+                    .background(RoundedRectangle(cornerRadius: GocBongCTW.lon, style: .continuous)
+                        .fill(c.hong == nil ? AppColors.primary.opacity(0.55) : AppColors.error.opacity(0.75)))
+            }
+            if c.hong != nil {
+                HStack(spacing: 12) {
+                    Text("Not sent").foregroundColor(AppColors.error)
+                    Button("Retry") { vm.thuLai(c.id) }.accessibilityIdentifier("dm.retry")
+                    Button("Delete", role: .destructive) { vm.bo(c.id) }
+                }
+                .font(.ctw(size: 12, weight: .semibold))
+            } else {
+                Text("Sending…").font(.ctw(size: 11)).foregroundColor(AppColors.textTertiary)
+            }
+        }
+        .padding(.horizontal, 10).padding(.top, 6)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("dm.pending.\(c.id.uuidString.prefix(4))")
+    }
 
     @ViewBuilder private var dauHoiThoai: some View {
         if !vm.conCu, !vm.dangTai {
             VStack(spacing: 6) {
-                AvatarHoatDongCTW(user: userKia, size: 72, moc: mocKia)
-                Text(tenKia).font(.ctw(size: 18, weight: .bold)).foregroundColor(AppColors.textPrimary)
+                AvatarHoatDongCTW(user: userKia, size: 76, moc: mocKia)
+                Text(verbatim: tenKia).font(.ctw(size: 19, weight: .bold)).foregroundColor(AppColors.textPrimary)
                 if let p = peer, let n = kho.thanhVien(p.id), !n.dongPhu.isEmpty {
-                    Text(n.dongPhu).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
+                    Text(n.dongPhu).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).multilineTextAlignment(.center)
+                }
+                if let p = peer {
+                    Button { tamPhu = .hoSo(p.id) } label: {
+                        Text("View profile").font(.ctw(size: 13, weight: .semibold))
+                            .padding(.horizontal, 14).padding(.vertical, 7)
+                            .background(Capsule().fill(AppColors.backgroundSecondary))
+                    }
+                    .buttonStyle(.plain).foregroundColor(AppColors.textPrimary)
+                    .accessibilityIdentifier("dm.viewProfile")
                 }
             }
-            .padding(.vertical, 18)
+            .padding(.vertical, 18).padding(.horizontal, 24)
         }
     }
+
+    private var dauKhung: some View {
+        Button { if let p = peer { tamPhu = .hoSo(p.id) } } label: {
+            HStack(spacing: 8) {
+                AvatarHoatDongCTW(user: userKia, size: 32, moc: mocKia)
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(verbatim: tenKia).font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(1)
+                    let c = !(kho.dangGo[threadId] ?? []).isEmpty ? String(localized: "typing…") : TrangThaiHoatDongCTW.chu(mocKia)
+                    if !c.isEmpty {
+                        Text(c).font(.ctw(size: 11)).foregroundColor(mocKia == .dangHoatDong ? AppColors.success : AppColors.textSecondary).lineLimit(1)
+                    }
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .disabled(peer == nil)
+        .accessibilityHint(Text("Opens their profile"))
+        .accessibilityIdentifier("dm.header")
+    }
+
+    @ViewBuilder private func nutXuongCuoi(_ cuon: ScrollViewProxy) -> some View {
+        if !oDay && !vm.tin.isEmpty {
+            Button { withAnimation { cuon.scrollTo("cuoi", anchor: .bottom) } } label: {
+                Image(systemName: "arrow.down").font(.ctw(size: 16, weight: .bold)).foregroundColor(AppColors.primary)
+                    .frame(width: 42, height: 42)
+                    .background(Circle().fill(AppColors.backgroundCard).shadow(color: .black.opacity(0.15), radius: 6, y: 2))
+                    .overlay(alignment: .topTrailing) {
+                        if vm.moiChuaXem > 0 {
+                            Text(verbatim: "\(vm.moiChuaXem)").font(.ctw(size: 11, weight: .bold)).foregroundColor(.white)
+                                .padding(.horizontal, 6).padding(.vertical, 2).background(Capsule().fill(AppColors.error))
+                                .offset(x: 6, y: -6)
+                        }
+                    }
+            }
+            .padding(.trailing, 14).padding(.bottom, 10)
+            .transition(.scale.combined(with: .opacity))
+            .accessibilityLabel(vm.moiChuaXem > 0 ? String(localized: "\(vm.moiChuaXem) new messages, jump to latest") : String(localized: "Jump to latest"))
+            .accessibilityIdentifier("dm.jump")
+        }
+    }
+
+    // MARK: Ô soạn
 
     @ViewBuilder private var oSoan: some View {
-        VStack(spacing: 0) {
-            Divider()
-            if daChan {
-                VStack(spacing: 6) {
-                    Text("You blocked \(tenKia).").font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
-                    Button("Unblock") { Task { if let p = peer { try? await kd.unblock(userId: p.id) } } }
-                }
-                .frame(maxWidth: .infinity).padding(12)
-            } else {
-                if let l = vm.loi, !vm.tin.isEmpty { CTWErrorBanner(text: l) { vm.loi = nil }.padding(.horizontal, 12).padding(.top, 6) }
-                if let t = vm.tienDoTai {
-                    HStack(spacing: 6) { ProgressView().controlSize(.small); Text(t).font(.ctw(size: 12)) }
-                        .foregroundColor(AppColors.textSecondary).padding(.top, 6)
-                }
-                if let r = traLoi {
-                    HStack {
-                        Rectangle().fill(AppColors.primary).frame(width: 3)
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text(r.senderId == vm.toi ? String(localized: "Replying to yourself") : String(localized: "Replying to \(tenKia)"))
-                                .font(.ctw(size: 12, weight: .semibold)).foregroundColor(AppColors.primary)
-                            Text(Self.tomTat(r)).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(1)
+        if daChan {
+            VStack(spacing: 6) {
+                Divider()
+                Text("You blocked \(tenKia).").font(.ctw(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                Text("You can't message each other while they're blocked.").font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
+                Button("Unblock") { Task { if let p = peer { try? await kd.unblock(userId: p.id) } } }
+                    .padding(.bottom, 8)
+            }
+            .frame(maxWidth: .infinity).background(AppColors.backgroundCard)
+        } else {
+            VStack(spacing: 0) {
+                if let l = vm.loi, !vm.tin.isEmpty { CTWErrorBanner(text: l) { vm.loi = nil }.padding(.horizontal, 12).padding(.vertical, 6) }
+                OSoanTinRiengCTW(
+                    chu: $chu, dangSoan: $dangSoan, cho: $cho,
+                    traLoi: traLoi.map { TrichDanCTW.tuTin($0, toi: vm.toi, tenKia: tenKia) },
+                    tenKia: tenKia, tienDo: vm.tienDoTai,
+                    huyTraLoi: { traLoi = nil },
+                    gui: gui,
+                    guiThich: { vm.gui(.chu("👍"), traLoi: traLoi?.id); traLoi = nil },
+                    guiThoai: { d, ms in vm.gui(.thoai(d, ms), traLoi: traLoi?.id); traLoi = nil },
+                    mo: { m in
+                        switch m {
+                        case .tep: moTep = true
+                        case .nhanDan: tamPhu = .gif(1)
+                        case .mayAnh: moMayAnh = true
+                        case .thuVien: moThuVien = true
+                        case .gif: tamPhu = .gif(0)
+                        case .emoji: tamPhu = .emoji
                         }
-                        Spacer()
-                        Button { traLoi = nil } label: { Image(systemName: "xmark.circle.fill").foregroundColor(AppColors.textTertiary) }
-                            .accessibilityLabel("Cancel reply")
-                    }
-                    .frame(height: 36).padding(.horizontal, 12).padding(.top, 6)
-                }
-                if !anhCho.isEmpty || !tepCho.isEmpty { hangDinhKem }
-                HStack(alignment: .bottom, spacing: 8) {
-                    Menu {
-                        if MayAnh.coMayAnh { Button { moMayAnh = true } label: { Label("Camera", systemImage: "camera") } }
-                        Button { moThuVien = true } label: { Label("Photo library", systemImage: "photo.on.rectangle") }
-                        Button { moTep = true } label: { Label("File", systemImage: "doc") }
-                    } label: {
-                        Image(systemName: "plus.circle.fill").font(.ctw(size: 26)).foregroundColor(AppColors.primary)
-                            .frame(width: 44, height: 44)
-                    }
-                    .accessibilityLabel("Attach")
-                    TextField("Message", text: $chu, axis: .vertical)
-                        .lineLimit(1...5)
-                        .focused($dangSoan)
-                        .padding(.horizontal, 14).padding(.vertical, 9)
-                        .background(RoundedRectangle(cornerRadius: 20).fill(AppColors.backgroundPrimary))
-                        .onChange(of: chu) { _, m in vm.baoGo(!m.isEmpty) }
-                        .accessibilityIdentifier("dm.composer")
-                    Button { Task { await gui() } } label: {
-                        Group {
-                            if vm.dangGui { ProgressView() }
-                            else { Image(systemName: "paperplane.fill").font(.ctw(size: 20)) }
-                        }
-                        .foregroundColor(coGiDeGui ? AppColors.primary : AppColors.textTertiary)
-                        .frame(width: 44, height: 44)
-                    }
-                    .disabled(!coGiDeGui || vm.dangGui)
-                    .accessibilityLabel("Send")
-                    .accessibilityIdentifier("dm.send")
-                }
-                .padding(.horizontal, 8).padding(.vertical, 6)
-            }
-        }
-        .background(AppColors.backgroundCard)
-    }
-
-    private var hangDinhKem: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(Array(anhCho.enumerated()), id: \.offset) { i, d in
-                    ZStack(alignment: .topTrailing) {
-                        if let u = UIImage(data: d) {
-                            Image(uiImage: u).resizable().scaledToFill().frame(width: 64, height: 64).clipShape(RoundedRectangle(cornerRadius: 10))
-                        }
-                        Button { anhCho.remove(at: i) } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(.white, .black.opacity(0.6)) }
-                            .accessibilityLabel("Remove photo")
-                    }
-                }
-                ForEach(Array(tepCho.enumerated()), id: \.offset) { i, t in
-                    HStack(spacing: 6) {
-                        Image(systemName: "doc.fill").foregroundColor(AppColors.primary)
-                        Text(t.1).font(.ctw(size: 12)).lineLimit(1).frame(maxWidth: 120).fixedSize(horizontal: false, vertical: true)
-                        Button { tepCho.remove(at: i) } label: { Image(systemName: "xmark.circle.fill").foregroundColor(AppColors.textTertiary) }
-                            .accessibilityLabel("Remove file")
-                    }
-                    .padding(8).background(RoundedRectangle(cornerRadius: 10).fill(AppColors.backgroundSecondary))
-                }
-            }
-            .padding(.horizontal, 12).padding(.top, 8)
-        }
-    }
-
-    @ViewBuilder private func menuTin(_ m: Message) -> some View {
-        if !m.daXoaHoacThuHoi {
-            ControlGroup {
-                ForEach(BongTinCTW.camXucNhanh, id: \.self) { e in Button(e) { vm.thaCamXuc(m, e) } }
-            }
-            Button { traLoi = m; dangSoan = true } label: { Label("Reply", systemImage: "arrowshape.turn.up.left") }
-            if let c = m.content, !c.isEmpty {
-                Button { UIPasteboard.general.string = c } label: { Label("Copy", systemImage: "doc.on.doc") }
-            }
-            if ChatRiengVM.thuHoiDuoc(m, toi: vm.toi) {
-                Button(role: .destructive) { Task { await vm.thuHoi(m) } } label: { Label("Unsend", systemImage: "arrow.uturn.backward") }
-            }
-            if m.senderId != vm.toi {
-                Button(role: .destructive) { tamPhu = .baoCao } label: { Label("Report", systemImage: "exclamationmark.bubble") }
+                    },
+                    baoGo: { vm.baoGo($0) })
             }
         }
     }
 
-    private var coGiDeGui: Bool { !chu.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !anhCho.isEmpty || !tepCho.isEmpty }
+    private func gui() {
+        let c = chu.trimmingCharacters(in: .whitespacesAndNewlines)
+        let r = traLoi?.id
+        if !cho.isEmpty { vm.gui(.tep(c, cho), traLoi: r) } else if !c.isEmpty { vm.gui(.chu(c), traLoi: r) } else { return }
+        chu = ""; cho = []; traLoi = nil
+    }
 
-    private func gui() async {
-        let (c, a, t, r) = (chu, anhCho, tepCho, traLoi)
-        chu = ""; anhCho = []; tepCho = []; traLoi = nil
-        if !(await vm.gui(chu: c, anh: a, tep: t, traLoi: r)) {
-            // Hỏng ⇒ trả nháp lại cho người dùng, không mất chữ/ảnh.
-            chu = c; anhCho = a; tepCho = t; traLoi = r
+    // MARK: Nhấn giữ
+
+    private func menuGiu(_ m: Message) -> some View {
+        MenuGiuTinRiengCTW(m: m, cuaToi: m.senderId == vm.toi, nguoiKia: userKia, tenKia: tenKia, toi: vm.toi,
+                           chon: { t in xuLy(t, m) }, dong: { withAnimation(.easeOut(duration: 0.12)) { giu = nil } })
+            .transition(.opacity)
+            .zIndex(10)
+    }
+
+    private func xuLy(_ t: ThaoTacGiuCTW, _ m: Message) {
+        withAnimation(.easeOut(duration: 0.12)) { giu = nil }
+        switch t {
+        case .camXuc(let e): vm.thaCamXuc(m, e); CTWRung.chon()
+        case .themCamXuc: tamPhu = .camXuc(m)
+        case .traLoi: traLoi = m; dangSoan = true
+        case .chep: UIPasteboard.general.string = m.content; hien(String(localized: "Copied"))
+        case .chuyenTiep: tamPhu = .chuyenTiep(m)
+        case .luuAnh:
+            let urls = TomTatTinCTW.anhTep(m).compactMap { DuongDanAnh.urlAnh($0.url) ?? URL(string: $0.url) }
+            Task { hien(await LuuAnhCTW.luu(urls) ? String(localized: "Saved to Photos") : String(localized: "Couldn't save the photo")) }
+        case .thuHoi: Task { await vm.thuHoi(m) }
+        case .baoCao: tamPhu = .baoCao
         }
+    }
+
+    private func hien(_ s: String) {
+        withAnimation { thongBao = s }
+        Task { try? await Task.sleep(for: .seconds(1.8)); withAnimation { if thongBao == s { thongBao = nil } } }
+    }
+
+    // MARK: Tấm phủ
+
+    @ViewBuilder private func tamPhuView(_ t: TamPhu) -> some View {
+        switch t {
+        case .baoCao: BaoCaoNguoiCTW(ten: tenKia, userId: peer?.id ?? 0, threadId: threadId)
+        case .hoSo(let id): NavigationStack { HoSoThanhVienCTW(userId: id, laTamPhu: true) }
+        case .anh(let u): XemAnhLonCTW(url: u)
+        case .gif(let p):
+            BangChonGifCTW(batDau: p) { url, kieu in vm.gui(.media(url, kieu), traLoi: traLoi?.id); traLoi = nil }
+        case .emoji: BangEmojiCTW(tieuDe: "Emoji", chon: { chu += $0 }, dongSauKhiChon: false)
+        case .camXuc(let m): BangEmojiCTW(tieuDe: "Add reaction", chon: { vm.thaCamXuc(m, $0) })
+        case .aiCamXuc(let m):
+            AiCamXucCTW(m: vm.tin.first { $0.id == m.id } ?? m, toi: vm.toi, tenKia: tenKia) { e in vm.thaCamXuc(m, e) }
+        case .chuyenTiep(let m): ChuyenTiepTinRiengCTW(m: m, tuHoiThoai: threadId)
+        case .thongTin:
+            ThongTinHoiThoaiCTW(threadId: threadId, peerId: peer?.id, tenKia: tenKia, nguoi: userKia, moc: mocKia,
+                                moHoSo: { mo(.hoSo(peer?.id ?? 0)) }, baoCao: { mo(.baoCao) },
+                                daXoa: { if !nganXep.duong.isEmpty { nganXep.duong.removeLast() } })
+        }
+    }
+
+    /// Mở tấm phủ khác SAU khi tấm đang mở đóng hẳn (SwiftUI bỏ qua lệnh mở khi một tấm còn đang đóng dở).
+    private func mo(_ t: TamPhu) {
+        Task { try? await Task.sleep(for: .milliseconds(450)); tamPhu = t }
     }
 
     private func moTepDinhKem(_ a: MessageAttachment) {
@@ -484,158 +631,46 @@ struct ChatRiengCTW: View {
         Task { xemTep = try? await CTWXemTep.taiVe(url: u, ten: a.fileName ?? "file", khoa: "dm-\(a.id)") }
     }
 
-    private func canMocGio(_ i: Int) -> Bool {
-        guard let d = vm.tin[i].ngayGio else { return false }
-        guard i > 0, let truoc = vm.tin[i - 1].ngayGio else { return true }
-        return d.timeIntervalSince(truoc) > 15 * 60
+    /// Ảnh gửi đi: cạnh dài ≤ 2048 px, JPEG 0,82 (máy chủ trần 10 MB / tệp).
+    static func nen(_ u: UIImage) -> Data? {
+        let dai = max(u.size.width, u.size.height) * u.scale
+        guard dai > 2048 else { return u.jpegData(compressionQuality: 0.82) }
+        let k = 2048 / dai
+        let co = CGSize(width: u.size.width * u.scale * k, height: u.size.height * u.scale * k)
+        let f = UIGraphicsImageRendererFormat(); f.scale = 1
+        return UIGraphicsImageRenderer(size: co, format: f).image { _ in u.draw(in: CGRect(origin: .zero, size: co)) }
+            .jpegData(compressionQuality: 0.82)
     }
 
-    private func cuoiNhom(_ i: Int) -> Bool {
-        guard i + 1 < vm.tin.count else { return true }
-        let a = vm.tin[i], b = vm.tin[i + 1]
-        if a.senderId != b.senderId { return true }
-        guard let x = a.ngayGio, let y = b.ngayGio else { return true }
-        return y.timeIntervalSince(x) > 15 * 60
+    // MARK: Màn thử (DEBUG) — `CT_XEM_DM=giu|traloi|gif|info|camxuc`
+
+    private func moManThu() {
+        #if DEBUG
+        if ProcessInfo.processInfo.environment["CT_XEM_DM_GO"] == "1", let p = peer { kho.giaDangGo(threadId: threadId, userId: p.id) }
+        guard let k = ProcessInfo.processInfo.environment["CT_XEM_DM"], let cuoi = vm.tin.last(where: { $0.senderId != vm.toi }) else { return }
+        Task {
+            try? await Task.sleep(for: .milliseconds(600))
+            switch k {
+            case "giu": giu = cuoi
+            case "traloi": traLoi = cuoi
+            case "gif": tamPhu = .gif(0)
+            case "info": tamPhu = .thongTin
+            case "camxuc": tamPhu = .aiCamXuc(vm.tin.first { !($0.reactions ?? []).isEmpty } ?? cuoi)
+            default: break
+            }
+        }
+        #endif
     }
 
-    private func mocGio(_ m: Message) -> some View {
-        Text(m.ngayGio.map(Self.gioDai) ?? "")
-            .font(.ctw(size: 11, weight: .medium)).foregroundColor(AppColors.textTertiary)
-            .padding(.vertical, 8)
-    }
-
-    // MARK: Định dạng (dùng chung danh sách hội thoại)
+    // MARK: Định dạng (dùng chung danh sách hội thoại + kiểm thử cũ)
 
     /// "14:05" hôm nay · "Th 2" trong tuần · "5 thg 10" xa hơn.
-    static func gioNgan(_ d: Date, bayGio: Date = Date()) -> String {
-        let l = Calendar.current
-        if l.isDate(d, inSameDayAs: bayGio) { return CTWDinhDang.gio(d) }
-        if let n = l.dateComponents([.day], from: l.startOfDay(for: d), to: l.startOfDay(for: bayGio)).day, n < 7 {
-            return CTWDinhDang.mau("EEE").string(from: d)
-        }
-        return CTWDinhDang.mau("MMMd").string(from: d)
-    }
+    static func gioNgan(_ d: Date, bayGio: Date = Date()) -> String { ThoiGianNganCTW.chuoi(d, bayGio: bayGio) }
 
-    static func gioDai(_ d: Date) -> String {
-        let l = Calendar.current
-        if l.isDateInToday(d) { return CTWDinhDang.gio(d) }
-        if l.isDateInYesterday(d) { return String(localized: "Yesterday \(CTWDinhDang.gio(d))") }
-        return CTWDinhDang.mau("EEEMMMd").string(from: d) + " " + CTWDinhDang.gio(d)
-    }
+    static func gioDai(_ d: Date) -> String { NhanMocCTW.chuoi(d) }
 
     /// Dòng tóm tắt một tin (danh sách hội thoại, trích dẫn khi trả lời).
-    static func tomTat(_ m: Message) -> String {
-        if m.daXoaHoacThuHoi { return String(localized: "Message unsent") }
-        if let c = m.content, !c.isEmpty { return c }
-        if (m.hasAttachment ?? false) || !m.anh.isEmpty { return String(localized: "📷 Photo") }
-        if !m.tepKhongPhaiAnh.isEmpty { return String(localized: "📎 File") }
-        return ""
-    }
-}
-
-// MARK: - Bong bóng
-
-struct BongTinCTW: View {
-    let m: Message
-    let cuaToi: Bool
-    let nguoiKia: CTWUser
-    let hienAvatar: Bool
-    let toi: Int?
-    var xemAnh: (URL) -> Void = { _ in }
-    var moTep: (MessageAttachment) -> Void = { _ in }
-
-    static let camXucNhanh = ["❤️", "😆", "😮", "😢", "😡", "👍"]
-
-    var body: some View {
-        HStack(alignment: .bottom, spacing: 6) {
-            if cuaToi { Spacer(minLength: 56) } else {
-                Group { if hienAvatar { CTWAvatar(user: nguoiKia, size: 28) } else { Color.clear } }.frame(width: 28, height: 28)
-            }
-            VStack(alignment: cuaToi ? .trailing : .leading, spacing: 3) {
-                if let p = m.parentMessage, !m.daXoaHoacThuHoi {
-                    Text(p.content.flatMap { $0.isEmpty ? nil : $0 } ?? String(localized: "Attachment"))
-                        .font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(2)
-                        .padding(.horizontal, 10).padding(.vertical, 6)
-                        .background(RoundedRectangle(cornerRadius: 14).strokeBorder(AppColors.border, lineWidth: 1))
-                }
-                if m.daXoaHoacThuHoi {
-                    Text(cuaToi ? String(localized: "You unsent a message") : String(localized: "Message unsent"))
-                        .font(.ctw(size: 14).italic()).foregroundColor(AppColors.textTertiary)
-                        .padding(.horizontal, 12).padding(.vertical, 8)
-                        .background(RoundedRectangle(cornerRadius: 18).strokeBorder(AppColors.border, lineWidth: 1))
-                } else {
-                    if !m.anh.isEmpty { luoiAnh }
-                    ForEach(m.tepKhongPhaiAnh) { a in
-                        Button { moTep(a) } label: {
-                            HStack(spacing: 8) {
-                                Image(systemName: "doc.fill").font(.ctw(size: 20)).foregroundColor(cuaToi ? .white : AppColors.primary)
-                                VStack(alignment: .leading, spacing: 1) {
-                                    Text(a.fileName ?? String(localized: "File")).font(.ctw(size: 14, weight: .semibold)).lineLimit(2)
-                                    if let s = a.fileSize { Text(ByteCountFormatter.string(fromByteCount: Int64(s), countStyle: .file)).font(.ctw(size: 11)).opacity(0.8) }
-                                }
-                            }
-                            .foregroundColor(cuaToi ? .white : AppColors.textPrimary)
-                            .padding(10)
-                            .background(RoundedRectangle(cornerRadius: 16).fill(cuaToi ? AppColors.primary : AppColors.backgroundSecondary))
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(String(localized: "File \(a.fileName ?? "")"))
-                    }
-                    if let c = m.content, !c.isEmpty {
-                        Text(c)
-                            .font(.ctw(size: 16))
-                            .foregroundColor(cuaToi ? .white : AppColors.textPrimary)
-                            .textSelection(.enabled)
-                            .padding(.horizontal, 12).padding(.vertical, 8)
-                            .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(cuaToi ? AppColors.primary : AppColors.backgroundSecondary))
-                    }
-                }
-                if let r = m.reactions, !r.isEmpty {
-                    HStack(spacing: 2) {
-                        ForEach(r) { x in
-                            Text(x.count > 1 ? "\(x.emoji)\(x.count)" : x.emoji).font(.ctw(size: 12))
-                        }
-                    }
-                    .padding(.horizontal, 6).padding(.vertical, 2)
-                    .background(Capsule().fill(AppColors.backgroundCard))
-                    .overlay(Capsule().strokeBorder(r.contains { $0.coCua(toi) } ? AppColors.primary.opacity(0.6) : AppColors.border, lineWidth: 1))
-                    .offset(y: -6)
-                    .padding(.bottom, -6)
-                }
-            }
-            if !cuaToi { Spacer(minLength: 56) }
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 1)
-        .accessibilityElement(children: .combine)
-    }
-
-    @ViewBuilder private var luoiAnh: some View {
-        let ds = m.anh.compactMap { DuongDanAnh.urlAnh($0) ?? URL(string: $0) }
-        if ds.count == 1, let u = ds.first {
-            // Một ảnh: đúng tỉ lệ ảnh (aspect-fit như Messenger), không cắt vuông 220×220.
-            AnhVuaTiLeCTW(url: u, khoa: "dm-\(u.absoluteString)", toiDa: CGSize(width: 240, height: 300), bo: 16) { ProgressView() }
-                .contentShape(Rectangle())
-                .onTapGesture { xemAnh(u) }
-                .accessibilityLabel("Photo")
-        } else {
-            luoiNhieuAnh(ds)
-        }
-    }
-
-    private func luoiNhieuAnh(_ ds: [URL]) -> some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.fixed(ds.count == 1 ? 220 : 108), spacing: 4), count: min(2, max(1, ds.count))), spacing: 4) {
-            ForEach(ds, id: \.self) { u in
-                KFImage(u).placeholder { Rectangle().fill(AppColors.backgroundSecondary).overlay(ProgressView()) }
-                    .resizable().scaledToFill()
-                    .frame(width: ds.count == 1 ? 220 : 108, height: ds.count == 1 ? 220 : 108)
-                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .contentShape(Rectangle())
-                    .onTapGesture { xemAnh(u) }
-                    .accessibilityLabel("Photo")
-            }
-        }
-    }
+    static func tomTat(_ m: Message) -> String { TomTatTinCTW.chu(m) }
 }
 
 // MARK: - Xem ảnh lớn

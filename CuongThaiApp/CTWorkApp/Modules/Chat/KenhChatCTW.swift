@@ -168,7 +168,8 @@ struct KenhChatCTW: View {
         .alert(thongBao ?? "", isPresented: Binding(get: { thongBao != nil }, set: { if !$0 { thongBao = nil } })) {
             Button("OK", role: .cancel) {}
         }
-        .sheet(item: $tamPhu) { t in tamPhuView(t) }
+        // Avatar trong tấm phủ (chuỗi trả lời…) mở hồ sơ ngay trên tấm phủ đó (1.1).
+        .sheet(item: $tamPhu) { t in tamPhuView(t).ctwHoSoTamPhu() }
     }
 
     // MARK: Danh sách tin
@@ -420,7 +421,7 @@ struct KenhChatCTW: View {
         case .taoThe(let m):
             TheTuTinCTW(pid: pid, kenh: kenh, tin: m) { thongBao = $0 }.environmentObject(app)
         case .camXuc(let m):
-            ChonCamXucCTW { e in Task { await vm.camXuc(m, e) } }
+            BangEmojiCTW(tieuDe: "Add reaction", chon: { e in Task { await vm.camXuc(m, e) } })   // 1.1: bảng emoji đầy đủ (chung tin nhắn riêng)
         }
     }
 

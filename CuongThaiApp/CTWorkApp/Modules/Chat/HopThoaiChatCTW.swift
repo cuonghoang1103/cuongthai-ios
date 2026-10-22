@@ -4,7 +4,7 @@ import SwiftUI
 //
 // ThongTinKenhCTW (thành viên + online, chế độ báo, tắt tiếng, đổi tên/chủ đề, lưu trữ,
 // thêm/bớt người ở nhóm riêng) · TimTinCTW · TinGhimCTW · ChuyenTiepTinCTW ·
-// TheTuTinCTW · ChonCamXucCTW · TaoKenhCTW.
+// TheTuTinCTW · TaoKenhCTW.
 
 // MARK: Thông tin kênh
 
@@ -412,41 +412,7 @@ struct TheTuTinCTW: View {
 
 // MARK: Chọn cảm xúc
 
-struct ChonCamXucCTW: View {
-    let chon: (String) -> Void
-    @Environment(\.dismiss) private var dong
-    private var nhom: [(String, [String])] { [
-        (String(localized: "Frequently used"), ["👍", "❤️", "😂", "🎉", "👀", "🙏", "✅", "🔥"]),
-        (String(localized: "Smileys"), ["😀", "😄", "😊", "😍", "🤩", "😎", "🤔", "😅", "😢", "😮", "😴", "🤯"]),
-        (String(localized: "Work"), ["🚀", "💯", "👏", "🙌", "💪", "🤝", "📌", "📝", "🐛", "⚠️", "❓", "⏳", "☕️", "🍕"]),
-    ] }
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    ForEach(nhom, id: \.0) { n in
-                        Text(n.0).font(.ctw(size: 12, weight: .semibold)).foregroundColor(AppColors.textSecondary)
-                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 7), spacing: 6) {
-                            ForEach(n.1, id: \.self) { e in
-                                Button { chon(e); dong() } label: {
-                                    Text(e).font(.ctw(size: 28)).frame(width: 46, height: 46)
-                                        .background(RoundedRectangle(cornerRadius: 10).fill(AppColors.backgroundTertiary))
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
-                    }
-                }
-                .padding(Spacing.md)
-            }
-            .navigationTitle("Add reaction")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dong() } } }
-        }
-        .presentationDetents([.medium])
-    }
-}
+// Bảng thả cảm xúc "＋": `BangEmojiCTW` (Modules/ThanhVien/MenuGiuTinRiengCTW.swift — chung với tin nhắn riêng, 1.1).
 
 // MARK: Tạo kênh / nhóm riêng
 
