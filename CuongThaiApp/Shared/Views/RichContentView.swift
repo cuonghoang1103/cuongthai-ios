@@ -27,10 +27,17 @@ import WebKit
 struct RichContentView: UIViewRepresentable {
     let html: String
     @Binding var chieuCao: CGFloat
+    /// Chạm một ảnh slide (`.anh-slide img`) — (thứ tự trong bài, src). `nil` = ảnh không bấm được.
+    var khiChamSlide: ((Int, String) -> Void)? = nil
+    /// Vùng chọn chữ đổi (chữ đã chọn — rỗng khi bỏ chọn, có nằm trong khối mã không).
+    var khiChonChu: ((String, Bool) -> Void)? = nil
 
     func makeUIView(context: Context) -> WKWebView {
         let cauHinh = WKWebViewConfiguration()
         cauHinh.userContentController.add(context.coordinator, name: "chieuCao")
+        // Màn học Academy (22/10/2026): chạm slide ⇒ trình chiếu; bôi đen ⇒ "Lưu vào sổ tay".
+        cauHinh.userContentController.add(context.coordinator, name: "slide")
+        cauHinh.userContentController.add(context.coordinator, name: "chonChu")
 
         let web = WKWebView(frame: .zero, configuration: cauHinh)
         web.navigationDelegate = context.coordinator
@@ -43,6 +50,8 @@ struct RichContentView: UIViewRepresentable {
     }
 
     func updateUIView(_ web: WKWebView, context: Context) {
+        context.coordinator.khiChamSlide = khiChamSlide
+        context.coordinator.khiChonChu = khiChonChu
         let khoa = "\(html.hashValue)|\(context.environment.colorScheme)"
         guard context.coordinator.khoaDangHien != khoa else { return }
         context.coordinator.khoaDangHien = khoa
@@ -54,10 +63,28 @@ struct RichContentView: UIViewRepresentable {
     final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
         let cha: RichContentView
         var khoaDangHien: String?
+        var khiChamSlide: ((Int, String) -> Void)?
+        var khiChonChu: ((String, Bool) -> Void)?
 
-        init(_ cha: RichContentView) { self.cha = cha }
+        init(_ cha: RichContentView) {
+            self.cha = cha
+            khiChamSlide = cha.khiChamSlide
+            khiChonChu = cha.khiChonChu
+        }
 
         func userContentController(_ uc: WKUserContentController, didReceive message: WKScriptMessage) {
+            if message.name == "slide", let m = message.body as? [String: Any] {
+                let i = (m["i"] as? Int) ?? (m["i"] as? NSNumber)?.intValue ?? 0
+                let src = m["src"] as? String ?? ""
+                Task { @MainActor in self.khiChamSlide?(i, src) }
+                return
+            }
+            if message.name == "chonChu", let m = message.body as? [String: Any] {
+                let t = m["t"] as? String ?? ""
+                let code = m["code"] as? Bool ?? false
+                Task { @MainActor in self.khiChonChu?(t, code) }
+                return
+            }
             guard message.name == "chieuCao", let h = message.body as? CGFloat, h > 0 else { return }
             Task { @MainActor in
                 // Chênh dưới 1pt thì bỏ qua — không thì ResizeObserver và
@@ -80,8 +107,44 @@ struct RichContentView: UIViewRepresentable {
         }
     }
 
+    /// Chạm slide ⇒ báo (thứ tự, src); vùng chọn chữ đổi ⇒ báo (chữ, trong khối mã?).
+    private static let jsTuongTac = """
+    <style>.anh-slide img{cursor:zoom-in}</style>
+    <script>
+      document.querySelectorAll('.anh-slide img').forEach(function (img, i) {
+        img.addEventListener('click', function (e) {
+          e.preventDefault();
+          window.webkit.messageHandlers.slide.postMessage({ i: i, src: img.getAttribute('src') || '' });
+        });
+      });
+      (function () {
+        var hen, cu = '';
+        document.addEventListener('selectionchange', function () {
+          clearTimeout(hen);
+          hen = setTimeout(function () {
+            var s = window.getSelection();
+            var t = s ? s.toString().trim() : '';
+            var code = false;
+            if (s && s.rangeCount) {
+              var n = s.getRangeAt(0).commonAncestorContainer;
+              var el = n.nodeType === 1 ? n : n.parentElement;
+              code = !!(el && el.closest && el.closest('pre'));
+            }
+            t = t.slice(0, 5000);
+            if (t === cu) return;
+            cu = t;
+            window.webkit.messageHandlers.chonChu.postMessage({ t: t, code: code });
+          }, 250);
+        });
+      })();
+    </script>
+    """
+
     private func trangHTML(toi: Bool) -> String {
-        let ngonNgu = (Locale.preferredLanguages.first?.hasPrefix("vi") ?? false) ? "vi" : "en"
+        // Theo NGÔN NGỮ APP (mặc định tiếng Việt), không theo ngôn ngữ máy — máy để
+        // tiếng Anh mà app chọn tiếng Việt thì trước đây bài hiện toàn tiếng Anh.
+        let ngonNgu = SongNgu.appTiengViet ? "vi" : "en"
+        let tuongTac = khiChamSlide != nil || khiChonChu != nil
 
         let chuChinh = toi ? "#FFFFFF" : "#14141C"
         let chuPhu   = toi ? "#B8B8C4" : "#3A3A44"
@@ -277,6 +340,7 @@ struct RichContentView: UIViewRepresentable {
         </style></head>
         <body>
           <div class="rich-content" data-ml="\(ngonNgu)">\(html)</div>
+          \(tuongTac ? Self.jsTuongTac : "")
           <script>
             // Bảng rộng hơn màn hình sẽ kéo giãn cả trang và làm chữ bé tí.
             // Bọc mỗi bảng vào một khung cuộn ngang riêng.
@@ -321,11 +385,13 @@ struct RichContentView: UIViewRepresentable {
 /// Bọc web view lại cho gọn: tự giữ chiều cao, tự co giãn theo nội dung.
 struct RichContent: View {
     let html: String
+    var khiChamSlide: ((Int, String) -> Void)? = nil
+    var khiChonChu: ((String, Bool) -> Void)? = nil
     @State private var chieuCao: CGFloat = 40
 
     var body: some View {
         #if os(iOS)
-        RichContentView(html: html, chieuCao: $chieuCao)
+        RichContentView(html: html, chieuCao: $chieuCao, khiChamSlide: khiChamSlide, khiChonChu: khiChonChu)
             .frame(height: chieuCao)
         #else
         // macOS chưa dùng màn học; hiện bản đã lột thẻ cho khỏi trống.

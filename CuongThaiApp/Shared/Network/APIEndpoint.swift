@@ -428,6 +428,9 @@ enum APIEndpoint {
     case cauHoiThuongGap(lessonId: Int)
     /// Xoá một lượt trong mục trên. Máy chủ chỉ cho người hỏi hoặc admin.
     case xoaCauHoiThuongGap(lessonId: Int, askId: Int)
+    /// Các đường của màn học Academy (tài liệu, bài tập, thời lượng, sổ tay,
+    /// Code Lab, chứng chỉ, FAQ có trang, khoá gọn) — xem `HocBaiAPI.swift`.
+    case hocBai(HocBaiAPI)
 
     // Notifications
     case getUnreadNotificationCount
@@ -901,6 +904,7 @@ enum APIEndpoint {
         case .hoiGiaSuBai(let l, _): return "/api/v1/courses/lessons/\(l)/ai/ask"
         case .cauHoiThuongGap(let l): return "/api/v1/courses/lessons/\(l)/ai/asks"
         case .xoaCauHoiThuongGap(let l, let a): return "/api/v1/courses/lessons/\(l)/ai/asks/\(a)"
+        case .hocBai(let h): return h.duong
         case .getCourseProgress(let id): return "/api/v1/courses/\(id)/progress"
         case .saveLessonProgress(let id, _, _, _, _): return "/api/v1/courses/\(id)/progress"
 
@@ -1141,6 +1145,7 @@ enum APIEndpoint {
 
     var method: String {
         switch self {
+        case .hocBai(let h): return h.phuongThuc
         case .luuHoSoAcademy: return "PATCH"
         case .workSuaThe: return "PATCH"
         case .workChuyenThe, .workTaoThe, .workThemBinhLuan, .workBaoCaoBinhLuan: return "POST"
@@ -1229,6 +1234,7 @@ enum APIEndpoint {
 
     var body: [String: Any]? {
         switch self {
+        case .hocBai(let h): return h.than
         case .luuHoSoAcademy(let h): return ["preferences": ["academy": h]]
         case .tuVanHoi(let t), .tuVanDangBinhLuan(let t), .tuVanBaoCaoTraLoi(let t): return t
         case .videoThemCuaToi(let u, let n):
@@ -1599,12 +1605,13 @@ enum APIEndpoint {
             if let cursor = c { m["cursor"] = cursor }
             return m
         case .getCourses(let p, let s, let k):
-            var m: [String: Any] = ["page": p, "size": s]
+            // `gon=1`: danh sách chỉ vẽ thẻ khoá, không đọc `sections` (19 KB → 3 KB mỗi 3 khoá).
+            var m: [String: Any] = ["page": p, "size": s, "gon": 1]
             if let keyword = k { m["keyword"] = keyword }
             return m
         case .getCoursesAcademy(let p, let s, let k):
             // `academy=1` là thứ DUY NHẤT phân biệt hai rổ khoá học.
-            var m: [String: Any] = ["page": p, "size": s, "academy": 1]
+            var m: [String: Any] = ["page": p, "size": s, "academy": 1, "gon": 1]
             if let keyword = k { m["keyword"] = keyword }
             return m
         case .getNotifications(let c, let l):

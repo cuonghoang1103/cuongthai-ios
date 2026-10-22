@@ -711,7 +711,7 @@ extension Course {
     init(from ct: CourseDetail) {
         self.init(
             id: ct.id, title: ct.title, slug: ct.slug ?? "",
-            courseCode: nil, semesterName: nil,
+            courseCode: ct.courseCode, semesterName: ct.semesterName,
             shortDescription: ct.description, thumbnailUrl: ct.thumbnailUrl,
             instructor: ct.instructor, price: 0, discountPrice: nil, isFree: true,
             level: "", totalStudents: 0, avgRating: nil, totalLessons: nil,
@@ -751,6 +751,24 @@ struct CourseDetail: Codable, Identifiable {
     let whatYouLearn: String?
     let requirements: String?
     let documentsNote: String?
+
+    // ── Thêm 22/10/2026 cho màn chi tiết môn Academy. Đều optional: thiếu
+    // khoá nào cũng không được làm hỏng cả lượt giải mã (CLAUDE.md C3/C4).
+    /// Mã môn FPT (FER202…). Trước đây `Course(from:)` ghi cứng `nil` ⇒ gia sư
+    /// và Phòng Thi mất tên môn.
+    let courseCode: String?
+    let semesterName: String?
+    let semesterCode: String?
+    let shortDescription: String?
+    let academyType: String?
+    /// Quyền xem TRỌN nội dung (miễn phí + đã đăng nhập, Pro, đã mua, mã kích hoạt).
+    /// `false` ⇒ chỉ bài học thử mở được — màn chi tiết phải nói rõ vì sao.
+    let hasPaidAccess: Bool?
+    /// % bài đã xong, máy chủ tính sẵn.
+    let enrollmentProgress: Int?
+    let instructorName: String?
+    let instructorAvatar: String?
+    let price: Double?
 
     var nhanCapDo: String? {
         switch level {
@@ -924,6 +942,12 @@ struct CourseLesson: Codable, Identifiable, Hashable {
     /// sai: `course.routes.ts` trả trường này từ 11/07/2026, một lần grep sót
     /// khoá luôn tính năng suốt gần hai tháng.
     let quizData: QuizBai?
+    /// Chương chứa bài (có ở `/courses/:slug` và `/courses/:id/lessons/:id`).
+    let sectionId: Int?
+    /// Tài liệu đính kèm — chỉ có khi người xem có quyền (bài học thử: luôn có).
+    let documents: [TaiLieuBai]?
+    /// Bài tập nộp link, kèm `mySubmission` của chính mình.
+    let assignments: [BaiTapNop]?
 
     func hash(into hasher: inout Hasher) { hasher.combine(id) }
     static func == (l: CourseLesson, r: CourseLesson) -> Bool { l.id == r.id }
@@ -956,6 +980,9 @@ struct VideoTrack: Codable, Hashable {
     /// Dòng ghi công người làm video gốc — PHẢI hiện khi phát bài của người
     /// khác. Đây vừa là phép lịch sự vừa là chỗ dựa nếu bị hỏi về bản quyền.
     let credit: String?
+    /// `true` ⇒ video RIÊNG trên R2 mà gói này giấu URL (mục lục / khoá gọn).
+    /// URL ký để phát chỉ có ở `GET /courses/:id/lessons/:id`.
+    let locked: Bool?
 
     var nhan: String {
         switch track {
