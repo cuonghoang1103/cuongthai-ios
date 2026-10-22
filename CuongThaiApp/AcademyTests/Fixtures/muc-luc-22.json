@@ -1,0 +1,258 @@
+{
+ "success": true,
+ "data": [
+  {
+   "id": 258,
+   "courseId": 22,
+   "title": "Section 0 — Introduction & Study Guide|||Mục 0 — Giới thiệu môn học & Hướng dẫn học",
+   "description": "Đọc trước tiên: môn học là gì, học ra sao, điều kiện qua môn, lộ trình và tài liệu.",
+   "sortOrder": 0,
+   "isLocked": false,
+   "lessons": [
+    {
+     "id": 649,
+     "title": "0.1 — About FER202 & Course Map|||0.1 — Giới thiệu môn FER202 & bản đồ môn học",
+     "slug": "fer202-0-1-gioi-thieu",
+     "description": "Môn học này là gì, học xong làm được gì, và bản đồ toàn bộ hành trình React.",
+     "lessonType": "VIDEO",
+     "videoDurationSeconds": 4804,
+     "thumbnailUrl": null,
+     "isFreePreview": true,
+     "sortOrder": 0,
+     "videoUrl": null,
+     "videoPlatform": "DIRECT",
+     "videoTracks": [
+      {
+       "track": "VI",
+       "url": null,
+       "platform": "DIRECT",
+       "locked": true
+      },
+      {
+       "track": "YT",
+       "url": "https://youtu.be/SqcY0GlETPk",
+       "platform": "EMBED",
+       "credit": "Programming with Mosh — React Tutorial for Beginners"
+      }
+     ],
+     "defaultVideoTrack": "VI"
+    },
+    {
+     "id": 650,
+     "title": "0.2 — Passing Requirements & Grading|||0.2 — Điều kiện qua môn & cấu trúc điểm",
+     "slug": "fer202-0-2-dieu-kien-qua-mon",
+     "description": "Tổng giờ, tiên quyết, điểm sàn qua môn và trọng số từng cột điểm.",
+     "lessonType": "VIDEO",
+     "videoDurationSeconds": 342,
+     "thumbnailUrl": null,
+     "isFreePreview": true,
+     "sortOrder": 1,
+     "videoUrl": null,
+     "videoPlatform": "DIRECT",
+     "videoTracks": [
+      {
+       "track": "VI",
+       "url": null,
+       "platform": "DIRECT",
+       "locked": true
+      }
+     ],
+     "defaultVideoTrack": "VI"
+    },
+    {
+     "id": 652,
+     "title": "0.4 — Materials, Tools & Setup (Node.js + VS Code)|||0.4 — Tài liệu, công cụ & cài đặt (Node.js + VS Code)",
+     "slug": "fer202-0-4-tai-lieu-cai-dat",
+     "description": "Giáo trình, công cụ, và hướng dẫn cài Node.js/VS Code + tạo app React đầu tiên.",
+     "lessonType": "VIDEO",
+     "videoDurationSeconds": 594,
+     "thumbnailUrl": null,
+     "isFreePreview": true,
+     "sortOrder": 3,
+     "videoUrl": null,
+     "videoPlatform": "DIRECT",
+     "videoTracks": [
+      {
+       "track": "VI",
+       "url": null,
+       "platform": "DIRECT",
+       "locked": true
+      }
+     ],
+     "defaultVideoTrack": "VI"
+    }
+   ]
+  },
+  {
+   "id": 259,
+   "courseId": 22,
+   "title": "Chapter 1 — Overview & Setup|||Chương 1 — Tổng quan & Cài đặt",
+   "description": "Bức tranh full-stack, React 19 là gì, Git, và Node.js/npm.",
+   "sortOrder": 1,
+   "isLocked": false,
+   "lessons": []
+  },
+  {
+   "id": 260,
+   "courseId": 22,
+   "title": "Chapter 2 — ES6 for React|||Chương 2 — ES6 cho React",
+   "description": "Cú pháp JavaScript hiện đại mà mọi code React đều dùng.",
+   "sortOrder": 2,
+   "isLocked": false,
+   "lessons": []
+  },
+  {
+   "id": 261,
+   "courseId": 22,
+   "title": "Chapter 3 — JSX & Rendering|||Chương 3 — JSX & Render",
+   "description": "JSX là gì, render HTML, nhúng biểu thức JS, và fragment.",
+   "sortOrder": 3,
+   "isLocked": false,
+   "lessons": []
+  },
+  {
+   "id": 262,
+   "courseId": 22,
+   "title": "Chapter 4 — Bootstrap & React-Bootstrap|||Chương 4 — Bootstrap & React-Bootstrap",
+   "description": "Style React nhanh: grid system, component CSS, và React-Bootstrap.",
+   "sortOrder": 4,
+   "isLocked": false,
+   "lessons": []
+  },
+  {
+   "id": 263,
+   "courseId": 22,
+   "title": "Chapter 5 — Components & State|||Chương 5 — Component & State",
+   "description": "Xây component, truyền props, và quản lý state; class vs function.",
+   "sortOrder": 5,
+   "isLocked": false,
+   "lessons": []
+  },
+  {
+   "id": 264,
+   "courseId": 22,
+   "title": "Chapter 6 — Event Handling|||Chương 6 — Xử lý sự kiện",
+   "description": "Bắt sự kiện, synthetic events, truyền tham số cho handler, và form.",
+   "sortOrder": 6,
+   "isLocked": false,
+   "lessons": []
+  },
+  {
+   "id": 265,
+   "courseId": 22,
+   "title": "Chapter 7 — Props patterns & Context|||Chương 7 — Mẫu props & Context",
+   "description": "Container components, render props, và chia sẻ dữ liệu bằng Context.",
+   "sortOrder": 7,
+   "isLocked": false,
+   "lessons": []
+  },
+  {
+   "id": 266,
+   "courseId": 22,
+   "title": "Chapter 8 — Hooks|||Chương 8 — Hooks",
+   "description": "useState, useEffect, useContext, useReducer — trái tim của React hiện đại.",
+   "sortOrder": 8,
+   "isLocked": false,
+   "lessons": []
+  },
+  {
+   "id": 267,
+   "courseId": 22,
+   "title": "Progress Test 1 — CLO1–CLO6|||Bài kiểm tra tiến độ 1 — CLO1–CLO6",
+   "description": "Kiểm tra giữa chặng: ES6, JSX, Bootstrap, component, state, event, hooks.",
+   "sortOrder": 9,
+   "isLocked": false,
+   "lessons": []
+  },
+  {
+   "id": 268,
+   "courseId": 22,
+   "title": "Chapter 9 — Routing with React Router|||Chương 9 — Routing với React Router",
+   "description": "Điều hướng SPA: khai báo route, tham số, và link.",
+   "sortOrder": 10,
+   "isLocked": false,
+   "lessons": []
+  },
+  {
+   "id": 269,
+   "courseId": 22,
+   "title": "Chapter 10 — Code Splitting: lazy & Suspense|||Chương 10 — Code Splitting: lazy & Suspense",
+   "description": "Tải component theo nhu cầu để app khởi động nhanh hơn.",
+   "sortOrder": 11,
+   "isLocked": false,
+   "lessons": []
+  },
+  {
+   "id": 270,
+   "courseId": 22,
+   "title": "Chapter 11 — Client-Server Communication|||Chương 11 — Giao tiếp Client-Server",
+   "description": "fetch, promise, async/await, axios và json-server.",
+   "sortOrder": 12,
+   "isLocked": false,
+   "lessons": []
+  },
+  {
+   "id": 271,
+   "courseId": 22,
+   "title": "Chapter 12 — Flux Architecture & Redux|||Chương 12 — Kiến trúc Flux & Redux",
+   "description": "State toàn cục đoán được: Flux, Redux Toolkit, và thunk middleware.",
+   "sortOrder": 13,
+   "isLocked": false,
+   "lessons": []
+  },
+  {
+   "id": 272,
+   "courseId": 22,
+   "title": "Progress Test 2 — CLO7–CLO8|||Bài kiểm tra tiến độ 2 — CLO7–CLO8",
+   "description": "Kiểm tra giữa chặng 2: routing, code splitting, client-server, Redux.",
+   "sortOrder": 14,
+   "isLocked": false,
+   "lessons": []
+  },
+  {
+   "id": 273,
+   "courseId": 22,
+   "title": "Advanced A1 — React Performance|||Nâng cao A1 — Hiệu năng React",
+   "description": "Ngoài giáo trình: memo, useMemo, useCallback, và khi nào tối ưu.",
+   "sortOrder": 15,
+   "isLocked": false,
+   "lessons": []
+  },
+  {
+   "id": 274,
+   "courseId": 22,
+   "title": "Advanced A2 — Testing React|||Nâng cao A2 — Kiểm thử React",
+   "description": "Ngoài giáo trình: Jest + React Testing Library.",
+   "sortOrder": 16,
+   "isLocked": false,
+   "lessons": []
+  },
+  {
+   "id": 275,
+   "courseId": 22,
+   "title": "Advanced A3 — TypeScript & Next.js|||Nâng cao A3 — TypeScript & Next.js",
+   "description": "Ngoài giáo trình: gõ kiểu cho React, và framework Next.js.",
+   "sortOrder": 17,
+   "isLocked": false,
+   "lessons": []
+  },
+  {
+   "id": 6371,
+   "courseId": 22,
+   "title": "📝 PE review — real exams, question by question|||📝 Ôn thi PE — làm đề thật từng câu",
+   "description": "Phần TỰ THÊM: video làm trọn đề thi thực hành thật (đọc đề tiếng Anh → phân tích → setup → code từng dòng → chạy → đối chiếu rubric), mỗi kiến thức chỉ về đúng chương FER202. Bắt đầu với Đề 4 (SP26 B3).",
+   "sortOrder": 18,
+   "isLocked": false,
+   "lessons": []
+  },
+  {
+   "id": 543,
+   "courseId": 22,
+   "title": "Final Exam|||Thi cuối kỳ",
+   "description": "Thi cuối kỳ gồm PE (thi thực hành) và FE (trắc nghiệm). Khung + câu mẫu; đề thật thêm sau khi có trang phòng thi.",
+   "sortOrder": 19,
+   "isLocked": false,
+   "lessons": []
+  }
+ ]
+}

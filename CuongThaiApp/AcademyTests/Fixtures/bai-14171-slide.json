@@ -1,0 +1,35 @@
+{
+ "success": true,
+ "data": {
+  "id": 14171,
+  "sectionId": 5920,
+  "title": "CS.1.1 — 📑 History of database systems: file processing to PostgreSQL (1960s–1996)|||⭐ CS.1.1 — 📑 Lịch sử các hệ CSDL: từ xử lý file tới PostgreSQL (thập niên 1960–1996)",
+  "slug": "dbi202-slide-cs1-1",
+  "description": "Phần đầu deck ⭐ Chuyên sâu 1 (slide 1–13, tự dựng — không có trong giáo trình trường): từ xử lý file trước 1970, mô hình phân cấp (IBM IMS, dự án Apollo), mô hình mạng (CODASYL/IDMS), bài báo mô hình quan hệ của Edgar F. Codd năm 1970, System R và sự ra đời của SQL, Ingres ở Berkeley, Oracle — bản thương mại SQL đầu tiên năm 1979, Sybase → SQL Server, cho tới Postgres (1986) và PostgreSQL (1996).",
+  "content": "ms, algebra), a memory tip and the exam trap. </p></div>\n<div class=\"ml-vi\"><h2>📑 Học theo từng slide — ⭐ CS1 (⭐ Chuyên sâu 1 — Lịch sử và hệ sinh thái CSDL), slide 1–13</h2><p>Mở bộ slide <em>⭐ CS1</em> của thầy/cô bên cạnh trang này. Mỗi slide được giữ nguyên như trên lớp, ngay dưới là ý chính, giải thích dễ hiểu, câu SQL chạy thật kèm kết quả thật khi slide có câu lệnh, bảng từng bước cho mọi thuật toán (bao đóng, tìm khoá, dạng chuẩn, đại số quan hệ), mẹo nhớ và bẫy hay mất điểm. </p></div>\n<div class=\"anh-slide\"><img src=\"https://media.cuongthai.com/images/academy/DBI202/v1/cs1/001.webp\" alt=\"⭐ CS1 slide 1: Lịch sử và hệ sinh thái CSDL\" loading=\"lazy\" width=\"1280\" height=\"720\" /><p class=\"chu-thich\">📑 <strong>⭐ CS1</strong> · slide 1/25 — Lịch sử và hệ sinh thái CSDL</p></div>\n<div class=\"ml-en giang\"><p class=\"y-chinh\">🎯 The cover slide of this deck: a 60-year timeline from paper filing cabinets to PostgreSQL, SQL Server and NoSQL.</p>\n<p>Every real system you will build — the FAP-like app at school, an e-commerce backend, a bank's core system — sits on top of decisions made decades ago. Knowing why those decisions were made is what turns \"I memorised SQL syntax\" into \"I understand databases\".</p>\n<p class=\"meo\">🧠 Read this deck once end-to-end before jumping into indexes/transactions/design (decks CS.2–CS.6) — the vocabulary here (relational model, ACID, NoSQL) is reused everywhere after.</p></div>\n<div class=\"ml-vi giang\"><p class=\"y-chinh\">🎯 Slide bìa của deck này: dòng thời gian 60 năm từ tủ hồ sơ giấy tới PostgreSQL, SQL Server và NoSQL.</p>\n<p>Mọi hệ thống thật bạn sẽ xây — app kiểu FAP ở trường, backend thương mại điện tử, hệ lõi của một ngân hàng — đều đứng trên những quyết định được đưa ra từ hàng chục năm trước. Biết vì sao những quyết định đó được đưa ra chính là thứ biến \"tôi học thuộc cú pháp SQL\" thành \"tôi hiểu CSDL\".</p>\n<p class=\"meo\">🧠 Đọc trọn deck này một lượt trước khi vào chỉ mục/giao dịch/thiết kế (deck CS.2–CS.6) — từ vựng ở đây (mô hình quan hệ, ACID, NoSQL)<div class=\"anh-slide\"><img src=\"https://media.cuongthai.com/images/academy/DBI202/v1/cs1/002.webp\" alt=\"⭐ CS1 slide 2: Trước 1970: dữ liệu nằm trong file, không có CSDL\" loading=\"lazy\" width=\"1280\" height=\"720\" /><p class=\"chu-thich\">📑 <strong>⭐ CS1</strong> · slide 2/25 — Trước 1970: dữ liệu nằm trong file, không có CSDL</p></div>\n<div class=\"ml-en giang\"><p class=\"y-chinh\">🎯 Before there was a \"database\", programs read and wrote their own separate files — this is called file processing.</p>\n<ul>\n<li>1950s–60s: each program (often COBOL, on punched cards) owned its own file. A payroll program and an HR program could each store \"employee name\" in two different files.</li>\n<li>Nothing sat between the programs and the data to enforce rules — update one file and forget the other, and the two files silently disagree.</li>\n</ul>\n<p>Think of a company's paper filing cabinets: every department keeps its own folder of the same people, and cross-checking means physically walking over with a photocopy.</p>\n<p class=\"dap-an\">✅ This is the direct motivation for \"why do we need a database\": a database (and a DBMS) centralises the data so every program reads and writes the same copy, under the same rules.</p></div>\n<div class=\"ml-vi giang\"><p class=\"y-chinh\">🎯 Trước khi có \"cơ sở dữ liệu\", chương trình tự đọc/ghi file riêng của mình — gọi là xử lý file (file processing).</p>\n<ul>\n<li>Thập niên 1950–60: mỗi chương trình (thường viết bằng COBOL, chạy trên thẻ đục lỗ) sở hữu file riêng. Chương trình lương và chươn<div class=\"anh-slide\"><img src=\"https://media.cuongthai.com/images/academy/DBI202/v1/cs1/003.webp\" alt=\"⭐ CS1 slide 3: Mô hình phân cấp (hierarchical) — IBM IMS, 1966–68\" loading=\"lazy\" width=\"1280\" height=\"720\" /><p class=\"chu-thich\">📑 <strong>⭐ CS1</strong> · slide 3/25 — Mô hình phân cấp (hierarchical) — IBM IMS, 1966–68</p></div>\n<div class=\"ml-en giang\"><p class=\"y-chinh\">🎯 The first widely used database model: data organised as a tree, where every child record has exactly one parent.</p>\n<ul>\n<li>1966: IBM, together with North American Rockwell and Caterpillar, built a system to track the bill of materials for the Saturn V rocket of the Apollo program.</li>\n<li>The first working version (called ICS/DL/I) was completed in 1967 on the IBM System/360, and went live in August 1968 — this became <strong>IBM IMS</strong> (Information Management System), which IBM still sells today.</li>\n<li>Data is a tree: Department → Employee → Dependent, for example. Every record has <strong>exactly one</strong> parent.</li>\n</ul>\n<div class=\"callout\">🐘 <strong>On PostgreSQL</strong> — nothing to run here (no SQL yet in 1966), but the tree shape reappears in modern PostgreSQL as recursive CTEs and as JSON documents; see the CTE lesson later in this course. <a href=\"/courses/postgresql/learn?lessonSlug=postgresql-1-1-mo-hinh-quan-he\">bài mô hình quan hệ của khoá PostgreSQL</a></div>\n<p class=\"pitfall\">⚠️ Trap: \"hierarchical = old and useless\" is wrong. IMS is still in production at large banks and airlines today",
+  "lessonType": "VIDEO",
+  "videoUrl": "https://youtu.be/SdW5RKUboKc",
+  "videoDurationSeconds": 3926,
+  "thumbnailUrl": null,
+  "isFreePreview": true,
+  "isPublished": true,
+  "sortOrder": 0,
+  "createdAt": "2026-09-30T07:37:15.698Z",
+  "updatedAt": "2026-10-22T11:09:58.911Z",
+  "documents": [],
+  "assignments": [],
+  "videoPlatform": "EMBED",
+  "sourceCodeUrl": null,
+  "teachingNotes": null,
+  "quizData": null,
+  "videoTracks": [
+   {
+    "track": "YT",
+    "url": "https://youtu.be/SdW5RKUboKc",
+    "platform": "EMBED",
+    "credit": "CMU Database Group — 01 - History of Databases (CMU Databases / Spring 2020)"
+   }
+  ],
+  "defaultVideoTrack": "YT"
+ }
+}

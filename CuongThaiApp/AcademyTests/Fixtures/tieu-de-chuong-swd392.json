@@ -1,0 +1,14 @@
+{
+ "titles": [
+  "Section 0 — Introduction & Study Guide|||Mục 0 — Giới thiệu môn học & Hướng dẫn học",
+  "Chapter 1 — Design fundamentals & UML|||Chương 1 — Nền tảng thiết kế & UML",
+  "Chapter 2 — Requirements & analysis modeling (COMET)|||Chương 2 — Mô hình yêu cầu & phân tích (COMET)",
+  "Chapter 3 — Software architecture & quality attributes|||Chương 3 — Kiến trúc phần mềm & quality attributes",
+  "Chapter 4 — Design patterns (GoF)|||Chương 4 — Design patterns (GoF)",
+  "Chapter 5 — Relational database design & AI tools|||Chương 5 — Thiết kế CSDL quan hệ & công cụ AI",
+  "Chapter 6 — Project, defense & exam prep|||Chương 6 — Project, vấn đáp & ôn thi",
+  "Chapter 7 (Advanced) — SOLID, anti-patterns & modern architecture|||Chương 7 (Nâng cao) — SOLID, anti-pattern & kiến trúc hiện đại",
+  "⭐ Advanced — From diagrams to Spring Boot code: history, class↔JPA, sequence/state→code, COMET→Spring, SEP490 & interviews|||⭐ Chuyên sâu — Từ sơ đồ tới code Spring Boot: lịch sử, class↔JPA, sequence/state→code, COMET→Spring, đồ án SEP490 & phỏng vấn",
+  "Final Exam — Practical (20%, 85') + Theory (40%, 60') = 60%, 145 minutes|||Thi cuối kỳ — Practical (20%, 85') + Theory (40%, 60') = 60%, 145 phút"
+ ]
+}
