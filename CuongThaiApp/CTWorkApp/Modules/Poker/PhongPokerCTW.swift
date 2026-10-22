@@ -230,7 +230,7 @@ struct PhongPokerCTW: View {
                                     }
                                 }
                                 .opacity(daBau.contains(u.id) ? 1 : 0.45)
-                            Text(u.ten.split(separator: " ").first.map(String.init) ?? u.ten)
+                            Text(verbatim: u.tenNgan)
                                 .font(.ctw(size: 11)).foregroundColor(AppColors.textSecondary).fixedSize()
                         }
                         .accessibilityElement(children: .ignore)

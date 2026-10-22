@@ -32,11 +32,11 @@ struct CTWUser: Codable, Hashable, Identifiable {
         return String(localized: "User #\(id)")
     }
 
-    /// Hai chữ cái đầu cho vòng tròn khi không có ảnh.
-    var kyTuDau: String {
-        let tu = ten.split(separator: " ").prefix(2).compactMap(\.first)
-        return tu.isEmpty ? "?" : String(tu).uppercased()
-    }
+    /// Chữ tắt cho vòng tròn khi không có ảnh — chỉ chữ cái, bỏ phần trong ngoặc ("Minh (Demo)" ⇒ "M", không phải "M(").
+    var kyTuDau: String { TenNguoi.chuCaiDau(ten, duPhong: username) }
+
+    /// Tên ngắn (hàng "Đang hoạt động"…): từ cuối, bỏ ngoặc ("Minh (Demo)" ⇒ "Minh", "Hoàng Nghĩa Cường" ⇒ "Cường").
+    var tenNgan: String { TenNguoi.tenNgan(ten) }
 
     /// Người được GIAO thẻ phải có quyền sửa thẻ (ADMIN/MEMBER) — máy chủ
     /// từ chối người khác bằng `WORK_BAD_ASSIGNEE` (`assertAssignable`).
