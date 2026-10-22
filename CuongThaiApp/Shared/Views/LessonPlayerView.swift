@@ -135,7 +135,11 @@ struct LessonPlayerView: View {
     @StateObject private var vm = LessonPlayerViewModel()
     @StateObject private var soTay = SoTayBaiVM()
     #if os(iOS)
-    @StateObject private var bo = BoPhatVideo()
+    /// Giữ trình phát qua MỘT lớp vỏ không @Published: `BoPhatVideo` đổi `giay` mỗi giây,
+    /// quan sát thẳng ở đây là cả màn học (WebView nội dung, rút slide…) dựng lại mỗi giây.
+    /// Chỉ `KhoiVideoBai` quan sát nó.
+    @StateObject private var voPhat = VoBoPhat()
+    private var bo: BoPhatVideo { voPhat.bo }
     #endif
 
     @State private var bang: BangBaiHoc?
@@ -195,7 +199,7 @@ struct LessonPlayerView: View {
                        macDinh: dayDu?.defaultVideoTrack ?? baiHienTai?.defaultVideoTrack)
     }
     private var coVideo: Bool { dsLuong.contains(where: \.coVideo) }
-    private var slides: [SlideBai] { DocSlide.tu(dayDu?.content) }
+    private var slides: [SlideBai] { dayDu == nil ? [] : vm.slides }
 
     /// Khoá nạp trình phát: bài + luồng + URL (URL ký lại ⇒ khoá mới ⇒ nạp lại, giữ mốc).
     private var khoaPhat: String {
@@ -253,8 +257,11 @@ struct LessonPlayerView: View {
         .task(id: khoaPhat) { napPhat() }
         .onDisappear {
             vm.luuViTri(courseId: course.id, lessonId: lessonId, giay: bo.giay, ep: true)
-            bo.thaRa()
+            bo.dung()
+            // Gỡ closure (chúng giữ màn này ⇒ vòng giữ nhau với trình phát).
+            bo.goSuKien()
         }
+        .onAppear { ganSuKienPhat() }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)) { _ in
             vm.luuViTri(courseId: course.id, lessonId: lessonId, giay: bo.giay, ep: true)
         }
@@ -989,6 +996,8 @@ final class LessonPlayerViewModel: ObservableObject {
     @Published var loi: String?
     @Published var baiTap: [BaiTapNop] = []
     @Published var chungChi: ChungChiKhoa?
+    /// Slide rút từ `content` — tính MỘT lần mỗi khi bài về, không mỗi lần dựng view.
+    @Published private(set) var slides: [SlideBai] = []
 
     private var daTaiTienDo = false
     private var tongBai = 0
@@ -1010,6 +1019,7 @@ final class LessonPlayerViewModel: ObservableObject {
         }
         do {
             let bai: CourseLesson = try await APIClient.shared.request(.getLesson(courseId: courseId, lessonId: lessonId))
+            slides = DocSlide.tu(bai.content)
             baiDayDu = bai
             baiTap = bai.assignments ?? []
         } catch {
@@ -1023,6 +1033,7 @@ final class LessonPlayerViewModel: ObservableObject {
         if ep { daXinLai.remove(lessonId) }
         daXinLai.insert(lessonId)
         if let bai: CourseLesson = try? await APIClient.shared.request(.getLesson(courseId: courseId, lessonId: lessonId)) {
+            slides = DocSlide.tu(bai.content)
             baiDayDu = bai
             loiTaiBai = nil
         }

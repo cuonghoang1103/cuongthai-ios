@@ -96,7 +96,27 @@ final class BoPhatVideo: NSObject, ObservableObject {
         daBaoThoiLuong = false
         huyItem.removeAll()
 
-        let item = AVPlayerItem(url: url)
+        #if DEBUG
+        // Máy ảo không có thiết bị âm thanh (AQMEIO -66680) ⇒ AVPlayer hỏng CẢ item
+        // (-11800/-12746) dù tải 206 bình thường. `CT_CHI_HINH=1` dựng item chỉ có
+        // hình để soi đường phát R2 trên máy ảo. Bản Release không có nhánh này.
+        if ProcessInfo.processInfo.environment["CT_CHI_HINH"] == "1" {
+            Task { [weak self] in
+                let asset = AVURLAsset(url: url)
+                guard let v = try? await asset.loadTracks(withMediaType: .video).first,
+                      let d = try? await asset.load(.duration) else { return }
+                let comp = AVMutableComposition()
+                let t = comp.addMutableTrack(withMediaType: .video, preferredTrackID: kCMPersistentTrackID_Invalid)
+                try? t?.insertTimeRange(CMTimeRange(start: .zero, duration: d), of: v, at: .zero)
+                self?.ganItem(AVPlayerItem(asset: comp), tuPhat: tuPhat)
+            }
+            return
+        }
+        #endif
+        ganItem(AVPlayerItem(url: url), tuPhat: tuPhat)
+    }
+
+    private func ganItem(_ item: AVPlayerItem, tuPhat: Bool) {
         item.preferredForwardBufferDuration = 20
         item.publisher(for: \.status)
             .receive(on: RunLoop.main)
@@ -137,6 +157,10 @@ final class BoPhatVideo: NSObject, ObservableObject {
         if tuPhat { player.playImmediately(atRate: tocDo) }
     }
 
+    func goSuKien() {
+        khiTick = nil; khiDung = nil; khiHet = nil; khiCoThoiLuong = nil; khiHong = nil
+    }
+
     func phat() { player.playImmediately(atRate: tocDo) }
     func dung() { player.pause() }
 
@@ -169,6 +193,12 @@ final class BoPhatVideo: NSObject, ObservableObject {
         }
         try? p.setActive(true)
     }
+}
+
+/// Vỏ giữ `BoPhatVideo` cho `@StateObject` mà KHÔNG phát lại thay đổi của nó.
+@MainActor
+final class VoBoPhat: ObservableObject {
+    let bo = BoPhatVideo()
 }
 
 /// `AVPlayerViewController` thật: toàn màn hình, Hình trong hình, AirPlay, menu tốc độ
