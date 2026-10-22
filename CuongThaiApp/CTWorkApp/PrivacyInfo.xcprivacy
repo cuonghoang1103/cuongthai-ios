@@ -10,7 +10,11 @@
     · File timestamp — `contentModificationDateKey` ở
       `Shared/NgoaiTuyen/KhoNgoaiTuyen.swift` (dọn đệm ngoại tuyến cũ nhất
       trước), tệp nằm trong Caches của chính app ⇒ C617.1.
-    · KHÔNG dùng: system boot time, disk space, active keyboards.
+      `attributesOfItem(atPath:)[.size]` trên bản chép tạm trong tmp của app (`Modules/BangTin/SoanBaiCTW.swift`)
+      cũng thuộc nhóm này ⇒ cùng C617.1.
+    · `CTWorkShared/NgonNguCTW.swift` (ngôn ngữ app) ghi/đọc miền UserDefaults RIÊNG của app ⇒ CA92.1; ngôn ngữ máy
+      đọc bằng `Locale.preferredLanguages` (không đọc miền toàn cục). App Group chỉ dùng TỆP, không `suiteName` ⇒ không 1C8F.1.
+    · KHÔNG dùng: system boot time, disk space, active keyboards (soát lại 22/10/2026, build 7).
   Thêm tệp `Shared` mới vào target ⇒ quét lại bằng lệnh ở CLAUDE.md mục A8.
 -->
 <plist version="1.0">
@@ -97,6 +101,15 @@
             <!-- Voice note trong chat: lưu cho người trong kênh + phiên âm (Groq) — người dùng đồng ý trước lần ghi đầu. -->
             <key>NSPrivacyCollectedDataType</key><string>NSPrivacyCollectedDataTypeAudioData</string>
             <key>NSPrivacyCollectedDataTypeLinked</key><true/>
+            <key>NSPrivacyCollectedDataTypeTracking</key><false/>
+            <key>NSPrivacyCollectedDataTypePurposes</key><array><string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string></array>
+        </dict>
+        <dict>
+            <!-- Build 7 (22/10/2026, audit R12): chữ gõ vào ô tìm GIF (tin nhắn riêng) đi qua máy chủ (`/api/v1/gifs`) tới
+                 GIPHY (bên thứ ba). Máy chủ không lưu và không gửi id/tên/email ⇒ NOT linked; GIPHY có thể giữ chữ tìm ⇒
+                 khai cho khớp nhãn App Privacy trên App Store Connect (Search History · App Functionality · Not linked). -->
+            <key>NSPrivacyCollectedDataType</key><string>NSPrivacyCollectedDataTypeSearchHistory</string>
+            <key>NSPrivacyCollectedDataTypeLinked</key><false/>
             <key>NSPrivacyCollectedDataTypeTracking</key><false/>
             <key>NSPrivacyCollectedDataTypePurposes</key><array><string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string></array>
         </dict>

@@ -2,9 +2,13 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
   BẢN KHAI QUYỀN RIÊNG TƯ của Share Extension CT Work (CTWorkShare).
-  Soát 18/10/2026: extension đọc JSON trong App Group (`Data(contentsOf:)`) + token trong Keychain chia sẻ,
-  (`CTWorkShared/NhomCTW.swift`) — KHÔNG UserDefaults, file timestamp, disk space, boot time,
-  active keyboards. Gọi API CT Work (tạo thẻ / bình luận / đính kèm) — dữ liệu thu thập đã khai ở app chứa. Thêm mã chạm nhóm API nào ⇒ bổ sung ở đây.
+  Soát lại 22/10/2026 (build 7, audit R1) — quét ĐÚNG các tệp target biên dịch (`project.yml` › CTWorkShare:
+  `CTWorkShare/*` + `CTWorkShared/NhomCTW.swift` + `CTWorkShared/NgonNguCTW.swift`):
+    · UserDefaults — `NgonNguCTW.swift` (`cheDo` đọc `UserDefaults.standard`, miền RIÊNG của extension) ⇒ CA92.1.
+      Không App Group defaults (`suiteName`) ⇒ không 1C8F.1.
+    · Đọc JSON trong App Group (`Data(contentsOf:)`) + token trong Keychain chia sẻ — không phải API "required reason".
+    · KHÔNG dùng: file timestamp, disk space, system boot time, active keyboards.
+  Gọi API CT Work (tạo thẻ / bình luận / đính kèm) — dữ liệu thu thập đã khai ở app chứa. Thêm mã chạm nhóm API nào ⇒ bổ sung ở đây.
 -->
 <plist version="1.0">
 <dict>
@@ -13,7 +17,15 @@
     <key>NSPrivacyTrackingDomains</key>
     <array/>
     <key>NSPrivacyAccessedAPITypes</key>
-    <array/>
+    <array>
+        <dict>
+            <!-- `CTWorkShared/NgonNguCTW.swift` › `cheDo` đọc `UserDefaults.standard` (miền riêng của extension). -->
+            <key>NSPrivacyAccessedAPIType</key>
+            <string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+            <key>NSPrivacyAccessedAPITypeReasons</key>
+            <array><string>CA92.1</string></array>
+        </dict>
+    </array>
     <key>NSPrivacyCollectedDataTypes</key>
     <array/>
 </dict>
