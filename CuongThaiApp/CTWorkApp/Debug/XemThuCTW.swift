@@ -53,7 +53,8 @@ enum XemThuCTW {
         default: break
         }
         // My Work mở tab Agenda cho màn `agenda` (mảng D), Issues cho mọi màn khác.
-        UserDefaults.standard.set(man == "agenda" ? 1 : 0, forKey: "ctw.myWork.che")
+        // Bảng tin (`bangtin`) ⇒ phân đoạn thứ ba của My Work (XemThuCTW+BangTin.swift).
+        UserDefaults.standard.set(man == "agenda" ? 1 : man.hasPrefix("bangtin") ? 2 : 0, forKey: "ctw.myWork.che")
         app.daDongYDieuKhoan = true
         app.isAuthenticated = true
         app.luaChon = LuaChonCTW(slug: "northwind", tenKhongGian: "Northwind Studio", pid: 7, maDuAn: "NW", tenDuAn: "Mobile App Launch")
