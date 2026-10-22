@@ -177,9 +177,12 @@ struct CTWPointsBadge: View {
 
     var body: some View {
         let chu = diem == diem.rounded() ? String(Int(diem)) : String(format: "%.1f", diem)
+        // `.fixedSize()`: hàng dưới thẻ chật (cột iPad hẹp) từng co chữ thành rỗng ⇒ viên xám trống (ảnh lỗi 09).
         Text(chu)
             .font(.ctw(size: 11, weight: .semibold).monospacedDigit())
             .foregroundColor(AppColors.textSecondary)
+            .lineLimit(1)
+            .fixedSize()
             .padding(.horizontal, 5).padding(.vertical, 1.5)
             .background(RoundedRectangle(cornerRadius: 5, style: .continuous).fill(AppColors.backgroundTertiary))
             .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).strokeBorder(AppColors.border, lineWidth: 0.5))

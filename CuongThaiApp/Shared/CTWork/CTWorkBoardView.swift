@@ -577,10 +577,12 @@ struct CTWBoardView: View {
             let le = Spacing.md
             let khoang: CGFloat = 10
             let gap = CGFloat(vm.cot.count - mo) * (Self.rongCotGap + khoang)
-            // iPad/Mac: chia đều bề ngang khi đủ chỗ (≥ 240pt mỗi cột), không thì cuộn ngang. iPhone: cột gần bằng
-            // màn (thấy mép cột sau) và cuộn BẬT TỪNG CỘT (viewAligned) — vuốt một cái là sang đúng cột kế.
-            let deu = (geo.size.width - le * 2 - gap - khoang * CGFloat(so - 1)) / CGFloat(so)
-            let rongCot: CGFloat = rong ? max(250, deu) : min(340, geo.size.width - le * 2 - 34)
+            // iPad/Mac: chia đều bề ngang khi đủ chỗ (≥ 280pt mỗi cột); không đủ ⇒ `CTWBangCot.rongIPad` (bao nhiêu cột
+            // TRỌN vừa + hở mép cột kế để biết còn cuộn ngang). iPhone: cột gần bằng màn (thấy mép cột sau) và cuộn BẬT
+            // TỪNG CỘT (viewAligned) — vuốt một cái là sang đúng cột kế.
+            let rongCot: CGFloat = rong
+                ? CTWBangCot.rongIPad(beNgang: geo.size.width - le * 2 - gap, soCot: so, khoang: khoang)
+                : min(340, geo.size.width - le * 2 - 34)
             ScrollView(.horizontal, showsIndicators: rong) {
                 HStack(alignment: .top, spacing: khoang) {
                     ForEach(vm.cot) { c in
@@ -743,7 +745,7 @@ struct CTWBoardView: View {
 
     private var cacLan: some View {
         GeometryReader { geo in
-            let rongCot: CGFloat = rong ? 270 : min(300, geo.size.width - Spacing.md * 2 - 40)
+            let rongCot: CGFloat = rong ? CTWBangCot.san : min(300, geo.size.width - Spacing.md * 2 - 40)
             let lan = lanHienTai
             ScrollView(.vertical) {
                 LazyVStack(alignment: .leading, spacing: 10) {
@@ -1041,5 +1043,28 @@ struct CTWCardView: View {
     private var nhanCuaThe: [CTWLabel]? {
         guard let ids = the.labelIds, !ids.isEmpty else { return nil }
         return (cauHinh.labels ?? []).filter { ids.contains($0.id) }
+    }
+}
+
+// MARK: - Bề rộng cột bảng trên iPad (22/10/2026)
+//
+// Ảnh lỗi 09: cột chia đều theo sàn 250pt ⇒ 3 cột trên cột chi tiết ~750pt của iPad: cột thứ ba bị CẮT GIỮA chừng (không
+// rõ là còn cuộn được) và hàng dưới của thẻ chật tới mức ô điểm co thành viên xám rỗng. Luật mới: đủ chỗ cho mọi cột
+// ≥ `san` ⇒ chia đều (tối đa `tran`); không đủ ⇒ số cột TRỌN lớn nhất vừa bề ngang (chừa `hoMep` cho mép cột kế, như
+// iPhone), rồi giãn đều chúng.
+enum CTWBangCot {
+    static let san: CGFloat = 280
+    static let tran: CGFloat = 420
+    static let hoMep: CGFloat = 44
+
+    static func rongIPad(beNgang: CGFloat, soCot: Int, khoang: CGFloat) -> CGFloat {
+        let so = max(soCot, 1)
+        let deu = (beNgang - khoang * CGFloat(so - 1)) / CGFloat(so)
+        if deu >= san { return min(tran, deu) }
+        // Bao nhiêu cột trọn + khoảng + mép cột kế vừa bề ngang.
+        let vua = max(1, Int((beNgang - hoMep + khoang) / (san + khoang)))
+        let n = min(vua, so)
+        let w = (beNgang - hoMep - khoang * CGFloat(n)) / CGFloat(n)
+        return min(tran, max(san, w))
     }
 }
