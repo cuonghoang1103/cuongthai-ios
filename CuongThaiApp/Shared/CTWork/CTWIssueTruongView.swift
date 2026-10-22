@@ -158,7 +158,7 @@ struct CTWIssueTruongView: View {
         hang(String(localized: "Assignee")) { menuNguoi }
         hang(String(localized: "Reporter")) {
             HStack(spacing: 6) {
-                CTWAvatar(user: t.reporter, size: 22)
+                CTWAvatar(user: t.reporter, size: 22).ctwChamMoHoSo(t.reporter?.laAgent == true ? nil : t.reporter?.id)
                 Text(verbatim: t.reporter?.ten ?? "—").font(.ctw(size: 14)).foregroundColor(AppColors.textPrimary)
                 if t.reporter?.laAgent == true { CTWNhanAI() }
             }

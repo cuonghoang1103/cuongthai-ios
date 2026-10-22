@@ -45,4 +45,36 @@ enum TinNhanAPI {
     static func thanTrangThaiHoatDong(_ bat: Bool) -> [String: Any] { ["showActiveStatus": bat] }
 
     static func datTrangThaiHoatDong(_ bat: Bool) -> APIEndpoint { .updateProfile(thanTrangThaiHoatDong(bat)) }
+
+    // MARK: 1.1 — Messenger + hồ sơ (22/10/2026). Mọi đường đều CÓ SẴN trên máy chủ (messages.routes.ts, gifs.routes.ts,
+    // sticker.routes.ts, user.routes.ts); chỉ `offset` của /gifs là mới (nhánh ctw-msg2-be) — máy chủ cũ bỏ qua nó.
+
+    static func guiMedia(threadId: Int, url: String, kieu: String, traLoi: Int?) -> APIEndpoint {
+        .tuyChinh(duong: goc("/threads/\(threadId)/messages"), phuongThuc: "POST", than: GuiMediaCTW.than(url: url, kieu: kieu, traLoi: traLoi))
+    }
+
+    static func chuyenTiep(_ m: Message, toi threadId: Int) -> APIEndpoint {
+        .tuyChinh(duong: goc("/threads/\(threadId)/messages"), phuongThuc: "POST", than: ChuyenTiepCTW.than(m))
+    }
+
+    static func gif(q: String, offset: Int) -> APIEndpoint { .tuyChinh(duong: TrangGifCTW.duong(q: q, offset: offset), phuongThuc: "GET", than: nil) }
+    static func goiNhanDan() -> APIEndpoint { .tuyChinh(duong: "/api/v1/stickers/packs", phuongThuc: "GET", than: nil) }
+    static func nhanDan(goi: Int) -> APIEndpoint { .tuyChinh(duong: "/api/v1/stickers/packs/\(goi)/stickers", phuongThuc: "GET", than: nil) }
+
+    /// Ghim / bỏ đánh dấu… — một ô tuỳ chọn riêng của người xem (`PATCH /threads/:id/preference`).
+    static func tuyChon(threadId: Int, o: String, giaTri: String?) -> APIEndpoint {
+        .tuyChinh(duong: goc("/threads/\(threadId)/preference"), phuongThuc: "PATCH", than: ["slot": o, "value": giaTri as Any? ?? NSNull()])
+    }
+    static func danhDauChuaDoc(threadId: Int) -> APIEndpoint { .tuyChinh(duong: goc("/threads/\(threadId)/mark-unread"), phuongThuc: "POST", than: [:]) }
+    static func tatThongBao(threadId: Int, phut: Int?) -> APIEndpoint {
+        .tuyChinh(duong: goc("/threads/\(threadId)/mute-for"), phuongThuc: "POST", than: TatThongBaoCTW.than(phut))
+    }
+    /// "Xoá cuộc trò chuyện" — CHỈ phía tôi (người kia vẫn giữ); khôi phục được ở web (tab "Đã xoá").
+    static func xoaPhiaToi(threadId: Int) -> APIEndpoint { .tuyChinh(duong: goc("/threads/\(threadId)/hard"), phuongThuc: "DELETE", than: nil) }
+    static func bietDanh(threadId: Int, nguoi: Int, ten: String) -> APIEndpoint {
+        .tuyChinh(duong: goc("/threads/\(threadId)/nickname"), phuongThuc: "PUT", than: ["targetId": nguoi, "alias": ten])
+    }
+
+    /// Hồ sơ công khai (cùng trang /profile/:id của web): bio, ảnh bìa, chức danh… — `GET /users/:id`.
+    static func hoSoCongKhai(_ id: Int) -> APIEndpoint { .tuyChinh(duong: "/api/v1/users/\(id)", phuongThuc: "GET", than: nil) }
 }

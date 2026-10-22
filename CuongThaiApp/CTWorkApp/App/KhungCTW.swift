@@ -200,6 +200,8 @@ private struct CotNganXepCTW: View {
                 .toolbar { ToolbarItem(placement: .topBarTrailing) { NutTimKiemCTW() } }
                 .ctwDichDen()
         }
+        // Chạm avatar ở bất cứ màn nào trong cột ⇒ tấm phủ hồ sơ (Modules/ThanhVien/HoSoNguoiCTW.swift — 1.1).
+        .ctwHoSoTamPhu()
         .environmentObject(nganXep)
     }
 

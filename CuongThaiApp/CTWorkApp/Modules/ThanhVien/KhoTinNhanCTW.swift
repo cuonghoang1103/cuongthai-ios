@@ -235,6 +235,74 @@ final class KhoTinNhanCTW: ObservableObject {
         }
     }
 
+    // MARK: Tuỳ chọn hội thoại (1.1 — vuốt hàng, menu hồ sơ, thông tin hội thoại)
+    //
+    // Lạc quan: đổi hàng ngay, gọi máy chủ; hỏng ⇒ trả lại hàng cũ + báo lỗi. Đường máy chủ có sẵn (messages.routes.ts).
+
+    private func doiHang(_ id: Int, _ f: (MessageThread) -> MessageThread) -> MessageThread? {
+        guard let i = hoiThoai.firstIndex(where: { $0.id == id }) else { return nil }
+        let cu = hoiThoai[i]
+        hoiThoai[i] = f(cu)
+        return cu
+    }
+
+    private func traLai(_ cu: MessageThread?) {
+        guard let cu, let i = hoiThoai.firstIndex(where: { $0.id == cu.id }) else { return }
+        hoiThoai[i] = cu
+    }
+
+    func ghim(_ id: Int, _ bat: Bool) async throws {
+        let moc = bat ? ISO8601DateFormatter().string(from: Date()) : nil
+        let cu = doiHang(id) { $0.doiTuyChon(($0.preferences ?? ThreadPreferences()).dat(\.pinnedAt, moc)) }
+        do { try await APIClient.shared.send(TinNhanAPI.tuyChon(threadId: id, o: "pinnedAt", giaTri: moc)) } catch { traLai(cu); throw error }
+    }
+
+    /// `phut` nil = tới khi bật lại, 0 = bật lại thông báo.
+    func tatThongBao(_ id: Int, phut: Int?) async throws {
+        let den: String? = phut == 0 ? nil
+            : ISO8601DateFormatter().string(from: phut.map { Date().addingTimeInterval(TimeInterval($0 * 60)) } ?? Date().addingTimeInterval(100 * 365 * 86400))
+        let cu = doiHang(id) { $0.doiTuyChon(($0.preferences ?? ThreadPreferences()).dat(\.mutedUntil, den)) }
+        do { try await APIClient.shared.send(TinNhanAPI.tatThongBao(threadId: id, phut: phut)) } catch { traLai(cu); throw error }
+    }
+
+    func danhDauChuaDoc(_ id: Int) async throws {
+        let cu = doiHang(id) { $0.doiTuyChon(($0.preferences ?? ThreadPreferences()).dat(\.markedUnreadAt, ISO8601DateFormatter().string(from: Date()))) }
+        do { try await APIClient.shared.send(TinNhanAPI.danhDauChuaDoc(threadId: id)) } catch { traLai(cu); throw error }
+        await AppState.shared.taiSoChuaDoc()
+    }
+
+    /// Xoá CHỈ phía tôi — hàng biến khỏi danh sách; người kia vẫn giữ lịch sử.
+    func xoaPhiaToi(_ id: Int) async throws {
+        guard let i = hoiThoai.firstIndex(where: { $0.id == id }) else { return }
+        let cu = hoiThoai.remove(at: i)
+        do { try await APIClient.shared.send(TinNhanAPI.xoaPhiaToi(threadId: id)) } catch { hoiThoai.insert(cu, at: min(i, hoiThoai.count)); throw error }
+        await AppState.shared.taiSoChuaDoc()
+    }
+
+    /// Biệt danh người xem đặt cho người kia (rỗng = xoá). Máy chủ chỉ cho người TRONG hội thoại.
+    func datBietDanh(_ id: Int, nguoi: Int, ten: String) async throws {
+        try await APIClient.shared.send(TinNhanAPI.bietDanh(threadId: id, nguoi: nguoi, ten: ten))
+        let sach = ten.trimmingCharacters(in: .whitespaces)
+        _ = doiHang(id) { t in
+            guard let p = t.peer else { return t }
+            let p2 = ThreadPeer(id: p.id, username: p.username,
+                                displayName: sach.isEmpty ? (thanhVien(p.id)?.ten ?? p.username) : sach,
+                                avatarUrl: p.avatarUrl, alias: sach.isEmpty ? nil : sach, lastActiveAt: p.lastActiveAt)
+            return MessageThread(id: t.id, type: t.type, peer: p2, lastMessage: t.lastMessage, unreadCount: t.unreadCount,
+                                 createdAt: t.createdAt, updatedAt: t.updatedAt, preferences: t.preferences)
+        }
+    }
+
+    /// Hội thoại 1-1 đã có với một người (không tạo mới).
+    func hoiThoaiVoi(_ userId: Int) -> MessageThread? { hoiThoai.first { $0.peer?.id == userId && $0.laNhanRieng } }
+
+    #if DEBUG
+    /// Kiểm thử: nạp danh sách hội thoại.
+    func datHoiThoai(_ ds: [MessageThread]) { hoiThoai = ds; daTaiHoiThoai = true }
+    /// Màn thử: người kia "đang nhập…" (không tự tắt).
+    func giaDangGo(threadId: Int, userId: Int) { dangGo[threadId] = [userId] }
+    #endif
+
     // MARK: Riêng tư
 
     /// Bật/tắt "Hiển thị trạng thái hoạt động" (`PUT /profile {showActiveStatus}`). Socket đọc cờ này LÚC NỐI

@@ -63,7 +63,8 @@ struct TrangPhapLyView: View {
         Section {
             muc("We store your account (username, email, name, avatar) and the work you create: issues, comments, attachments, chat messages and documents.")
             muc("Photos and files are uploaded only when you choose to attach them. The camera is used only when you tap “Take Photo”.")
-            muc("The microphone is used only while you record a voice note in chat. Voice notes are stored for the people in that channel and sent to Groq, a third-party speech-to-text service, to create a transcript — the app asks for your consent before your first voice note.")
+            muc("The microphone is used only while you record a voice note in chat. Voice notes in project channels are stored for the people in that channel and sent to Groq, a third-party speech-to-text service, to create a transcript — the app asks for your consent before your first voice note. Voice messages in direct messages are only stored for you and the person you message; they are not transcribed.")
+            muc("Your profile photo, cover photo, display name and bio are the same as on cuongthai.com — changing them in the app changes them everywhere. Photos are saved to your library only when you choose “Save photo”.")
             muc("Video meetings open in Google Meet, Zoom, Microsoft Teams or Jitsi (or Safari). CT Work itself does not use your camera or microphone for calls.")
             muc("If you allow notifications, we store your device's push token to deliver CT Work notifications.")
             muc("AI assistant: when you ask it a question, your question and the project content needed to answer it (issues, comments, Docs pages, attached files and links you can already see) are sent to a third-party AI model provider (large language models such as Anthropic Claude and OpenAI GPT, through our AI gateway). The app asks for your consent before your first question; you can withdraw it in Account › Privacy. Answers are labelled “AI-generated” and can be reported.")
@@ -117,6 +118,8 @@ struct TaiKhoanCTW: View {
     @EnvironmentObject private var app: AppState
     @State private var tamPhu: TamPhu?
     @State private var hoiDangXuat = false
+    @State private var moHoSo = false
+    @State private var daMoThu = false
     /// 5.1.2(i): đồng ý gửi câu hỏi + nội dung dự án cho nhà cung cấp AI (Modules/AI/TroLyAICTW.swift).
     @AppStorage("com.cuongthai.ctwork.ai.dongY") private var aiDongY = false
     @ObservedObject private var ngonNgu = NgonNguApCTW.shared
@@ -139,23 +142,31 @@ struct TaiKhoanCTW: View {
         // Khung (`CotCTW`) đã bọc NavigationStack.
         Group {
             List {
+                // 22/10/2026 (1.1): thẻ tên ⇒ Hồ sơ của tôi (đổi ảnh đại diện/bìa, tên, giới thiệu — đồng bộ web).
                 Section {
-                    HStack(spacing: 14) {
-                        CTWAvatar(user: app.currentUser.map {
-                            CTWUser(id: $0.id, username: $0.username, fullName: $0.fullName,
-                                    displayName: $0.displayName, avatarUrl: $0.avatarUrl)
-                        }, size: 54)
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(app.currentUser?.displayName ?? app.currentUser?.fullName ?? app.currentUser?.username ?? "—")
-                                .font(.ctw(size: 18, weight: .semibold)).foregroundColor(AppColors.textPrimary)
-                            Text("@\(app.currentUser?.username ?? "")")
-                                .font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
-                            if let e = app.currentUser?.email {
-                                Text(e).font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
+                    Button { moHoSo = true } label: {
+                        HStack(spacing: 14) {
+                            CTWAvatar(user: app.currentUser.map {
+                                CTWUser(id: $0.id, username: $0.username, fullName: $0.fullName,
+                                        displayName: $0.displayName, avatarUrl: $0.avatarUrl)
+                            }, size: 58)
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(app.currentUser?.displayName ?? app.currentUser?.fullName ?? app.currentUser?.username ?? "—")
+                                    .font(.ctw(size: 18, weight: .semibold)).foregroundColor(AppColors.textPrimary)
+                                Text("@\(app.currentUser?.username ?? "")")
+                                    .font(.ctw(size: 13)).foregroundColor(AppColors.textSecondary)
+                                Text("View and edit profile").font(.ctw(size: 13, weight: .medium)).foregroundColor(AppColors.primary)
                             }
                         }
+                        .padding(.vertical, 6)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
                     }
-                    .padding(.vertical, 6)
+                    .buttonStyle(.plain)
+                    .overlay(alignment: .trailing) {
+                        Image(systemName: "chevron.right").font(.ctw(size: 13, weight: .semibold)).foregroundColor(AppColors.textTertiary)
+                    }
+                    .accessibilityIdentifier("account.profile")
                 }
 
                 Section {
@@ -231,11 +242,15 @@ struct TaiKhoanCTW: View {
                 }
             }
             .navigationTitle("Account")
+            .navigationDestination(isPresented: $moHoSo) { HoSoCuaToiCTW() }
             .confirmationDialog("Sign out of CT Work?", isPresented: $hoiDangXuat, titleVisibility: .visible) {
                 Button("Sign out", role: .destructive) { app.logout() }
             }
             #if DEBUG
-            .onAppear { if XemThuCTW.man?.lowercased() == "chonduan" { tamPhu = .chonDuAn } }
+            .onAppear {
+                if XemThuCTW.man?.lowercased() == "chonduan" { tamPhu = .chonDuAn }
+                if XemThuCTW.man?.lowercased() == "hoso", !daMoThu { daMoThu = true; moHoSo = true }
+            }
             #endif
             .sheet(item: $tamPhu) { t in
                 switch t {

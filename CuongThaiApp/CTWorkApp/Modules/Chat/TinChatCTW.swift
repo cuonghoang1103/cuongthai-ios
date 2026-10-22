@@ -68,7 +68,7 @@ struct TinChatCTW: View {
 
     private var tinNguoi: some View {
         HStack(alignment: .top, spacing: 10) {
-            if gop { Color.clear.frame(width: 36, height: 1) } else { CTWAvatar(user: tin.author, size: 36) }
+            if gop { Color.clear.frame(width: 36, height: 1) } else { CTWAvatar(user: tin.author, size: 36).ctwChamMoHoSo(tin.author?.id) }
             VStack(alignment: .leading, spacing: 4) {
                 if !gop {
                     HStack(spacing: 6) {

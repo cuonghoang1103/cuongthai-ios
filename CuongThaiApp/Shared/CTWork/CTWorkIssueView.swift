@@ -1041,7 +1041,7 @@ struct CTWIssueView: View {
         let laCuaToi = c.author?.id != nil && c.author?.id == appState.currentUser?.id
         let laAdmin = cfg.role == "ADMIN"
         return HStack(alignment: .top, spacing: 10) {
-            CTWAvatar(user: c.author, size: 28)
+            CTWAvatar(user: c.author, size: 28).ctwChamMoHoSo(c.author?.laAgent == true ? nil : c.author?.id)
             VStack(alignment: .leading, spacing: 5) {
                 HStack(spacing: 6) {
                     Text(c.author?.ten ?? String(localized: "Someone"))

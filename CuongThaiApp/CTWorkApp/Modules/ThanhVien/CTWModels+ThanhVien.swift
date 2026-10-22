@@ -79,3 +79,23 @@ struct CTWTinNhanGuiDi: Hashable, Identifiable {
     var tenTep: [String] = []
     var loi: String?
 }
+
+/// `GET /api/v1/users/:id` (follow.service.ts › getEnhancedPublicProfile) — CHỈ đọc phần app hiện: tên, ảnh, bìa, giới thiệu,
+/// chức danh/nơi làm. Máy chủ đã che trạng thái theo luật riêng tư; trạng thái hoạt động vẫn lấy từ danh bạ (`moc`).
+struct CTWHoSoCongKhai: Codable, Hashable {
+    var id: Int
+    var username: String?
+    var fullName: String?
+    var displayName: String?
+    var avatarUrl: String?
+    var coverPhotoUrl: String?
+    var bio: String?
+    var jobTitle: String?
+    var workplace: String?
+    var location: String?
+    var createdAt: String?
+
+    var ten: String { displayName ?? fullName ?? username ?? "—" }
+    /// "Chức danh · Nơi làm" — rỗng ⇒ không vẽ dòng.
+    var dongNghe: String { [jobTitle, workplace].compactMap { $0?.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }.joined(separator: " · ") }
+}
