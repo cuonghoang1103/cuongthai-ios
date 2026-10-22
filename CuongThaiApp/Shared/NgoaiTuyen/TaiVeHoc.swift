@@ -31,6 +31,10 @@ final class TaiVeHoc: ObservableObject {
         do {
             // 1. Chi tiết khoá + giáo trình.
             _ = try await ghim(.getCourseDetail(slug: slug), mon: ten)
+            // Màn chi tiết môn đọc bản GỌN (`?gon=1`) trước — ghim cả nó, không thì
+            // mở ngoại tuyến phải lùi về gói đầy đủ (vẫn chạy nhưng chậm hơn).
+            _ = try? await ghim(.hocBai(.khoaGon(slug: slug)), mon: ten)
+            _ = try? await ghim(.getCourseProgress(courseId: id), mon: ten)
             let ctData = try await ghim(.getCurriculum(courseId: id), mon: ten)
             xong = 1
 

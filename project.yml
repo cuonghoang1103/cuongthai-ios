@@ -449,6 +449,31 @@ targets:
         Debug:
           SWIFT_ACTIVE_COMPILATION_CONDITIONS: $(inherited) DEBUG
 
+  # Kiểm thử ĐƠN VỊ của app chính (22/10/2026): Tests/ = điều hướng (tính năng, ghim, link, thông báo);
+  # AcademyTests/ = màn học Academy: chọn luồng video,
+  # rút slide, tách tiêu đề song ngữ, nhịp lưu tiến độ, giải mã JSON THẬT của
+  # production (`AcademyTests/Fixtures`, đã bỏ chữ ký URL R2).
+  CuongThaiAppTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: CuongThaiApp/AcademyTests
+      - path: CuongThaiApp/Tests
+    dependencies:
+      - target: CuongThaiApp
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.cuongthai.app.tests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/CuongThaiApp.app/CuongThaiApp
+        BUNDLE_LOADER: $(TEST_HOST)
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: "UR32PFUQ38"
+      configs:
+        Debug:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: $(inherited) DEBUG
+
   CTWorkAppUITests:
     type: bundle.ui-testing
     platform: iOS
@@ -464,29 +489,6 @@ targets:
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: "UR32PFUQ38"
         TEST_TARGET_NAME: CTWorkApp
-
-  # Kiểm thử đơn vị của app CHÍNH (22/10/2026 — đợt rút gọn điều hướng):
-  # bảng đăng ký tính năng, ghim, đọc link `cuongthai://`, định tuyến thông báo,
-  # giải mã giá trị cửa sổ phụ cũ. Chạy: scheme CuongThaiApp › Test.
-  CuongThaiAppTests:
-    type: bundle.unit-test
-    platform: iOS
-    deploymentTarget: "17.0"
-    sources:
-      - path: CuongThaiApp/Tests
-    dependencies:
-      - target: CuongThaiApp
-    settings:
-      base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.cuongthai.app.tests
-        GENERATE_INFOPLIST_FILE: YES
-        TEST_HOST: $(BUILT_PRODUCTS_DIR)/CuongThaiApp.app/CuongThaiApp
-        BUNDLE_LOADER: $(TEST_HOST)
-        CODE_SIGN_STYLE: Automatic
-        DEVELOPMENT_TEAM: "UR32PFUQ38"
-      configs:
-        Debug:
-          SWIFT_ACTIVE_COMPILATION_CONDITIONS: $(inherited) DEBUG
 
   CuongThaiAppMac:
     type: application

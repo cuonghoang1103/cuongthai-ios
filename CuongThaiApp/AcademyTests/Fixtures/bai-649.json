@@ -1,0 +1,40 @@
+{
+ "success": true,
+ "data": {
+  "id": 649,
+  "sectionId": 258,
+  "title": "0.1 — About FER202 & Course Map|||0.1 — Giới thiệu môn FER202 & bản đồ môn học",
+  "slug": "fer202-0-1-gioi-thieu",
+  "description": "Môn học này là gì, học xong làm được gì, và bản đồ toàn bộ hành trình React.",
+  "content": "\n<div class=\"ml-en\">\n<span class=\"eyebrow\">Section 0 · Lesson 0.1</span>\n<h2>About FER202 — Front-End Web Development with React</h2>\n<p class=\"lead\">FER202 teaches you to build <strong>modern web front-ends</strong> with <strong>React</strong> — the library that powers Facebook, Netflix, Airbnb and most of today's web apps. You go from a static HTML/CSS mindset to <strong>thinking in components</strong>: small, reusable pieces of UI that describe what the screen should look like for any given data.</p>\n<p>The heart of React is one simple idea: <strong>UI is a function of state</strong>. You describe the interface for a given state, and when the state changes React efficiently updates only what changed. No manual DOM juggling — you declare, React reconciles.</p>\n<h3>By the end of this course you will be able to</h3>\n<ul>\n  <li>Scaffold a React app with Vite/CRA and understand the project structure.</li>\n  <li>Write <strong>JSX</strong> and build reusable <strong>components</strong> with props and state.</li>\n  <li>Manage state and side-effects with <strong>Hooks</strong> (useState, useEffect, useContext, useReducer).</li>\n  <li>Route between pages (<strong>React Router</strong>), split code with <strong>lazy/Suspense</strong>.</li>\n  <li>Fetch data from a REST API with <strong>fetch/axios</strong> and manage global state with <strong>Redux Toolkit</strong>.</li>\n</ul>\n<h3>Course map — the React journey</h3>\n<p>All 60 university sessions are grouped into the roadmap below. Each stage builds on the previous one — study them in order:</p>\n<div class=\"lz-map\">\n  <div class=\"lz-stage\">Foundations</div>\n  <div class=\"lz-node\"><div class=\"lz-badge\">1</div><div class=\"lz-nbody\"><div class=\"lz-ntitle\">Overview &amp; Setup</div><div class=\"lz-nsub\">Full-stack big picture · React 19 · Git · Node.js &amp; npm</div></div></div>\n  <div class=\"lz-node\"><div class=\"lz-badge\">2</div><div class=\"lz-nbody\"><div class=\"lz-ntitle\">ES6 for React</div><div class=\"lz-nsub\">let/const, arrows, destructuring, spread, modules</div></div></div>\n  <div class=\"lz-node\"><div class=\"lz-badge\">3</div><div class=\"lz-nbody\"><div class=\"lz-ntitle\">JSX &amp; Rendering</div><div class=\"lz-nsub\">Render HTML, JS expressions, fragments</div></div></div>\n  <div class=\"lz-stage\">Building UI</div>\n  <div class=\"lz-node\"><div class=\"lz-badge\">4</div><div class=\"lz-nbody\"><div class=\"lz-ntitle\">Bootstrap &amp; React-Bootstrap</div><div class=\"lz-nsub\">Grid, components, styling React fast</div></div></div>\n  <div class=\"lz-node\"><div class=\"lz-badge\">5</div><div class=\"lz-nbody\"><div class=\"lz-ntitle\">Components &amp; State</div><div class=\"lz-nsub\">Props, state, class vs function</div></div></div>\n  <div class=\"lz-node\"><div class=\"lz-badge\">6</div><div class=\"lz-nbody\"><div class=\"lz-ntitle\">Event Handling</div><div class=\"lz-nsub\">Synthetic events, handler context</div></div></div>\n  <div class=\"lz-node\"><div class=\"lz-badge\">7</div><div class=\"lz-nbody\"><div class=\"lz-ntitle\">Props &amp; C",
+  "lessonType": "VIDEO",
+  "videoUrl": "https://cuongthai-media-storage.e8105049f41b90209104afb5911d84b2.r2.cloudflarestorage.com/videos/bai-giang/front-end-web-development-with-react/00-gioi-thieu-mon-hoc/00-01-gioi-thieu-fer202-9c5bc90e.mp4?X-Amz-Signature=REDACTED",
+  "videoDurationSeconds": 4804,
+  "thumbnailUrl": null,
+  "isFreePreview": true,
+  "isPublished": true,
+  "sortOrder": 0,
+  "createdAt": "2026-07-24T19:22:27.325Z",
+  "updatedAt": "2026-10-22T11:09:51.837Z",
+  "documents": [],
+  "assignments": [],
+  "videoPlatform": "DIRECT",
+  "sourceCodeUrl": null,
+  "teachingNotes": null,
+  "quizData": null,
+  "videoTracks": [
+   {
+    "track": "VI",
+    "url": "https://cuongthai-media-storage.e8105049f41b90209104afb5911d84b2.r2.cloudflarestorage.com/videos/bai-giang/front-end-web-development-with-react/00-gioi-thieu-mon-hoc/00-01-gioi-thieu-fer202-9c5bc90e.mp4?X-Amz-Signature=REDACTED",
+    "platform": "DIRECT"
+   },
+   {
+    "track": "YT",
+    "url": "https://youtu.be/SqcY0GlETPk",
+    "platform": "EMBED",
+    "credit": "Programming with Mosh — React Tutorial for Beginners"
+   }
+  ],
+  "defaultVideoTrack": "VI"
+ }
+}

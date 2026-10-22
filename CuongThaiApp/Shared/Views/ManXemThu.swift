@@ -121,6 +121,8 @@ struct ManXemThu: View {
             // Cả luồng đăng nhập (21/10/2026): màn đăng nhập mới ⇒ "Đang đăng nhập…" ⇒ Trang chủ giả. Máy chủ GIẢ —
             // gõ tên bất kỳ; mật khẩu "wrong" ⇒ báo sai (tấm lắc). Kèm màn khởi động: thêm CT_XEM_KHOIDONG=1.
             case "dangnhap": ThuLuongDangNhap()
+            // Màn học Academy (22/10/2026) — xem ThuHocBaiDebug.swift.
+            case let s where s.hasPrefix("hocbai"): ThuHocBaiView(cheDo: s)
 
             default:
                 VStack(spacing: Spacing.sm) {
