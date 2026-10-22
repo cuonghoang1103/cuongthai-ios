@@ -140,7 +140,7 @@ final class ThanhVienCTWTests: XCTestCase {
         XCTAssertEqual(db.people?.count, 7)
         XCTAssertEqual(db.people?.first { $0.id == 9 }?.laAgent, true)
         let t = try giai([MessageThread].self, "/messages/threads")
-        XCTAssertEqual(t.count, 4)
+        XCTAssertEqual(t.count, 6, "1.1: thêm hội thoại GIF (Sara) + tin thoại (Anh Tu) cho ảnh chụp Messenger")
         XCTAssertEqual(t.first { $0.id == 102 }?.unreadCount, 2)
         XCTAssertNotNil(t.first?.peer?.lastActiveAt)
         let m = try giai([Message].self, "/messages/threads/101/messages")

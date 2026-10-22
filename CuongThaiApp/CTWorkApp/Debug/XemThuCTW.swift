@@ -1,5 +1,6 @@
 #if DEBUG
 import Foundation
+import Kingfisher
 
 /// Cửa XEM MÀN HÌNH bằng MÁY CHỦ GIẢ — CHỈ có trong bản DEBUG (CLAUDE.md A6).
 ///
@@ -34,6 +35,11 @@ enum XemThuCTW {
     static func batNeuCan() {
         guard let man = man?.lowercased(), !man.isEmpty else { return }
         URLProtocol.registerClass(MayChuGia.self)
+        // Kingfisher tải ảnh bằng phiên RIÊNG (không đi qua `registerClass`) ⇒ GIF/nhãn dán mẫu `/api/v1/__gia/…` cần máy
+        // chủ giả trong cấu hình phiên của nó.
+        let cauHinh = URLSessionConfiguration.default
+        cauHinh.protocolClasses = [MayChuGia.self] + (cauHinh.protocolClasses ?? [])
+        KingfisherManager.shared.downloader.sessionConfiguration = cauHinh
         let app = AppState.shared
         app.cheDoXemThu = true
         // Mỗi lượt xem thử bắt đầu sạch: nội dung đã ẩn ở lượt trước không ẩn tiếp.
@@ -77,7 +83,7 @@ enum XemThuCTW {
             app.dichCho = DichMoDunCTW(moDun: "chat", pid: 7, duongDan: DuongDanCTW.tach("/work/northwind/NW/chat?c=1")!)
         case "inbox": app.muc = .hopThu
         case "them": app.muc = .them
-        case "account", "chonduan": app.muc = .taiKhoan
+        case "account", "chonduan", "hoso": app.muc = .taiKhoan
         default: app.muc = .viecCuaToi
         }
         UserDefaults.standard.set(man, forKey: "ctw.xemThu.man")
@@ -100,6 +106,16 @@ final class MayChuGia: URLProtocol {
            mat == "*" || u.path.contains(mat) {
             DispatchQueue.global().asyncAfter(deadline: .now() + 0.15) {
                 self.client?.urlProtocol(self, didFailWithError: URLError(.notConnectedToInternet))
+            }
+            return
+        }
+        // GIF / nhãn dán / tin thoại mẫu do app tự vẽ (XemThuCTW+ThanhVien.swift › MediaGiaCTW) — trả byte thô, không JSON.
+        if let (d, kieu) = MediaGiaCTW.du(u.path) {
+            let res = HTTPURLResponse(url: u, statusCode: 200, httpVersion: "HTTP/1.1", headerFields: ["Content-Type": kieu])!
+            DispatchQueue.global().asyncAfter(deadline: .now() + 0.1) {
+                self.client?.urlProtocol(self, didReceive: res, cacheStoragePolicy: .notAllowed)
+                self.client?.urlProtocol(self, didLoad: d)
+                self.client?.urlProtocolDidFinishLoading(self)
             }
             return
         }
