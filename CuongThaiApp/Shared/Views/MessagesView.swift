@@ -829,7 +829,7 @@ struct NewMessageView: View {
         defer { dangMo = nil }
         do {
             let thread: MessageThread = try await APIClient.shared.request(.openThread(peerId: user.id))
-            hoiThoaiMo = thread
+            hoiThoaiMo = thread.voiNguoiKia(user.id)
         } catch {
             loi = error.localizedDescription
         }

@@ -265,6 +265,9 @@ struct MessageThread: Codable, Identifiable, Hashable {
     /// Tuỳ chọn RIÊNG của người đang xem: ghim / tắt thông báo / lưu trữ /
     /// đánh dấu chưa đọc. Máy chủ trả bản đã lọc theo người xem.
     let preferences: ThreadPreferences?
+    /// Hai người của hội thoại khi máy chủ trả bản THÔ (`userA`/`userB`, chưa có `peer`) — `POST /threads/user/:id`
+    /// trả đúng bản thô này. Dùng `voiNguoiKia(_:)` để chọn ra `peer`. Không dùng ở chỗ khác.
+    var haiBen: [ThreadPeer] = []
 
     var daGhim: Bool { preferences?.pinnedAt != nil }
     var daLuuTru: Bool { preferences?.archivedAt != nil }
@@ -329,6 +332,14 @@ struct MessageThread: Codable, Identifiable, Hashable {
 
     var displayName: String {
         peer?.displayName ?? peer?.username ?? (laHoTro ? "Hỗ trợ CuongThai" : "Người dùng")
+    }
+
+    /// Bản thô của `POST /threads/user/:id` không có `peer` ⇒ lấy người kia (id đã biết) trong `userA`/`userB`.
+    func voiNguoiKia(_ id: Int) -> MessageThread {
+        guard peer == nil, let p = haiBen.first(where: { $0.id == id }) else { return self }
+        return MessageThread(id: self.id, type: type, peer: p, lastMessage: lastMessage,
+                             unreadCount: unreadCount, createdAt: createdAt,
+                             updatedAt: updatedAt, preferences: preferences)
     }
 
     var laHoTro: Bool { type == "ADMIN" }
@@ -1453,5 +1464,49 @@ struct Tin: Codable, Identifiable, Hashable {
     var soGiay: Double {
         guard laVideo, let d = duration, d > 0 else { return 5 }
         return min(Double(d), 30)
+    }
+}
+
+
+// MARK: - Giải mã MessageThread chịu được hai hình dạng máy chủ trả
+//
+// `GET /messages/threads` trả bản ĐÃ DỰNG (`peer`, `unreadCount`, `lastMessage`), còn `POST /threads/user/:peerId`
+// (mở/tạo hội thoại riêng) trả bản THÔ của Prisma: `userA`/`userB`, `messages`, KHÔNG có `unreadCount` lẫn `peer`.
+// Trước 22/10/2026 `unreadCount` bắt buộc ⇒ bấm "Nhắn tin" ở hồ sơ (CT Work) và "Tin nhắn mới" (CuongThai) báo
+// "Máy chủ trả về phản hồi không như mong đợi". Thiếu ⇒ 0; người kia lấy qua `voiNguoiKia(_:)`.
+extension MessageThread {
+    private enum KhoaGiaiMa: String, CodingKey {
+        case id, type, peer, lastMessage, unreadCount, createdAt, updatedAt, preferences, userA, userB
+    }
+
+    /// Một bên của bản thô: có `fullName` (bản dựng thì gộp sẵn vào `displayName`).
+    private struct BenTho: Decodable {
+        let id: Int
+        let username: String?
+        let fullName: String?
+        let displayName: String?
+        let avatarUrl: String?
+        let lastActiveAt: String?
+        var thanhPeer: ThreadPeer {
+            ThreadPeer(id: id, username: username, displayName: displayName ?? fullName,
+                       avatarUrl: avatarUrl, alias: nil, lastActiveAt: lastActiveAt)
+        }
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: KhoaGiaiMa.self)
+        let a = try? c.decodeIfPresent(BenTho.self, forKey: .userA)
+        let b = try? c.decodeIfPresent(BenTho.self, forKey: .userB)
+        self.init(
+            id: try c.decode(Int.self, forKey: .id),
+            type: try c.decodeIfPresent(String.self, forKey: .type) ?? "USER",
+            peer: try c.decodeIfPresent(ThreadPeer.self, forKey: .peer),
+            lastMessage: try? c.decodeIfPresent(Message.self, forKey: .lastMessage),
+            unreadCount: try c.decodeIfPresent(Int.self, forKey: .unreadCount) ?? 0,
+            createdAt: try c.decodeIfPresent(String.self, forKey: .createdAt),
+            updatedAt: try c.decodeIfPresent(String.self, forKey: .updatedAt),
+            preferences: try? c.decodeIfPresent(ThreadPreferences.self, forKey: .preferences),
+            haiBen: [a, b].compactMap { $0?.thanhPeer }
+        )
     }
 }

@@ -278,8 +278,11 @@ struct LuoiAnhChatCTW: View {
 
     var body: some View {
         if anh.count == 1, let a = anh.first {
-            AnhTepChatCTW(pid: pid, tep: a, co: CGSize(width: 260, height: 200)) { bam(a) }
+            // MỘT ảnh: giữ đúng tỉ lệ ảnh (aspect-fit, như Messenger) — khung cố định 260×200 + scaledToFill từng cắt
+            // mất mép trái/phải ảnh chụp màn hình (ảnh lỗi 06, 22/10/2026).
+            AnhTepChatCTW(pid: pid, tep: a, co: TiLeAnhChatCTW.hopMotAnh, vuaTiLe: true) { bam(a) }
         } else {
+            // Lưới nhiều ảnh: ô vuông cắt giữa (như Messenger) — chạm ⇒ xem trọn ảnh.
             LazyVGrid(columns: [GridItem(.fixed(124), spacing: 6), GridItem(.fixed(124), spacing: 6)], alignment: .leading, spacing: 6) {
                 ForEach(anh.prefix(6)) { a in
                     AnhTepChatCTW(pid: pid, tep: a, co: CGSize(width: 124, height: 124)) { bam(a) }
@@ -289,34 +292,94 @@ struct LuoiAnhChatCTW: View {
     }
 }
 
+/// Tỉ lệ (rộng ÷ cao) của ảnh chat đã tải trong phiên — để vẽ lại / cuộn qua lại không nhảy cỡ khung. Máy chủ không
+/// trả kích thước ảnh (`WorkChannelFile`, `/messages/upload`) nên chỉ biết sau lần tải đầu.
+enum TiLeAnhChatCTW {
+    /// Hộp tối đa cho một ảnh đơn trong kênh chat.
+    static let hopMotAnh = CGSize(width: 280, height: 320)
+    /// Tỉ lệ tạm khi chưa biết (ảnh chụp màn hình / ảnh ngang hay gặp nhất).
+    static let tiLeTam: CGFloat = 4.0 / 3.0
+
+    @MainActor static var bang: [String: CGFloat] = [:]
+
+    /// Khung aspect-fit của ảnh tỉ lệ `tiLe` trong hộp `toiDa`; cạnh ngắn không nhỏ hơn `toiThieu` (ảnh rất dẹt / rất
+    /// hẹp vẫn chạm được — phần dư là nền ô, ảnh không bị cắt).
+    static func khung(tiLe: CGFloat?, toiDa: CGSize, toiThieu: CGFloat = 72) -> CGSize {
+        let r = tiLe.flatMap { $0.isFinite && $0 > 0 ? $0 : nil } ?? tiLeTam
+        var w = toiDa.width
+        var h = w / r
+        if h > toiDa.height { h = toiDa.height; w = h * r }
+        return CGSize(width: min(toiDa.width, max(toiThieu, w.rounded())), height: min(toiDa.height, max(toiThieu, h.rounded())))
+    }
+}
+
+/// Ảnh tải bằng URL ký sẵn, vẽ VỪA khung theo tỉ lệ thật (không cắt). Dùng cho ảnh đơn ở kênh chat và tin nhắn riêng.
+struct AnhVuaTiLeCTW<ThayThe: View>: View {
+    let url: URL?
+    let khoa: String
+    let toiDa: CGSize
+    var bo: CGFloat = 10
+    @ViewBuilder var thayThe: () -> ThayThe
+    @State private var tiLe: CGFloat?
+
+    var body: some View {
+        let k = TiLeAnhChatCTW.khung(tiLe: tiLe ?? TiLeAnhChatCTW.bang[khoa], toiDa: toiDa)
+        ZStack {
+            RoundedRectangle(cornerRadius: bo, style: .continuous).fill(AppColors.backgroundTertiary)
+            if let url {
+                KFImage(url)
+                    .onSuccess { r in
+                        let s = r.image.size
+                        guard s.width > 0, s.height > 0 else { return }
+                        Task { @MainActor in
+                            TiLeAnhChatCTW.bang[khoa] = s.width / s.height
+                            tiLe = s.width / s.height
+                        }
+                    }
+                    .placeholder { ProgressView() }
+                    .resizable()
+                    .scaledToFit()
+            } else {
+                thayThe()
+            }
+        }
+        .frame(width: k.width, height: k.height)
+        .clipShape(RoundedRectangle(cornerRadius: bo, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: bo, style: .continuous).strokeBorder(AppColors.border, lineWidth: 0.5))
+    }
+}
+
 struct AnhTepChatCTW: View {
     let pid: Int
     let tep: CTWChatFile
+    /// Ô cố định (lưới) hoặc hộp TỐI ĐA (`vuaTiLe`).
     let co: CGSize
+    /// Một ảnh đơn: khung theo tỉ lệ ảnh thật, không cắt.
+    var vuaTiLe = false
     let bam: () -> Void
     @State private var url: URL?
     @State private var hong = false
 
     var body: some View {
         Button(action: bam) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 10, style: .continuous).fill(AppColors.backgroundTertiary)
-                if hong && AppState.shared.cheDoXemThu {
-                    AnhMauCTW(hat: tep.id)
-                } else if let url {
-                    KFImage(url)
-                        .placeholder { ProgressView() }
-                        .resizable()
-                        .scaledToFill()
-                } else if hong {
-                    Image(systemName: "photo").foregroundColor(AppColors.textTertiary)
-                } else {
-                    ProgressView()
+            if vuaTiLe {
+                AnhVuaTiLeCTW(url: hong ? nil : url, khoa: "kenh-\(tep.id)", toiDa: co) { thayThe }
+            } else {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 10, style: .continuous).fill(AppColors.backgroundTertiary)
+                    if let url, !hong {
+                        KFImage(url)
+                            .placeholder { ProgressView() }
+                            .resizable()
+                            .scaledToFill()
+                    } else {
+                        thayThe
+                    }
                 }
+                .frame(width: co.width, height: co.height)
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(AppColors.border, lineWidth: 0.5))
             }
-            .frame(width: co.width, height: co.height)
-            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(AppColors.border, lineWidth: 0.5))
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Image \(tep.fileName ?? "")")
@@ -325,6 +388,16 @@ struct AnhTepChatCTW: View {
             if AppState.shared.cheDoXemThu { hong = true; return }
             #endif
             do { url = try await UrlTepChatCTW.lay(pid: pid, fid: tep.id) } catch { hong = true }
+        }
+    }
+
+    @ViewBuilder private var thayThe: some View {
+        if hong && AppState.shared.cheDoXemThu {
+            AnhMauCTW(hat: tep.id)
+        } else if hong {
+            Image(systemName: "photo").foregroundColor(AppColors.textTertiary)
+        } else {
+            ProgressView()
         }
     }
 }

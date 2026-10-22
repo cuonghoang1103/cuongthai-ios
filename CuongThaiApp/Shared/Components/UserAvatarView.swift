@@ -46,6 +46,57 @@ enum DuongDanAnh {
     }
 }
 
+// MARK: - Chữ tắt & tên ngắn của một người (22/10/2026)
+//
+// Lỗi thật trên ảnh nộp App Store (build 4): tên hiển thị "Minh (Demo)" ⇒ avatar "M(" khắp app (chữ tắt lấy ký tự đầu
+// của 2 từ, kể cả dấu ngoặc) và hàng "Đang hoạt động" ghi "(Demo)" (lấy từ CUỐI). MỘT chỗ cho cả hai app:
+//   · bỏ phần trong ngoặc (`(Demo)`, `[Bot]`, `{…}`, `（…）`, `【…】`) — đó là chú thích, không phải tên;
+//   · một "từ" chỉ tính CHỮ CÁI (`Character.isLetter` — tiếng Việt có dấu, CJK… đều đúng); dấu câu/emoji/số bị bỏ;
+//   · chữ tắt = chữ đầu của từ ĐẦU + từ CUỐI (cùng luật `initialsOf` của web), tối đa 2;
+//   · tên ngắn = từ CUỐI (tên gọi của người Việt: "Hoàng Nghĩa Cường" ⇒ "Cường"; tên kiểu Tây "Linh Tran" ⇒ "Tran" —
+//     giữ luật từ cuối cho đơn giản và đoán được).
+
+enum TenNguoi {
+    private static let ngoac = #"[\(\[\{（【][^\)\]\}）】]*[\)\]\}）】]"#
+
+    /// Tên đã bỏ phần trong ngoặc + khoảng trắng thừa. Bỏ xong mà rỗng (cả tên nằm trong ngoặc) ⇒ chỉ bỏ ký tự ngoặc.
+    static func boNgoac(_ ten: String) -> String {
+        let bo = ten.replacingOccurrences(of: ngoac, with: " ", options: .regularExpression)
+        let gon = bo.split(whereSeparator: \.isWhitespace).joined(separator: " ")
+        if gon.contains(where: \.isLetter) { return gon }
+        return ten.filter { !"()[]{}（）【】".contains($0) }
+            .split(whereSeparator: \.isWhitespace).joined(separator: " ")
+    }
+
+    /// Các từ (tách theo khoảng trắng) còn chữ cái, mỗi từ đã cắt dấu câu/emoji ở HAI ĐẦU ("Anne-Marie", "O'Brien" giữ nguyên).
+    static func cacTu(_ ten: String) -> [String] {
+        boNgoac(ten).split(whereSeparator: \.isWhitespace).compactMap { tu -> String? in
+            guard let dau = tu.firstIndex(where: \.isLetter), let cuoi = tu.lastIndex(where: \.isLetter) else { return nil }
+            return String(tu[dau...cuoi])
+        }
+    }
+
+    /// Chữ tắt cho avatar: tối đa 2 chữ cái (từ đầu + từ cuối), viết hoa. Không có chữ cái nào ⇒ thử `duPhong`
+    /// (vd username), rồi "?".
+    static func chuCaiDau(_ ten: String?, duPhong: String? = nil) -> String {
+        for s in [ten, duPhong] {
+            let tu = cacTu(s ?? "")
+            guard let dau = tu.first?.first(where: \.isLetter) else { continue }
+            var kq = String(dau).uppercased()
+            if tu.count > 1, let cuoi = tu.last?.first(where: \.isLetter) { kq += String(cuoi).uppercased() }
+            return kq
+        }
+        return "?"
+    }
+
+    /// Tên ngắn (hàng "Đang hoạt động", ghế poker…): từ cuối còn chữ cái, bỏ ngoặc/dấu câu. Không có ⇒ tên gốc đã gọn.
+    static func tenNgan(_ ten: String) -> String {
+        if let cuoi = cacTu(ten).last { return cuoi }
+        let gon = ten.trimmingCharacters(in: .whitespacesAndNewlines)
+        return gon
+    }
+}
+
 // MARK: - User Avatar
 struct UserAvatarView: View {
     let url: String?

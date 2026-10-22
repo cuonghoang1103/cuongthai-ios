@@ -32,7 +32,7 @@ struct DanhSachThanhVienCTW: View {
                                 Button { hoSo = n } label: {
                                     VStack(spacing: 5) {
                                         AvatarHoatDongCTW(user: n.nguoi, size: 54, moc: .dangHoatDong)
-                                        Text(n.ten.split(separator: " ").last.map(String.init) ?? n.ten)
+                                        Text(verbatim: TenNguoi.tenNgan(n.ten))
                                             .font(.ctw(size: 12)).foregroundColor(AppColors.textPrimary).lineLimit(1)
                                             .fixedSize()
                                     }

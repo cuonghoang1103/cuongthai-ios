@@ -130,7 +130,10 @@ struct CTWODem: View {
                 .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(mau.opacity(0.13)))
             Text(so).font(.ctw(size: 22, weight: .bold).monospacedDigit()).foregroundColor(AppColors.textPrimary)
                 .lineLimit(1).minimumScaleFactor(0.6)
-            Text(nhan).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary).lineLimit(2)
+            // Luôn GIỮ chỗ 2 dòng: trong lưới, nhãn dài ("Người đóng góp · 30 ngày") xuống dòng còn nhãn ngắn thì không
+            // ⇒ các ô cùng hàng cao lệch nhau (iPad tiếng Việt, 22/10/2026). Giữ chỗ ⇒ mọi ô cao bằng nhau.
+            Text(nhan).font(.ctw(size: 12)).foregroundColor(AppColors.textSecondary)
+                .lineLimit(2, reservesSpace: true).minimumScaleFactor(0.85)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)

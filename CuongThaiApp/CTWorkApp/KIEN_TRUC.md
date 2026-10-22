@@ -526,6 +526,30 @@ Mẫu: hai video chủ app gửi 21/10 (app giao hàng "Parcel": hero minh hoạ
   dựng; âm trong gói; công tắc mặc định; pháo) + `CTWorkUITests/KhoiDongDangNhapUITests.swift` (mở nguội ⇒ màn khởi động tự thoát ⇒
   sai mật khẩu ⇒ lỗi ⇒ đúng ⇒ My Work; chạm bỏ qua; đổi sang Đăng ký và lại).
 
+## 21. Sửa lỗi thấy lúc chụp ảnh nộp build 4 (22/10/2026)
+
+Ảnh lỗi: `~/Documents/ctwork-appstore/anh/build4/_loi/`. Kiểm thử: `CTWorkTests/SuaLoiBuild5Tests.swift`.
+- **Chữ tắt + tên ngắn của người: MỘT chỗ** — `TenNguoi` (Shared/Components/UserAvatarView.swift, cả hai app): bỏ phần trong ngoặc
+  (`(Demo)`, `[Bot]`…), một từ chỉ tính chữ cái (`Character.isLetter` — tiếng Việt có dấu, CJK), emoji/dấu câu bị bỏ. Chữ tắt =
+  chữ đầu từ ĐẦU + từ CUỐI (như `initialsOf` của web), tối đa 2, không có chữ ⇒ username ⇒ "?". Tên ngắn (hàng "Đang hoạt động",
+  ghế poker) = từ CUỐI ("Hoàng Nghĩa Cường" ⇒ "Cường", "Minh (Demo)" ⇒ "Minh"). `CTWUser.kyTuDau` / `.tenNgan` đi qua đây —
+  ⛔ đừng tự `split(" ").first/last` hay `prefix(1)` tên người ở chỗ khác.
+- **Hàng danh sách ĐỪNG giữ `MessageThread` làm thuộc tính view**: `MessageThread ==` chỉ so `id` ⇒ SwiftUI so hàng cũ/mới, thấy bằng
+  nhau, KHÔNG vẽ lại (dòng xem trước đứng "Say hi 👋 · Wed" dù kho đã có tin mới). `HangHoiThoaiCTW` giữ giá trị rút sẵn; luật cập
+  nhật danh sách theo tin (gửi + socket) là `KhoTinNhanCTW.voiTin` (thuần: lên đầu, tin về trễ không lùi xem trước, tin dội lại
+  không đếm chưa đọc hai lần; hội thoại chưa có ⇒ tải lại). App chính né cùng bẫy bằng `.id(...)` ở MessagesView.
+- **Ảnh đơn trong chat = aspect-fit** (`AnhVuaTiLeCTW`, `TiLeAnhChatCTW.khung`): hộp tối đa 280×320 (kênh) / 240×300 (tin riêng),
+  tỉ lệ thật biết sau lần tải đầu (máy chủ không trả kích thước) và nhớ trong phiên; lưới nhiều ảnh vẫn ô vuông cắt giữa.
+- **Dính đáy khung chat** (`GhimDayChatCTW` + `PhaCuonChatCTW`, kênh + tin riêng): nội dung đổi cao (ảnh tải xong, hàng Lazy dựng xong)
+  khi đang ở đáy (≤ 80pt) và người dùng không kéo (`onScrollPhaseChange`, iOS 18+; iOS 17 chỉ tự dính 6 s đầu) ⇒ cuộn lại xuống đáy.
+- **Cột bảng iPad** (`CTWBangCot.rongIPad`): đủ chỗ cho mọi cột ≥ 280pt ⇒ chia đều (≤ 420); không ⇒ số cột TRỌN vừa + hở 44pt mép
+  cột kế (biết là còn cuộn ngang). Ô điểm (`CTWPointsBadge`) `.fixedSize()` — hàng dưới thẻ chật từng co nó thành viên xám rỗng.
+- **Ô soạn iPad sau khi ẩn bàn phím** (`BoFocusKhiAnBanPhimCTW`, kênh + tin riêng): ẩn bàn phím ảo bằng phím ⌨︎↓ mà ô vẫn giữ con
+  trỏ ⇒ iPadOS còn báo khung bàn phím thấp (thanh phím tắt) và SwiftUI chừa một dải trống dưới ô soạn. Bàn phím đang cao (> 200pt)
+  thu còn < 120pt khi ô còn focus ⇒ bỏ focus. Gõ bằng bàn phím rời từ đầu thì không đụng. (Máy mô phỏng tải nặng không tái hiện
+  ổn định — kiểm lại trên iPad thật / lúc chụp ảnh.)
+- **`CTWODem`** giữ chỗ 2 dòng nhãn (`lineLimit(2, reservesSpace: true)`) ⇒ các ô cùng hàng cao bằng nhau ở mọi ngôn ngữ.
+
 ## 22. Bảng tin (Team Feed) — bản 1.1 (22/10/2026)
 
 Hợp đồng: `api-backend/docs/ctw-feed-hop-dong-api.md` (nhánh `ctw-feed`). Mã: `Modules/BangTin/`. Hai cấp **không gian + dự án**;

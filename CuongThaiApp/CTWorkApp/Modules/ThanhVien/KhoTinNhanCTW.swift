@@ -148,7 +148,8 @@ final class KhoTinNhanCTW: ObservableObject {
     /// Mở (tạo nếu chưa có) hội thoại 1-1 với một người rồi trả hội thoại.
     func moVoi(_ userId: Int) async throws -> MessageThread {
         if let t = hoiThoai.first(where: { $0.peer?.id == userId && $0.laNhanRieng }) { return t }
-        let t: MessageThread = try await APIClient.shared.request(.openThread(peerId: userId))
+        let tho: MessageThread = try await APIClient.shared.request(.openThread(peerId: userId))
+        let t = tho.voiNguoiKia(userId)
         if !hoiThoai.contains(where: { $0.id == t.id }) { hoiThoai.insert(t, at: 0) }
         RealtimeCTW.shared.vaoHoiThoai(t.id)
         return t
@@ -184,20 +185,36 @@ final class KhoTinNhanCTW: ObservableObject {
         }
     }
 
+    /// Tin vừa GỬI (màn chat) hoặc vừa nhận (socket) ⇒ cập nhật hàng hội thoại ngay: dòng tin cuối, giờ, thứ tự
+    /// (ảnh lỗi 08 — danh sách đứng ở "Say hi 👋 · Wed" sau khi nhắn từ hồ sơ). Hội thoại chưa có trong danh sách ⇒
+    /// tải lại từ máy chủ.
     func capNhatTinCuoi(_ threadId: Int, _ tin: Message) {
-        if let i = hoiThoai.firstIndex(where: { $0.id == threadId }) {
-            let t = hoiThoai.remove(at: i).voiTinMoi(tin, tangChuaDoc: false)
-            hoiThoai.insert(t, at: 0)
+        if let moi = Self.voiTin(hoiThoai, threadId: threadId, tin: tin, tangChuaDoc: false) { hoiThoai = moi }
+        else { Task { await taiHoiThoai() } }
+    }
+
+    /// Luật cập nhật danh sách hội thoại theo một tin (thuần — có kiểm thử): hàng mang tin mới làm `lastMessage` +
+    /// `updatedAt` rồi lên ĐẦU. Tin cũ hơn tin cuối đang có (socket về trễ, gửi chồng) ⇒ không lùi dòng xem trước;
+    /// cùng tin về hai lần (vừa gửi + socket dội lại) ⇒ không tăng số chưa đọc lần hai. nil ⇒ không có hội thoại đó.
+    nonisolated static func voiTin(_ ds: [MessageThread], threadId: Int, tin: Message, tangChuaDoc: Bool) -> [MessageThread]? {
+        guard let i = ds.firstIndex(where: { $0.id == threadId }) else { return nil }
+        var kq = ds
+        let cu = kq.remove(at: i)
+        if let cuoi = cu.lastMessage, cuoi.id > tin.id {
+            kq.insert(cu, at: i)
+            return kq
         }
+        let trung = cu.lastMessage?.id == tin.id
+        kq.insert(cu.voiTinMoi(tin, tangChuaDoc: tangChuaDoc && !trung), at: 0)
+        return kq
     }
 
     private func nhanTinMoi(_ threadId: Int, _ tin: Message) {
         datDangGo(threadId, tin.senderId, false)
         let cuaToi = tin.senderId == AppState.shared.currentUser?.id
         let dangXem = Self.hoiThoaiDangMo == threadId
-        if let i = hoiThoai.firstIndex(where: { $0.id == threadId }) {
-            let t = hoiThoai.remove(at: i).voiTinMoi(tin, tangChuaDoc: !cuaToi && !dangXem)
-            hoiThoai.insert(t, at: 0)
+        if let moi = Self.voiTin(hoiThoai, threadId: threadId, tin: tin, tangChuaDoc: !cuaToi && !dangXem) {
+            hoiThoai = moi
         } else {
             Task { await taiHoiThoai() }
         }
