@@ -24,6 +24,11 @@ struct PhongThiView: View {
     @State private var loi: String?
     @State private var tuKhoa: String
     @State private var loaiChon: LoaiDe?
+    /// Lọc theo KỲ HỌC (`semester.ordinal`) và theo MÔN (`courseCode`).
+    @State private var kyChon: Int?
+    @State private var monChon: String?
+    @State private var ganDay: [LuotDaLam] = []
+    @ObservedObject private var dangDo = KhoLuotDangDo.chung
     @State private var kyMo: Set<Int> = []
     @State private var monMo: Set<String> = []
     /// Cây kỳ → môn → đề, nhóm SẴN.
@@ -53,6 +58,8 @@ struct PhongThiView: View {
     private var hienThi: [DeThi] {
         var ds = de
         if let l = loaiChon { ds = ds.filter { $0.loai == l } }
+        if let k = kyChon { ds = ds.filter { $0.soKyHoc == k } }
+        if let m = monChon { ds = ds.filter { $0.maMon == m } }
         let t = tuKhoa.trimmingCharacters(in: .whitespaces).lowercased()
         if !t.isEmpty {
             ds = ds.filter {
@@ -128,22 +135,26 @@ struct PhongThiView: View {
     /// Đang tìm kiếm thì mở sẵn mọi nhóm — bắt người dùng gõ xong rồi còn
     /// phải bấm mở từng kỳ mới thấy kết quả là hỏng hẳn việc tìm.
     private var dangTim: Bool {
-        !tuKhoa.trimmingCharacters(in: .whitespaces).isEmpty || loaiChon != nil
+        !tuKhoa.trimmingCharacters(in: .whitespaces).isEmpty || loaiChon != nil || kyChon != nil || monChon != nil
     }
 
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: Spacing.md, pinnedViews: []) {
+                if tuKhoa.isEmpty && !dangTim { phanDau }
                 oTim
                 thanhLoai
+                thanhKyMon
 
                 if dangTai && de.isEmpty {
-                    ProgressView().frame(maxWidth: .infinity).padding(.top, Spacing.xl)
+                    ForEach(0..<5, id: \.self) { _ in SkeletonBox(height: 62, radius: CornerRadius.medium) }
+                } else if let l = loi, de.isEmpty {
+                    ErrorStateView(message: l) { Task { await tai() } }
                 } else if hienThi.isEmpty {
                     VStack(spacing: Spacing.sm) {
                         Image(systemName: "doc.questionmark")
                             .font(.system(size: 36)).foregroundColor(AppColors.textTertiary)
-                        Text(loi ?? "Không tìm thấy đề nào.")
+                        Text(T("Không có đề nào khớp. Thử bỏ bớt bộ lọc."))
                             .font(.body).foregroundColor(AppColors.textSecondary)
                     }
                     .frame(maxWidth: .infinity).padding(.top, Spacing.xl)
@@ -153,6 +164,8 @@ struct PhongThiView: View {
                 }
             }
             .padding(Spacing.md)
+            .frame(maxWidth: 860)
+            .frame(maxWidth: .infinity)
         }
         .background(AppColors.backgroundPrimary)
         .navigationTitle("Phòng thi")
@@ -181,6 +194,9 @@ struct PhongThiView: View {
         .onChange(of: de.count) { _, _ in cay = dungCay() }
         .onChange(of: tuKhoa) { _, _ in cay = dungCay() }
         .onChange(of: loaiChon) { _, _ in cay = dungCay() }
+        .onChange(of: kyChon) { _, _ in cay = dungCay() }
+        .onChange(of: monChon) { _, _ in cay = dungCay() }
+        .task { await taiGanDay() }
         .refreshable { await tai() }
     }
 
@@ -333,6 +349,22 @@ struct PhongThiView: View {
             .disabled(dangTim)
 
             if mo {
+                if let slug = m.de.first?.course?.slug, !slug.isEmpty {
+                    NavigationLink {
+                        DeThiTheoMonView(khoaHoc: slug, ten: m.ten, maMon: m.ma)
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "chart.bar.doc.horizontal").font(.caption)
+                            Text(T("Tiến độ của bạn ở môn này")).font(.caption.weight(.semibold))
+                            Spacer()
+                            Image(systemName: "chevron.right").font(.caption2.weight(.semibold))
+                        }
+                        .foregroundColor(AppColors.primary)
+                        .padding(.horizontal, Spacing.md).padding(.vertical, 9)
+                        .background(AppColors.primary.opacity(0.06))
+                    }
+                    .buttonStyle(.plain)
+                }
                 // Dòng ngăn theo KỲ THI, chỉ hiện khi sang kỳ mới — nhìn là
                 // thấy ngay "đây là chỗ đề Spring 2026 kết thúc".
                 LazyVStack(spacing: 0) {
@@ -349,6 +381,109 @@ struct PhongThiView: View {
         }
     }
 
+    // ── Đầu trang: đang làm dở + kết quả gần đây ───────────────
+    @ViewBuilder private var phanDau: some View {
+        let dsDo = dangDo.conHieuLuc
+        if !dsDo.isEmpty {
+            VStack(alignment: .leading, spacing: Spacing.sm) {
+                Label(T("Đang làm dở"), systemImage: "play.circle.fill")
+                    .font(.footnote.weight(.semibold)).foregroundColor(AppColors.warning)
+                ForEach(dsDo.prefix(3)) { l in
+                    NavigationLink {
+                        ChiTietDeView(de: l.de ?? de.first { $0.id == l.examId } ?? DeThi.toiGian(id: l.examId, title: l.tieuDe, code: l.maDe))
+                    } label: {
+                        HStack(spacing: Spacing.sm) {
+                            Image(systemName: l.coAI ? "sparkles" : "timer")
+                                .foregroundColor(l.coAI ? AppColors.primary : AppColors.warning)
+                                .frame(width: 22)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(l.tieuDe.tachSongNgu(ngonNgu)).font(.subheadline.weight(.medium))
+                                    .foregroundColor(AppColors.textPrimary).lineLimit(1)
+                                Text(l.coAI ? T("Ôn tập cùng CuongMini · không tính giờ")
+                                     : String(format: T("Còn khoảng %d phút"), (l.conLaiGiay ?? 0) / 60))
+                                    .font(.caption).foregroundColor(AppColors.textTertiary)
+                            }
+                            Spacer(minLength: 0)
+                            Text(T("Tiếp tục")).font(.caption.weight(.bold)).foregroundColor(AppColors.primary)
+                        }
+                        .padding(Spacing.sm + 2)
+                        .background(RoundedRectangle(cornerRadius: CornerRadius.medium).fill(AppColors.backgroundCard))
+                    }
+                    .buttonStyle(.nhan)
+                }
+            }
+        }
+        if !ganDay.isEmpty {
+            NavigationLink { LichSuThiView() } label: {
+                HStack(spacing: Spacing.md) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(T("Kết quả gần đây")).font(.footnote.weight(.semibold)).foregroundColor(AppColors.textSecondary)
+                        let dat = ganDay.prefix(10).filter { $0.passed == true }.count
+                        Text(String(format: T("%d lượt · đạt %d/%d lượt gần nhất"), ganDay.count, dat, min(10, ganDay.count)))
+                            .font(.caption).foregroundColor(AppColors.textTertiary)
+                    }
+                    Spacer(minLength: 0)
+                    // Mười cột nhỏ = mười lượt gần nhất, cao theo % điểm.
+                    HStack(alignment: .bottom, spacing: 3) {
+                        ForEach(Array(ganDay.prefix(10).reversed())) { l in
+                            let pt = (l.score ?? 0) / max(0.01, l.maxScore ?? 10)
+                            RoundedRectangle(cornerRadius: 2)
+                                .fill(l.passed == true ? AppColors.success : AppColors.warning)
+                                .frame(width: 6, height: max(3, 30 * pt))
+                        }
+                    }
+                    .frame(height: 30)
+                    .accessibilityHidden(true)
+                    Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundColor(AppColors.textTertiary)
+                }
+                .padding(Spacing.md)
+                .background(RoundedRectangle(cornerRadius: CornerRadius.medium).fill(AppColors.backgroundCard))
+            }
+            .buttonStyle(.nhan)
+        }
+    }
+
+    // ── Lọc theo kỳ học + môn ───────────────────────────────────
+    private var thanhKyMon: some View {
+        let dsKy = Dictionary(grouping: de, by: \.soKyHoc).map { ($0.key, $0.value.first?.tenKyHoc ?? "") }.sorted { $0.0 < $1.0 }
+        let goc = kyChon.map { k in de.filter { $0.soKyHoc == k } } ?? de
+        let dsMon = Dictionary(grouping: goc, by: \.maMon).map { ($0.key, $0.value.first?.tenKhoa ?? "") }.sorted { $0.0 < $1.0 }
+        return HStack(spacing: Spacing.sm) {
+            Menu {
+                Button(T("Mọi kỳ học")) { kyChon = nil }
+                ForEach(dsKy, id: \.0) { k, ten in Button(ten) { kyChon = k; monChon = nil } }
+            } label: {
+                nhanMenu(kyChon.flatMap { k in dsKy.first { $0.0 == k }?.1 } ?? T("Kỳ học"), dangChon: kyChon != nil)
+            }
+            Menu {
+                Button(T("Mọi môn")) { monChon = nil }
+                ForEach(dsMon, id: \.0) { m, ten in Button("\(m) · \(ten.tachSongNgu(ngonNgu))") { monChon = m } }
+            } label: {
+                nhanMenu(monChon ?? T("Môn"), dangChon: monChon != nil)
+            }
+            if kyChon != nil || monChon != nil {
+                Button(T("Bỏ lọc")) { kyChon = nil; monChon = nil }
+                    .font(.caption.weight(.semibold))
+            }
+            Spacer(minLength: 0)
+        }
+    }
+
+    private func nhanMenu(_ chu: String, dangChon: Bool) -> some View {
+        HStack(spacing: 4) {
+            Text(chu).font(.caption.weight(.semibold)).lineLimit(1)
+            Image(systemName: "chevron.down").font(.system(size: 9, weight: .bold))
+        }
+        .foregroundColor(dangChon ? .white : AppColors.textSecondary)
+        .padding(.horizontal, 11).padding(.vertical, 6)
+        .background(Capsule().fill(dangChon ? AppColors.primary : AppColors.backgroundCard))
+    }
+
+    private func taiGanDay() async {
+        // Không chặn màn hình: hỏng (chưa đăng nhập, mất mạng) thì chỉ không hiện khối này.
+        ganDay = (try? await APIClient.shared.request(.luotThiCuaToi)) ?? []
+    }
+
     private func tai() async {
         dangTai = true; defer { dangTai = false }
         do {
@@ -358,191 +493,12 @@ struct PhongThiView: View {
     }
 }
 
-// ── Trước khi vào thi ───────────────────────────────────────────
-
-struct ChiTietDeView: View {
-    @Environment(\.ngonNguDe) private var ngonNgu
-    let de: DeThi
-    /// Dòng "Môn · Kỳ" khi nơi gọi biết rõ hơn chính `de`.
-    ///
-    /// ⚠️ Mở từ màn ĐÃ LƯU thì `de` là `bookmark.exam`, mà bản đó KHÔNG mang
-    /// `course`/`semester` (máy chủ trả chúng thành trường anh em) — để mặc
-    /// thì dòng này hiện "Khác". Nơi gọi truyền hộ.
-    var moTaMon: String?
-    @State private var vaoThi = false
-    @State private var vaoOnTap = false
-    /// `nil` = chưa biết (đang hỏi máy chủ). Không đoán `false` rồi vẽ nút
-    /// rỗng: bấm vào lúc đó là GỠ mất dấu trang người dùng đã lưu từ web.
-    @State private var daLuu: Bool?
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: Spacing.lg) {
-                VStack(alignment: .leading, spacing: Spacing.sm) {
-                    // Cùng bộ huy hiệu màu với danh sách — mở một đề ra mà
-                    // mất hết dấu nhận biết thì phải cuộn lên đọc chữ mới
-                    // biết mình đang xem loại gì.
-                    NhanLoaiVaKy(de: de, coChu: 12)
-                    Text(de.ten(ngonNgu))
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundColor(AppColors.textPrimary)
-                        .fixedSize(horizontal: false, vertical: true)
-                    // Dòng phụ là nửa còn lại — ở màn chi tiết có chỗ, và
-                    // thấy cả hai tên giúp đối chiếu với đề giấy.
-                    if let phu = de.tenPhu(ngonNgu) {
-                        Text(phu)
-                            .font(.system(size: 13))
-                            .foregroundColor(AppColors.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())],
-                          spacing: Spacing.sm) {
-                    o("Số câu", "\(de.soCau)", "list.number")
-                    o("Thời gian", "\(de.phut) phút", "clock")
-                    o("Tổng điểm", nz(de.totalPoints), "star")
-                    o("Điểm đạt", nz(de.passMark), "checkmark.seal")
-                }
-
-                let dongMon = moTaMon ?? [de.tenKhoa, de.tenKy]
-                    .filter { !$0.isEmpty && $0 != "Khác" }
-                    .joined(separator: " · ")
-                if !dongMon.isEmpty {
-                    Text(dongMon.tachSongNgu(ngonNgu))
-                        .font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
-                }
-
-                Text("Đồng hồ chạy từ lúc bạn bấm Bắt đầu. Thoát ra rồi vào lại "
-                   + "thì làm tiếp bài đang dở, không mất bài.")
-                    .font(.system(size: 12))
-                    .foregroundColor(AppColors.textTertiary)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                Button {
-                    vaoThi = true
-                } label: {
-                    Text("Bắt đầu làm bài")
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity).padding(.vertical, 14)
-                        .background(Capsule().fill(AppColors.primary))
-                }
-                .buttonStyle(.plain)
-
-                // ── Phòng ôn tập cùng CuongMini ──────────────────────
-                // Lượt RIÊNG, tách hẳn khỏi lượt thi thật: máy chủ lọc
-                // `where: { …, aiAssisted }` nên bấm nút này KHÔNG bao giờ
-                // nối nhầm vào bài đang chạy đồng hồ, và ngược lại.
-                VStack(spacing: Spacing.sm) {
-                    Button {
-                        vaoOnTap = true
-                    } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: "sparkles")
-                                .font(.system(size: 15, weight: .semibold))
-                            Text("Thi cùng CuongMini")
-                                .font(.system(size: 17, weight: .semibold))
-                        }
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity).padding(.vertical, 14)
-                        .background(Capsule().fill(
-                            LinearGradient(colors: [AppColors.primary, AppColors.primaryDark],
-                                           startPoint: .leading, endPoint: .trailing)))
-                    }
-                    .buttonStyle(.plain)
-
-                    Text("Phòng ôn tập — KHÔNG tính giờ. Làm từng câu, hỏi AI về "
-                       + "đúng câu đang mở, xem đáp án và bình luận thoải mái.")
-                        .font(.system(size: 12))
-                        .foregroundColor(AppColors.textTertiary)
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .frame(maxWidth: .infinity)
-                }
-            }
-            .padding(Spacing.md)
-        }
-        .background(AppColors.backgroundPrimary)
-        .navigationTitle(de.code ?? "Đề thi")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) { nutLuu }
-        }
-        .task { await hoiDaLuu() }
-        .fullScreenCover(isPresented: $vaoThi) {
-            LamBaiView(de: de)
-        }
-        .fullScreenCover(isPresented: $vaoOnTap) {
-            LamBaiView(de: de, coAI: true)
-        }
-    }
-
-    // ── Lưu đề ──────────────────────────────────────────────────
-    //
-    // ⚠️ `POST /exams/:id/bookmark` là LẬT trạng thái, không phải "đặt", nên
-    // phải biết trạng thái hiện tại trước khi cho bấm. Máy chủ KHÔNG gửi kèm
-    // cờ đó trong `/take`, nên phải hỏi riêng danh sách đã lưu.
-    //
-    // Trước 05/09/2026 app KHÔNG có nút này ở đâu cả — `danhDauDeThi` đã khai
-    // trong `APIEndpoint` nhưng không nơi nào gọi, nên tab "Đề đã lưu" chỉ
-    // đầy lên được nếu người dùng lưu bên WEB. Một màn hình chỉ để hiện thứ
-    // mà chính nó không tạo ra được.
-    @ViewBuilder
-    private var nutLuu: some View {
-        if let co = daLuu {
-            Button {
-                Task { await lat(dangCo: co) }
-            } label: {
-                Image(systemName: co ? "bookmark.fill" : "bookmark")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundColor(co ? AppColors.accent : AppColors.textSecondary)
-            }
-            .accessibilityLabel(co ? "Bỏ lưu đề" : "Lưu đề")
-        } else {
-            ProgressView().controlSize(.small)
-        }
-    }
-
-    private func hoiDaLuu() async {
-        guard daLuu == nil else { return }
-        let ds: [DeDaLuu]? = try? await APIClient.shared.request(.dsDeDaLuu)
-        // Hỏi hỏng thì coi như CHƯA lưu — vẫn bấm được, và cú bấm đầu tiên
-        // trả về trạng thái thật từ máy chủ nên nó tự sửa mình.
-        daLuu = ds?.contains { $0.examId == de.id } ?? false
-    }
-
-    private func lat(dangCo: Bool) async {
-        struct R: Codable { let bookmarked: Bool }
-        daLuu = !dangCo                        // đổi ngay cho tay bấm thấy phản hồi
-        Haptics.cham()
-        do {
-            let r: R = try await APIClient.shared.request(.danhDauDeThi(examId: de.id))
-            daLuu = r.bookmarked               // máy chủ mới là nguồn sự thật
-        } catch {
-            daLuu = dangCo                     // hỏng thì trả lại như cũ
-        }
-    }
-
-    private func nz(_ v: Double?) -> String {
-        guard let v else { return "—" }
-        return v == v.rounded() ? String(Int(v)) : String(format: "%.1f", v)
-    }
-
-    private func o(_ ten: String, _ giaTri: String, _ icon: String) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 5) {
-                Image(systemName: icon)
-                    .font(.system(size: 11)).foregroundColor(AppColors.primary)
-                Text(ten).font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
-            }
-            Text(giaTri)
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundColor(AppColors.textPrimary)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(Spacing.md)
-        .background(RoundedRectangle(cornerRadius: CornerRadius.medium)
-            .fill(AppColors.backgroundCard))
+extension DeThi {
+    /// Đề tối giản khi chỉ còn id + tên (mục "đang làm dở" cũ không lưu đủ đề).
+    static func toiGian(id: Int, title: String, code: String?) -> DeThi {
+        DeThi(id: id, courseId: nil, kind: nil, peType: nil, title: title, code: code,
+              durationMinutes: nil, totalPoints: nil, passMark: nil, questionCount: nil,
+              course: nil, semester: nil, source: nil, description: nil,
+              attachmentUrl: nil, attachmentName: nil, my: nil)
     }
 }

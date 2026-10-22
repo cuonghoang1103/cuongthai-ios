@@ -122,9 +122,18 @@ extension String {
     /// Dựng WebView cho MỌI đáp án thì một đề 60 câu × 4 lựa chọn là 240
     /// WebView — máy tụt hẳn. Chỉ những chuỗi thật sự mang thẻ, công thức hay
     /// sơ đồ mới cần.
+    /// Có THẺ HTML THẬT không — `<stdio.h>`, `<iostream>`, `List<String>` trong
+    /// đề C/C++/Java KHÔNG phải thẻ. Coi chúng là thẻ thì WebView nuốt mất và
+    /// phương án hiện thành ô TRỐNG (gặp ở bản xem lại 22/10/2026).
+    var coTheHTMLThat: Bool {
+        guard contains("<") else { return false }
+        return range(of: #"</?(p|br|b|i|u|s|em|strong|code|pre|span|div|ul|ol|li|table|thead|tbody|tr|td|th|img|sub|sup|h[1-6]|a|blockquote|hr|figure|figcaption|mark|small|del|ins|kbd|svg|math)(\s[^<>]*)?/?>"#,
+                     options: [.regularExpression, .caseInsensitive]) != nil
+    }
+
     var canDungGiau: Bool {
         let s = self
-        if s.contains("<") && s.contains(">") { return true }        // thẻ HTML
+        if s.contains("<") && s.contains(">") && s.coTheHTMLThat { return true }  // thẻ HTML
         if s.contains("$") || s.contains("\\(") || s.contains("\\[") { return true }  // công thức
         if s.lowercased().contains("mermaid") { return true }
         return false
@@ -401,11 +410,14 @@ struct NoiDungThi: View {
     @Environment(\.ngonNguDe) private var ngonNgu
 
     private var da: String {
-        let t = chu.tachSongNgu(ngonNgu)
+        var t = chu.tachSongNgu(ngonNgu)
+        // Dấu `<…>` không phải thẻ (`#include <stdio.h>`) mà chuỗi lại có công
+        // thức ⇒ đi WebView ⇒ phải thoát ký tự, không thì trình duyệt nuốt mất.
+        if t.contains("<"), !t.coTheHTMLThat, t.canDungGiau { t = t.thoatHTML }
         guard laDeBai else { return t }
         // Đề đã là HTML thì chèn thẳng; đề chữ thuần thì phải thoát ký tự
         // trước, vì chèn `<br>` là đẩy nó sang bộ dựng HTML.
-        let laHTML = t.contains("<") && t.contains(">")
+        let laHTML = t.coTheHTMLThat || t.contains("&lt;")
         let nen = laHTML ? t : t.thoatHTML
         let ra = nen.xuongDongMucLaMa
         // Không có mục La Mã nào thì trả NGUYÊN BẢN, để chuỗi chữ thuần vẫn đi
@@ -413,10 +425,20 @@ struct NoiDungThi: View {
         return ra == nen ? t : ra
     }
 
+    /// Đề PE và phần hướng dẫn viết song ngữ bằng HTML: `<div class="ml-en">…`
+    /// + `<div class="ml-vi">…` trong CÙNG một chuỗi (không có `|||`). Web ẩn
+    /// khối kia bằng CSS theo `data-ml`; ở đây chèn đúng quy tắc đó vào trang.
+    private var daTheoNgonNgu: String {
+        let t = da
+        guard t.contains("ml-en") || t.contains("ml-vi") else { return t }
+        let an = ngonNgu == .viet ? "ml-en" : "ml-vi"
+        return "<style>.\(an){display:none!important}</style>" + t
+    }
+
     var body: some View {
         #if os(iOS)
         if da.canDungGiau {
-            NoiDungThiWeb(html: da, chieuCao: $cao)
+            NoiDungThiWeb(html: daTheoNgonNgu, chieuCao: $cao)
                 .frame(height: cao)
         } else {
             Text(da)

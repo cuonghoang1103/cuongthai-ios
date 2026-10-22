@@ -519,6 +519,21 @@ enum APIEndpoint {
     /// Cả hai đều LẬT trạng thái (toggle) và trả `{bookmarked: Bool}`.
     case danhDauDeThi(examId: Int)
     case danhDauCauHoi(questionId: Int)
+    // ── Phòng thi · đợt 2 (22/10/2026): PE, đề theo môn, xoá lượt ──
+    /// Đề của MỘT môn (slug hoặc id) + `my` (điểm cao nhất, lượt đang dở…).
+    /// Công khai — có token thì máy chủ điền thêm `my`.
+    case dsDeThiTheoMon(khoaHoc: String)
+    /// Nộp đề FE như web: kèm `codeAnswers` (câu lập trình trong đề tiến độ)
+    /// và `integritySignals` (số lần rời app khi đang thi).
+    case nopBaiThiFE(attemptId: Int, dapAn: [String: [Int]], maCode: [String: String],
+                     giay: Int, tinHieu: [String: Any])
+    case xoaLuotThi(attemptId: Int)
+    /// Đề NÓI chưa có câu hỏi phụ ⇒ máy chủ sinh từ chủ đề (`{count}`).
+    case taoCauHoiNoi(questionId: Int, soCau: Int)
+    /// CuongMini khi LUYỆN CHƯƠNG — không cần lượt thi (bản một cục, đường lùi).
+    case hoiCuongMiniLuyen(questionId: Int, than: [String: Any])
+    /// Lịch sử lượt thi của MỘT đề (`?examId=`).
+    case luotThiCuaDe(examId: Int)
 
     // ── CuongMini — AI đồng hành khi thi ─────────────────────────
     /// "Hiện đáp án" — KHÔNG gọi AI, tra thẳng đáp án đã có trên câu hỏi.
@@ -969,6 +984,12 @@ enum APIEndpoint {
         case .xemLaiLuotThi(let id): return "/api/v1/exams/attempts/\(id)"
         case .danhDauDeThi(let id): return "/api/v1/exams/\(id)/bookmark"
         case .danhDauCauHoi(let id): return "/api/v1/exams/questions/\(id)/bookmark"
+        case .dsDeThiTheoMon(let k): return "/api/v1/exams/course/\(APIEndpoint.maHoaDoan(k))"
+        case .nopBaiThiFE(let a, _, _, _, _): return "/api/v1/exams/attempts/\(a)/submit-fe"
+        case .xoaLuotThi(let a): return "/api/v1/exams/attempts/\(a)"
+        case .taoCauHoiNoi(let q, _): return "/api/v1/exams/questions/\(q)/speaking-questions"
+        case .hoiCuongMiniLuyen(let q, _): return "/api/v1/exams/practice/questions/\(q)/ai/ask"
+        case .luotThiCuaDe: return "/api/v1/exams/attempts/mine"
         case .dsBaiTapCode: return "/api/v1/code-lab/exercises"
         case .nhomCodeLab: return "/api/v1/code-lab/groups"
         case .thongKeCodeLab: return "/api/v1/code-lab/stats"
@@ -1134,6 +1155,11 @@ enum APIEndpoint {
         case .voVietLai: return 120
         // Tra chữ gọi model một lượt (đo 29/09: 4–20 giây).
         case .voHanTra: return 75
+        // Phòng thi: câu lập trình trong đề FE được AI chấm lúc nộp; CuongMini
+        // câu khó qua Opus có thể quá một phút.
+        case .nopBaiThiFE: return 180
+        case .hoiCuongMiniLuyen: return 240
+        case .taoCauHoiNoi: return 90
         // Trợ lý AI CT Work (mentor, 18/10/2026): đọc thẻ/Docs/tệp tới 3 vòng rồi mới trả lời — mỗi lượt model
         // tới 90 s ở máy chủ. 60 s mặc định là app bỏ cuộc trong khi câu trả lời vẫn được lưu ở máy chủ.
         // `/ai/quick` (việc một chạm của CuongMini trên thẻ, 21/10/2026): một lượt model tới 5000 token ra — cùng trần.
@@ -1211,6 +1237,10 @@ enum APIEndpoint {
             return "POST"
         case .hocTapBatDau, .hocTapNop, .hocTapChamLai, .hocTapNhanXet:
             return "POST"
+        case .nopBaiThiFE, .taoCauHoiNoi, .hoiCuongMiniLuyen:
+            return "POST"
+        case .xoaLuotThi:
+            return "DELETE"
         case .suaViec, .suaBuoiHoc, .suaHocKy, .suaBuoiThi:
             return "PATCH"
         case .xoaViec, .xoaBuoiHoc, .xoaHocKy, .xoaBuoiThi:
@@ -1317,6 +1347,12 @@ enum APIEndpoint {
             return ["languageCode": c, "scenario": ch, "history": ls, "message": chu]
         case .nopBaiTracNghiem(_, let da, let g):
             return ["answers": da, "timeSpentSeconds": g]
+        case .nopBaiThiFE(_, let da, let ma, let g, let th):
+            return ["answers": da, "codeAnswers": ma, "timeSpentSeconds": g, "integritySignals": th]
+        case .taoCauHoiNoi(_, let n):
+            return ["count": n]
+        case .hoiCuongMiniLuyen(_, let m):
+            return m
         case .batDauLuotThi(_, let coAI):
             // ⚠️ Không gửi `{aiAssisted:false}` cho lượt thường: máy chủ đọc
             // `req.body?.aiAssisted === true` nên gửi false cũng đúng, nhưng
@@ -1533,6 +1569,11 @@ enum APIEndpoint {
             if ngauNhien { m["random"] = 1 }
             if gioiHan > 0 { m["limit"] = gioiHan }
             return m.isEmpty ? nil : m
+        // Máy chủ mặc định 20 câu, trần 50 — không gửi là mất 30 bài thực hành.
+        case .luyenChuongThucHanh:
+            return ["limit": 50]
+        case .luotThiCuaDe(let e):
+            return ["examId": e]
         case .tienDoCodeLab(let id):
             return ["trackId": id]
         case .dsDuAn(let dm, let tim, let trang):

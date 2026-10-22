@@ -56,7 +56,8 @@ enum DongYChiaSeAI {
     • Ảnh trang vở viết tay khi bạn hỏi về trang, khoanh vùng hỏi, hoặc bấm "AI viết lại trang"
     • Mô tả bạn gõ ở "Vẽ giúp" (tranh, sơ đồ, chữ Hán cần tra, sơ đồ khối, sơ đồ mạch điện)
     • Ghi chú liên quan (Trợ lý ghi chú), số liệu thu chi (AI Tiền), CV, bài làm, mã nguồn
-    • Bản ghi âm khi luyện nói IELTS / nói với AI
+    • Bản ghi âm khi luyện nói IELTS / nói với AI / làm đề thi nói
+    • Bài thi thực hành (mã, bài viết, ảnh sơ đồ) khi nộp để AI chấm
 
     Nhà cung cấp: Anthropic (Claude) và OpenAI (GPT) qua cổng rambo.ai.vn, modelapi.vn; Groq (Whisper — chuyển giọng nói thành chữ).
 

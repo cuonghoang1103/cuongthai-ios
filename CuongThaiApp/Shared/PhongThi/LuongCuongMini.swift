@@ -14,7 +14,9 @@ enum LuongCuongMini {
     /// - Parameters:
     ///   - lichSu: các lượt TRƯỚC đó. Máy chủ không nhớ hộ.
     ///   - nhaCungCap: `nil` = để máy chủ tự chọn (Opus trước, lùi Sol).
-    static func hoi(attemptId: Int,
+    /// - Parameter attemptId: `nil` = LUYỆN (không có lượt thi) ⇒ đường
+    ///   `/practice/questions/:qid/ai/ask-stream` (chỉ câu đã gán chương).
+    static func hoi(attemptId: Int?,
                     questionId: Int,
                     cheDo: CheDoHoi,
                     cauHoi: String?,
@@ -26,7 +28,8 @@ enum LuongCuongMini {
         if let nhaCungCap { than["provider"] = nhaCungCap }
 
         return LuongHoiDap.doc(
-            duong: "/api/v1/exams/attempts/\(attemptId)/ai/ask-stream",
+            duong: attemptId.map { "/api/v1/exams/attempts/\($0)/ai/ask-stream" }
+                ?? "/api/v1/exams/practice/questions/\(questionId)/ai/ask-stream",
             than: than,
             loiTheoMa: { ma in
                 switch ma {
@@ -36,7 +39,9 @@ enum LuongCuongMini {
                 // người dùng đi tìm lỗi đăng nhập.
                 case 403: return "Hỏi CuongMini là tính năng Pro."
                 case 400: return "Bài thi đã nộp, không hỏi CuongMini được nữa."
-                case 404: return "Không tìm thấy câu hỏi này trong lượt thi."
+                case 404: return attemptId == nil
+                    ? "Câu này chưa được gán vào chương nào nên chưa hỏi CuongMini ngoài phòng thi được. Mở \"Thi cùng CuongMini\" của đề để hỏi."
+                    : "Không tìm thấy câu hỏi này trong lượt thi."
                 default:  return "Máy chủ trả lỗi \(ma)"
                 }
             })

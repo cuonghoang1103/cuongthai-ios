@@ -79,7 +79,16 @@ struct LuyenChuongView: View {
                 }
             }
             .sheet(item: $hoiAI) { h in
-                if let l = lessonId {
+                // CuongMini của Phòng thi, đường LUYỆN (không cần lượt thi) —
+                // đúng như web `useHoiCauLuyen`: máy chủ tự đọc đề + đáp án
+                // theo questionId, ngữ cảnh chỉ MỘT câu (rẻ hơn gia sư bài học
+                // hàng chục lần) và câu trả lời chip được dùng chung bộ đệm.
+                if let qid = h.maCauLuyen {
+                    CuongMiniView(luyenCau: qid, nhanCau: T("Câu") + " \(h.thuTu)",
+                                  daLam: !h.daChon.isEmpty, hoiNgay: h.viec?.cheDoCuongMini)
+                        .presentationDetents([.fraction(0.68), .large])
+                        .presentationDragIndicator(.visible)
+                } else if let l = lessonId {
                     GiaSuBaiHocView(lessonId: l, tenBai: tenChuong, tenMon: tenMon,
                                     quizContext: h.boiCanh, cauHoiSan: h.cauMoDau)
                         .presentationDetents([.fraction(0.68), .large])
@@ -237,7 +246,8 @@ struct LuyenChuongView: View {
                 //
                 // Gấp lại theo mặc định — bảy con chip mở sẵn dưới mỗi câu thì
                 // một đề 164 câu thành một bức tường nút.
-                if lessonId != nil {
+                // Câu đề thật (có id) ⇒ hỏi CuongMini luyện chương, không cần bài học đầu chương.
+                if c.id > 0 {
                     Button {
                         withAnimation(.easeInOut(duration: 0.18)) {
                             if moHoi.contains(c.id) { moHoi.remove(c.id) } else { moHoi.insert(c.id) }

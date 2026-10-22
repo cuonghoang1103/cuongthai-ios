@@ -35,6 +35,10 @@ enum CheDoHoi: String, CaseIterable, Identifiable {
     case viDuTuongTu    = "similar_example"
     case loiHayGap      = "common_mistakes"
     case tomTatQuyTac   = "summary_rule"
+    /// Hai chế độ của trang LUYỆN CHƯƠNG (web `CHE_DO_HOI`): dịch đề và gợi
+    /// ý chưa lộ đáp án. Máy chủ nhận cả hai (`TUTOR_MODES`).
+    case dichDe         = "translate"
+    case goiYNhe        = "hint"
     case hoiTuDo        = "free_qa"
 
     var id: String { rawValue }
@@ -48,6 +52,8 @@ enum CheDoHoi: String, CaseIterable, Identifiable {
         case .viDuTuongTu:  return "Cho ví dụ tương tự để luyện thêm"
         case .loiHayGap:    return "Lỗi hay gặp khi làm câu này?"
         case .tomTatQuyTac: return "Tóm tắt công thức/quy tắc liên quan"
+        case .dichDe:       return "Dịch đề sang tiếng Việt"
+        case .goiYNhe:      return "Gợi ý (chưa lộ đáp án)"
         case .hoiTuDo:      return ""
         }
     }
@@ -61,12 +67,25 @@ enum CheDoHoi: String, CaseIterable, Identifiable {
         case .viDuTuongTu:  return "square.on.square"
         case .loiHayGap:    return "exclamationmark.triangle"
         case .tomTatQuyTac: return "list.bullet.rectangle"
+        case .dichDe:       return "character.book.closed"
+        case .goiYNhe:      return "lightbulb"
         case .hoiTuDo:      return "text.bubble"
         }
     }
 
     /// Bảy nút gợi ý — bỏ `hoiTuDo` vì nó là ô gõ chữ, không phải nút.
-    static var goiY: [CheDoHoi] { allCases.filter { $0 != .hoiTuDo } }
+    /// Phòng thi: đúng 7 nút `QUICK` của `CuongMiniPanel.tsx`.
+    static var goiY: [CheDoHoi] {
+        [.cachLam, .cachNho, .kienThuc, .viSaoSai, .viDuTuongTu, .loiHayGap, .tomTatQuyTac]
+    }
+
+    /// Luyện chương / xem lại: thứ tự của web `chipChoCau(daLam)` — chưa làm
+    /// thì gợi ý + dịch đứng đầu, đã làm thì cách làm + vì sao sai.
+    static func goiYLuyen(daLam: Bool) -> [CheDoHoi] {
+        daLam
+            ? [.cachLam, .viSaoSai, .kienThuc, .cachNho, .loiHayGap, .viDuTuongTu, .tomTatQuyTac, .dichDe]
+            : [.goiYNhe, .dichDe, .cachLam, .viSaoSai, .kienThuc, .cachNho, .loiHayGap, .viDuTuongTu, .tomTatQuyTac]
+    }
 }
 
 // MARK: - Chọn model
@@ -249,5 +268,30 @@ struct BinhLuanCauHoi: Codable, Identifiable, Hashable {
     /// Tổng cả gốc lẫn trả lời — con số hiện trên nút mở.
     static func dem(_ ds: [BinhLuanCauHoi]) -> Int {
         ds.reduce(0) { $0 + 1 + $1.traLoi.count }
+    }
+}
+
+// MARK: - Nối với màn luyện chương (Academy)
+
+extension ViecHoiAI {
+    /// Bảy chip của màn luyện chương → chế độ CuongMini tương ứng.
+    var cheDoCuongMini: CheDoHoi {
+        switch self {
+        case .vaoDe:     return .cachLam
+        case .viSaoSai:  return .viSaoSai
+        case .kienThuc:  return .kienThuc
+        case .ghiNho:    return .cachNho
+        case .loiHayGap: return .loiHayGap
+        case .viDu:      return .viDuTuongTu
+        case .quyTac:    return .tomTatQuyTac
+        }
+    }
+}
+
+extension HoiVeCau {
+    /// id câu đề thi thật khi `HoiVeCau` dựng từ `CauLuyen` (`"luyen-<id>"`).
+    var maCauLuyen: Int? {
+        guard id.hasPrefix("luyen-") else { return nil }
+        return Int(id.dropFirst("luyen-".count))
     }
 }
