@@ -268,7 +268,9 @@ xcodebuild test -project CuongThaiApp.xcodeproj -scheme CTWorkApp -destination '
 
 **Đổi ngay trong app:** Account › Language: "Device language" (mặc định — máy tiếng Việt ⇒ tiếng Việt) · Tiếng Việt · English.
 - Lõi `CTWorkShared/NgonNguCTW.swift` (app + widget + Share Extension): lựa chọn lưu ở UserDefaults chuẩn + chép ra App Group
-  (`ngon-ngu.json`, đọc tệp nên extension không phải khai API "required reason"); `caiDatBundle()` **tráo lớp `Bundle.main`**
+  (`ngon-ngu.json`). ⚠️ Tệp vẫn gọi `UserDefaults.standard` trong cả hai extension ⇒ PrivacyInfo của CẢ BA target khai
+  UserDefaults `CA92.1` (build 7 — mục 24); ngôn ngữ máy đọc bằng `Locale.preferredLanguages`, KHÔNG đọc `AppleLanguages` của
+  miền toàn cục; `caiDatBundle()` **tráo lớp `Bundle.main`**
   (`BundleNgonNguCTW`) ⇒ `String(localized:)`, `NSLocalizedString` tra `<ma>.lproj` đang chọn (phải chặn cả biến thể
   `__localizedString(…localizations:)` của iOS 18.4+). ⚠️ `Text("…")`/`Label`/`Button`/`.navigationTitle` của SwiftUI KHÔNG đi
   qua Bundle — chúng tra theo `.environment(\.locale)`, và chỉ nhận locale NGÔN NGỮ TRẦN (`"vi"`/`"en"`; đo 20/10/2026 trên
@@ -632,3 +634,28 @@ muốn hồ sơ kiểu Facebook/X/Instagram, đổi ảnh đại diện ngay tro
   `MediaGiaCTW`) — không đưa GIF người thật vào ảnh chụp; Kingfisher được cấu hình đi qua máy chủ giả (phiên riêng của nó).
 - **Kiểm thử:** `CTWorkTests/MessengerHoSoTests.swift` · `CTWorkUITests/MessengerHoSoUITests.swift` (avatar ⇒ hồ sơ, đổi ảnh đại diện,
   nhấn giữ thả cảm xúc, trả lời, gửi GIF, lọc Chưa đọc).
+
+## 24. Sửa theo bản soát App Review — build 1.0.0 (7) (22/10/2026)
+
+Bản soát: `~/Documents/ctwork-appstore/AUDIT-REVIEW.md`. Kiểm thử: `CTWorkTests/SuaLoiBuild7Tests.swift`.
+- **Privacy manifest theo MÃ của từng target** (R1/R2/R12): app · widget · Share Extension đều khai UserDefaults `CA92.1`
+  (`NgonNguCTW` biên dịch vào cả ba); app khai thêm FileTimestamp `C617.1` (`KhoNgoaiTuyen`, `attributesOfItem` ở `SoanBaiCTW`)
+  và loại thu thập **Search History** (chữ tìm GIF ⇒ GIPHY; Not linked — khớp App Privacy trên ASC). App Group chỉ dùng TỆP
+  (không `UserDefaults(suiteName:)`) ⇒ không `1C8F.1`. `testManifestTheoMaCuaTungTarget` quét mã extension theo `project.yml`
+  và ĐỎ nếu mã dùng một nhóm API mà manifest không khai — thêm nguồn cho extension ⇒ thêm vào bảng của phép kiểm đó.
+- **Trình duyệt trong app = DANH SÁCH TRẮNG** (`TrinhDuyetCuongThaiCTW.cachMo`, B4b/3.1.1): `.trongApp` chỉ cho
+  `/chinh-sach-bao-mat`, `/dieu-khoan-su-dung`, `/about`, `/work/**`, `/login` (đích 307 của /work khi chưa có phiên web),
+  `/forgot-password`, `/verify-otp`, `/reset-password`, `/courses/huong-dan-ct-work/**`; `.chan` = đường mua/giá/Pro/cửa hàng/khoá
+  học bán + cổng thanh toán (không mở cả ra Safari, link bị ẩn); còn lại ⇒ Safari hệ thống (`MoSafariHeThongCTW` — trang
+  cuongthai.com) hoặc `SFSafariViewController` (trang ngoài). Next.js đổi trang bằng `pushState` nên còn hai lớp: kịch bản bắt cú
+  chạm link (`ctwMoNgoai`) + KVO `WKWebView.url` (ra ngoài danh sách ⇒ Safari + lùi lại). `GocCTW` đặt `openURL` gốc chặn đường
+  mua cho MỌI link (markdown, `Link`, nội dung người dùng). ⛔ Thêm trang web mở trong app ⇒ thêm vào `duongChoPhep` + kiểm thử.
+- **Chữ:** quy tắc cộng đồng nói thẳng "zero tolerance" (bài đăng, bình luận, tin nhắn, hồ sơ; báo cáo, chặn, 24 giờ, gỡ/cấm);
+  Xoá tài khoản khớp `accountDeletion.service.ts` + `dataRights.service.ts › anonymizeAccount` (72 giờ, huỷ được; nội dung chung
+  giữ dưới tên ẩn danh; xoá thẻ thiết bị, token API/lịch, kết nối, hội thoại AI riêng, ảnh đại diện/bìa); AI = "nhà cung cấp
+  mô hình AI bên thứ ba … qua dịch vụ cổng AI trung gian của bên thứ ba" (không nói "cổng AI của chúng tôi"); chuỗi máy ảnh
+  thêm bài Bảng tin, Docs, kết quả kiểm thử, ảnh bìa; tóm tắt quyền riêng tư thêm Bảng tin, tin nhắn riêng, GIPHY.
+- **Tin nhắn (R5) — giữ mọi hội thoại** (hộp thư Messenger CHUNG của cuongthai.com, cùng với web; lọc theo không gian sẽ giấu
+  hội thoại hỗ trợ + người đã rời nhóm mà web vẫn hiện). Màn danh sách + mô tả mô-đun ghi rõ "Direct messages with your
+  teammates and contacts on cuongthai.com".
+
