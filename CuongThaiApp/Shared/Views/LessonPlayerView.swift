@@ -327,15 +327,11 @@ struct LessonPlayerView: View {
     private var dauBai: some View {
         VStack(alignment: .leading, spacing: 6) {
             if let ch = chuongCuaBai {
-                HStack(spacing: 6) {
-                    if LoaiChuong.cua(ch.title) == .chuyenSau {
-                        Text("⭐ " + T("CHUYÊN SÂU")).font(.system(size: 10, weight: .heavy))
-                            .foregroundColor(AppColors.warning)
-                    }
-                    Text(ch.title.theoApp.uppercased())
-                        .font(.system(size: 11, weight: .semibold)).tracking(0.4)
-                        .foregroundColor(AppColors.textTertiary).lineLimit(1)
-                }
+                // Tiêu đề chương ĐÃ mang "⭐ Chuyên sâu …" — chỉ đổi màu, không chèn nhãn lặp lại.
+                Text(ch.title.theoApp.uppercased())
+                    .font(.system(size: 11, weight: .semibold)).tracking(0.4)
+                    .foregroundColor(LoaiChuong.cua(ch.title) == .chuyenSau ? AppColors.warning : AppColors.textTertiary)
+                    .lineLimit(1)
             }
             HStack(spacing: Spacing.sm) {
                 Label(T(loai.nhan), systemImage: loai.bieuTuong)
@@ -698,7 +694,7 @@ struct LessonPlayerView: View {
         } label: {
             HStack(spacing: 7) {
                 Image(systemName: "sparkles").font(.system(size: 15, weight: .semibold))
-                Text(T("Học cùng CuongMini")).font(.system(size: 15, weight: .semibold))
+                Text("CuongMini").font(.system(size: 15, weight: .semibold))
             }
             .foregroundColor(.white)
             .padding(.horizontal, 16).padding(.vertical, 12)
@@ -706,6 +702,7 @@ struct LessonPlayerView: View {
             .shadow(color: AppColors.primary.opacity(0.35), radius: 10, y: 4)
         }
         .buttonStyle(.nhan)
+        .accessibilityLabel(T("Học cùng CuongMini"))
         .padding(.trailing, Spacing.md)
         .padding(.bottom, Spacing.md)
         .opacity(chuDangChon == nil ? 1 : 0)
@@ -953,15 +950,9 @@ struct TieuDeChuong: View {
     var body: some View {
         let loai = LoaiChuong.cua(tieuDe)
         HStack(spacing: 6) {
-            switch loai {
-            case .chuyenSau: nhan("⭐ " + T("Chuyên sâu"), AppColors.warning)
-            case .thi: nhan(T("Thi"), AppColors.error)
-            case .onThi: nhan(T("Ôn thi"), AppColors.info)
-            case .thuong: EmptyView()
-            }
-            Text(tieuDe.theoApp.replacingOccurrences(of: "⭐ ", with: ""))
+            Text(tieuDe.theoApp)
                 .font(.system(size: 12.5, weight: .semibold))
-                .foregroundColor(AppColors.textSecondary)
+                .foregroundColor(loai == .chuyenSau ? AppColors.warning : AppColors.textSecondary)
                 .textCase(nil)
                 .lineLimit(2)
             Spacer(minLength: 0)

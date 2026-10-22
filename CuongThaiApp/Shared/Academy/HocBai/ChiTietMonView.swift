@@ -460,12 +460,8 @@ struct CourseSectionRow: View {
                     }
                     .frame(width: 34, height: 34)
                     VStack(alignment: .leading, spacing: 3) {
-                        if loai != .thuong {
-                            Text(loai == .chuyenSau ? T("CHUYÊN SÂU · NGOÀI GIÁO TRÌNH") : loai == .thi ? T("THI") : T("ÔN THI"))
-                                .font(.system(size: 9.5, weight: .heavy)).tracking(0.5).foregroundColor(mauNhan)
-                        }
                         Text(section.title.theoApp.replacingOccurrences(of: "⭐ ", with: ""))
-                            .font(.titleSmall).foregroundColor(AppColors.textPrimary)
+                            .font(.titleSmall).foregroundColor(loai == .chuyenSau ? AppColors.warning : AppColors.textPrimary)
                             .multilineTextAlignment(.leading)
                             .fixedSize(horizontal: false, vertical: true)
                         HStack(spacing: Spacing.sm) {

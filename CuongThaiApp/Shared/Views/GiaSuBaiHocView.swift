@@ -433,7 +433,13 @@ struct GiaSuBaiHocView: View {
 
     /// Máy chủ mới là nơi chặn (`assertPro`, CLAUDE.md C14) — ở đây chỉ để chọn
     /// HIỆN gì: ô hỏi hay thẻ mời nâng cấp.
-    private var laPro: Bool { appState.currentUser?.isPro == true }
+    private var laPro: Bool {
+        #if DEBUG
+        // Bàn soi (`CT_XEM_MAN=hocbai-giasu`): xem ô hỏi của Pro mà không cần phiên Pro.
+        if ProcessInfo.processInfo.environment["CT_GIA_PRO"] == "1" { return true }
+        #endif
+        return appState.currentUser?.isPro == true
+    }
 
     var body: some View {
         if nhung {

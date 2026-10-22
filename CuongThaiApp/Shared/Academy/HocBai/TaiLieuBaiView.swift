@@ -178,7 +178,7 @@ struct DanhSachBaiTapNop: View {
                     Label(d.formatted(date: .abbreviated, time: .shortened), systemImage: "calendar")
                         .foregroundColor(d < Date() ? AppColors.error : AppColors.textTertiary)
                 }
-                if let m = a.maxScore { Label(String(format: T("Thang %g"), m), systemImage: "star") }
+                if let m = a.maxScore { Label(String(format: T("Thang điểm %g"), m), systemImage: "star") }
             }
             .font(.caption).foregroundColor(AppColors.textTertiary)
             if let n = a.mySubmission {
