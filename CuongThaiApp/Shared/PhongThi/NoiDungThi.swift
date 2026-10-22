@@ -413,10 +413,20 @@ struct NoiDungThi: View {
         return ra == nen ? t : ra
     }
 
+    /// Đề PE và phần hướng dẫn viết song ngữ bằng HTML: `<div class="ml-en">…`
+    /// + `<div class="ml-vi">…` trong CÙNG một chuỗi (không có `|||`). Web ẩn
+    /// khối kia bằng CSS theo `data-ml`; ở đây chèn đúng quy tắc đó vào trang.
+    private var daTheoNgonNgu: String {
+        let t = da
+        guard t.contains("ml-en") || t.contains("ml-vi") else { return t }
+        let an = ngonNgu == .viet ? "ml-en" : "ml-vi"
+        return "<style>.\(an){display:none!important}</style>" + t
+    }
+
     var body: some View {
         #if os(iOS)
         if da.canDungGiau {
-            NoiDungThiWeb(html: da, chieuCao: $cao)
+            NoiDungThiWeb(html: daTheoNgonNgu, chieuCao: $cao)
                 .frame(height: cao)
         } else {
             Text(da)
