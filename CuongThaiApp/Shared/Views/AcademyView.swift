@@ -23,6 +23,16 @@ final class AcademyViewModel: ObservableObject {
     @Published var monTheoKy: [Int: [Course]] = [:]
     @Published var dangTai = false
     @Published var loi: String?
+    /// Môn đang học (`GET /courses/my`) — dải "Tiếp tục học" ở đầu Academy.
+    @Published var dangHoc: [Enrollment] = []
+
+    func taiDangHoc() async {
+        guard let r: (items: [Enrollment], nextCursor: Int?, hasMore: Bool) =
+            try? await APIClient.shared.requestList(.getMyCourses) else { return }
+        dangHoc = r.items
+            .filter { !$0.daXong && ($0.courseCode?.isEmpty == false) }
+            .sorted { ($0.lastAccessedAt ?? "") > ($1.lastAccessedAt ?? "") }
+    }
 
     /// Mọi môn Academy, không trùng — để lọc theo khung ngành và tìm theo mã.
     var tatCaMon: [Course] {
@@ -98,7 +108,19 @@ struct AcademyView: View {
 
     private var nhomKy: [NhomKy] {
         if let theoKhung = LocTheoNganh.xepTheoKhung(vm.tatCaMon, hoSo: hoSo) {
-            return theoKhung.filter { !$0.mon.isEmpty }
+            var ds = theoKhung.filter { !$0.mon.isEmpty }
+            // Môn KHÔNG nằm trong khung ngành (môn mới web vừa thêm, môn ngành khác,
+            // khung tĩnh chưa cập nhật) ⇒ nhóm "Môn khác" cuối danh sách, KHÔNG bao
+            // giờ ẩn mất — web thêm môn thì app thấy ngay mà không cần bản cập nhật.
+            let daHien = Set(ds.flatMap { $0.mon.map(\.id) })
+            let khac = vm.tatCaMon.filter { !daHien.contains($0.id) }
+                .sorted { LocTheoNganh.maCua($0) < LocTheoNganh.maCua($1) }
+            if !khac.isEmpty {
+                ds.append(NhomKy(id: 29_999, ten: T("Môn khác của Academy"),
+                                 moTa: T("Ngoài khung ngành bạn chọn — vẫn học được"),
+                                 mon: khac.map { MonHien(course: $0, laMaCu: false, laProject: LocTheoNganh.laProject($0)) }))
+            }
+            return ds
         }
         return vm.hocKy.map { k in
             NhomKy(id: k.id, ten: k.name, moTa: k.description,
@@ -114,6 +136,7 @@ struct AcademyView: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: Spacing.md) {
                 gioiThieu
+                if !vm.dangHoc.isEmpty && timKiem.isEmpty { daiDangHoc }
                 if hoSo.isStudent == true, dm.nganh(hoSo.faculty, hoSo.major) != nil {
                     theNganhCuaBan
                 } else {
@@ -140,9 +163,14 @@ struct AcademyView: View {
         .navigationTitle("Academy")
         .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $timKiem, prompt: "Tìm theo mã môn (CEA203, PRO192…)")
-        .refreshable { await vm.taiHet(ep: true) }
+        .refreshable {
+            await vm.taiHet(ep: true)
+            await vm.taiDangHoc()
+        }
         .task {
+            async let dh: Void = vm.taiDangHoc()
             await vm.taiHet()
+            _ = await dh
             await hoSoStore.keoTuMayChu()
             if hoSoStore.canHoi && !daHoi {
                 daHoi = true
@@ -182,6 +210,26 @@ struct AcademyView: View {
     }
 
     // MARK: Đầu trang
+
+    /// "Tiếp tục học" — môn đang dở, chạm là vào thẳng bài học dở gần nhất.
+    private var daiDangHoc: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            Label(T("Tiếp tục học"), systemImage: "play.circle.fill")
+                .font(.titleSmall).foregroundColor(AppColors.textPrimary)
+                .padding(.horizontal, Spacing.md)
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: Spacing.sm) {
+                    ForEach(vm.dangHoc) { gd in
+                        NavigationLink {
+                            CourseDetailView(slug: gd.courseSlug, moBaiId: gd.lastLessonId)
+                        } label: { TheDangHoc(gd: gd) }
+                        .buttonStyle(.nhan)
+                    }
+                }
+                .padding(.horizontal, Spacing.md)
+            }
+        }
+    }
 
     private var gioiThieu: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -424,7 +472,7 @@ struct AcademyView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(c.title.songNguTheoMay)
+                Text(c.title.theoApp)
                     .font(.bodyMedium)
                     .foregroundColor(AppColors.textPrimary)
                     .multilineTextAlignment(.leading)

@@ -112,6 +112,14 @@ private struct GoiCauHoiLuu: Codable { let items: [CauHoiLuu]; let conNua: Bool?
 
 /// Bối cảnh video lúc hỏi — gia sư nạp phụ đề của ĐÚNG luồng đang xem và biết
 /// người học đang ở giây nào (`phongVideo` + `phuDeGiay` + `videoTrack` của web).
+/// Câu hỏi bắn từ NGOÀI vào cột gia sư đang mở (iPad): "Hỏi về slide này",
+/// "Hỏi đoạn này", "Hỏi về chữ đang chọn" — giữ nguyên cuộc hỏi đang có.
+struct YeuCauHoiGiaSu: Equatable {
+    let id = UUID()
+    let cau: String
+    let khoaCache: String?
+}
+
 struct BoiCanhVideoHoi: Equatable {
     /// VI | EN | YT
     let track: String
@@ -383,6 +391,8 @@ struct GiaSuBaiHocView: View {
     let tenMon: String?
     let nhung: Bool
     let slides: [SlideBai]
+    /// Câu hỏi từ ngoài (cột bên iPad). Đổi `id` ⇒ hỏi ngay.
+    var yeuCau: YeuCauHoiGiaSu?
     @StateObject private var vm: GiaSuBaiVM
     @EnvironmentObject private var appState: AppState
     @Environment(\.dismiss) private var dismiss
@@ -407,7 +417,9 @@ struct GiaSuBaiHocView: View {
          khoaCacheSan: String? = nil,
          slides: [SlideBai] = [],
          boiCanhVideo: (() -> BoiCanhVideoHoi?)? = nil,
-         nhung: Bool = false) {
+         nhung: Bool = false,
+         yeuCau: YeuCauHoiGiaSu? = nil) {
+        self.yeuCau = yeuCau
         self.tenBai = tenBai
         self.tenMon = tenMon
         self.cauHoiSan = cauHoiSan
@@ -464,6 +476,10 @@ struct GiaSuBaiHocView: View {
         // xuất hiện ngay trong mục dưới, không phải đóng mở lại màn hình.
         .onChange(of: vm.dangHoi) { cu, moi in
             if cu && !moi { Task { await vm.taiThuongGap() } }
+        }
+        .onChange(of: yeuCau) { _, y in
+            guard let y, laPro else { return }
+            vm.hoi(y.cau, khoaCache: y.khoaCache)
         }
         .onChange(of: chonAnh) { _, ds in
             guard !ds.isEmpty else { return }
