@@ -220,6 +220,15 @@ final class PhongThiTests: XCTestCase {
         XCTAssertTrue(DongYChiaSeAI.laDuongAI(method: "POST", path: "/api/v1/exams/practice/questions/9/ai/ask"))
     }
 
+    func testTheHTMLThatVaGia() {
+        XCTAssertFalse("<stdio.h>".coTheHTMLThat)
+        XCTAssertFalse("#include <iostream>".coTheHTMLThat)
+        XCTAssertFalse("List<String> a = new ArrayList<>();".canDungGiau)
+        XCTAssertTrue("<p>x</p>".coTheHTMLThat)
+        XCTAssertTrue("a<br/>b".coTheHTMLThat)
+        XCTAssertTrue("<code class=\"language-c\">x</code>".canDungGiau)
+    }
+
     func testCauVeSoDo() {
         XCTAssertTrue(CauVeSoDo.la("Draw a Use Case Diagram for the system"))
         XCTAssertTrue(CauVeSoDo.la("Conceptual ERD"))

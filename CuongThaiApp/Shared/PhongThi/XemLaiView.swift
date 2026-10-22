@@ -42,6 +42,17 @@ struct XemLaiView: View {
 
     struct CauMini: Identifiable { let id: Int; let so: Int; let daLam: Bool }
 
+    init(xemLai: XemLaiBaiThi, tenDe: String, baiDaNop: [Int: String] = [:]) {
+        self.xemLai = xemLai
+        self.tenDe = tenDe
+        self.baiDaNop = baiDaNop
+        // Dựng sẵn trạng thái đã lưu + ghi chú NGAY lúc khởi tạo — đợi `.task`
+        // thì khung đầu tiên vẽ ra toàn dấu trang rỗng rồi mới "nhảy".
+        _daDanhDau = State(initialValue: Set(xemLai.questions.filter { $0.bookmarked == true }.map(\.id)))
+        _ghiChu = State(initialValue: Dictionary(uniqueKeysWithValues:
+            xemLai.questions.compactMap { q in q.bookmarkNote.map { (q.id, $0) } }))
+    }
+
     private var tatCa: [CauHoiXemLai] {
         xemLai.questions.sorted { ($0.sortOrder ?? 0, $0.id) < ($1.sortOrder ?? 0, $1.id) }
     }
@@ -118,10 +129,6 @@ struct XemLaiView: View {
             CuongMiniView(luyenCau: h.id, nhanCau: T("Câu") + " \(h.so)", daLam: h.daLam)
                 .presentationDetents([.fraction(0.62), .large])
                 .presentationDragIndicator(.visible)
-        }
-        .task {
-            daDanhDau = Set(xemLai.questions.filter { $0.bookmarked == true }.map(\.id))
-            for q in xemLai.questions { if let n = q.bookmarkNote { ghiChu[q.id] = n } }
         }
     }
 

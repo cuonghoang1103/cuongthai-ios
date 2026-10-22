@@ -483,6 +483,7 @@ struct TepDinhKemDe: View {
                         }
                     }
                     .buttonStyle(.borderedProminent)
+                    .tint(AppColors.primary)
                     .disabled(dangTai)
                 }
             }

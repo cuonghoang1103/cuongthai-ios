@@ -614,8 +614,11 @@ struct LamBaiView: View {
                         .font(.caption2)
                         .foregroundColor(AppColors.textTertiary)
                         .monospacedDigit()
+                        .lineLimit(1)
                 }
-                Spacer(minLength: 4)
+                // Tên đề co lại trước — đồng hồ và các nút KHÔNG được bị đẩy ra mép.
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .layoutPriority(-1)
                 dongHoNhan
 
                 if vm.de?.instructions?.isEmpty == false || vm.de?.attachmentUrl?.isEmpty == false {
@@ -700,13 +703,16 @@ struct LamBaiView: View {
                 .font(.caption.weight(.semibold))
                 .foregroundColor(AppColors.primary)
                 .lineLimit(1)
+                .fixedSize()
         } else if vm.coDongHo {
             HStack(spacing: 4) {
                 Image(systemName: "clock").font(.system(size: 12))
                 Text(dinhDang(vm.conLai))
                     .font(.system(.callout, design: .rounded).weight(.semibold))
                     .monospacedDigit()
+                    .lineLimit(1)
             }
+            .fixedSize()
             .foregroundColor(vm.conLai <= 60 ? AppColors.error : vm.conLai <= 300 ? AppColors.warning : AppColors.textPrimary)
             .padding(.horizontal, 8).padding(.vertical, 4)
             .background(Capsule().fill(vm.conLai <= 300 ? mauThanh.opacity(0.12) : Color.clear))
