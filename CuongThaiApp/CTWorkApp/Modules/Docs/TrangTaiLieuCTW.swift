@@ -407,6 +407,7 @@ struct TrangTaiLieuCTW: View {
     // MARK: Liên kết trong trang
 
     private func moLienKet(_ url: URL) -> OpenURLAction.Result {
+        if TrinhDuyetCuongThaiCTW.laDuongMua(url) { return .handled }  // 3.1.1: không mở trang mua
         if url.scheme == "http" || url.scheme == "https" {
             if url.host == URL(string: APIClient.diaChiGoc)?.host, url.path.hasPrefix("/work/") { return moDuongWork(url.path) }
             return .systemAction

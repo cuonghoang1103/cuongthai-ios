@@ -2,9 +2,13 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
   BẢN KHAI QUYỀN RIÊNG TƯ của widget CT Work (CTWorkWidget).
-  Soát 18/10/2026: widget chỉ đọc tệp JSON trong App Group bằng `Data(contentsOf:)`
-  (`CTWorkShared/NhomCTW.swift`) — KHÔNG UserDefaults, file timestamp, disk space, boot time,
-  active keyboards. Không gọi mạng, không cầm token. Thêm mã chạm nhóm API nào ⇒ bổ sung ở đây.
+  Soát lại 22/10/2026 (build 7, audit R1) — quét ĐÚNG các tệp target biên dịch (`project.yml` › CTWorkWidget:
+  `CTWorkWidget/*` + `CTWorkShared/*`):
+    · UserDefaults — `CTWorkShared/NgonNguCTW.swift` (`cheDo` đọc `UserDefaults.standard`, miền RIÊNG của widget;
+      lựa chọn ngôn ngữ của app thì đọc từ tệp App Group) ⇒ CA92.1. Không App Group defaults (`suiteName`) ⇒ không 1C8F.1.
+    · Đọc tệp JSON trong App Group bằng `Data(contentsOf:)` (`NhomCTW.swift`) — không phải API "required reason".
+    · KHÔNG dùng: file timestamp, disk space, system boot time, active keyboards.
+  Không gọi mạng, không cầm token ⇒ không thu thập dữ liệu. Thêm mã chạm nhóm API nào ⇒ bổ sung ở đây.
 -->
 <plist version="1.0">
 <dict>
@@ -13,7 +17,15 @@
     <key>NSPrivacyTrackingDomains</key>
     <array/>
     <key>NSPrivacyAccessedAPITypes</key>
-    <array/>
+    <array>
+        <dict>
+            <!-- `CTWorkShared/NgonNguCTW.swift` › `cheDo` đọc `UserDefaults.standard` (miền riêng của extension). -->
+            <key>NSPrivacyAccessedAPIType</key>
+            <string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+            <key>NSPrivacyAccessedAPITypeReasons</key>
+            <array><string>CA92.1</string></array>
+        </dict>
+    </array>
     <key>NSPrivacyCollectedDataTypes</key>
     <array/>
 </dict>

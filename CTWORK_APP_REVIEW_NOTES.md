@@ -140,6 +140,37 @@ Camera for photos and profile pictures; microphone only while recording; "Save p
 4.3: separate product from our "CuongThai" learning app (own bundle ID, icon, privacy manifest; no courses or finance).
 ```
 
+
+### Bản 1.1 — sửa các dòng sau trong khối trên trước khi nộp (2.3: tính năng mới phải khai CỤ THỂ)
+
+Hồ sơ + Tin nhắn kiểu Messenger (KIEN_TRUC §23). Thay dòng "Chat tab" và "PERMISSIONS", thêm dòng "Profile":
+
+```
+- Profile: Account > tap your name. Change your profile photo or cover (photo library or camera, then crop), edit name and bio — the same profile as on cuongthai.com. Tap anyone's avatar (chat, members, feed, issues) to open their profile: Message, View work, and ... > Mute / Copy profile link / Block / Report.
+- Chat tab > Messages: conversation list with Active now, Unread filter, swipe to pin/mute/mark unread/delete for me. In a conversation: touch and hold a message for reactions, Reply, Copy, Forward, Save photo, Unsend (within 5 min) or Report; GIFs and stickers (GIPHY results are rated PG-13 by the server); hold the microphone to record a voice message (slide left to cancel); the i button has mute, nickname, block, report and delete.
+PERMISSIONS
+Camera only for "Take Photo" (attachments and profile photo); microphone only while recording a voice note / voice message; "Save photo" adds a chat photo to your library (add-only); Face ID only for the optional app lock (off by default). Voice messages in direct messages are not transcribed or sent to third parties.
+```
+Đếm lại tổng ký tự (trần 4000) sau khi thay — có thể phải rút gọn dòng "WHAT TO TRY" khác.
+
+### Build 1.0.0 (7) — sửa theo bản soát App Review (22/10/2026, `~/Documents/ctwork-appstore/AUDIT-REVIEW.md`)
+
+Bản Notes đang dùng trên ASC nằm ở `~/Documents/ctwork-appstore/APP-STORE-CONNECT.md` §6 (bản build 6). Với build 7 thay các
+dòng sau cho khớp chữ trong app (KIEN_TRUC §24):
+
+```
+- Chat tab > Messages: direct messages with your teammates and contacts on cuongthai.com (the same Messenger inbox as on the website). ...
+USER-GENERATED CONTENT (1.2)
+Community rules are accepted on first launch and state zero tolerance for objectionable content and abusive users in posts, comments, messages and profiles. ...
+- CuongMini is AI and says so. Before the first request the app explains that the request and the project content needed to answer (...) are processed by third-party AI model providers (Anthropic Claude, OpenAI GPT) through third-party AI gateway services, only to produce the answer. ...
+ACCOUNT DELETION (5.1.1(v))
+Account > Delete account. The account is anonymised and deleted 72 hours after the request (cancellable until then): personal data, profile and cover photos, device and API tokens and private AI chats are removed; work shared with teammates stays under an anonymous name.
+PERMISSIONS
+Camera only when you choose to take a photo (issue, chat or direct message, feed post, doc, test result, profile or cover photo); ...
+```
+In-app browser (3.1.1): build 7 opens only cuongthai.com legal/help pages and CT Work web pages inside the app; every other link
+opens in Safari, and purchase/pricing/payment pages are never opened.
+
 ## 5. Phần BACKEND còn thiếu / nên có (không sửa ở phiên app)
 
 > **Cập nhật 18/10/2026 (phiên backend):** mục đánh dấu ✅ đã có trong mã backend — ĐÃ LÊN PROD (commit `d9c35114`
@@ -360,7 +391,10 @@ app, with a different audience, purpose and feature set:
 
 3. Separate identity. CT Work has its own bundle ID (com.cuongthai.ctwork),
    name, icon, App Store listing, privacy manifest and permissions. It does
-   not include any of CuongThai's learning, social or finance features.
+   not include any of CuongThai's learning or finance features. Its team
+   feed is visible only to members of a workspace or project and is never
+   public; Messages are direct messages with your teammates and contacts
+   on cuongthai.com (the same inbox as on the website).
    CuongThai only keeps a lightweight issue viewer for existing users; chat,
    meetings, approvals, documents, time tracking, widgets, Live Activities,
    Siri and the Share Extension are available only in CT Work.

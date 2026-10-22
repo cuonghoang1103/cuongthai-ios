@@ -6,8 +6,12 @@ import ObjectiveC
 // Ba target cùng biên dịch tệp này: `CTWorkApp`, `CTWorkWidget`, `CTWorkShare` (chỉ `import Foundation`).
 //
 // · Lựa chọn (`CheDo`): theo máy (mặc định) · vi · en. App lưu ở UserDefaults chuẩn + chép ra App Group
-//   (`ngon-ngu.json`, ghi bằng `NhomCTW.ghi` — đọc tệp KHÔNG phải API "required reason" nên widget/extension
-//   không phải khai thêm UserDefaults trong PrivacyInfo).
+//   (`ngon-ngu.json`, ghi bằng `NhomCTW.ghi`) để widget/extension đọc bằng tệp.
+//   ⚠️ (build 7, 22/10/2026 — audit R1) Tệp này VẪN gọi `UserDefaults.standard` (`cheDo` chạy cả trong widget và Share
+//   Extension) ⇒ PrivacyInfo của CẢ BA target khai `NSPrivacyAccessedAPICategoryUserDefaults` / `CA92.1` (miền
+//   riêng của chính target, không App Group defaults ⇒ không 1C8F.1). Thêm API "required reason" nào ở đây ⇒ khai cả ba.
+// · Ngôn ngữ của MÁY đọc bằng `Locale.preferredLanguages` — KHÔNG đọc `AppleLanguages` của miền toàn cục
+//   (dữ liệu hệ thống ghi; CA92.1 không cho phép — audit R2).
 // · Đổi ngay không khởi động lại: `caiDatBundle()` tráo lớp của `Bundle.main` (object_setClass) sang
 //   `BundleNgonNguCTW` ⇒ MỌI `String(localized:)` / `NSLocalizedString` / `Text("…")` tra trong
 //   `<ma>.lproj` đang chọn. Gốc view còn gắn `.environment(\.locale, …)` + `.id(ma)` để dựng lại cả cây.
@@ -43,11 +47,10 @@ enum NgonNguCTW {
 
     static var locale: Locale { Locale(identifier: ma == "vi" ? "vi" : "en") }
 
-    /// Ngôn ngữ của MÁY (danh sách toàn cục, không tính `AppleLanguages` riêng của app nếu app đã tự ghi).
-    static func maTheoMay() -> String {
-        // Miền TOÀN CỤC (danh sách của máy) — không đọc khoá riêng của app (app có thể đã tự ghi `["vi"]`).
-        let ds = (UserDefaults.standard.persistentDomain(forName: UserDefaults.globalDomain)?["AppleLanguages"] as? [String])
-            ?? Locale.preferredLanguages
+    /// Ngôn ngữ của MÁY. Chỉ dùng khi lựa chọn là "theo máy" — khi đó app đã XOÁ `AppleLanguages` riêng của mình
+    /// (`ghiAppleLanguages`) nên `Locale.preferredLanguages` là danh sách của máy. (Vừa đổi vi/en ⇒ "theo máy" trong
+    /// cùng phiên: hệ thống có thể còn giữ danh sách cũ tới lần mở sau — chấp nhận, đúng lại từ lần mở kế.)
+    static func maTheoMay(_ ds: [String] = Locale.preferredLanguages) -> String {
         for l in ds {
             let goc = String(l.prefix(2)).lowercased()
             if hoTro.contains(goc) { return goc }

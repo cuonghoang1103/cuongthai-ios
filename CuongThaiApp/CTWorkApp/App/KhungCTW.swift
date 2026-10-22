@@ -24,6 +24,10 @@ struct GocCTW: View {
         }
         .id("\(coChuHeThong)-\(ngonNgu.ma)")
         .environment(\.locale, ngonNgu.locale)
+        // 3.1.1 (build 7): MỌI link mở bằng `openURL` (chữ markdown, `Link`, nội dung người dùng) — đường mua/nâng cấp/thanh
+        // toán (`TrinhDuyetCuongThaiCTW.laDuongMua`) KHÔNG bao giờ được mở, kể cả ra Safari. Màn nào tự đặt `openURL`
+        // riêng thì tự gọi cùng luật (Trợ lý AI, Docs).
+        .environment(\.openURL, OpenURLAction { u in TrinhDuyetCuongThaiCTW.laDuongMua(u) ? .handled : .systemAction })
         .animation(.easeInOut(duration: 0.35), value: app.isAuthenticated)
         .animation(.easeInOut(duration: 0.2), value: app.daDongYDieuKhoan)
     }

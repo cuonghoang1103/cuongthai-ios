@@ -16,7 +16,7 @@ struct RouteHoSoThanhVienCTW: Hashable { var userId: Int }
 extension CTWModule {
     static let tinNhan = CTWModule(
         id: "tin-nhan", ten: "Messages", bieuTuong: "bubble.left.and.text.bubble.right", nhom: .giaoTiep,
-        moTa: "Direct messages with your teammates", thuTu: 1, capUngDung: true, tabIPhone: "chat",
+        moTa: "Direct messages with your teammates and contacts on cuongthai.com", thuTu: 1, capUngDung: true, tabIPhone: "chat",
         man: { _ in AnyView(DanhSachTinNhanCTW()) },
         dichDen: { v in
             AnyView(v
