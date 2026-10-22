@@ -73,6 +73,13 @@ final class DayCTW: NSObject, ObservableObject, UNUserNotificationCenterDelegate
         return s[r.upperBound...].prefix(200).contains("development")
     }()
 
+    /// Đường dẫn dùng cho nút Reply: có `feedPostId` ⇒ đường bài Bảng tin (giữ slug của `duongDan` nếu có).
+    nonisolated static func duongDanTraLoi(duongDan: String?, feedPostId: Int?, feedCommentId: Int?) -> String? {
+        guard let feedPostId else { return duongDan }
+        let slug = duongDan.flatMap(DichBangTin.tach)?.slug ?? duongDan.flatMap(DuongDanCTW.tach)?.slug ?? "_"
+        return "/work/\(slug)/feed?post=\(feedPostId)" + (feedCommentId.map { "&comment=\($0)" } ?? "")
+    }
+
     static func datHuyHieu(_ so: Int) {
         UNUserNotificationCenter.current().setBadgeCount(max(0, so))
     }
@@ -108,7 +115,12 @@ final class DayCTW: NSObject, ObservableObject, UNUserNotificationCenterDelegate
             let nut = response.actionIdentifier
             let chu = (response as? UNTextInputNotificationResponse)?.userText
             let id = (info["thongBaoId"] as? Int) ?? Int("\(info["thongBaoId"] ?? "")")
-            let duongDan = info["duongDan"] as? String
+            // Bảng tin (hợp đồng feed §9): gói mang `feedPostId`/`feedCommentId` ở cấp ngoài ⇒ Reply PHẢI bình luận vào BÀI
+            // (`POST /feed/posts/<feedPostId>/comments {parentId: feedCommentId}`), không vào bình luận thẻ — dựng đường bài từ
+            // chính hai khoá đó (khớp `DichBangTin.tach`) để không phụ thuộc hình dạng `duongDan`.
+            let feedBai = (info["feedPostId"] as? Int) ?? Int("\(info["feedPostId"] ?? "")")
+            let feedBL = (info["feedCommentId"] as? Int) ?? Int("\(info["feedCommentId"] ?? "")")
+            let duongDan = DayCTW.duongDanTraLoi(duongDan: info["duongDan"] as? String, feedPostId: feedBai, feedCommentId: feedBL)
             let aid = (info["approvalId"] as? Int) ?? Int("\(info["approvalId"] ?? "")")
             DispatchQueue.main.async {
                 NutThongBaoCTW.xuLy(nut: nut, thongBaoId: id, duongDan: duongDan, approvalId: aid, chu: chu, xong: completionHandler)

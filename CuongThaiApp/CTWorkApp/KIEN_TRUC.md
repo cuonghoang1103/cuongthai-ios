@@ -584,8 +584,9 @@ CLIENT không bao giờ thấy; AI agent không đọc/ghi (máy chủ 403).
 - **Thời gian thực:** `RealtimeCTW.suKienBangTin` (`work:feed:event`; gửi `work:feed:subscribe` sau MỖI lần nối) ⇒ viên "N bài mới",
   bộ đếm bình luận, tải lại một bài (gộp sự kiện). Mất socket ⇒ `/feed/new-count` mỗi 60 s khi màn đang hiện.
 - **Thông báo:** đường dẫn sâu `/work/<ws>/feed?post=<id>&comment=<cid>` (`DichBangTin.tach`) ⇒ `DinhTuyenCTW` ⇒ `KhoBangTinCTW.moBai`
-  ⇒ My Work đẩy `ChiTietBaiCTW` (cuộn + tô sáng bình luận). Nút Reply trên thông báo ⇒ `HanhDongThongBaoCTW.traLoi` bình luận vào BÀI
-  (`parentId` = bình luận được trả lời). Cài đặt thông báo: công tắc `push.feed` + "Thông báo Bảng tin theo không gian & dự án"
+  ⇒ My Work đẩy `ChiTietBaiCTW` (cuộn + tô sáng bình luận). Nút Reply trên thông báo ⇒ `DayCTW.duongDanTraLoi` dựng đường bài từ `feedPostId`/`feedCommentId` (cấp ngoài
+  gói APNs, `thread-id` `ctw-feed-<id>`) ⇒ `HanhDongThongBaoCTW.traLoi` bình luận vào BÀI (`parentId` = bình luận được trả lời), không vào
+  bình luận thẻ. Đã kiểm với production 22/10 (`BangTinThatTests` — JSON thật, bài thử trong "CT Work Demo" đã xoá). Cài đặt thông báo: công tắc `push.feed` + "Thông báo Bảng tin theo không gian & dự án"
   (`PUT /feed/follow` ALL/MENTIONS/OFF). Chạm lại tab My Work ⇒ `ChamLaiTabCTW` ⇒ bảng tin cuộn lên đầu.
 - **Bố cục:** cột giữa ≤ 680 pt (iPad như LinkedIn), ô soạn = sheet lớn (iPhone) / form sheet (iPad), khung xương `.anhLuot()`, thẻ hiện
   lần lượt ở lần nạp đầu, ô trống có minh hoạ + "Tạo bài viết đầu tiên". VoiceOver: nút Thích có 6 tác vụ "Bày tỏ …", ảnh đọc alt +

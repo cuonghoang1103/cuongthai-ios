@@ -309,6 +309,15 @@ final class BangTinCTWTests: XCTestCase {
         XCTAssertEqual(DichBangTin.urlWeb("/work/acme/feed?post=12")?.absoluteString, "https://cuongthai.com/work/acme/feed?post=12")
     }
 
+    func testDuongDanNutTraLoi() {
+        XCTAssertEqual(DayCTW.duongDanTraLoi(duongDan: "/work/acme/feed?post=12&comment=88", feedPostId: 12, feedCommentId: 88),
+                       "/work/acme/feed?post=12&comment=88")
+        XCTAssertEqual(DichBangTin.tach(DayCTW.duongDanTraLoi(duongDan: nil, feedPostId: 5, feedCommentId: nil) ?? ""),
+                       DichBangTin(slug: "_", post: 5, comment: nil), "thiếu duongDan vẫn trả lời đúng bài")
+        XCTAssertEqual(DayCTW.duongDanTraLoi(duongDan: "/work/acme/FP/issue/3?comment=1", feedPostId: nil, feedCommentId: nil),
+                       "/work/acme/FP/issue/3?comment=1", "thông báo thẻ giữ nguyên")
+    }
+
     func testDinhTuyenMoBai() {
         let app = AppState.shared, kho = KhoBangTinCTW.shared
         let cu = (app.isAuthenticated, app.muc)
