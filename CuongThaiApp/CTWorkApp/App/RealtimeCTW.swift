@@ -23,6 +23,28 @@ struct SuKienChatCTW {
     var message: CTWChatMessage?
 }
 
+/// `work:feed:event` của Bảng tin (hợp đồng api-backend `docs/ctw-feed-hop-dong-api.md` §8) — KHÔNG mang nội dung, chỉ id +
+/// bộ đếm; màn tải lại qua REST (REST lọc quyền).
+struct SuKienBangTinCTW: Equatable {
+    /// post.created | post.updated | post.deleted | comment.created | comment.updated | comment.deleted | reaction | poll
+    var type: String
+    var postId: Int
+    var workspaceId: Int?
+    var projectId: Int?
+    var actorId: Int?
+    var commentId: Int?
+    var parentId: Int?
+    var commentCount: Int?
+    var reactionCount: Int?
+
+    static func tu(_ d: [String: Any]) -> SuKienBangTinCTW? {
+        guard let t = d["type"] as? String, let pid = d["postId"] as? Int else { return nil }
+        return SuKienBangTinCTW(type: t, postId: pid, workspaceId: d["workspaceId"] as? Int, projectId: d["projectId"] as? Int,
+                                actorId: d["actorId"] as? Int, commentId: d["commentId"] as? Int, parentId: d["parentId"] as? Int,
+                                commentCount: d["commentCount"] as? Int, reactionCount: d["reactionCount"] as? Int)
+    }
+}
+
 /// `message:updated` của tin nhắn riêng — chỉ khoá THỰC SỰ đổi (nil = không đổi).
 struct SuKienTinNhanDoiCTW {
     var threadId: Int
@@ -48,6 +70,8 @@ final class RealtimeCTW: ObservableObject {
     let tinNhanDangGo = PassthroughSubject<(threadId: Int, userId: Int, dangGo: Bool), Never>()
     /// `presence:update` — chỉ phát cho bạn bè ∪ người đã có hội thoại, và KHÔNG phát cho người tắt trạng thái.
     let hienDien = PassthroughSubject<(userId: Int, online: Bool), Never>()
+    /// Bảng tin (21/10/2026): `work:feed:event` — viên "N bài mới", bộ đếm bình luận/cảm xúc.
+    let suKienBangTin = PassthroughSubject<SuKienBangTinCTW, Never>()
 
     private var manager: SocketManager?
     private var socket: SocketIOClient?
@@ -75,6 +99,9 @@ final class RealtimeCTW: ObservableObject {
                 guard let self else { return }
                 self.daNoi = true
                 for p in self.phong { self.vaoPhong(pid: p[0], cid: p[1]) }
+                // Bảng tin: xin vào phòng mọi phạm vi đọc được — PHẢI gửi lại sau mỗi lần nối lại (hợp đồng §8).
+                // Máy chủ cũ không biết sự kiện này ⇒ bỏ qua, vô hại.
+                self.dangKyBangTin()
                 // Nối lại ⇒ gửi các tin đang chờ trong hàng chờ ngoại tuyến.
                 await HangChoGuiCTW.shared.xa()
             }
@@ -115,6 +142,10 @@ final class RealtimeCTW: ObservableObject {
         s.on("social:notification") { _, _ in
             Task { @MainActor in await AppState.shared.taiSoChuaDoc() }
         }
+        s.on("work:feed:event") { [weak self] data, _ in
+            guard let d = data.first as? [String: Any], let e = SuKienBangTinCTW.tu(d) else { return }
+            Task { @MainActor in self?.suKienBangTin.send(e) }
+        }
         ngheTinNhan(s)
         s.connect(withPayload: ["token": token])
     }
@@ -138,6 +169,12 @@ final class RealtimeCTW: ObservableObject {
     func roiKenh(pid: Int, cid: Int) {
         phong.remove([pid, cid])
         socket?.emit("work:chat:leave", ["projectId": pid, "channelId": cid])
+    }
+
+    /// `work:feed:subscribe` (không tham số) — chỉ khi máy chủ có bảng tin (hoặc chưa biết).
+    func dangKyBangTin() {
+        guard let socket, socket.status == .connected, KhoBangTinCTW.shared.hoTro != false else { return }
+        socket.emitWithAck("work:feed:subscribe").timingOut(after: 8) { _ in }
     }
 
     /// Báo "đang gõ" (máy chủ chỉ phát lại trong phòng kênh socket đã vào; có trần nhịp).
