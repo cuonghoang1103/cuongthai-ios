@@ -94,61 +94,51 @@ trên web, không cần chạm DB):
 
 ## Cho người duyệt (dán vào App Review Notes)
 
-Viết lại 21/10/2026 cho **build 1.0.0 (4)** (CuongMini, Create with CuongMini, Tìm ⌘K, Thành viên + tin nhắn riêng 1-1
-có Report/Block, trạng thái hoạt động + công tắc, âm thông báo, Code với kho demo công khai). **3914 ký tự** (tính xuống
-dòng là CRLF thì 3946) — trần 4000. Đếm lại: `python3 -c "print(len(open('f').read().rstrip()))"`.
-Tài khoản demo: `~/Documents/ctwork-appstore/TAI-KHOAN-DEMO.md` (KHÔNG đưa vào git). Đăng nhập bằng **username**
-(máy chủ tra username, không tra email). Kho GitHub demo: https://github.com/cuonghoang1103/ctwork-demo-app.
-⚠️ Trước khi dán: dữ liệu demo phải đã dựng xong (`~/Documents/ctwork-appstore/demo-seed/seed-demo.mjs`) — nhất là
-GitHub đã nối (mục Code) và CuongMini trả lời được bằng tài khoản demo.
+Viết lại 22/10/2026 cho **bản nộp 1.0.0 (6)** — bản đầu lên App Store gồm TẤT CẢ: Board, CuongMini, Tìm ⌘K, **Bảng tin**
+(My Work › Bảng tin + từng dự án), **Hồ sơ** (đổi ảnh đại diện/bìa đồng bộ web; hồ sơ người khác), **tin nhắn kiểu Messenger**
+(cảm xúc, trả lời, chuyển tiếp, GIF/nhãn dán, tin thoại, thu hồi, Đã xem, đang gõ), Thành viên/trạng thái hoạt động.
+**3838 ký tự** (xuống dòng CRLF: 3868) — trần 4000. Đếm lại: `python3 -c "print(len(open('f').read().rstrip()))"`.
+Tài khoản demo: `~/Documents/ctwork-appstore/TAI-KHOAN-DEMO.md` (KHÔNG đưa vào git). Đăng nhập bằng **username**.
+Dữ liệu demo: `~/Documents/ctwork-appstore/demo-seed/seed-demo.mjs` (bước 1) + `seed-feed-profile.mjs` (bước 2, 22/10: bài ghim
+cấp không gian + 2 ảnh, bài của Minh có ảnh + @ctworkdemo, bình chọn, bình luận + trả lời, cảm xúc; tin riêng có trả lời, GIF,
+cảm xúc, Đã xem; ảnh đại diện + bìa + giới thiệu hai tài khoản).
+Đã kiểm trong mã trước khi viết: tin thoại tin nhắn riêng KHÔNG chép lời (`/api/v1/messages` không gọi dịch vụ chép lời; chỉ
+`services/work/chatFiles.service.ts` của kênh gửi Groq); GIF đi qua `gifs.routes.ts` (chỉ chữ tìm, khoá của máy chủ, PG-13,
+không lưu truy vấn).
 
 ```
-CT Work is a free team work-management app (issues, boards, sprints, chat, direct messages, meetings, docs, Code, CuongMini AI assistant) for teams on cuongthai.com. No purchases, prices or purchase links (3.1.1).
+CT Work is a free team work-management app (issues, boards, sprints, team feed, chat and direct messages, meetings, docs, Code, CuongMini AI assistant) for teams on cuongthai.com. No purchases, prices or purchase links (3.1.1).
 
 SIGN IN
-Enter the demo USERNAME (not the email) and password from Sign-In Information. The account is in the "CT Work Demo" workspace, project DEMO: an active sprint, issues in every status, comments with a photo, chat, a direct conversation, an upcoming meeting, a doc, an approval waiting for this account and a connected public GitHub repo. A second member, "Minh (Demo)", wrote the "other person" content. Sign in with Apple is also offered (4.8).
+Enter the USERNAME ctworkdemo (not the email) and the password from Sign-In Information. The account owns the "CT Work Demo" workspace, project DEMO: active sprint, issues in every status, a pinned feed post, a poll, comments, chat, a direct conversation with GIFs and reactions, a meeting, a doc, an approval and a connected public GitHub repo. A second member, "Minh (Demo)", wrote the "other person" content. Sign in with Apple is also offered (4.8).
 
-WHAT TO TRY
-- My Work: issues assigned to you; Agenda; "What should I work on today?" asks CuongMini.
-- Projects: Board (touch and hold a card, drag it), Backlog, List, More (all other tools). Open an issue to edit fields, comment, attach a photo, log time.
-- CuongMini (AI): the sparkle button on the project page, the "Ask CuongMini" card under More, or the CuongMini button inside any issue (Summarize, Split, Generate tests...). Answers stream in and link to issues/docs.
-- Create with CuongMini: Projects > project picker > + > Create with CuongMini drafts a project plan from a short brief; nothing is created until you review it.
-- Search: magnifying glass on any main screen (Cmd+K on iPad).
-- Chat tab: Channels, Messages (1-1 with Minh: photos, files, replies, reactions, unsend within 5 min, read receipts) and Members (online dot / "Active 5m ago").
-- Projects > More > Code: Git activity from github.com/cuonghoang1103/ctwork-demo-app (tap a DEMO key to open the issue), branches, the open pull request, source and diffs.
-- Inbox: reply, Approve/Reject. Account > Sounds and Notification settings.
-- Timer on an issue: Live Activity with Pause/Stop. Widgets "My work today" and "Timer"; Siri "What's on my plate in CT Work"; Share Extension; Spotlight.
+WHERE THINGS ARE
+- Board: Projects tab (touch and hold a card to drag it); Backlog, List, More.
+- CuongMini (AI): sparkle button on the project page, "Ask CuongMini" under More, the CuongMini button inside any issue, and "What should I work on today?" in My Work. Answers stream in, link to issues and reply in the language of the question.
+- Search: magnifying glass on main screens (Cmd+K on iPad).
+- Chat tab: Channels, Messages (Messenger-style: touch and hold for reactions, Reply, Forward, Unsend within 5 min, Report; GIFs, stickers, voice messages, read receipts, typing) and Members (Active now).
+- Feed: My Work > Feed (all spaces), or a project > More > Feed. Post text, photos, videos, files, polls; react, comment and reply.
+- Profiles: tap any avatar (chat, feed, members, issues). Your own: Account > tap your name to change photo, cover, name and bio (synced with the website).
+- Projects > More > Code: Git activity, branches, pull request, source and diffs.
 
 USER-GENERATED CONTENT (1.2)
-Community rules are accepted on first launch. Comments, chat messages and AI answers: touch and hold > Report / Block user. Direct conversation: ... > Report conversation or Block (a blocked user cannot message you, their content is hidden and you don't see each other's active status). Reported content is hidden for the reporter at once; we review every report within 24 hours and remove the content or the offending account. Blocked users: Account > Blocked users & hidden content. Contact: Account > Help & contact.
+Community rules are accepted on first launch. Report is on every feed post and comment (... menu), every chat or direct message (touch and hold), every conversation (i > Report) and every profile (... > Report). Feed posts can also be hidden ("Hide post"). Block user is available from posts, comments, messages, conversations and profiles: a blocked user cannot message you and their posts, comments, messages and active status are hidden. Reported content is hidden for the reporter at once. Feed reports go to the space admins (report queue at the top of the feed, "N reports to review") and to our moderation team; all reports are reviewed within 24 hours and the content or the account is removed. Blocked users: Account > Blocked users & hidden content.
 
 PRIVACY AND AI (4.7, 5.1.2)
-- Active status: Account > Privacy & security > "Show active status". Off = others don't see when you're active and you don't see theirs.
-- CuongMini is AI and says so. Before the first request the app explains that the request and the project content needed to answer it (issues, comments, docs, files; for Create with CuongMini the brief, attached files and team member names/emails) go to our server and then to a third-party AI model provider (e.g. OpenAI or Anthropic, via an AI gateway) only to produce the answer. Nothing is sent until "Allow and ask"; consent can be withdrawn in Account > Privacy & security and is cleared on sign-out. Every answer is labelled "AI-generated" with Report.
-- Voice notes in chat: a separate consent names Groq (speech-to-text); nothing is recorded before "Allow and record".
-- AI agents added on the web are labelled "AI agent".
+- CuongMini is AI and says so. Before the first request the app explains that the request and the project content needed to answer (issues, comments, docs, files; for Create with CuongMini the brief, files and member names/emails) go to our server and then to a third-party AI model provider (e.g. OpenAI or Anthropic, via an AI gateway) only to produce the answer. Nothing is sent before "Allow and ask"; consent can be withdrawn in Account > Privacy & security. Answers are labelled "AI-generated" with Report.
+- Voice: voice notes in project channels are transcribed by Groq after a separate consent naming Groq ("Allow and record"). Voice messages in direct messages are NOT transcribed or sent to any third party.
+- GIF search goes through our server to GIPHY (search text only, no account data, PG-13).
+- Active status can be turned off: Account > Privacy & security.
 No data is used for ads or tracking. Policy: cuongthai.com/chinh-sach-bao-mat
 
 ACCOUNT DELETION (5.1.1(v))
 Account > Delete account. Erased 72 hours after the request; can be cancelled within that window.
 
 PERMISSIONS
-Camera only for "Take Photo"; microphone only for voice notes; Face ID only for the optional app lock (off by default). Photos and Add to Calendar use system pickers.
+Camera for photos and profile pictures; microphone only while recording; "Save photo" is add-only; Face ID only for the optional app lock.
 
-4.3: a separate product from our "CuongThai" learning app: own bundle ID, icon and privacy manifest; none of its courses, social feed or finance.
+4.3: separate product from our "CuongThai" learning app (own bundle ID, icon, privacy manifest; no courses or finance).
 ```
-
-### Bản 1.1 — sửa các dòng sau trong khối trên trước khi nộp (2.3: tính năng mới phải khai CỤ THỂ)
-
-Hồ sơ + Tin nhắn kiểu Messenger (KIEN_TRUC §23). Thay dòng "Chat tab" và "PERMISSIONS", thêm dòng "Profile":
-
-```
-- Profile: Account > tap your name. Change your profile photo or cover (photo library or camera, then crop), edit name and bio — the same profile as on cuongthai.com. Tap anyone's avatar (chat, members, feed, issues) to open their profile: Message, View work, and ... > Mute / Copy profile link / Block / Report.
-- Chat tab > Messages: conversation list with Active now, Unread filter, swipe to pin/mute/mark unread/delete for me. In a conversation: touch and hold a message for reactions, Reply, Copy, Forward, Save photo, Unsend (within 5 min) or Report; GIFs and stickers (GIPHY results are rated PG-13 by the server); hold the microphone to record a voice message (slide left to cancel); the i button has mute, nickname, block, report and delete.
-PERMISSIONS
-Camera only for "Take Photo" (attachments and profile photo); microphone only while recording a voice note / voice message; "Save photo" adds a chat photo to your library (add-only); Face ID only for the optional app lock (off by default). Voice messages in direct messages are not transcribed or sent to third parties.
-```
-Đếm lại tổng ký tự (trần 4000) sau khi thay — có thể phải rút gọn dòng "WHAT TO TRY" khác.
 
 ## 5. Phần BACKEND còn thiếu / nên có (không sửa ở phiên app)
 
