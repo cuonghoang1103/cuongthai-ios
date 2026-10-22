@@ -414,7 +414,7 @@ struct ManCuaTab: View {
         switch tab {
         case .homNay:
             #if DEBUG
-            if KhungXemThu.dangBat { ThuTongQuan(kieu: .day) } else { TongQuanView(dungDuongChung: !laCuaSoPhu) }
+            if KhungXemThu.dangBat { ThuTongQuan(kieu: KhungXemThu.kieuHomNay) } else { TongQuanView(dungDuongChung: !laCuaSoPhu) }
             #else
             TongQuanView(dungDuongChung: !laCuaSoPhu)
             #endif

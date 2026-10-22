@@ -228,6 +228,7 @@ struct LuoiDiNhanh: View {
                     .font(.subheadline.weight(.semibold))
                     .foregroundColor(AppColors.textPrimary)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.8)
                 Text(phu)
                     .font(.caption2)
                     .foregroundColor(AppColors.textTertiary)

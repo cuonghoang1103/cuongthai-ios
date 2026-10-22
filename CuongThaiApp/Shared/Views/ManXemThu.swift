@@ -490,9 +490,13 @@ struct KhungXemThu: View {
     let ten: String
     @EnvironmentObject private var appState: AppState
 
+    /// Dữ liệu giả của Hôm nay — `khung-rong` ⇒ ngày trống (thấy lưới Đi nhanh không cần cuộn).
+    static var kieuHomNay: ThuTongQuan.Kieu = .day
+
     init(ten: String) {
         self.ten = ten
         Self.dangBat = true
+        Self.kieuHomNay = ten == "khung-rong" ? .rong : .day
     }
 
     var body: some View {
