@@ -22,6 +22,7 @@ struct ManTinhNang: View {
         case .thoiKhoaBieu:
             if let vmTongQuan { LichTuanView(vm: vmTongQuan) } else { LichTuanDocLap() }
         case .academy: AcademyView()
+        case .chuongTrinh: ChuongTrinhView()
         case .khoaHocCuaToi: MyCoursesView()
         case .ielts: IeltsView(coNganXepRieng: false)
         case .ngoaiNgu: NgonNguView()

@@ -6,8 +6,10 @@ import Kingfisher
 // MARK: - Courses View
 struct CoursesView: View {
     @EnvironmentObject private var appState: AppState
-    @StateObject private var viewModel = CoursesViewModel()
+    /// Chương trình đào tạo (thẻ lối vào + màn tổng dùng CHUNG một VM ⇒ mở màn tổng không tải lại từ đầu).
+    @StateObject private var chuongTrinh = ChuongTrinhDaoTaoVM()
     @State private var searchQuery = ""
+    @State private var moTimKhoa = false
 
     var body: some View {
         NavigationStack {
@@ -24,10 +26,13 @@ struct CoursesView: View {
                     // năm thẻ ba bề rộng. Người dùng nhìn ảnh là thấy ngay.
                     //
                     // Academy đặt NGAY dưới ô tìm kiếm, thành một nhánh riêng
-                    // có viền — không trộn vào lưới khoá bên dưới. Hai thứ
-                    // khác mục đích: một bên là chương trình đại học theo kỳ,
-                    // một bên là khoá chọn học tuỳ ý.
+                    // có viền. Ngay sau nó là CHƯƠNG TRÌNH ĐÀO TẠO (22/10/2026) —
+                    // thay cho "Khoá tự biên soạn" + lưới khoá cũ: hai chương
+                    // trình theo kỳ đứng cạnh nhau, một theo giáo trình trường,
+                    // một là lộ trình 4 năm của CuongThai.
                     AcademyEntryCard()
+
+                    TheChuongTrinh(vm: chuongTrinh)
 
                     NgoaiNguEntryCard()
 
@@ -54,11 +59,6 @@ struct CoursesView: View {
                     MoPhongEntryCard()
                     CVEntryCard()
                     SnippetEntryCard()
-
-                    tieuDeNhanh("Khoá tự biên soạn", "sparkles")
-                    categoriesSection
-                    featuredCoursesSection
-                    allCoursesSection
                 }
                 .padding(Spacing.md)
             }
@@ -69,7 +69,7 @@ struct CoursesView: View {
             .toolbar {
                 ToolbarItemGroup(placement: .navigationBarTrailing) {
                     // Tìm TOÀN CỤC (tính năng + khoá + bài + người) — ô tìm trên
-                    // đầu trang chỉ lọc khoá tự biên soạn.
+                    // đầu trang chỉ tìm trong chương trình đào tạo.
                     Button { appState.bangGoc = .timKiem } label: {
                         Image(systemName: "magnifyingglass")
                             .foregroundColor(AppColors.textPrimary)
@@ -82,27 +82,14 @@ struct CoursesView: View {
                     .accessibilityLabel(T("Khoá học của tôi"))
                 }
             }
-            .onAppear {
-                Task {
-                    await viewModel.loadCourses()
-                }
+            // Ô tìm của tab Học ⇒ chế độ "Tất cả" của Chương trình đào tạo, đã điền sẵn từ khoá
+            // (tìm không dấu ngay trên máy, gồm cả khoá Sắp ra mắt).
+            .navigationDestination(isPresented: $moTimKhoa) {
+                ChuongTrinhView(vm: chuongTrinh, cheDo: .tatCa,
+                                tuKhoa: searchQuery.trimmingCharacters(in: .whitespacesAndNewlines))
             }
-            .refreshable {
-                await viewModel.loadCourses()
-            }
-        }
-    }
-
-    /// Nhãn phân nhánh, để người dùng thấy rõ phần dưới KHÔNG phải Academy.
-    private func tieuDeNhanh(_ chu: String, _ bieuTuong: String) -> some View {
-        HStack(spacing: Spacing.sm) {
-            Image(systemName: bieuTuong)
-                .font(.system(size: 13))
-                .foregroundColor(AppColors.primary)
-            Text(chu)
-                .font(.titleSmall)
-                .foregroundColor(AppColors.textPrimary)
-            Spacer()
+            .task { await chuongTrinh.taiNeuCu() }
+            .refreshable { await chuongTrinh.tai() }
         }
     }
 
@@ -113,365 +100,15 @@ struct CoursesView: View {
 
             TextField(T("Tìm kiếm khoá học"), text: $searchQuery)
                 .foregroundColor(AppColors.textPrimary)
+                .submitLabel(.search)
                 .onSubmit {
-                    Task {
-                        await viewModel.searchCourses(query: searchQuery)
-                    }
+                    guard !searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+                    moTimKhoa = true
                 }
         }
         .padding(Spacing.md)
         .background(AppColors.backgroundTertiary)
         .cornerRadius(CornerRadius.medium)
-    }
-
-    private var categoriesSection: some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            sectionHeader("Danh mục")
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: Spacing.md) {
-                    ForEach(viewModel.categories, id: \.self) { category in
-                        CategoryChip(
-                            category: category,
-                            isSelected: viewModel.selectedCategory == category
-                        ) {
-                            viewModel.selectedCategory = category
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private var featuredCoursesSection: some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            sectionHeader(T("Khoá học nổi bật"))
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: Spacing.md) {
-                    ForEach(viewModel.featuredCourses) { course in
-                        NavigationLink(destination: CourseDetailView(slug: course.slug)) {
-                            FeaturedCourseCard(course: course)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private var allCoursesSection: some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            HStack {
-                sectionHeader(T("Tất cả khoá học"))
-
-                Spacer()
-
-                Menu {
-                    Button("Mới nhất") { viewModel.sortBy = .newest }
-                    Button("Phổ biến nhất") { viewModel.sortBy = .popular }
-                } label: {
-                    HStack(spacing: 4) {
-                        Text("Sắp xếp")
-                        Image(systemName: "chevron.down")
-                    }
-                    .font(.caption)
-                    .foregroundColor(AppColors.primary)
-                }
-            }
-
-            if viewModel.isLoading {
-                ProgressView()
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, Spacing.xl)
-            } else if viewModel.courses.isEmpty {
-                emptyCoursesView
-            } else {
-                LazyVStack(spacing: Spacing.md) {
-                    ForEach(viewModel.courses) { course in
-                        NavigationLink(destination: CourseDetailView(slug: course.slug)) {
-                            CourseRow(course: course)
-                        }
-                    }
-
-                    if viewModel.hasMore {
-                        ProgressView()
-                            .padding()
-                            .onAppear {
-                                Task {
-                                    await viewModel.loadMoreCourses()
-                                }
-                            }
-                    }
-                }
-            }
-        }
-    }
-
-    private func sectionHeader(_ title: String) -> some View {
-        Text(title)
-            .font(.titleMedium)
-            .foregroundColor(AppColors.textPrimary)
-    }
-
-    private var emptyCoursesView: some View {
-        VStack(spacing: Spacing.lg) {
-            Image(systemName: "book.closed")
-                .font(.system(size: 50))
-                .foregroundColor(AppColors.textTertiary)
-
-            Text(T("Không có khoá học nào"))
-                .font(.titleMedium)
-                .foregroundColor(AppColors.textPrimary)
-
-            Text(T("Thử tìm kiếm với từ khoá khác"))
-                .font(.bodyMedium)
-                .foregroundColor(AppColors.textSecondary)
-        }
-        .padding(.vertical, Spacing.xl)
-    }
-}
-
-// MARK: - Category Chip
-struct CategoryChip: View {
-    let category: String
-    let isSelected: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Text(category)
-                .font(.buttonSmall)
-                .foregroundColor(isSelected ? .white : AppColors.textSecondary)
-                .padding(.horizontal, Spacing.md)
-                .padding(.vertical, Spacing.sm)
-                .background(isSelected ? AppColors.primary : AppColors.backgroundTertiary)
-                .cornerRadius(CornerRadius.full)
-        }
-    }
-}
-
-// MARK: - Featured Course Card
-struct FeaturedCourseCard: View {
-    let course: Course
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.md) {
-            // Thumbnail
-            ZStack(alignment: .topTrailing) {
-                #if canImport(Kingfisher)
-                if let thumbnail = course.thumbnailUrl, let url = URL(string: thumbnail) {
-                    KFImage(url)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width: 220, height: 130)
-                        .clipped()
-                } else {
-                    courseThumbnailPlaceholder
-                }
-                #else
-                courseThumbnailPlaceholder
-                #endif
-
-                // Price badge
-                if !course.isFree {
-                    Text(course.isEnrolled == true ? "Đã ghi danh" : formatPrice(course.discountPrice ?? course.price))
-                        .font(.captionBold)
-                        .foregroundColor(AppColors.onPrimary)
-                        .padding(.horizontal, Spacing.sm)
-                        .padding(.vertical, 4)
-                        .background(course.isEnrolled == true ? AppColors.success : AppColors.primary)
-                        .cornerRadius(CornerRadius.small)
-                        .padding(Spacing.sm)
-                }
-            }
-            .cornerRadius(CornerRadius.medium)
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(course.title)
-                    .font(.titleSmall)
-                    .foregroundColor(AppColors.textPrimary)
-                    .lineLimit(2)
-
-                if let instructor = course.instructor {
-                    Text(instructor.name)
-                        .font(.caption)
-                        .foregroundColor(AppColors.textSecondary)
-                }
-
-                HStack(spacing: Spacing.sm) {
-                    // Rating
-                    HStack(spacing: 2) {
-                        Image(systemName: "star.fill")
-                            .foregroundColor(AppColors.warning)
-                        Text(String(format: "%.1f", course.avgRating ?? 0))
-                    }
-                    .font(.caption)
-
-                    Text("(\(course.totalStudents))")
-                        .font(.caption)
-                        .foregroundColor(AppColors.textSecondary)
-
-                    Spacer()
-
-                    // Price
-                    if course.isFree {
-                        Text("Miễn phí")
-                            .font(.buttonSmall)
-                            .foregroundColor(AppColors.success)
-                    } else if let discount = course.discountPrice {
-                        HStack(spacing: 4) {
-                            Text(formatPrice(course.price))
-                                .strikethrough()
-                                .font(.caption)
-                                .foregroundColor(AppColors.textTertiary)
-                            Text(formatPrice(discount))
-                                .font(.buttonSmall)
-                                .foregroundColor(AppColors.primary)
-                        }
-                    } else {
-                        Text(formatPrice(course.price))
-                            .font(.buttonSmall)
-                            .foregroundColor(AppColors.primary)
-                    }
-                }
-            }
-        }
-        .frame(width: 220)
-    }
-
-    private var courseThumbnailPlaceholder: some View {
-        RoundedRectangle(cornerRadius: CornerRadius.medium)
-            .fill(AppColors.backgroundTertiary)
-            .frame(width: 220, height: 130)
-            .overlay(
-                Image(systemName: "play.rectangle.fill")
-                    .font(.system(size: 40))
-                    .foregroundColor(AppColors.textTertiary)
-            )
-    }
-
-    private func formatPrice(_ price: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = "VND"
-        formatter.locale = Locale(identifier: "vi_VN")
-        return formatter.string(from: NSNumber(value: price)) ?? "\(Int(price))đ"
-    }
-}
-
-// MARK: - Course Row
-struct CourseRow: View {
-    let course: Course
-
-    var body: some View {
-        HStack(spacing: Spacing.md) {
-            // Thumbnail
-            #if canImport(Kingfisher)
-            if let thumbnail = course.thumbnailUrl, let url = URL(string: thumbnail) {
-                KFImage(url)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: 100, height: 70)
-                    .cornerRadius(CornerRadius.small)
-            } else {
-                courseRowPlaceholder
-            }
-            #else
-            courseRowPlaceholder
-            #endif
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(course.title)
-                    .font(.titleSmall)
-                    .foregroundColor(AppColors.textPrimary)
-                    .lineLimit(2)
-
-                if let instructor = course.instructor {
-                    Text(instructor.name)
-                        .font(.caption)
-                        .foregroundColor(AppColors.textSecondary)
-                }
-
-                HStack(spacing: Spacing.sm) {
-                    // Rating
-                    HStack(spacing: 2) {
-                        Image(systemName: "star.fill")
-                            .foregroundColor(AppColors.warning)
-                        Text(String(format: "%.1f", course.avgRating ?? 0))
-                    }
-                    .font(.caption)
-
-                    Text("•")
-                        .foregroundColor(AppColors.textTertiary)
-
-                    Text("\(course.totalStudents) học viên")
-                        .font(.caption)
-                        .foregroundColor(AppColors.textSecondary)
-                }
-
-                HStack(spacing: Spacing.sm) {
-                    // Level badge
-                    Text(course.level)
-                        .font(.caption)
-                        .foregroundColor(AppColors.primary)
-                        .padding(.horizontal, Spacing.sm)
-                        .padding(.vertical, 2)
-                        .background(AppColors.primary.opacity(0.1))
-                        .cornerRadius(CornerRadius.small)
-
-                    if let lessons = course.totalLessons {
-                        Text("\(lessons) bài học")
-                            .font(.caption)
-                            .foregroundColor(AppColors.textSecondary)
-                    }
-                }
-            }
-
-            Spacer()
-
-            // Price & CTA
-            VStack(alignment: .trailing, spacing: 4) {
-                if course.isFree {
-                    Text("Miễn phí")
-                        .font(.buttonSmall)
-                        .foregroundColor(AppColors.success)
-                } else if let discount = course.discountPrice {
-                    Text(formatPrice(discount))
-                        .font(.titleSmall)
-                        .foregroundColor(AppColors.primary)
-                } else {
-                    Text(formatPrice(course.price))
-                        .font(.titleSmall)
-                        .foregroundColor(AppColors.primary)
-                }
-
-                if course.isEnrolled == true {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(AppColors.success)
-                }
-            }
-        }
-        .padding(Spacing.md)
-        .background(AppColors.backgroundCard)
-        .cornerRadius(CornerRadius.medium)
-    }
-
-    private var courseRowPlaceholder: some View {
-        RoundedRectangle(cornerRadius: CornerRadius.small)
-            .fill(AppColors.backgroundTertiary)
-            .frame(width: 100, height: 70)
-            .overlay(
-                Image(systemName: "play.rectangle.fill")
-                    .foregroundColor(AppColors.textTertiary)
-            )
-    }
-
-    private func formatPrice(_ price: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = "VND"
-        formatter.locale = Locale(identifier: "vi_VN")
-        return formatter.string(from: NSNumber(value: price)) ?? "\(Int(price))đ"
     }
 }
 
@@ -558,90 +195,10 @@ struct ReviewRow: View {
     }
 }
 
-// MARK: - Courses View Model
-@MainActor
-class CoursesViewModel: ObservableObject {
-    @Published var courses: [Course] = []
-
-    /// App Store 3.1.1: app KHÔNG bán nội dung số ngoài In-App Purchase. Chỉ
-    /// hiện khoá MIỄN PHÍ và khoá người dùng ĐÃ ghi danh (mua trên web — được
-    /// dùng theo 3.1.3(b)). Khoá trả phí chưa sở hữu mà hiện ra thì sẽ kèm
-    /// giá VND và nút ghi danh trả 402 "mua hoặc nhập mã kích hoạt" — đúng thứ
-    /// người duyệt trả về. Đo 24/09/2026: 12/12 khoá công khai đều miễn phí,
-    /// nên bộ lọc này hiện chưa bỏ khoá nào; nó chặn trước cho khoá sau này.
-    nonisolated static func hienDuoc(_ c: Course) -> Bool {
-        c.isFree || c.isEnrolled == true
-    }
-    @Published var featuredCourses: [Course] = []
-    @Published var categories: [String] = ["Tất cả", "Lập trình", "Design", "Marketing", "Kinh doanh", "Nghệ thuật"]
-    @Published var selectedCategory = "Tất cả"
-    @Published var sortBy: CourseSortOption = .newest
-    @Published var isLoading = false
-    @Published var error: String?
-    @Published var hasMore = true
-
-    private var page = 1
-
-    func loadCourses() async {
-        isLoading = true
-
-        do {
-            // `/courses` phân trang kiểu page/totalPages, KHÔNG phải con trỏ.
-            let response: (items: [Course], nextCursor: Int?, hasMore: Bool) =
-                try await APIClient.shared.requestList(.getCourses(page: 1, size: 20, keyword: nil))
-            courses = response.items.filter(Self.hienDuoc)
-            featuredCourses = Array(courses.prefix(5))
-            page = 1
-            hasMore = response.items.count >= 20
-        } catch {
-            self.error = error.localizedDescription
-        }
-
-        isLoading = false
-    }
-
-    func loadMoreCourses() async {
-        guard hasMore, !isLoading else { return }
-
-        do {
-            let response: (items: [Course], nextCursor: Int?, hasMore: Bool) =
-                try await APIClient.shared.requestList(.getCourses(page: page + 1, size: 20, keyword: nil))
-            let daCo = Set(courses.map(\.id))
-            courses.append(contentsOf: response.items.filter { !daCo.contains($0.id) && Self.hienDuoc($0) })
-            page += 1
-            hasMore = !response.items.isEmpty
-        } catch {
-            self.error = error.localizedDescription
-        }
-    }
-
-    func searchCourses(query: String) async {
-        guard !query.isEmpty else {
-            await loadCourses()
-            return
-        }
-
-        isLoading = true
-
-        do {
-            let response: (items: [Course], nextCursor: Int?, hasMore: Bool) =
-                try await APIClient.shared.requestList(.getCourses(page: 1, size: 20, keyword: query))
-            courses = response.items.filter(Self.hienDuoc)
-        } catch {
-            self.error = error.localizedDescription
-        }
-
-        isLoading = false
-    }
-}
-
-// MARK: - Supporting Types
-enum CourseSortOption {
-    case newest
-    case popular
-    case priceLow
-    case priceHigh
-}
+// MARK: - Khoá tự biên soạn: đã chuyển
+// "Khoá tự biên soạn" + lưới khoá (CategoryChip, FeaturedCourseCard, CourseRow, CoursesViewModel)
+// đã GỠ 22/10/2026 — thay bằng Chương trình đào tạo (`Shared/ChuongTrinh/`). Luật App Store 3.1.1
+// của bộ lọc cũ (`hienDuoc`: chỉ khoá miễn phí hoặc đã sở hữu) sống tiếp ở `MonChuongTrinh.hienDuoc`.
 
 // CoursesResponse cũ ({courses, hasMore}) đã GỠ: backend trả
 // { success, data: [...], pagination: {page, total, totalPages} } — không có

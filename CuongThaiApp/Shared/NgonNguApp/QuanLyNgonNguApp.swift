@@ -90,3 +90,8 @@ final class QuanLyNgonNguApp: ObservableObject {
 func T(_ vi: String) -> String {
     ngonNguDangDung() == .anh ? (BangDich.anh[vi] ?? vi) : vi
 }
+
+/// Giao diện đang tiếng Anh? Cùng nguồn với `T(...)` — cho NỘI DUNG song ngữ từ máy
+/// chủ (chuỗi "EN|||VI", cặp `ten`/`tenEn`) chọn đúng nửa. Màn nào muốn đổi ngay khi
+/// người dùng đổi ngôn ngữ thì quan sát `QuanLyNgonNguApp.shared`.
+func giaoDienTiengAnh() -> Bool { ngonNguDangDung() == .anh }

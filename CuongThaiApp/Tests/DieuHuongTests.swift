@@ -26,7 +26,7 @@ final class DieuHuongTests: XCTestCase {
     /// lối chạm trên iPhone) và CT Work (giờ là app riêng).
     func testDanhMucPhuDuTinhNang() {
         let canCo: [String] = ["vo", "thoi-khoa-bieu", "hoc-ky", "tien-nong", "ielts", "ngoai-ngu",
-                               "academy", "phong-thi", "code-lab", "thu-vien-sach", "lo-trinh", "du-an",
+                               "academy", "chuong-trinh", "phong-thi", "code-lab", "thu-vien-sach", "lo-trinh", "du-an",
                                "phong-van", "thuat-toan", "mo-phong", "cv", "snippets", "video-hoc",
                                "xuong-ve", "xuong-3d", "ai-chat", "notes", "khoa-hoc-cua-toi",
                                "thong-bao", "ct-work", "cai-dat"]

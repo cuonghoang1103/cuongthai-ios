@@ -125,6 +125,8 @@ struct ManXemThu: View {
             case "dangnhap": ThuLuongDangNhap()
             // Màn học Academy (22/10/2026) — xem ThuHocBaiDebug.swift.
             case let s where s.hasPrefix("hocbai"): ThuHocBaiView(cheDo: s)
+            // Chương trình đào tạo (22/10/2026) — nguồn giả từ thư mục fixture, xem ThuChuongTrinhDebug.swift.
+            case let s where s.hasPrefix("chuongtrinh"): ThuChuongTrinhView(kieu: s)
 
             default:
                 VStack(spacing: Spacing.sm) {

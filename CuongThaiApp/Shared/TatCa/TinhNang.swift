@@ -21,6 +21,8 @@ enum TinhNang: String, CaseIterable, Identifiable, Codable, Hashable {
     case hocKy = "hoc-ky"
     case thoiKhoaBieu = "thoi-khoa-bieu"
     case academy
+    /// Chương trình đào tạo 4 năm · 15 kỳ (/courses của web) — 22/10/2026.
+    case chuongTrinh = "chuong-trinh"
     case khoaHocCuaToi = "khoa-hoc-cua-toi"
     case ielts
     case ngoaiNgu = "ngoai-ngu"
@@ -72,7 +74,7 @@ enum TinhNang: String, CaseIterable, Identifiable, Codable, Hashable {
 
     var nhom: Nhom {
         switch self {
-        case .hocKy, .thoiKhoaBieu, .academy, .khoaHocCuaToi, .ielts, .ngoaiNgu, .videoHoc, .thuVienSach:
+        case .hocKy, .thoiKhoaBieu, .academy, .chuongTrinh, .khoaHocCuaToi, .ielts, .ngoaiNgu, .videoHoc, .thuVienSach:
             return .hocTap
         case .phongThi, .codeLab, .thuatToan, .moPhong, .snippets, .loTrinh, .duAn, .phongVan, .cvBuilder:
             return .luyenVaNghe
@@ -112,6 +114,7 @@ enum TinhNang: String, CaseIterable, Identifiable, Codable, Hashable {
         case .hocKy: return T("Học kỳ")
         case .thoiKhoaBieu: return T("Thời khoá biểu")
         case .academy: return "Academy"
+        case .chuongTrinh: return T("Chương trình đào tạo")
         case .khoaHocCuaToi: return T("Khoá học của tôi")
         case .ielts: return "IELTS"
         case .ngoaiNgu: return T("Ngoại ngữ")
@@ -143,6 +146,7 @@ enum TinhNang: String, CaseIterable, Identifiable, Codable, Hashable {
         case .hocKy: return T("Việc AI giao, điểm, tỷ lệ trượt")
         case .thoiKhoaBieu: return T("Lịch học, lịch thi trong tuần")
         case .academy: return T("Chương trình đại học theo kỳ")
+        case .chuongTrinh: return T("4 năm · 15 kỳ, nền tảng tới chuyên gia")
         case .khoaHocCuaToi: return T("Khoá đang học, tiến độ")
         case .ielts: return T("Nghe, nói, đọc, viết")
         case .ngoaiNgu: return T("Từ vựng, thẻ ghi nhớ, ôn tập")
@@ -174,6 +178,7 @@ enum TinhNang: String, CaseIterable, Identifiable, Codable, Hashable {
         case .hocKy: return "target"
         case .thoiKhoaBieu: return "calendar"
         case .academy: return "building.columns.fill"
+        case .chuongTrinh: return "books.vertical"
         case .khoaHocCuaToi: return "book.closed.fill"
         case .ielts: return "textformat.abc"
         case .ngoaiNgu: return "character.book.closed.fill"
@@ -206,7 +211,7 @@ enum TinhNang: String, CaseIterable, Identifiable, Codable, Hashable {
         switch self {
         case .hocKy, .phongThi: return AppColors.error
         case .thoiKhoaBieu, .academy, .codeLab, .ctWork: return AppColors.primary
-        case .khoaHocCuaToi, .duAn, .tienNong: return AppColors.accent
+        case .khoaHocCuaToi, .duAn, .tienNong, .chuongTrinh: return AppColors.accent
         case .ielts, .videoHoc, .xuongBa: return AppColors.brandPink
         case .ngoaiNgu, .thuVienSach, .moPhong, .xuongVe: return AppColors.secondary
         case .thuatToan, .snippets, .cvBuilder: return AppColors.info
@@ -224,6 +229,7 @@ enum TinhNang: String, CaseIterable, Identifiable, Codable, Hashable {
         case .hocKy: return ["semester", "coach", "huan luyen", "diem", "ty le truot"]
         case .thoiKhoaBieu: return ["lich", "schedule", "timetable", "calendar", "tkb", "lich thi"]
         case .academy: return ["fpt", "dai hoc", "mon hoc", "university", "nganh"]
+        case .chuongTrinh: return ["khoa hoc", "courses", "curriculum", "lo trinh hoc", "hoc ky", "chuyen nganh", "sap ra mat"]
         case .khoaHocCuaToi: return ["my courses", "khoa hoc", "tien do"]
         case .ielts: return ["english", "tieng anh", "band"]
         case .ngoaiNgu: return ["language", "tu vung", "flashcard", "tieng nhat", "tieng trung"]
