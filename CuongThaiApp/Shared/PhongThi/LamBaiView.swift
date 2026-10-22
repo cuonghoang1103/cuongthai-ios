@@ -986,30 +986,7 @@ struct LuoiCauThiNoiDung: View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: cot), spacing: 8) {
                 ForEach(Array(vm.cauHoi.enumerated()), id: \.element.id) { i, c in
-                    let lam = vm.daLam(c)
-                    let hien = i == vm.viTri
-                    Button { chonCau(i) } label: {
-                        ZStack(alignment: .topTrailing) {
-                            Text(c.laCode ? "\(i + 1)⌨" : "\(i + 1)")
-                                .font(.system(size: 14, weight: .semibold))
-                                .monospacedDigit()
-                                .foregroundColor(lam ? .white : AppColors.textPrimary)
-                                .frame(maxWidth: .infinity).frame(height: 42)
-                                .background(RoundedRectangle(cornerRadius: 10)
-                                    .fill(lam ? AppColors.primary : AppColors.backgroundCard))
-                                .overlay(RoundedRectangle(cornerRadius: 10)
-                                    .strokeBorder(hien ? AppColors.accent : AppColors.border.opacity(0.5),
-                                                  lineWidth: hien ? 2.5 : 1))
-                            if vm.co.contains(c.id) {
-                                Circle().fill(AppColors.warning).frame(width: 9, height: 9)
-                                    .offset(x: -4, y: 4)
-                            }
-                        }
-                    }
-                    .buttonStyle(.nhan)
-                    .accessibilityLabel(T("Câu") + " \(i + 1)"
-                        + (lam ? ", " + T("đã trả lời") : ", " + T("chưa trả lời"))
-                        + (vm.co.contains(c.id) ? ", " + T("có cờ") : ""))
+                    oCau(i, c)
                 }
             }
             HStack(spacing: Spacing.md) {
@@ -1022,6 +999,35 @@ struct LuoiCauThiNoiDung: View {
             }
             .padding(.top, 2)
         }
+    }
+
+    private func oCau(_ i: Int, _ c: CauHoiThi) -> some View {
+        let lam: Bool = vm.daLam(c)
+        let hien: Bool = i == vm.viTri
+        let coCo: Bool = vm.co.contains(c.id)
+        let nhan: String = c.laCode ? "\(i + 1)⌨" : "\(i + 1)"
+        let mauChu: Color = lam ? .white : AppColors.textPrimary
+        let mauNen: Color = lam ? AppColors.primary : AppColors.backgroundCard
+        let mauVien: Color = hien ? AppColors.accent : AppColors.border.opacity(0.5)
+        var tro: String = T("Câu") + " \(i + 1)"
+        tro += lam ? ", " + T("đã trả lời") : ", " + T("chưa trả lời")
+        if coCo { tro += ", " + T("có cờ") }
+        return Button { chonCau(i) } label: {
+            ZStack(alignment: .topTrailing) {
+                Text(nhan)
+                    .font(.system(size: 14, weight: .semibold))
+                    .monospacedDigit()
+                    .foregroundColor(mauChu)
+                    .frame(maxWidth: .infinity).frame(height: 42)
+                    .background(RoundedRectangle(cornerRadius: 10).fill(mauNen))
+                    .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(mauVien, lineWidth: hien ? 2.5 : 1))
+                if coCo {
+                    Circle().fill(AppColors.warning).frame(width: 9, height: 9).offset(x: -4, y: 4)
+                }
+            }
+        }
+        .buttonStyle(.nhan)
+        .accessibilityLabel(tro)
     }
 
     private func chuThich(mau: Color, chu: String, vien: Bool = false) -> some View {

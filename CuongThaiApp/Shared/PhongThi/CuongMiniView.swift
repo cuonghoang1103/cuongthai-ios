@@ -23,11 +23,14 @@ final class CuongMiniVM: ObservableObject {
     @Published var nhaCungCap: NhaCungCapAI = .tuDong
     @Published var loi: String?
 
-    let attemptId: Int
+    /// `nil` = chế độ LUYỆN (luyện chương / xem lại bài đã nộp): không có lượt
+    /// thi nên không "Hiện đáp án"/"bài liên quan" — đáp án đã ở sẵn trên màn.
+    let attemptId: Int?
     let questionId: Int
     private var viec: Task<Void, Never>?
+    var laLuyen: Bool { attemptId == nil }
 
-    init(attemptId: Int, questionId: Int) {
+    init(attemptId: Int?, questionId: Int) {
         self.attemptId = attemptId
         self.questionId = questionId
     }
@@ -39,13 +42,14 @@ final class CuongMiniVM: ObservableObject {
     /// "chưa gán chương" không phải hỏng hóc, và web cũng làm y hệt
     /// (`.catch(() => setRelatedLesson(null))`).
     func napBaiHoc() async {
-        guard !daTraBaiHoc else { return }
+        guard !daTraBaiHoc, let attemptId else { return }
         daTraBaiHoc = true
         baiHoc = try? await APIClient.shared.request(
             .baiHocLienQuan(attemptId: attemptId, questionId: questionId))
     }
 
     func hienDapAn() async {
+        guard let attemptId else { return }
         do {
             dapAn = try await APIClient.shared.request(
                 .hienDapAn(attemptId: attemptId, questionId: questionId))
@@ -120,8 +124,13 @@ final class CuongMiniVM: ObservableObject {
         if !lichSu.isEmpty { than["history"] = lichSu }
         if let p = nhaCungCap.ma { than["provider"] = p }
         do {
-            let r: TraLoiCuongMini = try await APIClient.shared.request(
-                .hoiCuongMini(attemptId: attemptId, than: than))
+            let r: TraLoiCuongMini
+            if let attemptId {
+                r = try await APIClient.shared.request(.hoiCuongMini(attemptId: attemptId, than: than))
+            } else {
+                than["questionId"] = nil   // đã nằm trong đường dẫn
+                r = try await APIClient.shared.request(.hoiCuongMiniLuyen(questionId: questionId, than: than))
+            }
             guard viTri < luot.count else { return }
             luot[viTri].noiDung = r.answer
             luot[viTri].dangChay = false
@@ -158,11 +167,27 @@ struct CuongMiniView: View {
     @State private var chu = ""
     @State private var chacChan = false
     @FocusState private var dangGo: Bool
+    /// Hỏi ngay khi mở (nút chip ở màn luyện chương bấm thẳng vào một chế độ).
+    private let hoiNgay: CheDoHoi?
+    /// Đã làm câu này chưa — chọn bộ chip phù hợp ở chế độ luyện.
+    private let daLam: Bool
+    @State private var daHoiNgay = false
 
     init(examId: Int, attemptId: Int, questionId: Int, nhanCau: String) {
         self.examId = examId
         self.nhanCau = nhanCau
+        self.hoiNgay = nil
+        self.daLam = false
         _vm = StateObject(wrappedValue: CuongMiniVM(attemptId: attemptId, questionId: questionId))
+    }
+
+    /// Chế độ LUYỆN — không lượt thi (`/practice/questions/:qid/ai/*`).
+    init(luyenCau questionId: Int, nhanCau: String, daLam: Bool, hoiNgay: CheDoHoi? = nil) {
+        self.examId = 0
+        self.nhanCau = nhanCau
+        self.hoiNgay = hoiNgay
+        self.daLam = daLam
+        _vm = StateObject(wrappedValue: CuongMiniVM(attemptId: nil, questionId: questionId))
     }
 
     var body: some View {
@@ -189,7 +214,10 @@ struct CuongMiniView: View {
                 }
             }
         }
-        .task { await vm.napBaiHoc() }
+        .task {
+            await vm.napBaiHoc()
+            if let m = hoiNgay, !daHoiNgay { daHoiNgay = true; vm.hoi(m) }
+        }
         .onDisappear { vm.dung() }
     }
 
@@ -309,12 +337,21 @@ struct CuongMiniView: View {
                 // như web (`renderMath={!t.streaming}`): công thức về một
                 // nửa mà đem dựng thì nó nhảy loạn suốt lúc model đang gõ.
                 TraLoiAI(chu: l.noiDung, xong: !l.dangChay)
-                if l.coSan {
-                    Label("Có sẵn — từng hỏi trước đó", systemImage: "bolt.fill")
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(AppColors.primary)
-                        .padding(.horizontal, 7).padding(.vertical, 3)
-                        .background(Capsule().fill(AppColors.primary.opacity(0.12)))
+                HStack(spacing: Spacing.sm) {
+                    if l.coSan {
+                        Label("Có sẵn — từng hỏi trước đó", systemImage: "bolt.fill")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundColor(AppColors.primary)
+                            .padding(.horizontal, 7).padding(.vertical, 3)
+                            .background(Capsule().fill(AppColors.primary.opacity(0.12)))
+                    }
+                    Spacer(minLength: 0)
+                    // App Store 4.7 / 1.2: câu trả lời AI nào cũng phải báo cáo được.
+                    if !l.dangChay {
+                        NutBaoCaoTraLoiAI(nguon: "AI · CuongMini Phòng thi",
+                                          cauHoi: "\(nhanCau) (câu #\(vm.questionId))",
+                                          traLoi: l.noiDung)
+                    }
                 }
             }
         }
@@ -443,7 +480,7 @@ struct CuongMiniView: View {
                 }
             }
 
-            if vm.dapAn == nil { nutHienDapAn }
+            if vm.dapAn == nil && !vm.laLuyen { nutHienDapAn }
         }
         .padding(Spacing.md)
         .background(AppColors.backgroundSecondary)
@@ -452,7 +489,7 @@ struct CuongMiniView: View {
     private var goiY: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 7) {
-                ForEach(CheDoHoi.goiY) { m in
+                ForEach(vm.laLuyen ? CheDoHoi.goiYLuyen(daLam: daLam) : CheDoHoi.goiY) { m in
                     Button {
                         dangGo = false
                         vm.hoi(m)
