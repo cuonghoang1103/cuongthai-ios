@@ -3,4 +3,4 @@
 // (ITMS-90473), nên ba target cùng nạp tệp này (project.yml → configFiles).
 // Tăng số dựng: `scripts/phat-hanh-ctwork.sh` tự tăng CURRENT_PROJECT_VERSION ở đây (hoặc sửa tay).
 MARKETING_VERSION = 1.0.0
-CURRENT_PROJECT_VERSION = 5
+CURRENT_PROJECT_VERSION = 6
