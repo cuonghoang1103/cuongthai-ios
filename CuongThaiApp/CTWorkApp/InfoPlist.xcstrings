@@ -26,13 +26,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "CT Work uses the camera only when you choose \"Take Photo\" to attach a picture to an issue or a chat message, or to take a new profile photo."
+            "value": "CT Work uses the camera only when you choose to take a photo — to attach it to an issue, a chat or direct message, a feed post, a Docs page or a test result, or to use it as your profile or cover photo."
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "CT Work chỉ dùng máy ảnh khi bạn chọn \"Chụp ảnh\" để đính kèm ảnh vào một thẻ hoặc tin nhắn chat, hoặc để chụp ảnh đại diện mới."
+            "value": "CT Work chỉ dùng máy ảnh khi bạn chọn chụp ảnh — để đính kèm vào một thẻ, tin nhắn chat hoặc tin nhắn riêng, bài đăng trên Bảng tin, trang Tài liệu hoặc kết quả kiểm thử, hoặc để làm ảnh đại diện hay ảnh bìa."
           }
         }
       }

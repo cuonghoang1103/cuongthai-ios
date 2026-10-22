@@ -47,9 +47,9 @@ struct TrangPhapLyView: View {
 
     @ViewBuilder private var dieuKhoan: some View {
         Section {
-            muc("CT Work is a team work-management service by cuongthai.com: issues, boards, backlogs, comments, files, project chat and documents.")
+            muc("CT Work is a team work-management service by cuongthai.com: issues, boards, backlogs, comments, files, a team feed, project chat, direct messages and documents.")
             muc("You are responsible for what you post. Do not post content that is illegal, harassing, hateful, sexual, violent, or that infringes someone else's rights.")
-            muc("There is zero tolerance for objectionable content or abusive users. Reported content is reviewed within 24 hours; content that breaks these rules is removed and the account responsible is suspended.")
+            muc("There is zero tolerance for objectionable content and abusive users — in posts, comments, chat and direct messages, and profiles. Anyone can report content or a user and block a user. Reports are reviewed within 24 hours; content that breaks these rules is removed and the user responsible is suspended or banned.")
             muc("Workspace admins can add AI agents as members. Content created by an agent is labelled “AI agent”; the person who owns the agent is responsible for it.")
             muc("You can delete your account at any time from Account › Delete account.")
         } header: { Text("Summary") }
@@ -61,13 +61,16 @@ struct TrangPhapLyView: View {
 
     @ViewBuilder private var baoMat: some View {
         Section {
-            muc("We store your account (username, email, name, avatar) and the work you create: issues, comments, attachments, chat messages and documents.")
-            muc("Photos and files are uploaded only when you choose to attach them. The camera is used only when you tap “Take Photo”.")
+            muc("We store your account (username, email, name, profile and cover photo, bio) and the work you create: issues, comments, attachments, feed posts, chat and direct messages, and documents.")
+            muc("Photos and files are uploaded only when you choose to attach them. The camera is used only when you choose to take a photo.")
             muc("The microphone is used only while you record a voice note in chat. Voice notes in project channels are stored for the people in that channel and sent to Groq, a third-party speech-to-text service, to create a transcript — the app asks for your consent before your first voice note. Voice messages in direct messages are only stored for you and the person you message; they are not transcribed.")
             muc("Your profile photo, cover photo, display name and bio are the same as on cuongthai.com — changing them in the app changes them everywhere. Photos are saved to your library only when you choose “Save photo”.")
+            muc("Team Feed: posts, comments, reactions, polls, photos, videos and files you share in the feed are visible only to members of the workspace or project you post to — never public. You can hide or report any post and block its author.")
+            muc("Direct messages: your conversations with your teammates and contacts on cuongthai.com — the same inbox as on the website.")
+            muc("GIF search: the words you type in GIF search are sent through CT Work's server to GIPHY, a third-party service, to find GIFs. Your name and account details are not sent to GIPHY.")
             muc("Video meetings open in Google Meet, Zoom, Microsoft Teams or Jitsi (or Safari). CT Work itself does not use your camera or microphone for calls.")
             muc("If you allow notifications, we store your device's push token to deliver CT Work notifications.")
-            muc("AI assistant: when you ask it a question, your question and the project content needed to answer it (issues, comments, Docs pages, attached files and links you can already see) are sent to a third-party AI model provider (large language models such as Anthropic Claude and OpenAI GPT, through our AI gateway). The app asks for your consent before your first question; you can withdraw it in Account › Privacy. Answers are labelled “AI-generated” and can be reported.")
+            muc("AI assistant: when you ask it a question, your question and the project content needed to answer it (issues, comments, Docs pages, attached files and links you can already see) are processed by third-party AI model providers (large language models such as Anthropic Claude and OpenAI GPT), reached through third-party AI gateway services. The app asks for your consent before your first question; you can withdraw it in Account › Privacy. Answers are labelled “AI-generated” and can be reported.")
             muc("Apart from the AI assistant and voice-note transcription, this app does not send your data to third-party AI services. AI agents that a workspace admin adds can read the project they are members of, like any other member; AI-drafted meeting minutes are labelled “AI-generated”.")
             muc("Widgets, Siri and Spotlight use a copy of your own data kept on this device only (today's work, your timer, issues you opened recently). Signing out deletes it.")
             muc("Face ID lock is optional and off by default. Face ID is handled by iOS; the app never sees your face data.")
@@ -80,9 +83,9 @@ struct TrangPhapLyView: View {
 
     @ViewBuilder private var troGiup: some View {
         Section {
-            muc("To report a comment or chat message, touch and hold it, then choose Report. To report meeting notes, open the meeting and choose ••• › Report notes. To stop seeing someone, choose Block.")
+            muc("To report a feed post or comment, tap ••• on it and choose Report. To report a chat or direct message, touch and hold it, then choose Report. To report a person, open their profile and choose ••• › Report. To report meeting notes, open the meeting and choose ••• › Report notes. To stop seeing someone, choose Block.")
             muc("Blocked users and hidden content are managed in Account › Blocked users.")
-            muc("Our moderators review every report within 24 hours.")
+            muc("Our moderators review every report within 24 hours. Objectionable content is removed and abusive users are suspended or banned — zero tolerance.")
         } header: { Text("Safety") }
         Section {
             Link(destination: URL(string: "mailto:\(LienHeCTW.email)?subject=CT%20Work%20support")!) {
@@ -339,7 +342,7 @@ struct XoaTaiKhoanCTW: View {
                     Label("Your account is scheduled for deletion \(han(yc)).", systemImage: "clock.fill")
                         .foregroundColor(AppColors.warning)
                 } footer: {
-                    Text("Your account and personal data will be permanently deleted 72 hours after the request. Until then you can keep using CT Work and cancel the request.")
+                    Text("Your account and personal data will be permanently deleted 72 hours after the request; work you shared with your team stays under an anonymous name. Until then you can keep using CT Work and cancel the request.")
                 }
                 Section {
                     Button { Task { await huy() } } label: {
@@ -349,10 +352,10 @@ struct XoaTaiKhoanCTW: View {
                 }
             } else {
                 Section("What happens") {
-                    dong("Your profile, comments, chat messages and files you uploaded are removed from the service.")
-                    dong("Your email and username are disabled and can't be reused.")
-                    dong("You are signed out everywhere — on the web and in every app.")
-                    dong("This applies to your whole cuongthai.com account and can't be undone.")
+                    dong("Your account is deleted about 72 hours after you confirm. Until then you can keep using CT Work and cancel the request here.")
+                    dong("Your personal data is erased: name, username, email, bio, profile photo and cover photo. You can no longer sign in.")
+                    dong("Your devices' notification tokens, your CT Work API and calendar tokens, connected accounts and your private AI conversations are deleted, and you are signed out everywhere — on the web and in every app.")
+                    dong("Work you shared with your team — issues, comments, feed posts, messages, documents and files — stays so your teammates keep their work, but it is shown under an anonymous name. This applies to your whole cuongthai.com account and can't be undone once it takes effect.")
                 }
                 Section("Reason (optional)") {
                     TextField("Why are you leaving?", text: $lyDo, axis: .vertical).lineLimit(2...5)
@@ -375,7 +378,7 @@ struct XoaTaiKhoanCTW: View {
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive) { Task { await gui() } }
         } message: {
-            Text("72 hours after you confirm, your account and personal data are deleted and can't be recovered. You can cancel within those 72 hours.")
+            Text("72 hours after you confirm, your account and personal data are deleted and can't be recovered. Work you shared with your team stays under an anonymous name. You can cancel within those 72 hours.")
         }
     }
 

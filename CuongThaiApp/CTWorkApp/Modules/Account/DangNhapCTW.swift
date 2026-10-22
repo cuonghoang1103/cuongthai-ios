@@ -20,11 +20,13 @@ struct DongYQuyTacCTW: View {
                 }
                 VStack(alignment: .leading, spacing: 14) {
                     Text("Community rules").font(.ctw(size: 15, weight: .semibold)).foregroundColor(AppColors.textPrimary)
-                    dong("hand.raised.fill", "No harassment, threats, hate speech or sexual content in comments, chat or files.")
-                    dong("flag.fill", "Every comment and message can be reported. Reported content is hidden for you right away and reviewed by moderators within 24 hours.")
-                    dong("person.crop.circle.badge.xmark", "You can block any user — you won't see their comments or messages anymore.")
+                    // 1.2 (build 7, audit R7): nói THẲNG "zero tolerance" + phủ bài đăng, bình luận, tin nhắn, hồ sơ.
+                    dong("exclamationmark.shield.fill", "There is zero tolerance for objectionable content and abusive users — in posts, comments, messages and profiles.")
+                    dong("hand.raised.fill", "No harassment, threats, hate speech, sexual or violent content, or spam — in posts, comments, chat and direct messages, files or profiles.")
+                    dong("flag.fill", "Every post, comment, message and profile can be reported. Reported content is hidden for you right away and reviewed by moderators within 24 hours.")
+                    dong("person.crop.circle.badge.xmark", "You can block any user — you won't see their posts, comments or messages anymore, and they can't message you.")
                     dong("sparkles", "Some workspace members can be AI agents. Their content is always labelled “AI agent” and can be reported like any other.")
-                    dong("exclamationmark.shield.fill", "Accounts that break these rules are removed.")
+                    dong("xmark.octagon.fill", "Content that breaks these rules is removed, and the users who post it are suspended or banned.")
                 }
                 .padding(Spacing.lg)
                 .ctwThe(16)

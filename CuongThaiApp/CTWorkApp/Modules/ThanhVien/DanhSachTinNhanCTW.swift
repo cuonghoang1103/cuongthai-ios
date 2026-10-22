@@ -43,6 +43,14 @@ struct DanhSachTinNhanCTW: View {
             if tim.isEmpty, !dangHoatDong.isEmpty { hangHoatDong }
             if let loi { CTWErrorBanner(text: loi) { self.loi = nil }.listRowSeparator(.hidden) }
             if tim.isEmpty { chipLoc.listRowSeparator(.hidden) }
+            // R5 (build 7): hộp thư này là Messenger CHUNG của cuongthai.com (web + app) — nói rõ phạm vi.
+            if tim.isEmpty, !kho.hoiThoai.isEmpty {
+                Text("Direct messages with your teammates and contacts on cuongthai.com.")
+                    .font(.ctw(size: 12)).foregroundColor(AppColors.textTertiary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .listRowSeparator(.hidden)
+                    .accessibilityIdentifier("dm.phamVi")
+            }
             ForEach(ds) { t in
                 NavigationLink(value: RouteChatRiengCTW(threadId: t.id)) {
                     HangHoiThoaiCTW(t: t, ten: tenHoiThoai(t), moc: t.peer.map { kho.moc($0.id, mocHoiThoai: $0.lastActiveAt, bayGio: bayGio) } ?? .an,

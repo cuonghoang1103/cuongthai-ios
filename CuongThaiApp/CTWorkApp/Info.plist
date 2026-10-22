@@ -62,7 +62,7 @@
         <string>UIInterfaceOrientationLandscapeLeft</string>
         <string>UIInterfaceOrientationLandscapeRight</string>
     </array>
-    <key>NSCameraUsageDescription</key><string>CT Work uses the camera only when you choose &quot;Take Photo&quot; to attach a picture to an issue or a chat message, or to take a new profile photo.</string>
+    <key>NSCameraUsageDescription</key><string>CT Work uses the camera only when you choose to take a photo — to attach it to an issue, a chat or direct message, a feed post, a Docs page or a test result, or to use it as your profile or cover photo.</string>
     <key>NSFaceIDUsageDescription</key><string>If you turn on Face ID lock in Account › Security, CT Work asks for Face ID when you open the app.</string>
     <key>NSSupportsLiveActivities</key><true/>
     <key>CTWNhomKeychain</key><string>$(AppIdentifierPrefix)com.cuongthai.ctwork.shared</string>
