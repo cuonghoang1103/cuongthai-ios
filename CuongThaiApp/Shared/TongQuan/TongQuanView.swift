@@ -1,10 +1,11 @@
 import SwiftUI
 
-/// Trang chủ mới: bảng điều khiển việc + lịch học, thay cho bảng tin.
+/// "Hôm nay" — bảng điều khiển việc + lịch học trong ngày (tab đầu tiên).
 ///
-/// Bảng tin KHÔNG bị bỏ — nó chuyển vào nút trên thanh tiêu đề và một thẻ
-/// trong "Đi nhanh". Xoá hẳn thì mọi màn liên quan (chi tiết bài, bình luận,
-/// thả cảm xúc) thành mã chết mà vẫn phải biên dịch.
+/// 22/10/2026 (rút gọn): Bảng tin thành tab riêng; lưới "Đi nhanh" là các
+/// tính năng NGƯỜI DÙNG GHIM (`KhoGhim`) + ô "Tất cả". Stack của màn này buộc
+/// vào `appState.duongHomNay` để link/thông báo/tìm kiếm đẩy thẳng một tính
+/// năng vào đây (iPhone).
 struct TongQuanView: View {
     @StateObject private var vm: TongQuanVM
     /// Bản thử dùng dữ liệu giả nên KHÔNG được gọi mạng: `nap()` sẽ hỏng vì
@@ -12,10 +13,14 @@ struct TongQuanView: View {
     /// trang trắng. Xem `ThuTongQuan` trong `ManXemThu`.
     private let banThu: Bool
     @EnvironmentObject private var appState: AppState
+    /// `false` ở cửa sổ phụ: dùng stack RIÊNG thay vì `appState.duongHomNay`.
+    private let dungDuongChung: Bool
+    @State private var duongRieng: [DichHomNay] = []
 
-    init() {
+    init(dungDuongChung: Bool = true) {
         _vm = StateObject(wrappedValue: TongQuanVM())
         banThu = false
+        self.dungDuongChung = dungDuongChung
     }
 
     #if DEBUG
@@ -24,12 +29,10 @@ struct TongQuanView: View {
     init(banThu vm: TongQuanVM) {
         _vm = StateObject(wrappedValue: vm)
         banThu = true
+        dungDuongChung = true
     }
     #endif
     @State private var oViecMoi = ""
-    @State private var moVo = false
-    @State private var moLich = false
-    @State private var moFeed = false
     @State private var moCon: Set<Int> = []
     @State private var monDangMo: String?
     /// `.sheet(item:)` chứ không `isPresented` + biến rời: hai state đổi
@@ -38,7 +41,6 @@ struct TongQuanView: View {
     @State private var moChat: MoChatAI?
     /// Buổi học đang mở chi tiết, mở từ thẻ điểm nhấn.
     @State private var buoiDangSua: BuoiHoc?
-    @State private var moThongBao = false
     /// Ngày đang mở hết việc trong khối "Sắp tới".
     @State private var ngayMoRong: Set<String> = []
     @FocusState private var dangGo: Bool
@@ -48,8 +50,12 @@ struct TongQuanView: View {
     @ScaledMetric(relativeTo: .title3) private var coTieuDeMuc: CGFloat = 19
     @Environment(\.accessibilityReduceMotion) private var giamChuyenDong
 
+    private var duong: Binding<[DichHomNay]> {
+        dungDuongChung ? $appState.duongHomNay : $duongRieng
+    }
+
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: duong) {
             ScrollView {
                 // Thứ tự này trả lời lần lượt bốn câu hỏi của một ngày đi
                 // học: sắp tới học gì → hôm nay phải làm gì → nhờ được ai →
@@ -82,40 +88,26 @@ struct TongQuanView: View {
                 guard !banThu else { return }
                 await vm.nap(); await vm.napLich()
             }
-            .navigationTitle(T("Tổng quan"))
+            // Tiêu đề TRÙNG nhãn tab ("Hôm nay") — bản cũ: tab "Trang chủ", màn "Tổng quan".
+            .navigationTitle(T("Hôm nay"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    HStack(spacing: Spacing.md) {
-                        // Vở viết tay. Trên iPad nó đã có mục riêng ở thanh
-                        // bên; nút này là lối vào cho iPhone và cho iPad đang
-                        // ở cửa sổ hẹp.
-                        Button { moVo = true } label: {
-                            Image(systemName: "book.closed")
-                        }
-                        .accessibilityLabel(T("Vở"))
-
-                        Button { moLich = true } label: {
-                            Image(systemName: "calendar")
-                        }
-                        .accessibilityLabel(T("Thời khoá biểu"))
-
-                        // Bảng tin vẫn ở đây — không mất, chỉ đổi chỗ.
-                        Button { moFeed = true } label: {
-                            Image(systemName: "square.stack")
-                        }
-                        .accessibilityLabel(T("Bảng tin"))
+                    Button { appState.bangGoc = .timKiem } label: {
+                        Image(systemName: "magnifyingglass")
                     }
                     .foregroundColor(AppColors.textPrimary)
+                    .accessibilityLabel(T("Tìm kiếm"))
                 }
             }
-            .navigationDestination(isPresented: $moVo) { NoiDungVoView() }
-            .navigationDestination(isPresented: $moLich) { LichTuanView(vm: vm) }
-            .navigationDestination(isPresented: $moFeed) { HomeView() }
-            // Sheet chứ không đẩy màn: `NotificationsView` tự mang nút "Đóng"
-            // (nó vốn được `HomeView` mở dạng sheet), nên đẩy vào stack thì
-            // trên cùng có HAI đường quay lại — mũi tên và "Đóng".
-            .sheet(isPresented: $moThongBao) { NotificationsView() }
+            // Vở, Thời khoá biểu… không còn nút riêng trên thanh tiêu đề: chúng
+            // là ô ghim mặc định của Đi nhanh, và mọi tính năng mở qua đây.
+            .navigationDestination(for: DichHomNay.self) { d in
+                switch d {
+                case .tinhNang(let f): ManTinhNang(tinhNang: f, vmTongQuan: vm)
+                case .tatCa: TatCaView()
+                }
+            }
             .sheet(item: $buoiDangSua) { b in
                 NavigationStack { SuaBuoiHocView(vm: vm, buoi: b) }
             }
@@ -169,7 +161,10 @@ struct TongQuanView: View {
     /// khi bỏ lưới bốn thẻ số — một huy hiệu trên đúng cái nút mở nó, thay vì
     /// một thẻ to bằng nắm tay nằm cách nút đó nửa màn hình.
     private var nutThongBao: some View {
-        Button { moThongBao = true } label: {
+        // Sheet từ GỐC (`appState.bangGoc`), không phải sheet riêng của màn này:
+        // màn đã có ba `.sheet`, thêm cái thứ tư trên cùng view là nuốt nhau (C5).
+        // `NotificationsView` tự mang nút "Đóng" nên trình bày chứ không đẩy.
+        Button { appState.bangGoc = .thongBao } label: {
             ZStack(alignment: .topTrailing) {
                 Image(systemName: "bell")
                     .font(.system(size: 18, weight: .medium))
@@ -238,7 +233,7 @@ struct TongQuanView: View {
                 phutBayGio: phut,
                 moChiTiet: { buoiDangSua = $0 },
                 moBaiHoc: { monDangMo = $0.joined(separator: ",") },
-                moLich: { moLich = true })
+                moLich: { duong.wrappedValue.append(.tinhNang(.thoiKhoaBieu)) })
         }
     }
 
@@ -354,7 +349,7 @@ struct TongQuanView: View {
                     .font(.system(size: 14, weight: .semibold).monospacedDigit())
                     .foregroundColor(AppColors.textSecondary)
                 Spacer(minLength: 0)
-                Button(T("Cả tuần")) { moLich = true }
+                Button(T("Cả tuần")) { duong.wrappedValue.append(.tinhNang(.thoiKhoaBieu)) }
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(AppColors.primary)
                     .frame(minHeight: 44)
@@ -680,59 +675,21 @@ struct TongQuanView: View {
 
     private var khoiDiNhanh: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            Text(T("Đi nhanh"))
-                .font(.system(size: coTieuDeMuc, weight: .bold))
-                .foregroundColor(AppColors.textPrimary)
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: Spacing.sm),
-                                GridItem(.flexible(), spacing: Spacing.sm)], spacing: Spacing.sm) {
-                // Huấn luyện học kỳ — AI giao việc, chấm bằng chứng, báo tỷ lệ trượt (02/10/2026).
-                NavigationLink { HuanLuyenHocKyView() } label: {
-                    theNhanh(T("Học kỳ"), T("Việc AI giao, điểm, tỷ lệ trượt"), "target", AppColors.error)
+            HStack(alignment: .firstTextBaseline) {
+                Text(T("Đi nhanh"))
+                    .font(.system(size: coTieuDeMuc, weight: .bold))
+                    .foregroundColor(AppColors.textPrimary)
+                Spacer()
+                // Sửa = sang danh mục: ghim thêm, bỏ ghim, kéo đổi thứ tự.
+                NavigationLink(value: DichHomNay.tatCa) {
+                    Text(T("Sửa"))
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundColor(AppColors.primary)
                 }
-                NavigationLink { LichTuanView(vm: vm) } label: {
-                    theNhanh(T("Thời khoá biểu"), T("Lịch tuần"), "calendar", AppColors.primary)
-                }
-                NavigationLink { HomeView() } label: {
-                    theNhanh(T("Bảng tin"), T("Bài viết, bình luận"), "square.stack", AppColors.secondary)
-                }
-                NavigationLink { TienView() } label: {
-                    theNhanh(T("Tiền nong"), T("Chi tiêu, nợ, mục tiêu"), "creditcard", AppColors.accent)
-                }
-                NavigationLink { IeltsView() } label: {
-                    theNhanh("IELTS", T("Nghe, nói, đọc, viết"), "textformat.abc", AppColors.brandPink)
-                }
-                NavigationLink { XuongVeView() } label: {
-                    theNhanh(T("Xưởng vẽ"), T("Vẽ, phác bố cục, tô màu"), "paintbrush.pointed", AppColors.secondary)
-                }
-                // Đổi TAB chứ không đẩy: CT Work có NavigationStack riêng (để
-                // thông báo đẩy mở thẳng một thẻ). iPhone ⇒ tấm phủ, iPad ⇒ mục sidebar.
-                Button { appState.selectedTab = .ctWork } label: {
-                    theNhanh("CT Work", "My work, boards, issues", "rectangle.3.group", AppColors.primary)
-                }
-                .buttonStyle(.plain)
+                .accessibilityLabel(T("Sửa mục Đi nhanh"))
             }
+            LuoiDiNhanh()
         }
-    }
-
-    private func theNhanh(_ ten: String, _ phu: String, _ bt: String, _ mau: Color) -> some View {
-        HStack(spacing: Spacing.sm) {
-            Image(systemName: bt).font(.system(size: 16)).foregroundColor(mau).frame(width: 26)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(ten).font(.system(size: 14, weight: .semibold)).foregroundColor(AppColors.textPrimary)
-                Text(phu).font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
-                    .lineLimit(2).fixedSize(horizontal: false, vertical: true)
-            }
-            Spacer(minLength: 0)
-        }
-        .padding(Spacing.md)
-        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(AppColors.backgroundCard)
-                .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .strokeBorder(AppColors.border, lineWidth: 1))
-        )
-        .contentShape(Rectangle())
     }
 }
 

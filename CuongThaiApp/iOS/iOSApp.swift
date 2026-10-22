@@ -141,11 +141,11 @@ struct CuongThaiApp: App {
                     // ⚠️ Phải xử lý TRƯỚC khi chuyển cho Google: `nhanURL`
                     // nhận mọi URL rồi tự quyết, và một ngày nào đó nó nuốt
                     // nhầm thì widget chết câm mà không ai nghĩ tới đây.
+                    // Đọc ở `HanhDongURL.doc` (Shared/TatCa/DieuHuong.swift, có
+                    // kiểm thử). `them-video`: Share Extension đã ghi link vào
+                    // nhóm ứng dụng rồi mới mở app — ở đây chỉ việc nhặt lên.
                     if url.scheme == "cuongthai" {
-                        if url.host == "tien" { appState.selectedTab = .finance }
-                        // Share Extension đã ghi link vào nhóm ứng dụng rồi
-                        // mới mở app — ở đây chỉ việc nhặt lên.
-                        if url.host == "them-video" { appState.nhatVideoDuocChiaSe() }
+                        if let h = HanhDongURL.doc(url) { appState.apDung(h) }
                         return
                     }
                     _ = GoogleSignInService.nhanURL(url)
@@ -168,7 +168,7 @@ struct CuongThaiApp: App {
                     }
                 }
         }
-        // Phím tắt ⌘1…⌘0 — xem `LenhDieuHuong`.
+        // Phím tắt ⌘1…⌘5, ⌘K, ⇧⌘A — xem `LenhDieuHuong`.
         .commands { LenhDieuHuong(appState: appState) }
 
         // CỬA SỔ PHỤ — một module tách ra cửa sổ riêng, để đặt cạnh cửa sổ
@@ -178,8 +178,12 @@ struct CuongThaiApp: App {
         // cửa sổ luôn hiện cùng một màn, và đổi bên này là bên kia nhảy theo
         // — tức là mất sạch lý do mở cửa sổ thứ hai. Module hiện ở đây đi
         // theo GIÁ TRỊ mà `openWindow` truyền vào.
-        WindowGroup(id: "cua-so-phu", for: AppState.AppTab.self) { $tab in
-            NavigationStack { ManCuaTab(tab: tab ?? .notebook) }
+        //
+        // Khoá bằng `MucBen` (tab chính / tính năng / Tất cả) từ 22/10/2026.
+        // `MucBen` vẫn giải mã được số `AppTab` cũ mà iPadOS cất lúc khôi phục
+        // cửa sổ (`MucBen.tuTabCu`) — cửa sổ Vở mở từ bản trước vẫn ra Vở.
+        WindowGroup(id: "cua-so-phu", for: MucBen.self) { $muc in
+            ManCuaSo(muc: muc ?? .tinhNang(.vo))
                 .environmentObject(appState)
                 .modelContainer(KhoSwiftData.chung)
                 .lopPhuCuocGoi()

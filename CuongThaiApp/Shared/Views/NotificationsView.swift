@@ -211,7 +211,7 @@ struct NotificationsView: View {
         switch tb.noiDen {
         case .tinNhan:
             dismiss()
-            appState.selectedTab = .messages
+            appState.selectedTab = .tinNhan
 
         case .nguoiDung(let userId):
             nguoiDangMo = userId
@@ -227,14 +227,11 @@ struct NotificationsView: View {
                 vm.loi = "Không mở được bài viết — có thể nó đã bị xoá."
             }
 
-        case .ctWork(let dich):
-            // Đóng chuông TRƯỚC rồi mới mở CT Work: iPhone mở nó bằng tấm phủ
-            // toàn màn, mà trình bày tấm phủ lúc sheet đang đóng dở thì iOS
-            // bỏ qua im lặng.
-            dismiss()
-            try? await Task.sleep(nanoseconds: 450_000_000)
-            appState.ctWorkDich = dich
-            appState.selectedTab = .ctWork
+        case .ctWork:
+            // CT Work là app RIÊNG từ 22/10/2026: mở thẳng đúng thẻ trong app
+            // CT Work (hoặc App Store nếu máy chưa cài). Chuông giữ nguyên —
+            // người dùng quay lại vẫn thấy danh sách.
+            MoCTWorkApp.mo(duongDan: tb.payload?.url)
 
         case .khongDauCa:
             // Ghi chú, tài liệu Hub, thông báo ban quản trị: app chưa có màn

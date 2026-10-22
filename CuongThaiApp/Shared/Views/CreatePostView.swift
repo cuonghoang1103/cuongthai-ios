@@ -6,7 +6,12 @@ import Kingfisher
 
 // MARK: - Create Post View
 struct CreatePostView: View {
+    /// `true` khi mở dạng bảng (nút "+" ở Bảng tin, "Tạo bài viết" ở Tôi) —
+    /// từ 22/10/2026 "Tạo" không còn là tab. Hủy/đăng xong thì ĐÓNG bảng.
+    var laBangTrinhBay = false
+
     @EnvironmentObject var appState: AppState
+    @Environment(\.dismiss) private var dong
     @StateObject private var viewModel = CreatePostViewModel()
     @State private var selectedPhotosPickerItems: [PhotosPickerItem] = []
     @FocusState private var isContentFocused: Bool
@@ -30,6 +35,7 @@ struct CreatePostView: View {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button(T("Hủy")) {
                         resetForm()
+                        if laBangTrinhBay { dong() }
                     }
                     .foregroundColor(AppColors.textSecondary)
                 }
@@ -69,6 +75,8 @@ struct CreatePostView: View {
             .onChange(of: viewModel.postCreated) { _, created in
                 if created {
                     resetForm()
+                    NotificationCenter.default.post(name: .baiVietVuaDang, object: nil)
+                    if laBangTrinhBay { Haptics.xong(); dong() }
                 }
             }
         }

@@ -57,6 +57,11 @@ targets:
     sources:
       - path: CuongThaiApp/Shared
         group: Shared
+        # CT Work là app RIÊNG từ 22/10/2026 (target CTWorkApp, App Store id
+        # 6824877696). App chính chỉ còn mục "CT Work" mở app đó / App Store
+        # (`Shared/TatCa/MoCTWorkApp.swift`) ⇒ module KHÔNG biên dịch vào đây
+        # nữa. ⚠️ Thư mục vẫn là nguồn của CTWorkApp — đừng xoá/di chuyển nó.
+        excludes: ["CTWork/**"]
       - path: CuongThaiApp/iOS
         group: iOS
       - path: CuongThaiApp/Resources
@@ -460,6 +465,29 @@ targets:
         DEVELOPMENT_TEAM: "UR32PFUQ38"
         TEST_TARGET_NAME: CTWorkApp
 
+  # Kiểm thử đơn vị của app CHÍNH (22/10/2026 — đợt rút gọn điều hướng):
+  # bảng đăng ký tính năng, ghim, đọc link `cuongthai://`, định tuyến thông báo,
+  # giải mã giá trị cửa sổ phụ cũ. Chạy: scheme CuongThaiApp › Test.
+  CuongThaiAppTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: CuongThaiApp/Tests
+    dependencies:
+      - target: CuongThaiApp
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.cuongthai.app.tests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/CuongThaiApp.app/CuongThaiApp
+        BUNDLE_LOADER: $(TEST_HOST)
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: "UR32PFUQ38"
+      configs:
+        Debug:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: $(inherited) DEBUG
+
   CuongThaiAppMac:
     type: application
     platform: macOS
@@ -467,6 +495,7 @@ targets:
     sources:
       - path: CuongThaiApp/Shared
         group: Shared
+        excludes: ["CTWork/**"]
       - path: CuongThaiApp/macOS
         group: macOS
       - path: CuongThaiApp/Resources
@@ -505,6 +534,8 @@ schemes:
       storeKitConfiguration: CuongThaiApp/Pro.storekit
     test:
       config: Debug
+      targets:
+        - CuongThaiAppTests
     profile:
       config: Release
     analyze:

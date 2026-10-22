@@ -5,6 +5,7 @@ import Kingfisher
 
 // MARK: - Courses View
 struct CoursesView: View {
+    @EnvironmentObject private var appState: AppState
     @StateObject private var viewModel = CoursesViewModel()
     @State private var searchQuery = ""
 
@@ -62,14 +63,23 @@ struct CoursesView: View {
                 .padding(Spacing.md)
             }
             .background(AppColors.backgroundPrimary)
-            .navigationTitle("Khóa học")
+            // Tiêu đề TRÙNG nhãn tab ("Học") — bản cũ: tab "Học", màn "Khóa học".
+            .navigationTitle(T("Học"))
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItemGroup(placement: .navigationBarTrailing) {
+                    // Tìm TOÀN CỤC (tính năng + khoá + bài + người) — ô tìm trên
+                    // đầu trang chỉ lọc khoá tự biên soạn.
+                    Button { appState.bangGoc = .timKiem } label: {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundColor(AppColors.textPrimary)
+                    }
+                    .accessibilityLabel(T("Tìm kiếm"))
                     NavigationLink(destination: MyCoursesView()) {
                         Image(systemName: "book.closed")
                             .foregroundColor(AppColors.textPrimary)
                     }
+                    .accessibilityLabel(T("Khoá học của tôi"))
                 }
             }
             .onAppear {
@@ -101,7 +111,7 @@ struct CoursesView: View {
             Image(systemName: "magnifyingglass")
                 .foregroundColor(AppColors.textTertiary)
 
-            TextField("Tìm kiếm khóa học", text: $searchQuery)
+            TextField(T("Tìm kiếm khoá học"), text: $searchQuery)
                 .foregroundColor(AppColors.textPrimary)
                 .onSubmit {
                     Task {
@@ -135,7 +145,7 @@ struct CoursesView: View {
 
     private var featuredCoursesSection: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            sectionHeader("Khóa học nổi bật")
+            sectionHeader(T("Khoá học nổi bật"))
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: Spacing.md) {
@@ -152,7 +162,7 @@ struct CoursesView: View {
     private var allCoursesSection: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
             HStack {
-                sectionHeader("Tất cả khóa học")
+                sectionHeader(T("Tất cả khoá học"))
 
                 Spacer()
 
@@ -209,11 +219,11 @@ struct CoursesView: View {
                 .font(.system(size: 50))
                 .foregroundColor(AppColors.textTertiary)
 
-            Text("Không có khóa học nào")
+            Text(T("Không có khoá học nào"))
                 .font(.titleMedium)
                 .foregroundColor(AppColors.textPrimary)
 
-            Text("Thử tìm kiếm với từ khóa khác")
+            Text(T("Thử tìm kiếm với từ khoá khác"))
                 .font(.bodyMedium)
                 .foregroundColor(AppColors.textSecondary)
         }
@@ -986,7 +996,7 @@ struct MyCoursesView: View {
             .padding(Spacing.md)
         }
         .background(AppColors.backgroundPrimary)
-        .navigationTitle("Khóa học của tôi")
+        .navigationTitle(T("Khoá học của tôi"))
         .onAppear {
             Task {
                 await viewModel.loadEnrolledCourses()
@@ -1000,11 +1010,11 @@ struct MyCoursesView: View {
                 .font(.system(size: 60))
                 .foregroundColor(AppColors.textTertiary)
 
-            Text("Bạn chưa ghi danh khóa học nào")
+            Text(T("Bạn chưa ghi danh khoá học nào"))
                 .font(.titleMedium)
                 .foregroundColor(AppColors.textPrimary)
 
-            Text("Đăng ký khóa học để bắt đầu học tập")
+            Text(T("Đăng ký khoá học để bắt đầu học tập"))
                 .font(.bodyMedium)
                 .foregroundColor(AppColors.textSecondary)
         }

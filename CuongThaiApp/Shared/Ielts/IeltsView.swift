@@ -7,6 +7,8 @@ import SwiftUI
 /// tự đoán nên bắt đầu từ đâu, và phần lớn sẽ bấm bừa vào bài đầu tiên.
 struct IeltsView: View {
     var coNutDong = false
+    /// `false` khi màn được ĐẨY vào một stack có sẵn (Hôm nay, Tất cả tính năng) — xem `NganXepNeuCan`.
+    var coNganXepRieng = true
 
     @StateObject private var vm = IeltsVM()
     @Environment(\.dismiss) private var dong
@@ -14,7 +16,7 @@ struct IeltsView: View {
     @State private var moDoTrinhDo = false
 
     var body: some View {
-        NavigationStack {
+        NganXepNeuCan(rieng: coNganXepRieng) {
             ScrollView {
                 VStack(spacing: Spacing.md) {
                     if vm.loTrinh == nil && vm.dangTai {

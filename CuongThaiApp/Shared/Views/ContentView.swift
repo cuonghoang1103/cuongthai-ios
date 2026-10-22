@@ -39,7 +39,13 @@ struct ContentView: View {
     @ViewBuilder
     private func cuaXemThu(_ ten: String) -> some View {
         #if DEBUG
-        ManXemThu(ten: ten)
+        // `khung…` = VỎ THẬT (MainView: thanh tab / thanh bên iPad) với Hôm nay
+        // dữ liệu giả — để soi điều hướng mà không cần đăng nhập. Xem `KhungXemThu`.
+        if ten.lowercased().hasPrefix("khung") {
+            KhungXemThu(ten: ten.lowercased())
+        } else {
+            ManXemThu(ten: ten)
+        }
         #else
         EmptyView()
         #endif
@@ -47,6 +53,10 @@ struct ContentView: View {
 }
 
 // MARK: - Main View (bố cục theo BỀ RỘNG, không theo hệ điều hành)
+//
+// 22/10/2026 — đợt "rút gọn": 5 điểm đến chính (Hôm nay · Bảng tin · Học ·
+// Tin nhắn · Tôi) + MỘT danh mục "Tất cả tính năng" (`Shared/TatCa`). Tạo bài
+// không còn là tab (nút "+" nổi ở Bảng tin), CT Work là app riêng.
 struct MainView: View {
     @EnvironmentObject var appState: AppState
     @Environment(\.scenePhase) private var scenePhase
@@ -92,6 +102,15 @@ struct MainView: View {
                 // ra đăng nhập lại.
                 Task { await appState.fetchProfile() }
             }
+            // Bảng trình bày từ GỐC: tìm kiếm ⌘K, thông báo, ghi chú, cài đặt,
+            // soạn bài. Neo vào một view nền RIÊNG (không lên `boCuc`): màn con
+            // nào cũng có `.sheet` của nó, chung một view là cái sau nuốt cái
+            // trước (CLAUDE.md C5).
+            .background(Color.clear.sheet(item: $appState.bangGoc) { b in
+                ManBangGoc(bang: b)
+            })
+            // AI Chat mở từ danh mục / tìm kiếm.
+            .moAIChat(dangMo: $appState.moAIChatGoc)
     }
 
     @ViewBuilder
@@ -108,6 +127,21 @@ struct MainView: View {
     }
 }
 
+/// Nội dung của `AppState.bangGoc`.
+struct ManBangGoc: View {
+    let bang: BangGoc
+
+    var body: some View {
+        switch bang {
+        case .timKiem: SearchView()
+        case .thongBao: NotificationsView()
+        case .notes: NotesView()
+        case .caiDat: SettingsView()
+        case .taoBai: CreatePostView(laBangTrinhBay: true)
+        }
+    }
+}
+
 // MARK: - iOS TabView (iPhone, và iPad ở cửa sổ hẹp)
 #if os(iOS)
 struct iOSTabView: View {
@@ -115,98 +149,57 @@ struct iOSTabView: View {
 
     var body: some View {
         TabView(selection: $appState.selectedTab) {
-            // Trang chủ = BẢNG ĐIỀU KHIỂN việc + lịch học, không còn là bảng
-            // tin. `HomeView` (bảng tin) vẫn sống, vào từ nút trên thanh tiêu
-            // đề của Tổng quan và một thẻ trong "Đi nhanh" — gỡ hẳn thì mọi
-            // màn liên quan (chi tiết bài, bình luận, cảm xúc) thành mã chết.
-            TongQuanView()
-                .tabItem {
-                    Label(AppState.AppTab.home.title, systemImage: AppState.AppTab.home.icon)
-                }
-                .tag(AppState.AppTab.home)
-
-            CoursesView()
-                .tabItem {
-                    Label(AppState.AppTab.learn.title, systemImage: AppState.AppTab.learn.icon)
-                }
-                .tag(AppState.AppTab.learn)
-
-            CreatePostView()
-                .tabItem {
-                    Label(AppState.AppTab.create.title, systemImage: AppState.AppTab.create.icon)
-                }
-                .tag(AppState.AppTab.create)
-
-            MessagesView()
-                .tabItem {
-                    Label(AppState.AppTab.messages.title, systemImage: AppState.AppTab.messages.icon)
-                }
-                .tag(AppState.AppTab.messages)
-                .badge(appState.unreadMessages > 0 ? appState.unreadMessages : 0)
-
-            ProfileView()
-                .tabItem {
-                    Label(AppState.AppTab.profile.title, systemImage: AppState.AppTab.profile.icon)
-                }
-                .tag(AppState.AppTab.profile)
+            ForEach(AppState.AppTab.allCases) { tab in
+                ManCuaTab(tab: tab)
+                    .tabItem { Label(tab.title, systemImage: tab.icon) }
+                    .tag(tab)
+                    .badge(tab == .tinNhan && appState.unreadMessages > 0 ? appState.unreadMessages : 0)
+            }
         }
         .tint(AppColors.primary)
-        // ⚠️ Thanh tab này KHÔNG có mục `.notebook`. Người dùng đang ở Vở
-        // trên iPad rồi kéo app vào Slide Over là rơi xuống đúng đây, và
-        // `TabView` gặp một `tag` không tồn tại thì hiện MÀN TRỐNG — không
-        // lỗi, không tab nào sáng, trông y như app chết. Kéo về Trang chủ.
-        .onAppear { neuLacTab() }
-        .onChange(of: appState.selectedTab) { _, _ in neuLacTab() }
-        .fullScreenCover(isPresented: $appState.moTienNong) { TienView(coNutDong: true) }
-        .fullScreenCover(isPresented: $appState.moIelts) { IeltsView(coNutDong: true) }
-        .fullScreenCover(isPresented: $appState.moXuongVe) { XuongVeView(coNutDong: true) }
-        .fullScreenCover(isPresented: $appState.moXuongBa) { XuongBaView(coNutDong: true) }
-        .fullScreenCover(isPresented: $appState.moCTWork) { CTWorkView(coNutDong: true) }
+        .onAppear {
+            // Vừa từ cột đôi (iPad) thu về hẹp (Slide Over/Split View) mà đang
+            // xem một tính năng ở cột chi tiết ⇒ đưa nó sang Hôm nay thay vì
+            // đánh rơi.
+            switch appState.mucBenRieng {
+            case .tinhNang(let f)? where f.cachMo == .day:
+                appState.selectedTab = .homNay
+                appState.duongHomNay = [.tinhNang(f)]
+            case .tatCa?:
+                appState.selectedTab = .homNay
+                appState.duongHomNay = [.tatCa]
+            case .some:
+                appState.mucBenRieng = nil
+            case nil:
+                break
+            }
+            nhatTinhNang()
+        }
+        .onChange(of: appState.dichCanMo) { _, _ in nhatTinhNang() }
     }
 
-    private func neuLacTab() {
-        // Hai tab KHÔNG có mặt trên thanh này. `.notebook` thì cố ý (Vở chỉ
-        // dành cho iPad màn rộng); `.finance` thì có mặt ở đây dưới dạng một
-        // TẤM PHỦ toàn màn, vì thanh tab đã đủ 5 mục và mục thứ sáu bị iOS
-        // dồn vào "More" — chôn cả một mảng xuống hai lần chạm.
-        if appState.selectedTab == .finance {
-            appState.selectedTab = .home
-            appState.moTienNong = true
-            return
-        }
-        if appState.selectedTab == .ielts {
-            appState.selectedTab = .home
-            appState.moIelts = true
-            return
-        }
-        if appState.selectedTab == .xuongVe {
-            appState.selectedTab = .home
-            appState.moXuongVe = true
-            return
-        }
-        if appState.selectedTab == .xuongBa {
-            appState.selectedTab = .home
-            appState.moXuongBa = true
-            return
-        }
-        if appState.selectedTab == .ctWork {
-            appState.selectedTab = .home
-            appState.moCTWork = true
-            return
-        }
-        if appState.selectedTab == .notebook { appState.selectedTab = .home }
+    /// Tính năng kiểu `.day` mở trên iPhone = đẩy vào stack của Hôm nay. Không
+    /// còn tấm phủ toàn màn riêng cho từng mảng (năm cờ `moTienNong…` cũ):
+    /// đẩy thì có nút quay lại, có vuốt cạnh, và đúng một thanh tiêu đề.
+    private func nhatTinhNang() {
+        guard let d = appState.dichCanMo else { return }
+        appState.dichCanMo = nil
+        appState.selectedTab = .homNay
+        appState.duongHomNay = [d]
     }
 }
 #endif
 
 // MARK: - Bố cục cột đôi (iPad màn rộng + macOS)
 //
-// Một bố cục cho CẢ HAI. Trước 16/09/2026 đây là `macOSNavigationView` khoá
-// sau `#if os(macOS)`; mở khoá rẻ hơn viết bố cục iPad thứ hai, và mọi sửa
-// chữa từ nay áp cho cả hai cùng lúc thay vì phải nhớ làm hai lần.
+// Thanh bên: ô tìm (⌘K) · năm điểm đến chính · "Công cụ" = các tính năng ĐÃ
+// GHIM (thu gọn được) + "Tất cả tính năng…". Chọn một công cụ ⇒ nó hiện ở cột
+// chi tiết, cùng chỗ với năm màn chính.
 struct BoCucCotDoi: View {
     @EnvironmentObject var appState: AppState
+    @ObservedObject private var ghim = KhoGhim.shared
     @Environment(\.openWindow) private var moCuaSo
+    @AppStorage("thanhBen.moCongCu") private var moCongCu = true
 
     /// `UIApplicationSupportsMultipleScenes` trong Info.plist. Đọc lúc chạy
     /// chứ không ghi cứng `#if os(iOS)`: iPhone cũng là iOS mà không mở được
@@ -228,37 +221,47 @@ struct BoCucCotDoi: View {
             // sidebar trên iPad KHÔNG có gì xảy ra — không lỗi, không hiệu ứng,
             // trông y như nút chết (người dùng báo 16/09/2026).
             List(selection: mucDangChon) {
-                ForEach(AppState.AppTab.allCases) { tab in
-                    NavigationLink(value: tab) {
-                        Label(tab.title, systemImage: tab.icon)
-                    }
-                    .badge(tab == .messages && appState.unreadMessages > 0
-                           ? appState.unreadMessages : 0)
-                    // Mở module ra cửa sổ RIÊNG để đặt cạnh cửa sổ chính —
-                    // Vở bên trái, bài giảng bên phải. Chỉ iPad/Mac mới có
-                    // nhiều cửa sổ; trên iPhone `openWindow` không làm gì
-                    // nên giấu mục này đi cho khỏi thành nút chết.
-                    .contextMenu {
-                        if nhieuCuaSoDuoc {
-                            Button {
-                                moCuaSo(id: "cua-so-phu", value: tab)
-                            } label: {
-                                Label(T("Mở trong cửa sổ mới"),
-                                      systemImage: "macwindow.badge.plus")
-                            }
+                Section { oTim }
+
+                Section {
+                    ForEach(AppState.AppTab.allCases) { tab in
+                        NavigationLink(value: MucBen.tab(tab)) {
+                            Label(tab.title, systemImage: tab.icon)
                         }
+                        .badge(tab == .tinNhan && appState.unreadMessages > 0
+                               ? appState.unreadMessages : 0)
+                        // Mở module ra cửa sổ RIÊNG để đặt cạnh cửa sổ chính —
+                        // Vở bên trái, bài giảng bên phải. Chỉ iPad/Mac mới có
+                        // nhiều cửa sổ; trên iPhone `openWindow` không làm gì
+                        // nên giấu mục này đi cho khỏi thành nút chết.
+                        .contextMenu { nutCuaSoMoi(.tab(tab)) }
+                        .listRowBackground(nenChon(.tab(tab)))
                     }
+                }
+
+                Section(isExpanded: $moCongCu) {
+                    ForEach(ghim.ds) { f in
+                        hangCongCu(f).listRowBackground(nenChon(.tinhNang(f)))
+                    }
+                    NavigationLink(value: MucBen.tatCa) {
+                        Label(T("Tất cả tính năng…"), systemImage: "square.grid.2x2")
+                    }
+                    .contextMenu { nutCuaSoMoi(.tatCa) }
+                    .listRowBackground(nenChon(.tatCa))
+                } header: {
+                    Text(T("Công cụ"))
                 }
             }
             .listStyle(.sidebar)
-            .frame(minWidth: 180)
+            .navigationTitle("CuongThai")
+            .navigationSplitViewColumnWidth(min: 220, ideal: 270, max: 340)
         } detail: {
             VStack(spacing: 0) {
                 // Báo NGAY trên đầu mọi màn: đang xem bản đã tải. Hiện nội
                 // dung cũ mà im lặng là để người dùng tin vào số liệu lỗi
                 // thời — tệ hơn màn trắng, vì màn trắng thì họ biết là hỏng.
                 DaiNgoaiTuyen()
-                manChiTiet(appState.selectedTab)
+                chiTiet
             }
         }
         // `.balanced` để iPad DỰNG ĐỨNG vẫn thấy cột trái. Kiểu mặc định
@@ -267,50 +270,181 @@ struct BoCucCotDoi: View {
         // việc này sinh ra để tránh.
         .navigationSplitViewStyle(.balanced)
         .tint(AppColors.primary)
+        .onAppear { nhatTinhNang() }
+        .onChange(of: appState.dichCanMo) { _, _ in nhatTinhNang() }
         #if os(macOS)
         .frame(minWidth: 900, minHeight: 600)
         #endif
     }
 
-    /// ⚠️ Cột trái phải đọc/ghi THẲNG `appState.selectedTab`, không được giữ
-    /// `@State` riêng. Thông báo đẩy (`ThongBaoDay.apDungDinhTuyen`) và màn
-    /// Thông báo điều hướng bằng cách ĐẶT `appState.selectedTab`; một bản sao
-    /// riêng nuốt trọn những lệnh đó — chạm thông báo thì không có gì xảy ra
-    /// và không có lỗi nào để thấy. Bản macOS cũ đúng là đang dính lỗi này.
-    private var mucDangChon: Binding<AppState.AppTab?> {
-        Binding(get: { appState.selectedTab },
-                set: { moi in if let moi { appState.selectedTab = moi } })
+    /// Nền của mục ĐANG CHỌN — tự vẽ: đo trên iPadOS 26 (máy mô phỏng) thì
+    /// thanh bên `List(selection:)` không tô mục chọn lúc mới mở, người dùng
+    /// không biết mình đang ở đâu.
+    @ViewBuilder
+    private func nenChon(_ muc: MucBen) -> some View {
+        if mucDangChon.wrappedValue == muc {
+            RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
+                .fill(AppColors.primary.opacity(0.14))
+        } else {
+            Color.clear
+        }
+    }
+
+    /// Trông như ô tìm, bấm là mở bảng tìm toàn cục (cùng bảng với ⌘K).
+    private var oTim: some View {
+        Button { appState.bangGoc = .timKiem } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundColor(AppColors.textTertiary)
+                Text(T("Tìm kiếm"))
+                    .foregroundColor(AppColors.textTertiary)
+                Spacer(minLength: 0)
+                Text("⌘K")
+                    .font(.caption.monospaced())
+                    .foregroundColor(AppColors.textTertiary)
+                    .padding(.horizontal, 6).padding(.vertical, 2)
+                    .background(RoundedRectangle(cornerRadius: 5).strokeBorder(AppColors.border))
+                    .accessibilityHidden(true)
+            }
+            .font(.bodyMedium)
+            .padding(.horizontal, 10).padding(.vertical, 8)
+            .background(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
+                .fill(AppColors.backgroundTertiary))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .listRowInsets(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))
+        .listRowBackground(Color.clear)
+        .accessibilityLabel(T("Tìm kiếm"))
+        .accessibilityHint(T("Tìm tính năng, người, bài viết, khoá học"))
     }
 
     @ViewBuilder
-    private func manChiTiet(_ tab: AppState.AppTab) -> some View {
-        ManCuaTab(tab: tab)
+    private func hangCongCu(_ f: TinhNang) -> some View {
+        let nhan = Label {
+            Text(f.ten)
+        } icon: {
+            Image(systemName: f.bieuTuong).foregroundStyle(f.mau)
+        }
+        Group {
+            if f.cachMo == .day {
+                NavigationLink(value: MucBen.tinhNang(f)) { nhan }
+            } else {
+                // AI Chat, Ghi chú, Cài đặt… trình bày từ gốc; CT Work mở app
+                // riêng — không phải một "trang" để chọn ở cột chi tiết.
+                Button { appState.moTinhNang(f) } label: { nhan }
+                    .foregroundColor(AppColors.textPrimary)
+            }
+        }
+        .contextMenu {
+            if f.cachMo == .day { nutCuaSoMoi(.tinhNang(f)) }
+            Button(role: .destructive) { ghim.boGhim(f) } label: {
+                Label(T("Bỏ ghim"), systemImage: "pin.slash")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func nutCuaSoMoi(_ muc: MucBen) -> some View {
+        if nhieuCuaSoDuoc {
+            Button {
+                moCuaSo(id: "cua-so-phu", value: muc)
+            } label: {
+                Label(T("Mở trong cửa sổ mới"), systemImage: "macwindow.badge.plus")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var chiTiet: some View {
+        switch appState.mucBenRieng {
+        case .tinhNang(let f)?:
+            NavigationStack { ManTinhNang(tinhNang: f) }
+                .id(f)   // đổi công cụ ⇒ stack mới, không mang màn con của công cụ trước
+        case .tatCa?:
+            NavigationStack { TatCaView() }
+        case .tab(let t)?:
+            ManCuaTab(tab: t)
+        case nil:
+            ManCuaTab(tab: appState.selectedTab)
+        }
+    }
+
+    private func nhatTinhNang() {
+        guard let d = appState.dichCanMo else { return }
+        appState.dichCanMo = nil
+        switch d {
+        case .tinhNang(let f): appState.mucBenRieng = .tinhNang(f)
+        case .tatCa: appState.mucBenRieng = .tatCa
+        }
+    }
+
+    /// ⚠️ Cột trái phải đọc/ghi THẲNG `appState`, không được giữ `@State`
+    /// riêng. Thông báo đẩy (`ThongBaoDay.apDungDinhTuyen`) và màn Thông báo
+    /// điều hướng bằng cách ĐẶT `appState.selectedTab`; một bản sao riêng nuốt
+    /// trọn những lệnh đó — chạm thông báo thì không có gì xảy ra và không có
+    /// lỗi nào để thấy. Bản macOS cũ đúng là đang dính lỗi này.
+    private var mucDangChon: Binding<MucBen?> {
+        Binding(get: { appState.mucBenRieng ?? .tab(appState.selectedTab) },
+                set: { moi in
+                    switch moi {
+                    case .tab(let t)?: appState.selectedTab = t   // didSet xoá mục riêng
+                    case .tinhNang(let f)?:
+                        if f.cachMo == .day { appState.mucBenRieng = .tinhNang(f) }
+                        else { appState.moTinhNang(f) }
+                    case .tatCa?: appState.mucBenRieng = .tatCa
+                    case nil: break
+                    }
+                })
     }
 }
 
-/// Màn của MỘT module. Tách khỏi `BoCucCotDoi` vì cửa sổ PHỤ (Stage Manager)
-/// cũng dựng đúng những màn này — để hai bản `switch` song song là kiểu thêm
-/// module mới rồi quên một bên, và bên quên sẽ im lặng hiện màn trống.
+/// Màn của MỘT điểm đến chính. Mỗi màn TỰ mang `NavigationStack` của nó.
+/// Tách khỏi `BoCucCotDoi` vì thanh tab iPhone và cửa sổ PHỤ cũng dựng đúng
+/// những màn này — hai bản `switch` song song là kiểu thêm module mới rồi
+/// quên một bên, và bên quên sẽ im lặng hiện màn trống.
 struct ManCuaTab: View {
     let tab: AppState.AppTab
+    /// Cửa sổ phụ: Hôm nay KHÔNG dùng stack chung `appState.duongHomNay`
+    /// (không thì đẩy màn ở cửa sổ này, cửa sổ kia nhảy theo).
+    var laCuaSoPhu = false
 
     @ViewBuilder
     var body: some View {
         switch tab {
-        case .home: TongQuanView()
-        case .learn: CoursesView()
-        case .create: CreatePostView()
-        case .messages:
+        case .homNay:
+            #if DEBUG
+            if KhungXemThu.dangBat { ThuTongQuan(kieu: .day) } else { TongQuanView(dungDuongChung: !laCuaSoPhu) }
+            #else
+            TongQuanView(dungDuongChung: !laCuaSoPhu)
+            #endif
+        case .bangTin: HomeView()
+        case .hoc: CoursesView()
+        case .tinNhan:
             // MessagesView carries its own NavigationStack + NavigationLink,
             // so it drives push-to-chat inside the split-view detail column.
             MessagesView()
-        case .profile: ProfileView()
-        case .notebook: VoView()
-        case .finance: TienView()
-        case .ielts: IeltsView()
-        case .xuongVe: XuongVeView()
-        case .xuongBa: XuongBaView()
-        case .ctWork: CTWorkView()
+        case .toi: ProfileView()
+        }
+    }
+}
+
+/// Màn của cửa sổ PHỤ (`WindowGroup(id: "cua-so-phu")`).
+///
+/// ⚠️ Bản cũ bọc `NavigationStack { ManCuaTab(tab) }` — mà màn của tab nào
+/// cũng tự mang stack ⇒ hai stack lồng nhau trong mọi cửa sổ phụ. Ở đây chỉ
+/// TÍNH NĂNG (dạng nội dung) mới được bọc.
+struct ManCuaSo: View {
+    let muc: MucBen
+
+    var body: some View {
+        switch muc {
+        case .tab(let t):
+            ManCuaTab(tab: t, laCuaSoPhu: true)
+        case .tinhNang(let f):
+            NavigationStack { ManTinhNang(tinhNang: f) }
+        case .tatCa:
+            NavigationStack { TatCaView() }
         }
     }
 }

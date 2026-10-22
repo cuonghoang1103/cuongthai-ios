@@ -478,16 +478,56 @@ private struct ThuLuongDangNhap: View {
     }
 }
 
+/// VỎ THẬT của app (`MainView`) cho cửa xem màn — đợt rút gọn điều hướng
+/// 22/10/2026. Hôm nay dùng dữ liệu giả (`ThuTongQuan`); màn khác cần phiên
+/// thì hiện trạng thái chưa đăng nhập — đủ để soi thanh tab, thanh bên, danh
+/// mục, tìm kiếm.
+///
+///     CT_XEM_MAN=khung | khung-bangtin | khung-hoc | khung-tinnhan | khung-toi
+///               | khung-tatca | khung-tim | khung-tim-tien | khung-tien | khung-3d
+struct KhungXemThu: View {
+    static var dangBat = false
+    let ten: String
+    @EnvironmentObject private var appState: AppState
+
+    init(ten: String) {
+        self.ten = ten
+        Self.dangBat = true
+    }
+
+    var body: some View {
+        MainView()
+            .task {
+                // `CT_XOAY=ngang` — xoay iPad sang NGANG để chụp (máy mô phỏng
+                // không có Simulator.app để bấm ⌘←).
+                if ProcessInfo.processInfo.environment["CT_XOAY"] == "ngang",
+                   let canh = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+                    canh.requestGeometryUpdate(.iOS(interfaceOrientations: .landscapeLeft)) { _ in }
+                }
+                try? await Task.sleep(nanoseconds: 600_000_000)
+                switch ten {
+                case "khung-bangtin": appState.selectedTab = .bangTin
+                case "khung-hoc": appState.selectedTab = .hoc
+                case "khung-tinnhan": appState.selectedTab = .tinNhan
+                case "khung-toi": appState.selectedTab = .toi
+                case "khung-tatca": appState.moTatCa()
+                case "khung-tim": appState.bangGoc = .timKiem
+                case "khung-tien": appState.moTinhNang(.tienNong)
+                case "khung-3d": appState.moTinhNang(.xuongBa)
+                case "khung-soan": appState.bangGoc = .taoBai
+                default: break
+                }
+            }
+    }
+}
+
 struct ThuTongQuanTab: View {
     var body: some View {
         TabView {
             ThuTongQuan(kieu: .day)
-                .tabItem { Label(AppState.AppTab.home.title,
-                                 systemImage: AppState.AppTab.home.icon) }
-            trong(AppState.AppTab.learn)
-            trong(AppState.AppTab.create)
-            trong(AppState.AppTab.messages)
-            trong(AppState.AppTab.profile)
+                .tabItem { Label(AppState.AppTab.homNay.title,
+                                 systemImage: AppState.AppTab.homNay.icon) }
+            ForEach(AppState.AppTab.allCases.dropFirst()) { trong($0) }
         }
         .tint(AppColors.primary)
     }

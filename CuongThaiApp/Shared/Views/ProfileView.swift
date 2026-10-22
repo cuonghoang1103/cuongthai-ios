@@ -48,6 +48,7 @@ struct ProfileView: View {
             VStack(spacing: 0) {
                 profileHeader
                 profileStats
+                if viewModel.isCurrentUser && userIdKhac == nil { loiTat }
                 profileActions
                 contentTabs
                 noiDungTheoTab
@@ -92,7 +93,9 @@ struct ProfileView: View {
                 than
             }
             .background(AppColors.backgroundPrimary)
-            .navigationTitle(T("Hồ sơ"))
+            // Hồ sơ CỦA MÌNH = tab "Tôi" ⇒ tiêu đề trùng nhãn tab. Hồ sơ người
+            // khác vẫn là "Hồ sơ".
+            .navigationTitle(userIdKhac == nil ? T("Tôi") : T("Hồ sơ"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -512,6 +515,47 @@ struct ProfileView: View {
         return (QuanLyNgonNguApp.shared.ngonNgu == .anh ? "Joined " : "Tham gia ") + ra.string(from: d)
     }
 
+    /// Lối tắt của tab Tôi (22/10/2026): soạn bài (thay tab "Tạo" cũ) và danh
+    /// mục mọi tính năng.
+    private var loiTat: some View {
+        HStack(spacing: Spacing.sm) {
+            Button { appState.bangGoc = .taoBai } label: {
+                theLoiTat(T("Tạo bài viết"), "square.and.pencil")
+            }
+            .buttonStyle(.nhan)
+            NavigationLink { TatCaView() } label: {
+                theLoiTat(T("Tất cả tính năng"), "square.grid.2x2")
+            }
+            .buttonStyle(.nhan)
+        }
+        .padding(.horizontal, Spacing.md)
+        .padding(.top, Spacing.sm)
+    }
+
+    private func theLoiTat(_ ten: String, _ bieuTuong: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: bieuTuong)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundColor(AppColors.primary)
+            Text(ten)
+                .font(.subheadline.weight(.semibold))
+                .foregroundColor(AppColors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
+            Spacer(minLength: 0)
+            Image(systemName: "chevron.right")
+                .font(.caption.weight(.semibold))
+                .foregroundColor(AppColors.textTertiary)
+        }
+        .padding(.horizontal, 12)
+        .frame(maxWidth: .infinity, minHeight: 48)
+        .background(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
+            .fill(AppColors.backgroundCard)
+            .overlay(RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
+                .strokeBorder(AppColors.border, lineWidth: 1)))
+        .contentShape(Rectangle())
+    }
+
     private var profileActions: some View {
         HStack(spacing: Spacing.sm) {
             actionButton(icon: "square.grid.2x2", title: T("Bài viết"), isActive: viewModel.selectedTab == .posts) {
@@ -731,7 +775,7 @@ struct ProfileView: View {
 
             if viewModel.isCurrentUser {
                 Button {
-                    appState.selectedTab = .create
+                    appState.bangGoc = .taoBai
                 } label: {
                     Text(T("Tạo bài viết"))
                         .primaryButtonStyle()

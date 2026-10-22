@@ -38,7 +38,10 @@ struct NgonNguView: View {
                         // NHẤT. Giữ thẻ lại chứ không giấu đi: ai quen
                         // đường cũ vẫn tới đúng chỗ.
                         if laTiengAnh(n) {
-                            Button { appState.selectedTab = .ielts } label: {
+                            // Đẩy IELTS vào CHÍNH stack này (dạng nội dung, không
+                            // stack riêng) — bản cũ đổi sang "tab" IELTS, mà từ
+                            // 22/10/2026 IELTS là một tính năng, không phải tab.
+                            NavigationLink { IeltsView(coNganXepRieng: false) } label: {
                                 TheNgonNgu(n: n)
                             }
                             .buttonStyle(.plain)

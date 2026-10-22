@@ -62,86 +62,30 @@ final class ThongBaoDay: NSObject, ObservableObject, UNUserNotificationCenterDel
     /// Người dùng thấy "chạm thông báo thì app không mở, vào lại bằng icon
     /// thì đứng ở Trang chủ" — vì app chết trước khi kịp vẽ gì.
     ///
-    /// Luật: trong callback CHỈ ghi hai biến thường dưới đây (không ai quan
+    /// Luật: trong callback CHỈ ghi MỘT biến thường dưới đây (không ai quan
     /// sát ⇒ không SwiftUI ⇒ không UIKit). Việc đổi tab dời sang
     /// `apDungDinhTuyen()`, gọi từ ba chỗ đều đã an toàn:
-    ///   • `.task` của iOSTabView        — mở nguội từ thông báo
+    ///   • `.task` của MainView          — mở nguội từ thông báo
     ///   • `scenePhase == .active`       — app từ nền quay lại
     ///   • Task trễ 150ms trong callback — chạm banner khi app ĐANG mở
     ///     (không có chuyển scene nào sắp xảy ra nên hai móc trên im lặng)
-    @MainActor private static var canVaoTabTinNhan = false
-    @MainActor private static var hoiThoaiCho: Int?
-    /// Chạm một thông báo mạng xã hội (bình luận, cảm xúc, kết bạn…) ⇒ mở
-    /// chuông thay vì tab Tin nhắn.
-    @MainActor private static var canMoChuong = false
+    ///
+    /// Đích đã CẤT, chờ áp. Một cú chạm = một đích; chạm cái sau đè cái trước.
+    @MainActor private static var choApDung: DinhTuyenDay?
 
-    @MainActor static func catDinhTuyen(threadId: Int?) {
-        canVaoTabTinNhan = true
-        hoiThoaiCho = threadId
-        NhatKy.thongBao.info("cất định tuyến — hội thoại \(threadId.map(String.init) ?? "(không rõ)")")
-    }
-
-    @MainActor static func catDinhTuyenChuong() {
-        canMoChuong = true
-        NhatKy.thongBao.info("cất định tuyến — mở chuông")
-    }
-
-    /// Thông báo của mảng Tiền nong (nhắc nợ 8h/12h/19h, chốt chi tiêu 20h).
-    @MainActor private static var canMoTienNong = false
-    @MainActor private static var canGhiChiNgay = false
-
-    @MainActor static func catDinhTuyenTienNong(ghiChiNgay: Bool) {
-        canMoTienNong = true
-        canGhiChiNgay = ghiChiNgay
-        NhatKy.thongBao.info("cất định tuyến — Tiền nong (ghi chi ngay: \(ghiChiNgay))")
-    }
-
-    /// Thông báo CT Work (`kieu` = WORK_*): mở thẳng thẻ trong module CT Work.
-    @MainActor private static var canMoCTWork = false
-    @MainActor private static var ctWorkDichCho: CTWDich?
-
-    @MainActor static func catDinhTuyenCTWork(duongDan: String?) {
-        canMoCTWork = true
-        ctWorkDichCho = CTWDich.tuDuongDan(duongDan)
-        NhatKy.thongBao.info("cất định tuyến — CT Work \(duongDan ?? "(không có đường dẫn)")")
+    @MainActor static func catDinhTuyen(_ d: DinhTuyenDay) {
+        choApDung = d
+        NhatKy.thongBao.info("cất định tuyến — \(String(describing: d))")
     }
 
     /// Idempotent: áp xong tự xoá, ba móc có gọi chồng cũng chỉ áp một lần.
+    /// Bảng đổi đích → trạng thái nằm ở `AppState.apDung(_:)` (một chỗ, có
+    /// kiểm thử `DieuHuongTests`).
     @MainActor static func apDungDinhTuyen() {
-        if canMoCTWork {
-            canMoCTWork = false
-            let d = ctWorkDichCho
-            ctWorkDichCho = nil
-            NhatKy.thongBao.info("ÁP định tuyến — mở CT Work")
-            // Cùng cách với `.finance`: màn rộng là mục sidebar, iPhone thì
-            // `neuLacTab()` đổi thành tấm phủ. `CTWorkView` đọc `ctWorkDich`.
-            AppState.shared.ctWorkDich = d
-            AppState.shared.selectedTab = .ctWork
-        }
-        if canMoChuong {
-            canMoChuong = false
-            NhatKy.thongBao.info("ÁP định tuyến — mở chuông")
-            AppState.shared.selectedTab = .home
-            AppState.shared.moChuongThongBao = true
-        }
-        if canMoTienNong {
-            canMoTienNong = false
-            let ghiNgay = canGhiChiNgay
-            canGhiChiNgay = false
-            NhatKy.thongBao.info("ÁP định tuyến — mở Tiền nong")
-            // Trên bố cục cột đôi (iPad rộng) `.finance` là một mục sidebar
-            // thật; trên iPhone `iOSTabView.neuLacTab()` bắt lấy nó và đổi
-            // sang tấm phủ. Một dòng này đúng cho cả hai.
-            AppState.shared.selectedTab = .finance
-            AppState.shared.ghiChiNgaySauKhiMoTien = ghiNgay
-        }
-        guard canVaoTabTinNhan else { return }
-        canVaoTabTinNhan = false
-        let tid = hoiThoaiCho
-        hoiThoaiCho = nil
-        NhatKy.thongBao.info("ÁP định tuyến — mở tab Tin nhắn, hội thoại \(tid.map(String.init) ?? "(không)")")
-        AppState.shared.selectedTab = .messages
-        if let tid { AppState.shared.hoiThoaiCanMo = tid }
+        guard let d = choApDung else { return }
+        choApDung = nil
+        NhatKy.thongBao.info("ÁP định tuyến — \(String(describing: d))")
+        AppState.shared.apDung(d)
     }
 
     func khoiDong() {
@@ -256,34 +200,18 @@ final class ThongBaoDay: NSObject, ObservableObject, UNUserNotificationCenterDel
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
         let info = response.notification.request.content.userInfo
-        // `threadId` có thể về dạng Int, NSNumber hoặc chuỗi tuỳ đường đi.
-        let tid = (info["threadId"] as? Int)
-            ?? (info["threadId"] as? NSNumber)?.intValue
-            ?? Int((info["threadId"] as? String) ?? "")
+        // Phân loại NGAY (thuần dữ liệu) — `userInfo` không Sendable nên không
+        // mang nó qua ranh giới luồng.
+        let dich = DinhTuyenDay.phanLoai(info)
         let loai = info["loai"] as? String
-        let kieu = info["kieu"] as? String
-        let duongDan = info["duongDan"] as? String
         // Về luồng CHÍNH rồi mới làm gì và mới gọi completion — đây là toàn
         // bộ bản vá. `main.async` chứ không gọi thẳng: tách hẳn khỏi lượt
         // giao dịch CATransaction mà UIKit đang giữ khi gọi mình.
         DispatchQueue.main.async {
             MainActor.assumeIsolated {
-                NhatKy.thongBao.info("didReceive CHẠY — loai=\(loai ?? "(không có)") · threadId=\(tid.map(String.init) ?? "(không đọc được)")")
-                let man = info["man"] as? String
-                if kieu?.hasPrefix("WORK_") == true {
-                    // Thông báo CT Work cũng mang `loai: "xa-hoi"` — phải bắt
-                    // TRƯỚC nhánh chuông, không thì nó chỉ mở chuông.
-                    Self.catDinhTuyenCTWork(duongDan: duongDan)
-                } else if man?.hasPrefix("finance") == true {
-                    Self.catDinhTuyenTienNong(ghiChiNgay: (info["hoiChiTieu"] as? Bool) == true
-                                              || (info["hoiChiTieu"] as? NSNumber)?.boolValue == true)
-                } else if loai == "xa-hoi" {
-                    Self.catDinhTuyenChuong()
-                } else if loai == "tin-nhan" || tid != nil {
-                    // CHỈ CẤT — đổi tab dời sang `apDungDinhTuyen`, chạy khi
-                    // scene đã active.
-                    Self.catDinhTuyen(threadId: tid)
-                }
+                NhatKy.thongBao.info("didReceive CHẠY — loai=\(loai ?? "(không có)") · đích=\(dich.map { String(describing: $0) } ?? "(không)")")
+                // CHỈ CẤT — đổi tab dời sang `apDungDinhTuyen`, chạy khi scene đã active.
+                if let dich { Self.catDinhTuyen(dich) }
                 #if canImport(UIKit)
                 // Chạm banner khi app ĐANG mở: scene không đổi trạng thái nên
                 // các móc kia im lặng — tự áp sau khi mọi thứ đã yên. Đặt

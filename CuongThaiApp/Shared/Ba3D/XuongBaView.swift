@@ -15,6 +15,8 @@ import SceneKit
 /// nó ghép khối thì dùng đúng việc nó làm được.
 struct XuongBaView: View {
     var coNutDong = false
+    /// `false` khi màn được ĐẨY vào một stack có sẵn (Hôm nay, Tất cả tính năng) — xem `NganXepNeuCan`.
+    var coNganXepRieng = true
 
     @StateObject private var kho = KhoCanhBa.chung
     @Environment(\.dismiss) private var dong
@@ -23,7 +25,7 @@ struct XuongBaView: View {
     @State private var hoiXoa: CanhBa?
 
     var body: some View {
-        NavigationStack {
+        NganXepNeuCan(rieng: coNganXepRieng) {
             ScrollView {
                 VStack(alignment: .leading, spacing: Spacing.md) {
                     theGioiHan

@@ -10,33 +10,24 @@ import SwiftUI
 /// iPadOS gom phím tắt để hiện ra khi giữ ⌘, và nó sống bất kể đang mở màn
 /// nào. Rải `.keyboardShortcut` vào nút trong màn thì phím chỉ ăn khi cái nút
 /// đó đang nằm trên cây hiển thị.
+///
+/// 22/10/2026 (rút gọn): ⌘1…⌘5 = năm điểm đến chính · ⌘K = tìm kiếm toàn cục
+/// (tính năng + người + bài + khoá) · ⇧⌘A = Tất cả tính năng. Tính năng lẻ
+/// không còn phím riêng — ⌘K rồi gõ hai chữ nhanh hơn nhớ mười một tổ hợp.
 struct LenhDieuHuong: Commands {
     @ObservedObject var appState: AppState
 
     var body: some Commands {
         CommandMenu(T("Đi tới")) {
-            ForEach(AppState.AppTab.allCases) { tab in
+            ForEach(Array(AppState.AppTab.allCases.enumerated()), id: \.element) { i, tab in
                 Button(tab.title) { appState.selectedTab = tab }
-                    .keyboardShortcut(Self.phim(tab), modifiers: Self.phimPhu(tab))
+                    .keyboardShortcut(KeyEquivalent(Character(String(i + 1))), modifiers: .command)
             }
+            Divider()
+            Button(T("Tìm kiếm…")) { appState.bangGoc = .timKiem }
+                .keyboardShortcut("k", modifiers: .command)
+            Button(T("Tất cả tính năng")) { appState.moTatCa() }
+                .keyboardShortcut("a", modifiers: [.command, .shift])
         }
-    }
-
-    /// ⌘1…⌘9 rồi ⌘0 cho mục thứ MƯỜI — đúng nếp Safari/Finder/Chrome đã dùng
-    /// hàng chục năm, nên không ai phải học lại.
-    ///
-    /// ⚠️ Quá 10 mục thì phải nghĩ lại cách gán, không được lặng lẽ để mấy
-    /// mục cuối không có phím: người dùng đếm tới mục thứ 11 rồi bấm ⌘1 và
-    /// nhảy về đầu, không hiểu vì sao.
-    private static func phim(_ t: AppState.AppTab) -> KeyEquivalent {
-        let i = t.rawValue
-        // Mục thứ 11 trở đi: ⌥⌘1, ⌥⌘2… — đếm lại từ 1 với thêm phím ⌥,
-        // không lặng lẽ trùng ⌘0 của mục thứ mười.
-        if i >= 10 { return KeyEquivalent(Character(String(i - 9))) }
-        return KeyEquivalent(Character(i < 9 ? String(i + 1) : "0"))
-    }
-
-    private static func phimPhu(_ t: AppState.AppTab) -> EventModifiers {
-        t.rawValue >= 10 ? [.command, .option] : .command
     }
 }

@@ -16,6 +16,8 @@ import PencilKit
 /// phác nhanh được. Một bản thiết kế thật luôn cần cả hai.
 struct XuongVeView: View {
     var coNutDong = false
+    /// `false` khi màn được ĐẨY vào một stack có sẵn (Hôm nay, Tất cả tính năng) — xem `NganXepNeuCan`.
+    var coNganXepRieng = true
 
     @StateObject private var kho = KhoBanVe.chung
     @Environment(\.dismiss) private var dong
@@ -25,7 +27,7 @@ struct XuongVeView: View {
     @State private var hoiXoa: BanVe?
 
     var body: some View {
-        NavigationStack {
+        NganXepNeuCan(rieng: coNganXepRieng) {
             Group {
                 if kho.danhSach.isEmpty { khungTrong } else { luoi }
             }

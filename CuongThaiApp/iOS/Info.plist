@@ -111,6 +111,14 @@
             </array>
         </dict>
     </array>
+	<!-- Hỏi "máy đã cài app CT Work riêng chưa" (`canOpenURL("ctwork://")`)
+	     — 22/10/2026, CT Work tách khỏi app chính. Thiếu khoá này thì
+	     `canOpenURL` LUÔN trả false cho lược đồ lạ, kể cả khi app đã cài, và
+	     mục CT Work lúc nào cũng mở App Store. -->
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>ctwork</string>
+	</array>
 	<!-- Cho thư mục Documents của app hiện trong Files › Trên iPad tôi.
 	     Lý do: 18/09/2026 người dùng cần đưa 12 PDF giáo trình vào vở, mà
 	     iCloud Drive của họ ĐẦY (`Quota exceeded`) nên đường mây tắc. Bật hai

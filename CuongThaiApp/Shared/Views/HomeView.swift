@@ -89,7 +89,7 @@ struct HomeView: View {
     // One `.sheet(item:)` rather than two `.sheet(isPresented:)` — SwiftUI
     // only honours the last presentation modifier attached to a view.
     enum QuickSheet: String, Identifiable {
-        case search, notes, notifications
+        case notifications
         var id: String { rawValue }
     }
     @State private var tabDangChon: TabTrangChu = .tatCa
@@ -165,12 +165,22 @@ struct HomeView: View {
                     }
                 }
             }
+            // Soạn bài: "Tạo" không còn là một tab (22/10/2026) — nút nổi ở đây
+            // là lối chính, "Tạo bài viết" ở Tôi là lối phụ. Trình bày từ GỐC
+            // (`appState.bangGoc`) nên không giành chỗ `.sheet` của màn này.
+            .overlay(alignment: .bottomTrailing) {
+                if tabDangChon != .hocTap { nutSoanBai }
+            }
             // ⚠️ Tiêu đề để TRỐNG. Trước đây vừa đặt `navigationTitle`
             // ("CuongThai" hiện ở GIỮA) vừa có chữ "CuongThai" ở bên TRÁI —
             // hai cái cùng tên, và cái bên trái bị tiêu đề giữa cộng ba nút
             // bên phải ép hết chỗ nên cắt thành "C…". Facebook cũng chỉ có
             // MỘT chữ, nằm bên trái.
-            .navigationTitle("")
+            //
+            // 22/10/2026: tiêu đề "Bảng tin" ở GIỮA (trùng nhãn tab), logo bên
+            // trái chỉ còn DẤU HIỆU (không chữ) và bên phải còn ba nút — đủ chỗ,
+            // không lặp lại hai chữ cùng tên như bản cũ.
+            .navigationTitle(T("Bảng tin"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -183,7 +193,7 @@ struct HomeView: View {
                     // lại và KHÔNG BAO GIỜ cuộn. Bỏ hẳn — một cái đo mong manh
                     // để tách hai hành vi mà người dùng muốn cả hai thì chỉ tổ
                     // thêm chỗ hỏng.
-                    LogoCuongThai(canh: 27) {
+                    LogoCuongThai(canh: 27, coChu: false) {
                         veDau = true
                         Task { await vm.refresh(type: tabDangChon.loaiAPI) }
                     }
@@ -192,9 +202,10 @@ struct HomeView: View {
                     HStack(spacing: Spacing.md) {
                         // Presented as sheets, not pushed: both views carry
                         // their own NavigationStack.
-                        Button { quickSheet = .search } label: {
+                        Button { appState.bangGoc = .timKiem } label: {
                             Image(systemName: "magnifyingglass")
                         }
+                        .accessibilityLabel(T("Tìm kiếm"))
                         Button { quickSheet = .notifications } label: {
                             // Huy hiệu vẽ chồng thay vì dùng `.badge`:
                             // `.badge` chỉ có tác dụng trên tab và List.
@@ -213,13 +224,14 @@ struct HomeView: View {
                                     }
                                 }
                         }
+                        .accessibilityLabel(T("Thông báo"))
                         Button { moAI = true } label: {
                             Image(systemName: "sparkles")
                                 .foregroundStyle(AppColors.brandGradient)
                         }
-                        Button { quickSheet = .notes } label: {
-                            Image(systemName: "note.text")
-                        }
+                        .accessibilityLabel("AI Chat")
+                        // Ghi chú chuyển vào "Tất cả tính năng" (ghim được) —
+                        // nhường chỗ cho tiêu đề.
                     }
                     .foregroundColor(AppColors.textPrimary)
                 }
@@ -234,8 +246,6 @@ struct HomeView: View {
         }
         .sheet(item: $quickSheet) { sheet in
             switch sheet {
-            case .search: SearchView()
-            case .notes: NotesView()
             case .notifications: NotificationsView()
             }
         }
@@ -258,6 +268,28 @@ struct HomeView: View {
             await vm.loadFeed(type: tabDangChon.loaiAPI)
             await vm.taiSoBai()
         }
+        // Vừa đăng bài (bảng soạn trình bày từ gốc) ⇒ tải lại để thấy bài mình.
+        .onReceive(NotificationCenter.default.publisher(for: .baiVietVuaDang)) { _ in
+            Task { await vm.refresh(type: tabDangChon.loaiAPI); await vm.taiSoBai() }
+        }
+    }
+
+    /// Nút "+" nổi — soạn bài viết mới.
+    private var nutSoanBai: some View {
+        Button { appState.bangGoc = .taoBai } label: {
+            Image(systemName: "plus")
+                .font(.system(size: 22, weight: .bold))
+                .foregroundColor(.white)
+                .frame(width: 56, height: 56)
+                .background(Circle().fill(AppColors.brandGradient))
+                .shadow(color: AppColors.primary.opacity(0.35), radius: 12, x: 0, y: 6)
+                .contentShape(Circle())
+        }
+        .buttonStyle(.nhan)
+        .padding(.trailing, Spacing.md)
+        .padding(.bottom, Spacing.md)
+        .accessibilityLabel(T("Tạo bài viết"))
+        .keyboardShortcut("n", modifiers: .command)
     }
 
     private var filterBar: some View {

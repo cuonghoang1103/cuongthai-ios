@@ -186,6 +186,13 @@ struct SearchView: View {
     @EnvironmentObject var appState: AppState
     @StateObject private var vm = SearchViewModel()
     @FocusState private var dangGo: Bool
+    @Environment(\.dismiss) private var dong
+    /// Danh sách tính năng khớp đang mở hết (mặc định chỉ hiện vài mục đầu).
+    @State private var moHetTinhNang = false
+
+    /// Tính năng khớp từ khoá — tìm NGAY trong máy, không chờ mạng, nên gõ một
+    /// chữ đã thấy (máy chủ cần ≥ 2 ký tự).
+    private var tinhNangKhop: [TinhNang] { TinhNang.tim(vm.tuKhoa) }
 
     var body: some View {
         NavigationStack {
@@ -193,12 +200,90 @@ struct SearchView: View {
                 oTim
                 hangChip
                 Divider().overlay(AppColors.divider)
+                // 22/10/2026 (⌘K toàn cục): TÍNH NĂNG đứng trên cùng — mở một
+                // màn là việc người ta tìm nhiều nhất, và nó không tốn vòng mạng.
+                let khop = tinhNangKhop
+                if !khop.isEmpty { khoiTinhNang(khop) }
                 noiDung
             }
             .background(AppColors.backgroundPrimary)
             .navigationTitle(T("Tìm kiếm"))
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(T("Đóng")) { dong() }
+                }
+            }
+            .onChange(of: vm.tuKhoa) { _, _ in moHetTinhNang = false }
+            .task {
+                // Mở bằng ⌘K là để GÕ — bàn phím lên luôn. Chờ bảng trượt xong,
+                // đặt focus giữa lúc trình bày thì iOS bỏ qua.
+                try? await Task.sleep(nanoseconds: 350_000_000)
+                #if DEBUG
+                // Cửa xem màn: điền sẵn từ khoá để chụp kết quả (`CT_TIM=tien`).
+                if let q = ProcessInfo.processInfo.environment["CT_TIM"], !q.isEmpty {
+                    vm.tuKhoa = q
+                    return
+                }
+                #endif
+                dangGo = true
+            }
         }
+    }
+
+    // ── Kết quả TÍNH NĂNG (trong máy) ────────────────────────────
+    private func khoiTinhNang(_ ds: [TinhNang]) -> some View {
+        let toiDa = 4
+        let hien = moHetTinhNang ? ds : Array(ds.prefix(toiDa))
+        return VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                tieuDeNhom(T("Tính năng"), ds.count)
+                if ds.count > toiDa {
+                    Button(moHetTinhNang ? T("Thu gọn") : T("Xem tất cả")) {
+                        withAnimation(.snappy) { moHetTinhNang.toggle() }
+                    }
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(AppColors.primary)
+                    .padding(.top, Spacing.sm)
+                }
+            }
+            ForEach(hien) { f in
+                Button { chon(f) } label: { hangTinhNang(f) }
+                    .buttonStyle(.nhan)
+            }
+        }
+        .padding(.horizontal, Spacing.md)
+        .padding(.bottom, Spacing.sm)
+    }
+
+    private func hangTinhNang(_ f: TinhNang) -> some View {
+        HStack(spacing: Spacing.md) {
+            OBieuTuongTinhNang(tinhNang: f, canh: 36)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(f.ten).font(.system(size: 14.5, weight: .semibold))
+                    .foregroundColor(AppColors.textPrimary).lineLimit(1)
+                Text(f.moTa).font(.system(size: 12))
+                    .foregroundColor(AppColors.textSecondary).lineLimit(1)
+            }
+            Spacer(minLength: 0)
+            Image(systemName: f.cachMo == .ngoai ? "arrow.up.forward.app" : "chevron.right")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundColor(AppColors.textTertiary)
+        }
+        .padding(.horizontal, Spacing.md).padding(.vertical, 10)
+        .background(RoundedRectangle(cornerRadius: CornerRadius.medium)
+            .fill(AppColors.backgroundCard))
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+        .accessibilityHint(T("Mở tính năng"))
+    }
+
+    /// Đóng bảng tìm TRƯỚC rồi mới mở — đẩy/trình bày lúc bảng còn đang
+    /// trượt xuống thì UIKit bỏ qua im lặng (`sauKhiDong` đợi một nhịp).
+    private func chon(_ f: TinhNang) {
+        dangGo = false
+        dong()
+        appState.moTinhNang(f, sauKhiDong: true)
     }
 
     // ── Ô tìm: nằm NGAY dưới tiêu đề ─────────────────────────────
@@ -208,7 +293,7 @@ struct SearchView: View {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundColor(AppColors.textTertiary)
-                TextField(T("Tìm người, bài viết, khoá học, nhạc…"), text: $vm.tuKhoa)
+                TextField(T("Tìm tính năng, người, bài viết, khoá học…"), text: $vm.tuKhoa)
                     .font(.system(size: 15))
                     .textFieldStyle(.plain)
                     .autocorrectionDisabled()
@@ -380,6 +465,16 @@ struct SearchView: View {
                     Text(T("TÌM ĐƯỢC GÌ Ở ĐÂY"))
                         .font(.system(size: 11, weight: .heavy)).tracking(1)
                         .foregroundColor(AppColors.textTertiary)
+                    HStack(spacing: 10) {
+                        Image(systemName: "square.grid.2x2")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(AppColors.primary)
+                            .frame(width: 22)
+                        Text(T("Tính năng")).font(.system(size: 14))
+                            .foregroundColor(AppColors.textSecondary)
+                        Spacer(minLength: 0)
+                    }
+                    .padding(.vertical, 6)
                     ForEach(LoaiTimKiem.allCases.dropFirst()) { l in
                         HStack(spacing: 10) {
                             Image(systemName: l.bieuTuong)
@@ -392,7 +487,7 @@ struct SearchView: View {
                         }
                         .padding(.vertical, 6)
                     }
-                    Text(T("Gõ ít nhất 2 ký tự để bắt đầu."))
+                    Text(T("Tính năng hiện ngay khi gõ; người, bài viết, khoá học cần ít nhất 2 ký tự."))
                         .font(.system(size: 12))
                         .foregroundColor(AppColors.textTertiary)
                         .padding(.top, 2)

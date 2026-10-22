@@ -10,6 +10,8 @@ struct TienView: View {
     /// `true` khi màn này được mở dạng tấm phủ (iPhone) — lúc đó phải có nút
     /// Đóng, vì tấm phủ toàn màn không có cạnh nào để vuốt ra.
     var coNutDong = false
+    /// `false` khi màn được ĐẨY vào một stack có sẵn (Hôm nay, Tất cả tính năng) — xem `NganXepNeuCan`.
+    var coNganXepRieng = true
 
     @StateObject private var vm = TienVM()
     @Environment(\.dismiss) private var dong
@@ -22,7 +24,7 @@ struct TienView: View {
     @Environment(\.horizontalSizeClass) private var beRong
 
     var body: some View {
-        NavigationStack {
+        NganXepNeuCan(rieng: coNganXepRieng) {
             ScrollView {
                 VStack(spacing: Spacing.md) {
                     ThanhChonThang(thang: vm.thang) { b in Task { await vm.doiThang(b) } }
