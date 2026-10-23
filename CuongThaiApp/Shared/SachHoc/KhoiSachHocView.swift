@@ -30,6 +30,82 @@ extension View {
     func theKhoiSH(vien: Color = AppColors.border, nen: Color = AppColors.backgroundCard) -> some View {
         modifier(TheKhoiSH(vien: vien, nen: nen))
     }
+    /// Một LÁT của thẻ khối — xem `LatSH`.
+    func latTheSH(tren: Bool = false, duoi: Bool = false, vien: Color = AppColors.border, nen: Color = AppColors.backgroundCard) -> some View {
+        modifier(LatTheSH(tren: tren, duoi: duoi, vien: vien, nen: nen))
+    }
+}
+
+// MARK: - Khối "lát" (dựng dần theo hàng)
+
+private struct LatKhoiKey: EnvironmentKey { static let defaultValue = false }
+private struct RongNoiDungKey: EnvironmentKey { static let defaultValue: CGFloat = 0 }
+extension EnvironmentValues {
+    /// true ⇒ khối đang là con TRỰC TIẾP của LazyVStack của màn bài: khối lớn được trả nhiều phần tử.
+    var latKhoiSH: Bool {
+        get { self[LatKhoiKey.self] }
+        set { self[LatKhoiKey.self] = newValue }
+    }
+    /// Bề ngang cột nội dung của màn bài (0 = chưa biết) — bảng chia cột ngay lượt dựng đầu.
+    var rongNoiDungSH: CGFloat {
+        get { self[RongNoiDungKey.self] }
+        set { self[RongNoiDungKey.self] = newValue }
+    }
+}
+
+/// Khối LỚN cắt thành nhiều phần tử: con trực tiếp của LazyVStack (màn bài) ⇒ trả nguyên danh sách,
+/// mỗi hàng một phần tử — LazyVStack dựng dần khi cuộn tới thay vì cả khối trong MỘT khung hình
+/// (đo 23/10: khối viết 10 hàng PencilKit ~400 ms, bảng 26 hàng ~75 ms dựng một lượt ⇒ giật).
+/// Ở chỗ khác (khung ngữ pháp, sheet) ⇒ gom vào VStack(spacing: 0): nhìn y hệt.
+/// Khoảng cách giữa các hàng phải nằm TRONG hàng (padding) — LazyVStack của màn bài có spacing 0.
+struct LatSH<C: View>: View {
+    @Environment(\.latKhoiSH) private var lat
+    @ViewBuilder var noiDung: C
+
+    var body: some View {
+        if lat {
+            // Không để cờ lọt xuống khối lồng bên trong (sheet, thẻ chữ Hán…).
+            noiDung.environment(\.latKhoiSH, false)
+        } else {
+            VStack(alignment: .leading, spacing: 0) { noiDung }
+        }
+    }
+}
+
+/// Lát của `TheKhoiSH`: các lát xếp sát nhau nhìn liền MỘT thẻ (bo góc + đệm 14 chỉ ở lát đầu/cuối).
+struct LatTheSH: ViewModifier {
+    var tren = false
+    var duoi = false
+    var vien: Color = AppColors.border
+    var nen: Color = AppColors.backgroundCard
+
+    func body(content: Content) -> some View {
+        content
+            .padding(.horizontal, 14)
+            .padding(.top, tren ? 14 : 0)
+            .padding(.bottom, duoi ? 14 : 0)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(KhungLatSH(tren: tren, duoi: duoi, bo: 14, nen: nen, vien: vien))
+    }
+}
+
+/// Nền + viền của một lát: vẽ nguyên hình bo góc rồi kéo dài quá mép không phải đầu/cuối và CẮT đi —
+/// lát giữa chỉ còn hai cạnh dọc, lát đầu có góc trên, lát cuối có góc dưới. Cùng hình với thẻ liền.
+struct KhungLatSH: View {
+    let tren: Bool
+    let duoi: Bool
+    var bo: CGFloat = 14
+    var nen: Color = AppColors.backgroundCard
+    var vien: Color = AppColors.border
+
+    var body: some View {
+        let k = bo + 4
+        RoundedRectangle(cornerRadius: bo, style: .continuous).fill(nen)
+            .overlay(RoundedRectangle(cornerRadius: bo, style: .continuous).strokeBorder(vien, lineWidth: 1))
+            .padding(.top, tren ? 0 : -k)
+            .padding(.bottom, duoi ? 0 : -k)
+            .clipped()
+    }
 }
 
 // MARK: - Nút loa
@@ -211,26 +287,18 @@ struct BangSH: View {
     /// Cách chia: mỗi cột muốn bằng dòng dài nhất của nó; tổng vượt khung thì cột ngắn giữ nguyên,
     /// phần còn lại chia đều cho cột dài (mỗi cột ≥ 120). Nhiều cột tới mức không chia nổi ⇒ trần
     /// 300/380 rồi cuộn ngang như cũ.
-    private var rongCot: [CGFloat] {
+    private func rongCot() -> [CGFloat] {
         let soCot = max(head.count, rows.map(\.count).max() ?? 0)
         guard soCot > 0 else { return [] }
         let tran: CGFloat = khoNgang == .regular ? 380 : 300
-        let muon: [CGFloat] = (0..<soCot).map { j in
-            var dai: CGFloat = 0
-            #if canImport(UIKit)
-            let font = UIFont.systemFont(ofSize: (16 * tiLe).rounded(), weight: j == 0 ? .bold : .regular)
-            for o in ([head[safe: j]] + rows.map { $0[safe: j] }).compactMap({ $0 }) {
-                let w = (PhanTichChuSH.tron(o) as NSString).size(withAttributes: [.font: font]).width
-                dai = max(dai, ceil(w) + 2)
-            }
-            #else
-            dai = tran
-            #endif
-            return max(70, dai)
-        }
+        #if canImport(UIKit)
+        let muon = Self.muonCot(head: head, rows: rows, soCot: soCot, co: (16 * tiLe).rounded())
+        #else
+        let muon = [CGFloat](repeating: tran, count: soCot)
+        #endif
         // 20 = đệm ngang của mỗi ô (10 mỗi bên).
-        let choChu = rongKhung - 20 * CGFloat(soCot)
-        guard rongKhung > 0, choChu >= 120 * CGFloat(soCot) else { return muon.map { min(tran, $0) } }
+        let choChu = rongHieuLuc - 20 * CGFloat(soCot)
+        guard rongHieuLuc > 0, choChu >= 120 * CGFloat(soCot) else { return muon.map { min(tran, $0) } }
         if muon.reduce(0, +) <= choChu { return muon }
         var kq = muon
         var conLai = choChu
@@ -247,62 +315,125 @@ struct BangSH: View {
         return kq
     }
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            if let caption, !caption.isEmpty { ChuSH(text: caption, co: 14, dam: true, mau: .phu) }
-            if xepThe { the } else { luoi }
+    #if canImport(UIKit)
+    /// Bề ngang mỗi cột "muốn" (dòng dài nhất) — ĐỆM theo nội dung + cỡ chữ.
+    /// Đo 23/10 (Time Profiler, b5-kanji cuộn tự động trên iPad Pro 11" ảo): trước đây `rongCot` là
+    /// thuộc tính tính toán gọi lại ở TỪNG Ô và mỗi lần đo lại chữ của MỌI ô (bảng 26×4 ⇒ ~10.000
+    /// lần `NSString.size` mỗi lượt dựng) ⇒ 57,7% thời gian luồng chính, hitch 480 ms/giây.
+    @MainActor private static var demMuon: [String: [CGFloat]] = [:]
+
+    @MainActor private static func muonCot(head: [String], rows: [[String]], soCot: Int, co: CGFloat) -> [CGFloat] {
+        let khoa = "\(co)\u{1}\(soCot)\u{1}" + head.joined(separator: "\u{2}") + "\u{3}" + rows.map { $0.joined(separator: "\u{2}") }.joined(separator: "\u{4}")
+        if let c = demMuon[khoa] { return c }
+        let kq: [CGFloat] = (0..<soCot).map { j in
+            var dai: CGFloat = 0
+            let font = UIFont.systemFont(ofSize: co, weight: j == 0 ? .bold : .regular)
+            for o in ([head[safe: j]] + rows.map { $0[safe: j] }).compactMap({ $0 }) {
+                let w = (PhanTichChuSH.tron(o) as NSString).size(withAttributes: [.font: font]).width
+                dai = max(dai, ceil(w) + 2)
+            }
+            return max(70, dai)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(GeometryReader { g in
-            Color.clear
-                .onAppear { rongKhung = g.size.width }
-                .onChange(of: g.size.width) { _, w in rongKhung = w }
-        })
+        if demMuon.count > 300 { demMuon.removeAll() }
+        demMuon[khoa] = kq
+        return kq
+    }
+    #endif
+
+    @Environment(\.latKhoiSH) private var lat
+    @Environment(\.rongNoiDungSH) private var rongManBai
+
+    /// Bề ngang dùng chia cột: con trực tiếp của màn bài ⇒ bề ngang cột nội dung (biết ngay lượt dựng
+    /// đầu); chỗ khác ⇒ tự đo (GeometryReader, dựng lại một lần).
+    private var rongHieuLuc: CGFloat { lat && rongManBai > 0 ? rongManBai : rongKhung }
+
+    var body: some View {
+        if lat && rongManBai > 0 {
+            cacPhan.environment(\.latKhoiSH, false)
+        } else {
+            VStack(alignment: .leading, spacing: 0) { cacPhan }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(GeometryReader { g in
+                    Color.clear
+                        .onAppear { rongKhung = g.size.width }
+                        .onChange(of: g.size.width) { _, w in rongKhung = w }
+                })
+        }
     }
 
-    private var the: some View {
-        VStack(spacing: 8) {
-            ForEach(Array(rows.enumerated()), id: \.offset) { _, r in
-                VStack(alignment: .leading, spacing: 6) {
-                    if let dau = r.first { ChuSH(text: dau, co: 17, dam: true) }
-                    ForEach(Array(r.dropFirst().enumerated()), id: \.offset) { j, o in
-                        VStack(alignment: .leading, spacing: 1) {
-                            if head.indices.contains(j + 1) {
-                                Text(PhanTichChuSH.tron(head[j + 1]).uppercased()).font(.system(size: 10.5, weight: .bold)).kerning(0.4).foregroundColor(AppColors.textTertiary)
-                            }
-                            ChuSH(text: o, co: 16)
-                        }
-                    }
+    /// Các phần của bảng — mỗi phần một phần tử lazy (xem `LatSH`); khoảng cách nằm trong phần.
+    @ViewBuilder private var cacPhan: some View {
+        let coCaption = !(caption ?? "").isEmpty
+        if let caption, coCaption {
+            ChuSH(text: caption, co: 14, dam: true, mau: .phu).padding(.bottom, 8)
+        }
+        if xepThe {
+            ForEach(Array(rows.enumerated()), id: \.offset) { i, r in
+                theHang(r).theKhoiSH().padding(.top, i == 0 ? 0 : 8)
+            }
+        } else {
+            let cot = rongCot()
+            let tong = cot.reduce(0, +) + 20 * CGFloat(cot.count)
+            if rongHieuLuc > 0, tong <= rongHieuLuc + 0.5 {
+                // Vừa khung ⇒ không cần cuộn ngang ⇒ mỗi hàng một lát (thẻ bo 12 cắt ngang).
+                if !head.isEmpty {
+                    hang(head, cot, dau: true)
+                        .frame(width: tong, alignment: .leading)
+                        .background(KhungLatSH(tren: true, duoi: rows.isEmpty, bo: 12, nen: AppColors.backgroundTertiary))
                 }
-                .theKhoiSH()
+                ForEach(Array(rows.enumerated()), id: \.offset) { i, r in
+                    VStack(spacing: 0) {
+                        if i > 0 || !head.isEmpty { Divider() }
+                        hang(r, cot, dau: false)
+                    }
+                    .frame(width: tong, alignment: .leading)
+                    .background(KhungLatSH(tren: head.isEmpty && i == 0, duoi: i == rows.count - 1, bo: 12))
+                }
+            } else {
+                luoiCuon(cot)
             }
         }
     }
 
-    private var luoi: some View {
-        ScrollView(.horizontal, showsIndicators: true) {
-            Grid(alignment: .topLeading, horizontalSpacing: 0, verticalSpacing: 0) {
-                if !head.isEmpty {
-                    GridRow {
-                        ForEach(Array(head.enumerated()), id: \.offset) { j, h in
-                            ChuSH(text: h, co: 14, dam: true, mau: .phu)
-                                .frame(width: rongCot[safe: j] ?? 70, alignment: .leading)
-                                .padding(.horizontal, 10).padding(.vertical, 8)
-                        }
+    private func theHang(_ r: [String]) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            if let dau = r.first { ChuSH(text: dau, co: 17, dam: true) }
+            ForEach(Array(r.dropFirst().enumerated()), id: \.offset) { j, o in
+                VStack(alignment: .leading, spacing: 1) {
+                    if head.indices.contains(j + 1) {
+                        Text(PhanTichChuSH.tron(head[j + 1]).uppercased()).font(.system(size: 10.5, weight: .bold)).kerning(0.4).foregroundColor(AppColors.textTertiary)
                     }
-                    .background(AppColors.backgroundTertiary)
+                    ChuSH(text: o, co: 16)
+                }
+            }
+        }
+    }
+
+    /// Một hàng: ô bề ngang CỐ ĐỊNH theo cột (đã chia sẵn) ⇒ HStack là đủ, không cần `Grid`
+    /// (đo 23/10: GridLayout ~10% luồng chính khi cuộn bài Chữ Hán). Hàng cao bằng ô cao nhất.
+    private func hang(_ r: [String], _ cot: [CGFloat], dau: Bool) -> some View {
+        HStack(alignment: .top, spacing: 0) {
+            ForEach(Array(r.enumerated()), id: \.offset) { j, o in
+                Group {
+                    if dau { ChuSH(text: o, co: 14, dam: true, mau: .phu) } else { ChuSH(text: o, co: 16, dam: j == 0) }
+                }
+                .frame(width: cot[safe: j] ?? 70, alignment: .leading)
+                .padding(.horizontal, 10).padding(.vertical, 8)
+            }
+        }
+    }
+
+    /// Bảng nhiều cột quá khổ ⇒ cuộn ngang cả bảng (một phần tử).
+    private func luoiCuon(_ cot: [CGFloat]) -> some View {
+        ScrollView(.horizontal, showsIndicators: true) {
+            VStack(alignment: .leading, spacing: 0) {
+                if !head.isEmpty {
+                    hang(head, cot, dau: true).frame(maxWidth: .infinity, alignment: .leading).background(AppColors.backgroundTertiary)
                 }
                 ForEach(Array(rows.enumerated()), id: \.offset) { i, r in
-                    // Kẻ ngăn hàng thay cho nền sọc: nền của GridRow tô TỪNG Ô theo chiều cao riêng của
-                    // ô ⇒ hàng có một ô cao một ô thấp thì sọc lởm chởm. Divider ngoài GridRow trải hết cột.
+                    // Kẻ ngăn hàng thay cho nền sọc (hàng có ô cao ô thấp thì sọc lởm chởm).
                     if i > 0 || !head.isEmpty { Divider() }
-                    GridRow {
-                        ForEach(Array(r.enumerated()), id: \.offset) { j, o in
-                            ChuSH(text: o, co: 16, dam: j == 0)
-                                .frame(width: rongCot[safe: j] ?? 70, alignment: .leading)
-                                .padding(.horizontal, 10).padding(.vertical, 8)
-                        }
-                    }
+                    hang(r, cot, dau: false)
                 }
             }
             .fixedSize(horizontal: true, vertical: false)

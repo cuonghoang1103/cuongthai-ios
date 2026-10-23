@@ -214,35 +214,41 @@ struct KhungNetSH: View {
         .aspectRatio(1, contentMode: .fit)
     }
 
-    @ViewBuilder
+    /// MỘT `Canvas` vẽ cả chữ: nét mờ, nét đã hiện, nét đang chạy, số thứ tự. Đo 23/10 (bài Chữ Hán,
+    /// iPad Pro 11" ảo): bản cũ mỗi nét một Shape + một Text định vị (chữ 10 nét ≈ 25 view) ⇒ mỗi hàng
+    /// của khối viết dựng ~25–35 ms ⇒ giật khi cuộn tới. Canvas: một view, vẽ lại theo TimelineView.
     private func noiDung(_ paths: [String], canh: CGFloat, bayGio: Date) -> some View {
         let n = paths.count
         let tt = trangThai(n, bayGio)
         let w = beDayKVG(canh)
         let mauMo = AppColors.textTertiary.opacity(0.28)
         let mauCur = MauChuSH.mau(0xDC2626).color
-        ZStack(alignment: .topLeading) {
+        let mauChu = AppColors.textPrimary
+        let mauSo = AppColors.accent
+        let hienSo = hienSo
+        return Canvas { ctx, _ in
+            let k = canh / DuongKVG.KHUNG
+            let co = CGAffineTransform(scaleX: k, y: k)
+            let kieu = StrokeStyle(lineWidth: w, lineCap: .round, lineJoin: .round)
             if tt.daHien < n || tt.dang != nil {
-                ChuKVG(paths: paths).stroke(mauMo, style: StrokeStyle(lineWidth: w, lineCap: .round, lineJoin: .round))
+                var mo = Path()
+                for d in paths { mo.addPath(DuongKVG.path(d), transform: co) }
+                ctx.stroke(mo, with: .color(mauMo), style: kieu)
             }
-            ForEach(0..<n, id: \.self) { i in
+            for i in 0..<n {
                 if i < tt.daHien {
-                    NetKVG(d: paths[i]).stroke(i == tt.daHien - 1 && tt.daHien < n && tt.dang == nil ? mauCur : AppColors.textPrimary,
-                                               style: StrokeStyle(lineWidth: w, lineCap: .round, lineJoin: .round))
+                    let laCuoi = i == tt.daHien - 1 && tt.daHien < n && tt.dang == nil
+                    ctx.stroke(DuongKVG.path(paths[i]).applying(co), with: .color(laCuoi ? mauCur : mauChu), style: kieu)
                 } else if i == tt.dang {
-                    NetKVG(d: paths[i]).trim(from: 0, to: tt.phan)
-                        .stroke(mauCur, style: StrokeStyle(lineWidth: w, lineCap: .round, lineJoin: .round))
+                    ctx.stroke(DuongKVG.path(paths[i]).trimmedPath(from: 0, to: tt.phan).applying(co), with: .color(mauCur), style: kieu)
                 }
             }
-            if hienSo {
-                ForEach(0..<min(n, max(tt.daHien, (tt.dang ?? -1) + 1)), id: \.self) { i in
-                    let p = DuongKVG.dau(paths[i])
-                    let k = canh / DuongKVG.KHUNG
-                    Text("\(i + 1)")
-                        .font(.system(size: max(8, canh * 0.075), weight: .bold).monospacedDigit())
-                        .foregroundColor(i == tt.dang || (tt.dang == nil && i == tt.daHien - 1 && tt.daHien < n) ? mauCur : AppColors.accent)
-                        .position(x: max(6, (p.x - 4) * k), y: max(6, (p.y - 4) * k))
-                }
+            guard hienSo else { return }
+            for i in 0..<min(n, max(tt.daHien, (tt.dang ?? -1) + 1)) {
+                let p = DuongKVG.dau(paths[i])
+                let noi = i == tt.dang || (tt.dang == nil && i == tt.daHien - 1 && tt.daHien < n)
+                ctx.draw(Text("\(i + 1)").font(.system(size: max(8, canh * 0.075), weight: .bold).monospacedDigit()).foregroundColor(noi ? mauCur : mauSo),
+                         at: CGPoint(x: max(6, (p.x - 4) * k), y: max(6, (p.y - 4) * k)))
             }
         }
         .frame(width: canh, height: canh, alignment: .topLeading)

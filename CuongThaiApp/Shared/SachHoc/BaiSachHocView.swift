@@ -22,6 +22,10 @@ struct BaiSachHocView: View {
     /// Ngăn xếp thẻ chữ Hán đang mở (chạm chữ Hán trong bài; chip chữ khác ⇒ chồng thêm).
     @State private var chuHan: [String] = []
     @State private var moTraTu = false
+    /// Bề ngang vùng cuộn — để bảng chia cột đúng ngay lượt dựng đầu (khỏi đo lại từng bảng).
+    @State private var rongDoc: CGFloat = 0
+    /// Nút ✍ trên thanh công cụ ⇒ chỉ số NHÓM của khối viết cần cuộn tới.
+    @State private var nhayViet: Int?
     @Environment(\.openURL) private var moURL
     @AppStorage(CaiDatDocSH.furigana) private var furi = true
     @AppStorage(CaiDatDocSH.romaji) private var roma = true
@@ -29,17 +33,33 @@ struct BaiSachHocView: View {
     @AppStorage(CaiDatDocSH.tocDo) private var tocDo = 1.0
 
     var body: some View {
+        #if DEBUG && os(iOS)
+        let _ = DemBodySH.tang("BaiSachHocView")
+        #endif
         ScrollViewReader { cuon in
             ScrollView {
                 // LazyVStack: bài dài (Bài 0 có 10 khối viết tay × 10 ô PencilKit) chỉ dựng phần gần màn hình.
-                LazyVStack(alignment: .leading, spacing: 16) {
+                // spacing 0 + phần tử đệm: khối lớn (bảng, khối viết, trắc nghiệm) trả về NHIỀU phần tử — mỗi
+                // hàng một phần tử (`LatSH`) — để LazyVStack dựng dần theo hàng thay vì cả khối trong một khung
+                // hình. Đo 23/10 (DoCuonSH, iPad Pro 11" ảo, cuộn đều 2500 pt/s lần đầu): khối viết 67 chữ
+                // ~400 ms dựng một lượt, bảng 26 hàng ~75 ms, trắc nghiệm 33 câu ~300 ms ⇒ hitch ~480 ms/giây.
+                LazyVStack(alignment: .leading, spacing: 0) {
                     dau
                     if let bai {
                         let vd = NeoVideoSH.chia(bai)
-                        if !vd.dauBai.isEmpty || !(bai.videos ?? []).isEmpty { khoiVideo(bai, dauBai: vd.dauBai) }
-                        ForEach(Array(nhom(bai).enumerated()), id: \.offset) { i, n in
-                            nhomView(n, video: vd.theoKhoi).id(i)
+                        if !vd.dauBai.isEmpty || !(bai.videos ?? []).isEmpty {
+                            Color.clear.frame(height: 16)
+                            khoiVideo(bai, dauBai: vd.dauBai)
                         }
+                        #if DEBUG
+                        if ProcessInfo.processInfo.environment["CT_SACHHOC_CHI"].map({ !$0.isEmpty }) == true { Color.clear.frame(height: 1500) }
+                        #endif
+                        ForEach(Array(nhom(bai).enumerated()), id: \.offset) { i, n in
+                            // Phần tử đệm mang `.id(i)` — neo cho ScrollViewReader (cuộn tới nhóm i).
+                            Color.clear.frame(height: 16).id(i)
+                            nhomView(n, video: vd.theoKhoi)
+                        }
+                        Color.clear.frame(height: 16)
                         cuoi
                     } else if let loi {
                         KhungLoiSH(loi: loi) { Task { await nap() } }
@@ -47,16 +67,37 @@ struct BaiSachHocView: View {
                         ProgressView().frame(maxWidth: .infinity, minHeight: 200)
                     }
                 }
+                .environment(\.rongNoiDungSH, max(0, min(720, rongDoc) - 32))
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
                 .padding(.bottom, 60)
+                #if DEBUG && os(iOS)
+                // Màn soi: `CT_SACHHOC_DO=<pt/giây>` ⇒ tự cuộn đều cả bài và đo hitch (DoCuonSH.swift).
+                .background {
+                    if bai != nil, let v = ProcessInfo.processInfo.environment["CT_SACHHOC_DO"].flatMap(Double.init) {
+                        MocDoCuonSH(ten: muc.id, tocDo: CGFloat(v)).frame(width: 1, height: 1)
+                    }
+                }
+                #endif
                 // Bề rộng đọc ~720pt căn giữa — iPad (dọc lẫn ngang) không thành dòng chữ dài cả màn.
                 .frame(maxWidth: 720)
                 .frame(maxWidth: .infinity)
             }
             .id(muc)
+            .background(GeometryReader { g in
+                Color.clear
+                    .onAppear { rongDoc = g.size.width }
+                    .onChange(of: g.size.width) { _, w in rongDoc = w }
+            })
             .sheet(isPresented: Binding(get: { !chuHan.isEmpty }, set: { if !$0 { chuHan = [] } })) {
                 NganChuHanSH(nganXep: $chuHan, baiDangHoc: SachHocVM.soBai(muc.id), vm: vm)
+            }
+            .onChange(of: nhayViet) { _, n in
+                guard let n else { return }
+                // LazyVStack chỉ ƯỚC LƯỢNG chiều cao phần chưa dựng ⇒ cuộn lại vài lượt cho tới đúng chỗ.
+                withAnimation(.easeInOut(duration: 0.3)) { cuon.scrollTo(n, anchor: .top) }
+                for t in [0.4, 0.9] { DispatchQueue.main.asyncAfter(deadline: .now() + t) { cuon.scrollTo(n, anchor: .top) } }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { nhayViet = nil }
             }
             #if DEBUG
             .onChange(of: bai?.id) { _, _ in
@@ -78,6 +119,9 @@ struct BaiSachHocView: View {
         .navigationBarTitleDisplayMode(.inline)
         #endif
         .toolbar {
+            if let bai, !khoiViet(bai).isEmpty {
+                ToolbarItem(placement: .primaryAction) { nutViet(khoiViet(bai)) }
+            }
             if vm.khoa?.tuVung != nil {
                 ToolbarItem(placement: .primaryAction) {
                     Button { moTraTu = true } label: { Image(systemName: "character.book.closed") }
@@ -120,7 +164,20 @@ struct BaiSachHocView: View {
         bai = nil; loi = nil
         GiongSachHoc.chung.dung()
         do {
-            bai = try await vm.noiDungMuc(muc)
+            let b = try await vm.noiDungMuc(muc)
+            // Nạp SẴN thứ tự nét / thẻ chữ Hán (~650 KB mỗi tệp, giải mã ngoài luồng chính) ngay khi mở bài:
+            // để khối viết tự nạp khi cuộn tới thì vm publish GIỮA lúc cuộn ⇒ mọi khối đang dựng vẽ lại
+            // (đo 23/10: thêm ~100–200 ms hitch ở lượt cuộn đầu).
+            if let b {
+                if b.blocks.contains(where: { $0.loai == "write" }) {
+                    Task { await vm.napNet() }
+                    #if os(iOS)
+                    KhoiDongPencilSH.mot()
+                    #endif
+                }
+                if b.blocks.contains(where: { $0.loai == "hanlop" }) { Task { await vm.napChuHan() } }
+            }
+            bai = b
             if bai == nil { loi = "Không tìm thấy bài này trong khoá." }
         } catch {
             loi = error.localizedDescription
@@ -188,6 +245,13 @@ struct BaiSachHocView: View {
     /// Bài ngữ pháp: mỗi mục (từ khối `h`) đóng KHUNG cùng công thức + ví dụ của nó; bài tập đứng ngoài
     /// khung — như `Blocks framed` của web.
     private func nhom(_ b: BaiSH) -> [NhomKhoi] {
+        #if DEBUG
+        // Màn soi đo: `CT_SACHHOC_CHI=table,write` ⇒ chỉ giữ các loại khối này (quy hitch về từng loại).
+        if let chi = ProcessInfo.processInfo.environment["CT_SACHHOC_CHI"], !chi.isEmpty {
+            let ds = Set(chi.split(separator: ",").map(String.init))
+            return b.blocks.enumerated().filter { ds.contains($0.element.loai) }.map { NhomKhoi.le($0.offset, $0.element) }
+        }
+        #endif
         guard b.kind == "grammar" else { return b.blocks.enumerated().map { NhomKhoi.le($0.offset, $0.element) } }
         var out: [NhomKhoi] = []
         var dang: (Int, String, [KhoiSH])?
@@ -215,8 +279,10 @@ struct BaiSachHocView: View {
     private func nhomView(_ n: NhomKhoi, video: [Int: [VideoMucSH]]) -> some View {
         switch n {
         case .le(let i, let k):
-            VStack(alignment: .leading, spacing: 12) {
-                KhoiSHView(khoi: k)
+            // KHÔNG bọc VStack: khối "lát" (bảng, viết, trắc nghiệm) trả nhiều phần tử cho LazyVStack ngoài.
+            KhoiSHView(khoi: k).environment(\.latKhoiSH, true)
+            if let vs = video[i], !vs.isEmpty {
+                Color.clear.frame(height: 12)
                 videoMuc(i, video)
             }
         case .khung(let i, let t, let ks) where ks.isEmpty:
@@ -281,6 +347,30 @@ struct BaiSachHocView: View {
             .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(AppColors.border, lineWidth: 1))
         }
         .buttonStyle(.plain)
+    }
+
+    // MARK: Lối tắt tới khối viết
+
+    /// (chỉ số nhóm, tên khối) của các khối `write` — cùng chỉ số với `.id(i)` của phần tử đệm.
+    private func khoiViet(_ b: BaiSH) -> [(Int, String)] {
+        nhom(b).enumerated().compactMap { i, n in
+            if case .le(_, let k) = n, case .write(_, let title, _, _, _) = k { return (i, PhanTichChuSH.tron(title)) }
+            return nil
+        }
+    }
+
+    /// Khối viết nằm ở CUỐI bài dài — người học trên iPad báo không tìm thấy (23/10/2026).
+    @ViewBuilder
+    private func nutViet(_ ds: [(Int, String)]) -> some View {
+        if ds.count == 1 {
+            Button { nhayViet = ds[0].0 } label: { Image(systemName: "pencil.and.scribble") }
+                .accessibilityLabel("Tới phần luyện viết")
+        } else {
+            Menu {
+                ForEach(ds, id: \.0) { i, t in Button(t) { nhayViet = i } }
+            } label: { Image(systemName: "pencil.and.scribble") }
+                .accessibilityLabel("Tới phần luyện viết")
+        }
     }
 
     // MARK: Cài đặt đọc

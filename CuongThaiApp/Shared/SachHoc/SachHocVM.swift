@@ -112,14 +112,33 @@ final class SachHocVM: ObservableObject {
         }
     }
 
+    /// Việc nạp tệp phụ đang chạy, theo tên — gọi chồng (nạp sẵn lúc mở bài + `.task` của khối) thì
+    /// CHỜ chung một việc. Trước đây mỗi lời gọi tự giải mã lại rồi gán lần nữa ⇒ vm publish lần hai
+    /// GIỮA lúc cuộn ⇒ cả màn bài dựng lại (đo 23/10: một khung 307 ms ở b5-kanji).
+    private var dangNap: [String: Task<Void, Never>] = [:]
+
+    private func motLan(_ ten: String, _ viec: @escaping @MainActor () async -> Void) async {
+        if let t = dangNap[ten] { await t.value; return }
+        let t = Task { @MainActor in await viec() }
+        dangNap[ten] = t
+        await t.value
+        dangNap[ten] = nil
+    }
+
     func napChia() async {
         guard chia == nil, let t = khoa?.chia else { return }
-        chia = try? await kho.giai(khoaId, t, BangChiaSH.self)
+        await motLan("chia") { [self] in
+            guard chia == nil else { return }
+            chia = try? await kho.giai(khoaId, t, BangChiaSH.self)
+        }
     }
 
     func napChuHan() async {
         guard chuHan == nil, let t = khoa?.chuHan else { return }
-        chuHan = try? await kho.giai(khoaId, t, ChuHanSH.self)
+        await motLan("chuHan") { [self] in
+            guard chuHan == nil else { return }
+            chuHan = try? await kho.giai(khoaId, t, ChuHanSH.self)
+        }
     }
 
     func napTuVung() async {
@@ -134,7 +153,10 @@ final class SachHocVM: ObservableObject {
 
     func napNet() async {
         guard net == nil, let t = khoa?.net else { return }
-        net = (try? await kho.giai(khoaId, t, [String: [String]].self)) ?? [:]
+        await motLan("net") { [self] in
+            guard net == nil else { return }
+            net = (try? await kho.giai(khoaId, t, [String: [String]].self)) ?? [:]
+        }
     }
 
     /// Số bài (theo sách) của mục đang đọc — `b5-…` ⇒ 5 (mốc "đã học / bài sau" của thẻ chữ Hán).

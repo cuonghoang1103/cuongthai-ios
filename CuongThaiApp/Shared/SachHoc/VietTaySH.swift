@@ -65,6 +65,13 @@ enum KhoNetVietSH {
         return m.compactMapValues { try? PKDrawing(data: $0) }
     }
 
+    /// Số mục đã viết (đếm khoá, không giải mã nét) — thẻ của màn Luyện viết.
+    static func soDaViet(_ khoa: String) -> Int {
+        guard let d = try? Data(contentsOf: tep(khoa)),
+              let m = try? PropertyListDecoder().decode([String: Data].self, from: d) else { return 0 }
+        return m.count
+    }
+
     static func ghi(_ khoa: String, _ ink: [String: PKDrawing]) {
         let u = tep(khoa)
         let m = ink.filter { !$0.value.strokes.isEmpty }.mapValues { $0.dataRepresentation() }
@@ -88,6 +95,21 @@ struct ButVietSH: Equatable {
 }
 
 // MARK: - Ô vẽ PencilKit
+
+/// PKCanvasView ĐẦU TIÊN của tiến trình chạy `+[PKTiledCanvasView initialize]` ⇒ `registerDefaults`
+/// ⇒ `UserDefaults.didChangeNotification` ⇒ MỌI view có `@AppStorage` đang hiện (mỗi `ChuSH` có 2)
+/// dựng lại. Đo 23/10 (call stack + `_printChanges`): đúng lúc cuộn tới khối viết ⇒ một khung
+/// 120–300 ms. Khởi động sẵn lúc MỞ bài có khối viết (trước khi nội dung hiện) thì cái giá đó
+/// rơi vào lúc chưa có gì trên màn.
+@MainActor
+enum KhoiDongPencilSH {
+    private static var xong = false
+    static func mot() {
+        guard !xong else { return }
+        xong = true
+        _ = PKCanvasView(frame: .zero)
+    }
+}
 
 /// PKCanvasView trong suốt; nét vào/ra theo hệ thiết kế (`rongThietKe`), co theo `rong` thật.
 struct OVietPK: UIViewRepresentable {
@@ -370,19 +392,48 @@ struct VietTaySH: View {
         let soTrang = Int(ceil(Double(ds.count) / Double(Self.TRANG)))
         let hien = Array(ds.dropFirst(trang * Self.TRANG).prefix(Self.TRANG))
         let daViet = ds.filter { !(ink[$0]?.strokes.isEmpty ?? true) }
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .top, spacing: 8) {
-                Image(systemName: "pencil.and.scribble").font(.system(size: 16, weight: .bold)).foregroundColor(AppColors.primary).padding(.top, 2)
-                ChuSH(text: title, co: 17, dam: true)
+        #if DEBUG
+        let _ = DemBodySH.tang("VietTaySH")
+        #endif
+        let vien = AppColors.primary.opacity(0.35)
+        // Mỗi hàng luyện một LÁT (phần tử lazy riêng) — xem `LatSH`. Đo 23/10: 10 hàng PencilKit dựng
+        // trong một khung hình ~400 ms ⇒ giật khi cuộn tới khối viết.
+        LatSH {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: "pencil.and.scribble").font(.system(size: 16, weight: .bold)).foregroundColor(AppColors.primary).padding(.top, 2)
+                    ChuSH(text: title, co: 17, dam: true)
+                }
+                ChuSH(text: note ?? (coTu
+                    ? "Bấm ▶ xem thứ tự nét, tô theo chữ mờ ở dòng trên rồi tự viết lại cả từ ở dòng dưới (mỗi ô một chữ). Bật “Che mẫu” để tự nhớ ra từ từ nghĩa + 🔊."
+                    : "Bấm ▶ xem thứ tự nét, rồi tô theo chữ mờ ở ô đầu và tự viết ở hai ô sau. Viết bằng Apple Pencil hoặc ngón tay."),
+                      co: 13.5, mau: .phu)
+                thanhCongCu(daViet: daViet.count)
+                if soTrang > 1 { thanhTrang(ds, soTrang) }
             }
-            ChuSH(text: note ?? (coTu
-                ? "Bấm ▶ xem thứ tự nét, tô theo chữ mờ ở dòng trên rồi tự viết lại cả từ ở dòng dưới (mỗi ô một chữ). Bật “Che mẫu” để tự nhớ ra từ từ nghĩa + 🔊."
-                : "Bấm ▶ xem thứ tự nét, rồi tô theo chữ mờ ở ô đầu và tự viết ở hai ô sau. Viết bằng Apple Pencil hoặc ngón tay."),
-                  co: 13.5, mau: .phu)
-            thanhCongCu(daViet: daViet.count)
-            if soTrang > 1 { thanhTrang(ds, soTrang) }
-            LazyVStack(alignment: .leading, spacing: 4) {
-                ForEach(hien, id: \.self) { ch in
+            .latTheSH(tren: true, vien: vien)
+            .task {
+                await vm.napNet()
+                guard !daNap else { return }
+                daNap = true
+                ink = KhoNetVietSH.doc(khoaLuu)
+                #if DEBUG
+                // Màn soi: `CT_SACHHOC_DIEN=1` ⇒ ô đầu có sẵn nét "viết tay" dựng từ KanjiVG (máy ảo không vẽ được bằng lệnh).
+                if ProcessInfo.processInfo.environment["CT_SACHHOC_DIEN"] == "1", ink.isEmpty, let ch = ds.first, let ps = vm.net?[ch] {
+                    ink[ch] = Self.netGia(ps, o: 1)
+                }
+                #endif
+                phienBan = Dictionary(uniqueKeysWithValues: ink.keys.map { ($0, 1) })
+            }
+            .confirmationDialog("Xoá hết chữ đã viết trong khối này?", isPresented: $hoiXoaHet, titleVisibility: .visible) {
+                Button("Xoá hết", role: .destructive) {
+                    for k in ink.keys { phienBan[k, default: 0] += 1 }
+                    ink = [:]; ketQua = nil
+                    KhoNetVietSH.ghi(khoaLuu, ink)
+                }
+            }
+            ForEach(hien, id: \.self) { ch in
+                VStack(alignment: .leading, spacing: 4) {
                     HangVietSH(muc: ch, net: vm.net, goi: goi[ch], che: che, mo: mo, ve: ink[ch] ?? PKDrawing(), phienBan: phienBan[ch] ?? 0, but: but,
                                doi: { capNhat(ch, $0, ngoai: false) },
                                kichHoat: { dangHoat = ch },
@@ -390,47 +441,32 @@ struct VietTaySH: View {
                                xoa: { capNhat(ch, PKDrawing(), ngoai: true) })
                     if ch != hien.last { Divider() }
                 }
+                .padding(.top, ch == hien.first ? 10 : 4)
+                .latTheSH(vien: vien)
             }
-            HStack {
-                Text("Đã viết \(daViet.count)/\(ds.count) \(coTu ? "mục" : "chữ")").font(.system(size: 14, weight: .bold)).foregroundColor(AppColors.textPrimary)
-                Spacer()
-                NutSH(ten: dangXem ? "AI đang xem…" : "AI xem chữ", bieuTuong: "sparkles") { Task { await hoiAI(daViet) } }
-                    .disabled(dangXem || daViet.isEmpty).opacity(dangXem || daViet.isEmpty ? 0.5 : 1)
-            }
-            if daViet.count > 16 { Text("AI xem tối đa 16 \(coTu ? "mục" : "chữ") đầu đã viết mỗi lần.").font(.system(size: 12.5)).foregroundColor(AppColors.textTertiary) }
-            if let loi { PhanHoiSH(dung: false, chu: loi) }
-            if let kq = ketQua {
-                VStack(alignment: .leading, spacing: 8) {
-                    if let d = kq.diem {
-                        Text("Điểm AI: \(d)/100").font(.system(size: 15, weight: .heavy)).foregroundColor(d >= 70 ? AppColors.success : AppColors.warning)
-                    }
-                    NoiDungMarkdown(noiDung: kq.chu)
-                    Button("Đóng nhận xét") { ketQua = nil }.font(.system(size: 13.5, weight: .semibold))
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    Text("Đã viết \(daViet.count)/\(ds.count) \(coTu ? "mục" : "chữ")").font(.system(size: 14, weight: .bold)).foregroundColor(AppColors.textPrimary)
+                    Spacer()
+                    NutSH(ten: dangXem ? "AI đang xem…" : "AI xem chữ", bieuTuong: "sparkles") { Task { await hoiAI(daViet) } }
+                        .disabled(dangXem || daViet.isEmpty).opacity(dangXem || daViet.isEmpty ? 0.5 : 1)
                 }
-                .theKhoiSH(vien: AppColors.primary.opacity(0.35), nen: AppColors.primary.opacity(0.05))
+                if daViet.count > 16 { Text("AI xem tối đa 16 \(coTu ? "mục" : "chữ") đầu đã viết mỗi lần.").font(.system(size: 12.5)).foregroundColor(AppColors.textTertiary) }
+                if let loi { PhanHoiSH(dung: false, chu: loi) }
+                if let kq = ketQua {
+                    VStack(alignment: .leading, spacing: 8) {
+                        if let d = kq.diem {
+                            Text("Điểm AI: \(d)/100").font(.system(size: 15, weight: .heavy)).foregroundColor(d >= 70 ? AppColors.success : AppColors.warning)
+                        }
+                        NoiDungMarkdown(noiDung: kq.chu)
+                        Button("Đóng nhận xét") { ketQua = nil }.font(.system(size: 13.5, weight: .semibold))
+                    }
+                    .theKhoiSH(vien: AppColors.primary.opacity(0.35), nen: AppColors.primary.opacity(0.05))
+                }
+                Text("Thứ tự nét: KanjiVG © Ulrich Apel, CC BY-SA 3.0").font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
             }
-            Text("Thứ tự nét: KanjiVG © Ulrich Apel, CC BY-SA 3.0").font(.system(size: 11)).foregroundColor(AppColors.textTertiary)
-        }
-        .theKhoiSH(vien: AppColors.primary.opacity(0.35))
-        .task {
-            await vm.napNet()
-            guard !daNap else { return }
-            daNap = true
-            ink = KhoNetVietSH.doc(khoaLuu)
-            #if DEBUG
-            // Màn soi: `CT_SACHHOC_DIEN=1` ⇒ ô đầu có sẵn nét "viết tay" dựng từ KanjiVG (máy ảo không vẽ được bằng lệnh).
-            if ProcessInfo.processInfo.environment["CT_SACHHOC_DIEN"] == "1", ink.isEmpty, let ch = ds.first, let ps = vm.net?[ch] {
-                ink[ch] = Self.netGia(ps, o: 1)
-            }
-            #endif
-            phienBan = Dictionary(uniqueKeysWithValues: ink.keys.map { ($0, 1) })
-        }
-        .confirmationDialog("Xoá hết chữ đã viết trong khối này?", isPresented: $hoiXoaHet, titleVisibility: .visible) {
-            Button("Xoá hết", role: .destructive) {
-                for k in ink.keys { phienBan[k, default: 0] += 1 }
-                ink = [:]; ketQua = nil
-                KhoNetVietSH.ghi(khoaLuu, ink)
-            }
+            .padding(.top, 10)
+            .latTheSH(duoi: true, vien: vien)
         }
     }
 

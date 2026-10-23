@@ -38,7 +38,25 @@ enum PhanTichChuSH {
     /// Cùng luật với `INLINE_RE` của web (Blocks.tsx).
     private static let re = try! NSRegularExpression(pattern: #"(\*\*[^*]+\*\*|(?<![*\w])\*(?=[^\s*])(?:[^*\n]|\*\*[^*\n]+\*\*)+?(?<=\S)\*(?![*\w])|~~[^~]+~~|==[^=]+==|\{[^|}]+\|[^}]+\})"#)
 
+    /// Đệm kết quả tách theo chuỗi (lượt gọi gốc, không cờ). Đo 23/10: `ChuSH.body` tách lại mỗi lần
+    /// dựng ⇒ ~7% luồng chính khi cuộn bài Chữ Hán (regex trên từng ô bảng, từng câu).
+    nonisolated(unsafe) private static var dem: [String: [DoanChuSH]] = [:]
+    private static let khoaDem = NSLock()
+
     static func tach(_ s: String, dam: Bool = false, nghieng: Bool = false, gach: Bool = false, to: Bool = false) -> [DoanChuSH] {
+        guard !dam, !nghieng, !gach, !to else { return tachGoc(s, dam: dam, nghieng: nghieng, gach: gach, to: to) }
+        khoaDem.lock()
+        if let c = dem[s] { khoaDem.unlock(); return c }
+        khoaDem.unlock()
+        let kq = tachGoc(s, dam: false, nghieng: false, gach: false, to: false)
+        khoaDem.lock()
+        if dem.count > 6000 { dem.removeAll(keepingCapacity: true) }
+        dem[s] = kq
+        khoaDem.unlock()
+        return kq
+    }
+
+    private static func tachGoc(_ s: String, dam: Bool, nghieng: Bool, gach: Bool, to: Bool) -> [DoanChuSH] {
         var out: [DoanChuSH] = []
         let ns = s as NSString
         var dau = 0
@@ -152,6 +170,9 @@ struct ChuSH: View {
     @Environment(\.moChuHanSH) private var moChuHan
 
     var body: some View {
+        #if DEBUG && os(iOS)
+        let _ = DemBodySH.tang("ChuSH")
+        #endif
         let doan = PhanTichChuSH.tach(text)
         let size = (co * tiLe).rounded()
         #if canImport(UIKit)

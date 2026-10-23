@@ -66,14 +66,27 @@ struct KhungBaiTapSH<C: View>: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
+            DauKhungBaiTapSH(bieuTuong: bieuTuong, tieuDe: tieuDe, huongDan: huongDan)
+            noiDung
+        }
+        .theKhoiSH(vien: AppColors.primary.opacity(0.35))
+    }
+}
+
+/// Đầu khung bài tập (biểu tượng + tiêu đề + hướng dẫn) — dùng chung cho bản liền và bản lát.
+struct DauKhungBaiTapSH: View {
+    let bieuTuong: String
+    let tieuDe: String
+    let huongDan: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top, spacing: 8) {
                 Image(systemName: bieuTuong).font(.system(size: 16, weight: .bold)).foregroundColor(AppColors.primary).padding(.top, 2)
                 ChuSH(text: tieuDe, co: 17, dam: true)
             }
             Text(huongDan).font(.system(size: 13.5)).foregroundColor(AppColors.textSecondary)
-            noiDung
         }
-        .theKhoiSH(vien: AppColors.primary.opacity(0.35))
     }
 }
 
@@ -131,7 +144,18 @@ struct TracNghiemSH: View {
 
     var body: some View {
         let soDung = items.indices.filter { chon[$0] == items[$0].correct }.count
-        KhungBaiTapSH(bieuTuong: "checklist", tieuDe: title, huongDan: "Chọn một đáp án — thấy ngay đúng sai và lý do.") {
+        let vien = AppColors.primary.opacity(0.35)
+        // Mỗi câu một LÁT (xem `LatSH`) — đo 23/10: 33 câu dựng một lượt ~300 ms khi cuộn tới.
+        LatSH {
+            DauKhungBaiTapSH(bieuTuong: "checklist", tieuDe: title, huongDan: "Chọn một đáp án — thấy ngay đúng sai và lý do.")
+                .latTheSH(tren: true, vien: vien)
+                #if DEBUG
+                // Màn soi (máy ảo không bấm được từ dòng lệnh): `CT_SACHHOC_DIEN=1` ⇒ câu 1 chọn đúng, câu 2 chọn sai.
+                .onAppear {
+                    guard ProcessInfo.processInfo.environment["CT_SACHHOC_DIEN"] == "1", chon.isEmpty, items.count >= 2 else { return }
+                    chon = [0: items[0].correct, 1: (items[1].correct + 1) % max(1, items[1].options.count)]
+                }
+                #endif
             ForEach(Array(items.enumerated()), id: \.offset) { i, it in
                 CauTracNghiemSH(n: i + 1, cau: it, chon: chon[i]) { j in
                     chon[i] = j
@@ -140,22 +164,23 @@ struct TracNghiemSH: View {
                         vm.baoDiem(id, Int((Double(d) / Double(items.count) * 100).rounded()))
                     }
                 }
+                .padding(.top, 12)
+                .latTheSH(vien: vien)
             }
-            if !chon.isEmpty {
-                HStack {
-                    Text("Đúng \(soDung)/\(chon.count) câu đã làm").font(.system(size: 14.5, weight: .bold)).foregroundColor(AppColors.textPrimary)
-                    Spacer()
-                    NutSH(ten: "Làm lại", bieuTuong: "arrow.counterclockwise", phu: true) { chon = [:] }
+            Group {
+                if !chon.isEmpty {
+                    HStack {
+                        Text("Đúng \(soDung)/\(chon.count) câu đã làm").font(.system(size: 14.5, weight: .bold)).foregroundColor(AppColors.textPrimary)
+                        Spacer()
+                        NutSH(ten: "Làm lại", bieuTuong: "arrow.counterclockwise", phu: true) { chon = [:] }
+                    }
+                    .padding(.top, 12)
+                } else {
+                    Color.clear.frame(height: 0)
                 }
             }
+            .latTheSH(duoi: true, vien: vien)
         }
-        #if DEBUG
-        // Màn soi (máy ảo không bấm được từ dòng lệnh): `CT_SACHHOC_DIEN=1` ⇒ câu 1 chọn đúng, câu 2 chọn sai.
-        .onAppear {
-            guard ProcessInfo.processInfo.environment["CT_SACHHOC_DIEN"] == "1", chon.isEmpty, items.count >= 2 else { return }
-            chon = [0: items[0].correct, 1: (items[1].correct + 1) % max(1, items[1].options.count)]
-        }
-        #endif
     }
 }
 
