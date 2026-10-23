@@ -122,7 +122,10 @@ struct VietLaiView: View {
     private var giayDich: LoaiGiay { LuuVietLai.giayDich(cho: goc) }
     private var cach: CachLuuVietLai { CachLuuVietLai(rawValue: cachLuu) ?? .thayTrang }
 
-    var body: some View {
+    /// Màn đọc/viết tập trung ⇒ chủ đề mùa đứng yên khi màn này hiện (Shared/ChuDe).
+    var body: some View { thanManYen.nenMuaYen() }
+
+    @ViewBuilder private var thanManYen: some View {
         NavigationStack {
             VStack(spacing: 0) {
                 switch may.trangThai {

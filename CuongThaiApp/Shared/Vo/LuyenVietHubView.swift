@@ -26,7 +26,10 @@ struct LuyenVietHubView: View {
 
     private var soCot: Int { beRong == .regular ? 10 : 6 }
 
-    var body: some View {
+    /// Màn đọc/viết tập trung ⇒ chủ đề mùa đứng yên khi màn này hiện (Shared/ChuDe).
+    var body: some View { thanManYen.nenMuaYen() }
+
+    @ViewBuilder private var thanManYen: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.lg) {
                 tomTat

@@ -473,7 +473,10 @@ struct OnTheHomNayView: View {
 
     private var the: TheOn? { ds.first }
 
-    var body: some View {
+    /// Màn đọc/viết tập trung ⇒ chủ đề mùa đứng yên khi màn này hiện (Shared/ChuDe).
+    var body: some View { thanManYen.nenMuaYen() }
+
+    @ViewBuilder private var thanManYen: some View {
         Group {
             if dangTai && ds.isEmpty {
                 ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)

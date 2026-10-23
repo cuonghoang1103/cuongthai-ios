@@ -59,7 +59,10 @@ struct LamGonView: View {
         return r.isNull ? trang : r
     }
 
-    var body: some View {
+    /// Màn đọc/viết tập trung ⇒ chủ đề mùa đứng yên khi màn này hiện (Shared/ChuDe).
+    var body: some View { thanManYen.nenMuaYen() }
+
+    @ViewBuilder private var thanManYen: some View {
         NavigationStack {
             VStack(spacing: 0) {
                 khungXem

@@ -115,7 +115,10 @@ struct ManVietView: View {
         return trangs[chiSo]
     }
 
-    var body: some View {
+    /// Màn đọc/viết tập trung ⇒ chủ đề mùa đứng yên khi màn này hiện (Shared/ChuDe).
+    var body: some View { thanManYen.nenMuaYen() }
+
+    @ViewBuilder private var thanManYen: some View {
         VStack(spacing: 0) {
             thanhTren
             if tieng.dangGhi || tieng.dangPhat || trangHienTai?.ghiAmTen != nil {
