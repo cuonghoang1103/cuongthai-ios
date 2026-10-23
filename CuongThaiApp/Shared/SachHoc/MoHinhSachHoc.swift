@@ -88,6 +88,29 @@ struct BaiMetaSH: Codable, Equatable, Identifiable, Hashable {
     var ready: Bool = true
     /// Nhóm hiển thị (Dekiru: Bài học · Theo slide lớp · Luyện thêm · Theo sách).
     var nhom: String?
+    /// Khối tập viết của bài (index từ 23/10/2026 — bản cũ không có ⇒ app tự quét nội dung).
+    var viet: [KhoiVietMetaSH]?
+}
+
+/// Một khối `write` nhìn từ mục lục: id khối, tên, số mục khác nhau, vài chữ đầu để xem trước.
+struct KhoiVietMetaSH: Codable, Equatable, Hashable {
+    let id: String
+    var title: String = ""
+    var so: Int = 0
+    var mau: [String] = []
+
+    init(id: String, title: String, so: Int, mau: [String]) {
+        self.id = id; self.title = title; self.so = so; self.mau = mau
+    }
+
+    enum CodingKeys: String, CodingKey { case id, title, so, mau }
+    init(from d: Decoder) throws {
+        let c = try d.container(keyedBy: CodingKeys.self)
+        id = try c.decode(String.self, forKey: .id)
+        title = (try? c.decodeIfPresent(String.self, forKey: .title)) ?? ""
+        so = (try? c.decodeIfPresent(Int.self, forKey: .so)) ?? 0
+        mau = (try? c.decodeIfPresent([String].self, forKey: .mau)) ?? []
+    }
 }
 
 /// Mục tra cứu đứng ngoài các buổi (extras của web): Chia động từ, Ôn thẻ, đề luyện…

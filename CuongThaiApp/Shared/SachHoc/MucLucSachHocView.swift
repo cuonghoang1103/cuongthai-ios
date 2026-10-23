@@ -71,6 +71,7 @@ struct MucLucSachHocView: View {
             VStack(alignment: .leading, spacing: 16) {
                 if let khoa = vm.khoa {
                     theDau(khoa)
+                    if vm.coLuyenViet { theLuyenViet }
                     if vm.banLuu {
                         Label("Đang dùng bản đã lưu trên máy — kéo xuống để thử tải lại.", systemImage: "wifi.slash")
                             .font(.system(size: 13)).foregroundColor(AppColors.warning)
@@ -121,7 +122,11 @@ struct MucLucSachHocView: View {
         }
         #if DEBUG
         .navigationDestination(isPresented: Binding(get: { daMoSan && moSan != nil }, set: { daMoSan = $0 })) {
-            if let m = mucTuId(moSan) { BaiSachHocView(vm: vm, muc: m, cuonToi: cuonToi) }
+            if moSan == "viet" {
+                LuyenVietSHView(vm: vm, toiBuoi: cuonToi)
+            } else if let k = moSan, k.hasPrefix("viet:"), let mv = vm.dsViet.first(where: { $0.khoi.id == k.dropFirst(5) }) {
+                KhoiVietRiengView(vm: vm, muc: mv)
+            } else if let m = mucTuId(moSan) { BaiSachHocView(vm: vm, muc: m, cuonToi: cuonToi) }
         }
         .onChange(of: vm.khoa?.phienBan) { _, v in if v != nil, moSan != nil, !daMoSan { daMoSan = true } }
         #endif
@@ -187,6 +192,32 @@ struct MucLucSachHocView: View {
         )
     }
 
+    // MARK: Luyện viết
+
+    /// Lối vào nổi bật ngay dưới "Học tiếp": khối viết nằm ở CUỐI bài dài nên người học không tìm thấy.
+    private var theLuyenViet: some View {
+        let ds = vm.dsViet
+        return NavigationLink { LuyenVietSHView(vm: vm) } label: {
+            HStack(spacing: 14) {
+                Image(systemName: "pencil.and.scribble").font(.system(size: 22, weight: .semibold)).foregroundColor(AppColors.primary)
+                    .frame(width: 48, height: 48)
+                    .background(RoundedRectangle(cornerRadius: 13).fill(AppColors.primary.opacity(0.12)))
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("✍ Luyện viết").font(.system(size: 16.5, weight: .bold)).foregroundColor(AppColors.textPrimary)
+                    Text(ds.isEmpty
+                         ? "Kana và chữ Hán từng bài — viết bằng Apple Pencil hoặc ngón tay"
+                         : "\(ds.count) khối viết · \(Set(ds.map(\.buoi)).count) bài — mở thẳng, không phải cuộn cuối bài")
+                        .font(.system(size: 13)).foregroundColor(AppColors.textSecondary).fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundColor(AppColors.textTertiary)
+            }
+            .theKhoiSH(vien: AppColors.primary.opacity(0.35))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
     // MARK: Tra cứu
 
     private func phanTraCuu(_ khoa: KhoaSH) -> some View {
@@ -220,6 +251,7 @@ struct MucLucSachHocView: View {
         let td = vm.tienDo(b)
         let mo = moBuoi.contains(b.n)
         let xongHet = td.tong > 0 && td.xong == td.tong
+        let viet = vm.mucViet(b)
         return VStack(alignment: .leading, spacing: 0) {
             Button {
                 withAnimation(.easeInOut(duration: 0.22)) { if mo { moBuoi.remove(b.n) } else { moBuoi.insert(b.n) } }
@@ -235,6 +267,12 @@ struct MucLucSachHocView: View {
                     VStack(alignment: .leading, spacing: 3) {
                         Text(tieuDeBuoi(b)).font(.system(size: 16.5, weight: .semibold)).foregroundColor(AppColors.textPrimary).lineLimit(2)
                         Text(tomTat(b)).font(.system(size: 12.5)).foregroundColor(AppColors.textSecondary).lineLimit(2)
+                        if !viet.isEmpty {
+                            Label("Luyện viết · \(viet.count)", systemImage: "pencil.and.scribble")
+                                .font(.system(size: 11.5, weight: .bold)).foregroundColor(AppColors.primary)
+                                .padding(.horizontal, 8).padding(.vertical, 3)
+                                .background(Capsule().fill(AppColors.primary.opacity(0.11)))
+                        }
                         if td.tong > 0 {
                             HStack(spacing: 6) {
                                 ProgressView(value: Double(td.xong), total: Double(td.tong)).tint(AppColors.success).frame(maxWidth: 120)
@@ -255,6 +293,7 @@ struct MucLucSachHocView: View {
             .buttonStyle(.plain)
             if mo {
                 VStack(alignment: .leading, spacing: 0) {
+                    if !viet.isEmpty { loiVietBuoi(b, viet) }
                     ForEach(Array(nhomBai(b).enumerated()), id: \.offset) { _, cap in
                         let (ten, ds) = cap
                         if let ten {
@@ -271,6 +310,48 @@ struct MucLucSachHocView: View {
             }
         }
         .theKhoiSH()
+    }
+
+    /// Trong Bài đang mở: các khối viết của Bài, chạm là mở thẳng khối đó.
+    private func loiVietBuoi(_ b: BuoiSH, _ viet: [MucVietSH]) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("✍ LUYỆN VIẾT \(b.ten.uppercased())").font(.system(size: 11, weight: .heavy)).kerning(0.5).foregroundColor(AppColors.primary)
+                Spacer()
+                NavigationLink { LuyenVietSHView(vm: vm, toiBuoi: b.n) } label: {
+                    Text("Tất cả").font(.system(size: 12.5, weight: .semibold)).foregroundColor(AppColors.primary)
+                }
+                .buttonStyle(.plain)
+            }
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(viet) { m in
+                        NavigationLink { KhoiVietRiengView(vm: vm, muc: m) } label: {
+                            HStack(spacing: 6) {
+                                Text(m.khoi.mau.prefix(3).joined()).font(.system(size: 17, design: .serif)).lineLimit(1)
+                                Text("\(m.khoi.so)").font(.system(size: 12, weight: .bold).monospacedDigit()).foregroundColor(AppColors.textTertiary)
+                                Text(nhanNgan(m)).font(.system(size: 12.5, weight: .semibold)).lineLimit(1)
+                            }
+                            .foregroundColor(AppColors.textPrimary)
+                            .padding(.horizontal, 11).padding(.vertical, 8)
+                            .background(Capsule().fill(AppColors.backgroundTertiary))
+                            .overlay(Capsule().strokeBorder(mauNhomSH(m.nhom).opacity(0.45), lineWidth: 1))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+        }
+        .padding(.top, 12)
+    }
+
+    /// Nhãn ngắn của khối viết cho chip: "Của lớp" / "Toàn bộ" / "Luyện thêm" / "Hiragana あ・か"…
+    private func nhanNgan(_ m: MucVietSH) -> String {
+        let t = PhanTichChuSH.tron(m.khoi.title)
+        if t.contains("của lớp") { return "Chữ của lớp" }
+        if m.baiId.hasSuffix("-kanji") { return "Toàn bộ chữ Hán" }
+        if let r = t.range(of: "hàng ") { return (t.hasPrefix("Viết katakana") ? "Katakana " : t.hasPrefix("Viết hiragana") ? "Hiragana " : "") + t[r.upperBound...] }
+        return m.nhom ?? "Tập viết"
     }
 
     /// Tên buổi = "Bài N", kèm chủ đề lấy từ bài HỘI THOẠI đầu (nếu có) — web không có tên buổi riêng.
@@ -304,19 +385,16 @@ struct MucLucSachHocView: View {
         return out
     }
 
-    private func mauNhom(_ t: String) -> Color {
-        switch t {
-        case "Theo slide lớp": return AppColors.info
-        case "Luyện thêm": return AppColors.success
-        case "Theo sách": return AppColors.textSecondary
-        default: return AppColors.primary
-        }
-    }
+    private func mauNhom(_ t: String) -> Color { mauNhomSH(t) }
 
     // MARK: Một hàng bài
 
     private func hang(_ m: MucDocSH, title: String, kind: String, phut: Int, nhom: String?, nhanRieng: String? = nil) -> some View {
         let xong = vm.daXong.contains(m.id)
+        var coViet = false
+        if case .bai(let n, let id) = m, let l = vm.buoi(n)?.bai.first(where: { $0.id == id }) {
+            coViet = !(vm.khoiViet(buoi: n, bai: l) ?? []).isEmpty
+        }
         let mau = mauLoaiSH(vm.khoa, kind)
         return NavigationLink { BaiSachHocView(vm: vm, muc: m) } label: {
             HStack(alignment: .top, spacing: 10) {
@@ -331,6 +409,12 @@ struct MucLucSachHocView: View {
                     HStack(spacing: 6) {
                         Text(nhanRieng ?? vm.khoa?.nhan(kind) ?? kind).font(.system(size: 11, weight: .bold)).foregroundColor(mau)
                         if phut > 0 { Text("· ~\(phut) phút").font(.system(size: 11)).foregroundColor(AppColors.textTertiary) }
+                        if coViet {
+                            Label("Luyện viết", systemImage: "pencil.and.scribble").font(.system(size: 10.5, weight: .bold))
+                                .foregroundColor(AppColors.primary)
+                                .padding(.horizontal, 6).padding(.vertical, 2)
+                                .background(Capsule().fill(AppColors.primary.opacity(0.11)))
+                        }
                     }
                     ChuSH(text: title, co: 15.5, mau: xong ? .phu : .chinh)
                         .frame(maxWidth: .infinity, alignment: .leading)
