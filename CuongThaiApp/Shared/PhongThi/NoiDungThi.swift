@@ -277,6 +277,13 @@ struct NoiDungThiWeb: UIViewRepresentable {
         <script>
           const bao = () => window.webkit?.messageHandlers?.cao?.postMessage(document.body.scrollHeight);
           const el = document.getElementById('v');
+          // ⚠️ THEO DÕI CHIỀU CAO NGAY TỪ ĐẦU, đừng đợi cuối. Bản cũ chỉ báo
+          // một lần SAU KHI nạp xong mermaid + highlight.js (~14 tệp CDN, không
+          // có hạn giờ). Mạng điện thoại chậm ⇒ một tệp treo là khung đứng mãi
+          // ở 40pt: câu trả lời chỉ còn dòng tiêu đề (chụp lại 23/10/2026 — máy
+          // ảo mạng nhanh thì vẫn đủ, nên không ai thấy). Phần tô màu/sơ đồ là
+          // đồ trang trí: tới muộn thì ResizeObserver đo lại.
+          new ResizeObserver(bao).observe(document.body);
           (async () => {
             // ── Markdown → HTML ──────────────────────────────────────
             // Nguồn đi qua base64: markdown của model đầy dấu nháy, dấu chéo
@@ -308,6 +315,8 @@ struct NoiDungThiWeb: UIViewRepresentable {
                   .replace(/@@CTOAN(\\d+)@@/g, (_, i) => kho[+i]);
               } catch (e) { el.textContent = 'Không dựng được nội dung.'; }
             }
+            // Chữ đã đủ ⇒ báo ngay, trước mọi lượt nạp thư viện bên dưới.
+            requestAnimationFrame(bao);
             try {
               // Công thức: chỉ nạp KaTeX khi có dấu hiệu, không thì mỗi câu
               // hỏi đều kéo về một thư viện chẳng dùng tới.
@@ -386,7 +395,6 @@ struct NoiDungThiWeb: UIViewRepresentable {
             // Ảnh tải xong thì chiều cao đổi — đo lại, không thì phần dưới bị
             // cắt đúng bằng chiều cao ảnh.
             el.querySelectorAll('img').forEach(im => im.addEventListener('load', bao));
-            new ResizeObserver(bao).observe(document.body);
           })();
         </script></body></html>
         """

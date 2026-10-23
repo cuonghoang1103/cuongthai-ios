@@ -53,6 +53,22 @@ struct ThuHocBaiView: View {
                                     slides: DocSlide.tu(bai.content),
                                     boiCanhVideo: { BoiCanhVideoHoi(track: "VI", giay: 125) })
                 } else { dangTai }
+            // Một câu trả lời AI đọc từ tệp (`CT_TRALOI` = đường dẫn .md), dựng y như bong
+            // bóng gia sư: ScrollView › VStack › TraLoiAI. Soi khung WebView có giãn đủ cao không.
+            case "hocbai-traloi":
+                ScrollView {
+                    VStack(alignment: .leading, spacing: Spacing.sm) {
+                        Text("Câu hỏi mẫu").padding(Spacing.md)
+                        TraLoiAI(chu: (try? String(contentsOfFile: env["CT_TRALOI"] ?? "", encoding: .utf8)) ?? "## (thiếu CT_TRALOI)",
+                                 xong: true)
+                            .padding(Spacing.md)
+                            .background(RoundedRectangle(cornerRadius: CornerRadius.medium)
+                                .fill(AppColors.primary.opacity(0.07)))
+                        Text("— hết —").padding(Spacing.md)
+                    }
+                    .padding(Spacing.md)
+                }
+                .background(AppColors.backgroundPrimary)
             case "hocbai-slide":
                 if let bai {
                     XemSlideView(slides: DocSlide.tu(bai.content), dangXem: Int(env["CT_SLIDE"] ?? "") ?? 0) { _ in }
