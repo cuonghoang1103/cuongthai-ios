@@ -31,9 +31,27 @@ struct BaiSachHocView: View {
     @AppStorage(CaiDatDocSH.romaji) private var roma = true
     @AppStorage(CaiDatDocSH.coChu) private var tiLe = 1.0
     @AppStorage(CaiDatDocSH.tocDo) private var tocDo = 1.0
+    #if os(iOS)
+    /// "Viết lên bài" (GhiKhiHoc/VietDeBai). `@State`, KHÔNG `@StateObject`: đổi bút không được dựng lại cả bài.
+    @State private var vietDe = PhienVietDe()
+    #endif
 
     /// Màn đọc/viết tập trung ⇒ chủ đề mùa đứng yên khi màn này hiện (Shared/ChuDe).
-    var body: some View { thanManYen.nenMuaYen() }
+    var body: some View {
+        #if os(iOS)
+        thanManYen.ghiKhiHoc(nguCanhGhi, vietDe: vietDe).nenMuaYen()
+        #else
+        thanManYen.nenMuaYen()
+        #endif
+    }
+
+    #if os(iOS)
+    /// Bài đang mở ⇒ trang Vở "Ghi khi học" của nó (Dekiru ⇒ JPD113/JPD123 theo số bài).
+    private var nguCanhGhi: NguCanhGhi {
+        NguCanhGhi.sachHoc(khoa: vm.khoaId, tenKhoa: vm.khoa?.tieuDe, baiId: muc.id, soBai: SachHocVM.soBai(muc.id),
+                           tieuDe: PhanTichChuSH.tron(bai?.title ?? vm.meta(muc)?.title ?? ""))
+    }
+    #endif
 
     @ViewBuilder private var thanManYen: some View {
         #if DEBUG && os(iOS)
@@ -47,7 +65,7 @@ struct BaiSachHocView: View {
                 // hình. Đo 23/10 (DoCuonSH, iPad Pro 11" ảo, cuộn đều 2500 pt/s lần đầu): khối viết 67 chữ
                 // ~400 ms dựng một lượt, bảng 26 hàng ~75 ms, trắc nghiệm 33 câu ~300 ms ⇒ hitch ~480 ms/giây.
                 LazyVStack(alignment: .leading, spacing: 0) {
-                    dau
+                    dau.vietDe("dau")
                     if let bai {
                         let vd = NeoVideoSH.chia(bai)
                         if !vd.dauBai.isEmpty || !(bai.videos ?? []).isEmpty {
@@ -72,6 +90,10 @@ struct BaiSachHocView: View {
                     }
                 }
                 .environment(\.rongNoiDungSH, max(0, min(720, rongDoc) - 32))
+                #if os(iOS)
+                // Chữ của khoá kiểu sách theo "Cỡ chữ" của màn (tiLe), KHÔNG theo Dynamic Type (ChuSH cỡ cố định).
+                .environment(\.vietDe, NguCanhVietDe(phien: vietDe, coChu: CGFloat(tiLe)))
+                #endif
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
                 .padding(.bottom, 60)
@@ -284,7 +306,7 @@ struct BaiSachHocView: View {
         switch n {
         case .le(let i, let k):
             // KHÔNG bọc VStack: khối "lát" (bảng, viết, trắc nghiệm) trả nhiều phần tử cho LazyVStack ngoài.
-            KhoiSHView(khoi: k).environment(\.latKhoiSH, true)
+            khoiLe(i, k)
             if let vs = video[i], !vs.isEmpty {
                 Color.clear.frame(height: 12)
                 videoMuc(i, video)
@@ -294,6 +316,7 @@ struct BaiSachHocView: View {
                 TieuDeSH(text: t)
                 videoMuc(i, video)
             }
+            .vietDe("n\(i)")
         case .khung(let i, let t, let ks):
             VStack(alignment: .leading, spacing: 14) {
                 ChuSH(text: t, co: 19, dam: true, mau: .nhan)
@@ -305,6 +328,22 @@ struct BaiSachHocView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(AppColors.primary.opacity(0.045)))
             .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(AppColors.primary.opacity(0.3), lineWidth: 1.2))
+            .vietDe("n\(i)")
+        }
+    }
+
+    /// Một khối đứng riêng ở mức cao nhất. Lớp "viết lên bài": khối lát (bảng, trắc nghiệm) gắn lớp theo TỪNG LÁT
+    /// (tiền tố "n<i>"); khối có ô nhập/ô viết riêng (viết tay, điền, chép chính tả, bài luận) KHÔNG phủ lớp —
+    /// Pencil ở đó là để viết vào ô; còn lại một lớp cho cả khối.
+    @ViewBuilder
+    private func khoiLe(_ i: Int, _ k: KhoiSH) -> some View {
+        switch k {
+        case .table, .mcq:
+            KhoiSHView(khoi: k).environment(\.latKhoiSH, true).environment(\.phanNhomVietDe, "n\(i)")
+        case .write, .quiz, .dictation, .essay:
+            KhoiSHView(khoi: k).environment(\.latKhoiSH, true)
+        default:
+            KhoiSHView(khoi: k).environment(\.latKhoiSH, true).vietDe("n\(i)")
         }
     }
 

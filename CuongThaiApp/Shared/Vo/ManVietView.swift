@@ -75,12 +75,15 @@ struct ManVietView: View {
         case nopBai
         case rutThe, chiaSeLinh
         case academy(String, Int?)
+        /// Bài kiểu sách (Dekiru/IELTS…) của trang "ghi khi học": (id khoá, id bài).
+        case sachHoc(String, String)
         var id: String {
             switch self {
             case .nopBai: return "nopBai"
             case .rutThe: return "rutThe"
             case .chiaSeLinh: return "chiaSeLinh"
             case .academy(let s, let b): return "academy-\(s)-\(b ?? 0)"
+            case .sachHoc(let k, let b): return "sachhoc-\(k)-\(b)"
             case .vietLai: return "vietLai"
             case .lamGon: return "lamGon"
             case .khoGiay: return "khoGiay"
@@ -270,6 +273,8 @@ struct ManVietView: View {
                             ToolbarItem(placement: .cancellationAction) { Button(T("Đóng")) { cuaSo = nil } }
                         }
                 }
+            case .sachHoc(let k, let b):
+                MoBaiSachHocView(khoa: k, baiId: b)
             case .doiGiay:      DoiGiayView(trang: trangHienTai, cuon: cuon)
             case .khoGiay:
                 KhoGiayCuonView(cuon: cuon, trang: trangHienTai,
@@ -1090,6 +1095,22 @@ struct ManVietView: View {
                     Button { cuaSo = .quetTaiLieu } label: {
                         Label(T("Quét trang sách bằng camera"), systemImage: "doc.viewfinder")
                     }
+                    }
+                    if let b = trangHienTai.flatMap({ VoHocKy.baiSachCuaTrang($0) }) {
+                        Button { cuaSo = .sachHoc(b.khoa, b.baiId) } label: {
+                            Label(T("📖 Mở lại bài đã ghi trang này"), systemImage: "book")
+                        }
+                    }
+                    // Ảnh dán từ "Chụp đoạn bài" (AnhDanVo.swift) — gỡ từng ảnh, mới nhất trước.
+                    if let t = trangHienTai, KhoAnhDan.coAnh(t.id) {
+                        Button(role: .destructive) {
+                            let con = KhoAnhDan.goCuoi(t)
+                            ThaoTacTrang.danhDauCay(cuon)
+                            lanLuu += 1
+                            bao(con > 0 ? String(format: T("Đã gỡ ảnh dán — còn %d ảnh"), con) : T("Đã gỡ ảnh dán"))
+                        } label: {
+                            Label(T("Gỡ ảnh dán gần nhất"), systemImage: "rectangle.badge.minus")
+                        }
                     }
                     if trangHienTai?.nenPdfTen != nil || trangHienTai?.nenAnhTen != nil {
                         Button(role: .destructive) { goNen() } label: {

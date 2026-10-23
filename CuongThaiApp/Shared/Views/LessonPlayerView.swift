@@ -156,6 +156,18 @@ struct LessonPlayerView: View {
 
     enum CotBen: String, CaseIterable { case cuongMini, mucLuc }
 
+    #if os(iOS)
+    /// "Ghi khi học" (Shared/GhiKhiHoc): lớp viết lên bài + cột Vở. Cột Vở mở ⇒ cột phụ (CuongMini/Mục lục) nhường chỗ.
+    @State private var vietDe = PhienVietDe()
+    @State private var moVo = false
+    @Environment(\.dynamicTypeSize) private var coHeThong
+    private var nguCanhGhi: NguCanhGhi? {
+        guard !course.slug.isEmpty, !tenBai.isEmpty else { return nil }
+        return NguCanhGhi.academy(slug: course.slug, courseCode: course.courseCode, tenKhoa: course.title.theoApp,
+                                  lessonId: lessonId, tieuDe: tenBai)
+    }
+    #endif
+
     init(course: Course, sections: [CourseSection], lessonId: Int, coToanQuyen: Bool = true) {
         self.course = course
         self.sections = sections
@@ -212,16 +224,24 @@ struct LessonPlayerView: View {
     // MARK: Thân
 
     /// Màn đọc/tập trung ⇒ chủ đề mùa tự dừng chuyển động khi màn này hiện (Shared/ChuDe).
-    var body: some View { thanManYen.nenMuaYen() }
+    var body: some View {
+        #if os(iOS)
+        thanManYen.ghiKhiHoc(nguCanhGhi, vietDe: vietDe, moVo: $moVo).nenMuaYen()
+        #else
+        thanManYen.nenMuaYen()
+        #endif
+    }
 
     @ViewBuilder private var thanManYen: some View {
         Group {
             if laCotDoi {
                 HStack(spacing: 0) {
                     cotChinh
-                    Divider()
-                    cotPhai
-                        .frame(width: 380)
+                    if !coCotVo {
+                        Divider()
+                        cotPhai
+                            .frame(width: 380)
+                    }
                 }
             } else {
                 cotChinh
@@ -284,6 +304,14 @@ struct LessonPlayerView: View {
 
     private struct MoSlide: Identifiable { let viTri: Int; var id: Int { viTri } }
 
+    private var coCotVo: Bool {
+        #if os(iOS)
+        return moVo
+        #else
+        return false
+        #endif
+    }
+
     // MARK: Cột chính
 
     private var cotChinh: some View {
@@ -291,7 +319,7 @@ struct LessonPlayerView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: Spacing.md) {
                     NeoDauTrang()
-                    dauBai
+                    dauBai.vietDe("dau")
                     khoiChinh
                     tieuDeVaNut
                     #if os(iOS)
@@ -318,6 +346,9 @@ struct LessonPlayerView: View {
                 }
                 .padding(.horizontal, Spacing.md)
                 .padding(.bottom, Spacing.xxl + 56)
+                #if os(iOS)
+                .environment(\.vietDe, NguCanhVietDe(phien: vietDe, coChu: NguCanhVietDe.heSo(coHeThong)))
+                #endif
                 .frame(maxWidth: 860)
                 .frame(maxWidth: .infinity)
             }
@@ -535,6 +566,7 @@ struct LessonPlayerView: View {
             }
             .padding(Spacing.md)
             .background(RoundedRectangle(cornerRadius: CornerRadius.large, style: .continuous).fill(AppColors.backgroundCard))
+            .vietDe("noidung")
         } else if vm.dangTaiBai {
             VStack(alignment: .leading, spacing: 10) {
                 SkeletonBox(height: 18, width: 180)
@@ -552,6 +584,7 @@ struct LessonPlayerView: View {
             }
             .padding(Spacing.md)
             .background(RoundedRectangle(cornerRadius: CornerRadius.large, style: .continuous).fill(AppColors.backgroundCard))
+            .vietDe("ghichu")
         }
     }
 

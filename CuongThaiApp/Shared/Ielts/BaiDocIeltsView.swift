@@ -75,7 +75,12 @@ struct BaiDocIeltsView: View {
         if gonTrongChiaDoi {
             than.padding(Spacing.md)
         } else {
+            #if os(iOS)
+            manDayDu.ghiKhiHoc(NguCanhGhi(maMon: "IELTS", tenMon: "IELTS", nguon: "ielts-doc", khoaBai: bai.id,
+                                          tieuDeBai: "Reading · \(bai.title)"))
+            #else
             manDayDu
+            #endif
         }
     }
 

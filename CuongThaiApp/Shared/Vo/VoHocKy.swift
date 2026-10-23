@@ -258,6 +258,13 @@ enum VoHocKy {
     /// riêng) + một cuốn mang tên kỳ. Đã có thì trả cái đang có.
     @discardableResult
     static func lapVo(_ m: MonKyNay, tenKy: String?, kho: ModelContext) -> (MonVo, CuonVo) {
+        let (mon, c) = lapVo(m, tenKy: tenKy, taoCuonKy: true, kho: kho)
+        return (mon, c!)
+    }
+
+    /// `taoCuonKy: false` ⇒ chỉ lập/đọc MÔN (ghi khi học: cuốn "Ghi khi học" do người gọi lập — khỏi để lại
+    /// một cuốn "Kỳ này" trắng trong môn mới chỉ vì người dùng ghi nhanh một bài).
+    static func lapVo(_ m: MonKyNay, tenKy: String?, taoCuonKy: Bool, kho: ModelContext) -> (MonVo, CuonVo?) {
         let mon: MonVo
         if let co = monVo(cho: m.maMon, kho: kho) {
             mon = co
@@ -268,6 +275,7 @@ enum VoHocKy {
             ghi(khoaMon, m.maMon, mon.id.uuidString)
         }
         if let s = m.courseSlug { ghi(khoaKhoa, m.maMon, s) }
+        guard taoCuonKy else { try? kho.save(); return (mon, nil) }
         let ten = (tenKy?.trimmingCharacters(in: .whitespaces)).flatMap { $0.isEmpty ? nil : $0 } ?? T("Kỳ này")
         if let c = mon.cuonsTheoThuTu.first(where: { $0.ten == ten }) ?? mon.cuonsTheoThuTu.first {
             return (mon, c)
@@ -355,10 +363,25 @@ enum VoHocKy {
     @discardableResult
     static func trangChoBaiHoc(maMon: String, tenMon: String, courseSlug: String?, lessonId: Int,
                                tieuDeBai: String, kho: ModelContext) -> (CuonVo, TrangVo) {
+        let kq = trangChoBaiHoc(maMon: maMon, tenMon: tenMon, nguon: courseSlug, khoaBai: String(lessonId),
+                                tieuDeBai: tieuDeBai, kho: kho)
+        if let s = courseSlug { ghi(khoaBaiCuaTrang, kq.1.id.uuidString, "\(s)|\(lessonId)") }
+        return kq
+    }
+
+    /// Như trên, cho bài có id CHUỖI (khoá kiểu sách Dekiru/IELTS: `b0-hiragana`; Phòng thi; video).
+    /// `nguon` = khoá/nguồn của bài ("dekiru", "ielts", slug Academy…). Khoá nối trang
+    /// "bai|<nguon>|<khoaBai>" — với bài Academy trùng đúng khoá của bản số nguyên ở trên.
+    /// Bài kiểu sách ghi thêm `vo.bai.sach` (id trang ⇒ "nguon|id bài") để màn Vở mở lại đúng bài.
+    @discardableResult
+    static func trangChoBaiHoc(maMon: String, tenMon: String, nguon: String?, khoaBai: String,
+                               tieuDeBai: String, sachHoc: Bool = false, kho: ModelContext) -> (CuonVo, TrangVo) {
         let ma = maMon.uppercased()
+        let courseSlug = nguon
+        let lessonId = khoaBai
         let m = MonKyNay(maMon: ma, ten: tenMon, mauHex: bangMau[ma.unicodeScalars.reduce(0) { $0 + Int($1.value) } % bangMau.count],
-                         courseSlug: courseSlug, buoi: [])
-        let (mon, _) = lapVo(m, tenKy: nil, kho: kho)
+                         courseSlug: sachHoc ? nil : courseSlug, buoi: [])
+        let (mon, _) = lapVo(m, tenKy: nil, taoCuonKy: false, kho: kho)
         let tenCuon = T("Ghi khi học")
         let cuon: CuonVo
         if let c = mon.cuonsTheoThuTu.first(where: { $0.ten == tenCuon }) {
@@ -371,8 +394,24 @@ enum VoHocKy {
         }
         let khoa = "bai|\(courseSlug ?? ma)|\(lessonId)"
         let kq = trang(khoa: khoa, tieuDe: String(tieuDeBai.prefix(120)), trongCuon: cuon, kho: kho)
-        if let s = courseSlug { ghi(khoaBaiCuaTrang, kq.1.id.uuidString, "\(s)|\(lessonId)") }
+        if sachHoc, let s = courseSlug { ghi(khoaBaiSachCuaTrang, kq.1.id.uuidString, "\(s)|\(lessonId)") }
         return kq
+    }
+
+    /// Đã có trang ghi cho bài này chưa (KHÔNG tạo) — để nút ✍ biết hiện "Mở trang" hay "Ghi".
+    static func trangDaCoChoBai(nguon: String?, maMon: String, khoaBai: String, kho: ModelContext) -> TrangVo? {
+        let khoa = "bai|\(nguon ?? maMon.uppercased())|\(khoaBai)"
+        guard let s = doc(khoaTrang)[khoa], let id = UUID(uuidString: s) else { return nil }
+        return ((try? kho.fetch(FetchDescriptor<TrangVo>(predicate: #Predicate { $0.id == id }))) ?? []).first
+    }
+
+    private static let khoaBaiSachCuaTrang = "vo.bai.sach" // TrangVo.id ⇒ "khoá sách|id bài"
+
+    /// Bài kiểu sách (Dekiru/IELTS…) của một trang "ghi khi học": (id khoá sách, id bài).
+    static func baiSachCuaTrang(_ t: TrangVo) -> (khoa: String, baiId: String)? {
+        guard let s = doc(khoaBaiSachCuaTrang)[t.id.uuidString], let i = s.firstIndex(of: "|") else { return nil }
+        let k = String(s[..<i]), b = String(s[s.index(after: i)...])
+        return k.isEmpty || b.isEmpty ? nil : (k, b)
     }
 }
 

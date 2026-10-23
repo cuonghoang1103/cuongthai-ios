@@ -74,7 +74,21 @@ struct ManHocVideoView: View {
     }
 
     /// Màn đọc/tập trung ⇒ chủ đề mùa tự dừng chuyển động khi màn này hiện (Shared/ChuDe).
-    var body: some View { thanManYen.nenMuaYen() }
+    var body: some View {
+        #if os(iOS)
+        thanManYen.ghiKhiHoc(nguCanhGhi).nenMuaYen()
+        #else
+        thanManYen.nenMuaYen()
+        #endif
+    }
+
+    #if os(iOS)
+    /// Học video ⇒ trang Vở "Học qua video · <tên video>" (môn VIDEO, cuốn Ghi khi học).
+    private var nguCanhGhi: NguCanhGhi {
+        NguCanhGhi(maMon: "VIDEO", tenMon: T("Học qua video"), nguon: video.nguon ?? "video",
+                   khoaBai: video.videoId, tieuDeBai: video.tieuDeVi?.isEmpty == false ? video.tieuDeVi! : video.tieuDe)
+    }
+    #endif
 
     @ViewBuilder private var thanManYen: some View {
         Group {

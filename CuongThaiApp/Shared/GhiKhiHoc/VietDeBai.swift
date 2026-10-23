@@ -190,6 +190,8 @@ final class PhienVietDe: ObservableObject {
     private var daBan = false
 
     static let khoaNgonTay = "ghikhihoc.vietde.ngontay"
+    /// Phiên rỗng cho màn KHÔNG có lớp viết đè (để view quan sát không phải nhận optional).
+    static let khong = PhienVietDe()
 
     init() {
         let d = UserDefaults.standard

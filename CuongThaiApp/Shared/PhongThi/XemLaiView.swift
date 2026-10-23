@@ -88,7 +88,28 @@ struct XemLaiView: View {
         }
     }
 
+    /// Xem lại / chữa đề: có "Ghi khi học" (✍ trang Vở của đề + chụp câu vào Vở). KHÔNG gắn ở màn LÀM BÀI có
+    /// giờ (`LamBaiView`): đang tính giờ thì mở Vở/chụp màn là phân tâm, và dễ thành "chép đề ra ngoài".
     var body: some View {
+        #if os(iOS)
+        thanXemLai.ghiKhiHoc(nguCanhGhi)
+        #else
+        thanXemLai
+        #endif
+    }
+
+    #if os(iOS)
+    private var nguCanhGhi: NguCanhGhi {
+        let ten = tenDe.tachSongNgu(.viet)
+        let ma = xemLai.exam?.course?.courseCode.flatMap { $0.isEmpty ? nil : $0 }
+            ?? VoHocKy.maMon(trong: tenDe) ?? "PHONGTHI"
+        return NguCanhGhi(maMon: ma, tenMon: xemLai.exam?.course?.title?.tachSongNgu(.viet) ?? T("Phòng thi"),
+                          nguon: "thi", khoaBai: "de-\(xemLai.attempt.examId)",
+                          tieuDeBai: "\(T("Chữa đề")) · \(ten.isEmpty ? tenDe : ten)")
+    }
+    #endif
+
+    @ViewBuilder private var thanXemLai: some View {
         ScrollViewReader { cuon in
             ScrollView {
                 LazyVStack(spacing: Spacing.md) {
