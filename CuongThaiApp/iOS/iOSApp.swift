@@ -69,6 +69,8 @@ struct CuongThaiApp: App {
         // Chốt đồng ý chia sẻ dữ liệu với AI (5.1.2(i)) cho mọi lời gọi AI đi
         // qua `APIClient`. Xem `Shared/AI/DongYChiaSeAI.swift`.
         DongYChiaSeAI.ganVaoAPIClient()
+        // Chủ đề mùa: áp bảng màu TRƯỚC màn đầu tiên (không nháy tím rồi mới đổi). Xem Shared/ChuDe.
+        QuanLyChuDe.khoiDong()
     }
 
     /// Bọc chuỗi link thành `Identifiable` để dùng với `.sheet(item:)`.
@@ -120,6 +122,8 @@ struct CuongThaiApp: App {
                     // Máy ngủ qua mốc 6h/18h thì `Timer` không chạy — tính lại
                     // khi quay lại, không thì mở app buổi tối vẫn thấy nền sáng.
                     if moi == .active { giaoDien.lamMoiKhiTroLai() }
+                    // "Tự động theo mùa": qua 31/10 → 1/11 khi máy ngủ thì quay lại là sang Đông.
+                    if moi == .active { QuanLyChuDe.shared.lamMoiKhiTroLai() }
 
                     // Báo "tôi đang dùng app" cho máy chủ, và NGỪNG khi xuống
                     // nền. Thiếu nửa đầu thì với mọi người khác mình luôn

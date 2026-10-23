@@ -43,6 +43,9 @@ struct ContentView: View {
         // dữ liệu giả — để soi điều hướng mà không cần đăng nhập. Xem `KhungXemThu`.
         if ten.lowercased().hasPrefix("khung") {
             KhungXemThu(ten: ten.lowercased())
+        } else if ten.lowercased() == "chude" {
+            // Cài đặt → Chủ đề & hiệu ứng (đợt chủ đề 4 mùa, 23/10/2026).
+            NavigationStack { CaiDatChuDeView() }
         } else {
             ManXemThu(ten: ten)
         }
@@ -111,6 +114,8 @@ struct MainView: View {
             })
             // AI Chat mở từ danh mục / tìm kiếm.
             .moAIChat(dangMo: $appState.moAIChatGoc)
+            // Chủ đề mùa: chạm bung cánh hoa/bông tuyết (Cài đặt, mặc định tắt) — gốc cửa sổ.
+            .lopHieuUngCham()
     }
 
     @ViewBuilder
@@ -157,6 +162,8 @@ struct iOSTabView: View {
             }
         }
         .tint(AppColors.primary)
+        // Chủ đề mùa: vài hạt thưa ở mép các màn con (màn chính đã có nền mùa riêng).
+        .lopHatMoiTrang()
         .onAppear {
             // Vừa từ cột đôi (iPad) thu về hẹp (Slide Over/Split View) mà đang
             // xem một tính năng ở cột chi tiết ⇒ đưa nó sang Hôm nay thay vì
@@ -253,6 +260,21 @@ struct BoCucCotDoi: View {
                 }
             }
             .listStyle(.sidebar)
+            // Nền mùa nhạt cho thanh bên (không hạt — chữ menu nằm thẳng trên nền).
+            .scrollContentBackground(.hidden)
+            .background { NenMuaTuDong(kieu: .thanhBen) }
+            #if os(iOS)
+            .toolbar {
+                if let mua = QuanLyChuDe.shared.mua {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button { appState.bangGoc = .caiDat } label: {
+                            Image(systemName: mua.bieuTuong).foregroundStyle(AppColors.primary)
+                        }
+                        .accessibilityLabel(String(format: T("Chủ đề mùa %@ — mở Cài đặt"), mua.ten))
+                    }
+                }
+            }
+            #endif
             .navigationTitle("CuongThai")
             .navigationSplitViewColumnWidth(min: 220, ideal: 270, max: 340)
         } detail: {
@@ -263,6 +285,7 @@ struct BoCucCotDoi: View {
                 DaiNgoaiTuyen()
                 chiTiet
             }
+            .lopHatMoiTrang()
         }
         // `.balanced` để iPad DỰNG ĐỨNG vẫn thấy cột trái. Kiểu mặc định
         // (`.automatic`) giấu nó sau một nút ở dọc, nên xoay máy một cái là

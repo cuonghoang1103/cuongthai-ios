@@ -83,7 +83,8 @@ struct TongQuanView: View {
                 // trống chết cuối trang, cuộn mãi mới hết.
                 .padding(.bottom, Spacing.lg)
             }
-            .background(AppColors.backgroundPrimary)
+            // Nền mùa (Shared/ChuDe) thay nền phẳng — thẻ nội dung vẫn đặc nên chữ luôn rõ.
+            .nenChuDe()
             .refreshable {
                 guard !banThu else { return }
                 await vm.nap(); await vm.napLich()
@@ -151,6 +152,17 @@ struct TongQuanView: View {
                     .font(.system(size: 14))
                     .foregroundColor(AppColors.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
+                // Lời chào theo mùa + đếm ngược Noel/Tết (chủ đề Mặc định thì không có).
+                if let l = NgayLe.loiMua(QuanLyChuDe.shared.mua) {
+                    Label(l.chu, systemImage: l.bieuTuong)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(AppColors.primary)
+                        .padding(.horizontal, 10).padding(.vertical, 5)
+                        .background(Capsule().fill(AppColors.backgroundCard))
+                        .overlay(Capsule().strokeBorder(AppColors.primary.opacity(0.25), lineWidth: 1))
+                        .padding(.top, 4)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
             Spacer(minLength: 0)
             nutThongBao

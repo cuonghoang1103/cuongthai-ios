@@ -16,7 +16,7 @@ struct MessagesView: View {
                 filterTabs
                 threadsList
             }
-            .background(AppColors.backgroundPrimary)
+            .nenChuDe()
             // Đổi biệt danh trong khung chat phải hiện NGAY ở danh sách.
             // Máy chủ không phát sự kiện nào cho biệt danh (nó chỉ người xem
             // thấy), nên đường duy nhất là kênh nội bộ này.
@@ -260,7 +260,6 @@ struct MessagesView: View {
                 }
                 .listStyle(.plain)
                 .scrollContentBackground(.hidden)
-                .background(AppColors.backgroundPrimary)
             }
         }
     }

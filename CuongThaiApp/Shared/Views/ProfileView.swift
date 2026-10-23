@@ -92,7 +92,7 @@ struct ProfileView: View {
             ScrollView {
                 than
             }
-            .background(AppColors.backgroundPrimary)
+            .nenChuDe()
             // Hồ sơ CỦA MÌNH = tab "Tôi" ⇒ tiêu đề trùng nhãn tab. Hồ sơ người
             // khác vẫn là "Hồ sơ".
             .navigationTitle(userIdKhac == nil ? T("Tôi") : T("Hồ sơ"))
@@ -1144,6 +1144,21 @@ struct SettingsView: View {
                 // Giao diện — đặt TRÊN CÙNG vì đây là thứ người dùng vào
                 // Cài đặt để đổi nhiều nhất, và họ thấy kết quả ngay lập tức.
                 Section {
+                    // Chủ đề 4 mùa (23/10/2026) — lưới xem trước + hiệu ứng ở màn riêng.
+                    NavigationLink { CaiDatChuDeView() } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: QuanLyChuDe.shared.chuDe.bieuTuong)
+                                .font(.system(size: 15))
+                                .foregroundColor(AppColors.primary)
+                                .frame(width: 24)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(T("Chủ đề & hiệu ứng")).foregroundColor(AppColors.textPrimary)
+                                Text(QuanLyChuDe.shared.chuDe.ten)
+                                    .font(.system(size: 12))
+                                    .foregroundColor(AppColors.textTertiary)
+                            }
+                        }
+                    }
                     ForEach(CheDoGiaoDien.allCases) { c in
                         Button {
                             withAnimation(.easeInOut(duration: 0.25)) {

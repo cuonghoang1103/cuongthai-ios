@@ -154,8 +154,6 @@ struct HomeView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                AppColors.backgroundPrimary.ignoresSafeArea()
-
                 VStack(spacing: 0) {
                     filterBar
                     if tabDangChon == .hocTap {
@@ -165,6 +163,8 @@ struct HomeView: View {
                     }
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .nenChuDe()
             // Soạn bài: "Tạo" không còn là một tab (22/10/2026) — nút nổi ở đây
             // là lối chính, "Tạo bài viết" ở Tôi là lối phụ. Trình bày từ GỐC
             // (`appState.bangGoc`) nên không giành chỗ `.sheet` của màn này.
