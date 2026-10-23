@@ -27,6 +27,9 @@ enum KieuNen {
 /// Đọc cài đặt + môi trường rồi quyết có chạy hay đứng yên. Dùng cho mọi chỗ trong app (trừ thẻ xem trước).
 struct NenMuaTuDong: View {
     let kieu: KieuNen
+    /// `false` ở màn TIÊU ĐỀ LỚN (Học, Tất cả tính năng): bỏ trang trí dải trên (cành hoa, đèn, mây, đèn dây) vì
+    /// chữ tiêu đề lớn nằm đúng dải đó.
+    var tren = true
     @Environment(\.accessibilityReduceMotion) private var giamChuyenDong
     @Environment(\.scenePhase) private var pha
     @State private var dangHien = false
@@ -34,7 +37,7 @@ struct NenMuaTuDong: View {
     var body: some View {
         let ql = QuanLyChuDe.shared
         GeometryReader { g in
-            NenMua(mua: ql.mua, kieu: kieu, matDo: ql.matDo, trangTri: ql.trangTriGoc,
+            NenMua(mua: ql.mua, kieu: kieu, matDo: ql.matDo, trangTri: ql.trangTriGoc, tren: tren,
                    chay: dangHien && ql.dongDuoc && !giamChuyenDong && pha == .active,
                    vungAnToan: g.safeAreaInsets)
                 .ignoresSafeArea()
@@ -49,6 +52,7 @@ struct NenMua: View {
     var kieu: KieuNen = .trangChinh
     var matDo: MatDoHat = .vua
     var trangTri = true
+    var tren = true
     var chay = true
     var vungAnToan = EdgeInsets()
 
@@ -61,7 +65,7 @@ struct NenMua: View {
                         // Đứng yên ⇒ một thời điểm cố định (hạt rải đều, đèn sáng vừa) thay vì "khung lúc dừng".
                         let t = chay ? tl.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 36_000) : 1_234.5
                         VeMua(but: ButVe(ctx: ctx), co: co, t: CGFloat(t), mua: mua!, kieu: kieu,
-                              matDo: matDo, trangTri: trangTri, an: vungAnToan, chay: chay).ve()
+                              matDo: matDo, trangTri: trangTri, tren: tren, an: vungAnToan, chay: chay).ve()
                     }
                 }
             }
@@ -100,6 +104,7 @@ struct VeMua {
     let kieu: KieuNen
     let matDo: MatDoHat
     let trangTri: Bool
+    let tren: Bool
     let an: EdgeInsets
     let chay: Bool
 
@@ -253,15 +258,16 @@ struct VeMua {
     // MARK: Hạ
 
     private func veHaSau() {
-        // Mây trôi ở dải trên.
-        for j in 0..<2 {
+        // Mây trôi ở dải thanh tiêu đề (cao hơn dòng chào/ngày — mây trắng sau chữ xám là chìm chữ ở nền tối).
+        for j in 0..<2 where tren {
             let rong = (j == 0 ? 120 : 90) * k
             let vt = (t * (6 + CGFloat(j) * 3) + CGFloat(j) * 340).truncatingRemainder(dividingBy: w + rong * 2) - rong
-            but.to(HinhMua.may, Color.white, tam: CGPoint(x: vt, y: dinh + (j == 0 ? 26 : 70) * k),
-                   co: rong, doMo: kieu == .xemThu ? 0.85 : 0.75)
+            let yMay = kieu == .xemThu ? (j == 0 ? 14 : 34) * k : dinh - (j == 0 ? 30 : 12) * k
+            but.to(HinhMua.may, Color.theoCheDo(sang: .white, toi: Color.white.opacity(0.35)), tam: CGPoint(x: vt, y: yMay),
+                   co: rong * (kieu == .xemThu ? 1 : 0.8), doMo: kieu == .xemThu ? 0.85 : 0.8)
         }
         // Hải âu bay ngang mỗi 18 giây.
-        if kieu == .trangChinh {
+        if kieu == .trangChinh, tren {
             let chuKy: CGFloat = 18
             let tau = t.truncatingRemainder(dividingBy: chuKy)
             if tau < 11 {
@@ -297,6 +303,7 @@ struct VeMua {
     // MARK: Thu
 
     private func veThuSau() {
+        guard tren else { return }
         // Trăng rằm góc trên phải (đằng sau mọi thứ).
         let r = 24 * k
         let tam = kieu == .xemThu ? CGPoint(x: w - 34 * k, y: 30 * k)
@@ -316,37 +323,51 @@ struct VeMua {
     // MARK: Đông
 
     private func veDongSau() {
-        // Đèn dây chăng ngang mép trên, nhấp nháy.
-        let y0 = dinh + (kieu == .xemThu ? 6 : 4)
-        let vong = (kieu == .xemThu ? 10 : 22) * k
-        var day = Path()
-        day.move(to: CGPoint(x: -10, y: y0))
-        let doan = max(2, Int(w / (170 * k)))
-        for j in 0..<doan {
-            let a = CGFloat(j) / CGFloat(doan) * (w + 20) - 10
-            let b = CGFloat(j + 1) / CGFloat(doan) * (w + 20) - 10
-            day.addQuadCurve(to: CGPoint(x: b, y: y0), control: CGPoint(x: (a + b) / 2, y: y0 + vong * 2))
-        }
-        var c = but.ctx
-        c.opacity = 0.6
-        c.stroke(day, with: .color(Color.h(0x2F4F3A)), lineWidth: 1.4)
+        if tren { veDenDay() }
+        veTuyetDong()
+    }
+
+    private func veDenDay() {
+        // Đèn dây chăng ở dải thanh tiêu đề, nhấp nháy — CHỪA khoảng giữa (nơi tiêu đề màn) để dây không cắt qua chữ.
+        let y0 = kieu == .xemThu ? 6 : max(an.top - 44, 6)
+        let vong = (kieu == .xemThu ? 10 : 12) * k
+        let giua = (an.leading + w - an.trailing) / 2
+        let chua: CGFloat = kieu == .xemThu ? 0 : 84
+        let doanDay: [(CGFloat, CGFloat)] = chua == 0 ? [(-10, w + 10)] : [(an.leading - 10, giua - chua), (giua + chua, w + 10)]
         let mauDen = [Color.h(0xE53935), Color.h(0xF9C74F), Color.h(0x43A047), Color.h(0x42A5F5)]
-        let buoc = 34 * k
-        var x: CGFloat = 10
         var i = 0
-        while x < w {
-            let tl = (x + 10) / (w + 20) * CGFloat(doan)
-            let u = tl - tl.rounded(.down)
-            let y = y0 + vong * 2 * 2 * u * (1 - u) * 0.98 + 4 * k
-            let nhay = chay ? Double(0.45 + 0.55 * (0.5 + 0.5 * sin(t * 2.4 + CGFloat(i) * 1.9))) : 0.9
-            let m = mauDen[i % mauDen.count]
-            but.tron(CGPoint(x: x, y: y + 3 * k), 7 * k, m, doMo: nhay * 0.25)
-            var b = but.ctx
-            b.opacity = nhay
-            b.fill(Path(roundedRect: CGRect(x: x - 2.6 * k, y: y, width: 5.2 * k, height: 7.5 * k), cornerRadius: 2.6 * k),
-                   with: .color(m))
-            x += buoc; i += 1
+        for (dau, cuoi) in doanDay where cuoi - dau > 40 {
+            let doan = max(1, Int((cuoi - dau) / (150 * k)))
+            let rong = (cuoi - dau) / CGFloat(doan)
+            var day = Path()
+            day.move(to: CGPoint(x: dau, y: y0))
+            for j in 0..<doan {
+                let a = dau + CGFloat(j) * rong, b = a + rong
+                day.addQuadCurve(to: CGPoint(x: b, y: y0), control: CGPoint(x: (a + b) / 2, y: y0 + vong * 2))
+            }
+            var c = but.ctx
+            c.opacity = 0.6
+            c.stroke(day, with: .color(Color.h(0x2F4F3A)), lineWidth: 1.4)
+            let soBong = max(2, Int(rong / (32 * k)))
+            for j in 0..<doan {
+                for q in 1..<soBong {
+                    let u = CGFloat(q) / CGFloat(soBong)
+                    let x = dau + (CGFloat(j) + u) * rong
+                    let y = y0 + vong * 2 * u * (1 - u) * 2 * 0.98 + 1
+                    let nhay = chay ? Double(0.45 + 0.55 * (0.5 + 0.5 * sin(t * 2.4 + CGFloat(i) * 1.9))) : 0.9
+                    let m = mauDen[i % mauDen.count]
+                    but.tron(CGPoint(x: x, y: y + 3 * k), 7 * k, m, doMo: nhay * 0.25)
+                    var b = but.ctx
+                    b.opacity = nhay
+                    b.fill(Path(roundedRect: CGRect(x: x - 2.6 * k, y: y, width: 5.2 * k, height: 7.5 * k), cornerRadius: 2.6 * k),
+                           with: .color(m))
+                    i += 1
+                }
+            }
         }
+    }
+
+    private func veTuyetDong() {
         // Tuyết đọng ở đáy.
         var p = Path()
         let cao = (kieu == .xemThu ? 10 : 20) * k
@@ -374,29 +395,33 @@ struct VeMua {
         let xPhai = w - (kieu == .xemThu ? 4 : an.trailing + 6)
         switch mua {
         case .xuan:
-            canhHoa(goc: CGPoint(x: xTrai - 8 * k, y: dinh - 44 * k), latNgang: false,
-                    mauHoa: Color.h(0xF48FB1), mauNhuy: Color.h(0xC2185B))
-            denLong(CGPoint(x: xPhai - 70 * k, y: dinh - 4), day: 30 * k, pha: 0)
-            denLong(CGPoint(x: xPhai - 30 * k, y: dinh - 4), day: 52 * k, pha: 1.7)
+            if tren {
+                canhHoa(goc: CGPoint(x: xTrai - 8 * k, y: dinh - 38 * k), latNgang: false,
+                        mauHoa: Color.h(0xF48FB1), mauNhuy: Color.h(0xC2185B))
+                denLong(CGPoint(x: xPhai - 160 * k, y: dinh - 4), day: 26 * k, pha: 0)
+                denLong(CGPoint(x: xPhai - 116 * k, y: dinh - 4), day: 44 * k, pha: 1.7)
+            }
             baoLiXi(CGPoint(x: xTrai + 30 * k, y: day - 30 * k))
             canhHoa(goc: CGPoint(x: xPhai + 8 * k, y: day + 4 * k), latNgang: true, mauHoa: Color.h(0xF7C531),
                     mauNhuy: Color.h(0xC77800), huongLen: true)
         case .ha:
-            matTroi(CGPoint(x: xPhai - 56 * k, y: dinh + 30 * k))
+            if tren { matTroi(CGPoint(x: xPhai - 140 * k, y: dinh + 22 * k)) }
             oBaiBien(CGPoint(x: xTrai + 44 * k, y: day - 4 * k))
             bongBien(CGPoint(x: xPhai - 46 * k, y: h - 30 * k))
         case .thu:
-            canhHoa(goc: CGPoint(x: xTrai - 8 * k, y: dinh - 44 * k), latNgang: false,
-                    mauHoa: Color.h(0xF8BBD0), mauNhuy: Color.h(0xD81B60))
-            denOngSao(CGPoint(x: xPhai - 96 * k, y: dinh - 4), day: 34 * k)
+            if tren {
+                canhHoa(goc: CGPoint(x: xTrai - 8 * k, y: dinh - 38 * k), latNgang: false,
+                        mauHoa: Color.h(0xF8BBD0), mauNhuy: Color.h(0xD81B60))
+                denOngSao(CGPoint(x: xPhai - 96 * k, y: dinh - 4), day: 34 * k)
+            }
             dongLa(CGPoint(x: xTrai + 40 * k, y: day - 8 * k))
             canhPhong(CGPoint(x: xPhai - 20 * k, y: day))
         case .dong:
             cayThong(CGPoint(x: xTrai + 46 * k, y: day - 2 * k))
             nguoiTuyet(CGPoint(x: xPhai - 96 * k, y: day - 4 * k))
             chimCanhCut(CGPoint(x: xPhai - 40 * k, y: day - 2 * k))
-            if kieu == .trangChinh {
-                but.net(HinhMua.bongTuyet, Color.h(0x7FA8D8), tam: CGPoint(x: xPhai - 50 * k, y: dinh + 50 * k),
+            if kieu == .trangChinh, tren {
+                but.net(HinhMua.bongTuyet, Color.h(0x7FA8D8), tam: CGPoint(x: xPhai - 130 * k, y: dinh + 34 * k),
                         co: 30 * k, goc: t * 0.15, day: 2, doMo: 0.5)
             }
         }
@@ -422,23 +447,24 @@ struct VeMua {
             var c = b.ctx
             c.scaleBy(x: latNgang ? -1 : 1, y: huongLen ? -1 : 1)
             let cb = ButVe(ctx: c)
+            // Cành NÔNG (cao ≤ 40pt cục bộ) — nằm gọn trong dải thanh tiêu đề, không chạm lời chào bên dưới.
             var than = Path()
             than.move(to: CGPoint(x: 0, y: 0))
-            than.addCurve(to: CGPoint(x: 150, y: 58), control1: CGPoint(x: 50, y: 6), control2: CGPoint(x: 96, y: 54))
-            cb.duong(than, Color.h(0x6B4226), 5)
+            than.addCurve(to: CGPoint(x: 150, y: 26), control1: CGPoint(x: 50, y: 4), control2: CGPoint(x: 100, y: 30))
+            cb.duong(than, Color.h(0x6B4226), 4.5)
             var nhanh = Path()
-            nhanh.move(to: CGPoint(x: 70, y: 26)); nhanh.addQuadCurve(to: CGPoint(x: 104, y: 6), control: CGPoint(x: 88, y: 24))
-            nhanh.move(to: CGPoint(x: 112, y: 50)); nhanh.addQuadCurve(to: CGPoint(x: 128, y: 86), control: CGPoint(x: 112, y: 70))
-            cb.duong(nhanh, Color.h(0x6B4226), 3)
-            let hoa: [(CGFloat, CGFloat, CGFloat)] = [(40, 12, 22), (78, 34, 26), (104, 6, 20), (126, 86, 20),
-                                                       (150, 58, 24), (60, 20, 14), (120, 48, 16)]
+            nhanh.move(to: CGPoint(x: 70, y: 14)); nhanh.addQuadCurve(to: CGPoint(x: 100, y: -4), control: CGPoint(x: 86, y: 12))
+            nhanh.move(to: CGPoint(x: 112, y: 24)); nhanh.addQuadCurve(to: CGPoint(x: 132, y: 38), control: CGPoint(x: 120, y: 34))
+            cb.duong(nhanh, Color.h(0x6B4226), 2.6)
+            let hoa: [(CGFloat, CGFloat, CGFloat)] = [(38, 6, 20), (76, 16, 24), (100, -4, 18), (132, 38, 16),
+                                                       (150, 26, 22), (58, 10, 13), (118, 22, 14)]
             for (j, (x, y, s)) in hoa.enumerated() {
                 let tam = CGPoint(x: x, y: y)
                 cb.to(HinhMua.hoa5, mauHoa, tam: tam, co: s, goc: CGFloat(j) * 0.7)
                 cb.tron(tam, s * 0.13, mauNhuy)
             }
-            cb.tron(CGPoint(x: 92, y: 40), 3.5, mauHoa)   // nụ
-            cb.tron(CGPoint(x: 138, y: 70), 3, mauHoa)
+            cb.tron(CGPoint(x: 90, y: 20), 3.2, mauHoa)   // nụ
+            cb.tron(CGPoint(x: 140, y: 34), 2.8, mauHoa)
         }
     }
 

@@ -62,7 +62,7 @@ struct CoursesView: View {
                 }
                 .padding(Spacing.md)
             }
-            .nenChuDe()
+            .nenChuDe(tieuDeLon: true)
             // Tiêu đề TRÙNG nhãn tab ("Học") — bản cũ: tab "Học", màn "Khóa học".
             .navigationTitle(T("Học"))
             .navigationBarTitleDisplayMode(.large)

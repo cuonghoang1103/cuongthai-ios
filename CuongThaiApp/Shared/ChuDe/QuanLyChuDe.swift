@@ -129,7 +129,8 @@ final class QuanLyChuDe {
 extension View {
     /// Nền mùa ĐẦY ĐỦ (nền loang + hạt + trang trí 4 góc) cho MÀN CHÍNH. Thay cho
     /// `.background(AppColors.backgroundPrimary)` ở gốc màn: nội dung (thẻ) nằm TRÊN nền nên luôn rõ.
-    func nenChuDe() -> some View { modifier(NenChuDeModifier()) }
+    /// `tieuDeLon: true` cho màn dùng tiêu đề LỚN (navigationBarTitleDisplayMode .large) — bỏ trang trí dải trên.
+    func nenChuDe(tieuDeLon: Bool = false) -> some View { modifier(NenChuDeModifier(tren: !tieuDeLon)) }
 
     /// Màn đọc dài / tập trung (bài học, đọc sách, Vở, làm bài thi, video): khi màn này đang hiện thì mọi chuyển
     /// động của chủ đề dừng (nền vẫn giữ màu mùa). Gắn ở gốc màn — đếm theo onAppear/onDisappear nên lồng nhau vẫn đúng.
@@ -145,9 +146,10 @@ private struct ManYenModifier: ViewModifier {
 }
 
 private struct NenChuDeModifier: ViewModifier {
+    var tren = true
     func body(content: Content) -> some View {
         content
-            .background { NenMuaTuDong(kieu: .trangChinh) }
+            .background { NenMuaTuDong(kieu: .trangChinh, tren: tren) }
             .onAppear { QuanLyChuDe.shared.vaoManNen() }
             .onDisappear { QuanLyChuDe.shared.roiManNen() }
     }

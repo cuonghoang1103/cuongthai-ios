@@ -85,7 +85,7 @@ struct TatCaView: View {
         .navigationBarTitleDisplayMode(.large)
         #endif
         .scrollContentBackground(.hidden)
-        .nenChuDe()
+        .nenChuDe(tieuDeLon: true)
         .navigationTitle(T("Tất cả tính năng"))
         .animation(.default, value: kho.ds)
     }
