@@ -432,7 +432,8 @@ struct VietTaySH: View {
                     KhoNetVietSH.ghi(khoaLuu, ink)
                 }
             }
-            ForEach(hien, id: \.self) { ch in
+            ForEach(hien.indices.map { IdLatSH(khoa: "viet|\(id)|\(trang)", i: $0) }) { k in
+                let ch = hien[k.i]
                 VStack(alignment: .leading, spacing: 4) {
                     HangVietSH(muc: ch, net: vm.net, goi: goi[ch], che: che, mo: mo, ve: ink[ch] ?? PKDrawing(), phienBan: phienBan[ch] ?? 0, but: but,
                                doi: { capNhat(ch, $0, ngoai: false) },

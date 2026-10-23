@@ -55,8 +55,9 @@ struct BaiSachHocView: View {
                         if ProcessInfo.processInfo.environment["CT_SACHHOC_CHI"].map({ !$0.isEmpty }) == true { Color.clear.frame(height: 1500) }
                         #endif
                         ForEach(Array(nhom(bai).enumerated()), id: \.offset) { i, n in
-                            // Phần tử đệm mang `.id(i)` — neo cho ScrollViewReader (cuộn tới nhóm i).
-                            Color.clear.frame(height: 16).id(i)
+                            // Phần tử đệm mang id "nhom-i" — neo cho ScrollViewReader (cuộn tới nhóm i). Id CHUỖI,
+                            // không dùng số trần: phần tử lát của khối lớn cũng nằm thẳng trong LazyVStack này.
+                            Color.clear.frame(height: 16).id("nhom-\(i)")
                             nhomView(n, video: vd.theoKhoi)
                         }
                         Color.clear.frame(height: 16)
@@ -95,15 +96,15 @@ struct BaiSachHocView: View {
             .onChange(of: nhayViet) { _, n in
                 guard let n else { return }
                 // LazyVStack chỉ ƯỚC LƯỢNG chiều cao phần chưa dựng ⇒ cuộn lại vài lượt cho tới đúng chỗ.
-                withAnimation(.easeInOut(duration: 0.3)) { cuon.scrollTo(n, anchor: .top) }
-                for t in [0.4, 0.9] { DispatchQueue.main.asyncAfter(deadline: .now() + t) { cuon.scrollTo(n, anchor: .top) } }
+                withAnimation(.easeInOut(duration: 0.3)) { cuon.scrollTo("nhom-\(n)", anchor: .top) }
+                for t in [0.4, 0.9] { DispatchQueue.main.asyncAfter(deadline: .now() + t) { cuon.scrollTo("nhom-\(n)", anchor: .top) } }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { nhayViet = nil }
             }
             #if DEBUG
             .onChange(of: bai?.id) { _, _ in
                 if let n = cuonToi, bai != nil {
                     // LazyVStack chỉ ước lượng chiều cao phần chưa dựng ⇒ cuộn vài lượt cho tới đúng chỗ.
-                    for t in [0.6, 1.4, 2.4] { DispatchQueue.main.asyncAfter(deadline: .now() + t) { cuon.scrollTo(n, anchor: .top) } }
+                    for t in [0.6, 1.4, 2.4] { DispatchQueue.main.asyncAfter(deadline: .now() + t) { cuon.scrollTo("nhom-\(n)", anchor: .top) } }
                 }
             }
             #endif
@@ -351,7 +352,7 @@ struct BaiSachHocView: View {
 
     // MARK: Lối tắt tới khối viết
 
-    /// (chỉ số nhóm, tên khối) của các khối `write` — cùng chỉ số với `.id(i)` của phần tử đệm.
+    /// (chỉ số nhóm, tên khối) của các khối `write` — cùng chỉ số với id "nhom-i" của phần tử đệm.
     private func khoiViet(_ b: BaiSH) -> [(Int, String)] {
         nhom(b).enumerated().compactMap { i, n in
             if case .le(_, let k) = n, case .write(_, let title, _, _, _) = k { return (i, PhanTichChuSH.tron(title)) }

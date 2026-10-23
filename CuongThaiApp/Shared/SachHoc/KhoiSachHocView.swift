@@ -72,6 +72,15 @@ struct LatSH<C: View>: View {
     }
 }
 
+/// Id của MỘT phần tử lát. Phần tử lát nằm thẳng trong LazyVStack của màn bài, nên id phải duy nhất
+/// cả BÀI: `ForEach(id: \.offset)` (0, 1, 2…) trùng id số của các nhóm khối ⇒ LazyVStack nuốt mất
+/// phần tử (ảnh 24/10: bảng Nhóm 0 của b5-kanji mất 3 hàng đầu) — cùng kiểu lỗi ô xương Phòng thi 541c8d6.
+struct IdLatSH: Hashable, Identifiable {
+    let khoa: String
+    let i: Int
+    var id: IdLatSH { self }
+}
+
 /// Lát của `TheKhoiSH`: các lát xếp sát nhau nhìn liền MỘT thẻ (bo góc + đệm 14 chỉ ở lát đầu/cuối).
 struct LatTheSH: ViewModifier {
     var tren = false
@@ -361,6 +370,9 @@ struct BangSH: View {
         }
     }
 
+    /// Khoá id lát của bảng (bảng không có id riêng ⇒ lấy theo nội dung).
+    private var khoaLat: String { "bang|\(caption ?? "")|\(head.joined(separator: "|"))|\(rows.first?.joined(separator: "|") ?? "")|\(rows.count)" }
+
     /// Các phần của bảng — mỗi phần một phần tử lazy (xem `LatSH`); khoảng cách nằm trong phần.
     @ViewBuilder private var cacPhan: some View {
         let coCaption = !(caption ?? "").isEmpty
@@ -368,8 +380,8 @@ struct BangSH: View {
             ChuSH(text: caption, co: 14, dam: true, mau: .phu).padding(.bottom, 8)
         }
         if xepThe {
-            ForEach(Array(rows.enumerated()), id: \.offset) { i, r in
-                theHang(r).theKhoiSH().padding(.top, i == 0 ? 0 : 8)
+            ForEach(rows.indices.map { IdLatSH(khoa: khoaLat, i: $0) }) { k in
+                theHang(rows[k.i]).theKhoiSH().padding(.top, k.i == 0 ? 0 : 8)
             }
         } else {
             let cot = rongCot()
@@ -381,10 +393,11 @@ struct BangSH: View {
                         .frame(width: tong, alignment: .leading)
                         .background(KhungLatSH(tren: true, duoi: rows.isEmpty, bo: 12, nen: AppColors.backgroundTertiary))
                 }
-                ForEach(Array(rows.enumerated()), id: \.offset) { i, r in
+                ForEach(rows.indices.map { IdLatSH(khoa: khoaLat, i: $0) }) { k in
+                    let i = k.i
                     VStack(spacing: 0) {
                         if i > 0 || !head.isEmpty { Divider() }
-                        hang(r, cot, dau: false)
+                        hang(rows[i], cot, dau: false)
                     }
                     .frame(width: tong, alignment: .leading)
                     .background(KhungLatSH(tren: head.isEmpty && i == 0, duoi: i == rows.count - 1, bo: 12))

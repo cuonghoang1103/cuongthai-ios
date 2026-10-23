@@ -156,7 +156,8 @@ struct TracNghiemSH: View {
                     chon = [0: items[0].correct, 1: (items[1].correct + 1) % max(1, items[1].options.count)]
                 }
                 #endif
-            ForEach(Array(items.enumerated()), id: \.offset) { i, it in
+            ForEach(items.indices.map { IdLatSH(khoa: "mcq|" + id, i: $0) }) { k in
+                let i = k.i, it = items[k.i]
                 CauTracNghiemSH(n: i + 1, cau: it, chon: chon[i]) { j in
                     chon[i] = j
                     if chon.count == items.count {
