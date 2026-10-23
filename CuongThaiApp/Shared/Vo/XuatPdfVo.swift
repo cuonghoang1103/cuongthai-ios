@@ -60,6 +60,8 @@ enum XuatPdfVo {
                                   let anh = UIImage(contentsOfFile: KhoVo.duongDanNen(a).path) {
                             anh.draw(in: vuaKhung(anh.size, trong: khungNen))
                         }
+                        // 2b. Ảnh dán (chụp đoạn bài) — trên nền, dưới mực.
+                        KhoAnhDan.ve(t.id)
                         // 3. Nét bút, 2× cho in ấn nét (trang rất to thì hạ tỉ lệ
                         // để một ảnh không vượt ~6000px cạnh dài).
                         let net = KhoVo.nap(t.id)

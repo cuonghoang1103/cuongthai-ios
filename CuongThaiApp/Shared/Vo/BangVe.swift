@@ -90,9 +90,12 @@ struct BangVe: UIViewControllerRepresentable {
     var bopGoiTroLy: Bool = false
     var khiBopGoiTroLy: (() -> Void)?
     var cauNoi: CauNoiBangVe? = nil
+    /// Trang nhỏ hơn khung thì đặt sát ĐỈNH (khung Vở nửa màn hình của "Ghi khi học") thay vì giữa khung.
+    var canhTren: Bool = false
 
     func makeUIViewController(context: Context) -> BangVeVC {
         let vc = BangVeVC(idTrang: idTrang, giay: giay, khoTrang: khoTrang, khoGoc: khoGoc ?? khoTrang)
+        vc.canhTren = canhTren
         NhatKy.vo.info("makeUIViewController: vc MỚI \(ObjectIdentifier(vc).hashValue % 10000) · trang \(idTrang.uuidString.prefix(6))")
         vc.khiGanDay = khiGanDay
         vc.datNen(pdfTen: nenPdfTen, trang: nenPdfTrang, anhTen: nenAnhTen)
@@ -144,6 +147,8 @@ final class BangVeVC: UIViewController {
     // MARK: Trạng thái
 
     private(set) var idTrang: UUID
+    /// Xem `BangVe.canhTren`.
+    var canhTren = false
     private var giay: LoaiGiay
     private var khoTrang: CGSize
     /// Khổ gốc (chưa nối dài) — xem `BangVe.khoGoc`.
@@ -164,6 +169,8 @@ final class BangVeVC: UIViewController {
     let canvas = PKCanvasView()
     private let nen = GiayNenView()
     private let nenTaiLieu = NenTrangView()
+    /// Ảnh dán (chụp đoạn bài) — trên nền tài liệu, dưới mực. Xem `AnhDanVo.swift`.
+    private lazy var lopAnhDan = LopAnhDanView(idTrang: idTrang)
     /// Giữ MẠNH: `PKToolPicker` này do chính màn hình tạo ra, không có ai
     /// khác giữ hộ. Khai `weak` là nó bị thu hồi ngay sau khi dựng xong và
     /// bảng công cụ biến mất — hoặc chớp lên rồi tắt.
@@ -327,6 +334,7 @@ final class BangVeVC: UIViewController {
         // Thứ tự: giấy kẻ (dưới cùng) → trang tài liệu → mực.
         canvas.insertSubview(nen, at: 0)
         canvas.insertSubview(nenTaiLieu, aboveSubview: nen)
+        canvas.insertSubview(lopAnhDan, aboveSubview: nenTaiLieu)
 
         NSLayoutConstraint.activate([
             canvas.topAnchor.constraint(equalTo: view.topAnchor),
@@ -406,6 +414,8 @@ final class BangVeVC: UIViewController {
         nenTaiLieu.frame = CGRect(origin: .zero, size: CGSize(width: khoGoc.width * z,
                                                               height: khoGoc.height * z))
         nenTaiLieu.dat(pdfTen: pdfTen, trang: pdfTrang, anhTen: anhTen, khoTrang: khoGoc)
+        lopAnhDan.frame = CGRect(origin: .zero, size: khoPhong)
+        lopAnhDan.tyLe = z
         canvas.contentSize = khoPhong
         if let xem = lopXemTruoc { xem.frame = CGRect(origin: .zero, size: khoPhong); xem.tyLe = z }
 
@@ -417,7 +427,7 @@ final class BangVeVC: UIViewController {
         // dung". `frameObscured(in:)` là số ĐO THẬT của phần bị che, không
         // phải hằng số đoán bừa: bảng đổi cỡ theo máy và theo chỗ người dùng
         // kéo nó tới.
-        canvas.contentInset = UIEdgeInsets(top: duThuaDoc, left: duThua,
+        canvas.contentInset = UIEdgeInsets(top: canhTren ? 12 : duThuaDoc, left: duThua,
                                            bottom: max(duThuaDoc, cheDuoi()), right: duThua)
     }
 
@@ -517,7 +527,7 @@ final class BangVeVC: UIViewController {
         lop.frame = CGRect(origin: .zero, size: CGSize(width: khoTrang.width * z, height: khoTrang.height * z))
         lop.tyLe = z
         // Trên nền + nền tài liệu, dưới mực thật (mực là lớp riêng của canvas).
-        canvas.insertSubview(lop, aboveSubview: nenTaiLieu)
+        canvas.insertSubview(lop, aboveSubview: lopAnhDan)
         lopXemTruoc = lop
         lop.batDau { [weak self, weak lop] in
             guard let self else { return }

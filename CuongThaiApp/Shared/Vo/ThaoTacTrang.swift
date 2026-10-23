@@ -182,6 +182,7 @@ enum ThaoTacTrang {
         kho.insert(t)
         KhoVo.nhanBan(tu: goc.id, sang: t.id)
         KhoVo.nhanBanAnhNho(tu: goc.id, sang: t.id)
+        KhoAnhDan.nhanBan(tu: goc.id, sang: t.id)
         ds.insert(t, at: i + 1)
         danhSoLai(ds)
         danhDauCay(cuon)
@@ -329,6 +330,8 @@ enum ThaoTacTrang {
                 try? FileManager.default.copyItem(at: tam, to: KhoVo.duongDanNet(t.id))
                 try? FileManager.default.removeItem(at: tam)
             }
+            // Ảnh dán (tệp cạnh trang, theo id) đi theo id MỚI của trang dựng lại.
+            KhoAnhDan.doiTrang(tu: c.idCu, sang: t.id)
             let net = KhoVo.nap(t.id)
             KhoVo.dungAnhNho(net, kho: t.khoTrang, khoNen: t.khoGoc, cho: t.id, nenPdfTen: t.nenPdfTen,
                              nenPdfTrang: t.nenPdfTrang, nenAnhTen: t.nenAnhTen, giay: t.giay)

@@ -218,6 +218,10 @@ enum KhoVo {
                       let nen = UIImage(data: d) {
                 nen.draw(in: oNen)
             }
+            // Ảnh DÁN (chụp đoạn bài) — trên nền, dưới mực, đúng như màn viết.
+            if KhoAnhDan.coAnh(idTrang) {
+                KhoAnhDan.ve(idTrang) { k in CGRect(x: k.minX * ty, y: k.minY * ty, width: k.width * ty, height: k.height * ty) }
+            }
             guard !drawing.bounds.isEmpty else { return }
             let net = drawing.image(from: CGRect(origin: .zero, size: kho), scale: ty)
             net.draw(in: CGRect(origin: .zero, size: khoNho))
@@ -247,6 +251,14 @@ enum KhoVo {
             if let id = UUID(uuidString: ten), !idConSong.contains(id) {
                 try? fm.removeItem(at: url)
                 try? fm.removeItem(at: duongDanAnhNho(id))
+            }
+        }
+        // Ảnh dán của trang không còn (KHÔNG xoá lúc xoá trang: Hoàn tác xoá dựng lại trang cùng id).
+        if let ds = try? fm.contentsOfDirectory(at: KhoAnhDan.thuMuc, includingPropertiesForKeys: nil) {
+            for url in ds where url.pathExtension == "json" {
+                if let id = UUID(uuidString: url.deletingPathExtension().lastPathComponent), !idConSong.contains(id) {
+                    KhoAnhDan.xoaHet(id)
+                }
             }
         }
     }
