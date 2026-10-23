@@ -149,6 +149,7 @@ struct TracNghiemSH: View {
         LatSH {
             DauKhungBaiTapSH(bieuTuong: "checklist", tieuDe: title, huongDan: "Chọn một đáp án — thấy ngay đúng sai và lý do.")
                 .latTheSH(tren: true, vien: vien)
+                .vietDeCon("dau")
                 #if DEBUG
                 // Màn soi (máy ảo không bấm được từ dòng lệnh): `CT_SACHHOC_DIEN=1` ⇒ câu 1 chọn đúng, câu 2 chọn sai.
                 .onAppear {
@@ -167,6 +168,7 @@ struct TracNghiemSH: View {
                 }
                 .padding(.top, 12)
                 .latTheSH(vien: vien)
+                .vietDeCon("c\(i)")
             }
             Group {
                 if !chon.isEmpty {
@@ -181,6 +183,7 @@ struct TracNghiemSH: View {
                 }
             }
             .latTheSH(duoi: true, vien: vien)
+            .vietDeCon("cuoi")
         }
     }
 }

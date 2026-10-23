@@ -378,10 +378,12 @@ struct BangSH: View {
         let coCaption = !(caption ?? "").isEmpty
         if let caption, coCaption {
             ChuSH(text: caption, co: 14, dam: true, mau: .phu).padding(.bottom, 8)
+                .vietDeCon("cap")
         }
         if xepThe {
             ForEach(rows.indices.map { IdLatSH(khoa: khoaLat, i: $0) }) { k in
                 theHang(rows[k.i]).theKhoiSH().padding(.top, k.i == 0 ? 0 : 8)
+                    .vietDeCon("r\(k.i)")   // cùng khoá với hàng ở dạng bảng ⇒ đổi bố cục vẫn giữ nét
             }
         } else {
             let cot = rongCot()
@@ -392,6 +394,7 @@ struct BangSH: View {
                     hang(head, cot, dau: true)
                         .frame(width: tong, alignment: .leading)
                         .background(KhungLatSH(tren: true, duoi: rows.isEmpty, bo: 12, nen: AppColors.backgroundTertiary))
+                        .vietDeCon("head")
                 }
                 ForEach(rows.indices.map { IdLatSH(khoa: khoaLat, i: $0) }) { k in
                     let i = k.i
@@ -401,6 +404,7 @@ struct BangSH: View {
                     }
                     .frame(width: tong, alignment: .leading)
                     .background(KhungLatSH(tren: head.isEmpty && i == 0, duoi: i == rows.count - 1, bo: 12))
+                    .vietDeCon("r\(i)")
                 }
             } else {
                 luoiCuon(cot)
@@ -442,11 +446,15 @@ struct BangSH: View {
             VStack(alignment: .leading, spacing: 0) {
                 if !head.isEmpty {
                     hang(head, cot, dau: true).frame(maxWidth: .infinity, alignment: .leading).background(AppColors.backgroundTertiary)
+                        .vietDeCon("head")
                 }
                 ForEach(Array(rows.enumerated()), id: \.offset) { i, r in
                     // Kẻ ngăn hàng thay cho nền sọc (hàng có ô cao ô thấp thì sọc lởm chởm).
                     if i > 0 || !head.isEmpty { Divider() }
-                    hang(r, cot, dau: false)
+                    // Lớp viết đè theo HÀNG, cùng khoá với dạng lát ⇒ bảng đổi giữa cuộn ngang / vừa khung (xoay máy,
+                    // mở cột Vở) vẫn giữ nét đúng hàng; nằm TRONG vùng cuộn ngang ⇒ nét đi theo bảng khi kéo ngang.
+                    hang(r, cot, dau: false).frame(maxWidth: .infinity, alignment: .leading)
+                        .vietDeCon("r\(i)")
                 }
             }
             .fixedSize(horizontal: true, vertical: false)
