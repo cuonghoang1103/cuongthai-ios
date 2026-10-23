@@ -1,4 +1,5 @@
 import SwiftUI
+import Observation
 
 // MARK: - Design System
 
@@ -92,35 +93,46 @@ struct AppColors {
     static let divider = Color.theoCheDo(sang: Color(red: 30/255, green: 28/255, blue: 22/255).opacity(0.12), toi: Color.white.opacity(0.09))
     static let border = Color.theoCheDo(sang: Color(red: 30/255, green: 28/255, blue: 22/255).opacity(0.12), toi: Color.white.opacity(0.09))
     static let overlay = Color.black.opacity(0.5)
+
+    // Reaction Colors
+    static let like = primary
+    static let love = Color.theoCheDo(sang: Color(hex: 0xD32F2F), toi: Color(hex: 0xF54336))
+    static let haha = Color.theoCheDo(sang: Color(hex: 0xB47600), toi: Color(hex: 0xFAD129))
+    static let sad = Color.theoCheDo(sang: Color(hex: 0x2E6FD9), toi: Color(hex: 0x408CFA))
+    static let angry = Color.theoCheDo(sang: Color(hex: 0xD32F2F), toi: Color(hex: 0xEE4444))
+    static let brandPink = Color.theoCheDo(sang: Color(hex: 0xDB2777), toi: Color(hex: 0xF472B6))
+    static let brandGradient = LinearGradient(colors: [primary, brandPink], startPoint: .leading, endPoint: .trailing)
     #else
-    // Primary Brand Colors — tím thương hiệu giữ nguyên ở cả hai chế độ, chỉ
-    // đậm hơn một nấc ở nền sáng cho đủ tương phản chữ trắng (WCAG AA).
-    static let primary = Color.theoCheDo(sang: Color(hex: 0x7A45E8), toi: Color(hex: 0x8C5AF0))
-    static let primaryDark = Color.theoCheDo(sang: Color(hex: 0x6535D0), toi: Color(hex: 0x7340DB))
-    static let primaryLight = Color.theoCheDo(sang: Color(hex: 0x9B6BFF), toi: Color(hex: 0xA673FF))
+    // ── App chính (và app Admin): màu đi qua CHỦ ĐỀ đang hiệu lực (23/10/2026).
+    //
+    // Mỗi token là thuộc tính TÍNH (`static var`) đọc `KhoBangMau.shared.bang` — một đối tượng `@Observable`.
+    // SwiftUI theo dõi mọi thuộc tính `@Observable` đọc trong `body`, nên đổi chủ đề là MỌI màn đang dùng
+    // `AppColors.x` tự vẽ lại, không phải sửa từng màn, không phải mở lại app. Bảng nào đang hiệu lực do
+    // `QuanLyChuDe` (Shared/ChuDe) quyết; app Admin không có tệp đó nên luôn ở bảng gốc `BangMauChuDe.goc` — y hệt
+    // trước 23/10. ⚠️ Màu cất vào `static let` ở NƠI KHÁC (chụp một lần) sẽ không đổi theo chủ đề.
+    private static var b: BangMauChuDe { KhoBangMau.shared.bang }
 
-    // Secondary Colors
-    static let secondary = Color.theoCheDo(sang: Color(hex: 0x0E93A6), toi: Color(hex: 0x21D4ED))
-    static let accent = Color.theoCheDo(sang: Color(hex: 0xD97706), toi: Color(hex: 0xFF9933))
+    static var primary: Color { b.primary }
+    static var primaryDark: Color { b.primaryDark }
+    static var primaryLight: Color { b.primaryLight }
+    static var secondary: Color { b.secondary }
+    static var accent: Color { b.accent }
 
-    // Background Colors
-    static let backgroundPrimary = Color.theoCheDo(sang: Color(hex: 0xF6F6F9), toi: Color(hex: 0x0A0A14))
-    static let backgroundSecondary = Color.theoCheDo(sang: Color(hex: 0xFFFFFF), toi: Color(hex: 0x141420))
-    static let backgroundTertiary = Color.theoCheDo(sang: Color(hex: 0xEDEDF2), toi: Color(hex: 0x1A1A24))
-    static let backgroundCard = Color.theoCheDo(sang: Color(hex: 0xFFFFFF), toi: Color(hex: 0x1A1A24))
+    static var backgroundPrimary: Color { b.backgroundPrimary }
+    static var backgroundSecondary: Color { b.backgroundSecondary }
+    static var backgroundTertiary: Color { b.backgroundTertiary }
+    static var backgroundCard: Color { b.backgroundCard }
 
-    // Text Colors
-    static let textPrimary = Color.theoCheDo(sang: Color(hex: 0x14141C), toi: Color(hex: 0xFFFFFF))
-    static let textSecondary = Color.theoCheDo(sang: Color(hex: 0x56565F), toi: Color(hex: 0x9999A6))
-    // 19/10/2026: 0x81818C/0x737380 chỉ đạt 3,3–4,2:1 trên nền ⇒ dưới ngưỡng WCAG AA 4,5:1 cho chữ nhỏ.
-    static let textTertiary = Color.theoCheDo(sang: Color(hex: 0x6A6A75), toi: Color(hex: 0x8E8E9C))
+    static var textPrimary: Color { b.textPrimary }
+    static var textSecondary: Color { b.textSecondary }
+    static var textTertiary: Color { b.textTertiary }
 
     /// Chữ/biểu tượng đặt TRÊN nền thương hiệu (nút tím, huy hiệu đỏ, lớp phủ
     /// đen trên ảnh). Luôn trắng ở cả hai chế độ — đừng thay bằng textPrimary,
     /// ở chế độ sáng textPrimary là màu gần đen và sẽ chìm vào nền tím.
     static let onPrimary = Color.white
 
-    // Status Colors
+    // Status Colors — CHUNG mọi chủ đề (nghĩa của màu tín hiệu không đổi theo mùa).
     // 19/10/2026: bản sáng 0x1A8F35 = 3,6–4,2:1 ⇒ đậm lại cho đạt 4,5:1 (chữ "Done", chip trạng thái).
     static let success = Color.theoCheDo(sang: Color(hex: 0x157A33), toi: Color(hex: 0x33C759))
     static let error = Color.theoCheDo(sang: Color(hex: 0xD32F2F), toi: Color(hex: 0xEE4444))
@@ -130,35 +142,69 @@ struct AppColors {
     static let info = Color.theoCheDo(sang: Color(hex: 0x2563EB), toi: Color(hex: 0x5B8DEF))
 
     // UI Elements
-    static let divider = Color.theoCheDo(sang: Color.black.opacity(0.10), toi: Color.white.opacity(0.12))
-    static let border = Color.theoCheDo(sang: Color.black.opacity(0.08), toi: Color.white.opacity(0.10))
+    static var divider: Color { b.divider }
+    static var border: Color { b.border }
     static let overlay = Color.black.opacity(0.5)
 
-    #endif
-
     // Reaction Colors
-    static let like = primary
+    static var like: Color { primary }
     static let love = Color.theoCheDo(sang: Color(hex: 0xD32F2F), toi: Color(hex: 0xF54336))
     static let haha = Color.theoCheDo(sang: Color(hex: 0xB47600), toi: Color(hex: 0xFAD129))
     static let sad = Color.theoCheDo(sang: Color(hex: 0x2E6FD9), toi: Color(hex: 0x408CFA))
     static let angry = Color.theoCheDo(sang: Color(hex: 0xD32F2F), toi: Color(hex: 0xEE4444))
 
-    /// Hồng thương hiệu — đầu kia của dải gradient chữ CuongThai.
-    /// Bản nền sáng đậm hơn để chữ không bị nhạt trên nền trắng.
-    static let brandPink = Color.theoCheDo(sang: Color(hex: 0xDB2777), toi: Color(hex: 0xF472B6))
+    /// Hồng thương hiệu — đầu kia của dải gradient chữ CuongThai (mỗi chủ đề một màu "đầu kia").
+    static var brandPink: Color { b.brandPink }
 
-    /// Dải gradient thương hiệu — TÍM → HỒNG.
+    /// Dải gradient thương hiệu — PRIMARY → HỒNG (tím→hồng ở chủ đề Mặc định).
     ///
     /// Dùng cho chữ "CuongThai" ở mọi nơi trong app. Khai MỘT chỗ để hai màn
     /// không lệch nhau: trước đây màn Trang chủ tự khai gradient riêng
     /// (tím→lam) còn màn đăng nhập dùng `brandGradient`, nên cùng một chữ mà
     /// hai màu khác nhau tuỳ màn.
-    static let brandGradient = LinearGradient(
-        colors: [primary, brandPink],
-        startPoint: .leading,
-        endPoint: .trailing,
-    )
+    static var brandGradient: LinearGradient {
+        LinearGradient(colors: [primary, brandPink], startPoint: .leading, endPoint: .trailing)
+    }
+    #endif
 }
+
+#if !CTWORK_APP
+/// Bộ token màu của MỘT chủ đề (mỗi token đã tự đổi theo sáng/tối — `Color.theoCheDo`).
+struct BangMauChuDe {
+    var primary, primaryDark, primaryLight, secondary, accent: Color
+    var backgroundPrimary, backgroundSecondary, backgroundTertiary, backgroundCard: Color
+    var textPrimary, textSecondary, textTertiary: Color
+    var divider, border: Color
+    var brandPink: Color
+
+    /// Bảng GỐC — đúng từng số trước 23/10/2026. App Admin và lúc mới mở (trước khi `QuanLyChuDe` áp chủ đề) dùng bảng này.
+    static let goc = BangMauChuDe(
+        primary: .theoCheDo(sang: Color(hex: 0x7A45E8), toi: Color(hex: 0x8C5AF0)),
+        primaryDark: .theoCheDo(sang: Color(hex: 0x6535D0), toi: Color(hex: 0x7340DB)),
+        primaryLight: .theoCheDo(sang: Color(hex: 0x9B6BFF), toi: Color(hex: 0xA673FF)),
+        secondary: .theoCheDo(sang: Color(hex: 0x0E93A6), toi: Color(hex: 0x21D4ED)),
+        accent: .theoCheDo(sang: Color(hex: 0xD97706), toi: Color(hex: 0xFF9933)),
+        backgroundPrimary: .theoCheDo(sang: Color(hex: 0xF6F6F9), toi: Color(hex: 0x0A0A14)),
+        backgroundSecondary: .theoCheDo(sang: Color(hex: 0xFFFFFF), toi: Color(hex: 0x141420)),
+        backgroundTertiary: .theoCheDo(sang: Color(hex: 0xEDEDF2), toi: Color(hex: 0x1A1A24)),
+        backgroundCard: .theoCheDo(sang: Color(hex: 0xFFFFFF), toi: Color(hex: 0x1A1A24)),
+        textPrimary: .theoCheDo(sang: Color(hex: 0x14141C), toi: Color(hex: 0xFFFFFF)),
+        textSecondary: .theoCheDo(sang: Color(hex: 0x56565F), toi: Color(hex: 0x9999A6)),
+        // 19/10/2026: 0x81818C/0x737380 chỉ đạt 3,3–4,2:1 trên nền ⇒ dưới ngưỡng WCAG AA 4,5:1 cho chữ nhỏ.
+        textTertiary: .theoCheDo(sang: Color(hex: 0x6A6A75), toi: Color(hex: 0x8E8E9C)),
+        divider: .theoCheDo(sang: Color.black.opacity(0.10), toi: Color.white.opacity(0.12)),
+        border: .theoCheDo(sang: Color.black.opacity(0.08), toi: Color.white.opacity(0.10)),
+        brandPink: .theoCheDo(sang: Color(hex: 0xDB2777), toi: Color(hex: 0xF472B6)))
+}
+
+/// Nơi giữ bảng màu đang hiệu lực. `@Observable` ⇒ view nào đọc `AppColors.x` trong `body` sẽ tự vẽ lại khi bảng đổi.
+@Observable
+final class KhoBangMau {
+    static let shared = KhoBangMau()
+    var bang: BangMauChuDe = .goc
+    private init() {}
+}
+#endif
 
 // MARK: Typography
 extension Font {
@@ -190,7 +236,7 @@ struct Shadows {
     static let small = (color: Color.black.opacity(0.1), radius: CGFloat(4), x: CGFloat(0), y: CGFloat(2))
     static let medium = (color: Color.black.opacity(0.15), radius: CGFloat(8), x: CGFloat(0), y: CGFloat(4))
     static let large = (color: Color.black.opacity(0.2), radius: CGFloat(16), x: CGFloat(0), y: CGFloat(8))
-    static let glow = (color: AppColors.primary.opacity(0.3), radius: CGFloat(20), x: CGFloat(0), y: CGFloat(0))
+    static var glow: (color: Color, radius: CGFloat, x: CGFloat, y: CGFloat) { (color: AppColors.primary.opacity(0.3), radius: CGFloat(20), x: CGFloat(0), y: CGFloat(0)) }
 }
 
 // MARK: - View Modifiers

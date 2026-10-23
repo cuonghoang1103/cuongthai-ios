@@ -13,14 +13,14 @@ import Kingfisher
 /// Bảng màu RIÊNG của màn chương trình (web cũng khoanh bảng màu trong lớp `.goc`).
 /// Nền/chữ/kẻ lấy thẳng token của `Theme`; chỉ màu nhấn + nền ảnh dự phòng là riêng.
 enum MauCT {
-    static let giay = AppColors.backgroundPrimary
-    static let giay2 = AppColors.backgroundTertiary
-    static let the = AppColors.backgroundCard
-    static let muc = AppColors.textPrimary
-    static let muc2 = AppColors.textSecondary
-    static let muc3 = AppColors.textTertiary
-    static let ke = AppColors.divider
-    static let keDam = AppColors.textPrimary
+    static var giay: Color { AppColors.backgroundPrimary }
+    static var giay2: Color { AppColors.backgroundTertiary }
+    static var the: Color { AppColors.backgroundCard }
+    static var muc: Color { AppColors.textPrimary }
+    static var muc2: Color { AppColors.textSecondary }
+    static var muc3: Color { AppColors.textTertiary }
+    static var ke: Color { AppColors.divider }
+    static var keDam: Color { AppColors.textPrimary }
     /// Đỏ sẫm (oxblood) — ≥ 7:1 trên giấy sáng, ≥ 7:1 trên nền tối.
     static let nhan = Color.theoCheDo(sang: Color(hex: 0x8C2F24), toi: Color(hex: 0xE8957F))
     static let nhanNhat = Color.theoCheDo(sang: Color(hex: 0x8C2F24).opacity(0.07), toi: Color(hex: 0xE8957F).opacity(0.10))
