@@ -415,6 +415,9 @@ struct OnTheSH: View {
         VStack(alignment: .leading, spacing: 12) {
             if let bo = vm.boThe {
                 noiDung(bo)
+            } else if vm.khoa != nil && vm.khoa?.onThe == nil {
+                // Máy chủ chưa có bản xuất mới (on-the.json) — app mới hơn web đang chạy.
+                Text("Bộ thẻ chưa có trên máy chủ — kéo mục lục xuống để tải lại sau khi web cập nhật.").font(.system(size: 14)).foregroundColor(AppColors.textSecondary)
             } else if let l = vm.loiNap {
                 KhungLoiSH(loi: l) { Task { await vm.napBoThe() } }
             } else {
