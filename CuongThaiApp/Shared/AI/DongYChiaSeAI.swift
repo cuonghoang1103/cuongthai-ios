@@ -42,7 +42,9 @@ import AppKit
 enum DongYChiaSeAI {
     /// Khoá `@AppStorage` / `UserDefaults`. Đổi hậu tố `.v1` khi nội dung
     /// công bố thay đổi đáng kể (thêm nhà cung cấp mới) để hỏi lại mọi người.
-    static let khoa = "ai.dongYChiaSeDuLieu.v1"
+    /// v2 (23/10/2026): thêm Microsoft Azure Speech (chấm phát âm) + ảnh chữ viết tay
+    /// của khoá kiểu sách — người đã đồng ý ở v1 chưa từng được báo hai điều đó.
+    static let khoa = "ai.dongYChiaSeDuLieu.v2"
 
     static var daDongY: Bool { UserDefaults.standard.bool(forKey: khoa) }
 
