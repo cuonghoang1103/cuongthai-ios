@@ -147,7 +147,12 @@ struct PhongThiView: View {
                 thanhKyMon
 
                 if dangTai && de.isEmpty {
-                    ForEach(0..<5, id: \.self) { _ in SkeletonBox(height: 62, radius: CornerRadius.medium) }
+                    // Gói trong MỘT VStack: để 5 ô xương id 0…4 nằm thẳng trong LazyVStack thì
+                    // thẻ kỳ có `id` (= ordinal) trùng 0…4 bị LazyVStack coi là CÙNG ô và giữ
+                    // nguyên ô xương ⇒ Kỳ 1, Kỳ 2 hiện hai ô trống (iPad thật, 23/10/2026).
+                    VStack(spacing: Spacing.md) {
+                        ForEach(0..<5, id: \.self) { _ in SkeletonBox(height: 62, radius: CornerRadius.medium) }
+                    }
                 } else if let l = loi, de.isEmpty {
                     ErrorStateView(message: l) { Task { await tai() } }
                 } else if hienThi.isEmpty {

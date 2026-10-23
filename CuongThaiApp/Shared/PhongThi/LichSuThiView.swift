@@ -33,7 +33,10 @@ struct LichSuThiView: View {
         ScrollView {
             LazyVStack(spacing: Spacing.sm) {
                 if dangTai && ds.isEmpty {
-                    ForEach(0..<5, id: \.self) { _ in SkeletonBox(height: 70, radius: CornerRadius.large) }
+                    // Một VStack: ô xương id 0…n nằm thẳng trong LazyVStack trùng id phần tử thật ⇒ ô trống (xem PhongThiView).
+                    VStack(spacing: Spacing.sm) {
+                        ForEach(0..<5, id: \.self) { _ in SkeletonBox(height: 70, radius: CornerRadius.large) }
+                    }
                 } else if let l = loi, ds.isEmpty {
                     ErrorStateView(message: l) { Task { await tai() } }
                 } else if ds.isEmpty {

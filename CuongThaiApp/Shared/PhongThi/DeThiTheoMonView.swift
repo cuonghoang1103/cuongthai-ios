@@ -40,7 +40,10 @@ struct DeThiTheoMonView: View {
             LazyVStack(alignment: .leading, spacing: Spacing.md) {
                 if dangTai && ds.isEmpty {
                     SkeletonBox(height: 110, radius: CornerRadius.large)
-                    ForEach(0..<6, id: \.self) { _ in SkeletonBox(height: 64, radius: CornerRadius.medium) }
+                    // Một VStack: ô xương id 0…n nằm thẳng trong LazyVStack trùng id phần tử thật ⇒ ô trống (xem PhongThiView).
+                    VStack(spacing: Spacing.md) {
+                        ForEach(0..<6, id: \.self) { _ in SkeletonBox(height: 64, radius: CornerRadius.medium) }
+                    }
                 } else if let l = loi, ds.isEmpty {
                     ErrorStateView(message: l) { Task { await tai() } }
                 } else if ds.isEmpty {

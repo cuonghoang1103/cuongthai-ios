@@ -660,7 +660,10 @@ struct MyCoursesView: View {
         ScrollView {
             LazyVStack(spacing: Spacing.sm) {
                 if viewModel.isLoading && viewModel.ds.isEmpty {
-                    ForEach(0..<4, id: \.self) { _ in SkeletonBox(height: 84, radius: CornerRadius.large) }
+                    // Một VStack: ô xương id 0…n nằm thẳng trong LazyVStack trùng id phần tử thật ⇒ ô trống (xem PhongThiView).
+                    VStack(spacing: Spacing.sm) {
+                        ForEach(0..<4, id: \.self) { _ in SkeletonBox(height: 84, radius: CornerRadius.large) }
+                    }
                 } else if let loi = viewModel.error, viewModel.ds.isEmpty {
                     ErrorStateView(message: loi) { Task { await viewModel.tai() } }
                 } else if viewModel.ds.isEmpty {
