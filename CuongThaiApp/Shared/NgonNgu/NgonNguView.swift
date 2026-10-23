@@ -112,6 +112,16 @@ struct NgonNguHomeView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: Spacing.md) {
+                // Khoá できる日本語 (Dekiru) — đúng giáo trình trên lớp (JPD113/JPD123), bản NATIVE
+                // đọc nội dung web xuất ra (`Shared/SachHoc`). Đặt trên cùng: người học tiếng Nhật
+                // theo lớp vào app là để học BÀI ĐANG HỌC, trước cả ôn từ.
+                if ngonNgu.code.lowercased().hasPrefix("ja") {
+                    NavigationLink { MucLucSachHocView(moTa: .dekiru) } label: {
+                        TheKhoaSachHoc(moTa: .dekiru)
+                    }
+                    .buttonStyle(.plain)
+                }
+
                 // Ôn tập đặt TRÊN CÙNG, không nằm lẫn trong danh sách chủ đề.
                 // Ôn đúng hạn quan trọng hơn học từ mới, mà thứ nằm dưới thì
                 // người ta không cuộn tới.

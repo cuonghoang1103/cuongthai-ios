@@ -58,6 +58,9 @@ enum APIEndpoint {
     case ieltsGhiTienDo(items: [[String: Any]])
     case ieltsXoaTienDo(chang: String, phan: String, muc: String)
     case ieltsHoiAI([String: Any])
+    /// Giọng đọc của khoá kiểu sách (Dekiru…): `{text, giong, toc?}` ⇒ `{url, lyDo, giongDon}` — CÙNG
+    /// đường web dùng (`components/sach-hoc/audio.ts`), mp3 lưu trên R2. Cần đăng nhập; không có ⇒ đọc bằng máy.
+    case sachHocDoc([String: Any])
     case ieltsChamViet([String: Any])
     case ieltsDeThi(chang: String, hat: Int?)
     case ieltsNopDe([String: Any])
@@ -1071,6 +1074,7 @@ enum APIEndpoint {
         // ─── IELTS ───
         case .ieltsLoTrinh: return "/api/v1/ielts/lo-trinh"
         case .ieltsHoiAI: return "/api/v1/ielts/ai/hoi"
+        case .sachHocDoc: return "/api/v1/ielts/doc"
         case .ieltsChamViet: return "/api/v1/ielts/ai/cham-viet"
         case .ieltsLichSuThi: return "/api/v1/ielts/de-thi/lich-su"
         case .ieltsDeThi(let c, let h): return "/api/v1/ielts/de-thi/\(c)" + (h.map { "?hat=\($0)" } ?? "")
@@ -1181,7 +1185,7 @@ enum APIEndpoint {
         case .videoDoiNhom: return "PATCH"
         case .videoYeuThich: return "POST"
         case .videoXoaCuaToi: return "DELETE"
-        case .ieltsGhiTienDo, .ieltsHoiAI, .ieltsChamViet, .ieltsNopDe: return "POST"
+        case .ieltsGhiTienDo, .ieltsHoiAI, .ieltsChamViet, .ieltsNopDe, .sachHocDoc: return "POST"
         case .ieltsXoaTienDo: return "DELETE"
         // ─── Tiền nong ───
         case .tienThemVi, .tienChuyenVi, .tienThemNhomChi, .tienThemChi, .tienThemThu,
@@ -1273,7 +1277,7 @@ enum APIEndpoint {
             return m
         case .videoDoiNhom(_, let n): return ["nhomLon": n]
         case .ieltsGhiTienDo(let items): return ["items": items]
-        case .ieltsHoiAI(let m), .ieltsChamViet(let m), .ieltsNopDe(let m): return m
+        case .ieltsHoiAI(let m), .ieltsChamViet(let m), .ieltsNopDe(let m), .sachHocDoc(let m): return m
         // ─── Tiền nong ───
         case .tienThemVi(let m), .tienSuaVi(_, let m), .tienChuyenVi(let m),
              .tienThemNhomChi(let m), .tienSuaNhomChi(_, let m),

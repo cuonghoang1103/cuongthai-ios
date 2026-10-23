@@ -26,6 +26,8 @@ enum TinhNang: String, CaseIterable, Identifiable, Codable, Hashable {
     case khoaHocCuaToi = "khoa-hoc-cua-toi"
     case ielts
     case ngoaiNgu = "ngoai-ngu"
+    /// Khoá できる日本語 Bài 0–15 (giáo trình JPD113/JPD123), bản native — 23/10/2026.
+    case dekiru
     case videoHoc = "video-hoc"
     case thuVienSach = "thu-vien-sach"
     // Luyện tập & nghề nghiệp
@@ -74,7 +76,7 @@ enum TinhNang: String, CaseIterable, Identifiable, Codable, Hashable {
 
     var nhom: Nhom {
         switch self {
-        case .hocKy, .thoiKhoaBieu, .academy, .chuongTrinh, .khoaHocCuaToi, .ielts, .ngoaiNgu, .videoHoc, .thuVienSach:
+        case .hocKy, .thoiKhoaBieu, .academy, .chuongTrinh, .khoaHocCuaToi, .ielts, .ngoaiNgu, .dekiru, .videoHoc, .thuVienSach:
             return .hocTap
         case .phongThi, .codeLab, .thuatToan, .moPhong, .snippets, .loTrinh, .duAn, .phongVan, .cvBuilder:
             return .luyenVaNghe
@@ -118,6 +120,7 @@ enum TinhNang: String, CaseIterable, Identifiable, Codable, Hashable {
         case .khoaHocCuaToi: return T("Khoá học của tôi")
         case .ielts: return "IELTS"
         case .ngoaiNgu: return T("Ngoại ngữ")
+        case .dekiru: return T("Tiếng Nhật できる")
         case .videoHoc: return T("Học bằng video")
         case .thuVienSach: return T("Thư viện sách")
         case .phongThi: return T("Phòng thi")
@@ -150,6 +153,7 @@ enum TinhNang: String, CaseIterable, Identifiable, Codable, Hashable {
         case .khoaHocCuaToi: return T("Khoá đang học, tiến độ")
         case .ielts: return T("Nghe, nói, đọc, viết")
         case .ngoaiNgu: return T("Từ vựng, thẻ ghi nhớ, ôn tập")
+        case .dekiru: return T("Bài 0–15 theo sách trên lớp: kana, ngữ pháp, nghe, nói")
         case .videoHoc: return T("Học tiếng Anh qua video")
         case .thuVienSach: return T("Sách song ngữ Anh–Việt")
         case .phongThi: return T("Đề thi thật, bấm giờ")
@@ -182,6 +186,7 @@ enum TinhNang: String, CaseIterable, Identifiable, Codable, Hashable {
         case .khoaHocCuaToi: return "book.closed.fill"
         case .ielts: return "textformat.abc"
         case .ngoaiNgu: return "character.book.closed.fill"
+        case .dekiru: return "character.ja"
         case .videoHoc: return "play.rectangle.fill"
         case .thuVienSach: return "books.vertical.fill"
         case .phongThi: return "checklist"
@@ -212,7 +217,7 @@ enum TinhNang: String, CaseIterable, Identifiable, Codable, Hashable {
         case .hocKy, .phongThi: return AppColors.error
         case .thoiKhoaBieu, .academy, .codeLab, .ctWork: return AppColors.primary
         case .khoaHocCuaToi, .duAn, .tienNong, .chuongTrinh: return AppColors.accent
-        case .ielts, .videoHoc, .xuongBa: return AppColors.brandPink
+        case .ielts, .videoHoc, .xuongBa, .dekiru: return AppColors.brandPink
         case .ngoaiNgu, .thuVienSach, .moPhong, .xuongVe: return AppColors.secondary
         case .thuatToan, .snippets, .cvBuilder: return AppColors.info
         case .loTrinh, .phongVan, .notes: return AppColors.success
@@ -233,6 +238,7 @@ enum TinhNang: String, CaseIterable, Identifiable, Codable, Hashable {
         case .khoaHocCuaToi: return ["my courses", "khoa hoc", "tien do"]
         case .ielts: return ["english", "tieng anh", "band"]
         case .ngoaiNgu: return ["language", "tu vung", "flashcard", "tieng nhat", "tieng trung"]
+        case .dekiru: return ["dekiru", "tieng nhat", "japanese", "jpd113", "jpd123", "kana", "hiragana", "katakana", "nihongo", "nhat"]
         case .videoHoc: return ["video", "youtube", "nghe chep"]
         case .thuVienSach: return ["book", "library", "doc sach", "sach"]
         case .phongThi: return ["exam", "de thi", "thi thu", "quiz"]

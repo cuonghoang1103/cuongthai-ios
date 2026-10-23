@@ -26,6 +26,7 @@ struct ManTinhNang: View {
         case .khoaHocCuaToi: MyCoursesView()
         case .ielts: IeltsView(coNganXepRieng: false)
         case .ngoaiNgu: NgonNguView()
+        case .dekiru: MucLucSachHocView(moTa: .dekiru)
         case .videoHoc: VideoHocView()
         case .thuVienSach: ThuVienSachView()
         case .phongThi: PhongThiView()
