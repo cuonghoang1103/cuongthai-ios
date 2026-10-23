@@ -16,9 +16,17 @@ import AVFoundation
 
 struct ClipSH {
     let text: String
-    /// ja-nu · ja-nam · zh-nu · uk-nu…; nil ⇒ giọng mặc định của khoá.
+    /// ja-nu · ja-nam · zh-nu · uk-nu… · `dan` (người dẫn bài nghe); nil ⇒ giọng mặc định của khoá.
     var giong: String?
     var toc: Double?
+    /// Tiếng hiệu (nhạc mở/kết, "ting") — phát tệp này, bỏ qua `text`.
+    var sfx: URL?
+    /// Khoảng lặng (ms) — thời gian đọc câu hỏi của bài nghe kiểu đề thi.
+    var nghiMs: Int?
+
+    init(text: String, giong: String? = nil, toc: Double? = nil, sfx: URL? = nil, nghiMs: Int? = nil) {
+        self.text = text; self.giong = giong; self.toc = toc; self.sfx = sfx; self.nghiMs = nghiMs
+    }
 }
 
 @MainActor
@@ -30,6 +38,8 @@ final class GiongSachHoc: NSObject, ObservableObject {
     /// Câu thứ mấy trong lượt đang phát (tô sáng dòng hội thoại).
     @Published private(set) var cauDangDoc: Int?
     @Published private(set) var dangCho = false
+    /// Đang trong khoảng lặng của bài nghe: hết lúc nào (đồng hồ đếm ngược + nút "Nghe ngay").
+    @Published private(set) var imDen: Date?
 
     /// Giọng mặc định của khoá đang mở — màn khoá đặt.
     var giongMacDinh = "ja-nu"
@@ -78,7 +88,17 @@ final class GiongSachHoc: NSObject, ObservableObject {
         }
     }
 
+    /// Bỏ qua đoạn đang phát (lời dẫn, khoảng lặng) — sang đoạn kế tiếp, không dừng cả lượt.
+    func boQua() {
+        if may.isSpeaking { idCau = nil; may.stopSpeaking(at: .immediate) }
+        player?.pause()
+        boQuanSat()
+        imDen = nil
+        xong()
+    }
+
     func dung() {
+        imDen = nil
         luot += 1
         viec?.cancel(); viec = nil
         idCau = nil
@@ -106,6 +126,23 @@ final class GiongSachHoc: NSObject, ObservableObject {
     // MARK: Một câu
 
     private func docMot(_ c: ClipSH, my: Int) async {
+        if let ms = c.nghiMs, ms > 0 {
+            imDen = Date().addingTimeInterval(Double(ms) / 1000)
+            await withCheckedContinuation { (k: CheckedContinuation<Void, Never>) in
+                xongCau = k
+                DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(ms)) { [weak self] in
+                    guard let self, self.luot == my, self.imDen != nil else { return }
+                    self.imDen = nil
+                    self.xong()
+                }
+            }
+            imDen = nil
+            return
+        }
+        if let u = c.sfx {
+            await phatTep(u, nam: false, my: my, tiengHieu: true)
+            return
+        }
         let chu = PhanTichChuSH.choGiong(c.text).trimmingCharacters(in: .whitespacesAndNewlines)
         guard !chu.isEmpty else { return }
         let giong = c.giong ?? giongMacDinh
@@ -136,7 +173,7 @@ final class GiongSachHoc: NSObject, ObservableObject {
         }
     }
 
-    private func phatTep(_ url: URL, nam: Bool, my: Int) async {
+    private func phatTep(_ url: URL, nam: Bool, my: Int, tiengHieu: Bool = false) async {
         let item = AVPlayerItem(url: url)
         // Máy chủ chỉ có MỘT giọng mỗi thứ tiếng ⇒ vai nam: chậm lại + hạ cao độ (như web, NAM_RATE 0,86).
         item.audioTimePitchAlgorithm = nam ? .varispeed : .timeDomain
@@ -149,7 +186,7 @@ final class GiongSachHoc: NSObject, ObservableObject {
                     Task { @MainActor in self?.xong() }
                 })
             }
-            p.playImmediately(atRate: Float(tiLeToc * (nam ? 0.86 : 1)))
+            p.playImmediately(atRate: tiengHieu ? 1 : Float(tiLeToc * (nam ? 0.86 : 1)))
         }
         boQuanSat()
         if my == luot { player = nil }

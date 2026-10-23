@@ -38,6 +38,11 @@ final class SachHocVM: ObservableObject {
     @Published private(set) var dangTaiHet: (xong: Int, tong: Int)?
     @Published private(set) var chia: BangChiaSH?
     @Published private(set) var chuHan: ChuHanSH?
+    @Published private(set) var tuVung: [TuKhoaSH]?
+    @Published private(set) var boThe: BoTheSH?
+    /// Thứ tự nét KanjiVG (chữ → các nét `d`, hệ 109×109).
+    @Published private(set) var net: [String: [String]]?
+    @Published private(set) var loiNap: String?
 
     private let kho = KhoSachHoc.chung
 
@@ -117,6 +122,29 @@ final class SachHocVM: ObservableObject {
         chuHan = try? await kho.giai(khoaId, t, ChuHanSH.self)
     }
 
+    func napTuVung() async {
+        guard tuVung == nil, let t = khoa?.tuVung else { return }
+        do { tuVung = try await kho.giai(khoaId, t, TepTuVungSH.self).tu } catch { loiNap = error.localizedDescription }
+    }
+
+    func napBoThe() async {
+        guard boThe == nil, let t = khoa?.onThe else { return }
+        do { boThe = try await kho.giai(khoaId, t, BoTheSH.self) } catch { loiNap = error.localizedDescription }
+    }
+
+    func napNet() async {
+        guard net == nil, let t = khoa?.net else { return }
+        net = (try? await kho.giai(khoaId, t, [String: [String]].self)) ?? [:]
+    }
+
+    /// Số bài (theo sách) của mục đang đọc — `b5-…` ⇒ 5 (mốc "đã học / bài sau" của thẻ chữ Hán).
+    static func soBai(_ mucId: String) -> Int? {
+        guard mucId.hasPrefix("b") else { return nil }
+        let so = mucId.dropFirst().prefix { $0.isNumber }
+        guard !so.isEmpty, mucId.dropFirst(1 + so.count).first == "-" else { return nil }
+        return Int(so)
+    }
+
     // MARK: Thứ tự đọc (nút "Bài tiếp")
 
     /// Như web: Mở đầu → mọi bài đã soạn theo thứ tự buổi → mục tra cứu ở CUỐI.
@@ -172,8 +200,9 @@ final class SachHocVM: ObservableObject {
             _ = try? await kho.phu(khoaId, p)
             xong += 1; dangTaiHet = (xong, dangTaiHet?.tong ?? 0)
         }
-        if let t = khoa.chia { _ = try? await kho.tep(khoaId, t.tep, hash: t.hash) }
-        if let t = khoa.chuHan { _ = try? await kho.tep(khoaId, t.tep, hash: t.hash) }
+        for t in [khoa.chia, khoa.chuHan, khoa.tuVung, khoa.onThe, khoa.net].compactMap({ $0 }) {
+            _ = try? await kho.tep(khoaId, t.tep, hash: t.hash)
+        }
         dangTaiHet = nil
         await kiemDaLuu()
     }

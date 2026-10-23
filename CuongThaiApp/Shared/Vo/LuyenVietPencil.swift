@@ -52,8 +52,10 @@ struct LuyenVietPencil: View {
     }
 
     /// Ô viết. Vuông, và mọi toạ độ (nét người viết lẫn đường tim) đều quy
-    /// về cạnh này — lệch một chút là chấm sai hết.
-    private var canh: CGFloat { 420 }
+    /// về cạnh này — lệch một chút là chấm sai hết. Mặc định 420 (iPad); màn
+    /// hẹp hơn (iPhone, khoá kiểu sách) truyền cạnh nhỏ hơn — ngưỡng chấm
+    /// `ChamNet` đều tính theo cạnh nên vẫn đúng.
+    var canh: CGFloat = 420
 
     var body: some View {
         VStack(spacing: Spacing.md) {

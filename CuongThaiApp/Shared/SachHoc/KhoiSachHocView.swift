@@ -95,7 +95,7 @@ struct KhoiSHView: View {
         case .patterns(let rows): MauCauSH(rows: rows)
         case .vocab(let ds): TuVungSH(items: ds)
         case .dialogue(let title, let lines): HoiThoaiSH(title: title, lines: lines)
-        case .listen(let id, let title, let note, let lines, _): BaiNgheSH(id: id, title: title, note: note, lines: lines)
+        case .listen(let id, let title, let note, let lines, let dan): BaiNgheSH(id: id, title: title, note: note, lines: lines, dan: dan)
         case .passage(let title, let intro, let paras): BaiDocSH(title: title, intro: intro, paras: paras)
         case .chart(let kieu, let title, let unit, let labels, let series): BieuDoSH(kieu: kieu, title: title, unit: unit, labels: labels, series: series)
         case .alphabet(let groups): BangChuCaiSH(groups: groups)
@@ -558,25 +558,68 @@ private struct BongThoaiSH: View {
 
 // MARK: - Bài nghe
 
+/// Lời dẫn kiểu băng đề IELTS (web `nghe.ts › dungLoiDan`): nhạc hiệu → "Welcome… Day 3, Recording 1: …" →
+/// "You will hear …" → "First, you have N seconds…" + khoảng lặng → "Now listen carefully…" → ting →
+/// HỘI THOẠI → "That is the end of …" → nhạc kết. Giọng `dan` khác mọi nhân vật.
+enum LoiDanSHB {
+    static func tep(_ ten: String) -> URL? { URL(string: APIClient.diaChiGoc + "/audio/" + ten) }
+
+    static func dung(_ d: LoiDanSH, tieuDe: String) -> (mo: [ClipSH], ket: [ClipSH]) {
+        let c: String? = d.cau.flatMap { x in
+            guard x.count == 2 else { return nil }
+            return x[0] == x[1] ? "question \(x[0])" : "questions \(x[0]) to \(x[1])"
+        }
+        let docGiay: Int = d.cau.flatMap { $0.count == 2 ? min(20, 8 + ($0[1] - $0[0] + 1)) : nil } ?? 0
+        var ten = PhanTichChuSH.tron(tieuDe)
+        while let l = ten.last, ".!?".contains(l) { ten.removeLast() }
+        func dan(_ t: String) -> ClipSH { ClipSH(text: t, giong: "dan") }
+        var mo: [ClipSH] = []
+        if let u = tep("cuongthai-mo.mp3") { mo.append(ClipSH(text: "", sfx: u)) }
+        mo.append(dan("Welcome to Cuong Thai English. IELTS Listening. \(d.so): \(ten)."))
+        if let b = d.boiCanh, !b.isEmpty { mo.append(dan("You will hear \(b)")) }
+        if let c, docGiay > 0 {
+            mo.append(dan("First, you have \(docGiay) seconds to look at \(c)."))
+            mo.append(ClipSH(text: "", nghiMs: docGiay * 1000))
+        }
+        mo.append(dan("\(c.map { "Now listen carefully and answer \($0)." } ?? "Now listen carefully.") Get ready. The recording starts now."))
+        if let u = tep("cuongthai-ting.mp3") { mo.append(ClipSH(text: "", sfx: u)) }
+        var ket: [ClipSH] = [dan("That is the end of \(d.so).\(c != nil ? " You now have thirty seconds to check your answers." : "")")]
+        if let u = tep("cuongthai-ket.mp3") { ket.append(ClipSH(text: "", sfx: u)) }
+        return (mo, ket)
+    }
+}
+
 struct BaiNgheSH: View {
     let id: String
     let title: String
     let note: String?
     let lines: [LoiNgheSH]
+    var dan: LoiDanSH? = nil
     @EnvironmentObject private var vm: SachHocVM
     @ObservedObject private var giongDoc = GiongSachHoc.chung
     @State private var hienLoi = false
     @State private var soLan = 0
+    @State private var soMo = 0
 
     private var khoa: String { "nghe|\(id)" }
 
     var body: some View {
         let dang = giongDoc.dangPhat == khoa
+        let cau = (giongDoc.cauDangDoc ?? -1) - soMo
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .center, spacing: 12) {
                 Button {
-                    if !dang { soLan += 1 }
-                    giongDoc.phat(lines.map { ClipSH(text: $0.text, giong: $0.voice) }, khoa: khoa)
+                    if dang { giongDoc.dung(); return }
+                    soLan += 1
+                    let bai = lines.map { ClipSH(text: $0.text, giong: $0.voice) }
+                    if let dan {
+                        let (mo, ket) = LoiDanSHB.dung(dan, tieuDe: title)
+                        soMo = mo.count
+                        giongDoc.phat(mo + bai + ket, khoa: khoa)
+                    } else {
+                        soMo = 0
+                        giongDoc.phat(bai, khoa: khoa)
+                    }
                 } label: {
                     Image(systemName: dang ? "stop.fill" : "play.fill")
                         .font(.system(size: 20, weight: .bold)).foregroundColor(.white)
@@ -584,11 +627,27 @@ struct BaiNgheSH: View {
                         .background(Circle().fill(AppColors.secondary))
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel(dang ? "Dừng bài nghe" : "Phát bài nghe")
                 VStack(alignment: .leading, spacing: 2) {
                     Text("🎧 BÀI NGHE").font(.system(size: 11, weight: .heavy)).kerning(0.6).foregroundColor(AppColors.secondary)
                     ChuSH(text: title, co: 16.5, dam: true)
                     Text((note.map(PhanTichChuSH.tron) ?? "Nghe trước, làm bài bên dưới, rồi mới mở lời thoại để kiểm tra.") + (soLan > 0 ? " · Đã nghe \(soLan) lần" : ""))
                         .font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
+                }
+            }
+            if dang, dan != nil, cau < 0 || cau >= lines.count {
+                HStack(spacing: 10) {
+                    if let het = giongDoc.imDen {
+                        TimelineView(.periodic(from: .now, by: 1)) { tl in
+                            Text("⏱ Đọc câu hỏi: còn \(max(0, Int(het.timeIntervalSince(tl.date).rounded(.up)))) giây")
+                                .font(.system(size: 13.5, weight: .semibold).monospacedDigit()).foregroundColor(AppColors.textSecondary)
+                        }
+                        NutSH(ten: "Nghe ngay", bieuTuong: "forward.fill", phu: true) { giongDoc.boQua() }
+                    } else {
+                        Text(cau < 0 ? "🎙️ Phần giới thiệu của bài nghe" : "🎙️ Hết bài — soát lại đáp án")
+                            .font(.system(size: 13.5)).foregroundColor(AppColors.textSecondary)
+                        NutSH(ten: "Bỏ qua đoạn này", bieuTuong: "forward.end.fill", phu: true) { giongDoc.boQua() }
+                    }
                 }
             }
             Button { withAnimation(.easeOut(duration: 0.2)) { hienLoi.toggle() } } label: {
@@ -610,7 +669,7 @@ struct BaiNgheSH: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                         }
                         .padding(6)
-                        .background(RoundedRectangle(cornerRadius: 10).fill(dang && giongDoc.cauDangDoc == i ? AppColors.secondary.opacity(0.14) : Color.clear))
+                        .background(RoundedRectangle(cornerRadius: 10).fill(dang && cau == i ? AppColors.secondary.opacity(0.14) : Color.clear))
                     }
                 }
             }

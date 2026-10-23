@@ -39,6 +39,12 @@ struct KhoaSH: Decodable, Equatable {
     var phu: [MucPhuSH] = []
     var chuHan: TepSH?
     var chia: TepSH?
+    /// Từ vựng cả khoá (khối `vocabAll`, ô "Tra từ" trong bài).
+    var tuVung: TepSH?
+    /// Bộ thẻ "Ôn tập bằng thẻ" (khối `onthe`, Dekiru).
+    var onThe: TepSH?
+    /// Thứ tự nét KanjiVG của mọi chữ trong khoá (khoá tiếng Nhật).
+    var net: TepSH?
     let phienBan: String
     var sinhLuc: String?
 
@@ -196,7 +202,8 @@ enum KhoiSH: Equatable {
     case phatam(id: String, title: String?, note: String?, items: [CauPhatAmSH])
     case readkanji(id: String, title: String, note: String?, items: [CauDocHanSH])
     case build(id: String, title: String, items: [CauGhepSH])
-    case write(id: String, title: String, chars: [String], note: String?)
+    /// `goi`: gợi ý theo mục (nghĩa / cách đọc) — hiện khi "Che mẫu".
+    case write(id: String, title: String, chars: [String], note: String?, goi: [String: String])
     case hanlop(bai: Int)
     case chia
     case onthe
@@ -271,7 +278,7 @@ private struct KhoiBoc: Decodable {
         case "phatam": return .phatam(id: try s("id"), title: so("title"), note: so("note"), items: try m("items"))
         case "readkanji": return .readkanji(id: try s("id"), title: so("title") ?? "", note: so("note"), items: try m("items"))
         case "build": return .build(id: try s("id"), title: so("title") ?? "", items: try m("items"))
-        case "write": return .write(id: try s("id"), title: so("title") ?? "", chars: try m("chars"), note: so("note"))
+        case "write": return .write(id: try s("id"), title: so("title") ?? "", chars: try m("chars"), note: so("note"), goi: (try? m("goi")) ?? [:])
         case "hanlop": return .hanlop(bai: try m("bai"))
         case "chia": return .chia
         case "onthe": return .onthe
@@ -310,15 +317,87 @@ struct ChuHanSH: Decodable {
             tu = try? c.decode([TuDiChung].self, forKey: .tu)
         }
     }
-    struct TuDiChung: Decodable, Hashable { let w: String; var ro: String?; var vi: String? }
+    struct TuDiChung: Decodable, Hashable { let w: String; var ro: String?; var vi: String?; var bang: Bool? }
     struct Lop: Decodable { let chars: String; var nguon: String? }
+    /// Phần SINH TỰ ĐỘNG lúc build web (quét mọi bài): từ vựng chứa chữ, câu ví dụ, âm lấy từ bảng.
+    struct TuKhoa: Decodable, Hashable { let w: String; var ro: String = ""; var vi: String = ""; var n: Int = 0 }
+    struct CauVD: Decodable, Hashable { let text: String; var ro: String = ""; var vi: String = ""; var n: Int = 0 }
+    struct Bang: Decodable { var hv: String?; var on: String?; var kun: String?; var nghia: String?; var n: Int = 0 }
     var han: [String: Han] = [:]
     var lop: [String: Lop] = [:]
+    var tu: [String: [TuKhoa]] = [:]
+    var vd: [String: [CauVD]] = [:]
+    var bang: [String: Bang] = [:]
 
-    enum CodingKeys: String, CodingKey { case han, lop }
+    enum CodingKeys: String, CodingKey { case han, lop, tu, vd, bang }
     init(from d: Decoder) throws {
         let c = try d.container(keyedBy: CodingKeys.self)
         han = (try? c.decode([String: Han].self, forKey: .han)) ?? [:]
         lop = (try? c.decode([String: Lop].self, forKey: .lop)) ?? [:]
+        tu = (try? c.decode([String: [TuKhoa]].self, forKey: .tu)) ?? [:]
+        vd = (try? c.decode([String: [CauVD]].self, forKey: .vd)) ?? [:]
+        bang = (try? c.decode([String: Bang].self, forKey: .bang)) ?? [:]
     }
+
+    /// Chữ → bài (trong danh sách lớp) đầu tiên dạy nó — `lopOf` của kanji.ts.
+    var baiCuaChu: [String: Int] {
+        var m: [String: Int] = [:]
+        for (n, b) in lop.compactMap({ k, v in Int(k).map { ($0, v) } }).sorted(by: { $0.0 < $1.0 }) {
+            for c in b.chars.map(String.init) where m[c] == nil { m[c] = n }
+        }
+        return m
+    }
+}
+
+// MARK: - Từ vựng cả khoá (tu-vung.json)
+
+struct TepTuVungSH: Decodable { let tu: [TuKhoaSH] }
+struct TuKhoaSH: Decodable, Hashable, Identifiable {
+    let w: String
+    var pos: String = ""
+    var ipa: String = ""
+    var vi: String = ""
+    let n: Int
+    var id: String { "\(n)|\(w)" }
+    enum CodingKeys: String, CodingKey { case w, pos, ipa, vi, n }
+    init(from d: Decoder) throws {
+        let c = try d.container(keyedBy: CodingKeys.self)
+        w = try c.decode(String.self, forKey: .w)
+        pos = (try? c.decode(String.self, forKey: .pos)) ?? ""
+        ipa = (try? c.decode(String.self, forKey: .ipa)) ?? ""
+        vi = (try? c.decode(String.self, forKey: .vi)) ?? ""
+        n = (try? c.decode(Int.self, forKey: .n)) ?? 0
+    }
+}
+
+// MARK: - Bộ thẻ Ôn tập (on-the.json)
+
+struct BoTheSH: Decodable {
+    struct The: Decodable, Identifiable, Hashable {
+        struct ViDu: Decodable, Hashable { let en: String; var ro: String?; var vi: String? }
+        let id: String
+        let loai: String          // tu | han | np
+        let n: Int
+        var nhom: String = ""
+        let jp: String
+        var kana: String = ""
+        var ro: String = ""
+        let vi: String
+        var meta: String = ""
+        var ex: ViDu?
+        var ansJp: [String] = []
+        var ansVi: [String] = []
+    }
+    struct Cau: Decodable, Identifiable, Hashable {
+        let id: String
+        let loai: String          // np | han
+        let n: Int
+        let q: String
+        let opts: [String]
+        let correct: Int
+        var why: String = ""
+        var title: String = ""
+    }
+    let the: [The]
+    let cau: [Cau]
 }

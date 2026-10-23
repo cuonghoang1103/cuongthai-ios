@@ -6,9 +6,9 @@ import SwiftUI
 // chép) · readkanji (đọc chữ Hán không furigana). Làm xong cả khối ⇒ báo điểm
 // (%) về tiến độ — cùng `kind: baitap` web dùng.
 //
-// ĐỢT 2 (chưa native, hiện khung + mở trên web): write (viết tay + AI xem chữ),
-// speak (ghi âm + AI chấm nói), essay (viết + AI chấm), phatam (Azure chấm phát
-// âm), onthe (ôn thẻ 8 cách), vocabAll (tra cả khoá).
+// ĐỢT 2 (23/10, tệp riêng): write → VietTaySH / VietHanZhSH · speak, phatam → NoiSH ·
+// essay → VietBaiSH · onthe → OnTheSH · vocabAll → TraTuVungSH. Khung "Sắp có" (DotHaiSH)
+// chỉ còn cho loại khối app chưa biết / khối lỗi dữ liệu.
 // ════════════════════════════════════════════════════════════════
 
 /// Id bài đang đọc — để khung "đợt 2" mở đúng `?bai=` trên web.
@@ -22,6 +22,7 @@ extension EnvironmentValues {
 
 struct KhoiTuongTacSHView: View {
     let khoi: KhoiSH
+    @EnvironmentObject private var vm: SachHocVM
 
     var body: some View {
         switch khoi {
@@ -32,23 +33,19 @@ struct KhoiTuongTacSHView: View {
         case .readkanji(let id, let title, let note, let items): DocHanSH(id: id, title: title, note: note, items: items)
         case .chia: ChiaSH()
         case .hanlop(let bai): HanLopSH(bai: bai)
-        case .write(_, let title, let chars, _):
-            DotHaiSH(bieuTuong: "pencil.and.scribble", ten: "Tập viết tay", tieuDe: title,
-                     moTa: "Ô mẫu chạy thứ tự nét + ô luyện viết bằng ngón tay/Apple Pencil, AI xem chữ — đang làm cho app (đợt 2). Chữ của phần này: " + chars.prefix(14).joined(separator: " ") + (chars.count > 14 ? " …" : ""))
-        case .speak(_, let part, let questions):
-            DotHaiSH(bieuTuong: "mic.fill", ten: "Luyện nói + AI chấm", tieuDe: "Speaking Part \(part)",
-                     moTa: "Ghi âm câu trả lời rồi AI chấm — đợt 2. Câu hỏi: " + questions.prefix(3).map(PhanTichChuSH.tron).joined(separator: " · "))
-        case .essay(_, let task, let prompt, let minWords, _):
-            DotHaiSH(bieuTuong: "square.and.pencil", ten: "Viết bài + AI chấm", tieuDe: "Writing \(task) · tối thiểu \(minWords) từ",
-                     moTa: PhanTichChuSH.tron(prompt))
-        case .phatam(_, let title, _, let items):
-            DotHaiSH(bieuTuong: "waveform", ten: "Chấm phát âm", tieuDe: title ?? "Luyện phát âm",
-                     moTa: "Đọc to từng câu, máy chấm từng âm — đợt 2. \(items.count) câu.")
-        case .onthe:
-            DotHaiSH(bieuTuong: "rectangle.on.rectangle.angled", ten: "Ôn tập bằng thẻ", tieuDe: "8 cách ôn: thẻ lật · học · trắc nghiệm · gõ · nghe · ghép cặp · kiểm tra · ôn từ sai",
-                     moTa: "Bộ thẻ từ vựng, chữ Hán của lớp và mẫu ngữ pháp mọi bài — đang làm bản app (đợt 2).")
-        case .vocabAll:
-            DotHaiSH(bieuTuong: "magnifyingglass", ten: "Tra từ cả khoá", tieuDe: "Tra cứu toàn bộ từ vựng", moTa: "Tìm, lọc theo buổi, thẻ nhớ — đợt 2.")
+        #if os(iOS)
+        case .write(let id, let title, let chars, let note, let goi):
+            if vm.khoa?.ngonNgu == "zh" { VietHanZhSH(title: title, chars: chars, note: note) }
+            else { VietTaySH(id: id, title: title, chars: chars, note: note, goi: goi) }
+        case .speak(let id, let part, let questions): LuyenNoiSH(id: id, part: part, questions: questions)
+        case .phatam(let id, let title, let note, let items): PhatAmKhoiSH(id: id, title: title, note: note, items: items)
+        case .essay(let id, let task, let prompt, let minWords, let tips): VietBaiSH(id: id, task: task, prompt: prompt, minWords: minWords, tips: tips)
+        #else
+        case .write, .speak, .phatam, .essay:
+            DotHaiSH(bieuTuong: "iphone", ten: "Có trên iPhone / iPad", tieuDe: "Phần này cần micro hoặc bút", moTa: "Mở trên iPhone / iPad, hoặc trên web.")
+        #endif
+        case .onthe: OnTheSH()
+        case .vocabAll: TraTuVungSH()
         case .chuaBiet(let t):
             DotHaiSH(bieuTuong: "questionmark.square.dashed", ten: "Chưa hỗ trợ", tieuDe: "Khối “\(t)”", moTa: "Bản app này chưa hiểu loại nội dung này — cập nhật app, hoặc mở trên web.")
         case .loi(let t, let chiTiet):

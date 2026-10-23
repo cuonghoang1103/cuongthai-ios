@@ -124,10 +124,10 @@ struct ChiaSH: View {
 struct HanLopSH: View {
     let bai: Int
     @EnvironmentObject private var vm: SachHocVM
-    @State private var dangXem: ChuMoSH?
+    @Environment(\.moChuHanSH) private var moChuHan
+    @Environment(\.baiDangDocSH) private var baiId
+    @State private var nganXep: [String] = []
     private let cot = [GridItem(.adaptive(minimum: 150), spacing: 10)]
-
-    struct ChuMoSH: Identifiable { let id: String }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -136,7 +136,8 @@ struct HanLopSH: View {
                     .font(.system(size: 13)).foregroundColor(AppColors.textSecondary)
                 LazyVGrid(columns: cot, spacing: 10) {
                     ForEach(lop.chars.map(String.init), id: \.self) { c in
-                        Button { dangXem = ChuMoSH(id: c) } label: { the(c, ch.han[c]) }.buttonStyle(.plain)
+                        // Màn bài có chỗ mở thẻ chung (ngăn xếp, quay lại) ⇒ dùng nó; không có thì tự mở.
+                        Button { if let moChuHan { moChuHan(c) } else { nganXep = [c] } } label: { the(c, ch.han[c]) }.buttonStyle(.plain)
                     }
                 }
             } else if vm.chuHan != nil {
@@ -147,7 +148,9 @@ struct HanLopSH: View {
             }
         }
         .task { await vm.napChuHan() }
-        .sheet(item: $dangXem) { c in TheChuHanSH(chu: c.id, han: vm.chuHan?.han[c.id]) }
+        .sheet(isPresented: Binding(get: { !nganXep.isEmpty }, set: { if !$0 { nganXep = [] } })) {
+            NganChuHanSH(nganXep: $nganXep, baiDangHoc: SachHocVM.soBai(baiId), vm: vm)
+        }
     }
 
     private func the(_ c: String, _ h: ChuHanSH.Han?) -> some View {
@@ -167,68 +170,5 @@ struct HanLopSH: View {
         .padding(10)
         .background(RoundedRectangle(cornerRadius: 12).fill(AppColors.backgroundCard))
         .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(AppColors.border, lineWidth: 1))
-    }
-}
-
-struct TheChuHanSH: View {
-    let chu: String
-    let han: ChuHanSH.Han?
-    @Environment(\.dismiss) private var dong
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 14) {
-                    HStack(alignment: .center, spacing: 16) {
-                        Text(chu).font(.system(size: 88)).frame(width: 120, height: 120)
-                            .background(RoundedRectangle(cornerRadius: 16).fill(AppColors.backgroundTertiary))
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(han?.hv ?? "").font(.system(size: 22, weight: .heavy)).foregroundColor(MauChuSH.mau(0xB45309).color)
-                            Text(han?.nghia ?? "").font(.system(size: 17))
-                            NutLoaSH(text: chu, co: 34)
-                        }
-                    }
-                    if let h = han {
-                        if !h.on.isEmpty { hangTT("On (âm Hán)", h.on.joined(separator: "・")) }
-                        if !h.kun.isEmpty { hangTT("Kun (âm Nhật)", h.kun.joined(separator: "・")) }
-                        if let nho = h.nho, !nho.isEmpty {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("💡 CÁCH NHỚ").font(.system(size: 11, weight: .heavy)).foregroundColor(AppColors.accent)
-                                ChuSH(text: nho, co: 16)
-                            }
-                            .theKhoiSH(vien: AppColors.accent.opacity(0.35), nen: AppColors.accent.opacity(0.07))
-                        }
-                        if let tu = h.tu, !tu.isEmpty {
-                            Text("TỪ ĐI CHUNG").font(.system(size: 11, weight: .heavy)).foregroundColor(AppColors.textTertiary)
-                            ForEach(tu, id: \.self) { t in
-                                HStack(spacing: 10) {
-                                    NutLoaSH(text: t.w, co: 30)
-                                    VStack(alignment: .leading, spacing: 1) {
-                                        ChuSH(text: t.w, co: 19)
-                                        if let ro = t.ro { Text(ro).font(.system(size: 12.5).italic()).foregroundColor(AppColors.textTertiary) }
-                                        if let vi = t.vi { Text(vi).font(.system(size: 14)).foregroundColor(AppColors.textSecondary) }
-                                    }
-                                    Spacer()
-                                }
-                            }
-                        }
-                        Text("Hoạt hình thứ tự nét + ô tập viết: đợt 2 của app.").font(.system(size: 12.5)).foregroundColor(AppColors.textTertiary)
-                    }
-                }
-                .padding(20)
-            }
-            .background(AppColors.backgroundPrimary)
-            .navigationTitle("Chữ \(chu)")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Xong") { dong() } } }
-        }
-        .presentationDetents([.medium, .large])
-    }
-
-    private func hangTT(_ nhan: String, _ gt: String) -> some View {
-        HStack(alignment: .firstTextBaseline) {
-            Text(nhan).font(.system(size: 13.5)).foregroundColor(AppColors.textSecondary).frame(width: 110, alignment: .leading)
-            Text(gt).font(.system(size: 18, weight: .medium))
-        }
     }
 }

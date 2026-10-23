@@ -62,6 +62,10 @@ enum APIEndpoint {
     /// đường web dùng (`components/sach-hoc/audio.ts`), mp3 lưu trên R2. Cần đăng nhập; không có ⇒ đọc bằng máy.
     case sachHocDoc([String: Any])
     case ieltsChamViet([String: Any])
+    /// Khoá kiểu sách · khối `write`: ảnh ghép các hàng chữ viết tay (PNG base64) + chữ mục tiêu ⇒ AI xem chữ `{ketQua, diem}`.
+    case sachHocXemChuViet([String: Any])
+    /// Khoá kiểu sách · khối `essay` viết TAY: 1–4 trang ảnh (JPEG base64) ⇒ AI chép nguyên văn rồi chấm `{chep, ketQua}`.
+    case sachHocChamVietTay([String: Any])
     case ieltsDeThi(chang: String, hat: Int?)
     case ieltsNopDe([String: Any])
     case ieltsLichSuThi
@@ -1076,6 +1080,8 @@ enum APIEndpoint {
         case .ieltsHoiAI: return "/api/v1/ielts/ai/hoi"
         case .sachHocDoc: return "/api/v1/ielts/doc"
         case .ieltsChamViet: return "/api/v1/ielts/ai/cham-viet"
+        case .sachHocXemChuViet: return "/api/v1/ielts/ai/xem-chu-viet"
+        case .sachHocChamVietTay: return "/api/v1/ielts/ai/cham-viet-tay"
         case .ieltsLichSuThi: return "/api/v1/ielts/de-thi/lich-su"
         case .ieltsDeThi(let c, let h): return "/api/v1/ielts/de-thi/\(c)" + (h.map { "?hat=\($0)" } ?? "")
         case .ieltsNopDe: return "/api/v1/ielts/de-thi/nop"
@@ -1164,6 +1170,9 @@ enum APIEndpoint {
         case .nopBaiThiFE: return 180
         case .hoiCuongMiniLuyen: return 240
         case .taoCauHoiNoi: return 90
+        // AI chấm bài viết / xem ảnh chữ viết tay (khoá kiểu sách): model đọc ảnh + viết nhận xét dài — 60 s mặc định là sát.
+        case .ieltsChamViet, .sachHocXemChuViet: return 120
+        case .sachHocChamVietTay: return 180
         // Trợ lý AI CT Work (mentor, 18/10/2026): đọc thẻ/Docs/tệp tới 3 vòng rồi mới trả lời — mỗi lượt model
         // tới 90 s ở máy chủ. 60 s mặc định là app bỏ cuộc trong khi câu trả lời vẫn được lưu ở máy chủ.
         // `/ai/quick` (việc một chạm của CuongMini trên thẻ, 21/10/2026): một lượt model tới 5000 token ra — cùng trần.
@@ -1185,7 +1194,7 @@ enum APIEndpoint {
         case .videoDoiNhom: return "PATCH"
         case .videoYeuThich: return "POST"
         case .videoXoaCuaToi: return "DELETE"
-        case .ieltsGhiTienDo, .ieltsHoiAI, .ieltsChamViet, .ieltsNopDe, .sachHocDoc: return "POST"
+        case .ieltsGhiTienDo, .ieltsHoiAI, .ieltsChamViet, .ieltsNopDe, .sachHocDoc, .sachHocXemChuViet, .sachHocChamVietTay: return "POST"
         case .ieltsXoaTienDo: return "DELETE"
         // ─── Tiền nong ───
         case .tienThemVi, .tienChuyenVi, .tienThemNhomChi, .tienThemChi, .tienThemThu,
@@ -1277,7 +1286,7 @@ enum APIEndpoint {
             return m
         case .videoDoiNhom(_, let n): return ["nhomLon": n]
         case .ieltsGhiTienDo(let items): return ["items": items]
-        case .ieltsHoiAI(let m), .ieltsChamViet(let m), .ieltsNopDe(let m), .sachHocDoc(let m): return m
+        case .ieltsHoiAI(let m), .ieltsChamViet(let m), .ieltsNopDe(let m), .sachHocDoc(let m), .sachHocXemChuViet(let m), .sachHocChamVietTay(let m): return m
         // ─── Tiền nong ───
         case .tienThemVi(let m), .tienSuaVi(_, let m), .tienChuyenVi(let m),
              .tienThemNhomChi(let m), .tienSuaNhomChi(_, let m),

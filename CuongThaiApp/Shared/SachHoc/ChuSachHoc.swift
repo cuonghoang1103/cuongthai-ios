@@ -143,14 +143,20 @@ struct ChuSH: View {
 
     @AppStorage(CaiDatDocSH.furigana) private var furi = true
     @AppStorage(CaiDatDocSH.coChu) private var tiLe = 1.0
+    /// Màn bài có thẻ chữ Hán ⇒ chạm một chữ Hán trong đoạn là mở thẻ của chữ đó (KanjiSheet của web).
+    @Environment(\.moChuHanSH) private var moChuHan
 
     var body: some View {
         let doan = PhanTichChuSH.tach(text)
         let size = (co * tiLe).rounded()
         #if canImport(UIKit)
-        if furi && !khongFurigana && doan.contains(where: { $0.ruby != nil }) {
-            NhanRubySH(chu: Self.dungNS(doan, co: size, dam: dam, mau: mau, nghieng: nghieng, giua: giua),
-                       tren: doan.first(where: { $0.ruby != nil }) != nil ? size * 0.62 : 0)
+        let coRuby = furi && !khongFurigana && doan.contains(where: { $0.ruby != nil })
+        // Chữ Hán chạm được cần UILabel (SwiftUI `Text` không biết chạm vào ký tự nào).
+        let chamHan = moChuHan != nil && doan.contains { $0.text.contains(where: ChuHanTienIchSH.laHan) }
+        if coRuby || chamHan {
+            NhanRubySH(chu: Self.dungNS(doan, co: size, dam: dam, mau: mau, nghieng: nghieng, giua: giua, ruby: coRuby),
+                       tren: coRuby ? size * 0.62 : 0,
+                       cham: chamHan ? moChuHan : nil)
         } else {
             text(doan, size)
         }
@@ -182,11 +188,11 @@ struct ChuSH: View {
     }
 
     #if canImport(UIKit)
-    static func dungNS(_ doan: [DoanChuSH], co: CGFloat, dam: Bool, mau: MauChuSH, nghieng: Bool, giua: Bool) -> NSAttributedString {
+    static func dungNS(_ doan: [DoanChuSH], co: CGFloat, dam: Bool, mau: MauChuSH, nghieng: Bool, giua: Bool, ruby coRuby: Bool = true) -> NSAttributedString {
         let out = NSMutableAttributedString()
         let ps = NSMutableParagraphStyle()
         // Chừa chỗ cho hàng furigana phía trên mỗi dòng — UILabel không tự nới dòng cho ruby.
-        ps.lineSpacing = co * 0.42
+        ps.lineSpacing = co * (coRuby ? 0.42 : 0.18)
         ps.alignment = giua ? .center : .natural
         ps.lineBreakMode = .byWordWrapping
         ps.lineBreakStrategy = .standard
@@ -196,7 +202,7 @@ struct ChuSH: View {
             var attr: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: mau.ui, .paragraphStyle: ps]
             if d.gach { attr[.strikethroughStyle] = NSUnderlineStyle.single.rawValue }
             if d.to { attr[.backgroundColor] = UIColor(NEN_DA_QUANG) }
-            if let r = d.ruby {
+            if coRuby, let r = d.ruby {
                 let ruby = CTRubyAnnotationCreateWithAttributes(
                     .auto, .auto, .before, r as CFString,
                     [kCTRubyAnnotationSizeFactorAttributeName: 0.5] as CFDictionary)
@@ -226,6 +232,10 @@ final class NhanRubyUI: UILabel {
 struct NhanRubySH: UIViewRepresentable {
     let chu: NSAttributedString
     var tren: CGFloat = 0
+    /// Chạm một chữ Hán ⇒ gọi với chữ đó. Chạm chỗ khác thì cử chỉ KHÔNG nhận (chạm đi tiếp như thường).
+    var cham: ((String) -> Void)? = nil
+
+    func makeCoordinator() -> ChamChuHanUI { ChamChuHanUI() }
 
     func makeUIView(context: Context) -> NhanRubyUI {
         let l = NhanRubyUI()
@@ -233,10 +243,15 @@ struct NhanRubySH: UIViewRepresentable {
         l.lineBreakMode = .byWordWrapping
         l.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         l.setContentHuggingPriority(.defaultHigh, for: .vertical)
+        let g = UITapGestureRecognizer(target: context.coordinator, action: #selector(ChamChuHanUI.bam(_:)))
+        g.delegate = context.coordinator
+        l.addGestureRecognizer(g)
         return l
     }
 
     func updateUIView(_ l: NhanRubyUI, context: Context) {
+        context.coordinator.cham = cham
+        l.isUserInteractionEnabled = cham != nil
         if l.tren != tren { l.tren = tren; l.setNeedsDisplay() }
         if l.attributedText != chu { l.attributedText = chu }
     }
@@ -251,6 +266,57 @@ struct NhanRubySH: UIViewRepresentable {
         l.preferredMaxLayoutWidth = w
         let s = l.sizeThatFits(CGSize(width: w, height: .greatestFiniteMagnitude))
         return CGSize(width: min(w, ceil(s.width)), height: ceil(s.height) + 2 + tren)
+    }
+}
+
+/// Tìm chữ Hán dưới ngón tay bằng CoreText (cùng chuỗi có ruby mà UILabel vẽ, chừa dải `tren`).
+/// Gần đúng theo dòng gần nhất — đủ để chạm trúng một chữ cỡ 17pt trở lên.
+final class ChamChuHanUI: NSObject, UIGestureRecognizerDelegate {
+    var cham: ((String) -> Void)?
+
+    func gestureRecognizerShouldBegin(_ g: UIGestureRecognizer) -> Bool {
+        guard cham != nil, let l = g.view as? NhanRubyUI else { return false }
+        return chuTai(g.location(in: l), l) != nil
+    }
+
+    @objc func bam(_ g: UITapGestureRecognizer) {
+        guard let l = g.view as? NhanRubyUI, let c = chuTai(g.location(in: l), l) else { return }
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        cham?(c)
+    }
+
+    private func chuTai(_ p: CGPoint, _ l: NhanRubyUI) -> String? {
+        guard let at = l.attributedText, at.length > 0 else { return nil }
+        let rong = l.bounds.width
+        let cao: CGFloat = 100_000
+        let fs = CTFramesetterCreateWithAttributedString(at)
+        let khung = CTFramesetterCreateFrame(fs, CFRange(location: 0, length: 0), CGPath(rect: CGRect(x: 0, y: 0, width: rong, height: cao), transform: nil), nil)
+        guard let dong = CTFrameGetLines(khung) as? [CTLine], !dong.isEmpty else { return nil }
+        var goc = [CGPoint](repeating: .zero, count: dong.count)
+        CTFrameGetLineOrigins(khung, CFRange(location: 0, length: 0), &goc)
+        let y = p.y - l.tren
+        var tot: (i: Int, kc: CGFloat)?
+        for (i, d) in dong.enumerated() {
+            var len: CGFloat = 0, xuong: CGFloat = 0, dem: CGFloat = 0
+            CTLineGetTypographicBounds(d, &len, &xuong, &dem)
+            let chan = cao - goc[i].y
+            let tren = chan - len, duoi = chan + xuong
+            let kc = y < tren ? tren - y : y > duoi ? y - duoi : 0
+            if tot == nil || kc < tot!.kc { tot = (i, kc) }
+        }
+        guard let t = tot, t.kc < 14 else { return nil }
+        let d = dong[t.i]
+        let x = p.x - goc[t.i].x
+        let ns = at.string as NSString
+        let idx = CTLineGetStringIndexForPosition(d, CGPoint(x: x, y: 0))
+        for i in [idx - 1, idx] where i >= 0 && i < ns.length {
+            let r = ns.rangeOfComposedCharacterSequence(at: i)
+            let x0 = CTLineGetOffsetForStringIndex(d, r.location, nil)
+            let x1 = CTLineGetOffsetForStringIndex(d, r.location + r.length, nil)
+            let c = ns.substring(with: r)
+            if x >= min(x0, x1) - 2, x <= max(x0, x1) + 2, let k = c.first, ChuHanTienIchSH.laHan(k) { return c }
+        }
+        return nil
     }
 }
 #endif

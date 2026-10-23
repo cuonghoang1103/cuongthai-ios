@@ -19,7 +19,9 @@ struct BaiSachHocView: View {
     @State private var bai: BaiSH?
     @State private var loi: String?
     @State private var banCu = false
-    @State private var videoMo: VideoMoSH?
+    /// Ngăn xếp thẻ chữ Hán đang mở (chạm chữ Hán trong bài; chip chữ khác ⇒ chồng thêm).
+    @State private var chuHan: [String] = []
+    @State private var moTraTu = false
     @Environment(\.openURL) private var moURL
     @AppStorage(CaiDatDocSH.furigana) private var furi = true
     @AppStorage(CaiDatDocSH.romaji) private var roma = true
@@ -29,12 +31,14 @@ struct BaiSachHocView: View {
     var body: some View {
         ScrollViewReader { cuon in
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
+                // LazyVStack: bài dài (Bài 0 có 10 khối viết tay × 10 ô PencilKit) chỉ dựng phần gần màn hình.
+                LazyVStack(alignment: .leading, spacing: 16) {
                     dau
                     if let bai {
-                        if !danhSachVideo(bai).isEmpty { khoiVideo(bai) }
+                        let vd = NeoVideoSH.chia(bai)
+                        if !vd.dauBai.isEmpty || !(bai.videos ?? []).isEmpty { khoiVideo(bai, dauBai: vd.dauBai) }
                         ForEach(Array(nhom(bai).enumerated()), id: \.offset) { i, n in
-                            nhomView(n).id(i)
+                            nhomView(n, video: vd.theoKhoi).id(i)
                         }
                         cuoi
                     } else if let loi {
@@ -46,19 +50,27 @@ struct BaiSachHocView: View {
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
                 .padding(.bottom, 60)
-                .frame(maxWidth: 760)
+                // Bề rộng đọc ~720pt căn giữa — iPad (dọc lẫn ngang) không thành dòng chữ dài cả màn.
+                .frame(maxWidth: 720)
                 .frame(maxWidth: .infinity)
             }
             .id(muc)
+            .sheet(isPresented: Binding(get: { !chuHan.isEmpty }, set: { if !$0 { chuHan = [] } })) {
+                NganChuHanSH(nganXep: $chuHan, baiDangHoc: SachHocVM.soBai(muc.id), vm: vm)
+            }
             #if DEBUG
             .onChange(of: bai?.id) { _, _ in
                 if let n = cuonToi, bai != nil {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { cuon.scrollTo(n, anchor: .top) }
+                    // LazyVStack chỉ ước lượng chiều cao phần chưa dựng ⇒ cuộn vài lượt cho tới đúng chỗ.
+                    for t in [0.6, 1.4, 2.4] { DispatchQueue.main.asyncAfter(deadline: .now() + t) { cuon.scrollTo(n, anchor: .top) } }
                 }
             }
             #endif
         }
         .environment(\.baiDangDocSH, muc.id)
+        .environment(\.moChuHanSH, vm.khoa?.ngonNgu == "ja" && vm.khoa?.chuHan != nil ? { c in
+            if chuHan.last != c { chuHan = Array((chuHan + [c]).suffix(20)) }
+        } : nil)
         .environmentObject(vm)
         .background(AppColors.backgroundPrimary)
         .navigationTitle(vm.meta(muc)?.nhan ?? "")
@@ -66,11 +78,42 @@ struct BaiSachHocView: View {
         .navigationBarTitleDisplayMode(.inline)
         #endif
         .toolbar {
+            if vm.khoa?.tuVung != nil {
+                ToolbarItem(placement: .primaryAction) {
+                    Button { moTraTu = true } label: { Image(systemName: "character.book.closed") }
+                        .accessibilityLabel("Tra từ vựng cả khoá")
+                }
+            }
             ToolbarItem(placement: .primaryAction) { menuDoc }
         }
         .task(id: muc) { await nap() }
-        .onDisappear { GiongSachHoc.chung.dung() }
-        .sheet(item: $videoMo) { v in TrinhPhatVideoSH(video: v) }
+        .onDisappear {
+            GiongSachHoc.chung.dung()
+            #if os(iOS)
+            MayThuSH.chung.huy()
+            #endif
+        }
+        .sheet(isPresented: $moTraTu) {
+            NavigationStack {
+                ScrollView { TraTuVungSH().padding(16).frame(maxWidth: 720).frame(maxWidth: .infinity) }
+                    .background(AppColors.backgroundPrimary)
+                    .navigationTitle("Tra từ vựng")
+                    #if os(iOS)
+                    .navigationBarTitleDisplayMode(.inline)
+                    #endif
+                    .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Xong") { moTraTu = false } } }
+            }
+            .environmentObject(vm)
+        }
+        #if DEBUG
+        .task {
+            // Màn soi: `CT_SACHHOC_HAN=学` mở sẵn thẻ chữ Hán · `CT_SACHHOC_TRATU=1` mở sẵn ô tra từ.
+            let env = ProcessInfo.processInfo.environment
+            try? await Task.sleep(nanoseconds: 1_200_000_000)
+            if let c = env["CT_SACHHOC_HAN"], !c.isEmpty { chuHan = [c] }
+            if env["CT_SACHHOC_TRATU"] == "1" { moTraTu = true }
+        }
+        #endif
     }
 
     private func nap() async {
@@ -121,36 +164,17 @@ struct BaiSachHocView: View {
 
     // MARK: Video gắn bài
 
-    private func danhSachVideo(_ b: BaiSH) -> [VideoMoSH] {
-        var ds: [VideoMoSH] = []
-        for (neo, vs) in (b.videoNeo ?? [:]).sorted(by: { $0.key < $1.key }) {
-            for v in vs { ds.append(VideoMoSH(id: v.id ?? v.src, tieuDe: v.tieuDe, url: URL(string: v.src), youtube: nil, ghiChu: neo == "dau-bai" ? v.ghiChu : "Mục: " + neo.dropFirst())) }
-        }
-        for v in b.videos ?? [] {
-            if let s = v.src { ds.append(VideoMoSH(id: v.id, tieuDe: v.note ?? v.credit ?? "Video", url: URL(string: s), youtube: nil, ghiChu: v.dur)) }
-            else { ds.append(VideoMoSH(id: v.id, tieuDe: v.credit ?? "Video YouTube", url: nil, youtube: v.id, ghiChu: v.note)) }
-        }
-        return ds
-    }
-
-    private func khoiVideo(_ b: BaiSH) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+    /// Đầu bài: video `dau-bai` + neo không khớp mục nào + YouTube tuyển chọn — phát tại chỗ.
+    private func khoiVideo(_ b: BaiSH, dauBai: [VideoMucSH]) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
             Text("🎬 VIDEO CỦA BÀI").font(.system(size: 11, weight: .heavy)).kerning(0.5).foregroundColor(AppColors.brandPink)
-            ForEach(danhSachVideo(b)) { v in
-                Button {
-                    if let y = v.youtube, let u = URL(string: "https://www.youtube.com/watch?v=\(y)") { moURL(u) } else { videoMo = v }
-                } label: {
-                    HStack(spacing: 10) {
-                        Image(systemName: "play.rectangle.fill").font(.system(size: 22)).foregroundColor(AppColors.brandPink)
-                        VStack(alignment: .leading, spacing: 2) {
-                            ChuSH(text: v.tieuDe, co: 15, dam: true)
-                            if let g = v.ghiChu, !g.isEmpty { ChuSH(text: String(g), co: 12.5, mau: .mo) }
-                        }
-                        Spacer(minLength: 0)
-                    }
-                    .contentShape(Rectangle())
+            ForEach(Array(dauBai.enumerated()), id: \.offset) { _, v in VideoNoiSH(v: v) }
+            ForEach(Array((b.videos ?? []).enumerated()), id: \.offset) { _, v in
+                if let src = v.src {
+                    VideoNoiSH(v: VideoMucSH(src: src, tieuDe: v.note ?? v.credit ?? "Video", poster: v.poster, id: v.id, ghiChu: v.dur))
+                } else {
+                    VideoYouTubeSH(v: v)
                 }
-                .buttonStyle(.plain)
             }
         }
         .theKhoiSH(vien: AppColors.brandPink.opacity(0.35), nen: AppColors.brandPink.opacity(0.05))
@@ -158,35 +182,53 @@ struct BaiSachHocView: View {
 
     // MARK: Khối, đóng khung ngữ pháp
 
-    private enum NhomKhoi { case le(KhoiSH); case khung(String, [KhoiSH]) }
+    /// Kèm CHỈ SỐ khối gốc — để gắn video theo neo ngay dưới đúng tiêu đề `h`.
+    private enum NhomKhoi { case le(Int, KhoiSH); case khung(Int, String, [KhoiSH]) }
 
     /// Bài ngữ pháp: mỗi mục (từ khối `h`) đóng KHUNG cùng công thức + ví dụ của nó; bài tập đứng ngoài
     /// khung — như `Blocks framed` của web.
     private func nhom(_ b: BaiSH) -> [NhomKhoi] {
-        guard b.kind == "grammar" else { return b.blocks.map(NhomKhoi.le) }
+        guard b.kind == "grammar" else { return b.blocks.enumerated().map { NhomKhoi.le($0.offset, $0.element) } }
         var out: [NhomKhoi] = []
-        var dang: (String, [KhoiSH])?
-        func dong() { if let d = dang { out.append(.khung(d.0, d.1)); dang = nil } }
-        for k in b.blocks {
-            if case .h(let t) = k { dong(); dang = (t, []) }
-            else if k.laBaiTap { dong(); out.append(.le(k)) }
-            else if dang != nil { dang!.1.append(k) }
-            else { out.append(.le(k)) }
+        var dang: (Int, String, [KhoiSH])?
+        func dong() { if let d = dang { out.append(.khung(d.0, d.1, d.2)); dang = nil } }
+        for (i, k) in b.blocks.enumerated() {
+            if case .h(let t) = k { dong(); dang = (i, t, []) }
+            else if k.laBaiTap { dong(); out.append(.le(i, k)) }
+            else if dang != nil { dang!.2.append(k) }
+            else { out.append(.le(i, k)) }
         }
         dong()
         return out
     }
 
     @ViewBuilder
-    private func nhomView(_ n: NhomKhoi) -> some View {
+    private func videoMuc(_ i: Int, _ theo: [Int: [VideoMucSH]]) -> some View {
+        if let vs = theo[i], !vs.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                ForEach(Array(vs.enumerated()), id: \.offset) { _, v in VideoNoiSH(v: v) }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func nhomView(_ n: NhomKhoi, video: [Int: [VideoMucSH]]) -> some View {
         switch n {
-        case .le(let k): KhoiSHView(khoi: k)
-        case .khung(let t, let ks) where ks.isEmpty:
-            TieuDeSH(text: t)
-        case .khung(let t, let ks):
+        case .le(let i, let k):
+            VStack(alignment: .leading, spacing: 12) {
+                KhoiSHView(khoi: k)
+                videoMuc(i, video)
+            }
+        case .khung(let i, let t, let ks) where ks.isEmpty:
+            VStack(alignment: .leading, spacing: 12) {
+                TieuDeSH(text: t)
+                videoMuc(i, video)
+            }
+        case .khung(let i, let t, let ks):
             VStack(alignment: .leading, spacing: 14) {
                 ChuSH(text: t, co: 19, dam: true, mau: .nhan)
                     .padding(.bottom, 2)
+                videoMuc(i, video)
                 ForEach(Array(ks.enumerated()), id: \.offset) { _, k in KhoiSHView(khoi: k) }
             }
             .padding(14)
@@ -283,35 +325,5 @@ struct KhungLoiSH: View {
             NutSH(ten: "Thử lại", bieuTuong: "arrow.clockwise", hanhDong: thuLai)
         }
         .frame(maxWidth: .infinity).padding(.vertical, 40)
-    }
-}
-
-struct VideoMoSH: Identifiable {
-    let id: String
-    let tieuDe: String
-    let url: URL?
-    let youtube: String?
-    let ghiChu: String?
-}
-
-struct TrinhPhatVideoSH: View {
-    let video: VideoMoSH
-    @State private var player: AVPlayer?
-    @Environment(\.dismiss) private var dong
-    var body: some View {
-        NavigationStack {
-            VStack {
-                if let player { VideoPlayer(player: player).aspectRatio(16 / 9, contentMode: .fit) }
-                ChuSH(text: video.tieuDe, co: 16, dam: true).padding()
-                Spacer()
-            }
-            .background(AppColors.backgroundPrimary)
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Đóng") { dong() } } }
-        }
-        .onAppear {
-            GiongSachHoc.chung.dung()
-            if let u = video.url { player = AVPlayer(url: u); player?.play() }
-        }
-        .onDisappear { player?.pause() }
     }
 }

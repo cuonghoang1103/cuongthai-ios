@@ -69,6 +69,18 @@ struct NetChu: Codable {
     }
 }
 
+extension NetChu {
+    /// Dữ liệu tiếng Trung (`lang=zh`) KHÔNG có trường `character` (đo 23/10: chỉ strokes/medians/
+    /// radStrokes) — giải mã cứng thì cả chữ "chưa có dữ liệu nét". Thiếu ⇒ chuỗi rỗng.
+    init(from d: Decoder) throws {
+        enum K: String, CodingKey { case character, strokes, medians }
+        let c = try d.container(keyedBy: K.self)
+        self.init(character: (try? c.decode(String.self, forKey: .character)) ?? "",
+                  strokes: try c.decode([String].self, forKey: .strokes),
+                  medians: try c.decode([[[Double]]].self, forKey: .medians))
+    }
+}
+
 // ── Vẽ đường SVG ────────────────────────────────────────────────
 
 enum DuongSVG {
@@ -92,6 +104,15 @@ enum DuongSVG {
                 while i + 1 < so.count {
                     p.addLine(to: NetChu.doiToaDo(CGPoint(x: so[i], y: so[i+1]), canh: canh))
                     i += 2
+                }
+            case "Q":
+                // Dữ liệu tiếng Trung (lang=zh) dùng Q (bậc hai) — đo 23/10: 你 có M L C Q Z.
+                var i = 0
+                while i + 3 < so.count {
+                    p.addQuadCurve(
+                        to: NetChu.doiToaDo(CGPoint(x: so[i+2], y: so[i+3]), canh: canh),
+                        control: NetChu.doiToaDo(CGPoint(x: so[i], y: so[i+1]), canh: canh))
+                    i += 4
                 }
             case "C":
                 var i = 0
