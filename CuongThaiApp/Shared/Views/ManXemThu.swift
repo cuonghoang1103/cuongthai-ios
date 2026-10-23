@@ -111,7 +111,7 @@ struct ManXemThu: View {
             case "tuvan-thaoluan": TuVanNganhView(khoiId: "it", nganhId: "se", theBanDau: .thaoLuan)
             case "vo": VoView()
             // Bàn thử Vở — xem ThuVoDebug.swift.
-            case "vo-thu", "vo-kiem", "vo-viet", "vo-tongquan", "vo-sapxep", "vo-lamgon", "vo-lamgon-thu", "vo-vietlai": ThuVoView(cheDo: ten.lowercased())
+            case "vo-thu", "vo-kiem", "vo-viet", "vo-tongquan", "vo-sapxep", "vo-lamgon", "vo-lamgon-thu", "vo-vietlai", "vo-daxoa": ThuVoView(cheDo: ten.lowercased())
             case "cotdoi": BoCucCotDoi()
             case "trangchu": HomeView()
             case "khoahoc": CoursesView()      // → vào khoá → bài → màn HỌC BÀI

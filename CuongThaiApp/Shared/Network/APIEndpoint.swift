@@ -24,6 +24,8 @@ enum APIEndpoint {
     case voXinDuongNen(sha256: String, duoi: String, soByte: Int)
     case voXacNhanNet(trangId: Int, than: [String: Any])
     case voXoaTrang(clientIds: [String])
+    /// Khôi phục trang máy chủ đã xoá mềm (máy khác / thùng rác web) — 23/10/2026.
+    case voKhoiPhucTrang(clientIds: [String])
     case voXoaCuon(clientId: String)
     /// AI vẽ bằng nét (`kieu`: `hinh` | `sodo`). Chạy 30–90 giây — xem
     /// `thoiGianCho` bên dưới, mặc định 60 giây của `URLRequest` là cắt ngang.
@@ -723,6 +725,7 @@ enum APIEndpoint {
         case .voXinDuongDay(let id, _): return "/api/v1/vo/trang/\(id)/duong-day"
         case .voXacNhanNet(let id, _): return "/api/v1/vo/trang/\(id)/xac-nhan"
         case .voXoaTrang: return "/api/v1/vo/trang/xoa"
+        case .voKhoiPhucTrang: return "/api/v1/vo/trang/khoi-phuc"
         case .voXoaCuon: return "/api/v1/vo/cuon/xoa"
         case .voVe: return "/api/v1/vo/ve"
         case .voVeViec: return "/api/v1/vo/ve/viec"
@@ -1211,7 +1214,7 @@ enum APIEndpoint {
         case .tuyChinh(_, let pt, _): return pt
         case .workGoi(_, let pt, _, _): return pt
         case .voLayCay, .voVeXem, .voVietLaiXem, .voSoDoXem, .voMachXem: return "GET"
-        case .voDongBoCay, .voXinDuongDay, .voXacNhanNet, .voXoaTrang, .voXoaCuon,
+        case .voDongBoCay, .voXinDuongDay, .voXacNhanNet, .voXoaTrang, .voKhoiPhucTrang, .voXoaCuon,
              .voXinDuongNen, .voVe, .voVeViec, .voVietLai,
              .voHanTra, .voSoDoViec, .voMachViec: return "POST"
         case .ghiTienDo, .ghiKetQuaQuiz, .doiYeuThich, .aiDich, .aiKiemNguPhap, .aiNoiChuyen,
@@ -1309,6 +1312,7 @@ enum APIEndpoint {
         case .voXinDuongDay(_, let coAnh): return ["coAnhXemTruoc": coAnh]
         case .voXacNhanNet(_, let than): return than
         case .voXoaTrang(let ids): return ["clientIds": ids]
+        case .voKhoiPhucTrang(let ids): return ["clientIds": ids]
         case .voXoaCuon(let id): return ["clientId": id]
         case .voVe(let de, let kieu): return ["de": de, "kieu": kieu]
         case .voVeViec(let de, let kieu, let chiTiet): return ["de": de, "kieu": kieu, "chiTiet": chiTiet]

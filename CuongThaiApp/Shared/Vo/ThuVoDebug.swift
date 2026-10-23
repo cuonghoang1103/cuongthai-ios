@@ -22,6 +22,8 @@ import SwiftUI
 //                              CT_LAMGON=ap            … và tự bấm Áp dụng
 //                              CT_LAMGON_HOANTAC=1     … rồi ↶ / ↷ và đối chiếu (log)
 //                              CT_LAMGON_XEM=goc       cửa sổ mở ở bản "Trước"
+//   CT_XEM_MAN=vo-daxoa      (gieo vở mẫu nếu kho trống) đánh dấu 2 trang đầu là "máy chủ đã xoá"
+//                              rồi hiện huy hiệu + nội dung popover đồng bộ
 //   CT_XEM_MAN=vo-vietlai    gieo trang viết tay rồi mở màn viết; CT_VIETLAI=mau
 //                              … mở "✍️ AI viết lại" với kết quả mẫu (xem
 //                              `thuVietLaiTuDong` trong ManVietView để biết thêm cờ)
@@ -184,6 +186,44 @@ enum ThuVo {
             try? anh.pngData()?.write(to: goc.appendingPathComponent("giay-\(g.rawValue).png"))
         }
 
+        // 13. Trang MÁY CHỦ đã xoá (23/10/2026): đánh dấu, liệt kê, xoá khỏi
+        //     máy (không gửi lệnh xoá lên máy chủ; cuốn rỗng ⇒ chèn trang trắng).
+        let dbv = DongBoVo.shared
+        let khoThat = dbv._thuKho
+        let dauThat = MayChuDaXoaVo.doc()
+        dbv.gan(kho: kho)
+        let cC = CuonVo(ten: "Cuốn C", mon: mon, thuTu: 2); kho.insert(cC)
+        let cD = CuonVo(ten: "Cuốn D", mon: mon, thuTu: 3); kho.insert(cD)
+        let pC1 = TrangVo(cuon: cC, thuTu: 0, giay: .keNgang, huong: .doc); kho.insert(pC1)
+        let pC2 = TrangVo(cuon: cC, thuTu: 1, giay: .keNgang, huong: .doc); kho.insert(pC2)
+        let pD1 = TrangVo(cuon: cD, thuTu: 0, giay: .oLy, huong: .doc); kho.insert(pD1)
+        pC1.tieuDe = "Trang bị xoá ở web"
+        try? kho.save()
+        let hangDoiTruoc = ((try? kho.fetch(FetchDescriptor<ViecXoaCho>())) ?? []).count
+        dbv._thuDatDaXoa([pC1.id, pD1.id])
+        kiem("lưu tập 'máy chủ đã xoá' bền (UserDefaults)", MayChuDaXoaVo.doc() == [pC1.id, pD1.id])
+        let dsXoa = dbv.danhSachMayChuDaXoa()
+        kiem("liệt kê 2 trang đã xoá", dsXoa.count == 2, dsXoa.map(\.tenTrang).joined(separator: ","))
+        kiem("dòng mang tên trang + môn › cuốn",
+             dsXoa.contains { $0.tenTrang == "Trang bị xoá ở web" && $0.noiO == "Thử › Cuốn C" }
+             && dsXoa.contains { $0.noiO == "Thử › Cuốn D" })
+        dbv.xoaKhoiMayNay([pC1.id, pD1.id])
+        kiem("xoá khỏi máy: cuốn C còn đúng trang kia, đánh số lại",
+             cC.trangsTheoThuTu.map(\.id) == [pC2.id] && pC2.thuTu == 0)
+        kiem("xoá khỏi máy: cuốn D rỗng ⇒ có 1 trang trắng mới (giấy mặc định của cuốn)",
+             cD.soTrang == 1 && cD.trangsTheoThuTu.first?.id != pD1.id
+             && cD.trangsTheoThuTu.first?.loaiGiay == cD.giayMacDinh,
+             "soTrang=\(cD.soTrang) giay=\(cD.trangsTheoThuTu.first?.loaiGiay ?? "-")/\(cD.giayMacDinh)")
+        kiem("xoá khỏi máy: KHÔNG gửi lệnh xoá lên máy chủ",
+             ((try? kho.fetch(FetchDescriptor<ViecXoaCho>())) ?? []).count == hangDoiTruoc)
+        kiem("xoá khỏi máy: gỡ dấu", dbv.trangMayChuDaXoa.isEmpty && MayChuDaXoaVo.doc().isEmpty)
+        // Trang đã mất khỏi máy (xoá đường khác) ⇒ tự gỡ dấu khi liệt kê.
+        dbv._thuDatDaXoa([UUID()])
+        kiem("dấu mồ côi tự gỡ", dbv.danhSachMayChuDaXoa().isEmpty && dbv.trangMayChuDaXoa.isEmpty)
+        // Trả trạng thái thật về.
+        if let khoThat { dbv.gan(kho: khoThat) }
+        dbv._thuDatDaXoa(dauThat)
+
         // Dọn tệp nét vừa ghi ra Documents/Vo.
         for t in (try? kho.fetch(FetchDescriptor<TrangVo>())) ?? [] { KhoVo.xoa(t.id) }
         let hong = kq.filter { $0.hasPrefix("❌") }.count
@@ -319,6 +359,17 @@ struct ThuVoView: View {
             switch cheDo {
             case "vo-viet", "vo-lamgon", "vo-vietlai":
                 if let cuon { ManVietView(cuon: cuon) }
+            case "vo-daxoa":
+                // Popover đồng bộ có trang "máy chủ đã xoá" — để chụp/xem.
+                VStack(spacing: Spacing.md) {
+                    HStack { Text("Huy hiệu:").font(.caption); HuyHieuDongBo() }
+                    ChiTietDongBo(dongBo: DongBoVo.shared)
+                        .frame(width: 380)
+                        .background(AppColors.backgroundCard, in: RoundedRectangle(cornerRadius: 14))
+                        .shadow(radius: 12)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color.gray.opacity(0.25))
             case "vo-tongquan", "vo-sapxep":
                 if let cuon {
                     TongQuanTrangView(cuon: cuon, idDangMo: cuon.trangsTheoThuTu.first?.id,
@@ -337,6 +388,11 @@ struct ThuVoView: View {
                 for d in dong { NSLog("[THU-LAMGON] %@", d) }
             case "vo-lamgon": cuon = ThuVo.gieoTrangXau(kho)
             case "vo-vietlai": cuon = ThuVo.gieoTrangVietLai(kho)
+            case "vo-daxoa":
+                let c = ThuVo.gieoNeuTrong(kho)
+                DongBoVo.shared.gan(kho: kho)
+                DongBoVo.shared._thuDatDaXoa(Set((c?.trangsTheoThuTu ?? []).prefix(2).map(\.id)))
+                _ = ThuVo.tomTatKhoThat(kho)
             default:
                 UserDefaults.standard.set(cheDo == "vo-sapxep" ? "danhSach" : "luoi",
                                           forKey: "vo.tongquan.chedo")

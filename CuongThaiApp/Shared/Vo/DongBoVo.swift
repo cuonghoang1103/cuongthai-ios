@@ -29,6 +29,10 @@ final class DongBoVo: ObservableObject {
 
     @Published private(set) var trangThai: TrangThai = .nghi
     @Published private(set) var soTrangChoDay = 0
+    /// Trang mà MÁY CHỦ đã xoá (thùng rác web, hoặc máy khác xoá) trong khi
+    /// máy này vẫn còn bản — xem `MayChuDaXoaVo`. Không đẩy, không tính là
+    /// "chờ đẩy", không làm huy hiệu đỏ; popover hỏi người dùng khôi phục hay bỏ.
+    @Published private(set) var trangMayChuDaXoa: Set<UUID> = MayChuDaXoaVo.doc()
 
     private var kho: ModelContext?
     private var dangChay = false
@@ -164,7 +168,13 @@ final class DongBoVo: ObservableObject {
 
     private func capNhatSoCho(kho: ModelContext) {
         let d = FetchDescriptor<TrangVo>(predicate: #Predicate { $0.canDay })
-        soTrangChoDay = (try? kho.fetchCount(d)) ?? 0
+        let boQua = trangMayChuDaXoa
+        if boQua.isEmpty {
+            soTrangChoDay = (try? kho.fetchCount(d)) ?? 0
+        } else {
+            // Trang máy chủ đã xoá không "chờ đẩy" — nó chờ người dùng quyết.
+            soTrangChoDay = ((try? kho.fetch(d)) ?? []).filter { !boQua.contains($0.id) }.count
+        }
     }
 
     // MARK: - 0. Xả hàng đợi xoá
@@ -283,6 +293,7 @@ final class DongBoVo: ObservableObject {
     private func daySoCay(kho: ModelContext) async throws {
         let mons = try kho.fetch(FetchDescriptor<MonVo>())
         guard !mons.isEmpty else { return }
+        let daXoaTrenMayChu = trangMayChuDaXoa
 
         // Nền phải lên TRƯỚC cây: payload cây mang con trỏ `nenKhoa`, mà con
         // trỏ chỉ có sau khi tệp đã nằm trên R2. Làm ngược lại thì máy chủ
@@ -315,7 +326,11 @@ final class DongBoVo: ObservableObject {
                         "khoGiay": cuon.khoGiay.map { $0 as Any } ?? NSNull(),
                         "thuTu": cuon.thuTu,
                         "ghim": cuon.ghim,
-                        "trangs": cuon.trangsTheoThuTu.map { trang in
+                        // Trang máy chủ đã xoá: KHÔNG gửi. Gửi thì (máy chủ cũ)
+                        // nó bị ghi đè vào hàng trong thùng rác, hoặc (sau 30
+                        // ngày, hàng đã bị dọn) máy chủ TẠO LẠI nó — tức tự
+                        // làm sống lại trang người dùng đã xoá mà chưa hỏi.
+                        "trangs": cuon.trangsTheoThuTu.filter { !daXoaTrenMayChu.contains($0.id) }.map { trang in
                             [
                                 "clientId": trang.id.uuidString,
                                 "thuTu": trang.thuTu,
@@ -370,6 +385,12 @@ final class DongBoVo: ObservableObject {
                 for t in c.trangs {
                     guard let uid = UUID(uuidString: t.clientId), let trang = theoId[uid] else { continue }
                     trang.idMayChu = t.id
+                    if t.daXoa == true {
+                        // Máy chủ (từ 23/10/2026) báo trang đã bị xoá ở nơi
+                        // khác và KHÔNG ghi gì vào nó. Bản trên máy giữ nguyên.
+                        danhDauMayChuDaXoa(uid)
+                        continue
+                    }
                     if t.xungDot {
                         trang.vuongXungDot = true
                     } else if t.inkVersion > trang.phienBanNet && !trang.canDay {
@@ -385,34 +406,186 @@ final class DongBoVo: ObservableObject {
 
     // MARK: - 2. Đẩy nét vẽ
 
+    /// Đẩy nét từng trang bẩn.
+    ///
+    /// ⚠️ MỘT trang hỏng không được dừng cả lượt (trước 23/10/2026: trang
+    /// 11760 bị xoá trên web trả 404 ở `duong-day`, vòng lặp ném lỗi ngay ⇒
+    /// mọi trang xếp SAU nó không bao giờ được đẩy, huy hiệu đỏ mãi). Nay:
+    ///   - 404 `NOTE_NOT_FOUND` ⇒ trang đã bị xoá trên máy chủ ⇒ đánh dấu,
+    ///     bỏ qua, hỏi người dùng ở popover — KHÔNG phải lỗi đồng bộ;
+    ///   - gọi quá dày / bị huỷ ⇒ dừng ngay (thử tiếp chỉ làm nặng thêm);
+    ///   - lỗi khác ⇒ ghi lại, đẩy tiếp các trang còn lại, cuối lượt mới báo.
     private func dayCacTrangBan(kho: ModelContext) async throws {
         let ds = try kho.fetch(FetchDescriptor<TrangVo>(
             predicate: #Predicate { $0.canDay }
         ))
-        let canDay = ds.filter { $0.idMayChu != nil }
+        let boQua = trangMayChuDaXoa
+        let canDay = ds.filter { $0.idMayChu != nil && !boQua.contains($0.id) }
         guard !canDay.isEmpty else { trangThai = .nghi; return }
 
         var xong = 0
+        var loiDau: Error?
+        var soHong = 0
         for trang in canDay {
             trangThai = .dangDay(xong: xong, tong: canDay.count)
             do {
-                try await dayMotTrang(trang)
-            } catch let e as APIError {
-                if truongHopXungDot(e) {
+                do {
+                    try await dayMotTrang(trang)
+                } catch let e as APIError where truongHopXungDot(e) {
                     try await hopNhatXungDot(trang: trang, kho: kho)
-                } else {
-                    throw e
                 }
+            } catch let e as APIError where laTrangMayChuDaXoa(e) {
+                NhatKy.vo.info("trang \(trang.id.uuidString.prefix(8)) đã bị xoá trên máy chủ — bỏ qua, chờ người dùng quyết")
+                danhDauMayChuDaXoa(trang.id)
+            } catch let e as APIError where laQuaDay(e) {
+                try? kho.save()
+                throw e
+            } catch is CancellationError {
+                try? kho.save()
+                throw CancellationError()
+            } catch {
+                soHong += 1
+                if loiDau == nil { loiDau = error }
+                NhatKy.vo.error("đẩy trang \(trang.id.uuidString.prefix(8)) hỏng, đẩy tiếp trang khác: \(error.localizedDescription)")
             }
             xong += 1
         }
         try kho.save()
+        if let loiDau {
+            if soHong > 1 {
+                throw APIError.serverError(moTaLoi(loiDau) + " " + String(format: T("(%d trang chưa đẩy được)"), soHong))
+            }
+            throw loiDau
+        }
         trangThai = .nghi
     }
 
     private func truongHopXungDot(_ e: APIError) -> Bool {
         if case .coMa(let ma, _) = e { return ma == "INK_CONFLICT" }
         return false
+    }
+
+    /// Máy chủ không còn trang này (đã xoá mềm ở máy khác / thùng rác web).
+    private func laTrangMayChuDaXoa(_ e: APIError) -> Bool {
+        if case .coMa(let ma, _) = e { return ma == "NOTE_NOT_FOUND" }
+        return false
+    }
+
+    // MARK: - Trang máy chủ đã xoá
+
+#if DEBUG
+    /// Chỉ cho bàn thử `ThuVoDebug`.
+    var _thuKho: ModelContext? { kho }
+    func _thuDatDaXoa(_ ids: Set<UUID>) {
+        trangMayChuDaXoa = ids
+        MayChuDaXoaVo.ghi(ids)
+    }
+#endif
+
+    private func danhDauMayChuDaXoa(_ id: UUID) {
+        guard !trangMayChuDaXoa.contains(id) else { return }
+        trangMayChuDaXoa.insert(id)
+        MayChuDaXoaVo.ghi(trangMayChuDaXoa)
+    }
+
+    private func boDanhDauMayChuDaXoa(_ ids: [UUID]) {
+        let truoc = trangMayChuDaXoa
+        trangMayChuDaXoa.subtract(ids)
+        if trangMayChuDaXoa != truoc { MayChuDaXoaVo.ghi(trangMayChuDaXoa) }
+    }
+
+    /// Một dòng trong popover: trang nào, ở môn/cuốn nào.
+    struct MucDaXoa: Identifiable {
+        let id: UUID
+        let tenTrang: String
+        let noiO: String
+    }
+
+    /// Danh sách để hiện. Trang đã mất khỏi máy (xoá ở đây rồi) thì tự gỡ dấu.
+    func danhSachMayChuDaXoa() -> [MucDaXoa] {
+        guard let kho, !trangMayChuDaXoa.isEmpty else { return [] }
+        let ids = trangMayChuDaXoa
+        let ds = (try? kho.fetch(FetchDescriptor<TrangVo>(predicate: #Predicate { ids.contains($0.id) }))) ?? []
+        let conTren = Set(ds.map(\.id))
+        let mat = ids.subtracting(conTren)
+        if !mat.isEmpty { boDanhDauMayChuDaXoa(Array(mat)) }
+        return ds.map { t in
+            let so = (t.cuon?.trangsTheoThuTu.firstIndex { $0.id == t.id } ?? 0) + 1
+            let noi = [t.cuon?.mon?.ten, t.cuon?.ten].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " › ")
+            return MucDaXoa(id: t.id, tenTrang: t.tenHienThi(so: so), noiO: noi)
+        }
+        .sorted { ($0.noiO, $0.tenTrang) < ($1.noiO, $1.tenTrang) }
+    }
+
+    /// "Khôi phục lên máy chủ": bỏ xoá trên máy chủ rồi đồng bộ lại ngay.
+    /// Trả `nil` khi xong, hoặc câu lỗi để popover hiện.
+    func khoiPhucLenMayChu(_ ids: [UUID]) async -> String? {
+        guard let kho, !ids.isEmpty else { return nil }
+        do {
+            let kq: KetQuaKhoiPhuc = try await APIClient.shared.request(
+                .voKhoiPhucTrang(clientIds: ids.map(\.uuidString)))
+            let theoClient = Dictionary(kq.trangs.map { ($0.clientId.uppercased(), $0) }, uniquingKeysWith: { a, _ in a })
+            let dsTrang = (try? kho.fetch(FetchDescriptor<TrangVo>(predicate: #Predicate { ids.contains($0.id) }))) ?? []
+            for t in dsTrang {
+                // Máy chủ đã dọn hẳn hàng (quá 30 ngày thùng rác) ⇒ lượt sync
+                // tới sẽ TẠO trang mới với phiên bản 0: quên id/phiên bản cũ và
+                // đẩy lại toàn bộ nét của máy này, nếu không bước đẩy ăn 409.
+                if theoClient[t.id.uuidString.uppercased()]?.trangThai == "khongCo" {
+                    t.idMayChu = nil
+                    t.phienBanNet = 0
+                    t.soNetDaDay = 0
+                    t.canDay = true
+                }
+                ThaoTacTrang.danhDauCay(t.cuon)   // để sync gửi lại trang + gắn lại cuốn
+            }
+            try kho.save()
+            boDanhDauMayChuDaXoa(ids)
+            NhatKy.vo.info("khôi phục \(kq.daKhoiPhuc)/\(ids.count) trang lên máy chủ")
+            lanChayCuoi = nil
+            if let dang = viecDangChay {
+                // Lượt đang chạy đã chụp cây TRƯỚC khi gỡ dấu ⇒ chạy thêm một lượt sau nó.
+                Task { [weak self] in await dang.value; self?.lanChayCuoi = nil; self?.batDau() }
+            } else {
+                batDau()
+            }
+            capNhatSoCho(kho: kho)
+            return nil
+        } catch {
+            NhatKy.vo.error("khôi phục trang hỏng: \(error.localizedDescription)")
+            return moTaLoi(error)
+        }
+    }
+
+    /// "Xoá khỏi máy này": bỏ bản cục bộ của trang máy chủ đã xoá. KHÔNG gửi
+    /// lệnh xoá lên máy chủ (nó đã xoá rồi — bản trong thùng rác web vẫn còn
+    /// 30 ngày). Cuốn mà mất hết trang thì chèn một trang trắng, vì màn viết
+    /// không mở được cuốn rỗng.
+    func xoaKhoiMayNay(_ ids: [UUID]) {
+        guard let kho, !ids.isEmpty else { return }
+        let dsTrang = (try? kho.fetch(FetchDescriptor<TrangVo>(predicate: #Predicate { ids.contains($0.id) }))) ?? []
+        var cuons: [UUID: CuonVo] = [:]
+        for t in dsTrang {
+            if let c = t.cuon { cuons[c.id] = c }
+            kho.delete(t)
+        }
+        for c in cuons.values {
+            let conLai = c.trangsTheoThuTu.filter { !ids.contains($0.id) }
+            if conLai.isEmpty {
+                ThaoTacTrang.chenTrangTrang(vao: c, viTri: 0, giay: LoaiGiay(rawValue: c.giayMacDinh) ?? .keNgang,
+                                            huong: HuongGiay(rawValue: c.huongMacDinh) ?? .doc, kho: kho)
+            } else {
+                ThaoTacTrang.danhSoLai(conLai)
+            }
+            c.trangDangDoc = min(c.trangDangDoc, max(0, c.trangsTheoThuTu.count - 1))
+            // KHÔNG đánh dấu cây bẩn chỉ vì trang này: máy chủ không cần biết.
+        }
+        do { try kho.save() } catch {
+            NhatKy.vo.error("xoá khỏi máy hỏng: \(error.localizedDescription)")
+        }
+        for id in ids { KhoVo.xoa(id) }
+        boDanhDauMayChuDaXoa(ids)
+        capNhatSoCho(kho: kho)
+        NhatKy.vo.info("đã xoá \(dsTrang.count) trang (máy chủ đã xoá) khỏi máy này")
     }
 
     private func dayMotTrang(_ trang: TrangVo) async throws {
@@ -753,8 +926,44 @@ private struct KetQuaDongBoCay: Decodable {
         let nenUrl: String?
         let nenLoai: String?
         let nenTrang: Int?
+        /// Máy chủ từ 23/10/2026: trang đã bị xoá mềm ở nơi khác. Máy chủ cũ
+        /// không gửi ⇒ `nil` (khi đó 404 ở bước đẩy mới cho biết).
+        let daXoa: Bool?
     }
     let mons: [Mon]
+}
+
+private struct KetQuaKhoiPhuc: Decodable {
+    struct Trang: Decodable {
+        let clientId: String
+        let id: Int?
+        /// "khoiPhuc" | "conSong" | "khongCo"
+        let trangThai: String
+        let thieuCuon: Bool?
+    }
+    let daKhoiPhuc: Int
+    let trangs: [Trang]
+}
+
+/// Tập trang "máy chủ đã xoá" — lưu ở `UserDefaults`, CỐ Ý không thêm trường
+/// vào `@Model TrangVo`: thêm trường vào kho SwiftData đã có dữ liệu mà sai
+/// migration là mất sạch vở (bài học của repo). Tập này mất cũng vô hại:
+/// lượt đồng bộ sau máy chủ lại báo `daXoa` / 404 và nó tự dựng lại.
+enum MayChuDaXoaVo {
+    static let khoa = "vo.trangMayChuDaXoa.v1"
+
+    static func doc() -> Set<UUID> {
+        let ds = UserDefaults.standard.stringArray(forKey: khoa) ?? []
+        return Set(ds.compactMap(UUID.init(uuidString:)))
+    }
+
+    static func ghi(_ ids: Set<UUID>) {
+        if ids.isEmpty {
+            UserDefaults.standard.removeObject(forKey: khoa)
+        } else {
+            UserDefaults.standard.set(ids.map(\.uuidString).sorted(), forKey: khoa)
+        }
+    }
 }
 
 private struct DuongDay: Decodable {
