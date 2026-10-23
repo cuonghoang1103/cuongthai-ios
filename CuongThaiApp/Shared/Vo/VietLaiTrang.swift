@@ -248,7 +248,9 @@ enum DungChuDep {
             x0 = mm(12) + 6; x1 = w - mm(12) - 6
         case .luoiCode:
             x0 = mm(16) + mm(3.5); x1 = w - mm(8) - 4
-        case .trang, .genkou, .nhacLy:
+        case .tuVung3Cot:
+            x0 = mm(10) + 5; x1 = w - mm(10) - 5
+        case .trang, .genkou, .nhacLy, .soDoTuDuy, .bangSoSanh:
             dong = []
         }
         if dong.count < 3 {

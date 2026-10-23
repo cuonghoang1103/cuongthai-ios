@@ -122,6 +122,7 @@ struct ManVietView: View {
                     DaiTrang(trangs: trangs, chiSo: $chiSo, lanLuu: lanLuu,
                              dangKeo: $dangKeoTrang,
                              themTrang: themTrang,
+                             themMau: { themTrangMau($0) },
                              moTongQuan: { cuaSo = .tongQuan },
                              lam: lam,
                              dat: { id, dich in
@@ -1102,6 +1103,16 @@ struct ManVietView: View {
                     Button { themTrang() } label: {
                         Label(T("Thêm trang ở cuối"), systemImage: "plus.rectangle.portrait")
                     }
+                    // Mẫu trang theo kiểu ghi — submenu là MỘT con của Section.
+                    Menu {
+                        ForEach(LoaiGiay.mauTrang) { g in
+                            Button { themTrangMau(g) } label: {
+                                Label(g.ten, systemImage: g.bieuTuong)
+                            }
+                        }
+                    } label: {
+                        Label(T("Thêm trang theo mẫu…"), systemImage: "rectangle.stack.badge.plus")
+                    }
                     Button { chenSauHienTai() } label: {
                         Label(T("Chèn trang trắng sau trang này"), systemImage: "arrow.down.doc")
                     }
@@ -1308,6 +1319,16 @@ struct ManVietView: View {
         moTheoId(t.id)
     }
 
+    /// Chèn một trang MẪU (Cornell, lưới code, từ vựng 3 cột, sơ đồ tư duy,
+    /// bảng so sánh) ngay sau trang đang mở rồi mở nó ra.
+    private func themTrangMau(_ g: LoaiGiay) {
+        let t = ThaoTacTrang.chenTrangTrang(vao: cuon, viTri: chiSo + 1,
+                                            giay: g, huong: huongMoi, kho: kho)
+        moTheoId(t.id)
+        bao(String(format: T("Đã thêm trang %@"), g.ten))
+        Haptics.cham()
+    }
+
     private func chenSauHienTai() {
         let t = ThaoTacTrang.chenTrangTrang(vao: cuon, viTri: chiSo + 1,
                                             giay: giayMoi, huong: huongMoi, kho: kho)
@@ -1466,6 +1487,8 @@ private struct DaiTrang: View {
     let lanLuu: Int
     @Binding var dangKeo: UUID?
     let themTrang: () -> Void
+    /// Giữ lâu nút Thêm ⇒ chọn MẪU trang.
+    var themMau: ((LoaiGiay) -> Void)? = nil
     let moTongQuan: () -> Void
     let lam: (ViecTrang, TrangVo) -> Void
     let dat: (UUID, TrangVo) -> Void
@@ -1523,6 +1546,15 @@ private struct DaiTrang: View {
                         )
                     }
                     .buttonStyle(.plain)
+                    .contextMenu {
+                        if let themMau {
+                            Section(T("Thêm trang theo mẫu")) {
+                                ForEach(LoaiGiay.mauTrang) { g in
+                                    Button { themMau(g) } label: { Label(g.ten, systemImage: g.bieuTuong) }
+                                }
+                            }
+                        }
+                    }
                 }
                 .padding(Spacing.sm)
             }
@@ -1583,11 +1615,13 @@ private struct DoiGiayView: View {
     }
 
     private func chon(_ g: LoaiGiay) {
-        if apCaCuon {
-            cuon.giayMacDinh = g.rawValue
-            for t in cuon.trangsTheoThuTu { t.loaiGiay = g.rawValue }
-        } else {
-            trang?.loaiGiay = g.rawValue
+        let ds = apCaCuon ? cuon.trangsTheoThuTu : (trang.map { [$0] } ?? [])
+        if apCaCuon { cuon.giayMacDinh = g.rawValue }
+        for t in ds {
+            let cuLaMau = t.giay.laMauTrang
+            t.loaiGiay = g.rawValue
+            // Mẫu trang vẽ vào ảnh thu nhỏ (cũng là ảnh web hiện) ⇒ dựng lại.
+            if cuLaMau || g.laMauTrang { ThaoTacTrang.dungLaiAnhNho(t) }
         }
         trang?.suaLuc = Date()
         ThaoTacTrang.danhDauCay(cuon)

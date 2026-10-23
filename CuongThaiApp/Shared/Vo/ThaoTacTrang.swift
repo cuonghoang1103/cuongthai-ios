@@ -139,7 +139,20 @@ enum ThaoTacTrang {
         danhSoLai(ds)
         danhDauCay(cuon)
         luu(kho)
+        // Mẫu trang (Cornell, từ vựng 3 cột…) có bố cục riêng ⇒ dải trang phải
+        // thấy ngay bố cục đó, không phải một ô trắng.
+        if giay.laMauTrang { dungLaiAnhNho(t) }
         return t
+    }
+
+    /// Dựng lại ảnh thu nhỏ của trang từ tệp nét + giấy hiện tại. Gọi sau khi
+    /// đổi giấy: ảnh này cũng là ảnh web hiện, nên trang có nét được đánh dấu
+    /// `canDay` để lượt đồng bộ sau mang ảnh mới (đúng mẫu trang) lên.
+    static func dungLaiAnhNho(_ t: TrangVo) {
+        let net = KhoVo.nap(t.id)
+        KhoVo.dungAnhNho(net, kho: t.khoTrang, khoNen: t.khoGoc, cho: t.id, nenPdfTen: t.nenPdfTen,
+                         nenPdfTrang: t.nenPdfTrang, nenAnhTen: t.nenAnhTen, giay: t.giay)
+        if !net.strokes.isEmpty { t.canDay = true }
     }
 
     /// Nhân bản ĐẦY ĐỦ một trang: nét, nền PDF/ảnh, giấy, tên, chữ đã đọc.
@@ -180,9 +193,11 @@ enum ThaoTacTrang {
 
     static func doiGiay(_ ds: [TrangVo], thanh g: LoaiGiay, kho: ModelContext) {
         for t in ds where t.loaiGiay != g.rawValue {
+            let cuLaMau = t.giay.laMauTrang
             t.loaiGiay = g.rawValue
             t.suaLuc = Date()
             danhDauCay(t.cuon)
+            if cuLaMau || g.laMauTrang { dungLaiAnhNho(t) }
         }
         luu(kho)
     }
@@ -316,7 +331,7 @@ enum ThaoTacTrang {
             }
             let net = KhoVo.nap(t.id)
             KhoVo.dungAnhNho(net, kho: t.khoTrang, khoNen: t.khoGoc, cho: t.id, nenPdfTen: t.nenPdfTen,
-                             nenPdfTrang: t.nenPdfTrang, nenAnhTen: t.nenAnhTen)
+                             nenPdfTrang: t.nenPdfTrang, nenAnhTen: t.nenAnhTen, giay: t.giay)
             ds.insert(t, at: min(c.viTri, ds.count))
             moi.append(t)
         }

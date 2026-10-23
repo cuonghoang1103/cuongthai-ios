@@ -682,7 +682,7 @@ final class DongBoVo: ObservableObject {
             trang.vuongXungDot = false
             KhoVo.dungAnhNho(gop, kho: trang.khoTrang, khoNen: trang.khoGoc, cho: trang.id,
                              nenPdfTen: trang.nenPdfTen, nenPdfTrang: trang.nenPdfTrang,
-                             nenAnhTen: trang.nenAnhTen)
+                             nenAnhTen: trang.nenAnhTen, giay: trang.giay)
             NhatKy.vo.info("gộp được \(netThem.count) nét vào bản máy chủ")
             try await dayMotTrang(trang)
         } else {
@@ -703,7 +703,7 @@ final class DongBoVo: ObservableObject {
             KhoVo.ghi(banMayChu, cho: trang.id)
             KhoVo.dungAnhNho(banMayChu, kho: trang.khoTrang, khoNen: trang.khoGoc, cho: trang.id,
                              nenPdfTen: trang.nenPdfTen, nenPdfTrang: trang.nenPdfTrang,
-                             nenAnhTen: trang.nenAnhTen)
+                             nenAnhTen: trang.nenAnhTen, giay: trang.giay)
             trang.phienBanNet = tMayChu.inkVersion
             trang.soNetDaDay = banMayChu.strokes.count
             trang.canDay = false
@@ -876,7 +876,7 @@ final class DongBoVo: ObservableObject {
         KhoVo.ghi(net, cho: trang.id)
         KhoVo.dungAnhNho(net, kho: trang.khoTrang, khoNen: trang.khoGoc, cho: trang.id,
                              nenPdfTen: trang.nenPdfTen, nenPdfTrang: trang.nenPdfTrang,
-                             nenAnhTen: trang.nenAnhTen)
+                             nenAnhTen: trang.nenAnhTen, giay: trang.giay)
         trang.phienBanNet = phienBan
         trang.soNetDaDay = net.strokes.count
         trang.coNet = !net.strokes.isEmpty

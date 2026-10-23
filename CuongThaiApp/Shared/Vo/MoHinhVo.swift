@@ -452,8 +452,22 @@ enum LoaiGiay: String, Codable, CaseIterable, Identifiable {
     case bonDong
     /// Lưới viết code tay: cột số dòng bên trái + ô vuông nhỏ canh thụt lề.
     case luoiCode
+    // ─── MẪU TRANG theo kiểu ghi (23/10/2026) ───────────────────────────
+    // Vẽ như nền giấy (không phải nét người dùng ⇒ không bị tẩy), đồng bộ
+    // qua `paperKind` như mọi loại giấy khác. Máy/app CŨ không biết giá trị
+    // này ⇒ `LoaiGiay(rawValue:)` trả nil ⇒ hiện kẻ ngang, không vỡ gì.
+    /// Từ vựng 3 cột: Từ · Nghĩa · Ví dụ.
+    case tuVung3Cot
+    /// Sơ đồ tư duy: nút trung tâm + 6 nhánh gợi ý trên nền chấm.
+    case soDoTuDuy
+    /// Bảng so sánh: cột Tiêu chí + hai cột A / B.
+    case bangSoSanh
 
     var id: String { rawValue }
+
+    /// Năm MẪU TRANG theo kiểu ghi — thứ người dùng chọn lúc thêm trang.
+    static let mauTrang: [LoaiGiay] = [.cornell, .luoiCode, .tuVung3Cot, .soDoTuDuy, .bangSoSanh]
+    var laMauTrang: Bool { Self.mauTrang.contains(self) }
 
     var ten: String {
         switch self {
@@ -466,6 +480,9 @@ enum LoaiGiay: String, Codable, CaseIterable, Identifiable {
         case .nhacLy:  return T("Khuông nhạc")
         case .bonDong: return T("4 dòng tập viết (tiếng Anh)")
         case .luoiCode: return T("Lưới viết code")
+        case .tuVung3Cot: return T("Từ vựng 3 cột")
+        case .soDoTuDuy: return T("Sơ đồ tư duy")
+        case .bangSoSanh: return T("Bảng so sánh")
         }
     }
 
@@ -480,6 +497,9 @@ enum LoaiGiay: String, Codable, CaseIterable, Identifiable {
         case .nhacLy:  return T("Năm dòng kẻ nhạc")
         case .bonDong: return T("Đỉnh chữ hoa · đường giữa · dòng chân · đuôi — tập viết tay tiếng Anh")
         case .luoiCode: return T("Cột số dòng + ô 4mm để canh thụt lề khi viết code")
+        case .tuVung3Cot: return T("Từ · Nghĩa · Ví dụ — mỗi hàng một từ, ôn bằng cách che cột")
+        case .soDoTuDuy: return T("Nút chủ đề ở giữa + 6 nhánh gợi ý trên nền chấm")
+        case .bangSoSanh: return T("Cột tiêu chí + hai cột A / B — so sánh hai khái niệm")
         }
     }
 
@@ -494,6 +514,9 @@ enum LoaiGiay: String, Codable, CaseIterable, Identifiable {
         case .nhacLy:  return "music.note.list"
         case .bonDong: return "textformat.abc"
         case .luoiCode: return "chevron.left.forwardslash.chevron.right"
+        case .tuVung3Cot: return "list.bullet.rectangle"
+        case .soDoTuDuy: return "point.3.connected.trianglepath.dotted"
+        case .bangSoSanh: return "rectangle.grid.3x2"
         }
     }
 }

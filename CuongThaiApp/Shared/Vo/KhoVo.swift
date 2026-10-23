@@ -183,9 +183,14 @@ enum KhoVo {
     /// trình, mà cái họ chú thích LÊN thì không ai thấy.
     /// `kho` = khổ THẬT của trang (kể cả phần nối dài); `khoNen` = khổ gốc
     /// mà nền tài liệu phủ (`nil` = bằng `kho`).
+    ///
+    /// `giay`: MẪU TRANG (Cornell, từ vựng 3 cột, sơ đồ tư duy…) được vẽ luôn
+    /// vào ảnh — ảnh này cũng là thứ web hiện, và một trang Cornell mà trên
+    /// web chỉ còn mấy dòng chữ trôi thì mất hết bố cục. Giấy thường (kẻ
+    /// ngang, ô ly…) KHÔNG vẽ: dải trang nhỏ 128pt, kẻ dày thì rối mắt.
     static func dungAnhNho(_ drawing: PKDrawing, kho: CGSize, khoNen: CGSize? = nil, cho idTrang: UUID,
                            nenPdfTen: String? = nil, nenPdfTrang: Int = 0,
-                           nenAnhTen: String? = nil) {
+                           nenAnhTen: String? = nil, giay: LoaiGiay? = nil) {
         // Trang to (Bảng lớn, A3, nối dài) thì tỉ lệ 0,25 ra ảnh nhỏ tới
         // 400×2000px — dải trang chỉ rộng 128pt. Chặn cạnh dài ~560px.
         let ty: CGFloat = min(0.25, 560 / max(kho.width, kho.height, 1))
@@ -195,6 +200,15 @@ enum KhoVo {
             UIColor.white.setFill()
             let o = CGRect(origin: .zero, size: khoNho)
             ctx.fill(o)
+            if let giay, giay.laMauTrang {
+                let c = ctx.cgContext
+                c.saveGState()
+                c.scaleBy(x: ty, y: ty)
+                UITraitCollection(userInterfaceStyle: .light).performAsCurrent {
+                    GiayNenView.ve(c, giay: giay, khoTrang: kho, caoGoc: nenGoc.height)
+                }
+                c.restoreGState()
+            }
             let oNen = CGRect(x: 0, y: 0, width: nenGoc.width * ty, height: nenGoc.height * ty)
             if let ten = nenPdfTen,
                let nen = NenTrangView.veTrangPdf(ten: ten, trang: nenPdfTrang, kho: oNen.size) {
