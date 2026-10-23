@@ -25,7 +25,8 @@ import AppKit
 //      lọc theo `laDuongAI(method:path:)` bên dưới.
 //   2. `LuongChat.gui` (AI Chat) và `LuongHoiDap.doc` (gia sư bài học,
 //      CuongMini phòng thi, hỏi về video).
-//   3. Bốn lượt tải tự dựng: `/ielts/ai/cham-noi` (âm thanh → Groq Whisper),
+//   3. Các lượt tải tự dựng: `/ielts/ai/cham-noi` (âm thanh → Groq Whisper),
+//      `/ielts/ai/cham-phat-am` (WAV → Azure Speech, khoá kiểu sách — `PhatAmSH.gui`),
 //      `/ai/stt` (giọng nói → Groq Whisper), `/video-hoc/nhai` (âm thanh →
 //      Groq Whisper), `/class-schedule/doc-anh` (ảnh lịch → model thị giác).
 //
@@ -56,10 +57,11 @@ enum DongYChiaSeAI {
     • Ảnh trang vở viết tay khi bạn hỏi về trang, khoanh vùng hỏi, hoặc bấm "AI viết lại trang"
     • Mô tả bạn gõ ở "Vẽ giúp" (tranh, sơ đồ, chữ Hán cần tra, sơ đồ khối, sơ đồ mạch điện)
     • Ghi chú liên quan (Trợ lý ghi chú), số liệu thu chi (AI Tiền), CV, bài làm, mã nguồn
-    • Bản ghi âm khi luyện nói IELTS / nói với AI / làm đề thi nói
+    • Bản ghi âm khi luyện nói IELTS / luyện phát âm / nói với AI / làm đề thi nói
+    • Ảnh chữ viết tay khi nhờ AI xem chữ hoặc chấm bài viết tay trong khoá học
     • Bài thi thực hành (mã, bài viết, ảnh sơ đồ) khi nộp để AI chấm
 
-    Nhà cung cấp: Anthropic (Claude) và OpenAI (GPT) qua cổng rambo.ai.vn, modelapi.vn; Groq (Whisper — chuyển giọng nói thành chữ).
+    Nhà cung cấp: Anthropic (Claude) và OpenAI (GPT) qua cổng rambo.ai.vn, modelapi.vn; Groq (Whisper — chuyển giọng nói thành chữ); Microsoft Azure Speech (chấm phát âm).
 
     Dữ liệu chỉ dùng để tạo câu trả lời. Chọn "Không" thì tính năng AI không gửi gì. Đổi lại bất cứ lúc nào trong Chính sách bảo mật.
     """
