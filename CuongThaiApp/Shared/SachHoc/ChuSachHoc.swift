@@ -6,7 +6,7 @@ import CoreText
 
 // ════════════════════════════════════════════════════════════════
 // CHỮ TRONG BÀI — cú pháp nhỏ của web (`Inline` trong Blocks.tsx):
-//   **đậm** · ==dạ quang== · ~~gạch (câu sai)~~ · {漢字|かんじ} → chữ có furigana
+//   **đậm** · *nghiêng* · ==dạ quang== · ~~gạch (câu sai)~~ · {漢字|かんじ} → chữ có furigana
 // (lồng được: **{私|わたし}は** …). Furigana vẽ bằng CTRubyAnnotation của
 // CoreText trong một UILabel — SwiftUI `Text` KHÔNG có ruby. Câu không có
 // furigana (hoặc người học tắt furigana) đi `Text` thường cho nhẹ.
@@ -26,35 +26,40 @@ enum CaiDatDocSH {
 struct DoanChuSH {
     var text: String
     var dam = false
+    var nghieng = false
     var gach = false
     var to = false
     var ruby: String?
 }
 
 enum PhanTichChuSH {
-    private static let re = try! NSRegularExpression(pattern: #"(\*\*[^*]+\*\*|~~[^~]+~~|==[^=]+==|\{[^|}]+\|[^}]+\})"#)
+    /// *nghiêng* (romaji *shuumatsu*, câu ví dụ IELTS): ~630 cặp trong dữ liệu, trước 23/10 hiện nguyên
+    /// dấu sao. Cặp nghiêng chứa được **đậm**; dấu * dính chữ hai bên (5*3, péngyou*) giữ nguyên.
+    /// Cùng luật với `INLINE_RE` của web (Blocks.tsx).
+    private static let re = try! NSRegularExpression(pattern: #"(\*\*[^*]+\*\*|(?<![*\w])\*(?=[^\s*])(?:[^*\n]|\*\*[^*\n]+\*\*)+?(?<=\S)\*(?![*\w])|~~[^~]+~~|==[^=]+==|\{[^|}]+\|[^}]+\})"#)
 
-    static func tach(_ s: String, dam: Bool = false, gach: Bool = false, to: Bool = false) -> [DoanChuSH] {
+    static func tach(_ s: String, dam: Bool = false, nghieng: Bool = false, gach: Bool = false, to: Bool = false) -> [DoanChuSH] {
         var out: [DoanChuSH] = []
         let ns = s as NSString
         var dau = 0
         for m in re.matches(in: s, range: NSRange(location: 0, length: ns.length)) {
             if m.range.location > dau {
-                out.append(DoanChuSH(text: ns.substring(with: NSRange(location: dau, length: m.range.location - dau)), dam: dam, gach: gach, to: to))
+                out.append(DoanChuSH(text: ns.substring(with: NSRange(location: dau, length: m.range.location - dau)), dam: dam, nghieng: nghieng, gach: gach, to: to))
             }
             let p = ns.substring(with: m.range)
             let trong = String(p.dropFirst(2).dropLast(2))
-            if p.hasPrefix("**") { out += tach(trong, dam: true, gach: gach, to: to) }
-            else if p.hasPrefix("~~") { out += tach(trong, dam: dam, gach: true, to: to) }
-            else if p.hasPrefix("==") { out += tach(trong, dam: dam, gach: gach, to: true) }
+            if p.hasPrefix("**") { out += tach(trong, dam: true, nghieng: nghieng, gach: gach, to: to) }
+            else if p.hasPrefix("*") { out += tach(String(p.dropFirst().dropLast()), dam: dam, nghieng: true, gach: gach, to: to) }
+            else if p.hasPrefix("~~") { out += tach(trong, dam: dam, nghieng: nghieng, gach: true, to: to) }
+            else if p.hasPrefix("==") { out += tach(trong, dam: dam, nghieng: nghieng, gach: gach, to: true) }
             else if let gach2 = p.firstIndex(of: "|") {
                 let goc = String(p[p.index(after: p.startIndex)..<gach2])
                 let doc = String(p[p.index(after: gach2)..<p.index(before: p.endIndex)])
-                out.append(DoanChuSH(text: goc, dam: dam, gach: gach, to: to, ruby: doc))
+                out.append(DoanChuSH(text: goc, dam: dam, nghieng: nghieng, gach: gach, to: to, ruby: doc))
             }
             dau = m.range.location + m.range.length
         }
-        if dau < ns.length { out.append(DoanChuSH(text: ns.substring(from: dau), dam: dam, gach: gach, to: to)) }
+        if dau < ns.length { out.append(DoanChuSH(text: ns.substring(from: dau), dam: dam, nghieng: nghieng, gach: gach, to: to)) }
         return out
     }
 
@@ -178,7 +183,7 @@ struct ChuSH: View {
         for d in doan {
             var a = AttributedString(d.text)
             var f = Font.system(size: co, weight: (d.dam || dam) ? .bold : .regular)
-            if nghieng { f = f.italic() }
+            if nghieng || d.nghieng { f = f.italic() }
             a.font = f
             if d.gach { a.strikethroughStyle = .single }
             if d.to { a.backgroundColor = NEN_DA_QUANG }
@@ -198,7 +203,7 @@ struct ChuSH: View {
         ps.lineBreakStrategy = .standard
         for d in doan {
             var font = UIFont.systemFont(ofSize: co, weight: (d.dam || dam) ? .bold : .regular)
-            if nghieng, let fd = font.fontDescriptor.withSymbolicTraits(.traitItalic) { font = UIFont(descriptor: fd, size: co) }
+            if nghieng || d.nghieng, let fd = font.fontDescriptor.withSymbolicTraits(.traitItalic) { font = UIFont(descriptor: fd, size: co) }
             var attr: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: mau.ui, .paragraphStyle: ps]
             if d.gach { attr[.strikethroughStyle] = NSUnderlineStyle.single.rawValue }
             if d.to { attr[.backgroundColor] = UIColor(NEN_DA_QUANG) }
