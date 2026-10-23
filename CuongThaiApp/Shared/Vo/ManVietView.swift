@@ -73,9 +73,14 @@ struct ManVietView: View {
         case vietLai
         /// 📤 Nộp các trang của Vở làm bài cho một việc trong Huấn luyện học kỳ.
         case nopBai
+        case rutThe, chiaSeLinh
+        case academy(String, Int?)
         var id: String {
             switch self {
             case .nopBai: return "nopBai"
+            case .rutThe: return "rutThe"
+            case .chiaSeLinh: return "chiaSeLinh"
+            case .academy(let s, let b): return "academy-\(s)-\(b ?? 0)"
             case .vietLai: return "vietLai"
             case .lamGon: return "lamGon"
             case .khoGiay: return "khoGiay"
@@ -244,6 +249,24 @@ struct ManVietView: View {
             switch cua {
             case .nopBai:
                 NopBaiHocKyView(cuon: cuon, trangs: trangs, luuTruoc: { cauNoiVe.luuNgay() })
+            case .rutThe:
+                if let t = trangHienTai {
+                    RutTheView(trang: t, tenMon: cuon.mon?.ten ?? "", tenCuon: cuon.ten) { n in
+                        if n > 0 { bao(String(format: T("Đã thêm %d thẻ vào lịch ôn — ôn ở Vở › Ôn thẻ"), n)) }
+                    }
+                    .modifier(CoTrangLon())
+                }
+            case .chiaSeLinh:
+                if let t = trangHienTai {
+                    ChiaSeLinkTrangView(trang: t).presentationDetents([.medium, .large])
+                }
+            case .academy(let slug, let bai):
+                NavigationStack {
+                    CourseDetailView(slug: slug, moBaiId: bai)
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) { Button(T("Đóng")) { cuaSo = nil } }
+                        }
+                }
             case .doiGiay:      DoiGiayView(trang: trangHienTai, cuon: cuon)
             case .khoGiay:
                 KhoGiayCuonView(cuon: cuon, trang: trangHienTai,
@@ -980,6 +1003,13 @@ struct ManVietView: View {
                     }
                 }
                 .disabled(trangHienTai?.coNet != true)
+                Section {
+                    // Trang chỉ có nền giáo trình (chưa viết gì) vẫn rút thẻ được.
+                    Button { cauNoiVe.luuNgay(); cuaSo = .rutThe } label: {
+                        Label(T("🃏 Rút thẻ ôn từ trang này"), systemImage: "rectangle.stack.badge.plus")
+                    }
+                    .disabled(trangHienTai?.coNet != true && trangHienTai?.coNenTaiLieu != true)
+                }
                 }
 
                 Section {
@@ -1039,6 +1069,16 @@ struct ManVietView: View {
                     }
                     Button { cuaSo = .xuatPdf(trangs.map(\.id), cuon.ten) } label: {
                         Label(T("Xuất cả cuốn ra PDF"), systemImage: "square.and.arrow.up.on.square")
+                    }
+                    Button { cauNoiVe.luuNgay(); cuaSo = .chiaSeLinh } label: {
+                        Label(T("Chia sẻ link chỉ xem trang này…"), systemImage: "link")
+                    }
+                    if let slug = trangHienTai.flatMap({ VoHocKy.baiCuaTrang($0) })?.slug ?? VoHocKy.courseSlug(cho: cuon) {
+                        Button {
+                            cuaSo = .academy(slug, trangHienTai.flatMap { VoHocKy.baiCuaTrang($0) }?.lessonId)
+                        } label: {
+                            Label(T("📚 Mở bài học Academy của môn"), systemImage: "graduationcap")
+                        }
                     }
                     if coAI {
                     Button { dangChonPdf = true } label: {

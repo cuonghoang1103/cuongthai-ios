@@ -41,14 +41,21 @@ struct NoiDungVoView: View {
     private enum CuaSoVo: Identifiable {
         case taoMon
         case suaMon(MonVo)
+        case monKyNay
 
         var id: String {
             switch self {
             case .taoMon: return "tao"
             case .suaMon(let m): return "sua-" + m.id.uuidString
+            case .monKyNay: return "monKyNay"
             }
         }
     }
+
+    /// Vở theo học kỳ: môn của kỳ + buổi hôm nay (Huấn luyện học kỳ + TKB).
+    @StateObject private var hocKy = VoHocKyVM()
+    @State private var moTrang: MoTrangVo?
+    @State private var soTheCanOn = 0
 
     private var soCot: Int { beRong == .regular ? 3 : 2 }
 
@@ -57,11 +64,12 @@ struct NoiDungVoView: View {
     /// cùng một cây dữ liệu cục bộ — tách ra thành hai chỗ thì người dùng
     /// phải nhớ "viết chữ Hán thì vào đâu".
     private enum Muc: String, CaseIterable, Identifiable {
-        case vo, luyenViet, daHoi
+        case vo, onThe, luyenViet, daHoi
         var id: String { rawValue }
         var ten: String {
             switch self {
             case .vo:        return T("Vở của tôi")
+            case .onThe:     return T("Ôn thẻ")
             case .luyenViet: return T("Luyện viết")
             case .daHoi:     return T("Đã hỏi")
             }
@@ -74,12 +82,24 @@ struct NoiDungVoView: View {
         Group {
                 if muc == .daHoi {
                     TheDaHoiView()
+                } else if muc == .onThe {
+                    OnTheHomNayView(khiDoiSo: { soTheCanOn = $0 })
                 } else if muc == .luyenViet {
                     LuyenVietHubView()
-                } else if mons.isEmpty {
+                } else if mons.isEmpty && hocKy.mons.isEmpty {
                     ManTrong()
                 } else {
                     ScrollView {
+                        if !hocKy.homNay.isEmpty || soTheCanOn > 0 || !hocKy.mons.isEmpty {
+                            DaiHomNayVo(vm: hocKy, soTheCanOn: soTheCanOn,
+                                        moBuoi: { moBuoi($0) },
+                                        moOnThe: { muc = .onThe },
+                                        moGoiY: { cuaSo = .monKyNay })
+                                .padding(.top, Spacing.sm)
+                        }
+                        if mons.isEmpty {
+                            ManTrong().frame(minHeight: 360)
+                        }
                         LazyVGrid(
                             columns: Array(repeating: GridItem(.flexible(), spacing: Spacing.md),
                                            count: soCot),
@@ -146,9 +166,11 @@ struct NoiDungVoView: View {
                 // task của `.task` chết theo view, và lượt đẩy đang dở sẽ bị
                 // huỷ ngay khi người dùng mở một cuốn vở.
                 DongBoVo.shared.batDau(keoVeTruoc: true)
+                await napHocKy()
             }
             .refreshable { await DongBoVo.shared.dongBo(keoVeTruoc: true) }
             .sheet(isPresented: $dangTim) { TimTrongVoView() }
+            .fullScreenCover(item: $moTrang) { m in ManVietView(cuon: m.cuon, moTrang: m.trangId) }
             .sheet(item: $cuaSo) { cua in
                 switch cua {
                 case .taoMon:
@@ -162,8 +184,31 @@ struct NoiDungVoView: View {
                         mon.ten = ten; mon.emoji = emoji; mon.mauHex = mau
                         mon.suaLuc = Date()
                     }
+                case .monKyNay:
+                    GoiYMonKyNayView(vm: hocKy)
                 }
             }
+    }
+
+    /// Nạp kỳ học + đếm thẻ đến hạn; buổi đang diễn ra mà môn đã có vở thì
+    /// tạo sẵn trang của buổi ("tạo khi tới buổi").
+    private func napHocKy() async {
+        #if DEBUG
+        if ProcessInfo.processInfo.environment["CT_VO_HOCKY"] == "mau" {
+            hocKy.napMau()
+            VoHocKy.taoNeuDangHoc(hocKy.homNay, tenKy: hocKy.tenKy, kho: kho)
+            soTheCanOn = 12
+            return
+        }
+        #endif
+        await hocKy.nap()
+        VoHocKy.taoNeuDangHoc(hocKy.homNay, tenKy: hocKy.tenKy, kho: kho)
+        if let g = try? await TheOnVo.homNay(gioiHan: 1) { soTheCanOn = g.conLai ?? 0 }
+    }
+
+    private func moBuoi(_ b: BuoiVo) {
+        let (c, t) = VoHocKy.trangChoBuoi(b, tenKy: hocKy.tenKy, kho: kho)
+        moTrang = MoTrangVo(cuon: c, trangId: t.id)
     }
 
     private func xoaMon(_ mon: MonVo) {
