@@ -440,6 +440,8 @@ enum APIEndpoint {
     /// Các đường của màn học Academy (tài liệu, bài tập, thời lượng, sổ tay,
     /// Code Lab, chứng chỉ, FAQ có trang, khoá gọn) — xem `HocBaiAPI.swift`.
     case hocBai(HocBaiAPI)
+    /// Đường mới của Vở (thẻ ôn, chữ nhận dạng, link chỉ xem) — `VoMoiAPI.swift`.
+    case voMoi(VoMoiAPI)
 
     // Notifications
     case getUnreadNotificationCount
@@ -930,6 +932,7 @@ enum APIEndpoint {
         case .cauHoiThuongGap(let l): return "/api/v1/courses/lessons/\(l)/ai/asks"
         case .xoaCauHoiThuongGap(let l, let a): return "/api/v1/courses/lessons/\(l)/ai/asks/\(a)"
         case .hocBai(let h): return h.duong
+        case .voMoi(let v): return v.duong
         case .getCourseProgress(let id): return "/api/v1/courses/\(id)/progress"
         case .saveLessonProgress(let id, _, _, _, _): return "/api/v1/courses/\(id)/progress"
 
@@ -1168,6 +1171,7 @@ enum APIEndpoint {
         case .voVietLai: return 120
         // Tra chữ gọi model một lượt (đo 29/09: 4–20 giây).
         case .voHanTra: return 75
+        case .voMoi(let v) where v.choLau: return 120
         // Phòng thi: câu lập trình trong đề FE được AI chấm lúc nộp; CuongMini
         // câu khó qua Opus có thể quá một phút.
         case .nopBaiThiFE: return 180
@@ -1188,6 +1192,7 @@ enum APIEndpoint {
     var method: String {
         switch self {
         case .hocBai(let h): return h.phuongThuc
+        case .voMoi(let v): return v.phuongThuc
         case .luuHoSoAcademy: return "PATCH"
         case .workSuaThe: return "PATCH"
         case .workChuyenThe, .workTaoThe, .workThemBinhLuan, .workBaoCaoBinhLuan: return "POST"
@@ -1281,6 +1286,7 @@ enum APIEndpoint {
     var body: [String: Any]? {
         switch self {
         case .hocBai(let h): return h.than
+        case .voMoi(let v): return v.than
         case .luuHoSoAcademy(let h): return ["preferences": ["academy": h]]
         case .tuVanHoi(let t), .tuVanDangBinhLuan(let t), .tuVanBaoCaoTraLoi(let t): return t
         case .videoThemCuaToi(let u, let n):

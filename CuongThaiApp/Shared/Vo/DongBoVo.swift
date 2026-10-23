@@ -122,6 +122,9 @@ final class DongBoVo: ObservableObject {
             if keoVeTruoc { try await keoVe(kho: kho) }
             try await daySoCay(kho: kho)
             try await dayCacTrangBan(kho: kho)
+            // Chữ nhận dạng ⇒ máy chủ (để TÌM được chữ viết tay trên web).
+            // Không ném: hỏng thì lượt sau làm lại, không làm đỏ huy hiệu.
+            await dayChuNhanDang(kho: kho)
             trangThai = .xong(Date())
             soLanBiChan = 0          // thông rồi thì trả nhịp về bình thường
             NhatKy.vo.info("đồng bộ xong")
@@ -458,6 +461,64 @@ final class DongBoVo: ObservableObject {
             throw loiDau
         }
         trangThai = .nghi
+    }
+
+    // MARK: - 2b. Chữ nhận dạng lên máy chủ (23/10/2026)
+
+    /// Đọc chữ (Vision, NGAY TRÊN MÁY — không mạng, không AI) các trang đã sửa
+    /// từ lần đọc trước, rồi đẩy chữ của những trang mà máy chủ chưa có bản
+    /// đúng lên `POST /vo/chu`. Web dùng chữ đó cho tìm kiếm toàn văn.
+    ///
+    /// ⚠️ KHÔNG gửi chữ trong payload `/vo/sync`: lượt đó gửi CẢ CÂY mỗi lần
+    /// (tới 2.000 trang), thêm vài KB chữ mỗi trang là vài MB mỗi lượt. Ở đây
+    /// chỉ gửi trang có chữ ĐỔI — nhớ dấu vân của bản đã gửi trong
+    /// UserDefaults (không thêm trường vào @Model).
+    ///
+    /// Trần mỗi lượt: đọc tối đa 20 trang (mỗi trang ~0,3–1s Vision) — lần
+    /// đầu một cuốn 200 trang sẽ được đọc dần qua nhiều lượt đồng bộ.
+    private func dayChuNhanDang(kho: ModelContext) async {
+        guard let ds = try? kho.fetch(FetchDescriptor<TrangVo>()) else { return }
+        let boQua = trangMayChuDaXoa
+        let song = ds.filter { $0.idMayChu != nil && !boQua.contains($0.id) }
+        var daDoc = 0
+        for t in song where daDoc < 20 {
+            guard t.coNet || t.nenPdfTen != nil || t.nenAnhTen != nil else { continue }
+            if let luc = t.nhanDangLuc, luc >= t.suaLuc { continue }
+            let chu = await DocChuViet.doc(net: KhoVo.nap(t.id), khoTrang: t.khoTrang, khoNen: t.khoGoc,
+                                           nenPdfTen: t.nenPdfTen, nenPdfTrang: t.nenPdfTrang,
+                                           nenAnhTen: t.nenAnhTen)
+            t.chuNhanDang = chu.isEmpty ? nil : chu
+            t.nhanDangLuc = Date()
+            daDoc += 1
+        }
+        if daDoc > 0 { try? kho.save() }
+
+        var daGui = DauChuDaGui.doc()
+        var lo: [[String: Any]] = []
+        var dauCuaLo: [String: String] = [:]
+        for t in song {
+            let chu = String((t.chuNhanDang ?? "").prefix(20_000))
+            let dau = DauChuDaGui.dau(chu)
+            let k = t.id.uuidString
+            if daGui[k] == dau { continue }
+            // Trang chưa từng có chữ và vẫn chưa có ⇒ khỏi gửi chuỗi rỗng.
+            if chu.isEmpty && daGui[k] == nil { continue }
+            lo.append(["clientId": k, "chu": chu])
+            dauCuaLo[k] = dau
+        }
+        guard !lo.isEmpty else { return }
+        for i in stride(from: 0, to: lo.count, by: 100) {
+            let phan = Array(lo[i..<min(i + 100, lo.count)])
+            do {
+                let _: KetQuaDayChu = try await APIClient.shared.request(.voMoi(.dayChu(trangs: phan)))
+                for m in phan { if let k = m["clientId"] as? String { daGui[k] = dauCuaLo[k] } }
+            } catch {
+                // Máy chủ cũ (404) hay mạng hỏng: thôi, lượt sau thử lại.
+                NhatKy.vo.info("đẩy chữ nhận dạng chưa được: \(error.localizedDescription)")
+                break
+            }
+        }
+        DauChuDaGui.ghi(daGui)
     }
 
     private func truongHopXungDot(_ e: APIError) -> Bool {
@@ -1088,5 +1149,21 @@ private struct CayVoTaiVe: Decodable {
         }
     }
     let mons: [Mon]
+}
+struct KetQuaDayChu: Decodable { var daLuu: Int?; var khongThay: [String]? }
+
+/// Dấu vân (FNV-1a 64) của chữ đã gửi lên máy chủ, theo id trang. Không dùng
+/// `hashValue` — nó đổi giữa các lần chạy app.
+enum DauChuDaGui {
+    private static let khoa = "vo.chu.daGui"
+    static func doc() -> [String: String] {
+        (UserDefaults.standard.dictionary(forKey: khoa) as? [String: String]) ?? [:]
+    }
+    static func ghi(_ d: [String: String]) { UserDefaults.standard.set(d, forKey: khoa) }
+    static func dau(_ s: String) -> String {
+        var h: UInt64 = 0xcbf29ce484222325
+        for b in s.utf8 { h ^= UInt64(b); h = h &* 0x100000001b3 }
+        return String(h, radix: 36)
+    }
 }
 #endif
