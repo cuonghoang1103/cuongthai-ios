@@ -10,19 +10,21 @@ import SwiftUI
 ///
 /// `CT_SACHHOC_NGUON`: thư mục do `npm run sach-hoc:xuat` sinh (chưa deploy thì cuongthai.com chưa có).
 /// Màn: `sachhoc` (mục lục) · `sachhoc-bai:<id bài>` (mở thẳng một bài; id = `?bai=` của web) ·
-/// `sachhoc-nhat` (màn Tiếng Nhật có thẻ cửa vào). `CT_SACHHOC_KHOA`: dekiru (mặc định) | ielts | jp | ch.
+/// `sachhoc-nhat` (màn Tiếng Nhật có thẻ cửa vào) · `sachhoc-ielts` (màn IELTS có thẻ IELTS nền tảng).
+/// `CT_SACHHOC_KHOA`: dekiru (mặc định) | ielts | jp | ch.
+/// Đợt 2: `CT_SACHHOC_HAN=学` (mở thẻ chữ Hán) · `CT_SACHHOC_TRATU=1` (ô tra từ) · `CT_SACHHOC_ONTHE=<chế độ>`
+/// (lat hoc tn go nghe ghep kt sai) · `CT_SACHHOC_DIEN=1` (điền sẵn bài tập / kết quả phát âm mẫu).
 /// `CT_SACHHOC_CUON=<n>`: cuộn tới nhóm khối thứ n của bài.
 struct ThuSachHocView: View {
     let man: String
     private var env: [String: String] { ProcessInfo.processInfo.environment }
 
-    private var moTa: KhoaSachHocMoTa {
-        let k = env["CT_SACHHOC_KHOA"] ?? "dekiru"
-        return k == "dekiru" ? .dekiru : KhoaSachHocMoTa(id: k, ten: k.uppercased(), moTa: "Khoá kiểu sách", co: "📘")
-    }
+    private var moTa: KhoaSachHocMoTa { .theoId(env["CT_SACHHOC_KHOA"] ?? "dekiru") }
 
     var body: some View {
-        if man == "sachhoc-nhat" {
+        if man == "sachhoc-ielts" {
+            IeltsView(coNganXepRieng: false)
+        } else if man == "sachhoc-nhat" {
             NgonNguHomeView(ngonNgu: NgonNgu(id: 2, name: "Tiếng Nhật", nameEn: "Japanese", code: "ja",
                                             flagEmoji: "🇯🇵", order: 2, isActive: true, counts: nil))
         } else if man.hasPrefix("sachhoc-bai:") {

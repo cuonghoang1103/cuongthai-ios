@@ -28,6 +28,8 @@ enum TinhNang: String, CaseIterable, Identifiable, Codable, Hashable {
     case ngoaiNgu = "ngoai-ngu"
     /// Khoá できる日本語 Bài 0–15 (giáo trình JPD113/JPD123), bản native — 23/10/2026.
     case dekiru
+    /// Sách IELTS nền tảng 15 ngày (khoá kiểu sách, bản native) — 23/10/2026.
+    case ieltsNenTang = "ielts-nen-tang"
     case videoHoc = "video-hoc"
     case thuVienSach = "thu-vien-sach"
     // Luyện tập & nghề nghiệp
@@ -76,7 +78,7 @@ enum TinhNang: String, CaseIterable, Identifiable, Codable, Hashable {
 
     var nhom: Nhom {
         switch self {
-        case .hocKy, .thoiKhoaBieu, .academy, .chuongTrinh, .khoaHocCuaToi, .ielts, .ngoaiNgu, .dekiru, .videoHoc, .thuVienSach:
+        case .hocKy, .thoiKhoaBieu, .academy, .chuongTrinh, .khoaHocCuaToi, .ielts, .ngoaiNgu, .dekiru, .ieltsNenTang, .videoHoc, .thuVienSach:
             return .hocTap
         case .phongThi, .codeLab, .thuatToan, .moPhong, .snippets, .loTrinh, .duAn, .phongVan, .cvBuilder:
             return .luyenVaNghe
@@ -121,6 +123,7 @@ enum TinhNang: String, CaseIterable, Identifiable, Codable, Hashable {
         case .ielts: return "IELTS"
         case .ngoaiNgu: return T("Ngoại ngữ")
         case .dekiru: return T("Tiếng Nhật できる")
+        case .ieltsNenTang: return T("IELTS nền tảng 15 ngày")
         case .videoHoc: return T("Học bằng video")
         case .thuVienSach: return T("Thư viện sách")
         case .phongThi: return T("Phòng thi")
@@ -154,6 +157,7 @@ enum TinhNang: String, CaseIterable, Identifiable, Codable, Hashable {
         case .ielts: return T("Nghe, nói, đọc, viết")
         case .ngoaiNgu: return T("Từ vựng, thẻ ghi nhớ, ôn tập")
         case .dekiru: return T("Bài 0–15 theo sách trên lớp: kana, ngữ pháp, nghe, nói")
+        case .ieltsNenTang: return T("Sách 4 kỹ năng: nghe như đề thật, phát âm + nói + viết có máy chấm")
         case .videoHoc: return T("Học tiếng Anh qua video")
         case .thuVienSach: return T("Sách song ngữ Anh–Việt")
         case .phongThi: return T("Đề thi thật, bấm giờ")
@@ -187,6 +191,7 @@ enum TinhNang: String, CaseIterable, Identifiable, Codable, Hashable {
         case .ielts: return "textformat.abc"
         case .ngoaiNgu: return "character.book.closed.fill"
         case .dekiru: return "character.ja"
+        case .ieltsNenTang: return "book.pages"
         case .videoHoc: return "play.rectangle.fill"
         case .thuVienSach: return "books.vertical.fill"
         case .phongThi: return "checklist"
@@ -217,7 +222,7 @@ enum TinhNang: String, CaseIterable, Identifiable, Codable, Hashable {
         case .hocKy, .phongThi: return AppColors.error
         case .thoiKhoaBieu, .academy, .codeLab, .ctWork: return AppColors.primary
         case .khoaHocCuaToi, .duAn, .tienNong, .chuongTrinh: return AppColors.accent
-        case .ielts, .videoHoc, .xuongBa, .dekiru: return AppColors.brandPink
+        case .ielts, .videoHoc, .xuongBa, .dekiru, .ieltsNenTang: return AppColors.brandPink
         case .ngoaiNgu, .thuVienSach, .moPhong, .xuongVe: return AppColors.secondary
         case .thuatToan, .snippets, .cvBuilder: return AppColors.info
         case .loTrinh, .phongVan, .notes: return AppColors.success
@@ -238,6 +243,7 @@ enum TinhNang: String, CaseIterable, Identifiable, Codable, Hashable {
         case .khoaHocCuaToi: return ["my courses", "khoa hoc", "tien do"]
         case .ielts: return ["english", "tieng anh", "band"]
         case .ngoaiNgu: return ["language", "tu vung", "flashcard", "tieng nhat", "tieng trung"]
+        case .ieltsNenTang: return ["ielts", "nen tang", "15 ngay", "tieng anh", "english", "phat am", "speaking", "writing", "sach"]
         case .dekiru: return ["dekiru", "tieng nhat", "japanese", "jpd113", "jpd123", "kana", "hiragana", "katakana", "nihongo", "nhat"]
         case .videoHoc: return ["video", "youtube", "nghe chep"]
         case .thuVienSach: return ["book", "library", "doc sach", "sach"]
@@ -285,12 +291,16 @@ enum TinhNang: String, CaseIterable, Identifiable, Codable, Hashable {
             let ten = chuanHoa(f.ten)
             // Khớp cả tên tiếng Việt GỐC (người dùng bật tiếng Anh vẫn gõ được "vở").
             let tenGoc = chuanHoa(f.rawValue.replacingOccurrences(of: "-", with: " "))
-            if ten.hasPrefix(k) || ten.split(separator: " ").contains(where: { $0.hasPrefix(k) }) {
+            let tu = ten.split(separator: " ")
+            // Trùng NGUYÊN một từ của tên đứng trước khớp đầu từ: "tien" ⇒ "Tiền nóng" trước "Tiếng Nhật".
+            if tu.contains(where: { $0 == k }) {
                 diem.append((f, 0))
-            } else if ten.contains(k) || tenGoc.contains(k) {
+            } else if ten.hasPrefix(k) || tu.contains(where: { $0.hasPrefix(k) }) {
                 diem.append((f, 1))
-            } else if chuanHoa(f.moTa).contains(k) || f.tuKhoaPhu.contains(where: { $0.contains(k) }) {
+            } else if ten.contains(k) || tenGoc.contains(k) {
                 diem.append((f, 2))
+            } else if chuanHoa(f.moTa).contains(k) || f.tuKhoaPhu.contains(where: { $0.contains(k) }) {
+                diem.append((f, 3))
             }
         }
         return diem.sorted { $0.1 != $1.1 ? $0.1 < $1.1 : $0.0.thuTu < $1.0.thuTu }.map(\.0)

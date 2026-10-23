@@ -13,10 +13,30 @@ struct KhoaSachHocMoTa: Identifiable, Hashable {
     let ten: String
     let moTa: String
     let co: String
+    /// Chữ trên ô biểu tượng của thẻ cửa vào.
+    var nhanThe: String = "できる"
+    /// Hai màu dải chuyển của thẻ đầu mục lục / ô biểu tượng.
+    var mau: [UInt32] = [0xBE123C, 0x7A45E8]
 
     static let dekiru = KhoaSachHocMoTa(
         id: "dekiru", ten: "できる日本語 · Bài 0–15",
         moTa: "Học từ con số 0 theo sách trên lớp: kana, ngữ pháp, từ vựng, nói, nghe", co: "🇯🇵")
+
+    /// IELTS nền tảng 15 ngày (web `/language/en/ielts`) — sách 4 kỹ năng, Tập 1.
+    static let ielts = KhoaSachHocMoTa(
+        id: "ielts", ten: "IELTS nền tảng · 15 ngày",
+        moTa: "Sách 4 kỹ năng từ gốc: ngữ pháp, từ vựng, nghe có lời dẫn như đề thật, nói + phát âm có máy chấm, viết có AI chấm",
+        co: "🇬🇧", nhanThe: "IELTS", mau: [0x1D4ED8, 0x0E93A6])
+
+    static func theoId(_ id: String) -> KhoaSachHocMoTa {
+        switch id {
+        case "dekiru": return .dekiru
+        case "ielts": return .ielts
+        case "jp": return KhoaSachHocMoTa(id: "jp", ten: "JP · Tiếng Nhật từ 0", moTa: "Khoá tiếng Nhật từ 0 đến N1", co: "🇯🇵", nhanThe: "JP")
+        case "ch": return KhoaSachHocMoTa(id: "ch", ten: "CH · Tiếng Trung từ 0", moTa: "Khoá tiếng Trung từ 0 đến HSK 6", co: "🇨🇳", nhanThe: "中文", mau: [0xB91C1C, 0xD97706])
+        default: return KhoaSachHocMoTa(id: id, ten: id.uppercased(), moTa: "Khoá kiểu sách", co: "📘")
+        }
+    }
 }
 
 struct MucLucSachHocView: View {
@@ -73,7 +93,7 @@ struct MucLucSachHocView: View {
             }
             .padding(16)
             .padding(.bottom, 40)
-            .frame(maxWidth: 760)
+            .frame(maxWidth: 720)
             .frame(maxWidth: .infinity)
         }
         #if DEBUG
@@ -163,7 +183,7 @@ struct MucLucSachHocView: View {
         .padding(18)
         .background(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(LinearGradient(colors: [Color(hex: 0xBE123C), Color(hex: 0x7A45E8)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                .fill(LinearGradient(colors: moTa.mau.map { Color(hex: $0) }, startPoint: .topLeading, endPoint: .bottomTrailing))
         )
     }
 
@@ -356,10 +376,11 @@ struct TheKhoaSachHoc: View {
     let moTa: KhoaSachHocMoTa
     var body: some View {
         HStack(spacing: 14) {
-            Text("できる").font(.system(size: 15, weight: .heavy)).lineLimit(1).minimumScaleFactor(0.6)
+            Text(moTa.nhanThe).font(.system(size: 15, weight: .heavy)).lineLimit(1).minimumScaleFactor(0.6)
                 .foregroundColor(.white)
+                .padding(.horizontal, 4)
                 .frame(width: 56, height: 56)
-                .background(RoundedRectangle(cornerRadius: 14).fill(LinearGradient(colors: [Color(hex: 0xBE123C), Color(hex: 0x7A45E8)], startPoint: .topLeading, endPoint: .bottomTrailing)))
+                .background(RoundedRectangle(cornerRadius: 14).fill(LinearGradient(colors: moTa.mau.map { Color(hex: $0) }, startPoint: .topLeading, endPoint: .bottomTrailing)))
             VStack(alignment: .leading, spacing: 3) {
                 Text(moTa.ten).font(.system(size: 16.5, weight: .bold)).foregroundColor(AppColors.textPrimary)
                 Text(moTa.moTa).font(.system(size: 13)).foregroundColor(AppColors.textSecondary).fixedSize(horizontal: false, vertical: true)

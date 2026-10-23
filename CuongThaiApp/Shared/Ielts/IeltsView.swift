@@ -40,6 +40,12 @@ struct IeltsView: View {
                             nutPhongThi
                         }
                         nutKhoTuVung
+                        // Sách IELTS nền tảng 15 ngày (bản native của web /language/en/ielts — khoá kiểu sách,
+                        // `Shared/SachHoc`): học theo trang, nghe có lời dẫn, phát âm + nói + viết có máy chấm.
+                        NavigationLink { MucLucSachHocView(moTa: .ielts) } label: {
+                            TheKhoaSachHoc(moTa: .ielts)
+                        }
+                        .buttonStyle(.plain)
                         // CON ĐƯỜNG thay cho lưới 8 ô đếm số. Lưới cũ nói
                         // "còn 200 bài tập" — đúng nhưng vô dụng; con đường
                         // nói "bây giờ làm cái này", và đó là khác biệt giữa
