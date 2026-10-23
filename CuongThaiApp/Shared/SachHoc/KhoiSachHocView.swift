@@ -199,11 +199,65 @@ struct BangSH: View {
         return head.count >= 3 && tb > 22
     }
 
+    @Environment(\.horizontalSizeClass) private var khoNgang
+    @AppStorage(CaiDatDocSH.coChu) private var tiLe = 1.0
+    /// Bề ngang khung chứa bảng (đo bằng GeometryReader) — để chia cột vừa khít, khỏi cuộn ngang.
+    @State private var rongKhung: CGFloat = 0
+
+    /// Bề ngang CỐ ĐỊNH của từng cột. Lưới nằm trong ScrollView ngang + `fixedSize` nên ô chỉ được
+    /// hỏi cỡ lý tưởng (bề ngang nil): `Text` trả về MỘT dòng dài, khung kẹp bề ngang mà giữ chiều
+    /// cao một dòng ⇒ chữ xuống dòng đè hàng dưới (ảnh iPad 23/10, bảng slide Bài 5). Có bề ngang
+    /// thật thì ô tự đo đúng số dòng.
+    /// Cách chia: mỗi cột muốn bằng dòng dài nhất của nó; tổng vượt khung thì cột ngắn giữ nguyên,
+    /// phần còn lại chia đều cho cột dài (mỗi cột ≥ 120). Nhiều cột tới mức không chia nổi ⇒ trần
+    /// 300/380 rồi cuộn ngang như cũ.
+    private var rongCot: [CGFloat] {
+        let soCot = max(head.count, rows.map(\.count).max() ?? 0)
+        guard soCot > 0 else { return [] }
+        let tran: CGFloat = khoNgang == .regular ? 380 : 300
+        let muon: [CGFloat] = (0..<soCot).map { j in
+            var dai: CGFloat = 0
+            #if canImport(UIKit)
+            let font = UIFont.systemFont(ofSize: (16 * tiLe).rounded(), weight: j == 0 ? .bold : .regular)
+            for o in ([head[safe: j]] + rows.map { $0[safe: j] }).compactMap({ $0 }) {
+                let w = (PhanTichChuSH.tron(o) as NSString).size(withAttributes: [.font: font]).width
+                dai = max(dai, ceil(w) + 2)
+            }
+            #else
+            dai = tran
+            #endif
+            return max(70, dai)
+        }
+        // 20 = đệm ngang của mỗi ô (10 mỗi bên).
+        let choChu = rongKhung - 20 * CGFloat(soCot)
+        guard rongKhung > 0, choChu >= 120 * CGFloat(soCot) else { return muon.map { min(tran, $0) } }
+        if muon.reduce(0, +) <= choChu { return muon }
+        var kq = muon
+        var conLai = choChu
+        var dai = Array(0..<soCot)
+        // Rót nước: cột muốn ít hơn phần chia đều thì giữ nguyên, lặp tới khi ổn định.
+        while true {
+            let phan = conLai / CGFloat(dai.count)
+            let ngan = dai.filter { muon[$0] <= phan }
+            if ngan.isEmpty { for j in dai { kq[j] = floor(max(120, phan)) }; break }
+            for j in ngan { kq[j] = muon[j]; conLai -= muon[j] }
+            dai.removeAll { ngan.contains($0) }
+            if dai.isEmpty { break }
+        }
+        return kq
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             if let caption, !caption.isEmpty { ChuSH(text: caption, co: 14, dam: true, mau: .phu) }
             if xepThe { the } else { luoi }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(GeometryReader { g in
+            Color.clear
+                .onAppear { rongKhung = g.size.width }
+                .onChange(of: g.size.width) { _, w in rongKhung = w }
+        })
     }
 
     private var the: some View {
@@ -230,23 +284,25 @@ struct BangSH: View {
             Grid(alignment: .topLeading, horizontalSpacing: 0, verticalSpacing: 0) {
                 if !head.isEmpty {
                     GridRow {
-                        ForEach(Array(head.enumerated()), id: \.offset) { _, h in
+                        ForEach(Array(head.enumerated()), id: \.offset) { j, h in
                             ChuSH(text: h, co: 14, dam: true, mau: .phu)
-                                .frame(minWidth: 70, maxWidth: 300, alignment: .leading)
+                                .frame(width: rongCot[safe: j] ?? 70, alignment: .leading)
                                 .padding(.horizontal, 10).padding(.vertical, 8)
                         }
                     }
                     .background(AppColors.backgroundTertiary)
                 }
                 ForEach(Array(rows.enumerated()), id: \.offset) { i, r in
+                    // Kẻ ngăn hàng thay cho nền sọc: nền của GridRow tô TỪNG Ô theo chiều cao riêng của
+                    // ô ⇒ hàng có một ô cao một ô thấp thì sọc lởm chởm. Divider ngoài GridRow trải hết cột.
+                    if i > 0 || !head.isEmpty { Divider() }
                     GridRow {
                         ForEach(Array(r.enumerated()), id: \.offset) { j, o in
                             ChuSH(text: o, co: 16, dam: j == 0)
-                                .frame(minWidth: 70, maxWidth: 300, alignment: .leading)
+                                .frame(width: rongCot[safe: j] ?? 70, alignment: .leading)
                                 .padding(.horizontal, 10).padding(.vertical, 8)
                         }
                     }
-                    .background(i % 2 == 1 ? AppColors.backgroundTertiary.opacity(0.45) : Color.clear)
                 }
             }
             .fixedSize(horizontal: true, vertical: false)

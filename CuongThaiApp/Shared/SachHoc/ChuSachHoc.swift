@@ -241,8 +241,13 @@ struct NhanRubySH: UIViewRepresentable {
         if l.attributedText != chu { l.attributedText = chu }
     }
 
+    /// Bề ngang khi SwiftUI hỏi cỡ LÝ TƯỞNG (đề xuất `nil` — ô bảng trong ScrollView ngang +
+    /// `fixedSize`). Trả cỡ một dòng 4000pt thì khung ngoài kẹp về 300pt nhưng giữ chiều cao một
+    /// dòng ⇒ chữ xuống dòng tràn đè hàng dưới (ảnh iPad 23/10, bảng slide Bài 5).
+    static let rongLyTuong: CGFloat = 300
+
     func sizeThatFits(_ de: ProposedViewSize, uiView l: NhanRubyUI, context: Context) -> CGSize? {
-        let w = de.width.map { max(1, $0) } ?? 4000
+        let w = de.width.map { max(1, $0) } ?? Self.rongLyTuong
         l.preferredMaxLayoutWidth = w
         let s = l.sizeThatFits(CGSize(width: w, height: .greatestFiniteMagnitude))
         return CGSize(width: min(w, ceil(s.width)), height: ceil(s.height) + 2 + tren)
