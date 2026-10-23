@@ -24,6 +24,11 @@ import SwiftUI
 //                              CT_LAMGON_XEM=goc       cửa sổ mở ở bản "Trước"
 //   CT_XEM_MAN=vo-daxoa      (gieo vở mẫu nếu kho trống) đánh dấu 2 trang đầu là "máy chủ đã xoá"
 //                              rồi hiện huy hiệu + nội dung popover đồng bộ
+//   CT_XEM_MAN=vo-hocky      màn Vở với dải "Hôm nay" (đặt thêm CT_VO_HOCKY=mau: 3 môn mẫu, 1 buổi đang học)
+//   CT_XEM_MAN=vo-rutthe     gieo trang viết tay rồi mở "Rút thẻ ôn" (CT_RUTTHE=mau: kết quả mẫu, không gọi AI)
+//   CT_XEM_MAN=vo-onthe      màn "Ôn thẻ hôm nay" (CT_ONTHE=mau: 2 thẻ mẫu; CT_ONTHE_LAT=1 lật sẵn)
+//   CT_XEM_MAN=vo-mau        gieo cuốn "Mẫu trang" (5 mẫu) rồi mở màn viết; CT_MAU_TRANG=<0…4> mở trang đó
+//   CT_XEM_MAN=vo-mau-pdf    … xuất PDF cả cuốn mẫu, ghi đường dẫn vào log `[THU-VO] PDF:`
 //   CT_XEM_MAN=vo-vietlai    gieo trang viết tay rồi mở màn viết; CT_VIETLAI=mau
 //                              … mở "✍️ AI viết lại" với kết quả mẫu (xem
 //                              `thuVietLaiTuDong` trong ManVietView để biết thêm cờ)
@@ -318,6 +323,38 @@ enum ThuVo {
         return cuon
     }
 
+    /// Cuốn "Mẫu trang": 5 trang, mỗi trang một mẫu theo kiểu ghi, có vài nét
+    /// để thấy nét nằm TRÊN mẫu (và mẫu không bị tẩy theo nét).
+    static func gieoMauTrang(_ kho: ModelContext) -> CuonVo? {
+        let ten = "Mẫu trang"
+        var cuon = (try? kho.fetch(FetchDescriptor<CuonVo>()))?.first { $0.ten == ten }
+        if cuon == nil {
+            let mon = MonVo(ten: "SWT301 · Software Testing", emoji: "🧪", mauHex: 0x6366F1); kho.insert(mon)
+            let c = CuonVo(ten: ten, mon: mon, mauBiaHex: 0x6366F1); kho.insert(c)
+            for (i, g) in LoaiGiay.mauTrang.enumerated() {
+                let t = TrangVo(cuon: c, thuTu: i, giay: g, huong: .doc)
+                t.tieuDe = g.ten
+                kho.insert(t)
+                let d = veSo(i + 1)
+                KhoVo.ghi(d, cho: t.id)
+                KhoVo.dungAnhNho(d, kho: t.khoTrang, khoNen: t.khoGoc, cho: t.id, giay: g)
+                t.coNet = true
+            }
+            cuon = c
+        }
+        if let c = cuon {
+            c.trangDangDoc = Int(ProcessInfo.processInfo.environment["CT_MAU_TRANG"] ?? "") ?? 0
+        }
+        try? kho.save()
+        return cuon
+    }
+
+    /// Một trang viết tay có chữ để thử "Rút thẻ ôn".
+    static func gieoTrangRutThe(_ kho: ModelContext) -> CuonVo? {
+        let c = gieoMauTrang(kho)
+        return c
+    }
+
     /// Chữ số 1–9 vẽ bằng nét theo lưới 7 đoạn — đủ để nhận ra trên ảnh nhỏ.
     private static func veSo(_ n: Int) -> PKDrawing {
         let doan: [Int: [(CGPoint, CGPoint)]] = {
@@ -350,6 +387,7 @@ struct ThuVoView: View {
     @Environment(\.modelContext) private var kho
     @State private var dong: [String] = []
     @State private var cuon: CuonVo?
+    @State private var anhPdf: UIImage?
 
     var body: some View {
         // ZStack + Color.clear: một `Group` đang RỖNG (cuon còn nil) không bao
@@ -357,8 +395,23 @@ struct ThuVoView: View {
         ZStack {
             Color.clear
             switch cheDo {
-            case "vo-viet", "vo-lamgon", "vo-vietlai":
+            case "vo-viet", "vo-lamgon", "vo-vietlai", "vo-mau":
                 if let cuon { ManVietView(cuon: cuon) }
+            case "vo-hocky":
+                VoView()
+            case "vo-onthe":
+                NavigationStack { OnTheHomNayView().navigationTitle("Ôn thẻ") }
+            case "vo-rutthe":
+                if let t = cuon?.trangsTheoThuTu.first {
+                    Color.gray.opacity(0.2).sheet(isPresented: .constant(true)) {
+                        RutTheView(trang: t, tenMon: cuon?.mon?.ten ?? "", tenCuon: cuon?.ten ?? "")
+                            .modifier(CoTrangLon())
+                    }
+                }
+            case "vo-mau-pdf":
+                if let anh = anhPdf {
+                    ScrollView { Image(uiImage: anh).resizable().scaledToFit().padding() }
+                } else { Text("đang xuất…") }
             case "vo-daxoa":
                 // Popover đồng bộ có trang "máy chủ đã xoá" — để chụp/xem.
                 VStack(spacing: Spacing.md) {
@@ -387,6 +440,30 @@ struct ThuVoView: View {
                 dong = ThuLamGon.chayHet()
                 for d in dong { NSLog("[THU-LAMGON] %@", d) }
             case "vo-lamgon": cuon = ThuVo.gieoTrangXau(kho)
+            case "vo-mau", "vo-rutthe": cuon = ThuVo.gieoMauTrang(kho)
+            case "vo-hocky", "vo-onthe": break
+            case "vo-mau-pdf":
+                if let c = ThuVo.gieoMauTrang(kho),
+                   let url = XuatPdfVo.taoPdf(trangs: c.trangsTheoThuTu, tenTep: "mau-trang") {
+                    ThuVo.log("PDF: " + url.path)
+                    // Dựng trang 1–5 của PDF thành MỘT ảnh ghép để nhìn được cả 5 mẫu.
+                    if let doc = CGPDFDocument(url as CFURL) {
+                        let n = doc.numberOfPages, w: CGFloat = 300, h: CGFloat = 424
+                        anhPdf = UIGraphicsImageRenderer(size: CGSize(width: w * CGFloat(n), height: h)).image { r in
+                            UIColor.lightGray.setFill(); r.fill(CGRect(x: 0, y: 0, width: w * CGFloat(n), height: h))
+                            for i in 1...n {
+                                guard let p = doc.page(at: i) else { continue }
+                                let b = p.getBoxRect(.mediaBox)
+                                let c = r.cgContext
+                                c.saveGState()
+                                c.translateBy(x: CGFloat(i - 1) * w + 4, y: h - 4)
+                                c.scaleBy(x: (w - 8) / b.width, y: -(h - 8) / b.height)
+                                c.drawPDFPage(p)
+                                c.restoreGState()
+                            }
+                        }
+                    }
+                }
             case "vo-vietlai": cuon = ThuVo.gieoTrangVietLai(kho)
             case "vo-daxoa":
                 let c = ThuVo.gieoNeuTrong(kho)
