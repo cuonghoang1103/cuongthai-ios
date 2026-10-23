@@ -88,7 +88,10 @@ struct DocSachView: View {
         return T("Chương") + " \(so)"
     }
 
-    var body: some View {
+    /// Màn đọc/tập trung ⇒ chủ đề mùa tự dừng chuyển động khi màn này hiện (Shared/ChuDe).
+    var body: some View { thanManYen.nenMuaYen() }
+
+    @ViewBuilder private var thanManYen: some View {
         ZStack(alignment: .top) {
             if let k = kho {
                 VStack(spacing: 0) {

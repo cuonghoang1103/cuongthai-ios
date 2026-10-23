@@ -211,7 +211,10 @@ struct LessonPlayerView: View {
 
     // MARK: Thân
 
-    var body: some View {
+    /// Màn đọc/tập trung ⇒ chủ đề mùa tự dừng chuyển động khi màn này hiện (Shared/ChuDe).
+    var body: some View { thanManYen.nenMuaYen() }
+
+    @ViewBuilder private var thanManYen: some View {
         Group {
             if laCotDoi {
                 HStack(spacing: 0) {

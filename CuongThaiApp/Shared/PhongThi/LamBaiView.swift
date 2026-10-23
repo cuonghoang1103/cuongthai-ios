@@ -458,7 +458,10 @@ struct LamBaiView: View {
 
     private var rong: Bool { coNgang == .regular }
 
-    var body: some View {
+    /// Màn đọc/tập trung ⇒ chủ đề mùa tự dừng chuyển động khi màn này hiện (Shared/ChuDe).
+    var body: some View { thanManYen.nenMuaYen() }
+
+    @ViewBuilder private var thanManYen: some View {
         ZStack {
             AppColors.backgroundPrimary.ignoresSafeArea()
 
